@@ -1,7 +1,7 @@
 "use client"
 
-import { DAMAGE_TYPES } from "@/lib/constants"
-import { AlertTriangle } from "lucide-react"
+import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
+import { AlertTriangle, Info } from "lucide-react"
 
 type DamageMark = {
   id: string
@@ -14,6 +14,7 @@ type DamageMark = {
 type VehicleDamageMapProps = {
   damageMarks: DamageMark[]
   onZoneClick: (zone: string) => void
+  onRemoveMark?: (markId: string) => void
 }
 
 const ZONE_PATHS: Record<string, { path: string; cx: number; cy: number }> = {
@@ -39,16 +40,22 @@ const ZONE_PATHS: Record<string, { path: string; cx: number; cy: number }> = {
   wheels: { path: "M60,540 L340,540 L340,570 L60,570 Z", cx: 200, cy: 555 },
 }
 
-export function VehicleDamageMap({ damageMarks, onZoneClick }: VehicleDamageMapProps) {
+function getSeverityColor(severity: string): string {
+  return (DAMAGE_SEVERITY as Record<string, { color: string }>)[severity]?.color || "#9CA3AF"
+}
+
+export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark }: VehicleDamageMapProps) {
   const damagedZones = new Set(damageMarks.map((m) => m.zone))
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <AlertTriangle className="size-4" />
-        <span>Araç üzerinde hasarlı bölgelere tıklayarak hasar ekleyin</span>
+      {/* Instruction */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 text-blue-800 p-3 rounded-lg">
+        <Info className="size-4 shrink-0" />
+        <span>Araç üzerinde tıklanabilir bölgelere tıklayarak hasar işaretleyiniz</span>
       </div>
 
+      {/* Vehicle SVG */}
       <div className="bg-muted/30 rounded-xl p-4 overflow-x-auto">
         <svg
           viewBox="0 0 400 590"
@@ -73,14 +80,21 @@ export function VehicleDamageMap({ damageMarks, onZoneClick }: VehicleDamageMapP
               <g key={zone} onClick={() => onZoneClick(zone)} className="cursor-pointer">
                 <path
                   d={data.path}
-                  fill={isDamaged ? "rgba(239, 68, 68, 0.2)" : "rgba(59, 130, 246, 0.05)"}
-                  stroke={isDamaged ? "#EF4444" : "rgba(59, 130, 246, 0.3)"}
-                  strokeWidth="1"
-                  className="transition-colors hover:fill-primary/20"
+                  fill={isDamaged ? "rgba(239, 68, 68, 0.25)" : "rgba(37, 99, 235, 0.06)"}
+                  stroke={isDamaged ? "rgba(239, 68, 68, 0.7)" : "rgba(37, 99, 235, 0.25)"}
+                  strokeWidth={isDamaged ? "2" : "1"}
+                  className="transition-colors hover:fill-primary/15"
                 />
                 {isDamaged && (
                   <>
-                    <circle cx={data.cx} cy={data.cy} r="8" fill="#EF4444" />
+                    <circle
+                      cx={data.cx}
+                      cy={data.cy}
+                      r="9"
+                      fill={getSeverityColor(marksInZone[0]?.severity || "light")}
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
                     <text
                       x={data.cx}
                       y={data.cy + 1}
@@ -100,15 +114,77 @@ export function VehicleDamageMap({ damageMarks, onZoneClick }: VehicleDamageMapP
         </svg>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2 text-xs">
-        {Object.entries(DAMAGE_TYPES).slice(0, 4).map(([key, val]) => (
-          <span key={key} className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: val.color }} />
-            {val.label}
-          </span>
-        ))}
+      {/* Severity Legend */}
+      <div className="bg-card border rounded-xl p-4">
+        <h4 className="text-sm font-medium mb-3">Hasar Şiddeti</h4>
+        <div className="flex flex-wrap gap-4">
+          {Object.entries(DAMAGE_SEVERITY).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-2">
+              <span
+                className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
+                style={{ backgroundColor: val.color }}
+              />
+              <span className="text-sm">{val.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Damage type legend */}
+      <div className="bg-card border rounded-xl p-4">
+        <h4 className="text-sm font-medium mb-3">Hasar Tipleri</h4>
+        <div className="flex flex-wrap gap-3">
+          {Object.entries(DAMAGE_TYPES).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: val.color }} />
+              <span className="text-xs text-muted-foreground">{val.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Damage list summary */}
+      {damageMarks.length > 0 && (
+        <div className="bg-card border rounded-xl p-4">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <AlertTriangle className="size-4 text-destructive" />
+            Hasar Kayıtları ({damageMarks.length})
+          </h4>
+          <div className="space-y-2">
+            {damageMarks.map((mark) => (
+              <div key={mark.id} className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg text-sm">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: getSeverityColor(mark.severity) }}
+                  />
+                  <span className="font-medium truncate">
+                    {VEHICLE_ZONES[mark.zone as keyof typeof VEHICLE_ZONES] || mark.zone}
+                  </span>
+                  <span className="text-muted-foreground text-xs shrink-0">
+                    {DAMAGE_TYPES[mark.damageType as keyof typeof DAMAGE_TYPES]?.label || mark.damageType}
+                  </span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted shrink-0">
+                    {DAMAGE_SEVERITY[mark.severity as keyof typeof DAMAGE_SEVERITY]?.label || mark.severity}
+                  </span>
+                  {mark.note && (
+                    <span className="text-muted-foreground text-xs truncate">- {mark.note}</span>
+                  )}
+                </div>
+                {onRemoveMark && (
+                  <button
+                    onClick={() => onRemoveMark(mark.id)}
+                    className="text-destructive hover:underline text-xs shrink-0 ml-2"
+                    title="Hasarı kaldır"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,19 +4,21 @@ import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { vehicleCreateSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
+import { AuditLogAction } from "@/lib/audit"
+import { normalizePlate } from "@/lib/format"
 
 export async function createVehicleAction(formData: FormData) {
   const user = await requireAuth()
 
   const raw = {
     customerId: formData.get("customerId") as string,
-    plate: formData.get("plate") as string,
-    brand: formData.get("brand") as string,
-    model: formData.get("model") as string,
-    vehicleType: formData.get("vehicleType") as string,
+    plate: normalizePlate(formData.get("plate") as string || ""),
+    brand: (formData.get("brand") as string || "").trim(),
+    model: (formData.get("model") as string || "").trim(),
+    vehicleType: (formData.get("vehicleType") as string || "").trim(),
     modelYear: formData.get("modelYear") as string,
     mileage: formData.get("mileage") as string,
-    vin: formData.get("vin") as string,
+    vin: (formData.get("vin") as string || "").trim(),
   }
 
   const parsed = vehicleCreateSchema.safeParse(raw)
@@ -44,6 +46,8 @@ export async function createVehicleAction(formData: FormData) {
       vin: parsed.data.vin || null,
     },
   })
+
+  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicle.id, "vehicle_created")
 
   revalidatePath("/app/vehicles")
   return { success: true, id: vehicle.id }

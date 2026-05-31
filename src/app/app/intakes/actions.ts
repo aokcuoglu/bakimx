@@ -128,7 +128,10 @@ export async function removeDamageMarkAction(markId: string, intakeFormId: strin
   })
   if (!mark) return { error: "Hasar işareti bulunamadı" }
 
-  await prisma.damageMark.delete({ where: { id: markId } })
+  const deleteResult = await prisma.damageMark.deleteMany({
+    where: { id: markId, workshopId: user.workshopId },
+  })
+  if (deleteResult.count === 0) return { error: "Hasar işareti bulunamadı" }
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true }
@@ -172,7 +175,10 @@ export async function removePhotoAction(photoId: string, intakeFormId: string) {
   })
   if (!photo) return { error: "Fotoğraf bulunamadı" }
 
-  await prisma.vehiclePhoto.delete({ where: { id: photoId } })
+  const deleteResult = await prisma.vehiclePhoto.deleteMany({
+    where: { id: photoId, workshopId: user.workshopId },
+  })
+  if (deleteResult.count === 0) return { error: "Fotoğraf bulunamadı" }
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true }
@@ -186,10 +192,11 @@ export async function updateIntakeStatusAction(intakeFormId: string, status: str
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
 
-  await prisma.vehicleIntakeForm.update({
-    where: { id: intakeFormId },
+  const updateResult = await prisma.vehicleIntakeForm.updateMany({
+    where: { id: intakeFormId, workshopId: user.workshopId },
     data: { status: status as import("@prisma/client").IntakeStatus },
   })
+  if (updateResult.count === 0) return { error: "Kabul formu bulunamadı" }
 
   await AuditLogAction(user.workshopId, user.id, "VehicleIntakeForm", intakeFormId, `status_changed_to_${status}`)
 

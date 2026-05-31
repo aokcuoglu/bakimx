@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
 import { AuthVisualPanel } from "@/components/auth/auth-visual-panel"
-import { LoginForm } from "@/components/auth/login-form"
+import { ForgotPasswordForm } from "@/components/auth/forgot-password-form"
 
 export const metadata: Metadata = {
-  title: "Giriş Yap | BakimX",
-  description: "BakimX hesabınıza giriş yapın.",
+  title: "Şifre Desteği | BakimX",
+  description: "BakimX şifre desteği talep formu.",
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC]">
       <div className="lg:w-[45%] lg:min-h-screen p-0 lg:p-3">
@@ -16,8 +16,8 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
-        <div className="w-full max-w-[440px]">
-          <LoginForm />
+        <div className="w-full max-w-[480px]">
+          <ForgotPasswordForm />
         </div>
       </div>
     </div>

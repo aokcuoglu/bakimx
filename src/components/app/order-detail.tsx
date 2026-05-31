@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Plus, Trash2, Car } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Car, Wrench } from "lucide-react"
 import { ORDER_STATUS } from "@/lib/constants"
+import { formatTRY } from "@/lib/format"
 
 type OrderDetailProps = {
   id: string
@@ -105,20 +106,36 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
     return sum
   }, 0)
 
+  const partsTotal = order.items
+    .filter((i) => i.type === "part")
+    .reduce((sum, item) => {
+      if (item.totalPrice) return sum + item.totalPrice
+      if (item.unitPrice) return sum + item.unitPrice * item.quantity
+      return sum
+    }, 0)
+
+  const laborTotal = order.items
+    .filter((i) => i.type === "labor")
+    .reduce((sum, item) => {
+      if (item.totalPrice) return sum + item.totalPrice
+      if (item.unitPrice) return sum + item.unitPrice * item.quantity
+      return sum
+    }, 0)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/app/orders")} className="p-2 hover:bg-muted rounded-lg">
+        <button onClick={() => router.push("/app/orders")} className="p-2.5 hover:bg-muted rounded-xl touch-manipulation">
           <ArrowLeft className="size-5" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold">Servis Emri</h2>
-            <span className={`text-xs px-2 py-1 rounded-full ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
               {statusInfo?.label || order.status}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground truncate">
             {order.intakeForm.vehicle.plate} - {order.intakeForm.customer.firstName} {order.intakeForm.customer.lastName}
           </p>
         </div>
@@ -127,7 +144,7 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
       {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
 
       {/* Status actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {order.status === "draft" && (
           <Button size="sm" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
             İşleme Başla
@@ -135,7 +152,7 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
         )}
         {order.status === "in_progress" && (
           <Button size="sm" onClick={() => handleStatusChange("ready_for_delivery")} disabled={loading}>
-            Teslimat için Hazır
+            Teslimata Hazır
           </Button>
         )}
         {order.status === "ready_for_delivery" && (
@@ -147,7 +164,7 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
 
       {/* Items */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Kalemler</CardTitle>
             <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
@@ -157,34 +174,63 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
         </CardHeader>
         <CardContent>
           {order.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Henüz kalem eklenmedi</p>
+            <div className="text-center py-8">
+              <Wrench className="size-12 mx-auto mb-3 opacity-15" />
+              <p className="text-sm text-muted-foreground">Henüz kalem eklenmedi</p>
+            </div>
           ) : (
-            <div className="space-y-2">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                  <div>
-                    <span className="text-sm font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {item.type === "part" ? "Parça" : "İşçilik"} x{item.quantity}
-                    </span>
-                    {item.note && <span className="text-xs text-muted-foreground ml-2">- {item.note}</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.unitPrice && (
-                      <span className="text-sm">{(item.unitPrice * item.quantity).toLocaleString("tr-TR")} TL</span>
-                    )}
-                    <button onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:underline text-xs">
-                      <Trash2 className="size-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {total > 0 && (
-                <div className="flex justify-between pt-2 border-t text-sm font-medium">
-                  <span>Toplam</span>
-                  <span>{total.toLocaleString("tr-TR")} TL</span>
+            <div className="space-y-3">
+              {/* Part items */}
+              {order.items.filter((i) => i.type === "part").length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Parçalar</p>
+                  {order.items
+                    .filter((i) => i.type === "part")
+                    .map((item) => {
+                      const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
+                      return (
+                        <ItemRow key={item.id} item={item} lineTotal={lineTotal} onRemove={handleRemoveItem} />
+                      )
+                    })}
                 </div>
               )}
+
+              {/* Labor items */}
+              {order.items.filter((i) => i.type === "labor").length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">İşçilik</p>
+                  {order.items
+                    .filter((i) => i.type === "labor")
+                    .map((item) => {
+                      const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
+                      return (
+                        <ItemRow key={item.id} item={item} lineTotal={lineTotal} onRemove={handleRemoveItem} />
+                      )
+                    })}
+                </div>
+              )}
+
+              {/* Summary */}
+              <div className="border-t pt-3 space-y-1.5 text-sm">
+                {partsTotal > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Parça Toplamı</span>
+                    <span>{formatTRY(partsTotal)}</span>
+                  </div>
+                )}
+                {laborTotal > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>İşçilik Toplamı</span>
+                    <span>{formatTRY(laborTotal)}</span>
+                  </div>
+                )}
+                {total > 0 && (
+                  <div className="flex justify-between pt-2 border-t font-bold text-base">
+                    <span>Genel Toplam</span>
+                    <span>{formatTRY(total)}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
@@ -192,12 +238,12 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
 
       {showAddForm && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Yeni Kalem</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Yeni Kalem Ekle</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div>
               <Label>Tip</Label>
               <select
-                className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
+                className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                 value={itemType}
                 onChange={(e) => setItemType(e.target.value)}
               >
@@ -205,25 +251,69 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
                 <option value="labor">İşçilik</option>
               </select>
             </div>
-            <div><Label>Ad</Label><Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası" /></div>
-            <div><Label>Miktar</Label><Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} /></div>
-            <div><Label>Birim Fiyat (TL)</Label><Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" /></div>
-            <div className="flex gap-2">
-              <Button onClick={handleAddItem} disabled={loading || !itemName}>Ekle</Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>İptal</Button>
+            <div>
+              <Label>Kalem Adı</Label>
+              <Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Miktar</Label>
+                <Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} min="1" />
+              </div>
+              <div>
+                <Label>Birim Fiyat (TL)</Label>
+                <Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleAddItem} disabled={loading || !itemName} size="lg" className="flex-1 h-12">Ekle</Button>
+              <Button variant="outline" onClick={() => setShowAddForm(false)} size="lg" className="h-12">İptal</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">İlgili Araç Kabulü</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base">İlgili Araç Kabulü</CardTitle></CardHeader>
         <CardContent>
-          <Button variant="outline" onClick={() => router.push(`/app/intakes/${order.intakeForm.id}`)}>
+          <Button variant="outline" onClick={() => router.push(`/app/intakes/${order.intakeForm.id}`)} size="lg" className="w-full h-12">
             <Car className="size-4 mr-2" /> Kabul Detayına Git
           </Button>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function ItemRow({
+  item,
+  lineTotal,
+  onRemove,
+}: {
+  item: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }
+  lineTotal: number
+  onRemove: (id: string) => void
+}) {
+  return (
+    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium truncate">{item.name}</span>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${item.type === "part" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+            {item.type === "part" ? "Parça" : "İşçilik"}
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {item.quantity} adet {item.unitPrice ? `× ${formatTRY(item.unitPrice)}` : ""}
+          {item.note && ` • ${item.note}`}
+        </div>
+      </div>
+      <div className="text-right shrink-0 ml-3">
+        <span className="text-sm font-medium">{formatTRY(lineTotal)}</span>
+        <button onClick={() => onRemove(item.id)} className="block text-destructive text-xs hover:underline mt-0.5 ml-auto">
+          <Trash2 className="size-3" />
+        </button>
+      </div>
     </div>
   )
 }

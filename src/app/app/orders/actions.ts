@@ -41,7 +41,7 @@ export async function addOrderItemAction(formData: FormData) {
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
     type: formData.get("type") as string,
-    name: formData.get("name") as string,
+    name: (formData.get("name") as string || "").trim(),
     quantity: formData.get("quantity") as string,
     unitPrice: formData.get("unitPrice") as string,
     totalPrice: formData.get("totalPrice") as string,
@@ -65,7 +65,7 @@ export async function addOrderItemAction(formData: FormData) {
   })
   if (!order) return { error: "Servis emri bulunamadı" }
 
-  await prisma.serviceOrderItem.create({
+  const item = await prisma.serviceOrderItem.create({
     data: {
       workshopId: user.workshopId,
       serviceOrderId: raw.serviceOrderId,
@@ -77,6 +77,8 @@ export async function addOrderItemAction(formData: FormData) {
       note: parsed.data.note || null,
     },
   })
+
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", item.id, "order_item_added")
 
   revalidatePath(`/app/orders/${raw.serviceOrderId}`)
   return { success: true }
@@ -91,7 +93,12 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   })
   if (!item) return { error: "Kalem bulunamadı" }
 
-  await prisma.serviceOrderItem.delete({ where: { id: itemId } })
+  const deleteResult = await prisma.serviceOrderItem.deleteMany({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (deleteResult.count === 0) return { error: "Kalem bulunamadı" }
+
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", itemId, "order_item_removed")
 
   revalidatePath(`/app/orders/${orderId}`)
   return { success: true }
@@ -106,10 +113,13 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   })
   if (!order) return { error: "Servis emri bulunamadı" }
 
-  await prisma.serviceOrder.update({
-    where: { id: orderId },
+  const updateResult = await prisma.serviceOrder.updateMany({
+    where: { id: orderId, workshopId: user.workshopId },
     data: { status: status as import("@prisma/client").OrderStatus },
   })
+  if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
+
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
 
   revalidatePath(`/app/orders/${orderId}`)
   revalidatePath("/app/orders")

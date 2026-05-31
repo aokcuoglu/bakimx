@@ -6,8 +6,28 @@ export interface SessionData {
   workshopId?: string
 }
 
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET
+  if (!secret || secret.trim() === "") {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SESSION_SECRET ortam değişkeni production ortamında zorunludur. " +
+          "Lütfen .env dosyanıza en az 32 karakter uzunluğunda rastgele bir SESSION_SECRET ekleyin."
+      )
+    }
+    return "complex_password_at_least_32_characters_long_for_dev"
+  }
+  if (process.env.NODE_ENV === "production" && secret.length < 32) {
+    throw new Error(
+      "SESSION_SECRET en az 32 karakter uzunluğunda olmalıdır. " +
+        "Mevcut uzunluk: " + secret.length
+    )
+  }
+  return secret
+}
+
 export const sessionOptions = {
-  password: process.env.SESSION_SECRET || "complex_password_at_least_32_characters_long_for_dev",
+  password: getSessionSecret(),
   cookieName: "bakimx_session",
   cookieOptions: {
     httpOnly: true,

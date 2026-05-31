@@ -2,13 +2,13 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.1.0
+**Versiyon:** v0.1.1 — MVP Hardening & UX Polish
 
 ## Hızlı Başlangıç
 
 ### Gereksinimler
 - Node.js 18+ veya Bun
-- PostgreSQL veritabanı
+- PostgreSQL veritabanı (geliştirme için)
 
 ### Kurulum
 
@@ -19,8 +19,6 @@ cd bakimx
 
 # Bağımlılıkları yükleyin
 bun install
-# veya
-npm install
 
 # .env dosyasını oluşturun
 cp .env.example .env
@@ -37,6 +35,8 @@ bun run db:seed
 bun run dev
 # http://localhost:3000
 ```
+
+**Önemli:** Bu projede Docker kullanılmamaktadır. Lokal geliştirme bun/npm ile yapılır.
 
 ### Demo Giriş Bilgileri
 - **E-posta:** `demo@bakimx.com`
@@ -56,6 +56,7 @@ bun run dev
 | `bun run db:migrate` | Migration oluştur |
 | `bun run db:seed` | Demo veri ekle |
 | `bun run db:studio` | Prisma Studio |
+| `bun run db:validate` | Prisma şema doğrulama |
 
 ### Ortam Değişkenleri
 
@@ -65,9 +66,12 @@ SESSION_SECRET="rastgele-32-karakter"
 APP_URL="http://localhost:3000"
 ```
 
-### Docker
+#### DATABASE_URL Davranışı
+- `bun run build`, `DATABASE_URL` olmadan da çalışır (build-safe Prisma fallback)
+- `bun run dev` çalıştırmak için geçerli bir `DATABASE_URL` gerekir
+- Production'da `DATABASE_URL` zorunludur
 
-Bu sürümde Docker kullanılmamaktadır. Local geliştirme bun/npm ile yapılır.
+---
 
 ## Tech Stack
 - **Framework:** Next.js 16 (App Router)
@@ -77,23 +81,96 @@ Bu sürümde Docker kullanılmamaktadır. Local geliştirme bun/npm ile yapılı
 - **ORM:** Prisma
 - **Veritabanı:** PostgreSQL
 - **Auth:** iron-session + bcryptjs
-- **Validasyon:** Zod
+- **Validasyon:** Zod v4
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
 
-## v0.1.0 Özellikler
-- Kullanıcı giriş/kayıt
-- İş yeri profili yönetimi
-- Müşteri CRUD
-- Araç CRUD
-- Araç kabul sihirbazı (6 adım)
+---
+
+## v0.1.1 Özellikler
+
+### Tenant İzolasyonu
+- Tüm veritabanı sorguları `workshopId` ile kapsamlandırılmıştır
+- Cross-workshop veri erişimi engellenmiştir
+- `getCurrentUserWithWorkshop()`, `assertWorkshopAccess()` yardımcı fonksiyonları
+
+### Auth & Session
+- iron-session tabanlı oturum yönetimi
+- Oturum açmış kullanıcılar `/login` ve `/register`'dan yönlendirilir
+- Güvenli cookie ayarları (httpOnly, secure, sameSite)
+- E-posta normalizasyonu ve validasyonu
+
+### Mobil UX
+- Mobile-first tasarım
+- Dokunmatik dostu butonlar (min 48px)
+- Mobil alt navigasyon
+- Kart/liste tabanlı görünüm
+- Açıklayıcı boş durum ve hata mesajları
+
+### Araç Kabul Sihirbazı
+- 6 adımlı progress bar
+- Müşteri ve araç seçimi/oluşturma
+- Zorunlu alan validasyonları
 - Fotoğraf kontrol listesi
 - 2D SVG araç hasar işaretleme
-- Mock SMS onayı (demo modu)
-- Müşteri çıktı linki (`/s/[token]`)
-- Servis emri yapısı
-- Audit log
-- Tenant izolasyonu
+- Mock SMS onay (demo modu)
+
+### Müşteri Arama
+- Ad, soyad, telefon ile arama
+- Araç plaka, marka, model, müşteri adı ile arama
+- `workshopId` kapsamında güvenli
+
+### Hasar İşaretleme
+- SVG araç gövdesi üzerinde tıklanabilir 20 bölge
+- Hasar tipi: Çizik, Göçük, Kırık, Çatlak, Boya hasarı, Eksik parça, Diğer
+- Şiddet seviyesi: Hafif, Orta, Ağır
+- Renk kodlu görsel legend
+- Hasar ekleme/silme
+
+### Photo Capture UI (MVP)
+- Her fotoğraf kontrol listesi öğesi için kamera/galeri input (`capture="environment"`)
+- İstemci tarafı `object URL` ile anlık önizleme
+- "Fotoğraf çek / yükle" ve "Tekrar çek / değiştir" aksiyonları
+- Gerçek dosya yükleme henüz aktif değil — Supabase/S3 gelecek sürümlerde
+
+### Mock SMS Onay
+- Demo modunda SMS gönderilmez
+- Test kodu yalnızca development/demo ortamında API yanıtında döner
+- Production'da OTP kodu API yanıtında gönderilmez
+- Gerçek SMS entegrasyonu sonraki sürümlerde planlanmaktadır
+
+### Oturum Güvenliği
+- Production'da `SESSION_SECRET` zorunludur ve en az 32 karakter olmalıdır
+- Local dev için fallback korunur
+
+### Müşteri Çıktı Sayfası (`/s/[token]`)
+- Token tabanlı güvenli erişim
+- BakimX markalı profesyonel tasarım
+- Yazdır / PDF kaydet (tarayıcı `window.print()`)
+- Print-friendly CSS
+- WhatsApp ile paylaşım için kullanılabilir
+
+### Servis Emri
+- Parça ve işçilik kalemleri
+- TRY para birimi formatlaması
+- Parça/işçilik toplamları ayrı gösterim
+- Genel toplam
+- Durum takibi
+
+### Storage Altyapısı
+- `lib/storage/` temiz soyutlama katmanı
+- Mock depolama sağlayıcısı (lokal geliştirme için)
+- Supabase Storage / S3 entegrasyonu için TODO
+- Storage env vars olmadan build çalışır
+
+### Audit Log
+- Müşteri/Araç/Kabul oluşturma
+- Durum değişiklikleri
+- Onay talebi ve doğrulama
+- Servis emri ve kalem işlemleri
+- Paylaşım linki oluşturma
+
+---
 
 ## Rotalar
 
@@ -107,15 +184,52 @@ Bu sürümde Docker kullanılmamaktadır. Local geliştirme bun/npm ile yapılı
 - `/login` — Giriş
 - `/register` — Kayıt
 
-### Panel
+### Panel (`/app/*`)
 - `/app` — Dashboard
 - `/app/workshop` — İş yeri profili
-- `/app/customers` — Müşteri listesi
+- `/app/customers` — Müşteri listesi (arama destekli)
 - `/app/customers/new` — Yeni müşteri
-- `/app/vehicles` — Araç listesi
+- `/app/customers/[id]` — Müşteri detayı
+- `/app/vehicles` — Araç listesi (arama destekli)
 - `/app/vehicles/new` — Yeni araç
-- `/app/intakes` — Kabul listesi
-- `/app/intakes/new` — Yeni kabul
-- `/app/intakes/[id]` — Kabul detayı
+- `/app/intakes` — Kabul listesi (durum filtreli)
+- `/app/intakes/new` — Yeni kabul sihirbazı
+- `/app/intakes/[id]` — Kabul detayı (sekmeli)
 - `/app/orders` — Servis emri listesi
 - `/app/orders/[id]` — Servis emri detayı
+
+---
+
+## Tasarım Kimliği
+
+- **Primary Navy:** #0B1F3A
+- **Primary Blue:** #2563EB
+- **Accent Sky:** #38BDF8
+- **Soft Background:** #F8FAFC
+- **Deep Background:** #0F172A
+
+---
+
+## Sınırlamalar (v0.1.1)
+
+- Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
+- Gerçek OCR entegrasyonu yok
+- Gerçek dosya yükleme/storage yok (kamera UI mevcut, Supabase/S3 gelecek sürümlerde)
+- PDF oluşturma yalnızca tarayıcı print ile (sunucu tarafı PDF gelecek)
+- Ödeme/fatura modülü yok
+- WhatsApp Business API yok
+- Docker konteyner desteği yok (lokal bun/npm)
+- Gelişmiş tam metin arama yok (basit contains/startswith)
+
+---
+
+## Sürümler
+
+- [v0.1.0](docs/releases/v0.1.0.md) — MVP
+- [v0.1.1](docs/releases/v0.1.1.md) — Hardening & UX Polish (güncel)
+- [v0.0.1](docs/releases/v0.0.1.md) — Başlangıç
+
+## QA
+
+- [v0.1.1 Manuel QA](docs/QA/v0.1.1-manual-checklist.md)
+- [v0.1.1 Tenant İzolasyonu QA](docs/QA/v0.1.1-tenant-isolation-checklist.md)

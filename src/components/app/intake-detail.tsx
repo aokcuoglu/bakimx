@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,9 +20,12 @@ import {
   Plus,
   Trash2,
   MessageSquare,
+  Info,
+  Wrench,
 } from "lucide-react"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
+import { formatTRY } from "@/lib/format"
 
 type IntakeDetailProps = {
   id: string
@@ -46,14 +49,12 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order">("info")
   const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
 
-  // Damage mark modal state
   const [showDamageModal, setShowDamageModal] = useState(false)
   const [selectedZone, setSelectedZone] = useState("")
   const [damageType, setDamageType] = useState("")
   const [severity, setSeverity] = useState("")
   const [damageNote, setDamageNote] = useState("")
 
-  // Approval state
   const [otpCode, setOtpCode] = useState("")
   const [generatedOtp, setGeneratedOtp] = useState("")
   const [approvalSent, setApprovalSent] = useState(false)
@@ -62,16 +63,23 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Photo upload state
   const [photoType, setPhotoType] = useState("")
   const [photoNote, setPhotoNote] = useState("")
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
-  // Service order state
   const [showOrderItemForm, setShowOrderItemForm] = useState(false)
   const [itemType, setItemType] = useState("part")
   const [itemName, setItemName] = useState("")
   const [itemQty, setItemQty] = useState("1")
   const [itemPrice, setItemPrice] = useState("")
+
+  // Consent checkboxes
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [serviceInfoAccepted, setServiceInfoAccepted] = useState(false)
+  const [promoAccepted, setPromoAccepted] = useState(false)
 
   async function handleStatusChange(newStatus: string) {
     setLoading(true)
@@ -240,7 +248,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       if (data.success) {
         router.refresh()
       } else {
-        setError(data.error || "Sipariş oluşturulamadı")
+        setError(data.error || "Servis emri oluşturulamadı")
       }
     } catch {
       setError("Bir hata oluştu")
@@ -279,38 +287,46 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
     }
   }
 
+  const requiredPhotos = Object.entries(PHOTO_TYPES).filter(([, v]) => v.required)
+  const takenPhotoTypes = new Set(intake.photos.map((p) => p.type))
+
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
-    { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
-    { id: "damage" as const, label: "Hasar", icon: AlertTriangle },
+    { id: "photos" as const, label: "Fotoğraflar", icon: Camera, count: intake.photos.length },
+    { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.damageMarks.length },
     { id: "approval" as const, label: "Onay", icon: MessageSquare },
-    { id: "order" as const, label: "Sipariş", icon: Plus },
+    { id: "order" as const, label: "Sipariş", icon: Wrench },
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/app/intakes")} className="p-2 hover:bg-muted rounded-lg">
+        <button onClick={() => router.push("/app/intakes")} className="p-2.5 hover:bg-muted rounded-xl touch-manipulation">
           <ArrowLeft className="size-5" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold">{intake.vehicle.plate}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
+            <h2 className="text-xl font-bold truncate">{intake.vehicle.plate}</h2>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
               {statusInfo?.label || intake.status}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground truncate">
             {intake.vehicle.brand} {intake.vehicle.model} - {intake.customer.firstName} {intake.customer.lastName}
           </p>
         </div>
       </div>
 
-      {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+      {error && (
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
+          <Info className="size-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Status actions */}
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {intake.status === "draft" && (
           <Button size="sm" onClick={() => handleStatusChange("waiting_approval")} disabled={loading}>
             Onay İste
@@ -336,17 +352,22 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             Teslim Edildi
           </Button>
         )}
+        {(intake.status === "draft" || intake.status === "waiting_approval") && (
+          <Button size="sm" variant="outline" onClick={() => handleStatusChange("cancelled")} disabled={loading} className="text-destructive">
+            İptal Et
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto border-b">
+      <div className="flex gap-1 overflow-x-auto border-b">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
                 activeTab === tab.id
                   ? "text-primary border-primary"
                   : "text-muted-foreground border-transparent hover:text-foreground"
@@ -354,6 +375,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             >
               <Icon className="size-4" />
               {tab.label}
+              {tab.count != null && tab.count > 0 && (
+                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
+              )}
             </button>
           )
         })}
@@ -363,33 +387,51 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       {activeTab === "info" && (
         <div className="space-y-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Müşteri Bilgileri</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><User className="size-4" /> Müşteri Bilgileri</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><User className="size-4 text-muted-foreground" />{intake.customer.firstName} {intake.customer.lastName}</div>
-                <div className="flex items-center gap-2"><Phone className="size-4 text-muted-foreground" />{intake.customer.phone}</div>
+                <div className="flex items-center gap-2 font-medium">{intake.customer.firstName} {intake.customer.lastName}</div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="size-3.5" />
+                  {intake.customer.phone}
+                </div>
                 {intake.customer.email && <div className="text-muted-foreground">{intake.customer.email}</div>}
               </div>
             </CardContent>
           </Card>
+
           <Card>
-            <CardHeader><CardTitle className="text-base">Araç Bilgileri</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Car className="size-4" /> Araç Bilgileri</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Car className="size-4 text-muted-foreground" />{intake.vehicle.plate} - {intake.vehicle.brand} {intake.vehicle.model}</div>
-                {intake.vehicle.modelYear && <div>Model Yılı: {intake.vehicle.modelYear}</div>}
-                {intake.mileageAtIntake && <div>Kilometre: {intake.mileageAtIntake.toLocaleString("tr-TR")} km</div>}
-                {intake.vehicle.vin && <div>VIN: {intake.vehicle.vin}</div>}
+                <div className="font-medium">{intake.vehicle.plate} - {intake.vehicle.brand} {intake.vehicle.model}</div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+                  {intake.vehicle.modelYear && <span>Model: {intake.vehicle.modelYear}</span>}
+                  {intake.mileageAtIntake && <span>Kilometre: {intake.mileageAtIntake.toLocaleString("tr-TR")} km</span>}
+                  {intake.vehicle.vin && <span className="font-mono text-xs">VIN: {intake.vehicle.vin}</span>}
+                </div>
               </div>
             </CardContent>
           </Card>
+
           <Card>
-            <CardHeader><CardTitle className="text-base">Kabul Bilgileri</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><ClipboardList className="size-4" /> Kabul Bilgileri</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
-                <div><strong>Şikayet:</strong> {intake.customerComplaint}</div>
-                {intake.internalNote && <div><strong>İç Not:</strong> {intake.internalNote}</div>}
-                <div className="text-muted-foreground">{new Date(intake.createdAt).toLocaleDateString("tr-TR")}</div>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="font-medium">Müşteri Şikayeti:</span>
+                  <p className="mt-1 text-muted-foreground">{intake.customerComplaint}</p>
+                </div>
+                {intake.internalNote && (
+                  <div>
+                    <span className="font-medium">İç Not:</span>
+                    <p className="mt-1 text-muted-foreground">{intake.internalNote}</p>
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground pt-2 border-t">
+                  Oluşturulma: {new Date(intake.createdAt).toLocaleDateString("tr-TR")}
+                  {intake.approvedAt && <> • Onay: {new Date(intake.approvedAt).toLocaleDateString("tr-TR")}</>}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -398,48 +440,161 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
 
       {activeTab === "photos" && (
         <div className="space-y-4">
+          {/* Required photo checklist */}
           <Card>
-            <CardHeader><CardTitle className="text-base">Fotoğraf Ekle</CardTitle></CardHeader>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Fotoğraf Kontrol Listesi</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {takenPhotoTypes.size} / {Object.entries(PHOTO_TYPES).length} fotoğraf tamamlandı
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {/* Required photos */}
+                <p className="text-xs font-medium text-muted-foreground mb-1">Zorunlu Fotoğraflar</p>
+                {requiredPhotos.map(([key, val]) => {
+                  const taken = takenPhotoTypes.has(key)
+                  return (
+                    <PhotoChecklistItem
+                      key={key}
+                      photoKey={key}
+                      label={val.label}
+                      taken={taken}
+                      required={true}
+                      onRemove={handleRemovePhoto}
+                      photos={intake.photos}
+                      intakeId={intake.id}
+                    />
+                  )
+                })}
+                {/* Optional photos */}
+                <p className="text-xs font-medium text-muted-foreground mb-1 pt-2">Opsiyonel Fotoğraflar</p>
+                {Object.entries(PHOTO_TYPES)
+                  .filter(([, v]) => !v.required)
+                  .map(([key, val]) => {
+                    const taken = takenPhotoTypes.has(key)
+                    return (
+                      <PhotoChecklistItem
+                        key={key}
+                        photoKey={key}
+                        label={val.label}
+                        taken={taken}
+                        required={false}
+                        onRemove={handleRemovePhoto}
+                        photos={intake.photos}
+                        intakeId={intake.id}
+                      />
+                    )
+                  })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Add photo */}
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Fotoğraf Ekle</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <Label>Fotoğraf Türü</Label>
                 <select
-                  className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
+                  className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   value={photoType}
-                  onChange={(e) => setPhotoType(e.target.value)}
+                  onChange={(e) => {
+                    setPhotoType(e.target.value)
+                    setPhotoFile(null)
+                    setPhotoPreview(null)
+                  }}
                 >
-                  <option value="">Seçin...</option>
+                  <option value="">Seçiniz...</option>
                   {Object.entries(PHOTO_TYPES).map(([key, val]) => (
-                    <option key={key} value={key}>{val.label}</option>
+                    <option key={key} value={key}>
+                      {val.label} {val.required ? "(Zorunlu)" : "(Opsiyonel)"}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <Label>Not</Label>
-                <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf notu..." />
+                <Label>Fotoğraf Çek / Yükle</Label>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setPhotoFile(file)
+                    const url = URL.createObjectURL(file)
+                    setPhotoPreview(url)
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
+                >
+                  <Camera className="size-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {photoFile ? "Fotoğraf seçildi — tekrar değiştir" : "Kamera ile çek veya galeriden seç"}
+                  </span>
+                </button>
+                {photoPreview && (
+                  <div className="relative mt-2 rounded-lg overflow-hidden border bg-black">
+                    <img
+                      src={photoPreview}
+                      alt="Seçilen fotoğraf önizlemesi"
+                      className="w-full max-h-48 object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoFile(null)
+                        setPhotoPreview(null)
+                        if (photoInputRef.current) photoInputRef.current.value = ""
+                      }}
+                      className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Not: v0.1.0&apos;da gerçek dosya yükleme henüz aktif değil. Fotoğraf kayıtları veritabanında tutulur.
-                Supabase Storage/S3 entegrasyonu gelecekte eklenecektir.
-              </p>
-              <Button onClick={handleAddPhoto} disabled={loading || !photoType}>
+              <div>
+                <Label>Not</Label>
+                <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
+              </div>
+              <div className="p-3 rounded-lg bg-blue-50 text-blue-800 text-xs flex items-start gap-2">
+                <Info className="size-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Gerçek dosya yükleme henüz aktif değil. Bu arayüz MVP fotoğraf çekme temelidir. Supabase Storage / S3 entegrasyonu gelecek sürümlerde eklenecektir.
+                </span>
+              </div>
+              <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full h-12">
                 <Plus className="size-4 mr-1" /> Fotoğraf Kaydı Ekle
               </Button>
             </CardContent>
           </Card>
 
+          {/* Photo list */}
           {intake.photos.length > 0 && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Kaydedilmiş Fotoğraflar ({intake.photos.length})</CardTitle></CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Kaydedilmiş Fotoğraflar ({intake.photos.length})</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {intake.photos.map((photo) => (
-                    <div key={photo.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div>
-                        <span className="text-sm font-medium">{PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type}</span>
+                    <div key={photo.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium">
+                          {PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type}
+                        </span>
                         {photo.note && <span className="text-xs text-muted-foreground ml-2">- {photo.note}</span>}
                       </div>
-                      <button onClick={() => handleRemovePhoto(photo.id)} className="text-destructive hover:underline text-xs">Kaldır</button>
+                      <button onClick={() => handleRemovePhoto(photo.id)} className="text-destructive text-xs hover:underline shrink-0 ml-2">
+                        Kaldır
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -455,50 +610,29 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             damageMarks={intake.damageMarks}
             onZoneClick={(zone) => {
               setSelectedZone(zone)
+              setDamageType("")
+              setSeverity("")
+              setDamageNote("")
               setShowDamageModal(true)
             }}
+            onRemoveMark={handleRemoveDamageMark}
           />
-
-          {intake.damageMarks.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Hasar Kayıtları ({intake.damageMarks.length})</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {intake.damageMarks.map((mark) => (
-                    <div key={mark.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div>
-                        <span className="text-sm font-medium">{VEHICLE_ZONES[mark.zone as keyof typeof VEHICLE_ZONES] || mark.zone}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {DAMAGE_TYPES[mark.damageType as keyof typeof DAMAGE_TYPES]?.label || mark.damageType}
-                          ({DAMAGE_SEVERITY[mark.severity as keyof typeof DAMAGE_SEVERITY]?.label || mark.severity})
-                        </span>
-                        {mark.note && <span className="text-xs ml-2">- {mark.note}</span>}
-                      </div>
-                      <button onClick={() => handleRemoveDamageMark(mark.id)} className="text-destructive hover:underline text-xs">
-                        <Trash2 className="size-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Damage modal */}
           {showDamageModal && (
             <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50" onClick={() => setShowDamageModal(false)}>
-              <div className="bg-card w-full md:max-w-md md:rounded-xl rounded-t-xl p-4 space-y-4" onClick={(e) => e.stopPropagation()}>
-                <h3 className="font-semibold">
+              <div className="bg-card w-full md:max-w-md md:rounded-xl rounded-t-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-semibold text-lg">
                   Hasar Ekle: {VEHICLE_ZONES[selectedZone as keyof typeof VEHICLE_ZONES] || selectedZone}
                 </h3>
                 <div>
                   <Label>Hasar Tipi</Label>
                   <select
-                    className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
+                    className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                     value={damageType}
                     onChange={(e) => setDamageType(e.target.value)}
                   >
-                    <option value="">Seçin...</option>
+                    <option value="">Seçiniz...</option>
                     {Object.entries(DAMAGE_TYPES).map(([key, val]) => (
                       <option key={key} value={key}>{val.label}</option>
                     ))}
@@ -506,26 +640,32 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                 </div>
                 <div>
                   <Label>Şiddet</Label>
-                  <select
-                    className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
-                    value={severity}
-                    onChange={(e) => setSeverity(e.target.value)}
-                  >
-                    <option value="">Seçin...</option>
+                  <div className="flex gap-2 mt-1">
                     {Object.entries(DAMAGE_SEVERITY).map(([key, val]) => (
-                      <option key={key} value={key}>{val.label}</option>
+                      <button
+                        key={key}
+                        onClick={() => setSeverity(key)}
+                        className={`flex-1 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation ${
+                          severity === key
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:border-muted-foreground"
+                        }`}
+                      >
+                        <span className="w-3 h-3 rounded-full inline-block mr-1.5" style={{ backgroundColor: val.color }} />
+                        {val.label}
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div>
                   <Label>Not</Label>
-                  <Input value={damageNote} onChange={(e) => setDamageNote(e.target.value)} placeholder="Hasar notu..." />
+                  <Input value={damageNote} onChange={(e) => setDamageNote(e.target.value)} placeholder="Hasar açıklaması..." />
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleAddDamageMark} disabled={loading || !damageType || !severity} className="flex-1">
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={handleAddDamageMark} disabled={loading || !damageType || !severity} size="lg" className="flex-1 h-12">
                     Kaydet
                   </Button>
-                  <Button variant="outline" onClick={() => setShowDamageModal(false)} className="flex-1">
+                  <Button variant="outline" onClick={() => setShowDamageModal(false)} size="lg" className="h-12">
                     İptal
                   </Button>
                 </div>
@@ -539,15 +679,73 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
         <div className="space-y-4">
           {!approvalSent && !approvalVerified && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Müşteri Onayı</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="size-4" /> Müşteri Onayı</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Müşteriye SMS ile onay kodu gönderilecektir.
+                  Müşteri onayı için SMS ile doğrulama kodu gönderilir.
                 </p>
-                <div className="p-3 rounded-lg bg-yellow-50 text-yellow-800 text-sm">
-                  Demo modunda SMS gönderilmez. Test kodu ekranda gösterilir.
+                <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                  <p className="font-medium mb-1">Demo Modu</p>
+                  <p>Demo modunda SMS gönderilmez. Test kodu ekranda gösterilir. Gerçek SMS entegrasyonu sonraki sürümlerde eklenecektir.</p>
                 </div>
-                <Button onClick={handleRequestApproval} disabled={loading} className="w-full">
+
+                <div className="space-y-3 border rounded-xl p-4 bg-muted/20">
+                  <p className="text-sm font-medium">Onay Gereksinimleri</p>
+
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="detail-terms"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <label htmlFor="detail-terms" className="text-sm">
+                      Araç kabul formunu onaylıyorum. <span className="text-destructive">*</span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="detail-privacy"
+                      checked={privacyAccepted}
+                      onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <label htmlFor="detail-privacy" className="text-sm">
+                      Aydınlatma metnini okudum. <span className="text-destructive">*</span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="detail-serviceInfo"
+                      checked={serviceInfoAccepted}
+                      onChange={(e) => setServiceInfoAccepted(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <label htmlFor="detail-serviceInfo" className="text-sm text-muted-foreground">
+                      Servis süreciyle ilgili bilgilendirme almak istiyorum.
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="detail-promo"
+                      checked={promoAccepted}
+                      onChange={(e) => setPromoAccepted(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <label htmlFor="detail-promo" className="text-sm text-muted-foreground">
+                      Kampanya ve ticari ileti almak istiyorum.
+                    </label>
+                  </div>
+                </div>
+
+                <Button onClick={handleRequestApproval} disabled={loading || !termsAccepted || !privacyAccepted} size="lg" className="w-full h-12">
                   <MessageSquare className="size-4 mr-2" /> Onay Talebi Oluştur
                 </Button>
               </CardContent>
@@ -556,17 +754,26 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
 
           {approvalSent && generatedOtp && !approvalVerified && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Onay Kodu</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-4 rounded-lg bg-green-50 text-green-800 text-center">
-                  <p className="text-sm">Onay kodu (demo):</p>
-                  <p className="text-3xl font-bold tracking-widest mt-1">{generatedOtp}</p>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Onay Kodu Doğrulama</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-5 rounded-xl bg-green-50 border-2 border-green-200 text-green-800 text-center">
+                  <p className="text-sm font-medium mb-2">Demo Test Kodu</p>
+                  <p className="text-4xl font-bold tracking-[0.3em]">{generatedOtp}</p>
+                  <p className="text-xs mt-2 text-green-600">Bu kodu müşteriye göstererek onay alabilirsiniz</p>
                 </div>
                 <div>
                   <Label>Onay Kodu</Label>
-                  <Input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456" />
+                  <Input
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="6 haneli kodu giriniz"
+                    className="h-14 text-center text-2xl tracking-widest"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoComplete="off"
+                  />
                 </div>
-                <Button onClick={handleVerifyOtp} disabled={loading || !otpCode} className="w-full">
+                <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length < 4} size="lg" className="w-full h-12">
                   <CheckCircle2 className="size-4 mr-2" /> Onay Kodunu Doğrula
                 </Button>
               </CardContent>
@@ -575,23 +782,33 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
 
           {approvalVerified && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Onaylanmış</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm flex items-center gap-2">
-                  <CheckCircle2 className="size-5" />
-                  Müşteri onayı başarıyla doğrulanmış.
+              <CardHeader className="pb-3"><CardTitle className="text-base">Onaylanmış</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm flex items-center gap-2">
+                  <CheckCircle2 className="size-5 shrink-0" />
+                  <span>Müşteri onayı başarıyla doğrulandı.</span>
                 </div>
                 {!shareToken && (
-                  <Button onClick={handleGenerateShareLink} disabled={loading} className="w-full">
+                  <Button onClick={handleGenerateShareLink} disabled={loading} size="lg" className="w-full h-12">
                     <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
                   </Button>
                 )}
                 {shareToken && (
-                  <div className="p-3 bg-muted rounded-lg break-all text-sm">
-                    <p className="font-medium mb-1">Müşteri çıktı linki:</p>
-                    <a href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      {typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`}
-                    </a>
+                  <div className="p-4 bg-muted rounded-xl border">
+                    <p className="text-sm font-medium mb-2">Müşteri Çıktı Linki:</p>
+                    <div className="break-all text-sm bg-background p-3 rounded-lg">
+                      <a
+                        href={`/s/${shareToken}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`}
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Bu linki müşterinizle WhatsApp veya SMS ile paylaşabilirsiniz. Müşteri bu sayfadan araç kabul detaylarını görüntüleyebilir.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -604,10 +821,11 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
         <div className="space-y-4">
           {!intake.order ? (
             <Card>
-              <CardHeader><CardTitle className="text-base">Servis Emri</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">Henüz servis emri oluşturulmadı.</p>
-                <Button onClick={handleCreateOrder} disabled={loading}>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Wrench className="size-4" /> Servis Emri</CardTitle></CardHeader>
+              <CardContent className="text-center py-6">
+                <Wrench className="size-12 mx-auto mb-3 opacity-20" />
+                <p className="text-sm text-muted-foreground mb-4">Henüz servis emri oluşturulmadı</p>
+                <Button onClick={handleCreateOrder} disabled={loading} size="lg" className="h-12">
                   Servis Emri Oluştur
                 </Button>
               </CardContent>
@@ -615,41 +833,74 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
           ) : (
             <>
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Servis Emri</CardTitle>
+                    <CardTitle className="text-base">Servis Emri Kalemleri</CardTitle>
                     <Badge variant="outline">{ORDER_STATUS_LABELS[intake.order.status as keyof typeof ORDER_STATUS_LABELS] || intake.order.status}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    {intake.order.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                        <div>
-                          <span className="text-sm font-medium">{item.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {item.type === "part" ? "Parça" : "İşçilik"} x{item.quantity}
-                          </span>
-                          {item.note && <span className="text-xs text-muted-foreground ml-2">- {item.note}</span>}
-                        </div>
-                        <button onClick={async () => {
-                          await fetch(`/api/orders/items?id=${item.id}&orderId=${intake.order!.id}`, { method: "DELETE" })
-                          router.refresh()
-                        }} className="text-destructive text-xs hover:underline">
-                          <Trash2 className="size-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {intake.order.items.length === 0 && (
+                  {intake.order.items.length === 0 ? (
+                    <div className="text-center py-6">
+                      <Wrench className="size-10 mx-auto mb-2 opacity-20" />
                       <p className="text-sm text-muted-foreground">Henüz kalem eklenmedi</p>
-                    )}
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setShowOrderItemForm(true)}>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {intake.order.items.map((item) => {
+                        const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
+                        return (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate">{item.name}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${item.type === "part" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                                  {item.type === "part" ? "Parça" : "İşçilik"}
+                                </span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {item.quantity} adet {item.unitPrice ? `× ${formatTRY(item.unitPrice)}` : ""}
+                                {item.note && ` • ${item.note}`}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0 ml-3">
+                              <span className="text-sm font-medium">{formatTRY(lineTotal)}</span>
+                              <button
+                                onClick={async () => {
+                                  await fetch(`/api/orders/items?id=${item.id}&orderId=${intake.order!.id}`, { method: "DELETE" })
+                                  router.refresh()
+                                }}
+                                className="block text-destructive text-xs hover:underline mt-0.5 ml-auto"
+                              >
+                                <Trash2 className="size-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {/* Total */}
+                      <div className="flex justify-between items-center pt-3 border-t text-sm">
+                        <span className="font-medium">Toplam</span>
+                        <span className="font-bold text-base">
+                          {formatTRY(
+                            intake.order.items.reduce((sum, item) => {
+                              if (item.totalPrice) return sum + item.totalPrice
+                              if (item.unitPrice) return sum + item.unitPrice * item.quantity
+                              return sum
+                            }, 0)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button variant="outline" size="lg" onClick={() => { setShowOrderItemForm(true); setItemType("part"); setItemName(""); setItemQty("1"); setItemPrice("") }} className="w-full h-10">
                     <Plus className="size-4 mr-1" /> Kalem Ekle
                   </Button>
+
                   <div className="flex gap-2 pt-2">
                     {intake.order.status === "draft" && (
-                      <Button size="sm" onClick={async () => {
+                      <Button size="lg" className="flex-1 h-12" onClick={async () => {
                         await fetch(`/api/orders/${intake.order!.id}/status`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -659,14 +910,14 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                       }}>İşleme Başla</Button>
                     )}
                     {intake.order.status === "in_progress" && (
-                      <Button size="sm" onClick={async () => {
+                      <Button size="lg" className="flex-1 h-12" onClick={async () => {
                         await fetch(`/api/orders/${intake.order!.id}/status`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ status: "ready_for_delivery" }),
                         })
                         router.refresh()
-                      }}>Hazır</Button>
+                      }}>Teslimata Hazır</Button>
                     )}
                   </div>
                 </CardContent>
@@ -674,12 +925,12 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
 
               {showOrderItemForm && (
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Yeni Kalem</CardTitle></CardHeader>
+                  <CardHeader className="pb-3"><CardTitle className="text-base">Yeni Kalem Ekle</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <div>
                       <Label>Tip</Label>
                       <select
-                        className="w-full h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
+                        className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                         value={itemType}
                         onChange={(e) => setItemType(e.target.value)}
                       >
@@ -687,12 +938,23 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                         <option value="labor">İşçilik</option>
                       </select>
                     </div>
-                    <div><Label>Ad</Label><Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası" /></div>
-                    <div><Label>Miktar</Label><Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} /></div>
-                    <div><Label>Birim Fiyat</Label><Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" /></div>
-                    <div className="flex gap-2">
-                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName}>Ekle</Button>
-                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)}>İptal</Button>
+                    <div>
+                      <Label>Kalem Adı</Label>
+                      <Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Miktar</Label>
+                        <Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} min="1" />
+                      </div>
+                      <div>
+                        <Label>Birim Fiyat (TL)</Label>
+                        <Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName} size="lg" className="flex-1 h-12">Ekle</Button>
+                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg" className="h-12">İptal</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -700,6 +962,143 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </>
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+function PhotoChecklistItem({
+  photoKey,
+  label,
+  taken,
+  required,
+  onRemove,
+  photos,
+  intakeId,
+}: {
+  photoKey: string
+  label: string
+  taken: boolean
+  required: boolean
+  onRemove: (id: string) => void
+  photos: { id: string; type: string; label: string; fileUrl: string | null }[]
+  intakeId: string
+}) {
+  const [preview, setPreview] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+
+  const existingPhoto = photos.find((p) => p.type === photoKey)
+
+  async function handleCaptureAdd() {
+    if (!selectedFile) return
+    const formData = new FormData()
+    formData.set("intakeFormId", intakeId)
+    formData.set("type", photoKey)
+    formData.set("label", label)
+
+    try {
+      const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        router.refresh()
+      }
+    } catch {}
+  }
+
+  return (
+    <div
+      className={`flex flex-col rounded-lg text-sm ${
+        taken ? "bg-green-50 border border-green-200" : required ? "bg-red-50 border border-red-200" : "bg-muted/30 border border-muted"
+      }`}
+    >
+      <div className="flex items-center justify-between p-2.5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {taken ? (
+            <CheckCircle2 className="size-4 text-green-600 shrink-0" />
+          ) : required ? (
+            <Camera className="size-4 text-red-400 shrink-0" />
+          ) : (
+            <Camera className="size-4 text-muted-foreground/40 shrink-0" />
+          )}
+          <span className={taken ? "" : "text-muted-foreground"}>{label}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {!taken && !selectedFile ? (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Fotoğraf çek / yükle
+            </button>
+          ) : null}
+          {taken && (
+            <>
+              <span className="text-xs font-medium text-green-700">✓ Tamam</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (existingPhoto) onRemove(existingPhoto.id)
+                }}
+                className="text-xs text-destructive hover:underline"
+              >
+                Kaldır
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* File input and preview */}
+      {!taken && (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              setSelectedFile(file)
+              setPreview(URL.createObjectURL(file))
+            }}
+          />
+          {preview && (
+            <div className="px-2.5 pb-2.5">
+              <div className="relative rounded-lg overflow-hidden border bg-black">
+                <img
+                  src={preview}
+                  alt={`${label} önizlemesi`}
+                  className="w-full max-h-36 object-contain"
+                />
+                <div className="flex gap-2 p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFile(null)
+                      setPreview(null)
+                      if (inputRef.current) inputRef.current.value = ""
+                    }}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    Tekrar çek / değiştir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCaptureAdd}
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    Kaydet
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

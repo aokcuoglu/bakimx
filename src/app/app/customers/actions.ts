@@ -4,15 +4,17 @@ import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { customerCreateSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
+import { AuditLogAction } from "@/lib/audit"
+import { normalizePhone } from "@/lib/format"
 
 export async function createCustomerAction(formData: FormData) {
   const user = await requireAuth()
 
   const raw = {
-    firstName: formData.get("firstName") as string,
-    lastName: formData.get("lastName") as string,
-    phone: formData.get("phone") as string,
-    email: formData.get("email") as string,
+    firstName: (formData.get("firstName") as string || "").trim(),
+    lastName: (formData.get("lastName") as string || "").trim(),
+    phone: normalizePhone(formData.get("phone") as string || ""),
+    email: (formData.get("email") as string || "").trim(),
   }
 
   const parsed = customerCreateSchema.safeParse(raw)
@@ -29,6 +31,8 @@ export async function createCustomerAction(formData: FormData) {
       email: parsed.data.email || null,
     },
   })
+
+  await AuditLogAction(user.workshopId, user.id, "Customer", customer.id, "customer_created")
 
   revalidatePath("/app/customers")
   return { success: true, id: customer.id }

@@ -33,7 +33,7 @@ export default function RegisterPage() {
         setError(data.error || "Kayıt başarısız")
       }
     } catch {
-      setError("Bir hata oluştu")
+      setError("Bir hata oluştu, lütfen tekrar deneyiniz")
     } finally {
       setLoading(false)
     }

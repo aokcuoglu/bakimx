@@ -8,14 +8,14 @@ import { redirect } from "next/navigation"
 
 export async function registerAction(formData: FormData) {
   const raw = {
-    email: formData.get("email") as string,
+    email: (formData.get("email") as string || "").trim().toLowerCase(),
     password: formData.get("password") as string,
-    firstName: formData.get("firstName") as string,
-    lastName: formData.get("lastName") as string,
-    workshopName: formData.get("workshopName") as string,
-    phone: formData.get("phone") as string,
-    city: formData.get("city") as string,
-    address: formData.get("address") as string,
+    firstName: (formData.get("firstName") as string || "").trim(),
+    lastName: (formData.get("lastName") as string || "").trim(),
+    workshopName: (formData.get("workshopName") as string || "").trim(),
+    phone: (formData.get("phone") as string || "").trim(),
+    city: (formData.get("city") as string || "").trim(),
+    address: (formData.get("address") as string || "").trim(),
   }
 
   const parsed = registerSchema.safeParse(raw)
@@ -26,7 +26,7 @@ export async function registerAction(formData: FormData) {
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } })
   if (existing) {
-    return { error: "Bu e-posta adresi zaten kayıtlı" }
+    return { error: "Bu e-posta adresi ile zaten bir hesap bulunmaktadır" }
   }
 
   const hashedPassword = await bcrypt.hash(parsed.data.password, 12)
@@ -60,7 +60,7 @@ export async function registerAction(formData: FormData) {
 
 export async function loginAction(formData: FormData) {
   const raw = {
-    email: formData.get("email") as string,
+    email: (formData.get("email") as string || "").trim().toLowerCase(),
     password: formData.get("password") as string,
   }
 
@@ -71,12 +71,17 @@ export async function loginAction(formData: FormData) {
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
   if (!user) {
-    return { error: "E-posta veya şifre hatalı" }
+    return { error: "E-posta adresi veya şifre hatalı" }
   }
 
   const valid = await bcrypt.compare(parsed.data.password, user.password)
   if (!valid) {
-    return { error: "E-posta veya şifre hatalı" }
+    return { error: "E-posta adresi veya şifre hatalı" }
+  }
+
+  const workshop = await prisma.workshop.findUnique({ where: { id: user.workshopId } })
+  if (!workshop) {
+    return { error: "Hesabınıza bağlı iş yeri bulunamadı. Lütfen destek ile iletişime geçin." }
   }
 
   const session = await getSession()

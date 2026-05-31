@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Menu,
+  X,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -39,7 +40,12 @@ export function AppShell({ children, workshopName }: { children: React.ReactNode
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-navy text-navy-foreground">
+          <aside className="fixed inset-y-0 left-0 w-64 bg-navy text-navy-foreground shadow-xl animate-in slide-in-from-left">
+            <div className="flex justify-end p-3">
+              <button onClick={() => setSidebarOpen(false)} className="text-white/70 hover:text-white p-1">
+                <X className="size-5" />
+              </button>
+            </div>
             <SidebarContent pathname={pathname} workshopName={workshopName} onClose={() => setSidebarOpen(false)} />
           </aside>
         </div>
@@ -49,20 +55,20 @@ export function AppShell({ children, workshopName }: { children: React.ReactNode
       <div className="flex-1 md:ml-64">
         {/* Mobile top bar */}
         <header className="md:hidden sticky top-0 z-40 bg-navy text-navy-foreground px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setSidebarOpen(true)}>
+          <button onClick={() => setSidebarOpen(true)} className="p-1 -ml-1 touch-manipulation">
             <Menu className="size-6" />
           </button>
-          <span className="font-semibold text-sm">{workshopName || "BakimX"}</span>
+          <span className="font-semibold text-sm truncate max-w-[60%]">{workshopName || "BakimX"}</span>
           <div className="w-6" />
         </header>
 
-        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 md:pt-6 pb-24 md:pb-6">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">
-        <div className="flex justify-around items-center py-2">
-          {navItems.slice(0, 4).map((item) => {
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border safe-area-bottom">
+        <div className="flex justify-around items-center py-2 px-1">
+          {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon
             const active = pathname === item.href || (item.href !== "/app" && pathname.startsWith(item.href))
             return (
@@ -70,25 +76,15 @@ export function AppShell({ children, workshopName }: { children: React.ReactNode
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 text-xs px-2 py-1",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "flex flex-col items-center gap-0.5 text-[10px] px-1 py-1.5 rounded-lg transition-colors min-w-0 touch-manipulation",
+                  active ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Icon className="size-5" />
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}
-          <Link
-            href="/app"
-            className={cn(
-              "flex flex-col items-center gap-0.5 text-xs px-2 py-1",
-              pathname === "/app" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <LayoutDashboard className="size-5" />
-            <span>Panel</span>
-          </Link>
         </div>
       </nav>
     </div>
@@ -106,9 +102,9 @@ function SidebarContent({
 }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-white/10">
+      <div className="p-5 border-b border-white/10">
         <h1 className="text-lg font-bold">{workshopName || "BakimX"}</h1>
-        <p className="text-xs text-white/60 mt-0.5">Araç Kabul Sistemi</p>
+        <p className="text-xs text-white/60 mt-1">Araç Kabul Sistemi</p>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {

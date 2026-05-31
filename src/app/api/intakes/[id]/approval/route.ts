@@ -5,7 +5,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const { id } = await params
 
-    // Check if this is a verify request
     const contentType = request.headers.get("content-type") || ""
     if (contentType.includes("application/json")) {
       const body = await request.json()
@@ -22,7 +21,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
-    return NextResponse.json({ success: true, otpCode: result.otpCode, approvalId: result.approvalId })
+
+    const response: Record<string, unknown> = {
+      success: true,
+      approvalId: result.approvalId,
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      response.otpCode = result.otpCode
+    } else {
+      response.message = "Onay kodu demo ortamında gösterilir."
+    }
+
+    return NextResponse.json(response)
   } catch {
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
   }

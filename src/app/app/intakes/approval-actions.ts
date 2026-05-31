@@ -34,8 +34,8 @@ export async function requestApprovalAction(intakeFormId: string) {
     },
   })
 
-  await prisma.vehicleIntakeForm.update({
-    where: { id: intakeFormId },
+  await prisma.vehicleIntakeForm.updateMany({
+    where: { id: intakeFormId, workshopId: user.workshopId },
     data: { status: "waiting_approval", approvalTextVersion },
   })
 
@@ -64,16 +64,16 @@ export async function verifyOtpAction(intakeFormId: string, otpCode: string) {
     return { error: "Geçersiz doğrulama kodu" }
   }
 
-  await prisma.approvalRequest.update({
-    where: { id: approval.id },
+  await prisma.approvalRequest.updateMany({
+    where: { id: approval.id, workshopId: user.workshopId },
     data: {
       status: "verified",
       approvedAt: new Date(),
     },
   })
 
-  await prisma.vehicleIntakeForm.update({
-    where: { id: intakeFormId },
+  await prisma.vehicleIntakeForm.updateMany({
+    where: { id: intakeFormId, workshopId: user.workshopId },
     data: { status: "approved", approvedAt: new Date() },
   })
 

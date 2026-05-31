@@ -5,10 +5,14 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const publicPaths = ["/", "/login", "/register", "/privacy", "/terms"]
+  const publicPaths = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"]
   const publicPrefixes = ["/s/"]
 
   if (publicPaths.includes(pathname)) {
+    const session = await getSession()
+    if (session?.userId && (pathname === "/login" || pathname === "/register")) {
+      return NextResponse.redirect(new URL("/app", request.url))
+    }
     return NextResponse.next()
   }
 
@@ -17,13 +21,21 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/")) {
+    const session = await getSession()
+    const protectedApiPaths = ["/api/intakes", "/api/customers", "/api/vehicles", "/api/orders", "/api/workshop"]
+    const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
+    if (isProtected && !session?.userId) {
+      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    }
     return NextResponse.next()
   }
 
   if (pathname.startsWith("/app")) {
     const session = await getSession()
-    if (!session.userId) {
-      return NextResponse.redirect(new URL("/login", request.url))
+    if (!session?.userId) {
+      const loginUrl = new URL("/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
     }
     return NextResponse.next()
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -58,6 +59,12 @@ export function Header() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-3">
+          <Link
+            href="/login"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Giriş Yap
+          </Link>
           <a
             href="#demo-talep"
             className={buttonVariants({ size: "default", className: "bg-primary text-primary-foreground hover:bg-primary/90" })}
@@ -89,6 +96,13 @@ export function Header() {
               </a>
             ))}
             <div className="flex flex-col gap-2 mt-3 pt-3 border-t">
+              <Link
+                href="/login"
+                className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground py-2.5 text-center"
+                onClick={() => setMobileOpen(false)}
+              >
+                Giriş Yap
+              </Link>
               <a
                 href="#demo-talep"
                 onClick={() => setMobileOpen(false)}
