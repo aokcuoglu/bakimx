@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Workshop {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  city         String
+  address      String
+  logoUrl      String?
+  taxNumber    String?
+  invoiceTitle String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users       User[]
+  customers   Customer[]
+  vehicles    Vehicle[]
+  intakes     VehicleIntakeForm[]
+  photos      VehiclePhoto[]
+  damageMarks DamageMark[]
+  approvals   ApprovalRequest[]
+  shareLinks  PublicShareLink[]
+  orders      ServiceOrder[]
+  auditLogs   AuditLog[]
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String?
+  lastName    String?
+  workshopId  String
+  workshop    Workshop @relation(fields: [workshopId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
+  firstName  String
+  lastName   String
+  phone      String
+  email      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  vehicles Vehicle[]
+  intakes  VehicleIntakeForm[]
+
+  @@index([workshopId])
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  workshopId   String
+  workshop     Workshop @relation(fields: [workshopId], references: [id])
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+  plate        String
+  brand        String
+  model        String
+  vehicleType  String?
+  modelYear    Int?
+  mileage      Int?
+  vin          String?
+  vinOcrRaw    String?
+  vinConfirmed Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  intakes VehicleIntakeForm[]
+
+  @@index([workshopId])
+  @@index([customerId])
+}
+
+model VehicleIntakeForm {
+  id                  String       @id @default(cuid())
+  workshopId          String
+  workshop            Workshop     @relation(fields: [workshopId], references: [id])
+  customerId          String
+  customer            Customer     @relation(fields: [customerId], references: [id])
+  vehicleId           String
+  vehicle             Vehicle      @relation(fields: [vehicleId], references: [id])
+  status              IntakeStatus @default(draft)
+  mileageAtIntake     Int?
+  customerComplaint   String
+  internalNote        String?
+  approvalTextVersion String?
+  approvedAt          DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  photos      VehiclePhoto[]
+  damageMarks DamageMark[]
+  approvals   ApprovalRequest[]
+  shareLinks  PublicShareLink[]
+  order       ServiceOrder?
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([vehicleId])
+}
+
+enum IntakeStatus {
+  draft
+  waiting_approval
+  approved
+  in_progress
+  ready_for_delivery
+  delivered
+  cancelled
+}
+
+model VehiclePhoto {
+  id           String            @id @default(cuid())
+  workshopId   String
+  workshop     Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId String
+  intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  type         VehiclePhotoType
+  label        String
+  required     Boolean           @default(false)
+  fileUrl      String?
+  note         String?
+  createdAt    DateTime          @default(now())
+
+  @@index([workshopId])
+  @@index([intakeFormId])
+}
+
+enum VehiclePhotoType {
+  front
+  rear
+  left_side
+  right_side
+  dashboard_mileage
+  registration_front
+  registration_back
+  vin_area
+  damage_detail
+  other
+}
+
+model DamageMark {
+  id           String            @id @default(cuid())
+  workshopId   String
+  workshop     Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId String
+  intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  zone         String
+  damageType   DamageType
+  severity     DamageSeverity
+  note         String?
+  photoUrl     String?
+  createdAt    DateTime          @default(now())
+
+  @@index([workshopId])
+  @@index([intakeFormId])
+}
+
+enum DamageType {
+  scratch
+  dent
+  broken
+  cracked
+  paint_damage
+  missing_part
+  other
+}
+
+enum DamageSeverity {
+  light
+  medium
+  heavy
+}
+
+model ApprovalRequest {
+  id                  String            @id @default(cuid())
+  workshopId          String
+  workshop            Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId        String
+  intakeForm          VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  phone               String
+  otpCode             String
+  status              ApprovalStatus    @default(pending)
+  approvalType        String            @default("vehicle_intake")
+  approvalTextVersion String?
+  approvedAt          DateTime?
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([workshopId])
+  @@index([intakeFormId])
+}
+
+enum ApprovalStatus {
+  pending
+  verified
+  expired
+  cancelled
+}
+
+model PublicShareLink {
+  id           String            @id @default(cuid())
+  workshopId   String
+  workshop     Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId String
+  intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  token        String            @unique
+  expiresAt    DateTime?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+
+  @@index([workshopId])
+  @@index([intakeFormId])
+}
+
+model ServiceOrder {
+  id           String            @id @default(cuid())
+  workshopId   String
+  workshop     Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId String            @unique
+  intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  status       OrderStatus       @default(draft)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  items ServiceOrderItem[]
+
+  @@index([workshopId])
+}
+
+enum OrderStatus {
+  draft
+  in_progress
+  ready_for_delivery
+  delivered
+  cancelled
+}
+
+model ServiceOrderItem {
+  id             String       @id @default(cuid())
+  workshopId     String
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  type           OrderItemType
+  name           String
+  quantity       Int          @default(1)
+  unitPrice      Float?
+  totalPrice     Float?
+  note           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([workshopId])
+  @@index([serviceOrderId])
+}
+
+enum OrderItemType {
+  part
+  labor
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  workshopId   String
+  workshop     Workshop @relation(fields: [workshopId], references: [id])
+  actorUserId  String?
+  actorUser    User?    @relation(fields: [actorUserId], references: [id])
+  entityType   String
+  entityId     String
+  action       String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([workshopId])
+}

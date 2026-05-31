@@ -38,6 +38,7 @@ export function Header() {
             width={32}
             height={32}
             priority
+            loading="eager"
           />
           <span className="text-xl font-bold tracking-tight">
             <span className="text-foreground">Bakim</span><span className="text-primary">X</span>
