@@ -1,31 +1,51 @@
-/**
- * Supabase Storage provider placeholder.
- *
- * TODO: Implement when Supabase Storage is configured.
- *
- * Required env vars:
- *   - NEXT_PUBLIC_SUPABASE_URL
- *   - NEXT_PUBLIC_SUPABASE_ANON_KEY
- *   - SUPABASE_SERVICE_ROLE_KEY
- *   - STORAGE_BUCKET_NAME
- *
- * This file should NOT be imported until Supabase is configured.
- * The getStorageProvider() factory in storage-provider.ts should be
- * updated to check STORAGE_PROVIDER env var and return this provider.
- */
-
 import type { StorageProvider } from "./types"
 
+type SupabaseClient = import("@supabase/supabase-js").SupabaseClient
+
 export class SupabaseStorageProvider implements StorageProvider {
-  async upload(_file: File, _path: string): Promise<{ url: string; key: string }> {
-    throw new Error("SupabaseStorageProvider not yet implemented. Configure Supabase env vars and implement this provider.")
+  private client: SupabaseClient
+  private bucket: string
+
+  constructor(client: SupabaseClient, bucket: string) {
+    this.client = client
+    this.bucket = bucket
   }
 
-  async delete(_key: string): Promise<void> {
-    throw new Error("SupabaseStorageProvider not yet implemented.")
+  async upload(file: File, path: string): Promise<{ url: string; key: string }> {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { error } = await this.client.storage
+      .from(this.bucket)
+      .upload(path, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (error) {
+      throw new Error(`Supabase yükleme hatası: ${error.message}`)
+    }
+
+    return { url: "", key: path }
   }
 
-  async getSignedUrl(_key: string, _expiresIn?: number): Promise<string> {
-    throw new Error("SupabaseStorageProvider not yet implemented.")
+  async delete(key: string): Promise<void> {
+    const { error } = await this.client.storage
+      .from(this.bucket)
+      .remove([key])
+
+    if (error) {
+      throw new Error(`Supabase silme hatası: ${error.message}`)
+    }
+  }
+
+  async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .createSignedUrl(key, expiresIn)
+
+    if (error) {
+      throw new Error(`Supabase imzalı URL hatası: ${error.message}`)
+    }
+
+    return data?.signedUrl || ""
   }
 }

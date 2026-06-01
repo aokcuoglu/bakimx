@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,11 +22,28 @@ import {
   MessageSquare,
   Info,
   Wrench,
+  Upload,
+  RefreshCw,
+  ImageOff,
+  Loader2,
 } from "lucide-react"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
+
+type VehiclePhoto = {
+  id: string
+  type: string
+  label: string
+  required: boolean
+  fileUrl: string | null
+  fileName: string | null
+  mimeType: string | null
+  sizeBytes: number | null
+  storageProvider: string | null
+  note: string | null
+}
 
 type IntakeDetailProps = {
   id: string
@@ -38,7 +55,7 @@ type IntakeDetailProps = {
   createdAt: Date
   customer: { id: string; firstName: string; lastName: string; phone: string; email: string | null }
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
-  photos: { id: string; type: string; label: string; required: boolean; fileUrl: string | null; note: string | null }[]
+  photos: VehiclePhoto[]
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
@@ -70,13 +87,14 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
+
   const [showOrderItemForm, setShowOrderItemForm] = useState(false)
   const [itemType, setItemType] = useState("part")
   const [itemName, setItemName] = useState("")
   const [itemQty, setItemQty] = useState("1")
   const [itemPrice, setItemPrice] = useState("")
 
-  // Consent checkboxes
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [serviceInfoAccepted, setServiceInfoAccepted] = useState(false)
@@ -150,6 +168,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
     formData.set("type", photoType)
     formData.set("label", PHOTO_TYPES[photoType as keyof typeof PHOTO_TYPES]?.label || photoType)
     if (photoNote) formData.set("note", photoNote)
+    if (photoFile) formData.set("file", photoFile)
 
     try {
       const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
@@ -157,6 +176,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       if (data.success) {
         setPhotoType("")
         setPhotoNote("")
+        setPhotoFile(null)
+        setPhotoPreview(null)
+        if (photoInputRef.current) photoInputRef.current.value = ""
         router.refresh()
       } else {
         setError(data.error || "Fotoğraf eklenemedi")
@@ -173,6 +195,29 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       await fetch(`/api/intakes/photos?id=${id}&intakeFormId=${intake.id}`, { method: "DELETE" })
       router.refresh()
     } catch {}
+  }
+
+  async function handleReplacePhoto(photoId: string, file: File) {
+    setUploadingPhotoId(photoId)
+    setError("")
+    const formData = new FormData()
+    formData.set("photoId", photoId)
+    formData.set("intakeFormId", intake.id)
+    formData.set("file", file)
+
+    try {
+      const res = await fetch("/api/intakes/photos", { method: "PUT", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        router.refresh()
+      } else {
+        setError(data.error || "Fotoğraf değiştirilemedi")
+      }
+    } catch {
+      setError("Bir hata oluştu")
+    } finally {
+      setUploadingPhotoId(null)
+    }
   }
 
   async function handleRequestApproval() {
@@ -453,7 +498,6 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {/* Required photos */}
                 <p className="text-xs font-medium text-muted-foreground mb-1">Zorunlu Fotoğraflar</p>
                 {requiredPhotos.map(([key, val]) => {
                   const taken = takenPhotoTypes.has(key)
@@ -465,12 +509,13 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                       taken={taken}
                       required={true}
                       onRemove={handleRemovePhoto}
+                      onReplace={handleReplacePhoto}
                       photos={intake.photos}
                       intakeId={intake.id}
+                      uploadingPhotoId={uploadingPhotoId}
                     />
                   )
                 })}
-                {/* Optional photos */}
                 <p className="text-xs font-medium text-muted-foreground mb-1 pt-2">Opsiyonel Fotoğraflar</p>
                 {Object.entries(PHOTO_TYPES)
                   .filter(([, v]) => !v.required)
@@ -484,8 +529,10 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                         taken={taken}
                         required={false}
                         onRemove={handleRemovePhoto}
+                        onReplace={handleReplacePhoto}
                         photos={intake.photos}
                         intakeId={intake.id}
+                        uploadingPhotoId={uploadingPhotoId}
                       />
                     )
                   })}
@@ -521,7 +568,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   capture="environment"
                   className="hidden"
                   onChange={(e) => {
@@ -563,41 +610,35 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                     </button>
                   </div>
                 )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  İzin verilen formatlar: JPEG, PNG, WebP. Maksimum 8 MB.
+                </p>
               </div>
               <div>
                 <Label>Not</Label>
                 <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
               </div>
-              <div className="p-3 rounded-lg bg-blue-50 text-blue-800 text-xs flex items-start gap-2">
-                <Info className="size-3.5 shrink-0 mt-0.5" />
-                <span>
-                  Gerçek dosya yükleme henüz aktif değil. Bu arayüz MVP fotoğraf çekme temelidir. Supabase Storage / S3 entegrasyonu gelecek sürümlerde eklenecektir.
-                </span>
-              </div>
               <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full h-12">
-                <Plus className="size-4 mr-1" /> Fotoğraf Kaydı Ekle
+                {loading ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Upload className="size-4 mr-1" />}
+                {photoFile ? "Fotoğraf Yükle ve Kaydet" : "Fotoğraf Kaydı Ekle"}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Photo list */}
+          {/* Media gallery */}
           {intake.photos.length > 0 && (
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Kaydedilmiş Fotoğraflar ({intake.photos.length})</CardTitle></CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
                   {intake.photos.map((photo) => (
-                    <div key={photo.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="min-w-0">
-                        <span className="text-sm font-medium">
-                          {PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type}
-                        </span>
-                        {photo.note && <span className="text-xs text-muted-foreground ml-2">- {photo.note}</span>}
-                      </div>
-                      <button onClick={() => handleRemovePhoto(photo.id)} className="text-destructive text-xs hover:underline shrink-0 ml-2">
-                        Kaldır
-                      </button>
-                    </div>
+                    <PhotoGalleryCard
+                      key={photo.id}
+                      photo={photo}
+                      onRemove={handleRemovePhoto}
+                      onReplace={handleReplacePhoto}
+                      isUploading={uploadingPhotoId === photo.id}
+                    />
                   ))}
                 </div>
               </CardContent>
@@ -620,7 +661,6 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             onRemoveMark={handleRemoveDamageMark}
           />
 
-          {/* Damage modal */}
           {showDamageModal && (
             <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50" onClick={() => setShowDamageModal(false)}>
               <div className="bg-card w-full md:max-w-md md:rounded-xl rounded-t-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -909,7 +949,6 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                           </div>
                         )
                       })}
-                      {/* Total */}
                       <div className="flex justify-between items-center pt-3 border-t text-sm">
                         <span className="font-medium">Toplam</span>
                         <span className="font-bold text-base">
@@ -998,44 +1037,210 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   )
 }
 
+function PhotoGalleryCard({
+  photo,
+  onRemove,
+  onReplace,
+  isUploading,
+}: {
+  photo: VehiclePhoto
+  onRemove: (id: string) => void
+  onReplace: (photoId: string, file: File) => void
+  isUploading: boolean
+}) {
+  const replaceInputRef = useRef<HTMLInputElement>(null)
+  const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  return (
+    <div className="rounded-xl border overflow-hidden bg-white">
+      <div className="relative aspect-square bg-muted flex items-center justify-center">
+        {photo.fileUrl ? (
+          <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
+        ) : (
+          <div className="text-center p-3">
+            <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
+            <span className="text-xs text-muted-foreground">Dosya yok</span>
+          </div>
+        )}
+        {isUploading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <Loader2 className="size-8 text-white animate-spin" />
+          </div>
+        )}
+      </div>
+      <div className="p-2.5 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium truncate">{typeLabel}</span>
+          <button
+            onClick={() => onRemove(photo.id)}
+            className="text-destructive hover:bg-destructive/10 p-1 rounded touch-manipulation"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
+        {photo.fileName && (
+          <p className="text-xs text-muted-foreground truncate">{photo.fileName}</p>
+        )}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {photo.sizeBytes != null && <span>{formatSize(photo.sizeBytes)}</span>}
+          {photo.mimeType && (
+            <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
+          )}
+        </div>
+        <input
+          ref={replaceInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) onReplace(photo.id, file)
+          }}
+        />
+        <button
+          onClick={() => replaceInputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-primary hover:bg-primary/5 rounded-lg touch-manipulation"
+          disabled={isUploading}
+        >
+          <RefreshCw className="size-3" />
+          Tekrar çek / değiştir
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string }) {
+  const [src, setSrc] = useState<string | null>(() =>
+    fileUrl.startsWith("data:") ? fileUrl : null
+  )
+  const [loading, setLoading] = useState(() => !fileUrl.startsWith("data:"))
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (fileUrl.startsWith("data:")) return
+
+    let cancelled = false
+    fetch(`/api/photos?id=${photoId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load")
+        return res.blob()
+      })
+      .then((blob) => {
+        if (!cancelled) {
+          setSrc(URL.createObjectURL(blob))
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFailed(true)
+          setLoading(false)
+        }
+      })
+
+    return () => { cancelled = true }
+  }, [photoId, fileUrl])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full h-full">
+        <Loader2 className="size-6 text-muted-foreground/40 animate-spin" />
+      </div>
+    )
+  }
+
+  if (failed || !src) {
+    return (
+      <div className="text-center p-3">
+        <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
+        <span className="text-xs text-muted-foreground">Yüklenemedi</span>
+      </div>
+    )
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt="Fotoğraf"
+      className="w-full h-full object-cover"
+    />
+  )
+}
+
 function PhotoChecklistItem({
   photoKey,
   label,
   taken,
   required,
   onRemove,
+  onReplace,
   photos,
   intakeId,
+  uploadingPhotoId,
 }: {
   photoKey: string
   label: string
   taken: boolean
   required: boolean
   onRemove: (id: string) => void
-  photos: { id: string; type: string; label: string; fileUrl: string | null }[]
+  onReplace: (photoId: string, file: File) => void
+  photos: { id: string; type: string; label: string; fileUrl: string | null; fileName: string | null; mimeType: string | null; sizeBytes: number | null }[]
   intakeId: string
+  uploadingPhotoId: string | null
 }) {
   const [preview, setPreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const replaceInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   const existingPhoto = photos.find((p) => p.type === photoKey)
+  const isUploading = uploadingPhotoId === existingPhoto?.id
 
   async function handleCaptureAdd() {
-    if (!selectedFile) return
+    if (!selectedFile) {
+      const formData = new FormData()
+      formData.set("intakeFormId", intakeId)
+      formData.set("type", photoKey)
+      formData.set("label", label)
+      try {
+        const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
+        const data = await res.json()
+        if (data.success) {
+          router.refresh()
+        }
+      } catch {}
+      return
+    }
+
+    setUploading(true)
     const formData = new FormData()
     formData.set("intakeFormId", intakeId)
     formData.set("type", photoKey)
     formData.set("label", label)
+    formData.set("file", selectedFile)
 
     try {
       const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
       const data = await res.json()
       if (data.success) {
+        setSelectedFile(null)
+        setPreview(null)
+        if (inputRef.current) inputRef.current.value = ""
         router.refresh()
       }
-    } catch {}
+    } catch {
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -1056,7 +1261,7 @@ function PhotoChecklistItem({
           <span className={taken ? "" : "text-muted-foreground"}>{label}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!taken && !selectedFile ? (
+          {!taken && !selectedFile && (
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -1064,10 +1269,28 @@ function PhotoChecklistItem({
             >
               Fotoğraf çek / yükle
             </button>
-          ) : null}
+          )}
           {taken && (
             <>
               <span className="text-xs font-medium text-green-700">✓ Tamam</span>
+              <input
+                ref={replaceInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file && existingPhoto) onReplace(existingPhoto.id, file)
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => replaceInputRef.current?.click()}
+                className="text-xs text-primary hover:underline"
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className="size-3 animate-spin" /> : "Değiştir"}
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1082,13 +1305,12 @@ function PhotoChecklistItem({
         </div>
       </div>
 
-      {/* File input and preview */}
       {!taken && (
         <>
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             capture="environment"
             className="hidden"
             onChange={(e) => {
@@ -1122,9 +1344,11 @@ function PhotoChecklistItem({
                   <button
                     type="button"
                     onClick={handleCaptureAdd}
+                    disabled={uploading}
                     className="text-xs text-primary hover:underline font-medium"
                   >
-                    Kaydet
+                    {uploading ? <Loader2 className="size-3 animate-spin inline" /> : null}
+                    {uploading ? " Yükleniyor..." : "Kaydet"}
                   </button>
                 </div>
               </div>

@@ -1,35 +1,43 @@
-/**
- * Unified storage provider factory.
- *
- * Currently returns the MockStorageProvider for local development.
- * In production, swap this to return a real provider based on env vars.
- *
- * TODO: Implement real providers and switch based on environment:
- *   - If STORAGE_PROVIDER=supabase → use SupabaseStorageProvider
- *   - If STORAGE_PROVIDER=s3 → use S3StorageProvider
- *   - Default: MockStorageProvider (safe, no external deps)
- *
- * Public output page handles missing photo fileUrl gracefully with
- * "Fotoğraf önizlemesi depolama entegrasyonu sonrası gösterilecektir."
- */
-
 import type { StorageProvider } from "./types"
 import { getMockStorageProvider } from "./mock-storage-provider"
 
-export function getStorageProvider(): StorageProvider {
-  const provider = process.env.STORAGE_PROVIDER
+let _provider: StorageProvider | null = null
+
+export async function getStorageProvider(): Promise<StorageProvider> {
+  if (_provider) return _provider
+
+  const provider = process.env.STORAGE_PROVIDER || "mock"
 
   if (provider === "supabase") {
-    throw new Error(
-      "SupabaseStorageProvider not yet implemented. Set STORAGE_PROVIDER to undefined or remove it to use MockStorageProvider."
-    )
+    const url = process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "bakimx-media"
+
+    if (!url || !key) {
+      throw new Error(
+        "Supabase yapılandırması eksik. SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY ortam değişkenlerini ayarlayınız."
+      )
+    }
+
+    const { createClient } = await import("@supabase/supabase-js")
+    const client = createClient(url, key, {
+      auth: { persistSession: false },
+    })
+    const { SupabaseStorageProvider } = await import("./supabase-storage-provider")
+    _provider = new SupabaseStorageProvider(client, bucket)
+    return _provider
   }
 
   if (provider === "s3") {
-    throw new Error(
-      "S3StorageProvider not yet implemented. Set STORAGE_PROVIDER to undefined or remove it to use MockStorageProvider."
-    )
+    const { S3StorageProvider } = await import("./s3-storage-provider")
+    _provider = new S3StorageProvider()
+    return _provider
   }
 
-  return getMockStorageProvider()
+  _provider = getMockStorageProvider()
+  return _provider
+}
+
+export function resetStorageProvider(): void {
+  _provider = null
 }

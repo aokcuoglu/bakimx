@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     const session = await getSession()
-    const protectedApiPaths = ["/api/intakes", "/api/customers", "/api/vehicles", "/api/orders", "/api/workshop"]
+    const protectedApiPaths = ["/api/intakes", "/api/customers", "/api/vehicles", "/api/orders", "/api/workshop", "/api/photos"]
     const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
     if (isProtected && !session?.userId) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })

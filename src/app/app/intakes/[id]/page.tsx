@@ -13,7 +13,20 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
     include: {
       customer: true,
       vehicle: true,
-      photos: true,
+      photos: {
+        select: {
+          id: true,
+          type: true,
+          label: true,
+          required: true,
+          fileUrl: true,
+          fileName: true,
+          mimeType: true,
+          sizeBytes: true,
+          storageProvider: true,
+          note: true,
+        },
+      },
       damageMarks: true,
       approvals: { orderBy: { createdAt: "desc" }, take: 1 },
       shareLinks: { where: { isActive: true }, take: 1 },

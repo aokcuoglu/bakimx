@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, Star, Share2, FileText, FileDown } from "lucide-react"
+import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, Star, Share2, FileText, FileDown, ImageOff } from "lucide-react"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
@@ -27,7 +27,7 @@ type ShareLink = {
     createdAt: Date
     customer: { firstName: string; lastName: string; phone: string }
     vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
-    photos: { type: string; label: string; fileUrl: string | null }[]
+    photos: { id?: string; type: string; label: string; fileUrl: string | null }[]
     damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
     approvals: { status: string; approvedAt: Date | null }[]
     order: { status: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
@@ -72,6 +72,8 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
       setCopied(false)
     }
   }
+
+  const photosWithFile = intakeForm.photos.filter((p) => p.fileUrl)
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] print:bg-white print:text-black">
@@ -211,6 +213,17 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">
               Fotoğraf Kontrol Listesi ({intakeForm.photos.length})
             </h3>
+            {photosWithFile.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {photosWithFile.map((photo, idx) => (
+                  <PublicPhotoThumbnail
+                    key={`photo-${idx}`}
+                    photo={photo}
+                    token={token}
+                  />
+                ))}
+              </div>
+            )}
             <div className="space-y-1.5">
               {intakeForm.photos.map((photo, idx) => (
                 <div key={`${photo.type}-${idx}`} className="text-sm flex items-center gap-2">
@@ -219,16 +232,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   {photo.fileUrl ? (
                     <span className="text-xs text-green-600 print:text-gray-600">(Fotoğraf mevcut)</span>
                   ) : (
-                    <span className="text-xs text-gray-400">(Fotoğraf kaydedildi)</span>
+                    <span className="text-xs text-gray-400">(Kaydedildi)</span>
                   )}
                 </div>
               ))}
             </div>
-            {intakeForm.photos.some((p) => !p.fileUrl) && (
-              <p className="text-xs text-gray-400 mt-2 italic">
-                Fotoğraf önizlemeleri depolama entegrasyonu sonrası gösterilecektir.
-              </p>
-            )}
           </div>
         )}
 
@@ -407,3 +415,64 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
   )
 }
 
+function PublicPhotoThumbnail({
+  photo,
+  token,
+}: {
+  photo: { id?: string; type: string; label: string; fileUrl: string | null }
+  token: string
+}) {
+  const isDataUrl = photo.fileUrl?.startsWith("data:") ?? false
+  const hasNoId = !photo.id && !isDataUrl
+  const [src, setSrc] = useState<string | null>(() => isDataUrl ? photo.fileUrl! : null)
+  const [failed, setFailed] = useState(() => hasNoId)
+  const [loading, setLoading] = useState(() => !isDataUrl && !!photo.id && !hasNoId)
+
+  useEffect(() => {
+    if (isDataUrl || hasNoId || !photo.id) return
+
+    const imgSrc = `/s/${token}/photos/${photo.id}`
+    const img = new window.Image()
+    img.onload = () => {
+      setSrc(imgSrc)
+      setLoading(false)
+    }
+    img.onerror = () => {
+      setFailed(true)
+      setLoading(false)
+    }
+    img.src = imgSrc
+  }, [photo, token, isDataUrl, hasNoId])
+
+  if (loading) {
+    return (
+      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="size-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (failed || !src) {
+    return (
+      <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">
+        <div className="text-center">
+          <ImageOff className="size-5 text-gray-300 mx-auto" />
+          <span className="text-[10px] text-gray-400 mt-0.5 block">
+            {PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  )
+}

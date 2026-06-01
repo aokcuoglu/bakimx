@@ -5,6 +5,8 @@ import { requireAuth } from "@/lib/auth"
 import { intakeCreateSchema, damageMarkSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
+import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
+import { nanoid } from "nanoid"
 
 export async function createIntakeAction(formData: FormData) {
   const user = await requireAuth()
@@ -56,7 +58,22 @@ export async function getIntakeAction(id: string) {
     include: {
       customer: true,
       vehicle: true,
-      photos: true,
+      photos: {
+        select: {
+          id: true,
+          type: true,
+          label: true,
+          required: true,
+          fileUrl: true,
+          fileName: true,
+          mimeType: true,
+          sizeBytes: true,
+          storageProvider: true,
+          note: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
       damageMarks: true,
       approvals: { orderBy: { createdAt: "desc" }, take: 1 },
       shareLinks: { where: { isActive: true }, take: 1 },
@@ -143,28 +160,137 @@ export async function addPhotoAction(formData: FormData) {
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string
   const label = formData.get("label") as string
-  const fileUrl = formData.get("fileUrl") as string
-  const note = formData.get("note") as string
+  const note = formData.get("note") as string | null
+  const file = formData.get("file") as File | null
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
 
+  const photoId = nanoid()
+  let fileUrl: string | null = null
+  let fileName: string | null = null
+  let mimeType: string | null = null
+  let sizeBytes: number | null = null
+  let storageProvider: string | null = null
+  let storageKey: string | null = null
+
+  if (file && file.size > 0 && file.name) {
+    const validation = validateUploadFile(file)
+    if (!validation.valid) {
+      return { error: validation.error }
+    }
+
+    try {
+      const storagePath = buildStoragePath(user.workshopId, intakeFormId, type, photoId, file.name)
+      const provider = await getStorageProvider()
+      const result = await provider.upload(file, storagePath)
+
+      fileUrl = result.url
+      storageKey = result.key
+      fileName = file.name
+      mimeType = file.type
+      sizeBytes = file.size
+      storageProvider = process.env.STORAGE_PROVIDER || "mock"
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Dosya yükleme hatası"
+      await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_upload_error", JSON.stringify({ error: message }))
+      return { error: `Fotoğraf yüklenemedi: ${message}` }
+    }
+  }
+
   const photo = await prisma.vehiclePhoto.create({
     data: {
+      id: photoId,
       workshopId: user.workshopId,
       intakeFormId,
       type: type as import("@prisma/client").VehiclePhotoType,
       label: label || type,
       required: false,
-      fileUrl: fileUrl || null,
+      fileUrl,
+      fileName,
+      mimeType,
+      sizeBytes,
+      storageProvider,
+      storageKey,
       note: note || null,
     },
   })
 
+  await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photo.id, "photo_uploaded", JSON.stringify({
+    type,
+    storageProvider: storageProvider || "none",
+    sizeBytes,
+  }))
+
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true, id: photo.id }
+}
+
+export async function replacePhotoAction(formData: FormData) {
+  const user = await requireAuth()
+
+  const photoId = formData.get("photoId") as string
+  const intakeFormId = formData.get("intakeFormId") as string
+  const file = formData.get("file") as File | null
+
+  if (!file || file.size === 0) {
+    return { error: "Fotoğraf dosyası gerekli" }
+  }
+
+  const validation = validateUploadFile(file)
+  if (!validation.valid) {
+    return { error: validation.error }
+  }
+
+  const existingPhoto = await prisma.vehiclePhoto.findFirst({
+    where: { id: photoId, workshopId: user.workshopId },
+  })
+  if (!existingPhoto) return { error: "Fotoğraf bulunamadı" }
+
+  if (existingPhoto.storageKey) {
+    try {
+      const provider = await getStorageProvider()
+      await provider.delete(existingPhoto.storageKey)
+    } catch {}
+  }
+
+  const storagePath = buildStoragePath(user.workshopId, intakeFormId, existingPhoto.type, photoId, file.name)
+  let fileUrl: string | null = null
+  let storageKey: string | null = null
+
+  try {
+    const provider = await getStorageProvider()
+    const result = await provider.upload(file, storagePath)
+    fileUrl = result.url
+    storageKey = result.key
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Dosya yükleme hatası"
+    await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_replace_error", JSON.stringify({ error: message }))
+    return { error: `Fotoğraf değiştirilemedi: ${message}` }
+  }
+
+  await prisma.vehiclePhoto.update({
+    where: { id: photoId },
+    data: {
+      fileUrl,
+      fileName: file.name,
+      mimeType: file.type,
+      sizeBytes: file.size,
+      storageProvider: process.env.STORAGE_PROVIDER || "mock",
+      storageKey,
+    },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_replaced", JSON.stringify({
+    type: existingPhoto.type,
+    storageProvider: process.env.STORAGE_PROVIDER || "mock",
+    sizeBytes: file.size,
+  }))
+
+  revalidatePath(`/app/intakes/${intakeFormId}`)
+  return { success: true, id: photoId }
 }
 
 export async function removePhotoAction(photoId: string, intakeFormId: string) {
@@ -175,10 +301,22 @@ export async function removePhotoAction(photoId: string, intakeFormId: string) {
   })
   if (!photo) return { error: "Fotoğraf bulunamadı" }
 
+  if (photo.storageKey) {
+    try {
+      const provider = await getStorageProvider()
+      await provider.delete(photo.storageKey)
+    } catch {}
+  }
+
   const deleteResult = await prisma.vehiclePhoto.deleteMany({
     where: { id: photoId, workshopId: user.workshopId },
   })
   if (deleteResult.count === 0) return { error: "Fotoğraf bulunamadı" }
+
+  await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_deleted", JSON.stringify({
+    type: photo.type,
+    hadStorageKey: !!photo.storageKey,
+  }))
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true }
