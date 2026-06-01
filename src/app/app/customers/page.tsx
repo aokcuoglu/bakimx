@@ -29,12 +29,17 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   })
 
   return (
-    <AppShell workshopName={workshop?.name}>
-      <div className="space-y-6">
+    <AppShell workshopName={workshop?.name} pageTitle="Müşteriler">
+      <div className="space-y-5 sm:space-y-6">
+        <div className="flex items-center text-sm text-slate-500">
+          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+          <span className="mx-2">/</span>
+          <span className="text-slate-700 font-medium">Müşteriler</span>
+        </div>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Müşteriler</h2>
-            <p className="text-muted-foreground">{customers.length} müşteri</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Müşteriler</h2>
+            <p className="text-sm text-slate-500 mt-0.5">{customers.length} müşteri kayıtlı</p>
           </div>
           <Link href="/app/customers/new">
             <Button size="lg" className="gap-2">

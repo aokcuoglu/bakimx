@@ -8,6 +8,11 @@ export type OrderLineItem = {
   totalPrice: number | null
 }
 
+export type OrderTotalsOptions = {
+  discountAmount?: number | null
+  taxRate?: number | null
+}
+
 export function calculateLineTotal(item: OrderLineItem): number | null {
   if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
   if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
@@ -29,31 +34,71 @@ export function calculateGroupTotal(items: OrderLineItem[], type?: string): numb
   }, 0)
 }
 
-export function formatOrderSummary(items: OrderLineItem[]): {
+export function calculateOrderTotals(
+  items: OrderLineItem[],
+  options: OrderTotalsOptions = {}
+): {
+  partsTotal: number
+  laborTotal: number
+  subtotal: number
+  discountAmount: number
+  taxRate: number
+  taxAmount: number
+  grandTotal: number
+  partsCount: number
+  laborCount: number
+  hasAnyPrice: boolean
+} {
+  const partsTotal = calculateGroupTotal(items, "part")
+  const laborTotal = calculateGroupTotal(items, "labor")
+  const subtotal = partsTotal + laborTotal
+  const discountAmount = Math.max(0, options.discountAmount ?? 0)
+  const afterDiscount = Math.max(0, subtotal - discountAmount)
+  const taxRate = options.taxRate ?? 0
+  const taxAmount = (afterDiscount * taxRate) / 100
+  const grandTotal = afterDiscount + taxAmount
+
+  return {
+    partsTotal,
+    laborTotal,
+    subtotal,
+    discountAmount,
+    taxRate,
+    taxAmount,
+    grandTotal,
+    partsCount: items.filter((i) => i.type === "part").length,
+    laborCount: items.filter((i) => i.type === "labor").length,
+    hasAnyPrice: items.some(
+      (i) => (i.totalPrice != null && i.totalPrice > 0) || (i.unitPrice != null && i.unitPrice > 0)
+    ),
+  }
+}
+
+export function formatOrderSummary(
+  items: OrderLineItem[],
+  options: OrderTotalsOptions = {}
+): {
   partsTotal: string
   laborTotal: string
+  subtotal: string
+  discountAmount: string
+  taxAmount: string
   grandTotal: string
   partsCount: number
   laborCount: number
   hasAnyPrice: boolean
 } {
-  const parts = items.filter((i) => i.type === "part")
-  const labor = items.filter((i) => i.type === "labor")
-
-  const partsTotalRaw = calculateGroupTotal(items, "part")
-  const laborTotalRaw = calculateGroupTotal(items, "labor")
-  const grandTotalRaw = partsTotalRaw + laborTotalRaw
-
-  const hasAnyPrice = items.some(
-    (i) => (i.totalPrice != null && i.totalPrice > 0) || (i.unitPrice != null && i.unitPrice > 0)
-  )
+  const totals = calculateOrderTotals(items, options)
 
   return {
-    partsTotal: parts.length > 0 ? formatTRY(partsTotalRaw) : "—",
-    laborTotal: labor.length > 0 ? formatTRY(laborTotalRaw) : "—",
-    grandTotal: items.length > 0 ? formatTRY(grandTotalRaw) : "—",
-    partsCount: parts.length,
-    laborCount: labor.length,
-    hasAnyPrice,
+    partsTotal: totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—",
+    laborTotal: totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—",
+    subtotal: totals.hasAnyPrice ? formatTRY(totals.subtotal) : "—",
+    discountAmount: totals.discountAmount > 0 ? formatTRY(totals.discountAmount) : "—",
+    taxAmount: totals.taxRate > 0 ? formatTRY(totals.taxAmount) : "—",
+    grandTotal: totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—",
+    partsCount: totals.partsCount,
+    laborCount: totals.laborCount,
+    hasAnyPrice: totals.hasAnyPrice,
   }
 }

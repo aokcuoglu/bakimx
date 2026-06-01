@@ -3,6 +3,8 @@ import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { OrderDetail } from "@/components/app/order-detail"
+import { formatWorkOrderNo } from "@/lib/work-order-number"
+import { calculateOrderTotals } from "@/lib/totals"
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -11,16 +13,111 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await prisma.serviceOrder.findFirst({
     where: { id, workshopId: user.workshopId },
     include: {
-      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: true } },
-      items: true,
+      intakeForm: {
+        include: {
+          customer: true,
+          vehicle: true,
+          damageMarks: { orderBy: { createdAt: "asc" } },
+          photos: {
+            orderBy: { createdAt: "asc" },
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              required: true,
+              fileUrl: true,
+              fileName: true,
+              mimeType: true,
+              sizeBytes: true,
+            },
+          },
+          shareLinks: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" } },
+        },
+      },
+      items: { orderBy: { createdAt: "asc" } },
     },
   })
 
   if (!order) notFound()
 
+  const totals = calculateOrderTotals(order.items, {
+    discountAmount: order.discountAmount,
+    taxRate: order.taxRate,
+  })
+
+  const safeOrder = {
+    id: order.id,
+    workOrderNo: formatWorkOrderNo(order),
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    technicianName: order.technicianName,
+    estimatedDeliveryAt: order.estimatedDeliveryAt ? order.estimatedDeliveryAt.toISOString() : null,
+    createdAt: order.createdAt.toISOString(),
+    notes: order.notes,
+    discountAmount: order.discountAmount,
+    taxRate: order.taxRate,
+    totals: {
+      partsTotal: totals.partsTotal,
+      laborTotal: totals.laborTotal,
+      subtotal: totals.subtotal,
+      discountAmount: totals.discountAmount,
+      taxAmount: totals.taxAmount,
+      grandTotal: totals.grandTotal,
+      hasAnyPrice: totals.hasAnyPrice,
+      partsCount: totals.partsCount,
+      laborCount: totals.laborCount,
+    },
+    items: order.items.map((i) => ({
+      id: i.id,
+      type: i.type,
+      name: i.name,
+      sku: i.sku,
+      unit: i.unit,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      totalPrice: i.totalPrice,
+      note: i.note,
+    })),
+    customer: {
+      firstName: order.intakeForm.customer.firstName,
+      lastName: order.intakeForm.customer.lastName,
+      phone: order.intakeForm.customer.phone,
+      email: order.intakeForm.customer.email,
+    },
+    vehicle: {
+      plate: order.intakeForm.vehicle.plate,
+      brand: order.intakeForm.vehicle.brand,
+      model: order.intakeForm.vehicle.model,
+      modelYear: order.intakeForm.vehicle.modelYear,
+      mileage: order.intakeForm.vehicle.mileage,
+      vin: order.intakeForm.vehicle.vin,
+    },
+    intake: {
+      id: order.intakeForm.id,
+      status: order.intakeForm.status,
+      mileageAtIntake: order.intakeForm.mileageAtIntake,
+      customerComplaint: order.intakeForm.customerComplaint,
+      internalNote: order.intakeForm.internalNote,
+      createdAt: order.intakeForm.createdAt.toISOString(),
+      approvedAt: order.intakeForm.approvedAt ? order.intakeForm.approvedAt.toISOString() : null,
+      shareToken: order.intakeForm.shareLinks[0]?.token || null,
+    },
+    damageMarks: order.intakeForm.damageMarks.map((d) => ({
+      id: d.id,
+      zone: d.zone,
+      damageType: d.damageType,
+      severity: d.severity,
+      note: d.note,
+    })),
+    photos: order.intakeForm.photos,
+  }
+
   return (
-    <AppShell workshopName={workshop?.name}>
-      <OrderDetail order={order} />
+    <AppShell
+      workshopName={workshop?.name}
+      pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
+    >
+      <OrderDetail order={safeOrder} />
     </AppShell>
   )
 }

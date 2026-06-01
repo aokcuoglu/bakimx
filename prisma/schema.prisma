@@ -236,25 +236,44 @@ model PublicShareLink {
 }
 
 model ServiceOrder {
-  id           String            @id @default(cuid())
-  workshopId   String
-  workshop     Workshop          @relation(fields: [workshopId], references: [id])
-  intakeFormId String            @unique
-  intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
-  status       OrderStatus       @default(draft)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id                   String            @id @default(cuid())
+  workshopId           String
+  workshop             Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId         String            @unique
+  intakeForm           VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  workOrderNo          String?
+  status               OrderStatus       @default(draft)
+  paymentStatus        PaymentStatus     @default(unpaid)
+  technicianName       String?
+  estimatedDeliveryAt  DateTime?
+  discountAmount       Float?
+  taxRate              Float?
+  notes                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   items ServiceOrderItem[]
 
   @@index([workshopId])
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 enum OrderStatus {
   draft
+  waiting_approval
+  approved
   in_progress
+  waiting_parts
   ready_for_delivery
   delivered
+  cancelled
+}
+
+enum PaymentStatus {
+  unpaid
+  partial
+  paid
   cancelled
 }
 
@@ -265,6 +284,8 @@ model ServiceOrderItem {
   serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
   type           OrderItemType
   name           String
+  sku            String?
+  unit           String?
   quantity       Int          @default(1)
   unitPrice      Float?
   totalPrice     Float?

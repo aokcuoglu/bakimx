@@ -48,12 +48,36 @@ export const INTAKE_STATUS = {
 } as const
 
 export const ORDER_STATUS = {
-  draft: { label: "Taslak", color: "bg-gray-100 text-gray-800" },
-  in_progress: { label: "İşlemde", color: "bg-blue-100 text-blue-800" },
-  ready_for_delivery: { label: "Teslimat için hazır", color: "bg-purple-100 text-purple-800" },
-  delivered: { label: "Teslim edildi", color: "bg-emerald-100 text-emerald-800" },
-  cancelled: { label: "İptal", color: "bg-red-100 text-red-800" },
+  draft: { label: "Taslak", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  waiting_approval: { label: "Onay Bekliyor", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  approved: { label: "Onaylandı", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  in_progress: { label: "Devam Ediyor", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  waiting_parts: { label: "Parça Bekliyor", color: "bg-orange-100 text-orange-800 border-orange-200" },
+  ready_for_delivery: { label: "Teslime Hazır", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  delivered: { label: "Teslim Edildi", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  cancelled: { label: "İptal", color: "bg-rose-100 text-rose-800 border-rose-200" },
 } as const
+
+export const PAYMENT_STATUS = {
+  unpaid: { label: "Ödenmedi", color: "bg-rose-50 text-rose-700 border-rose-200" },
+  partial: { label: "Kısmi", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  paid: { label: "Ödendi", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  cancelled: { label: "İptal", color: "bg-slate-50 text-slate-500 border-slate-200" },
+} as const
+
+export const ORDER_STATUS_ORDER: readonly OrderStatusKey[] = [
+  "draft",
+  "waiting_approval",
+  "approved",
+  "in_progress",
+  "waiting_parts",
+  "ready_for_delivery",
+  "delivered",
+  "cancelled",
+]
+
+export type OrderStatusKey = keyof typeof ORDER_STATUS
+export type PaymentStatusKey = keyof typeof PAYMENT_STATUS
 
 export const PHOTO_TYPES = {
   front: { label: "Ön", required: true },

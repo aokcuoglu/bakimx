@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.1.3 — Image Storage & Intake Media Foundation
+**Versiyon:** v0.1.4 — İş Emri UX Alignment
 
 ## Hızlı Başlangıç
 
@@ -121,6 +121,71 @@ STORAGE_PROVIDER=mock
 
 ---
 
+## v0.1.4 Özellikler
+
+### Korumalı Uygulama Kabuğu Yenileme
+- Koyu lacivert sol kenar çubuğu (`#0F172A`)
+- Gruplandırılmış modüller: Ana Panel, Servis, Depo & Finans, Analiz, Ayarlar
+- Üst çubuk: sayfa başlığı, “Plaka, müşteri, iş emri ara” araması, “+ Yeni İş Emri” CTA, bildirim ikonu, kullanıcı menüsü
+- Mobilde: drawer + alt navigasyon (4 sekme)
+- Topbar araması `/app/orders?q=...` ile çalışır (plaka, müşteri, iş emri no, telefon)
+
+### İş Emirleri Liste Sayfası
+- Sayfa başlığı “İş Emirleri” + breadcrumb
+- KPI kartları: Aktif, Tamamlandı, Teslim Edildi, İptal (tıklanabilir filtre)
+- Filtreler: metin arama, durum (8 seçenek), ödeme (3 seçenek)
+- Masaüstünde tablo, mobilde kart görünümü
+- PlateBadge (lacivert monospace), StatusBadge, PaymentBadge
+
+### Yeni İş Emri Sayfası
+- “Yeni Araç Kabulü” veya “Kabullerden İş Emri Oluştur” iki yollu akış
+- Uygun kabul kayıtlarını listeler, bir tıkla iş emri oluşturur
+
+### İş Emri Detay Sayfası (Büyük Yenileme)
+- İki sütunlu yerleşim (masaüstü), mobilde tek sütun
+- Başlık: plaka rozeti, durum/ödeme rozetleri, müşteri, araç
+- Durum geçiş butonları (geçerli sonraki durumlar)
+- Müşteri & Araç kartı, Parçalar/İşçilikler kartı, Şikayet & Notlar kartı
+- Hasar haritası ve fotoğraf galerisi özeti (kabul detayına link)
+- **Sticky Fiyatlandırma paneli**: parça/işçilik toplamı, ara toplam, iskonto, KDV, genel toplam
+- İskonto & KDV inline düzenleme
+- İş Emri Bilgileri (teknisyen, tahmini teslim, notlar)
+- Müşteri Çıktısı (public link, yazdır/PDF, WhatsApp paylaş)
+
+### Schema Genişletmeleri
+- `ServiceOrder`: `workOrderNo`, `paymentStatus`, `technicianName`, `estimatedDeliveryAt`, `discountAmount`, `taxRate`, `notes`
+- Yeni `PaymentStatus` enum: `unpaid | partial | paid | cancelled`
+- `OrderStatus` enum genişletildi: `waiting_approval`, `approved`, `waiting_parts`
+- `ServiceOrderItem`: `sku`, `unit` (opsiyonel)
+- Tüm yeni alanlar nullable → geriye dönük uyumlu
+- `formatWorkOrderNo` eski kayıtlar için `BX-{son6}` fallback üretir
+- `calculateOrderTotals` ve `formatOrderSummary` ortak tek hesap kaynağı
+
+### Placeholder Modüller (Yakında)
+- `/app/quotes`, `/app/appointments`, `/app/reminders`
+- `/app/inventory`, `/app/suppliers`, `/app/cash`
+- `/app/reports`
+- Tümü uygulama kabuğu içinde, kenar çubuğunda “Yakında” rozeti
+
+### Placeholder Özellikler (Gerçek Değil)
+- “Plaka Tara”, “Sesle Doldur”, “Barkodla Ekle” butonları yalnızca UI placeholder
+- Plaka tanıma / OCR entegrasyonu yakında
+- Sesle doldurma entegrasyonu yakında
+- Barkod entegrasyonu yakında
+
+### Tenant İzolasyonu
+- Tüm yeni sorgular `workshopId` ile kapsamlandı
+- Ödeme ve meta güncellemeleri `requireAuth` + scoped Prisma
+- Internal veriler public çıktıya sızmıyor
+
+### Regresyon Güvenliği
+- Tüm v0.1.3 rotaları çalışıyor
+- Mock SMS, mock storage, public output, PDF, WhatsApp helper değişmedi
+- Hiçbir Docker dosyası eklenmedi
+- Hiçbir yeni zorunlu env değişkeni yok
+
+---
+
 ## v0.1.3 Özellikler
 
 ### Depolama Sağlayıcı Mimarisi
@@ -216,7 +281,7 @@ STORAGE_PROVIDER=mock
 - `/register` — Kayıt
 
 ### Panel (`/app/*`)
-- `/app` — Dashboard
+- `/app` — Genel Bakış (dashboard)
 - `/app/workshop` — İş yeri profili
 - `/app/customers` — Müşteri listesi (arama destekli)
 - `/app/customers/new` — Yeni müşteri
@@ -226,14 +291,28 @@ STORAGE_PROVIDER=mock
 - `/app/intakes` — Kabul listesi (durum filtreli)
 - `/app/intakes/new` — Yeni kabul sihirbazı
 - `/app/intakes/[id]` — Kabul detayı (sekmeli, fotoğraf galerili)
-- `/app/orders` — Servis emri listesi
-- `/app/orders/[id]` — Servis emri detayı
+- `/app/orders` — İş emri listesi (KPI'lar, filtreler, masaüstü tablosu, mobil kartları)
+- `/app/orders/new` — Yeni iş emri (kabul seçici)
+- `/app/orders/[id]` — İş emri detayı (sticky fiyat paneli, durum/ödeme)
+- `/app/quotes` — Teklifler (Yakında)
+- `/app/appointments` — Randevular (Yakında)
+- `/app/reminders` — Bakım Hatırlatmaları (Yakında)
+- `/app/inventory` — Stok / Parçalar (Yakında)
+- `/app/suppliers` — Tedarikçiler (Yakında)
+- `/app/cash` — Kasa (Yakında)
+- `/app/reports` — Raporlar (Yakında)
 
 ### API
 - `POST /api/intakes/photos` — Fotoğraf yükle (FormData, file dahil)
 - `PUT /api/intakes/photos` — Fotoğraf değiştir
 - `DELETE /api/intakes/photos` — Fotoğraf sil
 - `GET /api/photos?id=` — Kimlik doğrulamalı fotoğraf görüntüle
+- `POST /api/orders` — İş emri oluştur
+- `POST /api/orders/[id]/status` — İş emri durum güncelle
+- `POST /api/orders/[id]/payment` — Ödeme durumu güncelle
+- `POST /api/orders/[id]/meta` — Teknisyen / tahmini teslim / iskonto / KDV / notlar
+- `POST /api/orders/items` — Parça / işçilik ekle
+- `DELETE /api/orders/items` — Parça / işçilik sil
 
 ---
 
@@ -243,27 +322,46 @@ STORAGE_PROVIDER=mock
 - **Primary Blue:** #2563EB
 - **Accent Sky:** #38BDF8
 - **Soft Background:** #F8FAFC
-- **Deep Background:** #0F172A
+- **Deep Sidebar (Mavi-Lacivert):** #0F172A
+
+### Bileşen Stili (v0.1.4)
+- **Kenar çubuğu:** koyu lacivert arka plan, beyaz / açık gri metin, aktif link mavi vurgu
+- **Üst çubuk:** beyaz, ince alt border, hafif gölge
+- **Kartlar:** beyaz arka plan, ince gri border (`border-slate-200`), `rounded-xl`, hafif gölge
+- **Plaka rozeti:** monospace, koyu lacivert arka plan, beyaz metin
+- **Durum rozetleri:** her durum için yumuşak renk + sınır (`bg-{renk}-100 text-{renk}-800 border-{renk}-200`)
+- **Butonlar:** yuvarlatılmış köşeler, mavi primary, beyaz kart arka planı
+- **KPI kartları:** renkli accent ikon, büyük rakam
+- **Tablolar (masaüstü):** beyaz, çizgili satırlar, sticky başlık yok
+- **Kartlar (mobil):** kompakt, badge + chevron, dokunma dostu
+- **Gölgeler:** subtle, yoğun değil
+- **Gürültülü gradyan:** yok
+- **Turuncu/amber ana stil olarak:** kullanılmıyor (uyarı/durum rozetleri dışında)
 
 ---
 
-## Sınırlamalar (v0.1.3)
+## Sınırlamalar (v0.1.4)
 
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
-- Gerçek OCR entegrasyonu yok
-- WhatsApp Business API yok
+- Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
+- Gerçek sesle doldurma / barkod tarama yok (placeholder)
+- WhatsApp Business API yok (manuel paylaşım linki)
 - @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
 - S3 depolama sağlayıcısı henüz uygulanmadı (placeholder)
 - HEIC dosya desteği yok (açık hata mesajı ile reddedilir)
-- İstemci tarafı görüntü sıkıştırma henüz uygulanmadı (dosya boyutu sınırı uygulanır)
-- Ödeme/fatura modülü yok
+- İstemci tarafı görüntü sıkıştırma henüz uygulanmadı
+- Ödeme modülü sadece etiket (gerçek ödeme entegrasyonu yok)
+- E-fatura / e-arşiv / fatura modülü yok
+- Çok şubeli kurumsal modül yok
+- Stok, teklif, randevu, kasa, raporlar modülleri “Yakında” placeholder
 - Docker konteyner desteği yok (lokal bun/npm)
 
 ---
 
 ## Sürümler
 
-- [v0.1.3](docs/releases/v0.1.3.md) — Image Storage & Intake Media Foundation (güncel)
+- [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment (güncel)
+- [v0.1.3](docs/releases/v0.1.3.md) — Image Storage & Intake Media Foundation
 - [v0.1.2](docs/releases/v0.1.2.md) — Public Output & PDF Foundation
 - [v0.1.1](docs/releases/v0.1.1.md) — Hardening & UX Polish
 - [v0.1.0](docs/releases/v0.1.0.md) — MVP
@@ -271,6 +369,7 @@ STORAGE_PROVIDER=mock
 
 ## QA
 
+- [v0.1.4 Manuel QA](docs/QA/v0.1.4-manual-checklist.md)
 - [v0.1.3 Manuel QA](docs/QA/v0.1.3-manual-checklist.md)
 - [v0.1.2 Manuel QA](docs/QA/v0.1.2-manual-checklist.md)
 - [v0.1.1 Manuel QA](docs/QA/v0.1.1-manual-checklist.md)

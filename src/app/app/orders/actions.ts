@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { serviceOrderItemSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
+import { generateWorkOrderNo } from "@/lib/work-order-number"
+import { z } from "zod/v4"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireAuth } = await import("@/lib/auth")
@@ -23,6 +25,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
     data: {
       workshopId: user.workshopId,
       intakeFormId,
+      workOrderNo: generateWorkOrderNo(),
       status: "draft",
     },
   })
@@ -34,6 +37,11 @@ export async function createServiceOrderAction(intakeFormId: string) {
   return { success: true, id: order.id }
 }
 
+const orderItemCreateSchema = serviceOrderItemSchema.extend({
+  sku: z.string().optional(),
+  unit: z.string().optional(),
+})
+
 export async function addOrderItemAction(formData: FormData) {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
@@ -42,15 +50,19 @@ export async function addOrderItemAction(formData: FormData) {
     serviceOrderId: formData.get("serviceOrderId") as string,
     type: formData.get("type") as string,
     name: (formData.get("name") as string || "").trim(),
+    sku: (formData.get("sku") as string) || "",
+    unit: (formData.get("unit") as string) || "",
     quantity: formData.get("quantity") as string,
     unitPrice: formData.get("unitPrice") as string,
     totalPrice: formData.get("totalPrice") as string,
     note: formData.get("note") as string,
   }
 
-  const parsed = serviceOrderItemSchema.safeParse({
+  const parsed = orderItemCreateSchema.safeParse({
     type: raw.type,
     name: raw.name,
+    sku: raw.sku || undefined,
+    unit: raw.unit || undefined,
     quantity: raw.quantity ? Number(raw.quantity) : 1,
     unitPrice: raw.unitPrice ? Number(raw.unitPrice) : undefined,
     totalPrice: raw.totalPrice ? Number(raw.totalPrice) : undefined,
@@ -71,6 +83,8 @@ export async function addOrderItemAction(formData: FormData) {
       serviceOrderId: raw.serviceOrderId,
       type: parsed.data.type,
       name: parsed.data.name,
+      sku: parsed.data.sku || null,
+      unit: parsed.data.unit || null,
       quantity: parsed.data.quantity,
       unitPrice: parsed.data.unitPrice || null,
       totalPrice: parsed.data.totalPrice || null,
@@ -123,6 +137,85 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 
   revalidatePath(`/app/orders/${orderId}`)
   revalidatePath("/app/orders")
+  return { success: true }
+}
+
+export async function updateOrderPaymentStatusAction(orderId: string, paymentStatus: string) {
+  const { requireAuth } = await import("@/lib/auth")
+  const user = await requireAuth()
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+
+  const updateResult = await prisma.serviceOrder.updateMany({
+    where: { id: orderId, workshopId: user.workshopId },
+    data: { paymentStatus: paymentStatus as import("@prisma/client").PaymentStatus },
+  })
+  if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
+
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`)
+
+  revalidatePath(`/app/orders/${orderId}`)
+  revalidatePath("/app/orders")
+  return { success: true }
+}
+
+const orderMetaSchema = z.object({
+  technicianName: z.string().max(120).optional().or(z.literal("")),
+  estimatedDeliveryAt: z.string().optional().or(z.literal("")),
+  discountAmount: z.coerce.number().min(0).optional(),
+  taxRate: z.coerce.number().min(0).max(100).optional(),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+})
+
+export async function updateOrderMetaAction(orderId: string, formData: FormData) {
+  const { requireAuth } = await import("@/lib/auth")
+  const user = await requireAuth()
+
+  const raw = {
+    technicianName: formData.get("technicianName") as string,
+    estimatedDeliveryAt: formData.get("estimatedDeliveryAt") as string,
+    discountAmount: formData.get("discountAmount") as string,
+    taxRate: formData.get("taxRate") as string,
+    notes: formData.get("notes") as string,
+  }
+
+  const parsed = orderMetaSchema.safeParse({
+    technicianName: raw.technicianName || "",
+    estimatedDeliveryAt: raw.estimatedDeliveryAt || "",
+    discountAmount: raw.discountAmount ? Number(raw.discountAmount) : undefined,
+    taxRate: raw.taxRate ? Number(raw.taxRate) : undefined,
+    notes: raw.notes || "",
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+
+  const estimatedDeliveryAt = parsed.data.estimatedDeliveryAt
+    ? new Date(parsed.data.estimatedDeliveryAt)
+    : null
+
+  await prisma.serviceOrder.updateMany({
+    where: { id: orderId, workshopId: user.workshopId },
+    data: {
+      technicianName: parsed.data.technicianName || null,
+      estimatedDeliveryAt,
+      discountAmount: parsed.data.discountAmount ?? null,
+      taxRate: parsed.data.taxRate ?? null,
+      notes: parsed.data.notes || null,
+    },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated")
+
+  revalidatePath(`/app/orders/${orderId}`)
   return { success: true }
 }
 

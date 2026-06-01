@@ -13,16 +13,21 @@ export default async function NewVehiclePage() {
   })
 
   return (
-    <AppShell workshopName={workshop?.name}>
-      <div className="space-y-6">
+    <AppShell workshopName={workshop?.name} pageTitle="Yeni Araç">
+      <div className="space-y-5 sm:space-y-6">
+        <div className="flex items-center text-sm text-slate-500">
+          <Link href="/app/vehicles" className="hover:text-slate-700">Araçlar</Link>
+          <span className="mx-2">/</span>
+          <span className="text-slate-700 font-medium">Yeni</span>
+        </div>
         <div>
-          <h2 className="text-2xl font-bold">Yeni Araç</h2>
-          <p className="text-muted-foreground">Yeni araç bilgilerini girin</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Yeni Araç</h2>
+          <p className="text-sm text-slate-500 mt-0.5">Yeni araç bilgilerini girin</p>
         </div>
         {customers.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-12 text-slate-500">
             <p>Önce bir müşteri oluşturmalısınız</p>
-            <Link href="/app/customers/new" className="text-primary hover:underline text-sm mt-1 block">
+            <Link href="/app/customers/new" className="text-blue-600 hover:text-blue-700 text-sm mt-1 block">
               Müşteri oluştur
             </Link>
           </div>

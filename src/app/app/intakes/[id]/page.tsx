@@ -37,7 +37,7 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
   if (!intake) notFound()
 
   return (
-    <AppShell workshopName={workshop?.name}>
+    <AppShell workshopName={workshop?.name} pageTitle={`Araç Kabulü • ${intake.vehicle.plate}`}>
       <IntakeDetail intake={intake} />
     </AppShell>
   )
