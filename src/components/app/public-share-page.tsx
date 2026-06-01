@@ -1,16 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { Printer, Car, Phone, Mail, CheckCircle2, MapPin, Calendar, Shield, Star } from "lucide-react"
-import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
-import { formatTRY } from "@/lib/format"
+import Link from "next/link"
+import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, Star, Share2, FileText, FileDown } from "lucide-react"
+import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
+import { formatTRY, formatMileage } from "@/lib/format"
+import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
+import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/totals"
 
 type ShareLink = {
-  id: string
-  token: string
   createdAt: Date
+  token: string
   workshop: {
-    id: string
     name: string
     phone: string
     city: string
@@ -18,52 +20,74 @@ type ShareLink = {
     logoUrl: string | null
   }
   intakeForm: {
-    id: string
     status: string
     mileageAtIntake: number | null
     customerComplaint: string
-    internalNote: string | null
     approvedAt: Date | null
     createdAt: Date
-    customer: { firstName: string; lastName: string; phone: string; email: string | null }
+    customer: { firstName: string; lastName: string; phone: string }
     vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
-    photos: { id: string; type: string; label: string; fileUrl: string | null }[]
-    damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
-    approvals: { id: string; status: string; approvedAt: Date | null }[]
-    order: { id: string; status: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
+    photos: { type: string; label: string; fileUrl: string | null }[]
+    damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
+    approvals: { status: string; approvedAt: Date | null }[]
+    order: { status: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
   }
 }
 
 export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
-  const { workshop, intakeForm } = shareLink
+  const { workshop, intakeForm, token } = shareLink
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
+  const [copied, setCopied] = useState(false)
+
+  const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${token}` : `/s/${token}`
+
+  const orderItems = intakeForm.order?.items ?? []
+  const summary = formatOrderSummary(orderItems)
+  const parts = orderItems.filter((i) => i.type === "part")
+  const labor = orderItems.filter((i) => i.type === "labor")
 
   function handlePrint() {
     window.print()
   }
 
+  function handleWhatsAppShare() {
+    const text = generateWhatsAppShareText({
+      publicLink,
+      workshopName: workshop.name,
+      totalAmount: intakeForm.order ? orderItems.reduce((sum, item) => {
+        if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
+        if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+        return sum
+      }, 0) : null,
+    })
+    window.open(getWhatsAppShareUrl(text), "_blank")
+  }
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(publicLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] print:bg-white print:text-black">
-      {/* Header */}
-      <header className="bg-navy text-white p-5 print:hidden">
+      {/* Screen header */}
+      <header className="bg-[#0B1F3A] text-white p-5 print:hidden">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {workshop.logoUrl && (
-                <Image src={workshop.logoUrl} alt={workshop.name} width={40} height={40} className="rounded-lg object-cover" />
+                <Image src={workshop.logoUrl} alt={workshop.name} width={40} height={40} className="rounded-lg object-cover" unoptimized />
               )}
               <div>
                 <h1 className="font-bold text-lg">{workshop.name}</h1>
-                <p className="text-sm text-white/70">Araç Kabul Formu</p>
+                <p className="text-sm text-white/70">Araç Kabul ve İşlem Özeti</p>
               </div>
             </div>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
-            >
-              <Printer className="size-4" />
-              <span className="hidden sm:inline">Yazdır / PDF</span>
-            </button>
           </div>
         </div>
       </header>
@@ -74,11 +98,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{workshop.name}</h1>
-              <p className="text-sm text-gray-500">Araç Kabul Formu</p>
+              <p className="text-sm text-gray-500">Araç Kabul ve İşlem Özeti</p>
             </div>
             <div className="text-right text-sm text-gray-500">
-              <p>{new Date(shareLink.createdAt).toLocaleDateString("tr-TR")}</p>
-              <p className="text-xs italic">BakimX tarafından oluşturuldu</p>
+              <p>{new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</p>
+              <p className="text-xs italic">BakimX ile oluşturuldu</p>
             </div>
           </div>
         </div>
@@ -97,9 +121,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <span className="text-xs px-2 py-1 rounded-full border border-gray-400 font-medium">
             Durum: {statusInfo?.label || intakeForm.status}
           </span>
+          <span className="text-xs text-gray-500">
+            {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}
+          </span>
         </div>
 
-        {/* Customer + Vehicle Summary */}
+        {/* Customer & Vehicle */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
           <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Müşteri & Araç</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -109,12 +136,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <Phone className="size-3" />
                 <span>{intakeForm.customer.phone}</span>
               </div>
-              {intakeForm.customer.email && (
-                <div className="flex items-center gap-1.5 text-gray-500">
-                  <Mail className="size-3" />
-                  <span>{intakeForm.customer.email}</span>
-                </div>
-              )}
             </div>
             <div>
               <div className="flex items-center gap-1.5 font-bold text-base">
@@ -127,8 +148,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               </p>
               {intakeForm.mileageAtIntake != null && (
                 <p className="text-gray-500">
-                  Kilometre: {intakeForm.mileageAtIntake.toLocaleString("tr-TR")} km
+                  Kilometre: {formatMileage(intakeForm.mileageAtIntake)}
                 </p>
+              )}
+              {intakeForm.vehicle.vin && (
+                <p className="text-gray-400 text-xs font-mono mt-0.5">VIN: {intakeForm.vehicle.vin}</p>
               )}
             </div>
           </div>
@@ -143,9 +167,9 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               <p className="mt-1 text-gray-600 whitespace-pre-wrap">{intakeForm.customerComplaint}</p>
             </div>
             <div className="flex flex-wrap gap-x-4 text-xs text-gray-400 pt-2 border-t border-gray-100">
-              <span>Kayıt: {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</span>
+              <span className="flex items-center gap-1"><Calendar className="size-3" /> Kayıt: {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</span>
               {intakeForm.approvedAt && (
-                <span>Onay: {new Date(intakeForm.approvedAt).toLocaleDateString("tr-TR")}</span>
+                <span className="flex items-center gap-1"><CheckCircle2 className="size-3" /> Onay: {new Date(intakeForm.approvedAt).toLocaleDateString("tr-TR")}</span>
               )}
             </div>
           </div>
@@ -158,10 +182,10 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               Hasar Kayıtları ({intakeForm.damageMarks.length})
             </h3>
             <div className="space-y-2">
-              {intakeForm.damageMarks.map((mark) => {
+              {intakeForm.damageMarks.map((mark, idx) => {
                 const severityInfo = DAMAGE_SEVERITY[mark.severity as keyof typeof DAMAGE_SEVERITY]
                 return (
-                  <div key={mark.id} className="flex items-start gap-2.5 text-sm py-1.5 border-b border-gray-50 last:border-0">
+                  <div key={`dm-${idx}-${mark.zone}`} className="flex items-start gap-2.5 text-sm py-1.5 border-b border-gray-50 last:border-0">
                     <span
                       className="w-3 h-3 rounded-full shrink-0 mt-0.5 print:border print:border-black"
                       style={{ backgroundColor: severityInfo?.color || "#9CA3AF" }}
@@ -188,13 +212,23 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               Fotoğraf Kontrol Listesi ({intakeForm.photos.length})
             </h3>
             <div className="space-y-1.5">
-              {intakeForm.photos.map((photo) => (
-                <div key={photo.id} className="text-sm flex items-center gap-2">
+              {intakeForm.photos.map((photo, idx) => (
+                <div key={`${photo.type}-${idx}`} className="text-sm flex items-center gap-2">
                   <CheckCircle2 className="size-3.5 text-green-500 print:text-black shrink-0" />
-                  <span>{photo.label}</span>
+                  <span>{PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}</span>
+                  {photo.fileUrl ? (
+                    <span className="text-xs text-green-600 print:text-gray-600">(Fotoğraf mevcut)</span>
+                  ) : (
+                    <span className="text-xs text-gray-400">(Fotoğraf kaydedildi)</span>
+                  )}
                 </div>
               ))}
             </div>
+            {intakeForm.photos.some((p) => !p.fileUrl) && (
+              <p className="text-xs text-gray-400 mt-2 italic">
+                Fotoğraf önizlemeleri depolama entegrasyonu sonrası gösterilecektir.
+              </p>
+            )}
           </div>
         )}
 
@@ -225,42 +259,78 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         )}
 
         {/* Service Order */}
-        {intakeForm.order && (
+        {intakeForm.order && orderItems.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
             <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Servis Emri</h3>
-            {intakeForm.order.items.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Henüz kalem eklenmedi</p>
-            ) : (
-              <div className="space-y-2">
-                {intakeForm.order.items.map((item) => {
-                  const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
-                  return (
-                    <div key={item.id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 last:border-0">
-                      <div>
-                        <span className="font-medium">{item.name}</span>
-                        <span className="text-gray-400 ml-2">×{item.quantity}</span>
-                        <span className={`text-xs ml-1.5 ${item.type === "part" ? "text-blue-600" : "text-purple-600"}`}>
-                          ({item.type === "part" ? "Parça" : "İşçilik"})
+            <div className="space-y-3">
+              {/* Parts */}
+              {parts.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1.5">Parçalar ({summary.partsCount})</p>
+                  <div className="space-y-1.5">
+                    {parts.map((item, idx) => (
+                      <div key={`part-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-gray-50 last:border-0">
+                        <div>
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-gray-400 ml-1.5">×{item.quantity}</span>
+                          {item.unitPrice != null && item.unitPrice > 0 && (
+                            <span className="text-gray-400 text-xs ml-1">({formatTRY(item.unitPrice)}/adet)</span>
+                          )}
+                        </div>
+                        <span className={`font-medium ${calculateLineTotal(item) == null ? "text-gray-400 italic text-xs" : ""}`}>
+                          {formatLineTotal(item)}
                         </span>
                       </div>
-                      <span className="font-medium">{formatTRY(lineTotal)}</span>
-                    </div>
-                  )
-                })}
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200 font-bold">
-                  <span>Toplam</span>
-                  <span className="text-base">
-                    {formatTRY(
-                      intakeForm.order.items.reduce((sum, item) => {
-                        if (item.totalPrice) return sum + item.totalPrice
-                        if (item.unitPrice) return sum + item.unitPrice * item.quantity
-                        return sum
-                      }, 0)
-                    )}
-                  </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Labor */}
+              {labor.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-purple-700 uppercase tracking-wide mb-1.5">İşçilik ({summary.laborCount})</p>
+                  <div className="space-y-1.5">
+                    {labor.map((item, idx) => (
+                      <div key={`labor-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-gray-50 last:border-0">
+                        <div>
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-gray-400 ml-1.5">×{item.quantity}</span>
+                          {item.unitPrice != null && item.unitPrice > 0 && (
+                            <span className="text-gray-400 text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
+                          )}
+                        </div>
+                        <span className={`font-medium ${calculateLineTotal(item) == null ? "text-gray-400 italic text-xs" : ""}`}>
+                          {formatLineTotal(item)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Totals */}
+              {summary.hasAnyPrice && (
+                <div className="border-t border-gray-200 pt-2 space-y-1 text-sm">
+                  {parts.length > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>Parça Toplamı</span>
+                      <span>{summary.partsTotal}</span>
+                    </div>
+                  )}
+                  {labor.length > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>İşçilik Toplamı</span>
+                      <span>{summary.laborTotal}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-base pt-1 border-t border-gray-200">
+                    <span>Genel Toplam</span>
+                    <span>{summary.grandTotal}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -269,7 +339,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">İş Yeri Bilgileri</h3>
           <div className="text-sm space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold">
-              <Star className="size-3.5 text-navy" />
+              <Star className="size-3.5 text-[#0B1F3A]" />
               <span>{workshop.name}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-500">
@@ -283,17 +353,47 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="print:hidden space-y-4 pt-2 pb-8">
+        {/* Legal Disclaimer */}
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 print:border print:border-gray-200 text-center">
+          <FileText className="size-4 text-gray-400 mx-auto mb-1.5 print:hidden" />
+          <p className="text-xs text-gray-500">
+            Bu çıktı, servis kabul ve işlem özeti amacıyla oluşturulmuştur.
+          </p>
+        </div>
+
+        {/* Actions (screen only) */}
+        <div className="print:hidden space-y-3 pt-2 pb-8">
           <button
             onClick={handlePrint}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-navy text-white rounded-xl font-medium hover:bg-navy/90 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-[#0B1F3A] text-white rounded-xl font-medium hover:bg-[#0B1F3A]/90 transition-colors"
           >
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </button>
+          <Link
+            href={`/s/${token}/pdf`}
+            target="_blank"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#2563EB]/90 transition-colors"
+          >
+            <FileDown className="size-5" />
+            Yazdırılabilir Sayfa
+          </Link>
+          <button
+            onClick={handleWhatsAppShare}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white rounded-xl font-medium hover:bg-[#25D366]/90 transition-colors"
+          >
+            <Share2 className="size-5" />
+            WhatsApp ile Paylaş
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 bg-white text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+          >
+            {copied ? <CheckCircle2 className="size-5 text-green-500" /> : <Share2 className="size-5" />}
+            {copied ? "Kopyalandı!" : "Linki Kopyala"}
+          </button>
           <p className="text-center text-xs text-gray-400 px-4">
-            Bu sayfanın çıktısını alabilir veya tarayıcınızın &quot;PDF olarak kaydet&quot; seçeneği ile PDF dosyası oluşturabilirsiniz. WhatsApp ile paylaşım için bu linki kullanabilirsiniz.
+            Bu sayfanın çıktısını alabilir, yazdırılabilir sayfayı açarak PDF olarak kaydedebilir veya WhatsApp ile paylaşabilirsiniz.
           </p>
         </div>
 
@@ -306,3 +406,4 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
     </div>
   )
 }
+

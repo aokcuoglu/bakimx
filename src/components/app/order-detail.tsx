@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, Plus, Trash2, Car, Wrench } from "lucide-react"
 import { ORDER_STATUS } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
+import { formatOrderSummary, calculateLineTotal } from "@/lib/totals"
 
 type OrderDetailProps = {
   id: string
@@ -100,27 +101,7 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
     }
   }
 
-  const total = order.items.reduce((sum, item) => {
-    if (item.totalPrice) return sum + item.totalPrice
-    if (item.unitPrice) return sum + item.unitPrice * item.quantity
-    return sum
-  }, 0)
-
-  const partsTotal = order.items
-    .filter((i) => i.type === "part")
-    .reduce((sum, item) => {
-      if (item.totalPrice) return sum + item.totalPrice
-      if (item.unitPrice) return sum + item.unitPrice * item.quantity
-      return sum
-    }, 0)
-
-  const laborTotal = order.items
-    .filter((i) => i.type === "labor")
-    .reduce((sum, item) => {
-      if (item.totalPrice) return sum + item.totalPrice
-      if (item.unitPrice) return sum + item.unitPrice * item.quantity
-      return sum
-    }, 0)
+  const summary = formatOrderSummary(order.items)
 
   return (
     <div className="space-y-6">
@@ -187,9 +168,8 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
                   {order.items
                     .filter((i) => i.type === "part")
                     .map((item) => {
-                      const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
                       return (
-                        <ItemRow key={item.id} item={item} lineTotal={lineTotal} onRemove={handleRemoveItem} />
+                        <ItemRow key={item.id} item={item} lineTotal={calculateLineTotal(item)} onRemove={handleRemoveItem} />
                       )
                     })}
                 </div>
@@ -202,9 +182,8 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
                   {order.items
                     .filter((i) => i.type === "labor")
                     .map((item) => {
-                      const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
                       return (
-                        <ItemRow key={item.id} item={item} lineTotal={lineTotal} onRemove={handleRemoveItem} />
+                        <ItemRow key={item.id} item={item} lineTotal={calculateLineTotal(item)} onRemove={handleRemoveItem} />
                       )
                     })}
                 </div>
@@ -212,22 +191,22 @@ export function OrderDetail({ order }: { order: OrderDetailProps }) {
 
               {/* Summary */}
               <div className="border-t pt-3 space-y-1.5 text-sm">
-                {partsTotal > 0 && (
+                {summary.partsCount > 0 && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>Parça Toplamı</span>
-                    <span>{formatTRY(partsTotal)}</span>
+                    <span>{summary.partsTotal}</span>
                   </div>
                 )}
-                {laborTotal > 0 && (
+                {summary.laborCount > 0 && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>İşçilik Toplamı</span>
-                    <span>{formatTRY(laborTotal)}</span>
+                    <span>{summary.laborTotal}</span>
                   </div>
                 )}
-                {total > 0 && (
+                {summary.hasAnyPrice && (
                   <div className="flex justify-between pt-2 border-t font-bold text-base">
                     <span>Genel Toplam</span>
-                    <span>{formatTRY(total)}</span>
+                    <span>{summary.grandTotal}</span>
                   </div>
                 )}
               </div>
@@ -291,7 +270,7 @@ function ItemRow({
   onRemove,
 }: {
   item: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }
-  lineTotal: number
+  lineTotal: number | null
   onRemove: (id: string) => void
 }) {
   return (
@@ -309,7 +288,9 @@ function ItemRow({
         </div>
       </div>
       <div className="text-right shrink-0 ml-3">
-        <span className="text-sm font-medium">{formatTRY(lineTotal)}</span>
+        <span className={`text-sm font-medium ${lineTotal == null ? "text-gray-400 italic text-xs" : ""}`}>
+          {lineTotal != null ? formatTRY(lineTotal) : "Fiyat girilmedi"}
+        </span>
         <button onClick={() => onRemove(item.id)} className="block text-destructive text-xs hover:underline mt-0.5 ml-auto">
           <Trash2 className="size-3" />
         </button>

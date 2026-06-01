@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.1.1 — MVP Hardening & UX Polish
+**Versiyon:** v0.1.2 — Public Output & PDF Foundation
 
 ## Hızlı Başlangıç
 
@@ -116,9 +116,38 @@ APP_URL="http://localhost:3000"
 - Mock SMS onay (demo modu)
 
 ### Müşteri Arama
-- Ad, soyad, telefon ile arama
+- Ad, soyad, telefon ile arama (sunucu taraflı filtreleme)
 - Araç plaka, marka, model, müşteri adı ile arama
 - `workshopId` kapsamında güvenli
+- Sonuç bulunamadığında boş durum gösterimi
+- Mobil uyumlu arama girdisi
+
+### Müşteri Çıktı Sayfası (`/s/[token]`)
+- Token tabanlı güvenli erişim
+- BakimX markalı profesyonel tasarım (navy/blue kimlik)
+- Geçersiz/token süresi dolmuş sayfalar için markalı hata sayfası
+- Yazdır / PDF olarak kaydet (tarayıcı `window.print()`)
+- Yazdırılabilir sayfa `/s/[token]/pdf` endpoint
+- WhatsApp ile paylaşım butonu
+- Link kopyalama butonu
+- Print-friendly CSS
+- Servis emri parça/işçilik ayrımlı toplamları
+- Yasal sorumluluk reddi bildimi
+- İç ID'ler gizlenmiş, müşteri verileri güvenli
+
+### WhatsApp Paylaşım
+- `lib/share/whatsapp.ts` ile Türkçe paylaşım metni üretimi
+- wa.me URL ile manuel paylaşım linki
+- Toplam tutar opsiyonel ekleme
+- WhatsApp Business API entegrasyonu yok (sadece link üretimi)
+
+### Servis Emri Toplamları
+- Parça/işçilik ayrımlı detaylı toplamlar
+- Merkezi `lib/totals.ts` yardımcı modülü
+- Eksik fiyatlar için "Fiyat girilmedi" göstergesi
+- TRY formatlaması (Intl.NumberFormat)
+- Null/undefined fiyat güvenli hesaplama
+- Kabul detayı, servis emri ve çıktı sayfasında tutarlı gösterim
 
 ### Hasar İşaretleme
 - SVG araç gövdesi üzerinde tıklanabilir 20 bölge
@@ -160,8 +189,11 @@ APP_URL="http://localhost:3000"
 ### Storage Altyapısı
 - `lib/storage/` temiz soyutlama katmanı
 - Mock depolama sağlayıcısı (lokal geliştirme için)
-- Supabase Storage / S3 entegrasyonu için TODO
+- Supabase Storage provider placeholder (`supabase-storage-provider.ts`)
+- S3-compatible provider placeholder (`s3-storage-provider.ts`)
+- `STORAGE_PROVIDER` env var desteği (factory)
 - Storage env vars olmadan build çalışır
+- Eksik fotoğraf URL'leri için yer tutacı mesajı
 
 ### Audit Log
 - Müşteri/Araç/Kabul oluşturma
@@ -179,6 +211,7 @@ APP_URL="http://localhost:3000"
 - `/privacy` — Gizlilik politikası
 - `/terms` — Kullanım koşulları
 - `/s/[token]` — Müşteri çıktı sayfası
+- `/s/[token]/pdf` — Yazdırılabilir çıktı sayfası
 
 ### Auth
 - `/login` — Giriş
@@ -214,8 +247,15 @@ APP_URL="http://localhost:3000"
 
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR entegrasyonu yok
-- Gerçek dosya yükleme/storage yok (kamera UI mevcut, Supabase/S3 gelecek sürümlerde)
-- PDF oluşturma yalnızca tarayıcı print ile (sunucu tarafı PDF gelecek)
+- Gerçek dosya yükleme/storage yok (kamera UI mevcut, Supabase/S3 placeholder hazır)
+- @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
+### PDF / Print Foundation
+- `/s/[token]/pdf` — yazdırılabilir HTML endpoint
+- `@react-pdf/renderer` bağımlılığı eklendi (gelecek sunucu PDF)
+- `components/pdf/public-output-document.tsx` — React PDF bileşeni (temel)
+- Tarayıcı print butonu ile PDF kaydetme
+- Yasal sorumluluk reddi PDF çıktısında dahil
+- İç ID'ler PDF çıktısında gizlenmiş
 - Ödeme/fatura modülü yok
 - WhatsApp Business API yok
 - Docker konteyner desteği yok (lokal bun/npm)
@@ -225,11 +265,13 @@ APP_URL="http://localhost:3000"
 
 ## Sürümler
 
+- [v0.1.2](docs/releases/v0.1.2.md) — Public Output & PDF Foundation (güncel)
+- [v0.1.1](docs/releases/v0.1.1.md) — Hardening & UX Polish
 - [v0.1.0](docs/releases/v0.1.0.md) — MVP
-- [v0.1.1](docs/releases/v0.1.1.md) — Hardening & UX Polish (güncel)
 - [v0.0.1](docs/releases/v0.0.1.md) — Başlangıç
 
 ## QA
 
+- [v0.1.2 Manuel QA](docs/QA/v0.1.2-manual-checklist.md)
 - [v0.1.1 Manuel QA](docs/QA/v0.1.1-manual-checklist.md)
 - [v0.1.1 Tenant İzolasyonu QA](docs/QA/v0.1.1-tenant-isolation-checklist.md)

@@ -22,15 +22,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
+    if (!result?.success) {
+      return NextResponse.json({ error: "Onay talebi oluşturulamadı" }, { status: 400 })
+    }
+
     const response: Record<string, unknown> = {
       success: true,
       approvalId: result.approvalId,
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    if (result.otpCode) {
       response.otpCode = result.otpCode
-    } else {
-      response.message = "Onay kodu demo ortamında gösterilir."
     }
 
     return NextResponse.json(response)

@@ -42,7 +42,11 @@ export async function requestApprovalAction(intakeFormId: string) {
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "approval_requested")
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
-  return { success: true, otpCode, approvalId: approval.id }
+  return {
+    success: true as const,
+    otpCode: process.env.NODE_ENV !== "production" ? otpCode : undefined,
+    approvalId: approval.id,
+  }
 }
 
 export async function verifyOtpAction(intakeFormId: string, otpCode: string) {

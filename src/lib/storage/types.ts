@@ -4,10 +4,14 @@
  * TODO: When Supabase Storage or S3 is configured:
  *   - Implement SupabaseStorageProvider in lib/storage/supabase-storage-provider.ts
  *   - Implement S3StorageProvider in lib/storage/s3-storage-provider.ts
- *   - Swap MockStorageProvider for real provider in lib/storage/index.ts
+ *   - Swap MockStorageProvider for real provider in lib/storage/storage-provider.ts
  *
- * Current v0.1.1 uses MockStorageProvider for safe local development.
+ * Current v0.1.2 uses MockStorageProvider for safe local development.
  * No storage env vars are required to build or run the app.
+ *
+ * Public output page handles missing photo fileUrl gracefully.
+ * Photo previews show "Fotoğraf önizlemesi depolama entegrasyonu sonrası
+ * gösterilecektir." when appropriate.
  */
 
 export interface StorageProvider {
@@ -27,4 +31,9 @@ export interface StorageProvider {
    * For mock provider, returns the same URL.
    */
   getSignedUrl(key: string, expiresIn?: number): Promise<string>
+}
+
+export interface StorageUploadResult {
+  url: string
+  key: string
 }

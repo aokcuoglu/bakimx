@@ -26,6 +26,7 @@ import {
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import { formatTRY } from "@/lib/format"
+import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 
 type IntakeDetailProps = {
   id: string
@@ -543,6 +544,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                 </button>
                 {photoPreview && (
                   <div className="relative mt-2 rounded-lg overflow-hidden border bg-black">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photoPreview}
                       alt="Seçilen fotoğraf önizlemesi"
@@ -806,8 +808,35 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                         {typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`}
                       </a>
                     </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => {
+                          const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`
+                          const orderItems = intake.order?.items ?? []
+                          const totalAmount = orderItems.reduce((sum, item) => {
+                            if (item.totalPrice) return sum + item.totalPrice
+                            if (item.unitPrice) return sum + item.unitPrice * item.quantity
+                            return sum
+                          }, 0)
+                          const text = generateWhatsAppShareText({ publicLink, totalAmount: totalAmount > 0 ? totalAmount : null })
+                          window.open(getWhatsAppShareUrl(text), "_blank")
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
+                      >
+                          WhatsApp ile Paylaş
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`
+                            try { await navigator.clipboard.writeText(publicLink) } catch {}
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border bg-background text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                        >
+                          Linki Kopyala
+                        </button>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Bu linki müşterinizle WhatsApp veya SMS ile paylaşabilirsiniz. Müşteri bu sayfadan araç kabul detaylarını görüntüleyebilir.
+                      Bu linki müşterinizle paylaşabilirsiniz. Müşteri bu sayfadan araç kabul detaylarını görüntüleyebilir.
                     </p>
                   </div>
                 )}
@@ -848,7 +877,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   ) : (
                     <div className="space-y-2">
                       {intake.order.items.map((item) => {
-                        const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || 0
+                        const lineTotal = item.totalPrice || (item.unitPrice && item.unitPrice * item.quantity) || null
                         return (
                           <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                             <div className="min-w-0 flex-1">
@@ -864,7 +893,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-3">
-                              <span className="text-sm font-medium">{formatTRY(lineTotal)}</span>
+                              <span className={`text-sm font-medium ${lineTotal == null ? "text-gray-400 italic text-xs" : ""}`}>
+                                {lineTotal != null ? formatTRY(lineTotal) : "Fiyat girilmedi"}
+                              </span>
                               <button
                                 onClick={async () => {
                                   await fetch(`/api/orders/items?id=${item.id}&orderId=${intake.order!.id}`, { method: "DELETE" })
@@ -1070,6 +1101,7 @@ function PhotoChecklistItem({
           {preview && (
             <div className="px-2.5 pb-2.5">
               <div className="relative rounded-lg overflow-hidden border bg-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={preview}
                   alt={`${label} önizlemesi`}
