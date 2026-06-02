@@ -21,7 +21,11 @@ export async function requestApprovalAction(intakeFormId: string) {
 
   const otpCode = generateOtp()
 
-  const approvalTextVersion = `Araç Kabul Formu\n\nMüşteri: ${intake.customer.firstName} ${intake.customer.lastName}\nPlaka: ${intake.vehicle.plate}\nŞikayet: ${intake.customerComplaint}\n\nOnaylıyorum.`
+  const customerName =
+    intake.customer.type === "corporate"
+      ? intake.customer.companyName || "Kurumsal Müşteri"
+      : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"
+  const approvalTextVersion = `Araç Kabul Formu\n\nMüşteri: ${customerName}\nPlaka: ${intake.vehicle.plate}\nŞikayet: ${intake.customerComplaint}\n\nOnaylıyorum.`
 
   const approval = await prisma.approvalRequest.create({
     data: {

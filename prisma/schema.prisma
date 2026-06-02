@@ -45,20 +45,70 @@ model User {
 }
 
 model Customer {
-  id         String   @id @default(cuid())
-  workshopId String
-  workshop   Workshop @relation(fields: [workshopId], references: [id])
-  firstName  String
-  lastName   String
-  phone      String
-  email      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  workshopId    String
+  workshop      Workshop @relation(fields: [workshopId], references: [id])
+  type          CustomerType @default(individual)
+  firstName     String?
+  lastName      String?
+  fullName      String?
+  companyName   String?
+  contactName   String?
+  phone         String
+  phone2        String?
+  email         String?
+  city          String?
+  district      String?
+  address       String?
+  identityNumber String?
+  taxNumber     String?
+  taxOffice     String?
+  notes         String?
+  tag           CustomerTag? @default(standard)
+  source        CustomerSource?
+  priceGroup    CustomerPriceGroup? @default(standard)
+  discountRate  Float?     @default(0)
+  riskNote      String?
+  whatsappConsent Boolean  @default(false)
+  smsConsent      Boolean  @default(false)
+  emailConsent    Boolean  @default(false)
+  kvkkApprovedAt  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   vehicles Vehicle[]
   intakes  VehicleIntakeForm[]
 
   @@index([workshopId])
+  @@index([workshopId, type])
+  @@index([workshopId, phone])
+}
+
+enum CustomerType {
+  individual
+  corporate
+}
+
+enum CustomerTag {
+  standard
+  vip
+  risky
+  fleet
+}
+
+enum CustomerSource {
+  referral
+  google
+  social_media
+  walk_in
+  existing
+  other
+}
+
+enum CustomerPriceGroup {
+  standard
+  discounted
+  fleet
 }
 
 model Vehicle {

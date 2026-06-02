@@ -18,7 +18,14 @@ type OrderRow = {
   itemsCount: number
   hasPrice: boolean
   vehicle: { plate: string; brand: string; model: string }
-  customer: { firstName: string; lastName: string; phone: string }
+  customer: {
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    type: string
+    phone: string
+  }
 }
 
 type KPIs = {
@@ -134,7 +141,9 @@ export function OrderList({
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-slate-900 font-medium">
-                      {order.customer.firstName} {order.customer.lastName}
+                      {order.customer.type === "corporate"
+                        ? order.customer.companyName || "Kurumsal Müşteri"
+                        : order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri"}
                     </div>
                     <div className="text-xs text-slate-500">{order.customer.phone}</div>
                   </td>
@@ -188,7 +197,9 @@ export function OrderList({
                   <PlateBadge plate={order.vehicle.plate} />
                 </div>
                 <p className="mt-1.5 text-sm font-semibold text-slate-900 truncate">
-                  {order.customer.firstName} {order.customer.lastName}
+                  {order.customer.type === "corporate"
+                    ? order.customer.companyName || "Kurumsal Müşteri"
+                    : order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri"}
                 </p>
                 <p className="text-xs text-slate-500 truncate">
                   {order.vehicle.brand} {order.vehicle.model}

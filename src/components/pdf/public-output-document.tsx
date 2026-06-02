@@ -171,7 +171,15 @@ type PublicOutputPdfProps = {
     customerComplaint: string
     approvedAt: Date | null
     createdAt: Date
-    customer: { firstName: string; lastName: string; phone: string }
+    customer: {
+      firstName: string | null
+      lastName: string | null
+      fullName: string | null
+      companyName: string | null
+      contactName: string | null
+      type: string
+      phone: string
+    }
     vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
     photos: { type: string; label: string; fileUrl: string | null }[]
     damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
@@ -228,7 +236,11 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
           <View style={styles.grid2}>
             <View style={styles.grid2Col}>
               <Text style={styles.label}>Müşteri</Text>
-              <Text style={styles.value}>{intakeForm.customer.firstName} {intakeForm.customer.lastName}</Text>
+              <Text style={styles.value}>
+                {intakeForm.customer.type === "corporate"
+                  ? intakeForm.customer.companyName || "Kurumsal Müşteri"
+                  : intakeForm.customer.fullName || `${intakeForm.customer.firstName ?? ""} ${intakeForm.customer.lastName ?? ""}`.trim() || "Müşteri"}
+              </Text>
               <Text style={{ fontSize: 8, color: "#666" }}>Tel: {intakeForm.customer.phone}</Text>
             </View>
             <View style={styles.grid2Col}>

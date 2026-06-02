@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Customer = {
   id: string
-  firstName: string
-  lastName: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
+  companyName: string | null
+  type: string
   phone: string
 }
 
@@ -70,7 +73,9 @@ export function VehicleCreateForm({ customers }: { customers: Customer[] }) {
               <SelectContent>
                 {customers.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.firstName} {c.lastName} - {c.phone}
+                    {c.type === "corporate"
+                      ? c.companyName || "Kurumsal Müşteri"
+                      : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"} - {c.phone}
                   </SelectItem>
                 ))}
               </SelectContent>

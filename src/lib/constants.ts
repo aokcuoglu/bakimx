@@ -91,3 +91,38 @@ export const PHOTO_TYPES = {
   damage_detail: { label: "Hasar detayı", required: false },
   other: { label: "Diğer", required: false },
 } as const
+
+export const CUSTOMER_TYPES = {
+  individual: { label: "Bireysel", color: "bg-sky-50 text-sky-700 border-sky-200" },
+  corporate: { label: "Kurumsal", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+} as const
+
+export type CustomerTypeKey = keyof typeof CUSTOMER_TYPES
+
+export const CUSTOMER_TAGS = {
+  standard: { label: "Standart", color: "bg-slate-50 text-slate-600 border-slate-200" },
+  vip: { label: "VIP", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  risky: { label: "Riskli", color: "bg-rose-50 text-rose-700 border-rose-200" },
+  fleet: { label: "Filo", color: "bg-blue-50 text-blue-700 border-blue-200" },
+} as const
+
+export type CustomerTagKey = keyof typeof CUSTOMER_TAGS
+
+export const CUSTOMER_SOURCES = {
+  referral: { label: "Tavsiye" },
+  google: { label: "Google" },
+  social_media: { label: "Sosyal Medya" },
+  walk_in: { label: "Yoldan Geldi" },
+  existing: { label: "Mevcut Müşteri" },
+  other: { label: "Diğer" },
+} as const
+
+export type CustomerSourceKey = keyof typeof CUSTOMER_SOURCES
+
+export const CUSTOMER_PRICE_GROUPS = {
+  standard: { label: "Standart", color: "bg-slate-50 text-slate-600 border-slate-200" },
+  discounted: { label: "İndirimli", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  fleet: { label: "Filo", color: "bg-blue-50 text-blue-700 border-blue-200" },
+} as const
+
+export type CustomerPriceGroupKey = keyof typeof CUSTOMER_PRICE_GROUPS

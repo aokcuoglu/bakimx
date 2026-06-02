@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import type { NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const publicPaths = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"]

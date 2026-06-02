@@ -81,6 +81,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     customer: {
       firstName: order.intakeForm.customer.firstName,
       lastName: order.intakeForm.customer.lastName,
+      fullName: order.intakeForm.customer.fullName,
+      companyName: order.intakeForm.customer.companyName,
+      contactName: order.intakeForm.customer.contactName,
+      type: order.intakeForm.customer.type,
       phone: order.intakeForm.customer.phone,
       email: order.intakeForm.customer.email,
     },

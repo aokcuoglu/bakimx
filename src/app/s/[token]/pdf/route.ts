@@ -13,7 +13,15 @@ async function generatePdfHtml(data: {
     customerComplaint: string
     approvedAt: Date | null
     createdAt: Date
-    customer: { firstName: string; lastName: string; phone: string }
+    customer: {
+      firstName: string | null
+      lastName: string | null
+      fullName: string | null
+      companyName: string | null
+      contactName: string | null
+      type: string
+      phone: string
+    }
     vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
     photos: { type: string; label: string; fileUrl: string | null }[]
     damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
@@ -193,7 +201,11 @@ async function generatePdfHtml(data: {
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;display:flex;gap:24px;">
       <div style="flex:1;">
         <div style="font-size:10px;color:#666;">Müşteri</div>
-        <div style="font-weight:700;">${intakeForm.customer.firstName} ${intakeForm.customer.lastName}</div>
+        <div style="font-weight:700;">${
+          intakeForm.customer.type === "corporate"
+            ? intakeForm.customer.companyName || "Kurumsal Müşteri"
+            : intakeForm.customer.fullName || `${intakeForm.customer.firstName ?? ""} ${intakeForm.customer.lastName ?? ""}`.trim() || "Müşteri"
+        }</div>
         <div style="font-size:9px;color:#666;">Tel: ${intakeForm.customer.phone}</div>
       </div>
       <div style="flex:1;">
@@ -282,6 +294,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     customer: {
       firstName: intakeForm.customer.firstName,
       lastName: intakeForm.customer.lastName,
+      fullName: intakeForm.customer.fullName,
+      companyName: intakeForm.customer.companyName,
+      contactName: intakeForm.customer.contactName,
+      type: intakeForm.customer.type,
       phone: intakeForm.customer.phone,
     },
     photos: intakeForm.photos,

@@ -10,7 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Check, ChevronRight, User, Car, ClipboardList, Camera, AlertTriangle, MessageSquare } from "lucide-react"
 
-type Customer = { id: string; firstName: string; lastName: string; phone: string }
+type Customer = {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
+  companyName: string | null
+  type: string
+  phone: string
+}
 type Vehicle = { id: string; plate: string; brand: string; model: string; customerId: string }
 
 const STEPS = [
@@ -85,7 +93,16 @@ export function IntakeWizard({ customers: initialCustomers }: { customers: Custo
       const res = await fetch("/api/customers", { method: "POST", body: formData })
       const data = await res.json()
       if (data.success && data.id) {
-        const newC: Customer = { id: data.id, firstName: newFirstName, lastName: newLastName, phone: newPhone }
+        const fullName = `${newFirstName} ${newLastName}`.trim()
+        const newC: Customer = {
+          id: data.id,
+          firstName: newFirstName,
+          lastName: newLastName,
+          fullName,
+          companyName: null,
+          type: "individual",
+          phone: newPhone,
+        }
         setCustomers((prev) => [...prev, newC])
         setSelectedCustomerId(data.id)
         setNewCustomerMode(false)
@@ -275,7 +292,9 @@ export function IntakeWizard({ customers: initialCustomers }: { customers: Custo
                   <SelectContent>
                     {customers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName} - {c.phone}
+                        {c.type === "corporate"
+                          ? c.companyName || "Kurumsal Müşteri"
+                          : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"} - {c.phone}
                       </SelectItem>
                     ))}
                   </SelectContent>

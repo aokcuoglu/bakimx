@@ -94,7 +94,16 @@ type OrderDetailData = {
   taxRate: number | null
   totals: Totals
   items: OrderItem[]
-  customer: { firstName: string; lastName: string; phone: string; email: string | null }
+  customer: {
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    contactName: string | null
+    type: string
+    phone: string
+    email: string | null
+  }
   vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
   intake: {
     id: string
@@ -242,7 +251,9 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
           <PaymentBadge status={order.paymentStatus} size="md" />
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-          {order.customer.firstName} {order.customer.lastName}
+          {order.customer.type === "corporate"
+            ? order.customer.companyName || "Kurumsal Müşteri"
+            : order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri"}
         </h2>
         <p className="text-sm text-slate-500">
           {order.vehicle.brand} {order.vehicle.model}
@@ -403,8 +414,13 @@ function CustomerVehicleCard({
               <User className="size-3" /> Müşteri
             </div>
             <p className="text-sm font-semibold text-slate-900">
-              {customer.firstName} {customer.lastName}
+              {customer.type === "corporate"
+                ? customer.companyName || "Kurumsal Müşteri"
+                : customer.fullName || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "Müşteri"}
             </p>
+            {customer.type === "corporate" && customer.contactName ? (
+              <p className="text-xs text-slate-500">Yetkili: {customer.contactName}</p>
+            ) : null}
             <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600">
               <Phone className="size-3.5" />
               {customer.phone}

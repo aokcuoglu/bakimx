@@ -2,12 +2,18 @@ import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
-import { Phone, Mail, User, Car, ClipboardList } from "lucide-react"
-import { INTAKE_STATUS } from "@/lib/constants"
+import { CustomerDetail } from "@/components/app/customer-detail"
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CustomerDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ edit?: string }>
+}) {
   const { id } = await params
+  const sp = await searchParams
+  const showEdit = sp.edit === "1"
   const { user, workshop } = await getAppData()
 
   const customer = await prisma.customer.findFirst({
@@ -15,9 +21,16 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     include: {
       vehicles: { orderBy: { createdAt: "desc" } },
       intakes: {
-        include: { vehicle: true },
         orderBy: { createdAt: "desc" },
-        take: 10,
+        take: 50,
+        include: {
+          vehicle: true,
+          order: {
+            include: {
+              items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+            },
+          },
+        },
       },
     },
   })
@@ -25,97 +38,76 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   if (!customer) notFound()
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={`${customer.firstName} ${customer.lastName}`}>
-      <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app/customers" className="hover:text-slate-700">Müşteriler</Link>
-          <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">{customer.firstName} {customer.lastName}</span>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-          <h3 className="font-medium text-xs text-slate-500 uppercase tracking-wider">İletişim Bilgileri</h3>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex items-center gap-2 text-slate-900 font-medium">
-              <User className="size-4 text-slate-500" />
-              {customer.firstName} {customer.lastName}
-            </div>
-            <div className="flex items-center gap-2 text-slate-600">
-              <Phone className="size-4 text-slate-500" />
-              {customer.phone}
-            </div>
-            {customer.email && (
-              <div className="flex items-center gap-2 text-slate-600">
-                <Mail className="size-4 text-slate-500" />
-                {customer.email}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="font-semibold text-slate-900 mb-2">Araçlar ({customer.vehicles.length})</h3>
-          {customer.vehicles.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 bg-white border border-slate-200 rounded-xl">
-              <Car className="size-10 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm">Henüz araç kaydı yok</p>
-              <Link href="/app/vehicles/new" className="text-blue-600 hover:text-blue-700 text-sm">
-                Araç ekle
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {customer.vehicles.map((vehicle) => (
-                <div key={vehicle.id} className="p-3 bg-white border border-slate-200 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Car className="size-4 text-slate-500" />
-                    <span className="font-semibold text-sm text-slate-900">{vehicle.plate}</span>
-                  </div>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {vehicle.brand} {vehicle.model}
-                    {vehicle.modelYear && ` • ${vehicle.modelYear}`}
-                    {vehicle.mileage && ` • ${vehicle.mileage.toLocaleString("tr-TR")} km`}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h3 className="font-semibold text-slate-900 mb-2">Son Kabuller</h3>
-          {customer.intakes.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 bg-white border border-slate-200 rounded-xl">
-              <ClipboardList className="size-10 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm">Henüz kabul formu yok</p>
-              <Link href="/app/intakes/new" className="text-blue-600 hover:text-blue-700 text-sm">
-                Yeni kabul oluştur
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {customer.intakes.map((intake) => {
-                const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
-                return (
-                  <Link
-                    key={intake.id}
-                    href={`/app/intakes/${intake.id}`}
-                    className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{intake.vehicle.plate}</p>
-                      <p className="text-xs text-slate-500">{intake.customerComplaint}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusInfo?.color || "bg-slate-100 text-slate-700"}`}>
-                      {statusInfo?.label || intake.status}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+    <AppShell
+      workshopName={workshop?.name}
+      pageTitle={customer.type === "corporate" ? customer.companyName || "Kurumsal Müşteri" : [customer.firstName, customer.lastName].filter(Boolean).join(" ") || customer.fullName || "Müşteri"}
+    >
+      <CustomerDetail
+        showEditInitially={showEdit}
+        customer={{
+          id: customer.id,
+          type: customer.type || "individual",
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          fullName: customer.fullName,
+          companyName: customer.companyName,
+          contactName: customer.contactName,
+          phone: customer.phone,
+          phone2: customer.phone2,
+          email: customer.email,
+          city: customer.city,
+          district: customer.district,
+          address: customer.address,
+          identityNumber: customer.identityNumber,
+          taxNumber: customer.taxNumber,
+          taxOffice: customer.taxOffice,
+          notes: customer.notes,
+          tag: customer.tag,
+          source: customer.source,
+          priceGroup: customer.priceGroup,
+          discountRate: customer.discountRate,
+          riskNote: customer.riskNote,
+          whatsappConsent: customer.whatsappConsent,
+          smsConsent: customer.smsConsent,
+          emailConsent: customer.emailConsent,
+          kvkkApprovedAt: customer.kvkkApprovedAt ? customer.kvkkApprovedAt.toISOString() : null,
+          createdAt: customer.createdAt.toISOString(),
+          updatedAt: customer.updatedAt.toISOString(),
+        }}
+        vehicles={customer.vehicles.map((v) => ({
+          id: v.id,
+          plate: v.plate,
+          brand: v.brand,
+          model: v.model,
+          modelYear: v.modelYear,
+          mileage: v.mileage,
+          vin: v.vin,
+        }))}
+        intakes={customer.intakes.map((i) => ({
+          id: i.id,
+          status: i.status,
+          createdAt: i.createdAt.toISOString(),
+          customerComplaint: i.customerComplaint,
+          vehicle: { id: i.vehicle.id, plate: i.vehicle.plate, brand: i.vehicle.brand, model: i.vehicle.model },
+          order: i.order
+            ? {
+                id: i.order.id,
+                workOrderNo: i.order.workOrderNo,
+                status: i.order.status,
+                paymentStatus: i.order.paymentStatus,
+                estimatedDeliveryAt: i.order.estimatedDeliveryAt ? i.order.estimatedDeliveryAt.toISOString() : null,
+                grandTotal: i.order.items.reduce(
+                  (sum, item) => {
+                    if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
+                    if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+                    return sum
+                  },
+                  0
+                ),
+              }
+            : null,
+        }))}
+      />
     </AppShell>
   )
 }

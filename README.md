@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.1.4 — İş Emri UX Alignment
+**Versiyon:** v0.1.5 — Müşteri Yönetimi UX Alignment
 
 ## Hızlı Başlangıç
 
@@ -118,6 +118,42 @@ STORAGE_PROVIDER=mock
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.1.5 Özellikler
+
+### Müşteri Yönetimi Yenileme
+- **Müşteri Listesi (`/app/customers`)** — profesyonel tablo (masaüstü) + kart (mobil), tip filtresi, etiket filtresi, “Bakiye Özeti” ve “Yeni Müşteri” CTA'ları, “Excel İçe Aktar” placeholder
+- **Yeni Müşteri (`/app/customers/new`)** — Bireysel/Kurumsal segmentli toggle, ana form + sağ yan panel (profil, izinler, KVKK), “Sesle Doldur” placeholder
+- **Müşteri Detay (`/app/customers/[id]`)** — başlık, iletişim izinleri, bakiye özeti, araçlar, iş emirleri, kabul kayıtları, notlar, mobil uyumlu
+- **Müşteri Bakiye Özeti (`/app/customers/balances`)** — temel KPI kartları, bakiye listesi, gerçek tahsilat modülü bağımlılığı olmadan iş emri toplamlarından türetilmiş
+
+### Schema Genişletmeleri
+- `Customer` tipi: `individual` | `corporate` enum (varsayılan `individual`)
+- `Customer.firstName` ve `lastName` artık opsiyonel (geriye dönük uyumlu)
+- Yeni alanlar: `fullName`, `companyName`, `contactName`, `phone2`, `city`, `district`, `address`, `identityNumber`, `taxNumber`, `taxOffice`, `notes`
+- Yeni enum'lar: `CustomerTag` (standart | vip | riskli | filo), `CustomerSource` (tavsiye | google | sosyal medya | yoldan geldi | mevcut müşteri | diğer), `CustomerPriceGroup` (standart | indirimli | filo)
+- `discountRate`, `riskNote`
+- İletişim izinleri: `whatsappConsent`, `smsConsent`, `emailConsent` (boolean)
+- `kvkkApprovedAt` (DateTime)
+- Tüm alanlar geriye dönük uyumlu; mevcut kayıtlar etkilenmez
+
+### Placeholder Özellikler
+- “Excel İçe Aktar” butonu yalnızca UI placeholder (uygulanmadı)
+- “Sesle Doldur” butonu yalnızca UI placeholder (uygulanmadı)
+- Bakiye Özeti temel düzeydedir; tahsilat modülü henüz aktif değildir
+
+### Tenant İzolasyonu
+- Tüm müşteri sorguları `workshopId` ile kapsamlandı
+- Müşteri oluşturma, güncelleme, silme, arama `requireAuth` + scoped Prisma
+- Silme işlemi bağlı araç/kabul varsa güvenli hata döner
+
+### Regresyon Güvenliği
+- Tüm v0.1.4 rotaları çalışıyor
+- Mevcut müşteri CRUD, araç CRUD, kabul, iş emri, public output, mock SMS, mock storage etkilenmedi
+- İlk ad/soyad gösterimi `customerDisplayName` helper'ı ile null-safe
+- Hiçbir Docker dosyası eklenmedi
 
 ---
 
@@ -340,17 +376,17 @@ STORAGE_PROVIDER=mock
 
 ---
 
-## Sınırlamalar (v0.1.4)
-
+## Sınırlamalar (v0.1.5)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
+- “Excel İçe Aktar” yalnızca UI placeholder
 - WhatsApp Business API yok (manuel paylaşım linki)
 - @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
 - S3 depolama sağlayıcısı henüz uygulanmadı (placeholder)
 - HEIC dosya desteği yok (açık hata mesajı ile reddedilir)
 - İstemci tarafı görüntü sıkıştırma henüz uygulanmadı
-- Ödeme modülü sadece etiket (gerçek ödeme entegrasyonu yok)
+- Ödeme / tahsilat modülü sadece etiket (Bakiye Özeti temel düzeydedir; iş emri toplamlarından türetilir, gerçek muhasebe verisi göstermez)
 - E-fatura / e-arşiv / fatura modülü yok
 - Çok şubeli kurumsal modül yok
 - Stok, teklif, randevu, kasa, raporlar modülleri “Yakında” placeholder
@@ -360,7 +396,8 @@ STORAGE_PROVIDER=mock
 
 ## Sürümler
 
-- [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment (güncel)
+- [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment (güncel)
+- [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment
 - [v0.1.3](docs/releases/v0.1.3.md) — Image Storage & Intake Media Foundation
 - [v0.1.2](docs/releases/v0.1.2.md) — Public Output & PDF Foundation
 - [v0.1.1](docs/releases/v0.1.1.md) — Hardening & UX Polish
@@ -369,6 +406,7 @@ STORAGE_PROVIDER=mock
 
 ## QA
 
+- [v0.1.5 Manuel QA](docs/QA/v0.1.5-manual-checklist.md)
 - [v0.1.4 Manuel QA](docs/QA/v0.1.4-manual-checklist.md)
 - [v0.1.3 Manuel QA](docs/QA/v0.1.3-manual-checklist.md)
 - [v0.1.2 Manuel QA](docs/QA/v0.1.2-manual-checklist.md)

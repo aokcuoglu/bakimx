@@ -3,8 +3,14 @@ import { AppShell } from "@/components/app/app-shell"
 import { CustomerCreateForm } from "@/components/app/customer-create-form"
 import Link from "next/link"
 
-export default async function NewCustomerPage() {
+export default async function NewCustomerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>
+}) {
   const { workshop } = await getAppData()
+  const params = await searchParams
+  const initialType = params.type === "corporate" ? "corporate" : "individual"
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Yeni Müşteri">
@@ -16,9 +22,14 @@ export default async function NewCustomerPage() {
         </div>
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Yeni Müşteri</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Yeni müşteri bilgilerini girin</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Bireysel veya kurumsal müşteri bilgilerini girin
+          </p>
         </div>
-        <CustomerCreateForm />
+        <CustomerCreateForm
+          mode="create"
+          initial={{ type: initialType }}
+        />
       </div>
     </AppShell>
   )

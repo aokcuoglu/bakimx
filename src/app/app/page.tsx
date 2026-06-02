@@ -181,7 +181,9 @@ export default async function DashboardPage() {
                             {formatWorkOrderNo(order)} • {order.intakeForm.vehicle.plate}
                           </p>
                           <p className="text-xs text-slate-500 truncate">
-                            {order.intakeForm.customer.firstName} {order.intakeForm.customer.lastName}
+                            {order.intakeForm.customer.type === "corporate"
+                              ? order.intakeForm.customer.companyName || "Kurumsal Müşteri"
+                              : order.intakeForm.customer.fullName || `${order.intakeForm.customer.firstName ?? ""} ${order.intakeForm.customer.lastName ?? ""}`.trim() || "Müşteri"}
                           </p>
                         </div>
                       </div>
@@ -228,7 +230,9 @@ export default async function DashboardPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-slate-900 truncate">
-                            {intake.vehicle.plate} • {intake.customer.firstName} {intake.customer.lastName}
+                            {intake.vehicle.plate} • {intake.customer.type === "corporate"
+                              ? intake.customer.companyName || "Kurumsal Müşteri"
+                              : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
                           </p>
                           <p className="text-xs text-slate-500 truncate">
                             {intake.vehicle.brand} {intake.vehicle.model} • {formatDate(intake.createdAt)}

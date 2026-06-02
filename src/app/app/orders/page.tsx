@@ -80,6 +80,9 @@ export default async function OrdersPage({
       customer: {
         firstName: o.intakeForm.customer.firstName,
         lastName: o.intakeForm.customer.lastName,
+        fullName: o.intakeForm.customer.fullName,
+        companyName: o.intakeForm.customer.companyName,
+        type: o.intakeForm.customer.type,
         phone: o.intakeForm.customer.phone,
       },
     }

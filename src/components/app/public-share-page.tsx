@@ -25,7 +25,15 @@ type ShareLink = {
     customerComplaint: string
     approvedAt: Date | null
     createdAt: Date
-    customer: { firstName: string; lastName: string; phone: string }
+    customer: {
+      firstName: string | null
+      lastName: string | null
+      fullName: string | null
+      companyName: string | null
+      contactName: string | null
+      type: string
+      phone: string
+    }
     vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
     photos: { id?: string; type: string; label: string; fileUrl: string | null }[]
     damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
@@ -133,7 +141,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Müşteri & Araç</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="font-bold text-base">{intakeForm.customer.firstName} {intakeForm.customer.lastName}</p>
+              <p className="font-bold text-base">
+                {intakeForm.customer.type === "corporate"
+                  ? intakeForm.customer.companyName || "Kurumsal Müşteri"
+                  : intakeForm.customer.fullName || `${intakeForm.customer.firstName ?? ""} ${intakeForm.customer.lastName ?? ""}`.trim() || "Müşteri"}
+              </p>
               <div className="flex items-center gap-1.5 text-gray-500 mt-1">
                 <Phone className="size-3" />
                 <span>{intakeForm.customer.phone}</span>

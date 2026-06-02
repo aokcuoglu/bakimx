@@ -16,7 +16,14 @@ type IntakeRow = {
   photosCount: number
   damageCount: number
   total: number
-  customer: { firstName: string; lastName: string; phone: string }
+  customer: {
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    type: string
+    phone: string
+  }
   vehicle: { plate: string; brand: string; model: string }
 }
 
@@ -37,7 +44,9 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
     return list.filter(
       (i) =>
         i.vehicle.plate.toLowerCase().includes(q) ||
-        `${i.customer.firstName} ${i.customer.lastName}`.toLowerCase().includes(q) ||
+        (i.customer.type === "corporate"
+          ? (i.customer.companyName || "").toLowerCase().includes(q)
+          : (i.customer.fullName || `${i.customer.firstName ?? ""} ${i.customer.lastName ?? ""}`.trim()).toLowerCase().includes(q)) ||
         i.customer.phone.includes(q)
     )
   }
@@ -147,7 +156,9 @@ function SelectableIntakeCard({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-slate-900 truncate">
-          {intake.customer.firstName} {intake.customer.lastName}
+          {intake.customer.type === "corporate"
+            ? intake.customer.companyName || "Kurumsal Müşteri"
+            : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
         </p>
         <p className="text-xs text-slate-500 truncate">
           {intake.vehicle.brand} {intake.vehicle.model} • {formatDate(intake.createdAt)}

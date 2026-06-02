@@ -41,6 +41,9 @@ export default async function NewOrderPage() {
       customer: {
         firstName: i.customer.firstName,
         lastName: i.customer.lastName,
+        fullName: i.customer.fullName,
+        companyName: i.customer.companyName,
+        type: i.customer.type,
         phone: i.customer.phone,
       },
       vehicle: {

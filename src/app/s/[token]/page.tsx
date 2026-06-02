@@ -56,6 +56,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       customer: {
         firstName: intakeForm.customer.firstName,
         lastName: intakeForm.customer.lastName,
+        fullName: intakeForm.customer.fullName,
+        companyName: intakeForm.customer.companyName,
+        contactName: intakeForm.customer.contactName,
+        type: intakeForm.customer.type,
         phone: intakeForm.customer.phone,
       },
       photos: intakeForm.photos.map((p) => ({

@@ -54,3 +54,24 @@ export function normalizePhone(input: string): string {
 export function normalizePlate(input: string): string {
   return input.replace(/\s/g, "").toUpperCase()
 }
+
+/**
+ * Build a displayable name for a customer. Handles corporate/individual and null fields.
+ */
+export function customerDisplayName(customer: {
+  type?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  fullName?: string | null
+  companyName?: string | null
+  contactName?: string | null
+}): string {
+  if (customer.type === "corporate") {
+    return customer.companyName || customer.contactName || "Kurumsal Müşteri"
+  }
+  const full = (customer.fullName || "").trim()
+  if (full) return full
+  const first = (customer.firstName || "").trim()
+  const last = (customer.lastName || "").trim()
+  return [first, last].filter(Boolean).join(" ") || "Müşteri"
+}

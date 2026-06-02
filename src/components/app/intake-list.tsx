@@ -12,7 +12,13 @@ type IntakeWithRelations = {
   status: string
   customerComplaint: string
   createdAt: Date
-  customer: { firstName: string; lastName: string }
+  customer: {
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    type: string
+  }
   vehicle: { plate: string; brand: string; model: string }
 }
 
@@ -80,7 +86,9 @@ export function IntakeList({
                   <Car className="size-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">
                     <p className="font-medium text-sm truncate">
-                      {intake.vehicle.plate} - {intake.customer.firstName} {intake.customer.lastName}
+                      {intake.vehicle.plate} - {intake.customer.type === "corporate"
+                        ? intake.customer.companyName || "Kurumsal Müşteri"
+                        : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {intake.customerComplaint}

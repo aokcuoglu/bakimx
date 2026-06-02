@@ -26,12 +26,58 @@ export const workshopUpdateSchema = z.object({
   invoiceTitle: z.string().optional(),
 })
 
-export const customerCreateSchema = z.object({
-  firstName: z.string().min(1, "Ad alanı zorunludur"),
-  lastName: z.string().min(1, "Soyad alanı zorunludur"),
-  phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
-  email: z.email("Geçerli bir e-posta adresi giriniz").optional().or(z.literal("")),
-})
+export const customerCreateSchema = z
+  .object({
+    type: z.enum(["individual", "corporate"]).default("individual"),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    fullName: z.string().optional(),
+    companyName: z.string().optional(),
+    contactName: z.string().optional(),
+    phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
+    phone2: z.string().optional(),
+    email: z.email("Geçerli bir e-posta adresi giriniz").optional().or(z.literal("")),
+    city: z.string().optional(),
+    district: z.string().optional(),
+    address: z.string().optional(),
+    identityNumber: z.string().optional(),
+    taxNumber: z.string().optional(),
+    taxOffice: z.string().optional(),
+    notes: z.string().optional(),
+    tag: z.enum(["standard", "vip", "risky", "fleet"]).optional(),
+    source: z
+      .enum(["referral", "google", "social_media", "walk_in", "existing", "other"])
+      .optional()
+      .or(z.literal("")),
+    priceGroup: z.enum(["standard", "discounted", "fleet"]).optional(),
+    discountRate: z.coerce
+      .number()
+      .min(0, "İndirim oranı 0'dan küçük olamaz")
+      .max(100, "İndirim oranı 100'den büyük olamaz")
+      .optional(),
+    riskNote: z.string().optional(),
+    whatsappConsent: z.boolean().optional().default(false),
+    smsConsent: z.boolean().optional().default(false),
+    emailConsent: z.boolean().optional().default(false),
+    kvkkApprovedAt: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "individual") {
+      const hasFirst = (data.firstName || "").trim().length > 0
+      const hasLast = (data.lastName || "").trim().length > 0
+      const hasFull = (data.fullName || "").trim().length > 0
+      if (!hasFirst && !hasFull) {
+        ctx.addIssue({ code: "custom", path: ["firstName"], message: "Ad alanı zorunludur" })
+      }
+      if (!hasLast && !hasFull) {
+        ctx.addIssue({ code: "custom", path: ["lastName"], message: "Soyad alanı zorunludur" })
+      }
+    } else {
+      if (!(data.companyName || "").trim()) {
+        ctx.addIssue({ code: "custom", path: ["companyName"], message: "Şirket adı zorunludur" })
+      }
+    }
+  })
 
 export const vehicleCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),

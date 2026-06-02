@@ -53,7 +53,17 @@ type IntakeDetailProps = {
   internalNote: string | null
   approvedAt: Date | null
   createdAt: Date
-  customer: { id: string; firstName: string; lastName: string; phone: string; email: string | null }
+  customer: {
+    id: string
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    contactName: string | null
+    type: string
+    phone: string
+    email: string | null
+  }
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
   photos: VehiclePhoto[]
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
@@ -359,7 +369,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </span>
           </div>
           <p className="text-sm text-muted-foreground truncate">
-            {intake.vehicle.brand} {intake.vehicle.model} - {intake.customer.firstName} {intake.customer.lastName}
+            {intake.vehicle.brand} {intake.vehicle.model} - {intake.customer.type === "corporate"
+              ? intake.customer.companyName || "Kurumsal Müşteri"
+              : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
           </p>
         </div>
       </div>
@@ -436,7 +448,14 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><User className="size-4" /> Müşteri Bilgileri</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 font-medium">{intake.customer.firstName} {intake.customer.lastName}</div>
+                <div className="flex items-center gap-2 font-medium">
+                  {intake.customer.type === "corporate"
+                    ? intake.customer.companyName || "Kurumsal Müşteri"
+                    : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
+                </div>
+                {intake.customer.type === "corporate" && intake.customer.contactName ? (
+                  <div className="text-xs text-muted-foreground">Yetkili: {intake.customer.contactName}</div>
+                ) : null}
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="size-3.5" />
                   {intake.customer.phone}

@@ -21,6 +21,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
               { model: { contains: query, mode: "insensitive" } },
               { customer: { firstName: { contains: query, mode: "insensitive" } } },
               { customer: { lastName: { contains: query, mode: "insensitive" } } },
+              { customer: { fullName: { contains: query, mode: "insensitive" } } },
+              { customer: { companyName: { contains: query, mode: "insensitive" } } },
             ],
           }
         : {}),
@@ -91,7 +93,9 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                       {vehicle.plate} • {vehicle.brand} {vehicle.model}
                     </p>
                     <p className="text-xs text-slate-500 truncate">
-                      {vehicle.customer.firstName} {vehicle.customer.lastName}
+                      {vehicle.customer.type === "corporate"
+                        ? vehicle.customer.companyName || "Kurumsal Müşteri"
+                        : vehicle.customer.fullName || `${vehicle.customer.firstName ?? ""} ${vehicle.customer.lastName ?? ""}`.trim() || "Müşteri"}
                       {vehicle.modelYear && ` • ${vehicle.modelYear}`}
                       {vehicle.mileage && ` • ${vehicle.mileage.toLocaleString("tr-TR")} km`}
                     </p>
