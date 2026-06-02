@@ -29,3 +29,25 @@ export function generateWorkOrderNo(): string {
   const ts = Date.now().toString(36).toUpperCase().slice(-6)
   return `${PREFIX}${ts}`
 }
+
+export function generateQuoteNo(): string {
+  const ts = Date.now().toString(36).toUpperCase().slice(-6)
+  return `TKF${ts}`
+}
+
+export function formatQuoteNo(quote: { quoteNo?: string | null; id: string }): string {
+  if (quote.quoteNo && quote.quoteNo.length > 0) return quote.quoteNo
+  const suffix = quote.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()
+  return `TKF-${suffix}`
+}
+
+export function generateAppointmentNo(): string {
+  const ts = Date.now().toString(36).toUpperCase().slice(-6)
+  return `RND${ts}`
+}
+
+export function formatAppointmentNo(appointment: { appointmentNo?: string | null; id: string }): string {
+  if (appointment.appointmentNo && appointment.appointmentNo.length > 0) return appointment.appointmentNo
+  const suffix = appointment.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()
+  return `RND-${suffix}`
+}

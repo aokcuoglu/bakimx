@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus, UserPlus, Car, MessageCircle, Camera, Wallet } from "lucide-react"
+import { Plus, UserPlus, Car, MessageCircle, Camera, Wallet, FileText, CalendarClock } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface QuickAction {
@@ -42,6 +42,22 @@ const actions: QuickAction[] = [
     href: "/app/orders?status=waiting_approval",
     color: "text-amber-600",
     bgColor: "bg-amber-100",
+    enabled: true,
+  },
+  {
+    label: "Yeni Teklif",
+    icon: FileText,
+    href: "/app/quotes/new",
+    color: "text-green-600",
+    bgColor: "bg-green-100",
+    enabled: true,
+  },
+  {
+    label: "Yeni Randevu",
+    icon: CalendarClock,
+    href: "/app/appointments/new",
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-100",
     enabled: true,
   },
   {

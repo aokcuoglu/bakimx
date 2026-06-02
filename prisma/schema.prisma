@@ -18,16 +18,19 @@ model Workshop {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  users       User[]
-  customers   Customer[]
-  vehicles    Vehicle[]
-  intakes     VehicleIntakeForm[]
-  photos      VehiclePhoto[]
-  damageMarks DamageMark[]
-  approvals   ApprovalRequest[]
-  shareLinks  PublicShareLink[]
-  orders      ServiceOrder[]
-  auditLogs   AuditLog[]
+  users        User[]
+  customers    Customer[]
+  vehicles     Vehicle[]
+  intakes      VehicleIntakeForm[]
+  photos       VehiclePhoto[]
+  damageMarks  DamageMark[]
+  approvals    ApprovalRequest[]
+  shareLinks   PublicShareLink[]
+  orders       ServiceOrder[]
+  quotes       Quote[]
+  quoteItems   QuoteItem[]
+  appointments Appointment[]
+  auditLogs    AuditLog[]
 }
 
 model User {
@@ -78,6 +81,8 @@ model Customer {
 
   vehicles Vehicle[]
   intakes  VehicleIntakeForm[]
+  quotes   Quote[]
+  appointments Appointment[]
 
   @@index([workshopId])
   @@index([workshopId, type])
@@ -135,6 +140,8 @@ model Vehicle {
   updatedAt    DateTime @updatedAt
 
   intakes VehicleIntakeForm[]
+  quotes  Quote[]
+  appointments Appointment[]
 
   @@index([workshopId])
   @@index([customerId])
@@ -308,6 +315,8 @@ model ServiceOrder {
   updatedAt            DateTime          @updatedAt
 
   items ServiceOrderItem[]
+  convertedFromQuote       Quote?       @relation("QuoteToServiceOrder")
+  convertedFromAppointment Appointment? @relation("AppointmentToServiceOrder")
 
   @@index([workshopId])
   @@index([status])
@@ -355,6 +364,119 @@ model ServiceOrderItem {
 enum OrderItemType {
   part
   labor
+}
+
+model Quote {
+  id                    String    @id @default(cuid())
+  workshopId            String
+  workshop              Workshop  @relation(fields: [workshopId], references: [id])
+  customerId            String
+  customer              Customer  @relation(fields: [customerId], references: [id])
+  vehicleId             String?
+  vehicle               Vehicle?  @relation(fields: [vehicleId], references: [id])
+  quoteNo               String?
+  status                QuoteStatus @default(draft)
+  title                 String?
+  customerRequest       String?
+  internalNote          String?
+  validUntil            DateTime?
+  estimatedLaborTotal   Float?
+  estimatedPartsTotal   Float?
+  discountAmount        Float?
+  taxRate               Float?
+  grandTotal            Float?
+  convertedServiceOrderId String? @unique
+  convertedServiceOrder ServiceOrder? @relation("QuoteToServiceOrder", fields: [convertedServiceOrderId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  items QuoteItem[]
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([status])
+}
+
+enum QuoteStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
+  converted
+  cancelled
+}
+
+model QuoteItem {
+  id        String            @id @default(cuid())
+  workshopId String
+  workshop  Workshop          @relation(fields: [workshopId], references: [id])
+  quoteId   String
+  quote     Quote             @relation(fields: [quoteId], references: [id])
+  type      QuoteItemType
+  name      String
+  sku       String?
+  unit      String?
+  quantity  Int               @default(1)
+  unitPrice Float?
+  totalPrice Float?
+  note      String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([workshopId])
+  @@index([quoteId])
+}
+
+enum QuoteItemType {
+  part
+  labor
+}
+
+model Appointment {
+  id                      String             @id @default(cuid())
+  workshopId              String
+  workshop                Workshop           @relation(fields: [workshopId], references: [id])
+  customerId              String
+  customer                Customer           @relation(fields: [customerId], references: [id])
+  vehicleId               String?
+  vehicle                 Vehicle?           @relation(fields: [vehicleId], references: [id])
+  appointmentNo           String?
+  status                  AppointmentStatus  @default(scheduled)
+  appointmentAt           DateTime
+  estimatedDurationMinutes Int?
+  title                   String?
+  customerRequest         String?
+  internalNote            String?
+  reminderStatus           ReminderStatus    @default(none)
+  convertedServiceOrderId  String?            @unique
+  convertedServiceOrder   ServiceOrder?      @relation("AppointmentToServiceOrder", fields: [convertedServiceOrderId], references: [id])
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([appointmentAt])
+}
+
+enum AppointmentStatus {
+  scheduled
+  confirmed
+  arrived
+  converted
+  completed
+  cancelled
+  no_show
+}
+
+enum ReminderStatus {
+  none
+  pending
+  sent
+  failed
 }
 
 model AuditLog {

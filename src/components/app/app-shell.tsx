@@ -51,8 +51,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/app/intakes", label: "Araç Kabulleri", icon: ClipboardList },
       { href: "/app/customers", label: "Müşteriler", icon: Users },
       { href: "/app/vehicles", label: "Araçlar", icon: Car },
-      { href: "/app/quotes", label: "Teklifler", icon: FileText, badge: "Yakında" },
-      { href: "/app/appointments", label: "Randevular", icon: CalendarClock, badge: "Yakında" },
+      { href: "/app/quotes", label: "Teklifler", icon: FileText },
+      { href: "/app/appointments", label: "Randevular", icon: CalendarClock },
       { href: "/app/reminders", label: "Bakım Hatırlatmaları", icon: BellRing, badge: "Yakında" },
     ],
   },
@@ -76,7 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-const COMING_SOON_PREFIXES = ["/app/quotes", "/app/appointments", "/app/reminders", "/app/inventory", "/app/suppliers", "/app/cash", "/app/reports"]
+const COMING_SOON_PREFIXES = ["/app/reminders", "/app/inventory", "/app/suppliers", "/app/cash", "/app/reports"]
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -175,6 +175,20 @@ export function AppShell({
                 >
                   <Plus className="size-4" />
                   <span>Yeni İş Emri</span>
+                </Link>
+                <Link
+                  href="/app/quotes/new"
+                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation"
+                >
+                  <FileText className="size-4" />
+                  <span>Yeni Teklif</span>
+                </Link>
+                <Link
+                  href="/app/appointments/new"
+                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation"
+                >
+                  <CalendarClock className="size-4" />
+                  <span>Yeni Randevu</span>
                 </Link>
                 <Link
                   href="/app/orders/new"

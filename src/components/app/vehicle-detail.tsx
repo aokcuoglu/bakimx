@@ -228,10 +228,10 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     {customerDisplayName(v.customer)}
                   </p>
                   <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                    <a href={`tel:${v.customer.phone}`} className="inline-flex items-center gap-1 hover:text-blue-600">
+                    <span onClick={() => window.location.href = `tel:${v.customer.phone}`} className="inline-flex items-center gap-1 hover:text-blue-600 cursor-pointer">
                       <Phone className="size-3" />
                       {v.customer.phone}
-                    </a>
+                    </span>
                     {v.customer.email ? (
                       <span className="truncate">{v.customer.email}</span>
                     ) : null}

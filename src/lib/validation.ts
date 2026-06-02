@@ -148,6 +148,54 @@ export const serviceOrderItemSchema = z.object({
   note: z.string().optional(),
 })
 
+export const quoteCreateSchema = z.object({
+  customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
+  vehicleId: z.string().optional().or(z.literal("")),
+  title: z.string().optional(),
+  customerRequest: z.string().optional(),
+  internalNote: z.string().optional(),
+  validUntil: z.string().optional(),
+  estimatedLaborTotal: z.coerce.number().min(0, "İşçilik toplamı negatif olamaz").optional(),
+  estimatedPartsTotal: z.coerce.number().min(0, "Parça toplamı negatif olamaz").optional(),
+  discountAmount: z.coerce.number().min(0, "İndirim tutarı negatif olamaz").optional(),
+  taxRate: z.coerce.number().min(0, "KDV oranı negatif olamaz").max(100, "KDV oranı en fazla %100 olabilir").optional(),
+  grandTotal: z.coerce.number().min(0, "Genel toplam negatif olamaz").optional(),
+  status: z.enum(["draft", "sent", "accepted", "rejected", "expired", "converted", "cancelled"]).optional(),
+})
+
+export const quoteItemSchema = z.object({
+  type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
+  name: z.string().min(1, "Kalem adı zorunludur"),
+  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
+  unitPrice: z.coerce.number().min(0, "Birim fiyat negatif olamaz").optional(),
+  totalPrice: z.coerce.number().min(0, "Toplam fiyat negatif olamaz").optional(),
+  note: z.string().optional(),
+})
+
+export const appointmentCreateSchema = z.object({
+  customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
+  vehicleId: z.string().optional().or(z.literal("")),
+  appointmentAt: z.string().min(1, "Randevu tarihi zorunludur"),
+  appointmentTime: z.string().min(1, "Randevu saati zorunludur"),
+  estimatedDurationMinutes: z.coerce.number().int("Geçerli bir süre giriniz").min(5, "Süre en az 5 dakika olmalıdır").optional(),
+  title: z.string().optional(),
+  customerRequest: z.string().optional(),
+  internalNote: z.string().optional(),
+  reminderEnabled: z.coerce.boolean().optional().default(false),
+})
+
+export const appointmentStatusUpdateSchema = z.object({
+  status: z.enum(["scheduled", "confirmed", "arrived", "converted", "completed", "cancelled", "no_show"], {
+    error: "Geçerli bir durum seçiniz",
+  }),
+})
+
+export const quoteStatusUpdateSchema = z.object({
+  status: z.enum(["draft", "sent", "accepted", "rejected", "expired", "converted", "cancelled"], {
+    error: "Geçerli bir durum seçiniz",
+  }),
+})
+
 /**
  * Safely parse form data and return the first Turkish error message.
  */

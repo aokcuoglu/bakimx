@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.2.1 — Araçlar Modülü UX Alignment
+**Versiyon:** v0.2.2 — Teklifler & Randevular Foundation
 
 ## Hızlı Başlangıç
 
@@ -118,6 +118,58 @@ STORAGE_PROVIDER=mock
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.2.2 Özellikler
+
+### Teklifler Modülü (`/app/quotes`)
+
+- **Teklif listesi:** Tüm teklifler tablo/kart görünümü, durum filtresi, arama
+- **Yeni teklif:** Müşteri/araç seçimi, parça/işçilik kalemleri, otomatik toplam hesabı
+- **Teklif detay:** Kalem listesi, toplam bilgisi, durum güncelleme
+- **Tekliften iş emrine dönüştürme:** Tek tıkla kabul + iş emri oluşturma
+- **TKF ön eki:** Quote numaralandırma
+
+### Randevular Modülü (`/app/appointments`)
+
+- **Randevu listesi:** Takvim/kart görünümü, durum filtresi, arama
+- **Yeni randevu:** Müşteri/araç seçimi, tarih/saat seçimi, notlar
+- **Randevu detay:** Randevu bilgisi, müşteri/araç özeti, durum güncelleme
+- **Randevudan iş emrine dönüştürme:** Randevu tarihinde tek tıkla kabul + iş emri
+- **RND ön eki:** Randevu numaralandırma
+
+### Dashboard Entegrasyonu
+
+- **Bugünkü Randevular widget'ı:** Dashboard'da bugünün randevularını gösterir
+- **Hızlı İşlemler:** "Yeni Teklif" ve "Yeni Randevu" butonları
+- **Header:** "Yeni Teklif" ve "Yeni Randevu" CTA butonları
+- **Sidebar:** Teklifler ve Randevular aktif bağlantılar (artık "Yakında" rozeti yok)
+
+### Status Badges
+
+- `AppointmentStatusBadge` — Randevu durum rozeti
+- `QuoteStatusBadge` — Teklif durum rozeti
+
+### Tenant İzolasyonu
+
+- Tüm teklif ve randevu sorguları `workshopId` ile kapsamlı
+- Müşteri/araç seçici yalnızca workshop verisini gösterir
+- Dönüştürme işlemleri workshop-scoped
+
+### Placeholder Özellikler
+
+- Gerçek SMS/WhatsApp hatırlatma gönderimi yok (sadece log)
+- E-posta hatırlatma, takvim senkronizasyonu, yinelenen randevu yok
+- Teklif şablonu / kopyalama yok
+- Stok düşümü yok (tekliften iş emrine geçerken parça rezervasyonu yapılmaz)
+
+### Regresyon Güvenliği
+
+- Tüm v0.2.1 rotaları çalışıyor
+- Dashboard, iş emirleri, müşteriler, araçlar, kabuller etkilenmedi
+- Public output, PDF, fotoğraf/storage, mock SMS etkilenmedi
+- Hiçbir Docker dosyası eklenmedi
 
 ---
 
@@ -295,7 +347,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `calculateOrderTotals` ve `formatOrderSummary` ortak tek hesap kaynağı
 
 ### Placeholder Modüller (Yakında)
-- `/app/quotes`, `/app/appointments`, `/app/reminders`
+- `/app/reminders`
 - `/app/inventory`, `/app/suppliers`, `/app/cash`
 - `/app/reports`
 - Tümü uygulama kabuğu içinde, kenar çubuğunda “Yakında” rozeti
@@ -429,8 +481,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/orders` — İş emri listesi (KPI'lar, filtreler, masaüstü tablosu, mobil kartları)
 - `/app/orders/new` — Yeni iş emri (kabul seçici)
 - `/app/orders/[id]` — İş emri detayı (sticky fiyat paneli, durum/ödeme)
-- `/app/quotes` — Teklifler (Yakında)
-- `/app/appointments` — Randevular (Yakında)
+- `/app/quotes` — Teklifler (arama, durum filtresi, tablo/kart)
+- `/app/appointments` — Randevular (arama, durum filtresi, takvim/kart)
 - `/app/reminders` — Bakım Hatırlatmaları (Yakında)
 - `/app/inventory` — Stok / Parçalar (Yakında)
 - `/app/suppliers` — Tedarikçiler (Yakında)
@@ -480,7 +532,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.2.1)
+## Sınırlamalar (v0.2.2)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
@@ -493,14 +545,20 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Ödeme / tahsilat modülü sadece etiket (Bakiye Özeti temel düzeydedir; iş emri toplamlarından türetilir, gerçek muhasebe verisi göstermez)
 - E-fatura / e-arşiv / fatura modülü yok
 - Çok şubeli kurumsal modül yok
-- Stok, teklif, randevu, kasa, raporlar modülleri “Yakında” placeholder
+- Stok, kasa, raporlar modülleri “Yakında” placeholder
+- Gerçek SMS/WhatsApp hatırlatma gönderimi yok
+- Takvim senkronizasyonu yok (Google Calendar, Outlook)
+- Yinelenen randevu (recurring appointment) yok
+- Teklif şablonu / kopyalama yok
+- Stok düşümü yok (tekliften iş emrine geçerken parça rezervasyonu yapılmaz)
 - Docker konteyner desteği yok (lokal bun/npm)
 
 ---
 
 ## Sürümler
 
-- [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment (güncel)
+- [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation (güncel)
+- [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment
 - [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview
 - [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment
 - [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment
@@ -512,6 +570,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.2.2 Manuel QA](docs/QA/v0.2.2-manual-checklist.md)
 - [v0.2.1 Manuel QA](docs/QA/v0.2.1-manual-checklist.md)
 - [v0.2.0 Manuel QA](docs/QA/v0.2.0-manual-checklist.md)
 - [v0.1.5 Manuel QA](docs/QA/v0.1.5-manual-checklist.md)

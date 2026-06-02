@@ -431,6 +431,51 @@ export interface StatusDistribution {
   color: string
 }
 
+export interface TodayAppointmentRow {
+  id: string
+  appointmentNo: string
+  appointmentAt: string
+  status: string
+  customerName: string
+  customerPhone: string
+  plate: string | null
+  brand: string | null
+  model: string | null
+}
+
+export async function getTodayAppointmentRows(workshopId: string): Promise<TodayAppointmentRow[]> {
+  const today = todayStart()
+  const tomorrow = new Date(today.getTime() + 86400000)
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      workshopId,
+      appointmentAt: { gte: today, lt: tomorrow },
+      status: { notIn: ["cancelled", "completed"] },
+    },
+    include: {
+      customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
+      vehicle: { select: { plate: true, brand: true, model: true } },
+    },
+    orderBy: { appointmentAt: "asc" },
+    take: 10,
+  })
+
+  return appointments.map((a) => ({
+    id: a.id,
+    appointmentNo: a.appointmentNo || `RND-${a.id.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase()}`,
+    appointmentAt: a.appointmentAt.toISOString(),
+    status: a.status,
+    customerName: a.customer.type === "corporate"
+      ? a.customer.companyName || "Kurumsal"
+      : a.customer.fullName || [a.customer.firstName, a.customer.lastName].filter(Boolean).join(" ") || "Müşteri",
+    customerPhone: a.customer.phone,
+    plate: a.vehicle?.plate || null,
+    brand: a.vehicle?.brand || null,
+    model: a.vehicle?.model || null,
+  }))
+}
+
 export async function getWorkStatusDistribution(workshopId: string): Promise<StatusDistribution[]> {
   const startOfMonth = monthStart()
 

@@ -346,13 +346,15 @@ function MobileCards({
                   {row.brand} {row.model}
                   {row.modelYear ? ` (${row.modelYear})` : ""}
                 </p>
-                <Link
-                  href={`/app/customers/${row.customer.id}`}
-                  className="text-xs text-slate-500 hover:text-blue-600"
-                  onClick={(e) => e.stopPropagation()}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.location.href = `/app/customers/${row.customer.id}`
+                  }}
+                  className="text-xs text-slate-500 hover:text-blue-600 cursor-pointer"
                 >
                   {row.customer.displayName}
-                </Link>
+                </span>
               </div>
               <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
             </div>

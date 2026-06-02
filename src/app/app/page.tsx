@@ -7,6 +7,7 @@ import {
   getDashboardStats,
   getActiveWorkOrders,
   getTodayDeliveries,
+  getTodayAppointmentRows,
   getWaitingApprovals,
   getMissingPhotoItems,
   getRecentCustomers,
@@ -23,6 +24,7 @@ import { RecentCustomers } from "@/components/app/dashboard/recent-customers"
 import { WeeklyChart } from "@/components/app/dashboard/weekly-chart"
 import { StatusChart } from "@/components/app/dashboard/status-chart"
 import { QuickActions } from "@/components/app/dashboard/quick-actions"
+import { TodayAppointments } from "@/components/app/dashboard/today-appointments"
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
@@ -31,6 +33,7 @@ export default async function DashboardPage() {
     stats,
     activeOrders,
     todayDeliveries,
+    todayAppointments,
     waitingApprovals,
     missingPhotos,
     recentCustomers,
@@ -40,6 +43,7 @@ export default async function DashboardPage() {
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
     getTodayDeliveries(user.workshopId),
+    getTodayAppointmentRows(user.workshopId),
     getWaitingApprovals(user.workshopId),
     getMissingPhotoItems(user.workshopId),
     getRecentCustomers(user.workshopId, 6),
@@ -91,6 +95,8 @@ export default async function DashboardPage() {
           <WaitingApprovals approvals={waitingApprovals} />
           <MissingPhotos items={missingPhotos} />
         </div>
+
+        <TodayAppointments appointments={todayAppointments} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <RecentCustomers customers={recentCustomers} />

@@ -150,3 +150,36 @@ export const VEHICLE_TRANSMISSIONS = [
   { value: "otomatik", label: "Otomatik" },
   { value: "yarim_otomatik", label: "Yarı Otomatik" },
 ] as const
+
+export const QUOTE_STATUS = {
+  draft: { label: "Taslak", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  sent: { label: "Gönderildi", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  accepted: { label: "Kabul Edildi", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  rejected: { label: "Reddedildi", color: "bg-rose-100 text-rose-800 border-rose-200" },
+  expired: { label: "Süresi Doldu", color: "bg-orange-100 text-orange-800 border-orange-200" },
+  converted: { label: "İş Emrine Çevrildi", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  cancelled: { label: "İptal", color: "bg-slate-100 text-slate-500 border-slate-200" },
+} as const
+
+export type QuoteStatusKey = keyof typeof QUOTE_STATUS
+
+export const APPOINTMENT_STATUS = {
+  scheduled: { label: "Planlandı", color: "bg-sky-100 text-sky-800 border-sky-200" },
+  confirmed: { label: "Onaylandı", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  arrived: { label: "Geldi", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  converted: { label: "İş Emrine Çevrildi", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  completed: { label: "Tamamlandı", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  cancelled: { label: "İptal", color: "bg-slate-100 text-slate-500 border-slate-200" },
+  no_show: { label: "Gelmedi", color: "bg-rose-100 text-rose-800 border-rose-200" },
+} as const
+
+export type AppointmentStatusKey = keyof typeof APPOINTMENT_STATUS
+
+export const REMINDER_STATUS = {
+  none: { label: "Yok", color: "bg-slate-50 text-slate-400 border-slate-100" },
+  pending: { label: "Bekliyor", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  sent: { label: "Gönderildi", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  failed: { label: "Başarısız", color: "bg-rose-50 text-rose-700 border-rose-200" },
+} as const
+
+export type ReminderStatusKey = keyof typeof REMINDER_STATUS
