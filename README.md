@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.1.5 — Müşteri Yönetimi UX Alignment
+**Versiyon:** v0.2.0 — Dashboard & Operations Overview
 
 ## Hızlı Başlangıç
 
@@ -118,6 +118,52 @@ STORAGE_PROVIDER=mock
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.2.0 Özellikler
+
+### Dashboard & Operations Overview (`/app`)
+
+Tamamen yenilenmiş operasyonel gösterge paneli:
+
+- **KPI Kartları**: 6 metrik — Aktif İş Emri, Bugün Teslim, Onay Bekleyen, Eksik Fotoğraf, Geciken Teslim, Son 7 Gün
+- **Operasyonel Uyarı Banner'ı**: Geciken teslim, eksik fotoğraf, onay bekleyen uyarıları (gerçek veri, sıfırsa pozitif durum)
+- **Aktif İş Emirleri**: Masaüstünde tablo (9 sütun), mobilde kart görünümü, fotoğraf/onay durumu rozetleri
+- **Haftalık Operasyon Grafiği**: CSS bar chart — son 7 günlük iş emri trendi (sıfır bağımlılık)
+- **Aylık İş Durumları Grafiği**: CSS progress bar ile durum dağılımı (sıfır bağımlılık)
+- **Bugün Teslim Edilecekler**: Zaman bilgisi ve durum rozetli widget
+- **Onay Bekleyenler**: Kabul ve iş emrine hızlı erişim
+- **Eksik Fotoğraflar**: Zorunlu fotoğraf tiplerine göre eksik sayısı
+- **Son Müşteriler**: Son 6 müşteri kaydı, telefon ve tarih bilgisi
+- **Hızlı İşlemler**: 6 kısayol butonu (Yeni İş Emri, Yeni Müşteri, Yeni Araç, Onay Bekleyenler, Eksik Fotoğraflar, Bakiye Özeti)
+- **Mobil Uyum**: 2 kolon KPI, tek kolon widget'lar, kart görünümü, dokunma dostu
+- **Tenant İzolasyonu**: Tüm sorgular `workshopId` ile kapsamlı
+
+### Dashboard Veri Katmanı (`src/lib/dashboard/queries.ts`)
+
+8 adet workshop-scoped sunucu yardımcısı:
+- `getDashboardStats` — 6 KPI değerini paralel sorgularla hesaplar
+- `getActiveWorkOrders` — son 10 aktif iş emri (müşteri, araç, fotoğraf, toplam)
+- `getTodayDeliveries` — bugün teslim edilecekler
+- `getWaitingApprovals` — onay bekleyen iş emirleri
+- `getMissingPhotoItems` — eksik fotoğraflı aktif iş emirleri
+- `getRecentCustomers` — son 6 müşteri
+- `getWeeklyOperations` — 7 günlük iş emri sayıları
+- `getWorkStatusDistribution` — aylık durum dağılımı
+
+### Hiçbir Grafik Kütüphanesi Eklenmedi
+- Haftalık ve durum grafikleri saf CSS/SVG ile oluşturuldu
+- `recharts` veya başka bir grafik kütüphanesi eklenmedi
+
+### Tenant İzolasyonu
+- Tüm dashboard sorguları `workshopId` ile kapsamlı
+- Internal ID'ler sayfada görünmüyor
+
+### Regresyon Güvenliği
+- Tüm v0.1.5 rotaları çalışıyor
+- Landing, auth, iş emirleri, müşteriler, araçlar, kabuller, public output, fotoğraf/storage, mock SMS, PDF etkilenmedi
+- Hiçbir Docker dosyası eklenmedi
 
 ---
 
@@ -376,7 +422,7 @@ STORAGE_PROVIDER=mock
 
 ---
 
-## Sınırlamalar (v0.1.5)
+## Sınırlamalar (v0.2.0)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
@@ -396,7 +442,8 @@ STORAGE_PROVIDER=mock
 
 ## Sürümler
 
-- [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment (güncel)
+- [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview (güncel)
+- [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment
 - [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment
 - [v0.1.3](docs/releases/v0.1.3.md) — Image Storage & Intake Media Foundation
 - [v0.1.2](docs/releases/v0.1.2.md) — Public Output & PDF Foundation
@@ -406,6 +453,7 @@ STORAGE_PROVIDER=mock
 
 ## QA
 
+- [v0.2.0 Manuel QA](docs/QA/v0.2.0-manual-checklist.md)
 - [v0.1.5 Manuel QA](docs/QA/v0.1.5-manual-checklist.md)
 - [v0.1.4 Manuel QA](docs/QA/v0.1.4-manual-checklist.md)
 - [v0.1.3 Manuel QA](docs/QA/v0.1.3-manual-checklist.md)
