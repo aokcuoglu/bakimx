@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.2.0 — Dashboard & Operations Overview
+**Versiyon:** v0.2.1 — Araçlar Modülü UX Alignment
 
 ## Hızlı Başlangıç
 
@@ -118,6 +118,57 @@ STORAGE_PROVIDER=mock
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.2.1 Özellikler
+
+### Araç Listesi UX Yenileme (`/app/vehicles`)
+
+- Profesyonel masaüstü tablosu (8 sütun) + mobil kart görünümü
+- Arama: plaka, marka, model, müşteri adı, telefon
+- Araç tipi filtresi (Binek, Hafif Ticari, Ağır Vasıta, Motosiklet, Diğer)
+- Marka filtresi (mevcut veriden otomatik derlenir)
+- PlateBadge tutarlı stil
+- Boş durumlar için Türkçe mesajlar
+- "Plaka Tara" placeholder (plaka tanıma entegrasyonu yakında)
+
+### Yeni Araç Sayfası (`/app/vehicles/new`)
+
+- İki sütunlu yerleşim: form + ipucu paneli
+- Bölümlere ayrılmış form: Müşteri Bağlantısı, Araç Bilgileri, Teknik Bilgiler, Notlar
+- "Ruhsattan Oku" placeholder (OCR yakında)
+- Mobil sticky alt aksiyon çubuğu
+- Türkçe validasyon mesajları
+
+### Araç Detay Sayfası (`/app/vehicles/[id]`)
+
+- Araç Özeti, Müşteri Bilgisi, İş Emri Geçmişi, Kabul Geçmişi
+- Hasar Geçmişi (tüm kabullerden toplu), Fotoğraf Geçmişi (thumbnail grid)
+- Araç Durumu yan paneli (işlem, onay, hasar, fotoğraf durumu)
+- Mobil uyumlu tek sütun yerleşim
+
+### Araç Düzenleme (`/app/vehicles/[id]/edit`)
+
+- Yeni araç formu ile aynı alanlar, ön doldurmalı
+- Tenant sahiplik kontrolü
+
+### Şema Genişletmeleri (Geriye Dönük Uyumlu)
+
+- `Vehicle.color`, `Vehicle.engineNo`, `Vehicle.fuelType`, `Vehicle.transmission`, `Vehicle.notes`
+- `vehicleUpdateSchema` Zod validasyonu
+- `VEHICLE_TYPES`, `VEHICLE_FUEL_TYPES`, `VEHICLE_TRANSMISSIONS` sabitleri
+
+### Yeni Bileşenler
+
+- `PlateBadge` (`src/components/app/plate-badge.tsx`) — tutarlı plaka rozeti
+- `VehicleList` — liste + filtre + tablo/kart
+- `VehicleDetail` — detay sayfası bileşeni
+
+### Placeholder Özellikler
+
+- "Plaka Tara" butonu yalnızca UI placeholder
+- "Ruhsattan Oku" butonu yalnızca UI placeholder
 
 ---
 
@@ -368,8 +419,10 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/customers` — Müşteri listesi (arama destekli)
 - `/app/customers/new` — Yeni müşteri
 - `/app/customers/[id]` — Müşteri detayı
-- `/app/vehicles` — Araç listesi (arama destekli)
-- `/app/vehicles/new` — Yeni araç
+- `/app/vehicles` — Araç listesi (arama, tip/marka filtresi, desktop tablo, mobil kart)
+- `/app/vehicles/new` — Yeni araç (gelişmiş form, teknik bilgiler, placeholder OCR)
+- `/app/vehicles/[id]` — Araç detayı (özet, müşteri, iş emri/kabul/hasar/fotoğraf geçmişi)
+- `/app/vehicles/[id]/edit` — Araç düzenle
 - `/app/intakes` — Kabul listesi (durum filtreli)
 - `/app/intakes/new` — Yeni kabul sihirbazı
 - `/app/intakes/[id]` — Kabul detayı (sekmeli, fotoğraf galerili)
@@ -385,6 +438,11 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/reports` — Raporlar (Yakında)
 
 ### API
+- `GET /api/vehicles` — Araç listesi (opsiyonel ?customerId=)
+- `POST /api/vehicles` — Araç oluştur
+- `GET /api/vehicles/[id]` — Tek araç getir
+- `PUT /api/vehicles/[id]` — Araç güncelle
+- `DELETE /api/vehicles/[id]` — Araç sil (bağlı kayıt varsa güvenli hata)
 - `POST /api/intakes/photos` — Fotoğraf yükle (FormData, file dahil)
 - `PUT /api/intakes/photos` — Fotoğraf değiştir
 - `DELETE /api/intakes/photos` — Fotoğraf sil
@@ -422,7 +480,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.2.0)
+## Sınırlamalar (v0.2.1)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
@@ -442,7 +500,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview (güncel)
+- [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment (güncel)
+- [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview
 - [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment
 - [v0.1.4](docs/releases/v0.1.4.md) — İş Emri UX Alignment
 - [v0.1.3](docs/releases/v0.1.3.md) — Image Storage & Intake Media Foundation
@@ -453,6 +512,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.2.1 Manuel QA](docs/QA/v0.2.1-manual-checklist.md)
 - [v0.2.0 Manuel QA](docs/QA/v0.2.0-manual-checklist.md)
 - [v0.1.5 Manuel QA](docs/QA/v0.1.5-manual-checklist.md)
 - [v0.1.4 Manuel QA](docs/QA/v0.1.4-manual-checklist.md)

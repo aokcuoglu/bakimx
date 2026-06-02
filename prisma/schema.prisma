@@ -126,6 +126,11 @@ model Vehicle {
   vin          String?
   vinOcrRaw    String?
   vinConfirmed Boolean  @default(false)
+  color        String?
+  engineNo     String?
+  fuelType     String?
+  transmission String?
+  notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

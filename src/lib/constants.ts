@@ -126,3 +126,27 @@ export const CUSTOMER_PRICE_GROUPS = {
 } as const
 
 export type CustomerPriceGroupKey = keyof typeof CUSTOMER_PRICE_GROUPS
+
+export const VEHICLE_TYPES = [
+  { value: "", label: "Tüm Tipler" },
+  { value: "binek", label: "Binek" },
+  { value: "hafif_ticari", label: "Hafif Ticari" },
+  { value: "agir_vasita", label: "Ağır Vasıta" },
+  { value: "motosiklet", label: "Motosiklet" },
+  { value: "diger", label: "Diğer" },
+] as const
+
+export const VEHICLE_FUEL_TYPES = [
+  { value: "benzin", label: "Benzin" },
+  { value: "dizel", label: "Dizel" },
+  { value: "lpg", label: "LPG" },
+  { value: "hibrit", label: "Hibrit" },
+  { value: "elektrik", label: "Elektrik" },
+  { value: "diger", label: "Diğer" },
+] as const
+
+export const VEHICLE_TRANSMISSIONS = [
+  { value: "manuel", label: "Manuel" },
+  { value: "otomatik", label: "Otomatik" },
+  { value: "yarim_otomatik", label: "Yarı Otomatik" },
+] as const

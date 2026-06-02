@@ -2,109 +2,131 @@ import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
-import { Plus, Car, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus, ScanLine } from "lucide-react"
+import { VehicleList } from "@/components/app/vehicle-list"
+import { customerDisplayName } from "@/lib/format"
+import { deleteVehicleAction } from "./actions"
 
-export default async function VehiclesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function VehiclesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; vehicleType?: string; brand?: string }>
+}) {
   const { user, workshop } = await getAppData()
   const params = await searchParams
-  const query = params.q || ""
+  const q = (params.q || "").trim()
+  const vehicleType = (params.vehicleType || "").trim()
+  const brand = (params.brand || "").trim()
 
   const vehicles = await prisma.vehicle.findMany({
     where: {
       workshopId: user.workshopId,
-      ...(query
+      ...(vehicleType ? { vehicleType } : {}),
+      ...(brand ? { brand } : {}),
+      ...(q
         ? {
             OR: [
-              { plate: { contains: query, mode: "insensitive" } },
-              { brand: { contains: query, mode: "insensitive" } },
-              { model: { contains: query, mode: "insensitive" } },
-              { customer: { firstName: { contains: query, mode: "insensitive" } } },
-              { customer: { lastName: { contains: query, mode: "insensitive" } } },
-              { customer: { fullName: { contains: query, mode: "insensitive" } } },
-              { customer: { companyName: { contains: query, mode: "insensitive" } } },
+              { plate: { contains: q, mode: "insensitive" as const } },
+              { brand: { contains: q, mode: "insensitive" as const } },
+              { model: { contains: q, mode: "insensitive" as const } },
+              { customer: { firstName: { contains: q, mode: "insensitive" as const } } },
+              { customer: { lastName: { contains: q, mode: "insensitive" as const } } },
+              { customer: { fullName: { contains: q, mode: "insensitive" as const } } },
+              { customer: { companyName: { contains: q, mode: "insensitive" as const } } },
+              { customer: { phone: { contains: q } } },
             ],
           }
         : {}),
     },
-    include: { customer: true },
+    include: {
+      customer: true,
+      intakes: {
+        include: { order: { select: { id: true } } },
+        orderBy: { createdAt: "desc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
   })
 
+  const brands = [...new Set(vehicles.map((v) => v.brand).filter(Boolean))].sort()
+
+  const serialized = vehicles.map((v) => ({
+    id: v.id,
+    plate: v.plate,
+    brand: v.brand,
+    model: v.model,
+    vehicleType: v.vehicleType,
+    modelYear: v.modelYear,
+    mileage: v.mileage,
+    createdAt: v.createdAt.toISOString(),
+    customer: {
+      id: v.customer.id,
+      displayName: customerDisplayName(v.customer),
+      phone: v.customer.phone,
+      type: v.customer.type,
+    },
+    workOrdersCount: v.intakes.filter((i) => i.order).length,
+    lastServiceDate: v.intakes[0]?.createdAt.toISOString() || null,
+  }))
+
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Araçlar">
+    <AppShell
+      workshopName={workshop?.name}
+      pageTitle="Araçlar"
+      pageActions={
+        <Link
+          href="/app/vehicles/new"
+          className="inline-flex items-center justify-center size-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white touch-manipulation"
+          aria-label="Yeni araç"
+        >
+          <Plus className="size-5" />
+        </Link>
+      }
+    >
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
-          <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Araçlar</span>
+        <div className="hidden sm:flex items-center justify-between">
+          <div className="flex items-center text-sm text-slate-500">
+            <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+            <span className="mx-2">/</span>
+            <span className="text-slate-700 font-medium">Araçlar</span>
+          </div>
         </div>
-        <div className="flex items-center justify-between">
+
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Araçlar</h2>
             <p className="text-sm text-slate-500 mt-0.5">{vehicles.length} araç kayıtlı</p>
           </div>
-          <Link href="/app/vehicles/new">
-            <Button size="lg" className="gap-2 h-11">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled
+              title="Plaka tanıma entegrasyonu yakında"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-slate-400 text-sm font-medium cursor-not-allowed touch-manipulation"
+            >
+              <ScanLine className="size-4" />
+              <span className="hidden sm:inline">Plaka Tara</span>
+            </button>
+            <Link
+              href="/app/vehicles/new"
+              className="hidden sm:inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
+            >
               <Plus className="size-4" />
               Yeni Araç
-            </Button>
-          </Link>
-        </div>
-
-        <form className="relative" action="/app/vehicles" method="get">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-          <input
-            name="q"
-            defaultValue={query}
-            placeholder="Plaka, marka, model veya müşteri adı ile arayın..."
-            className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-          />
-        </form>
-
-        {vehicles.length === 0 ? (
-          <div className="text-center py-16 text-slate-500">
-            <Car className="size-14 mx-auto mb-4 text-slate-300" />
-            <p className="text-base font-medium">
-              {query ? "Aramanızla eşleşen araç bulunamadı" : "Henüz araç kaydı yok"}
-            </p>
-            <Link href="/app/vehicles/new" className="text-blue-600 hover:text-blue-700 text-sm mt-3 inline-block">
-              İlk aracınızı ekleyin
             </Link>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {query && (
-              <p className="text-xs text-slate-500 px-1">
-                {vehicles.length} araç bulundu
-              </p>
-            )}
-            {vehicles.map((vehicle) => (
-              <div
-                key={vehicle.id}
-                className="flex items-center justify-between p-3.5 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="size-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
-                    <Car className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
-                      {vehicle.plate} • {vehicle.brand} {vehicle.model}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {vehicle.customer.type === "corporate"
-                        ? vehicle.customer.companyName || "Kurumsal Müşteri"
-                        : vehicle.customer.fullName || `${vehicle.customer.firstName ?? ""} ${vehicle.customer.lastName ?? ""}`.trim() || "Müşteri"}
-                      {vehicle.modelYear && ` • ${vehicle.modelYear}`}
-                      {vehicle.mileage && ` • ${vehicle.mileage.toLocaleString("tr-TR")} km`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
+
+        <div className="hidden sm:block text-xs text-slate-400 -mt-2">
+          Plaka tanıma entegrasyonu yakında.
+        </div>
+
+        <VehicleList
+          vehicles={serialized}
+          brands={brands}
+          initialFilters={{ q, vehicleType, brand }}
+          onDelete={deleteVehicleAction}
+        />
       </div>
     </AppShell>
   )
