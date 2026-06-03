@@ -15,7 +15,9 @@ import {
   getWorkStatusDistribution,
 } from "@/lib/dashboard/queries"
 import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/queries"
+import { getCriticalStockItems } from "@/lib/parts/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
+import { CriticalStockWidget } from "@/components/app/dashboard/critical-stock"
 import { AlertBanner } from "@/components/app/dashboard/alert-banner"
 import { ActiveOrdersSection } from "@/components/app/dashboard/active-orders"
 import { TodayDeliveries } from "@/components/app/dashboard/today-deliveries"
@@ -42,6 +44,7 @@ export default async function DashboardPage() {
     statusDist,
     remindersDueSoon,
     remindersOverdue,
+    criticalStock,
   ] = await Promise.all([
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
@@ -54,6 +57,7 @@ export default async function DashboardPage() {
     getWorkStatusDistribution(user.workshopId),
     getDueSoonReminders(user.workshopId, 10),
     getOverdueReminders(user.workshopId, 10),
+    getCriticalStockItems(user.workshopId, 10),
   ])
 
   return (
@@ -104,8 +108,12 @@ export default async function DashboardPage() {
         <TodayAppointments appointments={todayAppointments} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          <RecentCustomers customers={recentCustomers} />
+          <CriticalStockWidget items={criticalStock} />
           <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          <RecentCustomers customers={recentCustomers} />
         </div>
       </div>
     </AppShell>

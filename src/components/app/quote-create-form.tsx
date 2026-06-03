@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Trash2, Loader2, Calculator } from "lucide-react"
+import { StockStatusBadge } from "@/components/app/stock-status-badge"
+import { formatPrice } from "@/lib/parts/format"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/app/quotes/actions"
 import { customerDisplayName } from "@/lib/format"
@@ -71,6 +73,9 @@ export function QuoteCreateForm() {
   const [discountAmount, setDiscountAmount] = useState("")
   const [taxRate, setTaxRate] = useState("20")
   const [items, setItems] = useState<LineItem[]>([])
+  const [catalogSearch, setCatalogSearch] = useState("")
+  const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
 
   useEffect(() => {
     if (state?.success && state.id) {
@@ -127,6 +132,34 @@ export function QuoteCreateForm() {
       ...prev,
       { id: newItemId(), type: "part", name: "", quantity: 1, unitPrice: null, totalPrice: null, note: "" },
     ])
+  }
+
+  async function searchCatalog(query: string) {
+    if (query.length < 1) { setCatalogResults([]); return }
+    setCatalogLoading(true)
+    try {
+      const res = await fetch(`/api/parts/search?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      if (data.parts) setCatalogResults(data.parts)
+    } catch { /* ignore */ }
+    finally { setCatalogLoading(false) }
+  }
+
+  function selectCatalogPart(part: { id: string; name: string; sku: string | null; salePrice: number | null; unit: string }) {
+    addItem()
+    setItems((prev) => {
+      const updated = [...prev]
+      const last = updated[updated.length - 1]
+      if (last) {
+        last.name = part.name
+        last.unitPrice = part.salePrice
+        last.totalPrice = part.salePrice ? part.salePrice * last.quantity : null
+        if (part.sku) last.note = `SKU: ${part.sku}`
+      }
+      return updated
+    })
+    setCatalogSearch("")
+    setCatalogResults([])
   }
 
   function removeItem(id: string) {
@@ -297,13 +330,49 @@ export function QuoteCreateForm() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold">Parça & İşçilik Kalemleri</CardTitle>
-                <Button type="button" size="sm" variant="outline" onClick={addItem} className="gap-1">
-                  <Plus className="size-3.5" />
-                  Kalem Ekle
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={addItem} className="gap-1">
+                    <Plus className="size-3.5" />
+                    Kalem Ekle
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      value={catalogSearch}
+                      onChange={(e) => { setCatalogSearch(e.target.value); searchCatalog(e.target.value) }}
+                      placeholder="Katalogdan parça ara ve ekle..."
+                    />
+                    {catalogLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Aranıyor...</span>}
+                  </div>
+                </div>
+                {catalogResults.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                    {catalogResults.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectCatalogPart(p)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-slate-900">{p.name}</span>
+                          {p.sku && <span className="text-xs text-slate-500 ml-2 font-mono">{p.sku}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
+                          {p.salePrice != null && <span className="text-xs font-medium text-slate-700">{formatPrice(p.salePrice)}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {items.length === 0 && (
                 <div className="text-center py-6 text-sm text-slate-500">
                   Henüz kalem eklenmedi. &quot;Kalem Ekle&quot; butonuna tıklayarak başlayın.

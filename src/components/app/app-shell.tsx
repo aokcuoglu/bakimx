@@ -59,7 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Depo & Finans",
     items: [
-      { href: "/app/inventory", label: "Stok / Parçalar", icon: Boxes, badge: "Yakında" },
+      { href: "/app/parts", label: "Stok / Parçalar", icon: Boxes },
       { href: "/app/suppliers", label: "Tedarikçiler", icon: Truck, badge: "Yakında" },
       { href: "/app/cash", label: "Kasa", icon: Wallet, badge: "Yakında" },
     ],
@@ -76,7 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-const COMING_SOON_PREFIXES = ["/app/inventory", "/app/suppliers", "/app/cash", "/app/reports"]
+const COMING_SOON_PREFIXES = ["/app/suppliers", "/app/cash", "/app/reports"]
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -104,7 +104,7 @@ export function AppShell({
     e.preventDefault()
     const value = searchValue.trim()
     if (!value) return
-    router.push(`/app/orders?q=${encodeURIComponent(value)}`)
+    router.push(`/app/parts?q=${encodeURIComponent(value)}`)
   }
 
   return (

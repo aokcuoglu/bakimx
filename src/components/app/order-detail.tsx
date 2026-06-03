@@ -37,6 +37,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
+import { StockStatusBadge } from "@/components/app/stock-status-badge"
+import { formatPrice } from "@/lib/parts/format"
 
 type OrderItem = {
   id: string
@@ -479,9 +481,37 @@ function PartsLaborCard({
   const [qty, setQty] = useState("1")
   const [price, setPrice] = useState("")
   const [note, setNote] = useState("")
+  const [catalogSearch, setCatalogSearch] = useState("")
+  const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(false)
 
   const parts = items.filter((i) => i.type === "part")
   const labor = items.filter((i) => i.type === "labor")
+
+  async function searchCatalog(query: string) {
+    if (query.length < 1) { setCatalogResults([]); return }
+    setCatalogLoading(true)
+    try {
+      const res = await fetch(`/api/parts/search?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      if (data.parts) setCatalogResults(data.parts)
+    } catch { /* ignore */ }
+    finally { setCatalogLoading(false) }
+  }
+
+  async function selectCatalogPart(partId: string) {
+    const part = catalogResults.find((p) => p.id === partId)
+    if (!part) return
+    setName(part.name)
+    setSku(part.sku || "")
+    setUnit(part.unit)
+    setPrice(part.salePrice?.toString() || "")
+    setQty("1")
+    setShowCatalog(false)
+    setCatalogSearch("")
+    setCatalogResults([])
+  }
 
   function resetForm() {
     setName("")
@@ -491,6 +521,9 @@ function PartsLaborCard({
     setPrice("")
     setNote("")
     setAddingType(null)
+    setShowCatalog(false)
+    setCatalogSearch("")
+    setCatalogResults([])
   }
 
   async function handleAdd() {
@@ -592,7 +625,7 @@ function PartsLaborCard({
             </Button>
           </div>
         ) : (
-          <div className="pt-3 border-t space-y-3">
+            <div className="pt-3 border-t space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-900">
                 {addingType === "part" ? "Yeni Parça" : "Yeni İşçilik"}
@@ -605,6 +638,46 @@ function PartsLaborCard({
                 <X className="size-4" />
               </button>
             </div>
+
+            {addingType === "part" && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      value={catalogSearch}
+                      onChange={(e) => { setCatalogSearch(e.target.value); searchCatalog(e.target.value) }}
+                      placeholder="Katalogdan parça ara..."
+                    />
+                    {catalogLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Aranıyor...</span>}
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setShowCatalog(!showCatalog)}>
+                    Katalogdan Ekle
+                  </Button>
+                </div>
+                {showCatalog && catalogResults.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                    {catalogResults.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectCatalogPart(p.id)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-slate-900">{p.name}</span>
+                          {p.sku && <span className="text-xs text-slate-500 ml-2 font-mono">{p.sku}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
+                          {p.salePrice != null && <span className="text-xs font-medium text-slate-700">{formatPrice(p.salePrice)}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="sm:col-span-2">
                 <Label className="text-xs">{addingType === "part" ? "Parça Adı *" : "İşçilik Adı *"}</Label>

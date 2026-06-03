@@ -32,6 +32,8 @@ model Workshop {
   appointments Appointment[]
   reminders    MaintenanceReminder[]
   auditLogs    AuditLog[]
+  partStockItems PartStockItem[]
+  stockMovements StockMovement[]
 }
 
 model User {
@@ -356,12 +358,15 @@ model ServiceOrderItem {
   quantity       Int          @default(1)
   unitPrice      Float?
   totalPrice     Float?
+  partId         String?
+  part           PartStockItem? @relation(fields: [partId], references: [id])
   note           String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
+  @@index([partId])
 }
 
 enum OrderItemType {
@@ -424,12 +429,15 @@ model QuoteItem {
   quantity  Int               @default(1)
   unitPrice Float?
   totalPrice Float?
+  partId    String?
+  part      PartStockItem?    @relation(fields: [partId], references: [id])
   note      String?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
   @@index([workshopId])
   @@index([quoteId])
+  @@index([partId])
 }
 
 enum QuoteItemType {
@@ -544,6 +552,66 @@ model MaintenanceReminder {
   @@index([status])
   @@index([dueDate])
   @@index([dueMileage])
+}
+
+model PartStockItem {
+  id               String   @id @default(cuid())
+  workshopId       String
+  workshop         Workshop @relation(fields: [workshopId], references: [id])
+  name             String
+  sku              String?
+  oemNo            String?
+  brand            String?
+  category         String?
+  description      String?
+  unit             String   @default("adet")
+  stockQty         Int      @default(0)
+  criticalStockQty Int      @default(0)
+  purchasePrice    Float?
+  salePrice        Float?
+  currency         String   @default("TRY")
+  supplierName     String?
+  supplierPhone    String?
+  shelfLocation    String?
+  barcode          String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  movements        StockMovement[]
+  serviceOrderItems ServiceOrderItem[]
+  quoteItems        QuoteItem[]
+
+  @@index([workshopId])
+  @@index([name])
+  @@index([sku])
+  @@index([oemNo])
+  @@index([brand])
+  @@index([category])
+  @@index([stockQty])
+  @@index([isActive])
+}
+
+model StockMovement {
+  id           String   @id @default(cuid())
+  workshopId   String
+  workshop     Workshop @relation(fields: [workshopId], references: [id])
+  partId       String
+  part         PartStockItem @relation(fields: [partId], references: [id])
+  type         String
+  quantity     Int
+  previousQty  Int?
+  newQty       Int?
+  reason       String?
+  sourceType   String?
+  sourceId     String?
+  createdByUserId String?
+  createdAt    DateTime @default(now())
+
+  @@index([workshopId])
+  @@index([partId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model AuditLog {
