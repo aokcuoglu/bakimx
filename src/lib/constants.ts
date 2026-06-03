@@ -183,3 +183,37 @@ export const REMINDER_STATUS = {
 } as const
 
 export type ReminderStatusKey = keyof typeof REMINDER_STATUS
+
+export const MAINTENANCE_REMINDER_STATUS = {
+  upcoming: { label: "Yaklaşan", color: "bg-sky-100 text-sky-800 border-sky-200" },
+  due_soon: { label: "Yaklaşıyor", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  overdue: { label: "Gecikmiş", color: "bg-rose-100 text-rose-800 border-rose-200" },
+  completed: { label: "Tamamlandı", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  postponed: { label: "Ertelendi", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  cancelled: { label: "İptal", color: "bg-slate-100 text-slate-500 border-slate-200" },
+} as const
+
+export type MaintenanceReminderStatusKey = keyof typeof MAINTENANCE_REMINDER_STATUS
+
+export const MAINTENANCE_REMINDER_TYPES = {
+  periodic_maintenance: { label: "Periyodik Bakım" },
+  oil_change: { label: "Yağ Bakımı" },
+  inspection: { label: "Muayene" },
+  tire_change: { label: "Lastik Değişimi" },
+  brake_check: { label: "Fren Kontrolü" },
+  battery_check: { label: "Akü Kontrolü" },
+  insurance: { label: "Sigorta" },
+  other: { label: "Diğer" },
+} as const
+
+export type MaintenanceReminderTypeKey = keyof typeof MAINTENANCE_REMINDER_TYPES
+
+export const MAINTENANCE_CHANNELS = {
+  none: { label: "Yok" },
+  sms: { label: "SMS" },
+  whatsapp: { label: "WhatsApp" },
+  phone: { label: "Telefon" },
+  email: { label: "E-posta" },
+} as const
+
+export type MaintenanceChannelKey = keyof typeof MAINTENANCE_CHANNELS

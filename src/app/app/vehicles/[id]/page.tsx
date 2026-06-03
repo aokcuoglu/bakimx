@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { VehicleDetail } from "@/components/app/vehicle-detail"
 import { calculateOrderTotals } from "@/lib/totals"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
+import { getVehicleReminders } from "@/lib/reminders/queries"
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,6 +29,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   })
 
   if (!vehicle) notFound()
+
+  const reminders = await getVehicleReminders(user.workshopId, id)
 
   const serialized = {
     ...vehicle,
@@ -59,6 +62,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         createdAt: p.createdAt.toISOString(),
       })),
     })),
+    reminders,
   }
 
   return (

@@ -24,10 +24,14 @@ import {
   ChevronRight,
   Hash,
   ExternalLink,
+  BellRing,
+  Calendar,
+  Gauge,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge, PlateBadge } from "@/components/app/status-badge"
+import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/app/reminder-status-badge"
 import { CustomerTypeBadge, CustomerTagBadge, PriceGroupBadge } from "@/components/app/customer-badges"
 import { CustomerCreateForm, type CustomerFormInitial } from "@/components/app/customer-create-form"
 import { DeleteCustomerButton } from "@/components/app/delete-customer-button"
@@ -36,6 +40,7 @@ import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { INTAKE_STATUS, CUSTOMER_SOURCES } from "@/lib/constants"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
 import { cn } from "@/lib/utils"
+import type { ReminderRow } from "@/lib/reminders/queries"
 
 type Vehicle = {
   id: string
@@ -76,11 +81,13 @@ export function CustomerDetail({
   customer,
   vehicles,
   intakes,
+  reminders = [],
   showEditInitially = false,
 }: {
   customer: CustomerDetailData
   vehicles: Vehicle[]
   intakes: Intake[]
+  reminders?: ReminderRow[]
   showEditInitially?: boolean
 }) {
   const [editing, setEditing] = useState<boolean>(!!showEditInitially)
@@ -324,6 +331,70 @@ export function CustomerDetail({
                     </li>
                   ) : null
                 )}
+              </ul>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Bakım Hatırlatmaları"
+            icon={BellRing}
+            count={reminders.length}
+            action={
+              <Link
+                href={`/app/reminders/new?customerId=${customer.id}`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+              >
+                <Plus className="size-3.5" />
+                Yeni Hatırlatma
+              </Link>
+            }
+          >
+            {reminders.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <BellRing className="size-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm">Henüz bakım hatırlatması yok</p>
+                <Link
+                  href={`/app/reminders/new?customerId=${customer.id}`}
+                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  <Plus className="size-3.5" />
+                  Yeni hatırlatma oluştur
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+                {reminders.map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      href={`/app/reminders/${r.id}`}
+                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <PlateBadge plate={r.vehicle.plate} />
+                          <span className="text-sm font-medium text-slate-900 truncate">{r.title}</span>
+                          <ReminderStatusBadge status={r.status} />
+                          <ReminderTypeBadge type={r.type} />
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                          {r.dueDate ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              {formatDate(r.dueDate)}
+                            </span>
+                          ) : null}
+                          {r.dueMileage ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Gauge className="size-3" />
+                              {r.dueMileage.toLocaleString("tr-TR")} km
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <ChevronRight className="size-4 text-slate-400" />
+                    </Link>
+                  </li>
+                ))}
               </ul>
             )}
           </SectionCard>

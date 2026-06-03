@@ -14,6 +14,7 @@ import {
   getWeeklyOperations,
   getWorkStatusDistribution,
 } from "@/lib/dashboard/queries"
+import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
 import { AlertBanner } from "@/components/app/dashboard/alert-banner"
 import { ActiveOrdersSection } from "@/components/app/dashboard/active-orders"
@@ -23,8 +24,8 @@ import { MissingPhotos } from "@/components/app/dashboard/missing-photos"
 import { RecentCustomers } from "@/components/app/dashboard/recent-customers"
 import { WeeklyChart } from "@/components/app/dashboard/weekly-chart"
 import { StatusChart } from "@/components/app/dashboard/status-chart"
-import { QuickActions } from "@/components/app/dashboard/quick-actions"
 import { TodayAppointments } from "@/components/app/dashboard/today-appointments"
+import { ReminderWidget } from "@/components/app/dashboard/reminder-widget"
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
@@ -39,6 +40,8 @@ export default async function DashboardPage() {
     recentCustomers,
     weeklyOps,
     statusDist,
+    remindersDueSoon,
+    remindersOverdue,
   ] = await Promise.all([
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
@@ -49,6 +52,8 @@ export default async function DashboardPage() {
     getRecentCustomers(user.workshopId, 6),
     getWeeklyOperations(user.workshopId),
     getWorkStatusDistribution(user.workshopId),
+    getDueSoonReminders(user.workshopId, 10),
+    getOverdueReminders(user.workshopId, 10),
   ])
 
   return (
@@ -100,7 +105,7 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <RecentCustomers customers={recentCustomers} />
-          <QuickActions />
+          <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />
         </div>
       </div>
     </AppShell>

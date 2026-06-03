@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { CustomerDetail } from "@/components/app/customer-detail"
+import { getCustomerReminders } from "@/lib/reminders/queries"
 
 export default async function CustomerDetailPage({
   params,
@@ -36,6 +37,8 @@ export default async function CustomerDetailPage({
   })
 
   if (!customer) notFound()
+
+  const reminders = await getCustomerReminders(user.workshopId, id)
 
   return (
     <AppShell
@@ -107,6 +110,7 @@ export default async function CustomerDetailPage({
               }
             : null,
         }))}
+        reminders={reminders}
       />
     </AppShell>
   )

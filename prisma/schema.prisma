@@ -30,6 +30,7 @@ model Workshop {
   quotes       Quote[]
   quoteItems   QuoteItem[]
   appointments Appointment[]
+  reminders    MaintenanceReminder[]
   auditLogs    AuditLog[]
 }
 
@@ -83,6 +84,7 @@ model Customer {
   intakes  VehicleIntakeForm[]
   quotes   Quote[]
   appointments Appointment[]
+  reminders MaintenanceReminder[]
 
   @@index([workshopId])
   @@index([workshopId, type])
@@ -142,6 +144,7 @@ model Vehicle {
   intakes VehicleIntakeForm[]
   quotes  Quote[]
   appointments Appointment[]
+  reminders MaintenanceReminder[]
 
   @@index([workshopId])
   @@index([customerId])
@@ -477,6 +480,70 @@ enum ReminderStatus {
   pending
   sent
   failed
+}
+
+enum MaintenanceReminderStatus {
+  upcoming
+  due_soon
+  overdue
+  completed
+  postponed
+  cancelled
+}
+
+enum MaintenanceReminderType {
+  periodic_maintenance
+  oil_change
+  inspection
+  tire_change
+  brake_check
+  battery_check
+  insurance
+  other
+}
+
+enum MaintenanceChannel {
+  none
+  sms
+  whatsapp
+  phone
+  email
+}
+
+model MaintenanceReminder {
+  id                  String                     @id @default(cuid())
+  workshopId          String
+  workshop            Workshop                   @relation(fields: [workshopId], references: [id])
+  customerId          String
+  customer            Customer                   @relation(fields: [customerId], references: [id])
+  vehicleId           String
+  vehicle             Vehicle                    @relation(fields: [vehicleId], references: [id])
+  title               String
+  type                MaintenanceReminderType    @default(other)
+  status              MaintenanceReminderStatus  @default(upcoming)
+  dueDate             DateTime?
+  dueMileage          Int?
+  currentMileage      Int?
+  lastServiceDate     DateTime?
+  lastServiceMileage  Int?
+  reminderDaysBefore  Int?
+  reminderKmBefore    Int?
+  preferredChannel    MaintenanceChannel         @default(none)
+  reminderStatus      ReminderStatus             @default(none)
+  customerNote        String?
+  internalNote        String?
+  completedAt         DateTime?
+  completedServiceOrderId String?                @unique
+  createdAppointmentId    String?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([dueMileage])
 }
 
 model AuditLog {

@@ -16,15 +16,20 @@ import {
   Camera,
   AlertTriangle,
   ChevronRight,
+  BellRing,
+  Calendar,
+  Gauge,
 } from "lucide-react"
 import { PlateBadge } from "@/components/app/plate-badge"
 import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
+import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/app/reminder-status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatTRY } from "@/lib/format"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import type { ReminderRow } from "@/lib/reminders/queries"
 
 type VehicleData = {
   id: string
@@ -43,6 +48,7 @@ type VehicleData = {
   notes: string | null
   createdAt: string
   updatedAt: string
+  reminders: ReminderRow[]
   customer: {
     id: string
     type: string
@@ -348,6 +354,61 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     </Link>
                   )
                 })}
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Bakım Hatırlatmaları"
+            icon={BellRing}
+            count={v.reminders.length}
+            action={
+              <Link
+                href={`/app/reminders/new?customerId=${v.customer.id}&vehicleId=${v.id}`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+              >
+                <Plus className="size-3.5" />
+                Yeni Hatırlatma
+              </Link>
+            }
+          >
+            {v.reminders.length === 0 ? (
+              <div className="text-center py-6 text-slate-500">
+                <BellRing className="size-8 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm">Bu araç için bakım hatırlatması bulunmuyor</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+                {v.reminders.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/app/reminders/${r.id}`}
+                    className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-slate-900">{r.title}</span>
+                        <ReminderStatusBadge status={r.status} />
+                        <ReminderTypeBadge type={r.type} />
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        {r.dueDate ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="size-3" />
+                            {formatDate(r.dueDate)}
+                          </span>
+                        ) : null}
+                        {r.dueMileage ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Gauge className="size-3" />
+                            {r.dueMileage.toLocaleString("tr-TR")} km
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                  </Link>
+                ))}
               </div>
             )}
           </SectionCard>

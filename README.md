@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.2.2 — Teklifler & Randevular Foundation
+**Versiyon:** v0.2.3 — Bakım Hatırlatmaları Foundation
 
 ## Hızlı Başlangıç
 
@@ -483,7 +483,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/orders/[id]` — İş emri detayı (sticky fiyat paneli, durum/ödeme)
 - `/app/quotes` — Teklifler (arama, durum filtresi, tablo/kart)
 - `/app/appointments` — Randevular (arama, durum filtresi, takvim/kart)
-- `/app/reminders` — Bakım Hatırlatmaları (Yakında)
+- `/app/reminders` — Bakım Hatırlatmaları (liste, oluşturma, detay, düzenleme, durum)
 - `/app/inventory` — Stok / Parçalar (Yakında)
 - `/app/suppliers` — Tedarikçiler (Yakında)
 - `/app/cash` — Kasa (Yakında)
