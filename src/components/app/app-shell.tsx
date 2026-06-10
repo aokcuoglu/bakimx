@@ -60,7 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Depo & Finans",
     items: [
       { href: "/app/parts", label: "Stok / Parçalar", icon: Boxes },
-      { href: "/app/suppliers", label: "Tedarikçiler", icon: Truck, badge: "Yakında" },
+      { href: "/app/suppliers", label: "Tedarikçiler", icon: Truck },
       { href: "/app/cash", label: "Kasa", icon: Wallet, badge: "Yakında" },
     ],
   },
@@ -76,7 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-const COMING_SOON_PREFIXES = ["/app/suppliers", "/app/cash", "/app/reports"]
+const COMING_SOON_PREFIXES = ["/app/cash", "/app/reports"]
 
 function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))

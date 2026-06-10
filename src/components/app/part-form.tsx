@@ -27,8 +27,15 @@ type PartData = {
   currency: string
   supplierName: string | null
   supplierPhone: string | null
+  supplierId: string | null
   shelfLocation: string | null
   barcode: string | null
+}
+
+type SupplierOption = {
+  id: string
+  name: string
+  phone: string | null
 }
 
 type ActionState = {
@@ -37,7 +44,7 @@ type ActionState = {
   id?: string
 }
 
-export function PartForm({ part }: { part?: PartData }) {
+export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: SupplierOption[] }) {
   const router = useRouter()
   const isEdit = !!part
 
@@ -174,10 +181,25 @@ export function PartForm({ part }: { part?: PartData }) {
             <CardTitle className="text-sm font-semibold">Tedarikçi Bilgisi</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-[11px] text-slate-400">Tedarikçi bilgileri metin alanı olarak kaydedilir. Tam tedarikçi yönetimi sonraki sürümlerde eklenecektir.</p>
+            {suppliers && suppliers.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="supplierId">Tedarikçi Seç</Label>
+                <select
+                  id="supplierId"
+                  name="supplierId"
+                  defaultValue={part?.supplierId || ""}
+                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                >
+                  <option value="">Tedarikçi seçin (opsiyonel)</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.phone ? ` — ${s.phone}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="supplierName">Tedarikçi Adı</Label>
+                <Label htmlFor="supplierName">Tedarikçi Adı (metin)</Label>
                 <Input id="supplierName" name="supplierName" defaultValue={part?.supplierName || ""} placeholder="Tedarikçi adı..." />
               </div>
               <div className="space-y-2">
@@ -185,6 +207,7 @@ export function PartForm({ part }: { part?: PartData }) {
                 <Input id="supplierPhone" name="supplierPhone" defaultValue={part?.supplierPhone || ""} placeholder="05XX XXX XX XX" />
               </div>
             </div>
+            <p className="text-[11px] text-slate-400">Seçili tedarikçi önceliklidir. Eski kayıtlar metin alanını kullanmaya devam eder.</p>
           </CardContent>
         </Card>
 

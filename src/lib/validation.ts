@@ -239,6 +239,7 @@ export const partCreateSchema = z.object({
   currency: z.string().default("TRY"),
   supplierName: z.string().optional().or(z.literal("")),
   supplierPhone: z.string().optional().or(z.literal("")),
+  supplierId: z.string().optional().or(z.literal("")),
   shelfLocation: z.string().optional().or(z.literal("")),
   barcode: z.string().optional().or(z.literal("")),
 })
@@ -261,3 +262,24 @@ export function getValidationError(result: { success: boolean; error?: { issues?
   }
   return null
 }
+
+export const supplierCreateSchema = z.object({
+  name: z.string().min(1, "Tedarikçi adı zorunludur"),
+  contactPerson: z.string().optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
+  phone2: z.string().optional().or(z.literal("")),
+  email: z.email("Geçerli bir e-posta adresi giriniz").optional().or(z.literal("")),
+  website: z.url("Geçerli bir URL giriniz").optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  address: z.string().optional().or(z.literal("")),
+  taxNumber: z.string().optional().or(z.literal("")),
+  taxOffice: z.string().optional().or(z.literal("")),
+  category: z.string().optional().or(z.literal("")),
+  paymentTermDays: z.coerce.number().int("Ödeme vadesi tam sayı olmalıdır").min(0, "Ödeme vadesi negatif olamaz").optional().or(z.literal("")),
+  averageDeliveryDays: z.coerce.number().int("Teslimat süresi tam sayı olmalıdır").min(0, "Teslimat süresi negatif olamaz").optional().or(z.literal("")),
+  performanceNote: z.string().optional().or(z.literal("")),
+  internalNote: z.string().optional().or(z.literal("")),
+  isActive: z.coerce.boolean().optional().default(true),
+})
+
+export const supplierUpdateSchema = supplierCreateSchema

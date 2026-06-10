@@ -15,6 +15,9 @@ export default async function PartDetailPage(props: { params: Promise<{ id: stri
         orderBy: { createdAt: "desc" },
         take: 50,
       },
+      supplier: {
+        select: { id: true, name: true, phone: true },
+      },
     },
   })
 

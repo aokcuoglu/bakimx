@@ -39,6 +39,8 @@ type PartType = {
   currency: string
   supplierName: string | null
   supplierPhone: string | null
+  supplierId: string | null
+  supplier: { id: string; name: string; phone: string | null } | null
   shelfLocation: string | null
   barcode: string | null
   isActive: boolean
@@ -208,13 +210,30 @@ export function PartDetail({ part }: { part: PartType }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
-              {part.supplierPhone && (
-                <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
-                  {part.supplierPhone}
-                </a>
+              {part.supplier ? (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Tedarikçi</span>
+                    <Link href={`/app/suppliers/${part.supplier.id}`} className="font-medium text-blue-600 hover:text-blue-700">
+                      {part.supplier.name}
+                    </Link>
+                  </div>
+                  {part.supplier.phone && (
+                    <a href={`tel:${part.supplier.phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
+                      {part.supplier.phone}
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
+                  {part.supplierPhone && (
+                    <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
+                      {part.supplierPhone}
+                    </a>
+                  )}
+                </>
               )}
-              <p className="text-[11px] text-slate-400 mt-2">Tedarikçi yönetimi sonraki sürümlerde eklenecektir.</p>
             </CardContent>
           </Card>
 

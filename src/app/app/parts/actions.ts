@@ -12,7 +12,7 @@ export async function createPartAction(formData: FormData) {
   const workshopId = user.workshopId
 
   const raw: Record<string, string> = {}
-  const fields = ["name", "sku", "oemNo", "brand", "category", "description", "unit", "stockQty", "criticalStockQty", "purchasePrice", "salePrice", "currency", "supplierName", "supplierPhone", "shelfLocation", "barcode"]
+  const fields = ["name", "sku", "oemNo", "brand", "category", "description", "unit", "stockQty", "criticalStockQty", "purchasePrice", "salePrice", "currency", "supplierName", "supplierPhone", "supplierId", "shelfLocation", "barcode"]
   for (const f of fields) {
     const v = formData.get(f)
     if (v && typeof v === "string") raw[f] = v
@@ -20,6 +20,11 @@ export async function createPartAction(formData: FormData) {
 
   const parsed = partCreateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
+
+  if (parsed.data.supplierId) {
+    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
+    if (!supplier) return { error: "Geçersiz tedarikçi" }
+  }
 
   const part = await prisma.partStockItem.create({
     data: {
@@ -38,6 +43,7 @@ export async function createPartAction(formData: FormData) {
       currency: parsed.data.currency || "TRY",
       supplierName: parsed.data.supplierName || null,
       supplierPhone: parsed.data.supplierPhone || null,
+      supplierId: parsed.data.supplierId || null,
       shelfLocation: parsed.data.shelfLocation || null,
       barcode: parsed.data.barcode || null,
     },
@@ -74,7 +80,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
   if (!part) return { error: "Parça bulunamadı" }
 
   const raw: Record<string, string> = {}
-  const fields = ["name", "sku", "oemNo", "brand", "category", "description", "unit", "stockQty", "criticalStockQty", "purchasePrice", "salePrice", "currency", "supplierName", "supplierPhone", "shelfLocation", "barcode"]
+  const fields = ["name", "sku", "oemNo", "brand", "category", "description", "unit", "stockQty", "criticalStockQty", "purchasePrice", "salePrice", "currency", "supplierName", "supplierPhone", "supplierId", "shelfLocation", "barcode"]
   for (const f of fields) {
     const v = formData.get(f)
     if (v && typeof v === "string") raw[f] = v
@@ -82,6 +88,11 @@ export async function updatePartAction(partId: string, formData: FormData) {
 
   const parsed = partUpdateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
+
+  if (parsed.data.supplierId) {
+    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
+    if (!supplier) return { error: "Geçersiz tedarikçi" }
+  }
 
   await prisma.partStockItem.updateMany({
     where: { id: partId, workshopId },
@@ -100,6 +111,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
       currency: parsed.data.currency || "TRY",
       supplierName: parsed.data.supplierName || null,
       supplierPhone: parsed.data.supplierPhone || null,
+      supplierId: parsed.data.supplierId || null,
       shelfLocation: parsed.data.shelfLocation || null,
       barcode: parsed.data.barcode || null,
     },

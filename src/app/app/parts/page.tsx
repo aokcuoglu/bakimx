@@ -25,12 +25,18 @@ export default async function PartsPage(props: {
       { brand: { contains: q, mode: "insensitive" } },
       { category: { contains: q, mode: "insensitive" } },
       { supplierName: { contains: q, mode: "insensitive" } },
+      { supplier: { name: { contains: q, mode: "insensitive" } } },
     ]
   }
 
   let parts = await prisma.partStockItem.findMany({
     where: where as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     orderBy: { name: "asc" },
+    include: {
+      supplier: {
+        select: { id: true, name: true },
+      },
+    },
   })
 
   if (status && status !== "all") {
@@ -59,6 +65,7 @@ export default async function PartsPage(props: {
 
   const serialized = parts.map((p) => ({
     ...p,
+    supplier: p.supplier ? { id: p.supplier.id, name: p.supplier.name } : null,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }))

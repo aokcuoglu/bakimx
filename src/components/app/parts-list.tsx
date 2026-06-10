@@ -24,6 +24,9 @@ type PartWithDates = {
   salePrice: number | null
   unit: string
   shelfLocation: string | null
+  supplierName: string | null
+  supplierId: string | null
+  supplier: { id: string; name: string } | null
   isActive: boolean
   createdAt: string
 }
@@ -198,6 +201,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kritik</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Satış Fiyatı</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lokasyon</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tedarikçi</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Durum</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">İşlem</th>
               </tr>
@@ -233,6 +237,13 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                     {part.salePrice != null ? formatPrice(part.salePrice) : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-500">{part.shelfLocation || "—"}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {part.supplier ? (
+                      <Link href={`/app/suppliers/${part.supplier.id}`} className="text-blue-600 hover:text-blue-700">{part.supplier.name}</Link>
+                    ) : part.supplierName ? (
+                      <span className="text-slate-700">{part.supplierName}</span>
+                    ) : <span className="text-slate-300">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <StockStatusBadge
                       stockQty={part.stockQty}
@@ -317,7 +328,14 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   )}>
                     Stok: {formatStockQty(part.stockQty)} {part.unit}
                   </span>
-                  {part.shelfLocation && <span className="text-slate-400">Raf: {part.shelfLocation}</span>}
+                  {(part.supplier || part.supplierName) && (
+                    <span className="text-slate-400 truncate max-w-[120px]">
+                      {part.supplier ? (
+                        <Link href={`/app/suppliers/${part.supplier.id}`} className="text-blue-500 hover:text-blue-600">{part.supplier.name}</Link>
+                      ) : part.supplierName}
+                    </span>
+                  )}
+                  {part.shelfLocation && !part.supplier && !part.supplierName && <span className="text-slate-400">Raf: {part.shelfLocation}</span>}
                 </div>
               </CardContent>
             </Card>

@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.2.3 — Bakım Hatırlatmaları Foundation
+**Versiyon:** v0.2.5 — Tedarikçiler Foundation
 
 ## Hızlı Başlangıç
 
@@ -485,7 +485,10 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/appointments` — Randevular (arama, durum filtresi, takvim/kart)
 - `/app/reminders` — Bakım Hatırlatmaları (liste, oluşturma, detay, düzenleme, durum)
 - `/app/inventory` — Stok / Parçalar (Yakında)
-- `/app/suppliers` — Tedarikçiler (Yakında)
+- `/app/suppliers` — Tedarikçiler (liste, oluşturma, detay, düzenleme)
+- `/app/suppliers/new` — Yeni tedarikçi
+- `/app/suppliers/[id]` — Tedarikçi detayı
+- `/app/suppliers/[id]/edit` — Tedarikçi düzenle
 - `/app/cash` — Kasa (Yakında)
 - `/app/reports` — Raporlar (Yakında)
 
@@ -532,11 +535,11 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.2.2)
+## Sınırlamalar (v0.2.5)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
-- “Excel İçe Aktar” yalnızca UI placeholder
+- "Excel İçe Aktar" yalnızca UI placeholder
 - WhatsApp Business API yok (manuel paylaşım linki)
 - @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
 - S3 depolama sağlayıcısı henüz uygulanmadı (placeholder)
@@ -545,7 +548,10 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Ödeme / tahsilat modülü sadece etiket (Bakiye Özeti temel düzeydedir; iş emri toplamlarından türetilir, gerçek muhasebe verisi göstermez)
 - E-fatura / e-arşiv / fatura modülü yok
 - Çok şubeli kurumsal modül yok
-- Stok, kasa, raporlar modülleri “Yakında” placeholder
+- Tedarikçi API entegrasyonu yok
+- Satın alma / teklif modülü yok ("Yakında" placeholder)
+- Kasa modülü "Yakında" placeholder
+- Raporlar modülü "Yakında" placeholder
 - Gerçek SMS/WhatsApp hatırlatma gönderimi yok
 - Takvim senkronizasyonu yok (Google Calendar, Outlook)
 - Yinelenen randevu (recurring appointment) yok
@@ -557,7 +563,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation (güncel)
+- [v0.2.5](docs/releases/v0.2.5.md) — Tedarikçiler Foundation (güncel)
+- [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation
 - [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment
 - [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview
 - [v0.1.5](docs/releases/v0.1.5.md) — Müşteri Yönetimi UX Alignment
@@ -570,6 +577,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.2.5 Manuel QA](docs/QA/v0.2.5-manual-checklist.md)
 - [v0.2.2 Manuel QA](docs/QA/v0.2.2-manual-checklist.md)
 - [v0.2.1 Manuel QA](docs/QA/v0.2.1-manual-checklist.md)
 - [v0.2.0 Manuel QA](docs/QA/v0.2.0-manual-checklist.md)

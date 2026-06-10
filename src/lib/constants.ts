@@ -217,3 +217,10 @@ export const MAINTENANCE_CHANNELS = {
 } as const
 
 export type MaintenanceChannelKey = keyof typeof MAINTENANCE_CHANNELS
+
+export const SUPPLIER_STATUS = {
+  active: { label: "Aktif", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  passive: { label: "Pasif", color: "bg-slate-100 text-slate-500 border-slate-200" },
+} as const
+
+export type SupplierStatusKey = keyof typeof SUPPLIER_STATUS

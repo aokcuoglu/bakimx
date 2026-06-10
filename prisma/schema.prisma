@@ -34,6 +34,7 @@ model Workshop {
   auditLogs    AuditLog[]
   partStockItems PartStockItem[]
   stockMovements StockMovement[]
+  suppliers     Supplier[]
 }
 
 model User {
@@ -572,6 +573,8 @@ model PartStockItem {
   currency         String   @default("TRY")
   supplierName     String?
   supplierPhone    String?
+  supplierId       String?
+  supplier         Supplier? @relation(fields: [supplierId], references: [id])
   shelfLocation    String?
   barcode          String?
   isActive         Boolean  @default(true)
@@ -590,6 +593,7 @@ model PartStockItem {
   @@index([category])
   @@index([stockQty])
   @@index([isActive])
+  @@index([supplierId])
 }
 
 model StockMovement {
@@ -627,4 +631,37 @@ model AuditLog {
   createdAt    DateTime @default(now())
 
   @@index([workshopId])
+}
+
+model Supplier {
+  id                   String   @id @default(cuid())
+  workshopId           String
+  workshop             Workshop @relation(fields: [workshopId], references: [id])
+  name                 String
+  contactPerson        String?
+  phone                String?
+  phone2               String?
+  email                String?
+  website              String?
+  city                 String?
+  address              String?
+  taxNumber            String?
+  taxOffice            String?
+  category             String?
+  paymentTermDays      Int?
+  averageDeliveryDays  Int?
+  performanceNote      String?
+  internalNote         String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  parts PartStockItem[]
+
+  @@index([workshopId])
+  @@index([name])
+  @@index([phone])
+  @@index([email])
+  @@index([city])
+  @@index([isActive])
 }
