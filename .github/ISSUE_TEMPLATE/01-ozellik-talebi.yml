@@ -1,0 +1,66 @@
+name: "✨ Özellik Talebi"
+description: "Yeni bir özellik veya geliştirme talebi oluşturun"
+title: "[Özellik] "
+labels: ["özellik"]
+body:
+  - type: textarea
+    id: amac
+    attributes:
+      label: "Amaç"
+      description: "Bu özellik neyi çözecek? Kim, neden kullanacak?"
+      placeholder: "Örn: Servis danışmanı şasi numarasını fotoğraftan otomatik okutabilmeli."
+    validations:
+      required: true
+
+  - type: textarea
+    id: kabul-kriterleri
+    attributes:
+      label: "Detaylar / Kabul Kriterleri"
+      description: "Özelliğin 'tamamlandı' sayılması için gerekenler. Her satır bir checkbox olur."
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: hedef-versiyon
+    attributes:
+      label: "Hedef Versiyon"
+      description: "Bu özelliğin çıkmasını istediğiniz versiyon (milestone ile de eşleştirin)"
+      placeholder: "Örn: v1.2.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: oncelik
+    attributes:
+      label: "Öncelik"
+      options:
+        - "🔴 Yüksek - Bir sonraki versiyonda mutlaka olmalı"
+        - "🟡 Orta - Yakın zamanda olmalı"
+        - "🟢 Düşük - Uygun zamanda yapılabilir"
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: ai-promptlari
+    attributes:
+      label: "AI Promptları (developer doldurur)"
+      description: "Geliştirme sırasında kullanılan AI promptları buraya eklenir"
+      placeholder: |
+        ```
+        Kullanılan prompt buraya...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: notlar
+    attributes:
+      label: "Notlar / Ekran Görüntüleri"
+      description: "Varsa ek bilgi, taslak çizim, ekran görüntüsü (sürükle-bırak ile eklenebilir)"
+    validations:
+      required: false
