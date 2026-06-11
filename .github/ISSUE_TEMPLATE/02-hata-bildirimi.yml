@@ -1,0 +1,51 @@
+name: "🐞 Hata Bildirimi"
+description: "Çalışmayan veya yanlış çalışan bir durumu bildirin"
+title: "[Hata] "
+labels: ["hata"]
+body:
+  - type: textarea
+    id: sorun
+    attributes:
+      label: "Sorun Nedir?"
+      description: "Ne olmasını bekliyordunuz, ne oldu?"
+      placeholder: "Örn: Plaka tanıma ekranında fotoğraf yüklenince uygulama donuyor."
+    validations:
+      required: true
+
+  - type: textarea
+    id: adimlar
+    attributes:
+      label: "Hatayı Tekrarlama Adımları"
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: input
+    id: versiyon
+    attributes:
+      label: "Hatanın Görüldüğü Versiyon"
+      placeholder: "Örn: v1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: oncelik
+    attributes:
+      label: "Öncelik"
+      options:
+        - "🔴 Acil - Sistem kullanılamıyor"
+        - "🟡 Orta - İş aksıyor ama geçici çözüm var"
+        - "🟢 Düşük - Küçük rahatsızlık"
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: ekler
+    attributes:
+      label: "Ekran Görüntüsü / Notlar"
+    validations:
+      required: false
