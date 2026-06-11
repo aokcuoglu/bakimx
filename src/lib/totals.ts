@@ -13,6 +13,39 @@ export type OrderTotalsOptions = {
   taxRate?: number | null
 }
 
+export type MinimalLineItem = {
+  totalPrice: number | null
+  unitPrice: number | null
+  quantity: number
+}
+
+export function calculateMinimalTotal(items: MinimalLineItem[]): number {
+  return items.reduce((sum, item) => {
+    if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
+    if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+    return sum
+  }, 0)
+}
+
+export function calculateOrderTotalsFromMinimal(
+  items: MinimalLineItem[],
+  options: OrderTotalsOptions = {}
+): {
+  grandTotal: number
+  hasAnyPrice: boolean
+} {
+  const subtotal = calculateMinimalTotal(items)
+  const discountAmount = Math.max(0, options.discountAmount ?? 0)
+  const afterDiscount = Math.max(0, subtotal - discountAmount)
+  const taxRate = options.taxRate ?? 0
+  const taxAmount = (afterDiscount * taxRate) / 100
+  const grandTotal = afterDiscount + taxAmount
+  const hasAnyPrice = items.some(
+    (i) => (i.totalPrice != null && i.totalPrice > 0) || (i.unitPrice != null && i.unitPrice > 0)
+  )
+  return { grandTotal, hasAnyPrice }
+}
+
 export function calculateLineTotal(item: OrderLineItem): number | null {
   if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
   if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity

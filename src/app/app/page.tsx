@@ -18,6 +18,7 @@ import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/querie
 import { getCriticalStockItems } from "@/lib/parts/queries"
 import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
+import { CashWidget } from "@/components/app/dashboard/cash-widget"
 import { CriticalStockWidget } from "@/components/app/dashboard/critical-stock"
 import { CriticalStockSuppliersWidget } from "@/components/app/dashboard/critical-stock-suppliers"
 import { AlertBanner } from "@/components/app/dashboard/alert-banner"
@@ -114,6 +115,11 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <CriticalStockWidget items={criticalStock} />
           <div className="space-y-4 sm:space-y-5">
+            <CashWidget data={{
+              todayCollected: stats.todayCollected,
+              openReceivable: stats.openReceivable,
+              partialPayments: stats.partialPayments,
+            }} />
             <CriticalStockSuppliersWidget suppliers={criticalStockSuppliers} />
             <ReminderWidget dueSoon={remindersDueSoon} overdue={remindersOverdue} />
           </div>

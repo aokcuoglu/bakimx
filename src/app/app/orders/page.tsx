@@ -13,47 +13,52 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; payment?: string }>
 }) {
-  const { user, workshop } = await getAppData()
   const params = await searchParams
   const q = (params.q || "").trim()
   const status = (params.status || "").trim()
   const payment = (params.payment || "").trim()
 
-  const orders = await prisma.serviceOrder.findMany({
-    where: {
-      workshopId: user.workshopId,
-      ...(status ? { status: status as import("@prisma/client").OrderStatus } : {}),
-      ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
-      ...(q
-        ? {
-            OR: [
-              { workOrderNo: { contains: q, mode: "insensitive" as const } },
-              { intakeForm: { vehicle: { plate: { contains: q, mode: "insensitive" as const } } } },
-              { intakeForm: { customer: { firstName: { contains: q, mode: "insensitive" as const } } } },
-              { intakeForm: { customer: { lastName: { contains: q, mode: "insensitive" as const } } } },
-              { intakeForm: { customer: { phone: { contains: q } } } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      intakeForm: { include: { customer: true, vehicle: true } },
-      items: true,
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const { user, workshop } = await getAppData()
 
-  const allOrders = await prisma.serviceOrder.findMany({
-    where: { workshopId: user.workshopId },
-    include: { items: true },
-  })
+  const [orders, statusGroups] = await Promise.all([
+    prisma.serviceOrder.findMany({
+      where: {
+        workshopId: user.workshopId,
+        ...(status ? { status: status as import("@prisma/client").OrderStatus } : {}),
+        ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
+        ...(q
+          ? {
+              OR: [
+                { workOrderNo: { contains: q, mode: "insensitive" as const } },
+                { intakeForm: { vehicle: { plate: { contains: q, mode: "insensitive" as const } } } },
+                { intakeForm: { customer: { firstName: { contains: q, mode: "insensitive" as const } } } },
+                { intakeForm: { customer: { lastName: { contains: q, mode: "insensitive" as const } } } },
+                { intakeForm: { customer: { phone: { contains: q } } } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        intakeForm: { include: { customer: true, vehicle: true } },
+        items: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.serviceOrder.groupBy({
+      by: ["status"],
+      where: { workshopId: user.workshopId },
+      _count: { _all: true },
+    }),
+  ])
 
+  const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
+  const activeStatuses = ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"]
   const kpis = {
-    active: allOrders.filter((o) => ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"].includes(o.status)).length,
-    completed: allOrders.filter((o) => o.status === "ready_for_delivery").length,
-    delivered: allOrders.filter((o) => o.status === "delivered").length,
-    cancelled: allOrders.filter((o) => o.status === "cancelled").length,
-    waitingApproval: allOrders.filter((o) => o.status === "waiting_approval").length,
+    active: activeStatuses.reduce((s, st) => s + (statusCountMap.get(st as import("@prisma/client").OrderStatus) ?? 0), 0),
+    completed: statusCountMap.get("ready_for_delivery" as import("@prisma/client").OrderStatus) ?? 0,
+    delivered: statusCountMap.get("delivered" as import("@prisma/client").OrderStatus) ?? 0,
+    cancelled: statusCountMap.get("cancelled" as import("@prisma/client").OrderStatus) ?? 0,
+    waitingApproval: statusCountMap.get("waiting_approval" as import("@prisma/client").OrderStatus) ?? 0,
   }
 
   const serializedOrders = orders.map((o) => {

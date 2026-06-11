@@ -28,10 +28,21 @@ export default async function CustomerDetailPage({
           vehicle: true,
           order: {
             include: {
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+              items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+              collections: {
+                where: { status: "completed" },
+                select: { id: true, amount: true, method: true, paymentDate: true, referenceNo: true, note: true },
+                orderBy: { paymentDate: "desc" },
+              },
             },
           },
         },
+      },
+      collections: {
+        where: { status: "completed" },
+        select: { id: true, amount: true, method: true, paymentDate: true, referenceNo: true, note: true, serviceOrderId: true },
+        orderBy: { paymentDate: "desc" },
+        take: 50,
       },
     },
   })
@@ -107,10 +118,27 @@ export default async function CustomerDetailPage({
                   },
                   0
                 ),
+                collections: i.order.collections.map((c) => ({
+                  id: c.id,
+                  amount: c.amount,
+                  method: c.method,
+                  paymentDate: c.paymentDate.toISOString(),
+                  referenceNo: c.referenceNo,
+                  note: c.note,
+                })),
               }
             : null,
         }))}
         reminders={reminders}
+        collections={customer.collections.map((c) => ({
+          id: c.id,
+          amount: c.amount,
+          method: c.method,
+          paymentDate: c.paymentDate.toISOString(),
+          referenceNo: c.referenceNo,
+          note: c.note,
+          serviceOrderId: c.serviceOrderId,
+        }))}
       />
     </AppShell>
   )

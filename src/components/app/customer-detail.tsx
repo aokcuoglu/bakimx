@@ -20,7 +20,6 @@ import {
   FileText,
   X,
   Check,
-  Info,
   ChevronRight,
   Hash,
   ExternalLink,
@@ -65,7 +64,25 @@ type Intake = {
     paymentStatus: string
     estimatedDeliveryAt: string | null
     grandTotal: number
+    collections?: Array<{
+      id: string
+      amount: number
+      method: string
+      paymentDate: string
+      referenceNo: string | null
+      note: string | null
+    }>
   } | null
+}
+
+type CollectionRow = {
+  id: string
+  amount: number
+  method: string
+  paymentDate: string
+  referenceNo: string | null
+  note: string | null
+  serviceOrderId: string | null
 }
 
 type CustomerDetailData = Omit<CustomerFormInitial, "whatsappConsent" | "smsConsent" | "emailConsent"> & {
@@ -82,12 +99,14 @@ export function CustomerDetail({
   vehicles,
   intakes,
   reminders = [],
+  collections = [],
   showEditInitially = false,
 }: {
   customer: CustomerDetailData
   vehicles: Vehicle[]
   intakes: Intake[]
   reminders?: ReminderRow[]
+  collections?: CollectionRow[]
   showEditInitially?: boolean
 }) {
   const [editing, setEditing] = useState<boolean>(!!showEditInitially)
@@ -113,6 +132,10 @@ export function CustomerDetail({
     const last = intakes[0]?.createdAt ? new Date(intakes[0].createdAt) : null
     return summarizeCustomerOrders(orders, last || new Date(customer.createdAt))
   }, [intakes, customer.createdAt])
+
+  const totalPaidFromCollections = useMemo(() => {
+    return collections.reduce((sum, c) => sum + c.amount, 0)
+  }, [collections])
 
   const orderIntakes = intakes.filter((i) => i.order)
   const otherIntakes = intakes.filter((i) => !i.order)
@@ -222,7 +245,7 @@ export function CustomerDetail({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
-          <BalanceCard balance={balance} />
+          <BalanceCard balance={balance} totalPaid={totalPaidFromCollections} customerId={customer.id} />
 
           <SectionCard
             title="Araçlar"
@@ -562,7 +585,8 @@ function SectionCard({
   )
 }
 
-function BalanceCard({ balance }: { balance: ReturnType<typeof summarizeCustomerOrders> }) {
+function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<typeof summarizeCustomerOrders>; totalPaid: number; customerId: string }) {
+  const actualRemaining = Math.max(0, balance.grandTotal - totalPaid)
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -570,30 +594,33 @@ function BalanceCard({ balance }: { balance: ReturnType<typeof summarizeCustomer
           <Wallet className="size-4 text-slate-500" />
           Bakiye Özeti
         </CardTitle>
-        <Link
-          href="/app/customers/balances"
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
-        >
-          Bakiye listesi
-          <ExternalLink className="size-3" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/app/cashbox/payments/new?customerId=${customerId}`}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+          >
+            <Plus className="size-3" />
+            Tahsilat Ekle
+          </Link>
+          <Link
+            href="/app/customers/balances"
+            className="text-xs text-slate-500 hover:text-slate-700 font-medium inline-flex items-center gap-1"
+          >
+            Bakiye listesi
+            <ExternalLink className="size-3" />
+          </Link>
+        </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <Stat label="İş Emri" value={balance.ordersCount.toString()} accent="bg-slate-50 text-slate-700" />
-          <Stat label="Yapılan İş" value={balance.workDone.toString()} accent="bg-blue-50 text-blue-700" />
           <Stat label="Genel Toplam" value={balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : "—"} accent="bg-indigo-50 text-indigo-700" />
+          <Stat label="Tahsil Edilen" value={totalPaid > 0 ? formatTRY(totalPaid) : "—"} accent="bg-emerald-50 text-emerald-700" />
           <Stat
-            label="Bizim Alacağımız"
-            value={balance.remaining > 0 ? formatTRY(balance.remaining) : formatTRY(0)}
-            accent={balance.remaining > 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}
+            label="Kalan Bakiye"
+            value={actualRemaining > 0 ? formatTRY(actualRemaining) : formatTRY(0)}
+            accent={actualRemaining > 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}
           />
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-[11px] text-slate-500 flex items-start gap-2">
-          <Info className="size-3.5 mt-0.5 shrink-0" />
-          <span>
-            Tahsilat modülü henüz aktif değil. Bu alan iş emri toplamlarına göre ön hazırlık olarak gösterilir.
-          </span>
         </div>
       </CardContent>
     </Card>

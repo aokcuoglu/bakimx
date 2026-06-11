@@ -6,29 +6,10 @@ import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2 } from "lu
 import { Input } from "@/components/ui/input"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/app/customer-badges"
 import { formatTRY } from "@/lib/format"
-import { formatDate } from "@/lib/utils-client"
-import { summarizeCustomerOrders } from "@/lib/customer-totals"
+import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
 import { cn } from "@/lib/utils"
-import type { Prisma } from "@prisma/client"
 
 type SP = { q?: string; type?: string }
-
-type BalanceRow = {
-  customer: import("@prisma/client").Customer & {
-    _count: { vehicles: number }
-    vehicles: { id: string; plate: string }[]
-    intakes: Array<{
-      createdAt: Date
-      order: {
-        status: import("@prisma/client").OrderStatus
-        paymentStatus: import("@prisma/client").PaymentStatus
-        items: { totalPrice: number | null; unitPrice: number | null; quantity: number }[]
-      } | null
-    }>
-  }
-  balance: ReturnType<typeof summarizeCustomerOrders>
-  ordersCount: number
-}
 
 export default async function CustomerBalancesPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { user, workshop } = await getAppData()
@@ -36,7 +17,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
   const q = (params.q || "").trim()
   const type = params.type === "corporate" ? "corporate" : params.type === "individual" ? "individual" : ""
 
-  const where: Prisma.CustomerWhereInput = { workshopId: user.workshopId }
+  const where: import("@prisma/client").Prisma.CustomerWhereInput = { workshopId: user.workshopId }
   if (q) {
     where.OR = [
       { firstName: { contains: q, mode: "insensitive" } },
@@ -56,64 +37,97 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
       vehicles: { select: { id: true, plate: true } },
       intakes: {
         orderBy: { createdAt: "desc" },
+        where: { order: { status: { notIn: ["cancelled"] } } },
         include: {
           order: {
             select: {
               id: true,
               status: true,
               paymentStatus: true,
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+              discountAmount: true,
+              taxRate: true,
+              items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
             },
           },
         },
+      },
+      collections: {
+        where: { status: "completed" },
+        select: { amount: true, paymentDate: true },
+        orderBy: { paymentDate: "desc" },
       },
     },
     orderBy: { createdAt: "desc" },
     take: 200,
   })
 
+  type BalanceRow = {
+    id: string
+    type: string
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    phone: string
+    tag: string | null
+    vehicleCount: number
+    ordersCount: number
+    grandTotal: number
+    paidAmount: number
+    remainingAmount: number
+    lastPaymentDate: string | null
+    lastActivityDate: string | null
+  }
+
   const rows: BalanceRow[] = customers.map((c) => {
     const orders = c.intakes
       .map((i) => i.order)
       .filter((o): o is NonNullable<typeof o> => o != null)
-    const orderLike = orders.map((o) => ({
-      status: o.status,
-      paymentStatus: o.paymentStatus,
-      items: o.items,
-    }))
-    const last = c.intakes[0]?.createdAt || c.createdAt
-    const balance = summarizeCustomerOrders(orderLike, last)
+
+    let grandTotal = 0
+    for (const order of orders) {
+      const totals = calculateOrderTotalsFromMinimal(order.items, {
+        discountAmount: order.discountAmount,
+        taxRate: order.taxRate,
+      })
+      if (totals.hasAnyPrice) grandTotal += totals.grandTotal
+    }
+
+    const paidAmount = c.collections.reduce((sum, col) => sum + col.amount, 0)
+    const remainingAmount = Math.max(0, grandTotal - paidAmount)
+    const lastPaymentDate = c.collections[0]?.paymentDate?.toISOString() || null
+    const lastActivityDate = c.intakes[0]?.createdAt?.toISOString() || null
+
     return {
-      customer: c,
-      balance,
+      id: c.id,
+      type: c.type || "individual",
+      firstName: c.firstName,
+      lastName: c.lastName,
+      fullName: c.fullName,
+      companyName: c.companyName,
+      phone: c.phone,
+      tag: c.tag,
+      vehicleCount: c._count.vehicles,
       ordersCount: orders.length,
+      grandTotal,
+      paidAmount,
+      remainingAmount,
+      lastPaymentDate,
+      lastActivityDate,
     }
   })
 
   const totals = rows.reduce(
     (acc, r) => {
       acc.customers += 1
-      acc.workDone += r.balance.workDone
-      acc.grandTotal += r.balance.grandTotal
-      acc.paid += r.balance.paid
-      acc.partial += r.balance.partial
-      acc.unpaid += r.balance.unpaid
-      acc.remaining += r.balance.remaining
-      acc.credit += r.balance.customerCredit
-      if (r.balance.hasOverdue) acc.overdue += 1
+      acc.grandTotal += r.grandTotal
+      acc.paidAmount += r.paidAmount
+      acc.remainingAmount += r.remainingAmount
+      if (r.remainingAmount > 0) acc.withBalance += 1
+      if (r.remainingAmount === 0 && r.grandTotal > 0) acc.settled += 1
       return acc
     },
-    {
-      customers: 0,
-      workDone: 0,
-      grandTotal: 0,
-      paid: 0,
-      partial: 0,
-      unpaid: 0,
-      remaining: 0,
-      credit: 0,
-      overdue: 0,
-    }
+    { customers: 0, grandTotal: 0, paidAmount: 0, remainingAmount: 0, withBalance: 0, settled: 0 }
   )
 
   return (
@@ -131,31 +145,40 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Bakiye Özeti</h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              İş emri toplamlarına göre temel bakiye görünümü
+              Tahsilat kayıtlarına dayalı müşteri bakiye görünümü
             </p>
           </div>
-          <Link
-            href="/app/customers"
-            className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
-          >
-            Müşteri Listesine Dön
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/app/cashbox"
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            >
+              <Wallet className="size-4" />
+              Kasa
+            </Link>
+            <Link
+              href="/app/customers"
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            >
+              Müşteri Listesi
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-500 flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
           <span>
-            Tahsilat modülü henüz aktif değildir. Bu sayfa iş emri toplamlarına göre ön hazırlık amaçlıdır; gerçek muhasebe verisi göstermez.
+            Bu ekran operasyonel tahsilat takibi içindir. Resmi muhasebe veya e-fatura/e-arşiv yerine geçmez.
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-slate-50 text-slate-700" />
-          <KpiCard label="Yapılan İş" value={totals.workDone.toString()} accent="bg-blue-50 text-blue-700" />
-          <KpiCard label="Bizim Alacağımız" value={formatTRY(totals.remaining)} accent="bg-rose-50 text-rose-700" />
-          <KpiCard label="Toplam Tahsilat" value={formatTRY(totals.paid)} accent="bg-emerald-50 text-emerald-700" />
-          <KpiCard label="Müşteri Alacağı" value={formatTRY(totals.credit)} accent="bg-amber-50 text-amber-700" />
-          <KpiCard label="Geciken Tahsilat" value={totals.overdue.toString()} accent="bg-orange-50 text-orange-700" />
+          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-blue-50 text-blue-700" />
+          <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-emerald-50 text-emerald-700" />
+          <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-rose-50 text-rose-700" />
+          <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-amber-50 text-amber-700" />
+          <KpiCard label="Ödenmiş" value={totals.settled.toString()} accent="bg-emerald-50 text-emerald-700" />
         </div>
 
         <form action="/app/customers/balances" method="get" className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -218,11 +241,13 @@ function nameFor(c: { type: string; firstName: string | null; lastName: string |
   return c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "—"
 }
 
-function DesktopBalanceTable({
-  rows,
-}: {
-  rows: BalanceRow[]
-}) {
+function BalanceStatusBadge({ remaining, grandTotal }: { remaining: number; grandTotal: number }) {
+  if (grandTotal <= 0) return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-slate-50 text-slate-500 border-slate-200">Pasif</span>
+  if (remaining > 0) return <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-medium bg-rose-50 text-rose-700 border-rose-200"><AlertTriangle className="size-3" /> Alacak</span>
+  return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-200">Ödendi</span>
+}
+
+function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; phone: string; tag: string | null; vehicleCount: number; ordersCount: number; grandTotal: number; paidAmount: number; remainingAmount: number; lastPaymentDate: string | null; lastActivityDate: string | null }> }) {
   return (
     <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
       <div className="overflow-x-auto">
@@ -231,75 +256,52 @@ function DesktopBalanceTable({
             <tr>
               <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
               <th className="px-4 py-3 text-left font-semibold">Telefon</th>
-              <th className="px-4 py-3 text-left font-semibold">Araç</th>
               <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
-              <th className="px-4 py-3 text-right font-semibold">Borç</th>
-              <th className="px-4 py-3 text-right font-semibold">Tahsilat</th>
-              <th className="px-4 py-3 text-right font-semibold">Bizim Alacak</th>
-              <th className="px-4 py-3 text-right font-semibold">Müşteri Alacağı</th>
-              <th className="px-4 py-3 text-left font-semibold">Son İşlem</th>
+              <th className="px-4 py-3 text-right font-semibold">Toplam</th>
+              <th className="px-4 py-3 text-right font-semibold">Tahsil Edilen</th>
+              <th className="px-4 py-3 text-right font-semibold">Kalan Bakiye</th>
+              <th className="px-4 py-3 text-left font-semibold">Son Tahsilat</th>
               <th className="px-4 py-3 text-left font-semibold">Durum</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map(({ customer, balance }) => {
-              const isOverdue = balance.hasOverdue
-              const hasActivity = balance.ordersCount > 0
-              const status = !hasActivity
-                ? { label: "Pasif", color: "bg-slate-50 text-slate-500 border-slate-200" }
-                : balance.remaining > 0
-                ? { label: "Borçlu", color: "bg-rose-50 text-rose-700 border-rose-200" }
-                : balance.grandTotal > 0
-                ? { label: "Ödendi", color: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-                : { label: "Aktif", color: "bg-blue-50 text-blue-700 border-blue-200" }
-              return (
-                <tr key={customer.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/app/customers/${customer.id}`}
-                      className="flex items-center gap-2.5 min-w-0 hover:text-blue-600"
-                    >
-                      <div className="size-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold shrink-0">
-                        {customer.type === "corporate" ? <Building2 className="size-4" /> : nameFor(customer).slice(0, 2).toUpperCase()}
+            {rows.map((row) => (
+              <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+                <td className="px-4 py-3">
+                  <Link href={`/app/customers/${row.id}`} className="flex items-center gap-2.5 min-w-0 hover:text-blue-600">
+                    <div className="size-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold shrink-0">
+                      {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(row)}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <CustomerTypeBadge type={row.type || "individual"} />
+                        {row.tag ? <CustomerTagBadge tag={row.tag} /> : null}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(customer)}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <CustomerTypeBadge type={customer.type || "individual"} />
-                          {customer.tag ? <CustomerTagBadge tag={customer.tag} /> : null}
-                        </div>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                    <a href={`tel:${customer.phone}`} className="hover:text-blue-600">{customer.phone}</a>
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{customer._count.vehicles}</td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{balance.ordersCount}</td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
-                    {balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : <span className="text-slate-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right text-emerald-700 tabular-nums">
-                    {balance.paid > 0 ? formatTRY(balance.paid) : <span className="text-slate-400">—</span>}
-                  </td>
-                  <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", balance.remaining > 0 ? "text-rose-700" : "text-slate-500")}>
-                    {balance.remaining > 0 ? formatTRY(balance.remaining) : formatTRY(0)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-amber-700 tabular-nums">
-                    {balance.customerCredit > 0 ? formatTRY(balance.customerCredit) : <span className="text-slate-400">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
-                    {balance.lastActivityAt ? formatDate(balance.lastActivityAt) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn("inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium", status.color)}>
-                      {isOverdue ? <AlertTriangle className="size-3 mr-1" /> : null}
-                      {status.label}
-                    </span>
-                  </td>
-                </tr>
-              )
-            })}
+                    </div>
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                  <a href={`tel:${row.phone}`} className="hover:text-blue-600">{row.phone}</a>
+                </td>
+                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.ordersCount}</td>
+                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-slate-400">—</span>}
+                </td>
+                <td className="px-4 py-3 text-right text-emerald-700 tabular-nums">
+                  {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-slate-400">—</span>}
+                </td>
+                <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-rose-700" : "text-slate-500")}>
+                  {row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                  {row.lastPaymentDate ? new Date(row.lastPaymentDate).toLocaleDateString("tr-TR") : "—"}
+                </td>
+                <td className="px-4 py-3">
+                  <BalanceStatusBadge remaining={row.remainingAmount} grandTotal={row.grandTotal} />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -307,36 +309,36 @@ function DesktopBalanceTable({
   )
 }
 
-function MobileBalanceCards({ rows }: { rows: BalanceRow[] }) {
+function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; phone: string; tag: string | null; vehicleCount: number; ordersCount: number; grandTotal: number; paidAmount: number; remainingAmount: number; lastPaymentDate: string | null }> }) {
   return (
     <div className="lg:hidden space-y-2.5">
-      {rows.map(({ customer, balance }) => (
+      {rows.map((row) => (
         <Link
-          key={customer.id}
-          href={`/app/customers/${customer.id}`}
+          key={row.id}
+          href={`/app/customers/${row.id}`}
           className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation"
         >
           <div className="flex items-start gap-3">
             <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
-              {customer.type === "corporate" ? <Building2 className="size-4" /> : nameFor(customer).slice(0, 2).toUpperCase()}
+              {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(customer)}</p>
-                <CustomerTypeBadge type={customer.type || "individual"} />
+                <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(row)}</p>
+                <CustomerTypeBadge type={row.type || "individual"} />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{customer.phone}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{row.phone}</p>
             </div>
             <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-            <MiniStat label="İş Emri" value={balance.ordersCount.toString()} />
-            <MiniStat label="Toplam" value={balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : "—"} />
-            <MiniStat label="Tahsilat" value={balance.paid > 0 ? formatTRY(balance.paid) : "—"} tone="emerald" />
+            <MiniStat label="İş Emri" value={row.ordersCount.toString()} />
+            <MiniStat label="Toplam" value={row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"} />
+            <MiniStat label="Tahsilat" value={row.paidAmount > 0 ? formatTRY(row.paidAmount) : "—"} tone="emerald" />
             <MiniStat
-              label="Bizim Alacak"
-              value={balance.remaining > 0 ? formatTRY(balance.remaining) : formatTRY(0)}
-              tone={balance.remaining > 0 ? "rose" : "slate"}
+              label="Kalan"
+              value={row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
+              tone={row.remainingAmount > 0 ? "rose" : "slate"}
             />
           </div>
         </Link>

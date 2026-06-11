@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { OrderDetail } from "@/components/app/order-detail"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
+import { computeRemainingAmount } from "@/lib/cashbox/status"
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -45,6 +46,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     taxRate: order.taxRate,
   })
 
+  const collections = await prisma.collectionPayment.findMany({
+    where: { serviceOrderId: id, workshopId: user.workshopId, status: "completed" },
+    orderBy: { paymentDate: "desc" },
+  })
+
+  const totalPaid = collections.reduce((sum, c) => sum + c.amount, 0)
+  const paidAmount = order.paidAmount || totalPaid
+  const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
+
   const safeOrder = {
     id: order.id,
     workOrderNo: formatWorkOrderNo(order),
@@ -79,6 +89,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       note: i.note,
     })),
     customer: {
+      id: order.intakeForm.customer.id,
       firstName: order.intakeForm.customer.firstName,
       lastName: order.intakeForm.customer.lastName,
       fullName: order.intakeForm.customer.fullName,
@@ -114,6 +125,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       note: d.note,
     })),
     photos: order.intakeForm.photos,
+    paidAmount,
+    remainingAmount,
+    collectionHistory: collections.map((c) => ({
+      id: c.id,
+      amount: c.amount,
+      method: c.method,
+      paymentDate: c.paymentDate.toISOString(),
+      referenceNo: c.referenceNo,
+      note: c.note,
+    })),
   }
 
   return (

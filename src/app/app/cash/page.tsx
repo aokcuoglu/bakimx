@@ -1,13 +1,5 @@
-import { getAppData } from "@/app/app/data"
-import { ComingSoonShell } from "@/components/app/coming-soon-shell"
+import { redirect } from "next/navigation"
 
-export default async function CashPage() {
-  const { workshop } = await getAppData()
-  return (
-    <ComingSoonShell
-      workshopName={workshop?.name}
-      title="Kasa"
-      description="Nakit ve banka hareketlerini takip edin."
-    />
-  )
+export default function CashPage() {
+  redirect("/app/cashbox")
 }

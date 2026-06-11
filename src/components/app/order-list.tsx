@@ -91,6 +91,7 @@ export function OrderList({
             <Link
               key={cfg.key}
               href={href}
+              prefetch={false}
               className={cn(
                 "rounded-xl border bg-white p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
                 isActive ? "ring-2 ring-blue-500 border-blue-500" : "border-slate-200"
@@ -169,6 +170,7 @@ export function OrderList({
                     <div className="flex items-center justify-end gap-1">
                       <Link
                         href={`/app/orders/${order.id}`}
+                        prefetch={false}
                         className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
                       >
                         <Eye className="size-3.5" />
@@ -188,6 +190,7 @@ export function OrderList({
           <Link
             key={order.id}
             href={`/app/orders/${order.id}`}
+            prefetch={false}
             className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation hover:border-slate-300 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">

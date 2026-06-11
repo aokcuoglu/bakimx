@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/app/status-badge"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
+import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
+import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { generateWhatsAppShareText, getWhatsAppShareUrl, buildPublicLink } from "@/lib/share/whatsapp"
 import {
@@ -34,6 +36,8 @@ import {
   Receipt,
   Calculator,
   Info,
+  Wallet,
+  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
@@ -97,6 +101,7 @@ type OrderDetailData = {
   totals: Totals
   items: OrderItem[]
   customer: {
+    id: string
     firstName: string | null
     lastName: string | null
     fullName: string | null
@@ -119,6 +124,16 @@ type OrderDetailData = {
   }
   damageMarks: DamageMark[]
   photos: Photo[]
+  paidAmount: number
+  remainingAmount: number
+  collectionHistory: Array<{
+    id: string
+    amount: number
+    method: string
+    paymentDate: string
+    referenceNo: string | null
+    note: string | null
+  }>
 }
 
 type PricingMetaDraft = {
@@ -378,12 +393,24 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
             orderId={order.id}
             totals={order.totals}
             paymentStatus={order.paymentStatus}
+            paidAmount={order.paidAmount}
+            remainingAmount={order.remainingAmount}
             editingMeta={editingMeta}
             setEditingMeta={setEditingMeta}
             metaDraft={metaDraft}
             setMetaDraft={setMetaDraft}
             saveMeta={saveMeta}
             loading={loading}
+          />
+
+          <PaymentHistoryCard
+            orderId={order.id}
+            totals={order.totals}
+            paidAmount={order.paidAmount}
+            remainingAmount={order.remainingAmount}
+            paymentStatus={order.paymentStatus}
+            collections={order.collectionHistory}
+            customerId={order.customer.id}
           />
 
           <OrderInfoCard order={order} onChangeStatus={changeStatus} loading={loading} />
@@ -780,6 +807,8 @@ function ComplaintNotesCard({ intake }: { intake: OrderDetailData["intake"] }) {
 function PricingSummaryCard({
   totals,
   paymentStatus,
+  paidAmount,
+  remainingAmount,
   editingMeta,
   setEditingMeta,
   metaDraft,
@@ -790,6 +819,8 @@ function PricingSummaryCard({
   orderId: string
   totals: Totals
   paymentStatus: string
+  paidAmount: number
+  remainingAmount: number
   editingMeta: boolean
   setEditingMeta: (b: boolean) => void
   metaDraft: PricingMetaDraft
@@ -811,10 +842,16 @@ function PricingSummaryCard({
       <CardContent className="space-y-2">
         <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
         <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
-        <div className="border-t pt-2 mt-2">
-          <SummaryRow label="Ara Toplam" value={totals.hasAnyPrice ? formatTRY(totals.subtotal) : "—"} bold />
-        </div>
-        {editingMeta ? (
+            <div className="border-t pt-2 mt-2">
+              <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
+            </div>
+            {paidAmount > 0 && (
+              <>
+                <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
+                <SummaryRow label="Kalan Bakiye" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />
+              </>
+            )}
+            {editingMeta ? (
           <div className="space-y-2.5 pt-2">
             <div>
               <Label className="text-xs">İndirim (₺)</Label>
@@ -908,17 +945,20 @@ function SummaryRow({
   bold,
   large,
   muted,
+  tone,
 }: {
   label: string
   value: string
   bold?: boolean
   large?: boolean
   muted?: boolean
+  tone?: "slate" | "emerald" | "rose"
 }) {
+  const toneColor = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : "text-slate-900"
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-slate-600", bold && "text-slate-900")}>{label}</span>
-      <span className={cn(muted ? "text-slate-400" : "text-slate-900", large && "text-lg font-bold text-slate-900")}>
+      <span className={cn(muted ? "text-slate-400" : toneColor, large && "text-lg font-bold text-slate-900", bold && !large && toneColor)}>
         {value}
       </span>
     </div>
@@ -1046,6 +1086,91 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
           <p className="text-[11px] text-slate-500 break-all">{shareLink}</p>
           <p className="text-[10px] text-slate-400 mt-0.5">Paylaşım için WhatsApp butonunu kullanın</p>
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PaymentHistoryCard({
+  orderId,
+  totals,
+  paidAmount,
+  remainingAmount,
+  collections,
+}: {
+  orderId: string
+  totals: Totals
+  paidAmount: number
+  remainingAmount: number
+  paymentStatus: string
+  collections: Array<{ id: string; amount: number; method: string; paymentDate: string; referenceNo: string | null; note: string | null }>
+  customerId: string
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wallet className="size-4 text-slate-500" />
+            Tahsilat Geçmişi
+          </CardTitle>
+          <Link
+            href={`/app/cashbox/payments/new?orderId=${orderId}`}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors touch-manipulation"
+          >
+            <Plus className="size-3" />
+            Tahsilat Ekle
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {collections.length === 0 ? (
+          <div className="text-center py-4">
+            <Wallet className="size-8 mx-auto mb-2 text-slate-300" />
+            <p className="text-sm text-slate-500">Henüz tahsilat kaydı yok</p>
+            <Link
+              href={`/app/cashbox/payments/new?orderId=${orderId}`}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              <Plus className="size-3.5" /> İlk tahsilatı ekle
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {collections.map((c) => {
+              const methodLabel = PAYMENT_METHOD_LABELS[c.method as PaymentMethodKey] || c.method
+              return (
+                <Link
+                  key={c.id}
+                  href={`/app/cashbox/payments/${c.id}`}
+                  className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">{formatTRY(c.amount)}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(c.paymentDate)} &bull; {methodLabel}</p>
+                  </div>
+                  <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                </Link>
+              )
+            })}
+          </div>
+        )}
+        {paidAmount > 0 && totals.hasAnyPrice && (
+          <div className="border-t pt-2 mt-2 space-y-1">
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Genel Toplam</span>
+              <span className="font-medium text-slate-900">{formatTRY(totals.grandTotal)}</span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Tahsil Edilen</span>
+              <span className="font-medium text-emerald-700">{formatTRY(paidAmount)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 font-medium">Kalan</span>
+              <span className={cn("font-bold", remainingAmount > 0 ? "text-rose-700" : "text-emerald-700")}>{formatTRY(remainingAmount)}</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

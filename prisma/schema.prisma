@@ -35,6 +35,7 @@ model Workshop {
   partStockItems PartStockItem[]
   stockMovements StockMovement[]
   suppliers     Supplier[]
+  collections   CollectionPayment[]
 }
 
 model User {
@@ -87,7 +88,8 @@ model Customer {
   intakes  VehicleIntakeForm[]
   quotes   Quote[]
   appointments Appointment[]
-  reminders MaintenanceReminder[]
+  reminders    MaintenanceReminder[]
+  collections  CollectionPayment[]
 
   @@index([workshopId])
   @@index([workshopId, type])
@@ -323,6 +325,11 @@ model ServiceOrder {
   items ServiceOrderItem[]
   convertedFromQuote       Quote?       @relation("QuoteToServiceOrder")
   convertedFromAppointment Appointment? @relation("AppointmentToServiceOrder")
+  collections             CollectionPayment[]
+
+  paidAmount     Float?
+  remainingAmount Float?
+  lastPaymentAt  DateTime?
 
   @@index([workshopId])
   @@index([status])
@@ -344,7 +351,49 @@ enum PaymentStatus {
   unpaid
   partial
   paid
+  overpaid
   cancelled
+}
+
+enum PaymentMethod {
+  cash
+  credit_card
+  bank_transfer
+  other
+}
+
+enum CollectionStatus {
+  completed
+  cancelled
+  refunded
+}
+
+model CollectionPayment {
+  id              String          @id @default(cuid())
+  workshopId      String
+  workshop        Workshop        @relation(fields: [workshopId], references: [id])
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  serviceOrderId  String?
+  serviceOrder    ServiceOrder?   @relation(fields: [serviceOrderId], references: [id])
+  quoteId         String?
+  amount          Float
+  currency        String          @default("TRY")
+  method          PaymentMethod   @default(cash)
+  status          CollectionStatus @default(completed)
+  paymentDate     DateTime        @default(now())
+  referenceNo     String?
+  note            String?
+  createdByUserId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([serviceOrderId])
+  @@index([paymentDate])
+  @@index([method])
+  @@index([status])
 }
 
 model ServiceOrderItem {

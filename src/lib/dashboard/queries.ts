@@ -31,6 +31,9 @@ export interface DashboardStats {
   missingPhotoIntakes: number
   overdueDeliveries: number
   lastWeekOrders: number
+  todayCollected: number
+  openReceivable: number
+  partialPayments: number
 }
 
 export async function getDashboardStats(workshopId: string): Promise<DashboardStats> {
@@ -45,6 +48,8 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     overdueDeliveries,
     lastWeekOrders,
     allActiveIntakes,
+    todayCollections,
+    activeReceivableOrders,
   ] = await Promise.all([
     prisma.serviceOrder.count({
       where: { workshopId, status: { notIn: NOT_DELIVERED_CANCELLED } },
@@ -72,6 +77,20 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     prisma.vehicleIntakeForm.findMany({
       where: { workshopId, status: { notIn: NOT_DELIVERED_CANCELLED_INTAKE } },
       select: { id: true },
+    }),
+    prisma.collectionPayment.aggregate({
+      where: { workshopId, status: "completed", paymentDate: { gte: today } },
+      _sum: { amount: true },
+    }),
+    prisma.serviceOrder.findMany({
+      where: {
+        workshopId,
+        status: { notIn: ["cancelled"] },
+        paymentStatus: { in: ["unpaid", "partial"] },
+      },
+      include: {
+        items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      },
     }),
   ])
 
@@ -102,6 +121,29 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     }
   }
 
+  const todayCollected = todayCollections._sum.amount || 0
+
+  let openReceivable = 0
+  let partialPayments = 0
+  for (const order of activeReceivableOrders) {
+    const t = order.items.reduce((sum, item) => {
+      if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
+      if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+      return sum
+    }, 0)
+    const discount = order.discountAmount ?? 0
+    const taxRate = order.taxRate ?? 0
+    const subtotal = Math.max(0, t - discount)
+    const tax = (subtotal * taxRate) / 100
+    const grandTotal = subtotal + tax
+    const paid = order.paidAmount || 0
+    const remaining = Math.max(0, grandTotal - paid)
+    if (remaining > 0) {
+      openReceivable += remaining
+      if (order.paymentStatus === "partial") partialPayments++
+    }
+  }
+
   return {
     activeOrders,
     todayDeliveries,
@@ -109,6 +151,9 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     missingPhotoIntakes,
     overdueDeliveries,
     lastWeekOrders,
+    todayCollected,
+    openReceivable,
+    partialPayments,
   }
 }
 
