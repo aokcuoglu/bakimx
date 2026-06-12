@@ -5,6 +5,7 @@ import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-ima
 import { prisma } from "@/lib/db"
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024
+const MAX_BODY_SIZE = 12 * 1024 * 1024
 const SUPPORTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -16,6 +17,15 @@ const SUPPORTED_IMAGE_TYPES = new Set([
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+
+    const contentLength = request.headers.get("content-length")
+    if (contentLength && Number(contentLength) > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        { error: "İstek gövdesi çok büyük. Görsel 8 MB'dan küçük olmalıdır." },
+        { status: 413 }
+      )
+    }
+
     const body = await request.json()
     const { imageDataUrl, mimeType } = body
 

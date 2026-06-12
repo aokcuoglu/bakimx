@@ -17,6 +17,7 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
         select: {
           id: true,
           type: true,
+          phase: true,
           label: true,
           required: true,
           fileUrl: true,
@@ -30,6 +31,7 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
       damageMarks: true,
       approvals: { orderBy: { createdAt: "desc" }, take: 1 },
       shareLinks: { where: { isActive: true }, take: 1 },
+      timelineEvents: { orderBy: { createdAt: "asc" } },
       order: { include: { items: true } },
     },
   })

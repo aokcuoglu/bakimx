@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
 import { generateWorkOrderNo } from "@/lib/work-order-number"
@@ -31,6 +32,13 @@ export async function createServiceOrderAction(intakeFormId: string) {
   })
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId,
+    eventType: "work_order_created",
+    description: "İş emri oluşturuldu",
+  })
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   revalidatePath("/app/orders")

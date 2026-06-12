@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
+import { addTimelineEvent } from "@/lib/intake/timeline"
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -44,6 +45,13 @@ export async function requestApprovalAction(intakeFormId: string) {
   })
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "approval_requested")
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId,
+    eventType: "approval_requested",
+    description: "Müşteri onayı istendi",
+  })
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return {
@@ -86,6 +94,13 @@ export async function verifyOtpAction(intakeFormId: string, otpCode: string) {
   })
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "approval_verified")
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId,
+    eventType: "approval_verified",
+    description: "Müşteri onayı doğrulandı",
+  })
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true }

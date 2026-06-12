@@ -26,15 +26,23 @@ import {
   RefreshCw,
   ImageOff,
   Loader2,
+  BarChart3,
+  Link as LinkIcon,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
+import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
+import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
+import { ApprovalTimeline } from "@/components/app/approval-timeline"
 
 type VehiclePhoto = {
   id: string
   type: string
+  phase: string
   label: string
   required: boolean
   fileUrl: string | null
@@ -69,12 +77,13 @@ type IntakeDetailProps = {
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
+  timelineEvents: { eventType: string; description: string; createdAt: Date }[]
   order: { id: string; status: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
 export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order">("info")
+  const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order" | "evidence">("info")
   const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
 
   const [showDamageModal, setShowDamageModal] = useState(false)
@@ -92,6 +101,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
   const [loading, setLoading] = useState(false)
 
   const [photoType, setPhotoType] = useState("")
+  const [photoPhase, setPhotoPhase] = useState("intake")
   const [photoNote, setPhotoNote] = useState("")
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -178,6 +188,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
     formData.set("type", photoType)
     formData.set("label", PHOTO_TYPES[photoType as keyof typeof PHOTO_TYPES]?.label || photoType)
     if (photoNote) formData.set("note", photoNote)
+    if (photoPhase) formData.set("phase", photoPhase)
     if (photoFile) formData.set("file", photoFile)
 
     try {
@@ -185,6 +196,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       const data = await res.json()
       if (data.success) {
         setPhotoType("")
+        setPhotoPhase("intake")
         setPhotoNote("")
         setPhotoFile(null)
         setPhotoPreview(null)
@@ -345,10 +357,21 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
 
   const requiredPhotos = Object.entries(PHOTO_TYPES).filter(([, v]) => v.required)
   const takenPhotoTypes = new Set(intake.photos.map((p) => p.type))
+  const photoCompletion = calculatePhotoCompletion(intake.photos.map((p) => p.type))
+  const photoGroups = groupPhotosByPhase(intake.photos)
+
+  const timelineEvents = intake.timelineEvents || []
+  const approvalStatus = intake.approvals.length > 0
+    ? intake.approvals[0].status === "verified" ? "verified" as const : "pending" as const
+    : "none" as const
+  const publicLinkStatus = intake.shareLinks.length > 0
+    ? intake.shareLinks[0].isActive ? "active" as const : "expired" as const
+    : "none" as const
 
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
-    { id: "photos" as const, label: "Fotoğraflar", icon: Camera, count: intake.photos.length },
+    { id: "evidence" as const, label: "Kanıt", icon: Camera, count: intake.photos.length },
+    { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
     { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.damageMarks.length },
     { id: "approval" as const, label: "Onay", icon: MessageSquare },
     { id: "order" as const, label: "Sipariş", icon: Wrench },
@@ -503,6 +526,156 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
         </div>
       )}
 
+      {activeTab === "evidence" && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="size-4" />
+                Kabul Kanıt Paneli
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <IntakeEvidenceSummary
+                photoCompletion={photoCompletion}
+                damageCount={intake.damageMarks.length}
+                approvalStatus={approvalStatus}
+                publicLinkStatus={publicLinkStatus}
+              />
+            </CardContent>
+          </Card>
+
+          {photoGroups.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Camera className="size-4" />
+                  Fotoğraf Grupları
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {photoGroups.map((group) => {
+                  const groupPhotos = intake.photos.filter((p) => (p.phase || "intake") === group.phase)
+                  return (
+                    <div key={group.phase} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          {group.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                          {groupPhotos.length}
+                        </span>
+                      </div>
+                      {groupPhotos.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-2">
+                          {groupPhotos.map((photo) => (
+                            <PhotoGalleryCard
+                              key={photo.id}
+                              photo={photo}
+                              onRemove={handleRemovePhoto}
+                              onReplace={handleReplacePhoto}
+                              isUploading={uploadingPhotoId === photo.id}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground py-2">Bu aşamada fotoğraf yok</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                Onay Zaman Çizelgesi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ApprovalTimeline
+                events={timelineEvents}
+                intakeCreatedAt={intake.createdAt}
+                approvedAt={intake.approvedAt}
+              />
+            </CardContent>
+          </Card>
+
+          {intake.shareLinks.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <LinkIcon className="size-4" />
+                  Halka Açık Link Durumu
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  {intake.shareLinks[0].isActive ? (
+                    <Eye className="size-4 text-emerald-600" />
+                  ) : (
+                    <EyeOff className="size-4 text-rose-600" />
+                  )}
+                  <span className={intake.shareLinks[0].isActive ? "text-emerald-700 font-medium" : "text-rose-700 font-medium"}>
+                    {intake.shareLinks[0].isActive ? "Link aktif" : "Link devre dışı"}
+                  </span>
+                </div>
+                <div className="bg-muted rounded-lg p-3 text-sm break-all">
+                  <a
+                    href={`/s/${intake.shareLinks[0].token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {typeof window !== "undefined" ? `${window.location.origin}/s/${intake.shareLinks[0].token}` : `/s/${intake.shareLinks[0].token}`}
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      const linkId = intake.shareLinks[0]?.id
+                      if (!linkId) return
+                      try {
+                        await fetch(`/api/intakes/${intake.id}/share-visibility`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ linkId, isActive: !intake.shareLinks[0].isActive }),
+                        })
+                        router.refresh()
+                      } catch {}
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border bg-background text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    {intake.shareLinks[0].isActive ? (
+                      <>
+                        <EyeOff className="size-4" />
+                        Devre Dışı Bırak
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="size-4" />
+                        Etkinleştir
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${intake.shareLinks[0].token}` : `/s/${intake.shareLinks[0].token}`
+                      try { await navigator.clipboard.writeText(publicLink) } catch {}
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border bg-background text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Linki Kopyala
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {activeTab === "photos" && (
         <div className="space-y-4">
           {/* Required photo checklist */}
@@ -580,6 +753,18 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                       {val.label} {val.required ? "(Zorunlu)" : "(Opsiyonel)"}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <Label>Aşama</Label>
+                <select
+                  className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+                  value={photoPhase}
+                  onChange={(e) => setPhotoPhase(e.target.value)}
+                >
+                  <option value="intake">Kabul (Intake)</option>
+                  <option value="repair_progress">Onarım Aşaması</option>
+                  <option value="delivery">Teslim</option>
                 </select>
               </div>
               <div>

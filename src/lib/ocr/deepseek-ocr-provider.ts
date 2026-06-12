@@ -78,7 +78,7 @@ export class DeepSeekOcrProvider implements OcrProvider {
 
   constructor(
     private readonly apiKey: string,
-    private readonly model = process.env.DEEPSEEK_OCR_MODEL || "deepseek-v4-flash"
+    private readonly model: string
   ) {}
 
   private async requestFields(rawText: string, compact = false) {

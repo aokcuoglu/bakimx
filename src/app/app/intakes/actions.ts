@@ -6,6 +6,7 @@ import { intakeCreateSchema, damageMarkSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
+import { addTimelineEvent } from "@/lib/intake/timeline"
 import { nanoid } from "nanoid"
 
 export async function createIntakeAction(formData: FormData) {
@@ -47,6 +48,13 @@ export async function createIntakeAction(formData: FormData) {
 
   await AuditLogAction(user.workshopId, user.id, "VehicleIntakeForm", intake.id, "intake_created")
 
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: intake.id,
+    eventType: "intake_created",
+    description: "Araç kabul formu oluşturuldu",
+  })
+
   revalidatePath("/app/intakes")
   return { success: true, id: intake.id }
 }
@@ -62,6 +70,7 @@ export async function getIntakeAction(id: string) {
         select: {
           id: true,
           type: true,
+          phase: true,
           label: true,
           required: true,
           fileUrl: true,
@@ -77,6 +86,7 @@ export async function getIntakeAction(id: string) {
       damageMarks: true,
       approvals: { orderBy: { createdAt: "desc" }, take: 1 },
       shareLinks: { where: { isActive: true }, take: 1 },
+      timelineEvents: { orderBy: { createdAt: "asc" } },
       order: { include: { items: true } },
     },
   })
@@ -133,6 +143,13 @@ export async function addDamageMarkAction(formData: FormData) {
     },
   })
 
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: raw.intakeFormId,
+    eventType: "damage_marks_added",
+    description: `Hasar kaydı: ${parsed.data.zone} - ${parsed.data.damageType}`,
+  })
+
   revalidatePath(`/app/intakes/${raw.intakeFormId}`)
   return { success: true, id: mark.id }
 }
@@ -160,6 +177,7 @@ export async function addPhotoAction(formData: FormData) {
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string
   const label = formData.get("label") as string
+  const phase = formData.get("phase") as string | null
   const note = formData.get("note") as string | null
   const file = formData.get("file") as File | null
 
@@ -206,6 +224,7 @@ export async function addPhotoAction(formData: FormData) {
       workshopId: user.workshopId,
       intakeFormId,
       type: type as import("@prisma/client").VehiclePhotoType,
+      phase: (phase || "intake") as import("@prisma/client").PhotoPhase,
       label: label || type,
       required: false,
       fileUrl,
@@ -223,6 +242,13 @@ export async function addPhotoAction(formData: FormData) {
     storageProvider: storageProvider || "none",
     sizeBytes,
   }))
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId,
+    eventType: "photos_uploaded",
+    description: `${type} fotoğrafı yüklendi`,
+  })
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return { success: true, id: photo.id }

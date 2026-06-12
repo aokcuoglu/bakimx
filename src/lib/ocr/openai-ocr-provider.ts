@@ -72,7 +72,7 @@ export class OpenAiOcrProvider implements OcrProvider {
 
   constructor(
     private readonly apiKey: string,
-    private readonly model = process.env.OPENAI_OCR_MODEL || "gpt-5.4-mini"
+    private readonly model: string
   ) {}
 
   async extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult> {

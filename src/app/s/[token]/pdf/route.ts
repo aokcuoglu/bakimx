@@ -2,35 +2,18 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
+import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 
 export const dynamic = "force-dynamic"
 
 async function generatePdfHtml(data: {
   workshop: { name: string; phone: string; city: string; address: string }
-  intakeForm: {
-    status: string
-    mileageAtIntake: number | null
-    customerComplaint: string
-    approvedAt: Date | null
-    createdAt: Date
-    customer: {
-      firstName: string | null
-      lastName: string | null
-      fullName: string | null
-      companyName: string | null
-      contactName: string | null
-      type: string
-      phone: string
-    }
-    vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
-    photos: { type: string; label: string; fileUrl: string | null }[]
-    damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
-    approvals: { status: string; approvedAt: Date | null }[]
-    order: { status: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
-  }
+  intakeForm: ReturnType<typeof sanitizeIntakeForPublic>
   createdAt: Date
+  photoCompletion: { percentage: number; requiredCompleted: number; required: number; total: number; completed: number; missingLabels: string[] }
 }): Promise<string> {
-  const { workshop, intakeForm, createdAt } = data
+  const { workshop, intakeForm, createdAt, photoCompletion } = data
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
   const orderItems = intakeForm.order?.items ?? []
   const parts = orderItems.filter((i) => i.type === "part")
@@ -48,20 +31,18 @@ async function generatePdfHtml(data: {
   }, 0)
   const grandTotal = partsTotal + laborTotal
 
-  const fmtDate = (d: Date) => d.toLocaleDateString("tr-TR")
+  const fmtDate = (d: Date) => new Date(d).toLocaleDateString("tr-TR")
 
   let damageRows = ""
   for (const mark of intakeForm.damageMarks) {
     const severityInfo = DAMAGE_SEVERITY[mark.severity as keyof typeof DAMAGE_SEVERITY]
-    const zoneLabel = VEHICLE_ZONES[mark.zone as keyof typeof VEHICLE_ZONES] || mark.zone
-    const typeLabel = DAMAGE_TYPES[mark.damageType as keyof typeof DAMAGE_TYPES]?.label || mark.damageType
     damageRows += `<tr>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;">
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${severityInfo?.color || "#9CA3AF"};margin-right:6px;vertical-align:middle;"></span>
-        ${zoneLabel}
+        ${mark.zoneLabel || VEHICLE_ZONES[mark.zone as keyof typeof VEHICLE_ZONES] || mark.zone}
       </td>
-      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;">${typeLabel}</td>
-      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;">${severityInfo?.label || mark.severity}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;">${mark.damageTypeLabel || DAMAGE_TYPES[mark.damageType as keyof typeof DAMAGE_TYPES]?.label || mark.damageType}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;">${mark.severityLabel || severityInfo?.label || mark.severity}</td>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;color:#999;">${mark.note || "—"}</td>
     </tr>`
   }
@@ -69,7 +50,7 @@ async function generatePdfHtml(data: {
   let photoRows = ""
   for (const photo of intakeForm.photos) {
     const label = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label
-    photoRows += `<div style="padding:3px 0;color:#333;">✓ ${label}</div>`
+    photoRows += `<div style="padding:3px 0;color:#333;">✓ ${label} <span style="font-size:8px;color:#999;">(${photo.phase})</span></div>`
   }
 
   let partRows = ""
@@ -98,6 +79,15 @@ async function generatePdfHtml(data: {
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center;">${item.quantity}</td>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:right;">${lineTotal}</td>
     </tr>`
+  }
+
+  let timelineRows = ""
+  for (const event of intakeForm.timeline) {
+    const label = TIMELINE_EVENT_LABELS[event.eventType] || event.description
+    timelineRows += `<div style="padding:4px 0;border-left:2px solid #e2e8f0;margin-left:8px;padding-left:12px;">
+      <div style="font-weight:600;font-size:9px;">${label}</div>
+      <div style="font-size:8px;color:#999;">${new Date(event.createdAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+    </div>`
   }
 
   const approvalSection = intakeForm.approvals.length > 0 ? `
@@ -168,8 +158,36 @@ async function generatePdfHtml(data: {
             <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-top:4px;"><span>Genel Toplam</span><span>${formatTRY(grandTotal)}</span></div>
           </div>
         ` : ""}
+        ${intakeForm.order.paymentStatusLabel ? `<div style="font-size:8px;color:#666;margin-top:6px;padding-top:4px;border-top:1px solid #f1f5f9;">Ödeme durumu: ${intakeForm.order.paymentStatusLabel}</div>` : ""}
       </div>
     </div>` : ""
+
+  const timelineSection = intakeForm.timeline.length > 0 ? `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Onay Zaman Çizelgesi</h3>
+      <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;">
+        ${timelineRows}
+      </div>
+    </div>` : ""
+
+  const evidenceSummarySection = `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Kanıt Özeti</h3>
+      <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;display:flex;gap:16px;">
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:16px;font-weight:700;color:${photoCompletion.percentage === 100 ? "#059669" : photoCompletion.percentage >= 60 ? "#D97706" : "#DC2626"};">${photoCompletion.percentage}%</div>
+          <div style="font-size:8px;color:#666;">Fotoğraf</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:16px;font-weight:700;color:${intakeForm.damageMarks.length > 0 ? "#D97706" : "#059669"};">${intakeForm.damageMarks.length}</div>
+          <div style="font-size:8px;color:#666;">Hasar</div>
+        </div>
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:16px;font-weight:700;color:${intakeForm.approvals.length > 0 && intakeForm.approvals[0].status === "verified" ? "#059669" : "#D97706"};">${intakeForm.approvals.length > 0 && intakeForm.approvals[0].status === "verified" ? "Onaylı" : "Bekliyor"}</div>
+          <div style="font-size:8px;color:#666;">Onay</div>
+        </div>
+      </div>
+    </div>`
 
   return `<!DOCTYPE html>
 <html>
@@ -195,6 +213,8 @@ async function generatePdfHtml(data: {
   <div style="margin-bottom:6px;">
     <span style="font-size:9px;padding:2px 8px;border:1px solid #0B1F3A;border-radius:10px;color:#0B1F3A;">${statusInfo?.label || intakeForm.status}</span>
   </div>
+
+  ${evidenceSummarySection}
 
   <div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Müşteri & Araç</h3>
@@ -232,6 +252,7 @@ async function generatePdfHtml(data: {
 
   ${damageSection}
   ${photoSection}
+  ${timelineSection}
   ${approvalSection}
   ${orderSection}
 
@@ -244,7 +265,11 @@ async function generatePdfHtml(data: {
     </div>
   </div>
 
-  <div style="text-align:center;margin-top:20px;padding-top:10px;border-top:1px solid #E5E7EB;color:#999;font-size:8px;">
+  <div style="text-align:center;margin-top:10px;padding:8px;border:1px solid #DBEAFE;border-radius:6px;background:#EFF6FF;color:#1E40AF;font-size:8px;">
+    Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+  </div>
+
+  <div style="text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;color:#999;font-size:8px;">
     <div>Bu çıktı, servis kabul ve işlem özeti amacıyla oluşturulmuştur.</div>
     <div style="margin-top:4px;">BakimX ile oluşturuldu • ${fmtDate(createdAt)}</div>
   </div>
@@ -262,10 +287,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
         include: {
           customer: true,
           vehicle: true,
-          photos: { select: { type: true, label: true, fileUrl: true } },
+          photos: { select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          order: { select: { status: true, items: { select: { type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
+          timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },
+          order: { select: { status: true, paymentStatus: true, items: { select: { type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
         },
       },
       workshop: { select: { name: true, phone: true, city: true, address: true } },
@@ -277,39 +303,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   }
 
   const { intakeForm, workshop } = shareLink
-  const safeIntakeForm = {
-    status: intakeForm.status,
-    mileageAtIntake: intakeForm.mileageAtIntake,
-    customerComplaint: intakeForm.customerComplaint,
-    approvedAt: intakeForm.approvedAt,
-    createdAt: intakeForm.createdAt,
-    vehicle: {
-      plate: intakeForm.vehicle.plate,
-      brand: intakeForm.vehicle.brand,
-      model: intakeForm.vehicle.model,
-      modelYear: intakeForm.vehicle.modelYear,
-      mileage: intakeForm.vehicle.mileage,
-      vin: intakeForm.vehicle.vin,
-    },
-    customer: {
-      firstName: intakeForm.customer.firstName,
-      lastName: intakeForm.customer.lastName,
-      fullName: intakeForm.customer.fullName,
-      companyName: intakeForm.customer.companyName,
-      contactName: intakeForm.customer.contactName,
-      type: intakeForm.customer.type,
-      phone: intakeForm.customer.phone,
-    },
-    photos: intakeForm.photos,
-    damageMarks: intakeForm.damageMarks,
-    approvals: intakeForm.approvals,
-    order: intakeForm.order,
+
+  const visibility = {
+    showPhotos: shareLink.showPhotos,
+    showDamage: shareLink.showDamage,
+    showOrderItems: shareLink.showOrderItems,
+    showPaymentStatus: shareLink.showPaymentStatus,
+    showTimeline: shareLink.showTimeline,
   }
+
+  const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
+
+  const photoTypes = intakeForm.photos.map((p) => p.type)
+  const { calculatePhotoCompletion } = await import("@/lib/intake/completeness")
+  const photoCompletion = calculatePhotoCompletion(photoTypes)
 
   const html = await generatePdfHtml({
     workshop,
     intakeForm: safeIntakeForm,
     createdAt: shareLink.createdAt,
+    photoCompletion,
   })
 
   return new Response(html, {

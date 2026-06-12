@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { PublicSharePage } from "@/components/app/public-share-page"
+import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
+import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 
 export const dynamic = "force-dynamic"
 
@@ -14,10 +16,11 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         include: {
           customer: true,
           vehicle: true,
-          photos: { select: { id: true, type: true, label: true, fileUrl: true } },
+          photos: { select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          order: { select: { id: true, status: true, items: { select: { id: true, type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
+          timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },
+          order: { select: { id: true, status: true, paymentStatus: true, items: { select: { id: true, type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
         },
       },
       workshop: { select: { id: true, name: true, phone: true, city: true, address: true, logoUrl: true } },
@@ -30,8 +33,36 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
   const { intakeForm, workshop } = shareLink
 
+  const visibility = {
+    showPhotos: shareLink.showPhotos,
+    showDamage: shareLink.showDamage,
+    showOrderItems: shareLink.showOrderItems,
+    showPaymentStatus: shareLink.showPaymentStatus,
+    showTimeline: shareLink.showTimeline,
+  }
+
+  const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
+
+  const photoTypes = intakeForm.photos.map((p) => p.type)
+  const photoCompletion = calculatePhotoCompletion(photoTypes)
+  const photoGroups = groupPhotosByPhase(
+    intakeForm.photos.map((p) => ({
+      id: p.id,
+      type: p.type,
+      label: p.label,
+      fileUrl: p.fileUrl,
+      phase: p.phase || "intake",
+    }))
+  )
+
   const safeShareLink = {
     createdAt: shareLink.createdAt,
+    token: shareLink.token,
+    showPhotos: shareLink.showPhotos,
+    showDamage: shareLink.showDamage,
+    showOrderItems: shareLink.showOrderItems,
+    showPaymentStatus: shareLink.showPaymentStatus,
+    showTimeline: shareLink.showTimeline,
     workshop: {
       name: workshop.name,
       phone: workshop.phone,
@@ -39,56 +70,9 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       address: workshop.address,
       logoUrl: workshop.logoUrl,
     },
-    intakeForm: {
-      status: intakeForm.status,
-      mileageAtIntake: intakeForm.mileageAtIntake,
-      customerComplaint: intakeForm.customerComplaint,
-      approvedAt: intakeForm.approvedAt,
-      createdAt: intakeForm.createdAt,
-      vehicle: {
-        plate: intakeForm.vehicle.plate,
-        brand: intakeForm.vehicle.brand,
-        model: intakeForm.vehicle.model,
-        modelYear: intakeForm.vehicle.modelYear,
-        mileage: intakeForm.vehicle.mileage,
-        vin: intakeForm.vehicle.vin,
-      },
-      customer: {
-        firstName: intakeForm.customer.firstName,
-        lastName: intakeForm.customer.lastName,
-        fullName: intakeForm.customer.fullName,
-        companyName: intakeForm.customer.companyName,
-        contactName: intakeForm.customer.contactName,
-        type: intakeForm.customer.type,
-        phone: intakeForm.customer.phone,
-      },
-      photos: intakeForm.photos.map((p) => ({
-        id: p.id,
-        type: p.type,
-        label: p.label,
-        fileUrl: p.fileUrl,
-      })),
-      damageMarks: intakeForm.damageMarks.map((dm) => ({
-        zone: dm.zone,
-        damageType: dm.damageType,
-        severity: dm.severity,
-        note: dm.note,
-      })),
-      approvals: intakeForm.approvals,
-      order: intakeForm.order
-        ? {
-            status: intakeForm.order.status,
-            items: intakeForm.order.items.map((i) => ({
-              type: i.type,
-              name: i.name,
-              quantity: i.quantity,
-              unitPrice: i.unitPrice,
-              totalPrice: i.totalPrice,
-            })),
-          }
-        : null,
-    },
-    token: shareLink.token,
+    intakeForm: safeIntakeForm,
+    photoCompletion,
+    photoGroups,
   }
 
   return <PublicSharePage shareLink={safeShareLink} />
