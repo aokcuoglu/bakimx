@@ -5,43 +5,69 @@ import { DeepSeekOcrProvider } from "./deepseek-ocr-provider"
 
 let _provider: OcrProvider | null = null
 
+type OcrProviderName = "mock" | "deepseek" | "openai"
+
+function parseProviderName(value: string | undefined): OcrProviderName {
+  const normalized = (value || "").toLowerCase().trim()
+  if (!normalized || normalized === "mock") return "mock"
+  if (normalized === "deepseek") return "deepseek"
+  if (normalized === "openai") return "openai"
+  throw new Error(
+    `Bilinmeyen OCR sağlayıcısı: "${value}". Desteklenen değerler: mock (varsayılan), deepseek, openai. ` +
+      "OCR_PROVIDER ortam değişkenini kontrol ediniz."
+  )
+}
+
 export async function getOcrProvider(): Promise<OcrProvider> {
   if (_provider) return _provider
 
-  const provider = process.env.OCR_PROVIDER || "deepseek"
+  const providerName = parseProviderName(process.env.OCR_PROVIDER)
 
-  if (provider === "mock") {
+  if (providerName === "mock") {
     _provider = getMockOcrProvider()
     return _provider
   }
 
-  if (provider === "openai") {
+  if (providerName === "openai") {
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
       throw new Error(
-        "Gerçek ruhsat okuma için OPENAI_API_KEY tanımlanmalıdır. " +
-          "Demo verisi kullanmak için OCR_PROVIDER=mock ayarlayabilirsiniz."
+        "OpenAI ile ruhsat okuma için OPENAI_API_KEY tanımlanmalıdır. " +
+          "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
       )
     }
-    _provider = new OpenAiOcrProvider(apiKey)
+    const model = process.env.OPENAI_OCR_MODEL
+    if (!model) {
+      throw new Error(
+        "OpenAI ile ruhsat okuma için OPENAI_OCR_MODEL tanımlanmalıdır (ör: gpt-4o, gpt-4o-mini). " +
+          "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
+      )
+    }
+    _provider = new OpenAiOcrProvider(apiKey, model)
     return _provider
   }
 
-  if (provider === "deepseek") {
+  if (providerName === "deepseek") {
     const apiKey = process.env.DEEPSEEK_API_KEY
     if (!apiKey) {
       throw new Error(
         "DeepSeek ile ruhsat okuma için DEEPSEEK_API_KEY tanımlanmalıdır. " +
-          "Demo verisi kullanmak için OCR_PROVIDER=mock ayarlayabilirsiniz."
+          "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
       )
     }
-    _provider = new DeepSeekOcrProvider(apiKey)
+    const model = process.env.DEEPSEEK_OCR_MODEL
+    if (!model) {
+      throw new Error(
+        "DeepSeek ile ruhsat okuma için DEEPSEEK_OCR_MODEL tanımlanmalıdır (ör: deepseek-chat). " +
+          "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
+      )
+    }
+    _provider = new DeepSeekOcrProvider(apiKey, model)
     return _provider
   }
 
   throw new Error(
-    `Bilinmeyen OCR sağlayıcısı: "${provider}". Desteklenen değerler: "deepseek", "openai", "mock". ` +
-      "OCR_PROVIDER ortam değişkenini kontrol ediniz."
+    `Bilinmeyen OCR sağlayıcısı: "${providerName}". Desteklenen değerler: mock (varsayılan), deepseek, openai.`
   )
 }
 

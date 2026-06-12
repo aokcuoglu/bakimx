@@ -33,7 +33,7 @@ const faqs = [
   {
     question: "Ruhsattan şase otomatik okunacak mı?",
     answer:
-      "Evet. Ruhsat fotoğrafınızı yüklediğinizde OCR ile plaka, şase numarası, marka, model ve araç sahibi bilgileri otomatik okunur. Okunan bilgiler kaydedilmeden önce onayınıza sunulur, böylece hataları düzeltebilirsiniz.",
+      "Evet. OCR_PROVIDER ortam değişkeni bir API anahtarı ile yapılandırıldığında (DeepSeek veya OpenAI), ruhsat fotoğrafınızı yüklediğinizde plaka, şase numarası, marka, model ve araç sahibi bilgileri otomatik okunur. Yapılandırılmadığında sistem demo verileriyle çalışır. Okunan bilgiler kaydedilmeden önce onayınıza sunulur.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",

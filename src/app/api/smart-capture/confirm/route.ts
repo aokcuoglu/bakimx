@@ -151,29 +151,47 @@ export async function POST(request: Request) {
         "vehicle_updated_via_ocr"
       )
     } else {
-      vehicle = await prisma.vehicle.create({
-        data: {
-          workshopId: user.workshopId,
-          customerId: customer.id,
-          plate,
-          brand,
-          model,
-          vehicleType: vehicleType || null,
-          modelYear,
-          vin: vin || null,
-          vinConfirmed: vin.length === 17,
-          engineNo: engineNo || null,
-        },
-        include: { customer: true },
-      })
-      vehicleCreated = true
-      await AuditLogAction(
-        user.workshopId,
-        user.id,
-        "Vehicle",
-        vehicle.id,
-        "vehicle_created_via_ocr"
-      )
+      try {
+        vehicle = await prisma.vehicle.create({
+          data: {
+            workshopId: user.workshopId,
+            customerId: customer.id,
+            plate,
+            brand,
+            model,
+            vehicleType: vehicleType || null,
+            modelYear,
+            vin: vin || null,
+            vinConfirmed: vin.length === 17,
+            engineNo: engineNo || null,
+          },
+          include: { customer: true },
+        })
+        vehicleCreated = true
+        await AuditLogAction(
+          user.workshopId,
+          user.id,
+          "Vehicle",
+          vehicle.id,
+          "vehicle_created_via_ocr"
+        )
+      } catch (createError: unknown) {
+        if (
+          createError instanceof Error &&
+          (createError.message.includes("Unique constraint") ||
+            createError.message.includes("UniqueConstraint"))
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                "Bu plaka ile kayıtlı bir araç zaten var. " +
+                "Lütfen sayfayı yenileyip tekrar deneyin veya Araçlar bölümünden düzenleyin.",
+            },
+            { status: 409 }
+          )
+        }
+        throw createError
+      }
     }
 
     await prisma.ocrLog.update({

@@ -1,17 +1,64 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, Star, Share2, FileText, FileDown, ImageOff } from "lucide-react"
-import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
+import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, Star, Share2, FileText, FileDown, Clock, BarChart3, Eye } from "lucide-react"
+import { INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/totals"
+import { ApprovalTimeline } from "@/components/app/approval-timeline"
+import { GroupedPhotoGallery } from "@/components/app/grouped-photo-gallery"
+
+type SafeIntakeData = {
+  status: string
+  statusLabel: string
+  mileageAtIntake: number | null
+  customerComplaint: string
+  approvedAt: Date | null
+  createdAt: Date
+  customer: {
+    firstName: string | null
+    lastName: string | null
+    fullName: string | null
+    companyName: string | null
+    contactName: string | null
+    type: string
+    phone: string
+  }
+  vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
+  photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
+  damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
+  approvals: { status: string; approvedAt: Date | null }[]
+  order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
+  timeline: { eventType: string; description: string; createdAt: Date }[]
+}
+
+type PhotoCompletionResult = {
+  total: number
+  completed: number
+  required: number
+  requiredCompleted: number
+  percentage: number
+  missing: string[]
+  missingLabels: string[]
+}
+
+type PhotoPhaseGroup = {
+  phase: string
+  label: string
+  photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
+}
 
 type ShareLink = {
   createdAt: Date
   token: string
+  showPhotos: boolean
+  showDamage: boolean
+  showOrderItems: boolean
+  showPaymentStatus: boolean
+  showTimeline: boolean
   workshop: {
     name: string
     phone: string
@@ -19,31 +66,13 @@ type ShareLink = {
     address: string
     logoUrl: string | null
   }
-  intakeForm: {
-    status: string
-    mileageAtIntake: number | null
-    customerComplaint: string
-    approvedAt: Date | null
-    createdAt: Date
-    customer: {
-      firstName: string | null
-      lastName: string | null
-      fullName: string | null
-      companyName: string | null
-      contactName: string | null
-      type: string
-      phone: string
-    }
-    vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
-    photos: { id?: string; type: string; label: string; fileUrl: string | null }[]
-    damageMarks: { zone: string; damageType: string; severity: string; note: string | null }[]
-    approvals: { status: string; approvedAt: Date | null }[]
-    order: { status: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
-  }
+  intakeForm: SafeIntakeData
+  photoCompletion: PhotoCompletionResult
+  photoGroups: PhotoPhaseGroup[]
 }
 
 export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
-  const { workshop, intakeForm, token } = shareLink
+  const { workshop, intakeForm, token, photoCompletion, photoGroups } = shareLink
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
   const [copied, setCopied] = useState(false)
 
@@ -62,6 +91,8 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
     const text = generateWhatsAppShareText({
       publicLink,
       workshopName: workshop.name,
+      plate: intakeForm.vehicle.plate,
+      statusLabel: intakeForm.statusLabel,
       totalAmount: intakeForm.order ? orderItems.reduce((sum, item) => {
         if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
         if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
@@ -81,8 +112,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
     }
   }
 
-  const photosWithFile = intakeForm.photos.filter((p) => p.fileUrl)
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] print:bg-white print:text-black">
       {/* Screen header */}
@@ -97,6 +126,10 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <h1 className="font-bold text-lg">{workshop.name}</h1>
                 <p className="text-sm text-white/70">Araç Kabul ve İşlem Özeti</p>
               </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-white/50">
+              <Shield className="size-4" />
+              <span className="text-xs">Güvenli Bağlantı</span>
             </div>
           </div>
         </div>
@@ -134,6 +167,49 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <span className="text-xs text-gray-500">
             {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}
           </span>
+        </div>
+
+        {/* Evidence Summary Card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none">
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500 flex items-center gap-2 mb-3">
+            <BarChart3 className="size-4" />
+            Kanıt Özeti
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className={`text-xl font-bold ${photoCompletion.percentage === 100 ? "text-emerald-600" : photoCompletion.percentage >= 60 ? "text-amber-600" : "text-rose-600"}`}>
+                {photoCompletion.percentage}%
+              </p>
+              <p className="text-xs text-gray-500">Fotoğraf</p>
+            </div>
+            <div className="text-center">
+              <p className={`text-xl font-bold ${intakeForm.damageMarks.length > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                {intakeForm.damageMarks.length}
+              </p>
+              <p className="text-xs text-gray-500">Hasar</p>
+            </div>
+            <div className="text-center">
+              <p className={`text-xl font-bold ${intakeForm.approvals.length > 0 && intakeForm.approvals[0].status === "verified" ? "text-emerald-600" : "text-amber-600"}`}>
+                {intakeForm.approvals.length > 0 && intakeForm.approvals[0].status === "verified" ? "Onaylı" : "Bekliyor"}
+              </p>
+              <p className="text-xs text-gray-500">Onay</p>
+            </div>
+          </div>
+          <div className="mt-3 w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${photoCompletion.percentage === 100 ? "bg-emerald-500" : photoCompletion.percentage >= 60 ? "bg-amber-500" : "bg-rose-500"}`}
+              style={{ width: `${photoCompletion.percentage}%` }}
+            />
+          </div>
+          {photoCompletion.missingLabels.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {photoCompletion.missingLabels.map((label) => (
+                <span key={label} className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-200">
+                  Eksik: {label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Customer & Vehicle */}
@@ -189,58 +265,19 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           </div>
         </div>
 
-        {/* Damage Summary */}
-        {intakeForm.damageMarks.length > 0 && (
+        {/* Photos - Grouped by Phase */}
+        {shareLink.showPhotos && intakeForm.photos.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">
-              Hasar Kayıtları ({intakeForm.damageMarks.length})
+            <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500 flex items-center gap-2">
+              <Eye className="size-3.5" />
+              Fotoğraflar ({intakeForm.photos.length})
             </h3>
-            <div className="space-y-2">
-              {intakeForm.damageMarks.map((mark, idx) => {
-                const severityInfo = DAMAGE_SEVERITY[mark.severity as keyof typeof DAMAGE_SEVERITY]
-                return (
-                  <div key={`dm-${idx}-${mark.zone}`} className="flex items-start gap-2.5 text-sm py-1.5 border-b border-gray-50 last:border-0">
-                    <span
-                      className="w-3 h-3 rounded-full shrink-0 mt-0.5 print:border print:border-black"
-                      style={{ backgroundColor: severityInfo?.color || "#9CA3AF" }}
-                    />
-                    <div>
-                      <span className="font-medium">{VEHICLE_ZONES[mark.zone as keyof typeof VEHICLE_ZONES] || mark.zone}</span>
-                      <span className="text-gray-500"> — {DAMAGE_TYPES[mark.damageType as keyof typeof DAMAGE_TYPES]?.label || mark.damageType}</span>
-                      <span className="text-xs ml-1 px-1.5 py-0.5 bg-gray-100 rounded-full print:border print:border-gray-300">
-                        {severityInfo?.label || mark.severity}
-                      </span>
-                      {mark.note && <p className="text-gray-400 text-xs mt-0.5">{mark.note}</p>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Photo Summary */}
-        {intakeForm.photos.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">
-              Fotoğraf Kontrol Listesi ({intakeForm.photos.length})
-            </h3>
-            {photosWithFile.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {photosWithFile.map((photo, idx) => (
-                  <PublicPhotoThumbnail
-                    key={`photo-${idx}`}
-                    photo={photo}
-                    token={token}
-                  />
-                ))}
-              </div>
-            )}
-            <div className="space-y-1.5">
+            <GroupedPhotoGallery groups={photoGroups} token={token} compact />
+            <div className="space-y-1.5 pt-2 border-t border-gray-100">
               {intakeForm.photos.map((photo, idx) => (
                 <div key={`${photo.type}-${idx}`} className="text-sm flex items-center gap-2">
                   <CheckCircle2 className="size-3.5 text-green-500 print:text-black shrink-0" />
-                  <span>{PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}</span>
+                  <span>{photo.label}</span>
                   {photo.fileUrl ? (
                     <span className="text-xs text-green-600 print:text-gray-600">(Fotoğraf mevcut)</span>
                   ) : (
@@ -249,6 +286,49 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Damage Summary */}
+        {shareLink.showDamage && intakeForm.damageMarks.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
+            <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">
+              Hasar Kayıtları ({intakeForm.damageMarks.length})
+            </h3>
+            <div className="space-y-2">
+              {intakeForm.damageMarks.map((mark, idx) => (
+                <div key={`dm-${idx}-${mark.zone}`} className="flex items-start gap-2.5 text-sm py-1.5 border-b border-gray-50 last:border-0">
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0 mt-0.5 print:border print:border-black"
+                    style={{ backgroundColor: mark.severityColor }}
+                  />
+                  <div>
+                    <span className="font-medium">{mark.zoneLabel}</span>
+                    <span className="text-gray-500"> — {mark.damageTypeLabel}</span>
+                    <span className="text-xs ml-1 px-1.5 py-0.5 bg-gray-100 rounded-full print:border print:border-gray-300">
+                      {mark.severityLabel}
+                    </span>
+                    {mark.note && <p className="text-gray-400 text-xs mt-0.5">{mark.note}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Approval Timeline */}
+        {shareLink.showTimeline && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
+            <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500 flex items-center gap-2">
+              <Clock className="size-3.5" />
+              Onay Zaman Çizelgesi
+            </h3>
+            <ApprovalTimeline
+              events={intakeForm.timeline}
+              intakeCreatedAt={intakeForm.createdAt}
+              approvedAt={intakeForm.approvedAt}
+              compact
+            />
           </div>
         )}
 
@@ -279,11 +359,10 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         )}
 
         {/* Service Order */}
-        {intakeForm.order && orderItems.length > 0 && (
+        {shareLink.showOrderItems && intakeForm.order && orderItems.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl p-4 print:border print:border-gray-300 print:shadow-none space-y-3">
             <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-500">Servis Emri</h3>
             <div className="space-y-3">
-              {/* Parts */}
               {parts.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1.5">Parçalar ({summary.partsCount})</p>
@@ -306,7 +385,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 </div>
               )}
 
-              {/* Labor */}
               {labor.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-purple-700 uppercase tracking-wide mb-1.5">İşçilik ({summary.laborCount})</p>
@@ -329,7 +407,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 </div>
               )}
 
-              {/* Totals */}
               {summary.hasAnyPrice && (
                 <div className="border-t border-gray-200 pt-2 space-y-1 text-sm">
                   {parts.length > 0 && (
@@ -351,6 +428,13 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 </div>
               )}
             </div>
+
+            {/* Payment status summary */}
+            {shareLink.showPaymentStatus && intakeForm.order.paymentStatusLabel && (
+              <div className="pt-2 border-t border-gray-100 text-xs text-gray-500">
+                Ödeme durumu: {intakeForm.order.paymentStatusLabel}
+              </div>
+            )}
           </div>
         )}
 
@@ -371,6 +455,14 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               <span>{workshop.phone}</span>
             </div>
           </div>
+        </div>
+
+        {/* Data safety notice */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 print:border print:border-blue-200 text-center">
+          <Shield className="size-4 text-blue-400 mx-auto mb-1.5 print:hidden" />
+          <p className="text-xs text-blue-600">
+            Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
+          </p>
         </div>
 
         {/* Legal Disclaimer */}
@@ -423,68 +515,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <p className="print:hidden mt-1">www.bakimx.com</p>
         </div>
       </main>
-    </div>
-  )
-}
-
-function PublicPhotoThumbnail({
-  photo,
-  token,
-}: {
-  photo: { id?: string; type: string; label: string; fileUrl: string | null }
-  token: string
-}) {
-  const isDataUrl = photo.fileUrl?.startsWith("data:") ?? false
-  const hasNoId = !photo.id && !isDataUrl
-  const [src, setSrc] = useState<string | null>(() => isDataUrl ? photo.fileUrl! : null)
-  const [failed, setFailed] = useState(() => hasNoId)
-  const [loading, setLoading] = useState(() => !isDataUrl && !!photo.id && !hasNoId)
-
-  useEffect(() => {
-    if (isDataUrl || hasNoId || !photo.id) return
-
-    const imgSrc = `/s/${token}/photos/${photo.id}`
-    const img = new window.Image()
-    img.onload = () => {
-      setSrc(imgSrc)
-      setLoading(false)
-    }
-    img.onerror = () => {
-      setFailed(true)
-      setLoading(false)
-    }
-    img.src = imgSrc
-  }, [photo, token, isDataUrl, hasNoId])
-
-  if (loading) {
-    return (
-      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-        <div className="size-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (failed || !src) {
-    return (
-      <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">
-        <div className="text-center">
-          <ImageOff className="size-5 text-gray-300 mx-auto" />
-          <span className="text-[10px] text-gray-400 mt-0.5 block">
-            {PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label}
-        className="w-full h-full object-cover"
-      />
     </div>
   )
 }

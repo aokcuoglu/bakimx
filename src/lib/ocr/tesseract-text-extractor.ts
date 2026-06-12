@@ -53,3 +53,16 @@ export async function extractRegistrationText(imageBuffer: Buffer): Promise<stri
     resolveQueue()
   }
 }
+
+export async function terminateTesseractWorker(): Promise<void> {
+  if (workerPromise) {
+    try {
+      const worker = await workerPromise
+      await worker.terminate()
+    } catch {
+      // Worker may already be terminated or failed to initialize
+    } finally {
+      workerPromise = null
+    }
+  }
+}

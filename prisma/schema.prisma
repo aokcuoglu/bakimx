@@ -26,6 +26,7 @@ model Workshop {
   damageMarks  DamageMark[]
   approvals    ApprovalRequest[]
   shareLinks   PublicShareLink[]
+  timelineEvents IntakeTimelineEvent[]
   orders       ServiceOrder[]
   quotes       Quote[]
   quoteItems   QuoteItem[]
@@ -152,8 +153,10 @@ model Vehicle {
   appointments Appointment[]
   reminders MaintenanceReminder[]
 
+  @@unique([workshopId, plate])
   @@index([workshopId])
   @@index([customerId])
+  @@index([workshopId, vin])
 }
 
 model VehicleIntakeForm {
@@ -177,6 +180,7 @@ model VehicleIntakeForm {
   damageMarks DamageMark[]
   approvals   ApprovalRequest[]
   shareLinks  PublicShareLink[]
+  timelineEvents IntakeTimelineEvent[]
   order       ServiceOrder?
 
   @@index([workshopId])
@@ -201,6 +205,7 @@ model VehiclePhoto {
   intakeFormId    String
   intakeForm      VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
   type            VehiclePhotoType
+  phase           PhotoPhase        @default(intake)
   label           String
   required        Boolean           @default(false)
   fileUrl         String?
@@ -215,6 +220,7 @@ model VehiclePhoto {
 
   @@index([workshopId])
   @@index([intakeFormId])
+  @@index([phase])
 }
 
 enum VehiclePhotoType {
@@ -228,6 +234,12 @@ enum VehiclePhotoType {
   vin_area
   damage_detail
   other
+}
+
+enum PhotoPhase {
+  intake
+  repair_progress
+  delivery
 }
 
 model DamageMark {
@@ -292,18 +304,39 @@ enum ApprovalStatus {
 }
 
 model PublicShareLink {
+  id                String            @id @default(cuid())
+  workshopId        String
+  workshop          Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId      String
+  intakeForm        VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  token             String            @unique
+  expiresAt         DateTime?
+  isActive          Boolean           @default(true)
+  showPhotos        Boolean           @default(true)
+  showDamage        Boolean           @default(true)
+  showOrderItems    Boolean           @default(true)
+  showPaymentStatus Boolean           @default(false)
+  showTimeline      Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+
+  @@index([workshopId])
+  @@index([intakeFormId])
+}
+
+model IntakeTimelineEvent {
   id           String            @id @default(cuid())
   workshopId   String
   workshop     Workshop          @relation(fields: [workshopId], references: [id])
   intakeFormId String
   intakeForm   VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
-  token        String            @unique
-  expiresAt    DateTime?
-  isActive     Boolean           @default(true)
+  eventType    String
+  description  String
   createdAt    DateTime          @default(now())
 
   @@index([workshopId])
   @@index([intakeFormId])
+  @@index([eventType])
+  @@index([createdAt])
 }
 
 model ServiceOrder {
