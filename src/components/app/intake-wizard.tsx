@@ -30,7 +30,17 @@ const STEPS = [
   { id: 6, label: "Onay", icon: MessageSquare },
 ]
 
-export function IntakeWizard({ customers: initialCustomers }: { customers: Customer[] }) {
+export function IntakeWizard({
+  customers: initialCustomers,
+  prefillCustomerId,
+  prefillVehicleId,
+  source,
+}: {
+  customers: Customer[]
+  prefillCustomerId?: string
+  prefillVehicleId?: string
+  source?: string
+}) {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
@@ -81,6 +91,22 @@ export function IntakeWizard({ customers: initialCustomers }: { customers: Custo
         })
     }
   }, [selectedCustomerId, newCustomerMode])
+
+  // Prefill customer/vehicle from OCR redirect
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (prefillCustomerId && customers.find((c) => c.id === prefillCustomerId)) {
+      setSelectedCustomerId(prefillCustomerId)
+    }
+  }, [prefillCustomerId, customers])
+
+  useEffect(() => {
+    if (prefillVehicleId && vehicles.find((v) => v.id === prefillVehicleId)) {
+      setSelectedVehicleId(prefillVehicleId)
+      if (source === "registration") setStep(3)
+    }
+  }, [prefillVehicleId, vehicles, source])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleCreateCustomer() {
     setLoading(true)
@@ -243,6 +269,12 @@ export function IntakeWizard({ customers: initialCustomers }: { customers: Custo
 
   return (
     <div className="space-y-6">
+      {source === "registration" && selectedCustomerId && selectedVehicleId && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 flex items-start gap-2">
+          <Check className="size-4 shrink-0 mt-0.5" />
+          <span>Ruhsattan kaydedilen müşteri ve araç seçildi. Kabul detaylarından devam edin.</span>
+        </div>
+      )}
       {/* Progress indicator */}
       <div className="bg-card border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
