@@ -9,7 +9,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true })
-  } catch (_error) {
+  } catch {
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
   }
 }

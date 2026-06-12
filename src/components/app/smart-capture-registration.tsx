@@ -7,13 +7,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { Camera, Upload, Loader2, CheckCircle2, AlertTriangle, ScanLine, ArrowRight, User, Car, ClipboardList } from "lucide-react"
-import type { RegistrationOcrResult } from "@/lib/ocr/types"
+import { Camera, Upload, Loader2, CheckCircle2, AlertTriangle, ScanLine, ArrowRight, User, Car, ClipboardList, Info } from "lucide-react"
+import type { OcrFieldConfidence, OcrProviderName } from "@/lib/ocr/types"
+import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { prepareRegistrationImage } from "@/lib/ocr/prepare-registration-image"
 
 type Step = "upload" | "processing" | "confirm" | "saving"
 
 const LOADING_STEPS: Step[] = ["saving"]
+
+const PROVIDER_LABELS: Record<OcrProviderName, string> = {
+  mock: "Demo (Mock)",
+  openai: "OpenAI Vision",
+  deepseek: "Tesseract + DeepSeek",
+  tesseract: "Tesseract (Yerel)",
+}
 
 type SaveResult = {
   customerId: string
@@ -24,6 +32,45 @@ type SaveResult = {
   customerName: string
   vehicleLabel: string
   intakeUrl: string
+  warnings?: string[]
+}
+
+type FieldConfig = {
+  key: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  uppercase?: boolean
+  helperText?: string
+}
+
+const FIELD_CONFIGS: FieldConfig[] = [
+  { key: "plate", label: "Plaka", required: true, uppercase: true },
+  { key: "vin", label: "Şase No (VIN)" },
+  { key: "ownerName", label: "Araç Sahibi Adı" },
+  { key: "ownerSurname", label: "Araç Sahibi Soyadı" },
+  { key: "phone", label: "Müşteri Telefonu", required: true, placeholder: "0555 123 4567", helperText: "Mevcut müşteri bu numarayla bulunur; yoksa Müşteriler bölümünde yeni kayıt oluşturulur." },
+  { key: "brand", label: "Marka", required: true },
+  { key: "model", label: "Model", required: true },
+  { key: "vehicleType", label: "Araç Tipi" },
+  { key: "modelYear", label: "Model Yılı" },
+  { key: "engineNo", label: "Motor No" },
+  { key: "registrationDate", label: "Tescil Tarihi" },
+]
+
+function ConfidenceIndicator({ confidence }: { confidence?: number }) {
+  if (confidence === undefined || confidence === null) return null
+  const isLow = confidence < LOW_CONFIDENCE_THRESHOLD
+  const pct = Math.round(confidence * 100)
+  return (
+    <span
+      className={`ml-2 inline-flex items-center gap-0.5 text-xs font-medium ${isLow ? "text-amber-600" : "text-emerald-600"}`}
+      title={`Güven: %${pct}`}
+    >
+      {isLow && <AlertTriangle className="size-3" />}
+      %{pct}
+    </span>
+  )
 }
 
 export function SmartCaptureRegistration() {
@@ -31,8 +78,9 @@ export function SmartCaptureRegistration() {
   const [step, setStep] = useState<Step>("upload")
   const [error, setError] = useState("")
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [ocrResult, setOcrResult] = useState<RegistrationOcrResult | null>(null)
+  const [ocrResult, setOcrResult] = useState<Record<string, OcrFieldConfidence> | null>(null)
   const [ocrLogId, setOcrLogId] = useState<string | null>(null)
+  const [ocrProvider, setOcrProvider] = useState<OcrProviderName | null>(null)
   const [confirmedFields, setConfirmedFields] = useState<Record<string, string>>({})
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null)
 
@@ -76,6 +124,7 @@ export function SmartCaptureRegistration() {
 
         setOcrResult(data.result)
         setOcrLogId(data.ocrLogId)
+        setOcrProvider(data.provider || null)
         if (data.previewDataUrl) {
           setImagePreview(data.previewDataUrl)
         }
@@ -139,6 +188,16 @@ export function SmartCaptureRegistration() {
     }
   }
 
+  function getFieldConfidence(key: string): number | undefined {
+    if (!ocrResult || !ocrResult[key]) return undefined
+    return ocrResult[key].confidence
+  }
+
+  function isLowConfidence(key: string): boolean {
+    const conf = getFieldConfidence(key)
+    return conf !== undefined && conf !== null && conf < LOW_CONFIDENCE_THRESHOLD
+  }
+
   if (saveResult) {
     return (
       <div className="space-y-5">
@@ -155,6 +214,17 @@ export function SmartCaptureRegistration() {
             </div>
           </CardContent>
         </Card>
+
+        {saveResult.warnings && saveResult.warnings.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-1">
+            {saveResult.warnings.map((w, i) => (
+              <p key={i} className="text-sm text-amber-800 flex items-start gap-2">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                {w}
+              </p>
+            ))}
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
@@ -232,6 +302,7 @@ export function SmartCaptureRegistration() {
             setImagePreview(null)
             setOcrResult(null)
             setOcrLogId(null)
+            setOcrProvider(null)
             setConfirmedFields({})
           }}
         >
@@ -280,6 +351,13 @@ export function SmartCaptureRegistration() {
           </div>
         </div>
 
+        {ocrProvider && (
+          <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 flex items-center gap-2 text-sm text-blue-700">
+            <Info className="size-4 shrink-0" />
+            <span>OCR sağlayıcı: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></span>
+          </div>
+        )}
+
         {imagePreview && (
           <Card>
             <CardHeader>
@@ -307,102 +385,40 @@ export function SmartCaptureRegistration() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="plate">Plaka *</Label>
-                <Input
-                  id="plate"
-                  value={confirmedFields.plate || ""}
-                  onChange={(e) => handleInputChange("plate", e.target.value.toUpperCase())}
-                  className="uppercase"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="vin">Şase No (VIN)</Label>
-                <Input
-                  id="vin"
-                  value={confirmedFields.vin || ""}
-                  onChange={(e) => handleInputChange("vin", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ownerName">Araç Sahibi Adı</Label>
-                <Input
-                  id="ownerName"
-                  value={confirmedFields.ownerName || ""}
-                  onChange={(e) => handleInputChange("ownerName", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ownerSurname">Araç Sahibi Soyadı</Label>
-                <Input
-                  id="ownerSurname"
-                  value={confirmedFields.ownerSurname || ""}
-                  onChange={(e) => handleInputChange("ownerSurname", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="phone">Müşteri Telefonu *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  inputMode="tel"
-                  value={confirmedFields.phone || ""}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  placeholder="0555 123 4567"
-                  required
-                />
-                <p className="text-xs text-slate-500">
-                  Mevcut müşteri bu numarayla bulunur; yoksa Müşteriler bölümünde yeni kayıt oluşturulur.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="brand">Marka *</Label>
-                <Input
-                  id="brand"
-                  value={confirmedFields.brand || ""}
-                  onChange={(e) => handleInputChange("brand", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="model">Model *</Label>
-                <Input
-                  id="model"
-                  value={confirmedFields.model || ""}
-                  onChange={(e) => handleInputChange("model", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="vehicleType">Araç Tipi</Label>
-                <Input
-                  id="vehicleType"
-                  value={confirmedFields.vehicleType || ""}
-                  onChange={(e) => handleInputChange("vehicleType", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="modelYear">Model Yılı</Label>
-                <Input
-                  id="modelYear"
-                  value={confirmedFields.modelYear || ""}
-                  onChange={(e) => handleInputChange("modelYear", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="engineNo">Motor No</Label>
-                <Input
-                  id="engineNo"
-                  value={confirmedFields.engineNo || ""}
-                  onChange={(e) => handleInputChange("engineNo", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="registrationDate">Tescil Tarihi</Label>
-                <Input
-                  id="registrationDate"
-                  value={confirmedFields.registrationDate || ""}
-                  onChange={(e) => handleInputChange("registrationDate", e.target.value)}
-                />
-              </div>
+              {FIELD_CONFIGS.map((field) => {
+                const lowConf = isLowConfidence(field.key)
+                return (
+                  <div
+                    key={field.key}
+                    className={`space-y-2 ${field.key === "phone" ? "sm:col-span-2" : ""}`}
+                  >
+                    <Label htmlFor={field.key} className="flex items-center">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-0.5">*</span>}
+                      <ConfidenceIndicator confidence={getFieldConfidence(field.key)} />
+                    </Label>
+                    <Input
+                      id={field.key}
+                      type={field.key === "phone" ? "tel" : "text"}
+                      inputMode={field.key === "phone" ? "tel" : undefined}
+                      value={confirmedFields[field.key] || ""}
+                      onChange={(e) => handleInputChange(field.key, field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      className={lowConf ? "border-amber-300 bg-amber-50/50 focus:border-amber-400" : ""}
+                    />
+                    {field.helperText && (
+                      <p className="text-xs text-slate-500">{field.helperText}</p>
+                    )}
+                    {lowConf && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <AlertTriangle className="size-3" />
+                        Düşük güven oranı — lütfen bu alanı dikkatle kontrol edin
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>

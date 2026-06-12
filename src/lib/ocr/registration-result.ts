@@ -23,7 +23,7 @@ function field(value: string): OcrFieldConfidence {
 export function toRegistrationResult(
   data: RegistrationFields,
   rawText: string
-): RegistrationOcrResult {
+): Omit<RegistrationOcrResult, "provider"> {
   return {
     plate: field(data.plate.toUpperCase()),
     vin: field(data.vin.toUpperCase()),

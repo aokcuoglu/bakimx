@@ -68,7 +68,7 @@ function getOutputText(response: OpenAiResponse): string {
 }
 
 export class OpenAiOcrProvider implements OcrProvider {
-  readonly name = "openai"
+  readonly name = "openai" as const
 
   constructor(
     private readonly apiKey: string,
@@ -131,6 +131,6 @@ export class OpenAiOcrProvider implements OcrProvider {
     }
 
     const parsed = OpenAiRegistrationSchema.parse(JSON.parse(getOutputText(data)))
-    return toRegistrationResult(parsed, parsed.rawText)
+    return { ...toRegistrationResult(parsed, parsed.rawText), provider: "openai" }
   }
 }

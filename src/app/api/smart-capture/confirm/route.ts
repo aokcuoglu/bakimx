@@ -57,6 +57,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Müşteri adı ve soyadı zorunludur" }, { status: 400 })
     }
 
+    const warnings: string[] = []
+
+    const plateConflict = await prisma.vehicle.findFirst({
+      where: { workshopId: user.workshopId, plate },
+      include: { customer: true },
+    })
+    if (plateConflict) {
+      warnings.push(`Bu plaka (${plate}) ile kayıtlı bir araç zaten mevcut: ${plateConflict.brand} ${plateConflict.model}`)
+    }
+
+    if (vin && vin.length >= 5) {
+      const vinConflict = await prisma.vehicle.findFirst({
+        where: { workshopId: user.workshopId, vin },
+        include: { customer: true },
+      })
+      if (vinConflict && (!plateConflict || vinConflict.id !== plateConflict.id)) {
+        warnings.push(`Bu şase numarası (${vin.substring(0, 8)}...) ile kayıtlı başka bir araç mevcut: ${vinConflict.plate} - ${vinConflict.brand} ${vinConflict.model}`)
+      }
+    }
+
     const matchingVehicles = await prisma.vehicle.findMany({
       where: {
         workshopId: user.workshopId,
@@ -71,7 +91,7 @@ export async function POST(request: Request) {
 
     if (matchingVehicles.length > 1) {
       return NextResponse.json(
-        { error: "Plaka ve şase numarası farklı araç kayıtlarıyla eşleşiyor. Lütfen Araçlar bölümünden kontrol edin." },
+        { error: "Plaka ve şase numarası farklı araç kayıtlarıyla eşleşiyor. Lütfen Araçlar bölümünden kontrol edin.", warnings },
         { status: 409 }
       )
     }
@@ -205,6 +225,15 @@ export async function POST(request: Request) {
       },
     })
 
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "OcrLog",
+      ocrLogId,
+      "ocr_confirmed",
+      JSON.stringify({ vehicleId: vehicle.id, customerId: customer.id })
+    )
+
     revalidatePath("/app/customers")
     revalidatePath(`/app/customers/${customer.id}`)
     revalidatePath("/app/vehicles")
@@ -227,6 +256,7 @@ export async function POST(request: Request) {
       customerName,
       vehicleLabel: `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}`,
       intakeUrl: `/app/intakes/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
+      ...(warnings.length > 0 ? { warnings } : {}),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Bir hata oluştu"
