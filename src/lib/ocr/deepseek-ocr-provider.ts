@@ -74,7 +74,7 @@ function reconcileFields(
 }
 
 export class DeepSeekOcrProvider implements OcrProvider {
-  readonly name = "deepseek"
+  readonly name = "deepseek" as const
 
   constructor(
     private readonly apiKey: string,
@@ -149,6 +149,6 @@ export class DeepSeekOcrProvider implements OcrProvider {
       )
     }
 
-    return toRegistrationResult(reconcileFields(fields, rawText), rawText)
+    return { ...toRegistrationResult(reconcileFields(fields, rawText), rawText), provider: "deepseek" }
   }
 }

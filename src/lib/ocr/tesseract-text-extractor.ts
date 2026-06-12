@@ -5,6 +5,19 @@ import { createWorker, OEM, PSM, type Worker } from "tesseract.js"
 
 const TESSERACT_CACHE_PATH = join(tmpdir(), "bakimx-tesseract-cache")
 
+/**
+ * Tesseract.js worker lifecycle:
+ *
+ * - The worker is initialized lazily on first recognition request.
+ * - Subsequent requests are queued and processed sequentially.
+ * - Call `terminateTesseractWorker()` to shut down the worker when the
+ *   application is shutting down or when OCR is no longer needed.
+ * - If the worker fails to initialize, the promise is cleared so the next
+ *   request will try again.
+ * - In serverless/edge environments, the worker may not persist across
+ *   invocations. This is a known limitation documented here.
+ */
+
 let workerPromise: Promise<Worker> | null = null
 let recognitionQueue: Promise<void> = Promise.resolve()
 
@@ -56,13 +69,13 @@ export async function extractRegistrationText(imageBuffer: Buffer): Promise<stri
 
 export async function terminateTesseractWorker(): Promise<void> {
   if (workerPromise) {
+    const currentPromise = workerPromise
+    workerPromise = null
     try {
-      const worker = await workerPromise
+      const worker = await currentPromise
       await worker.terminate()
     } catch {
       // Worker may already be terminated or failed to initialize
-    } finally {
-      workerPromise = null
     }
   }
 }

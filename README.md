@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.3.1 — OCR & Smart Capture Foundation
+**Versiyon:** v0.3.3 — Smart Capture Hardening & Real OCR Provider
 
 ## Hızlı Başlangıç
 
@@ -94,22 +94,41 @@ STORAGE_PROVIDER=mock
 ### OCR Ortam Değişkenleri
 
 ```env
-# Varsayılan: deepseek
-OCR_PROVIDER=deepseek
-DEEPSEEK_API_KEY=...
+# Varsayılan: mock (demo verisi döndürür, API anahtarı gerekmez)
+OCR_PROVIDER=mock
 
-# İsteğe bağlı, varsayılan: deepseek-v4-flash
-DEEPSEEK_OCR_MODEL=deepseek-v4-flash
+# Gerçek OCR için: deepseek, openai, veya tesseract
+# OCR_PROVIDER=deepseek
+# OCR_PROVIDER=openai
+# OCR_PROVIDER=tesseract
+
+# Sağlayıcıdan bağımsız model override (opsiyonel)
+# OCR_MODEL=gpt-4o
+
+# DeepSeek (OCR_PROVIDER=deepseek iken gerekli)
+# DEEPSEEK_API_KEY=your-key
+# DEEPSEEK_OCR_MODEL=deepseek-chat
+
+# OpenAI (OCR_PROVIDER=openai iken gerekli)
+# OPENAI_API_KEY=your-key
+# OPENAI_OCR_MODEL=gpt-4o
+
+# Tesseract (OCR_PROVIDER=tesseract) — yerel OCR, API anahtarı gerekmez
+# Doğruluk DeepSeek/OpenAI'dan düşüktür; fallback olarak önerilir
 ```
 
 **OCR davranışı:**
-- `OCR_PROVIDER` ayarlanmazsa veya `deepseek` ise: Tesseract görüntüden metni çıkarır, DeepSeek alanları JSON olarak eşler
-- DeepSeek için `DEEPSEEK_API_KEY` zorunludur; eksikse sahte veri yerine açık yapılandırma hatası gösterilir
-- DeepSeek resmi API doğrudan görüntü kabul etmediği için ilk metin okuma adımı yerel Tesseract ile yapılır
-- İstenirse `OCR_PROVIDER=openai` ve `OPENAI_API_KEY` ile OpenAI vision sağlayıcısı kullanılabilir
-- Demo verisi yalnızca açıkça `OCR_PROVIDER=mock` ayarlandığında kullanılır
+- `OCR_PROVIDER` ayarlanmazsa veya `mock` ise: sabit demo verisi döndürülür, API anahtarı gerekmez
+- `OCR_PROVIDER=deepseek`: Tesseract yerel metin çıkarma + DeepSeek JSON alan eşleme; `DEEPSEEK_API_KEY` zorunlu, `DEEPSEEK_OCR_MODEL` veya `OCR_MODEL` zorunlu
+- `OCR_PROVIDER=openai`: OpenAI Responses API vision OCR; `OPENAI_API_KEY` zorunlu, `OPENAI_OCR_MODEL` veya `OCR_MODEL` zorunlu
+- `OCR_PROVIDER=tesseract`: Yalnızca yerel Tesseract metin çıkarma; API anahtarı gerekmez, doğruluk düşük
+- `OCR_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
+- Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
 - HEIC/HEIF dosyaları sunucuda JPEG'e dönüştürülerek okunur
+- Maksimum görsel boyutu 8 MB; desteklenen MIME tipleri: JPEG, PNG, WebP, HEIC, HEIF
+- Hem JSON body (data URL) hem de multipart/form-data yükleme desteklenir
 - Kullanıcı onayı zorunludur — OCR sonucu otomatik kaydedilmez
+- Düşük güven oranlı alanlar sarı vurgu ile işaretlenir
 
 **Depolama davranışı:**
 - `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Geliştirme için uygundur.
@@ -119,9 +138,9 @@ DEEPSEEK_OCR_MODEL=deepseek-v4-flash
 - `SUPABASE_SERVICE_ROLE_KEY` asla tarayıcıya açıklanmaz. Tüm yükleme işlemleri sunucu taraflı yapılır.
 
 **Dosya kısıtlamaları:**
-- İzin verilen MIME tipleri: `image/jpeg`, `image/png`, `image/webp`
-- `image/heic` desteklenmez (açık hata mesajı ile reddedilir)
-- Maksimum dosya boyutu: 8 MB
+- İzin verilen MIME tipleri: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `image/heif`
+- Maksimum dosya boyutu: 8 MB (HEIC dönüştürme sonrası da kontrol edilir)
+- Hem JSON body (data URL) hem de multipart/form-data yükleme desteklenir
 - Tüm depolama yolları tenant-scoped: `workshops/{workshopId}/intakes/{intakeFormId}/{photoType}/{photoId}-{safeFileName}`
 
 ---
@@ -136,9 +155,30 @@ DEEPSEEK_OCR_MODEL=deepseek-v4-flash
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
-- **OCR:** Tesseract + DeepSeek / OpenAI vision / Mock demo sağlayıcısı
+- **OCR:** Tesseract + DeepSeek / OpenAI vision / Tesseract-only / Mock demo sağlayıcısı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.3.3 Özellikler
+
+### Smart Capture Hardening & Real OCR Provider
+
+- **OCR sağlayıcı yapılandırması:** `OCR_PROVIDER` artık `mock`, `deepseek`, `openai`, `tesseract` değerlerini destekler
+- **`OCR_MODEL` ortam değişkeni:** Sağlayıcıdan bağımsız model override. `DEEPSEEK_OCR_MODEL` ve `OPENAI_OCR_MODEL` geriye dönük uyumlu
+- **Mock varsayılan:** `OCR_PROVIDER` ayarlanmazsa veya `mock` ise sabit demo verisi döndürülür, API anahtarı gerekmez
+- **Tesseract-only sağlayıcısı:** `OCR_PROVIDER=tesseract` ile API anahtarı olmadan yerel OCR mümkün; doğruluk düşük, fallback olarak önerilir
+- **Eksik API anahtarı hatası:** Gerçek sağlayıcı seçildiğinde API anahtarı eksikse açık Türkçe hata mesajı
+- **Görsel yükleme sıkılaştırma:** 8 MB boyut sınırı, MIME tipi doğrulama, HEIC dönüştürme sonrası boyut kontrolü
+- **Multipart/form-data desteği:** OCR yükleme rotası artık `multipart/form-data` ile dosya yüklemeyi de destekler
+- **rawText gizliliği:** OCR API yanıtlarından `rawText` alanı çıkarılır; yalnızca veritabanında saklanır
+- **Güven oranı UX'i:** Düşük güven oranlı alanlar (%70 altı) sarı vurgu ile işaretlenir, yüzde gösterilir
+- **OCR sağlayıcı etiketi:** Onay ekranında kullanılan sağlayıcı gösterilir (Demo, OpenAI Vision, Tesseract+DeepSeek, Tesseract Yerel)
+- **VIN/plaka tekrar uyarısı:** Aynı VIN veya plaka ile mevcut araç varsa onay öncesi uyarı gösterilir
+- **Vehicle unique constraint:** `Vehicle(workshopId, plate)` DB seviyesinde benzersiz; VIN için uygulama seviyesinde tekrar kontrolü
+- **OCR audit log:** `ocr_capture` ve `ocr_confirmed` aksiyonları ile tam denetim izi
+- **Tesseract yaşam döngüsü:** Worker singleton, kuyruk tabanlı tanıma, `terminateTesseractWorker()` temizleme fonksiyonu belgeli
 
 ---
 
@@ -532,7 +572,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/reports` — Raporlar (Yakında)
 
 ### API
-- `POST /api/smart-capture/ocr` — OCR çalıştır, sonucu ve ocrLogId döndür
+- `POST /api/smart-capture/ocr` — OCR çalıştır (JSON body veya multipart/form-data), sonucu ve ocrLogId döndür (rawText hariç)
 - `POST /api/smart-capture/confirm` — Onaylanan alanları kaydet, müşteri/araç oluştur
 - `GET /api/vehicles` — Araç listesi (opsiyonel ?customerId=)
 - `POST /api/vehicles` — Araç oluştur
@@ -576,17 +616,17 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.3.1)
+## Sınırlamalar (v0.3.3)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
-- OCR için üretim ortamında OpenAI API anahtarı gerekir
+- OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
+- Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
 - "Excel İçe Aktar" yalnızca UI placeholder
 - WhatsApp Business API yok (manuel paylaşım linki)
 - @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
 - S3 depolama sağlayıcısı henüz uygulanmadı (placeholder)
-- HEIC dosya desteği yok (açık hata mesajı ile reddedilir)
 - İstemci tarafı görüntü sıkıştırma henüz uygulanmadı
-- Ödeme / tahsilat modülü sadece etiket (Bakiye Özeti temel düzeydedir; iş emri toplamlarından türetilir, gerçek muhasebe verisi göstermez)
+- Ödeme / tahsilat modülü sadece etiket (Bakiye Özeti temel düzeydedir)
 - E-fatura / e-arşiv / fatura modülü yok
 - Çok şubeli kurumsal modül yok
 - Tedarikçi API entegrasyonu yok
@@ -604,7 +644,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation (güncel)
+- [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider (güncel)
+- [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation
 - [v0.3.0](docs/releases/v0.3.0.md) — Kasa & Tahsilat Foundation
 - [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation
 - [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment
@@ -619,6 +660,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.3.3 Manuel QA](docs/QA/v0.3.3-manual-checklist.md)
 - [v0.3.1 Manuel QA](docs/QA/v0.3.1-manual-checklist.md)
 - [v0.3.0 Manuel QA](docs/QA/v0.3.0-manual-checklist.md)
 - [v0.2.5 Manuel QA](docs/QA/v0.2.5-manual-checklist.md)

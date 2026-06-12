@@ -39,30 +39,45 @@ export async function createVehicleAction(formData: FormData) {
     return { error: "Müşteri bulunamadı" }
   }
 
-  const vehicle = await prisma.vehicle.create({
-    data: {
-      workshopId: user.workshopId,
-      customerId: parsed.data.customerId,
-      plate: parsed.data.plate.toUpperCase(),
-      brand: parsed.data.brand,
-      model: parsed.data.model,
-      vehicleType: parsed.data.vehicleType || null,
-      modelYear: parsed.data.modelYear || null,
-      mileage: parsed.data.mileage || null,
-      vin: parsed.data.vin || null,
-      vinConfirmed: parsed.data.vinConfirmed ?? false,
-      color: parsed.data.color || null,
-      engineNo: parsed.data.engineNo || null,
-      fuelType: parsed.data.fuelType || null,
-      transmission: parsed.data.transmission || null,
-      notes: parsed.data.notes || null,
-    },
-  })
+  try {
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        workshopId: user.workshopId,
+        customerId: parsed.data.customerId,
+        plate: parsed.data.plate.toUpperCase(),
+        brand: parsed.data.brand,
+        model: parsed.data.model,
+        vehicleType: parsed.data.vehicleType || null,
+        modelYear: parsed.data.modelYear || null,
+        mileage: parsed.data.mileage || null,
+        vin: parsed.data.vin || null,
+        vinConfirmed: parsed.data.vinConfirmed ?? false,
+        color: parsed.data.color || null,
+        engineNo: parsed.data.engineNo || null,
+        fuelType: parsed.data.fuelType || null,
+        transmission: parsed.data.transmission || null,
+        notes: parsed.data.notes || null,
+      },
+    })
 
-  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicle.id, "vehicle_created")
+    await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicle.id, "vehicle_created")
 
-  revalidatePath("/app/vehicles")
-  return { success: true, id: vehicle.id }
+    revalidatePath("/app/vehicles")
+    return { success: true, id: vehicle.id }
+  } catch (createError: unknown) {
+    if (
+      createError instanceof Error &&
+      (createError.message.includes("Unique constraint") ||
+        createError.message.includes("UniqueConstraint"))
+    ) {
+      return {
+        error:
+          "Bu plaka ile kayıtlı bir araç zaten var. " +
+          "Lütfen mevcut aracı düzenleyin veya farklı bir plaka girin.",
+      }
+    }
+    throw createError
+  }
 }
 
 export async function getVehiclesAction() {

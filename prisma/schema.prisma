@@ -154,6 +154,8 @@ model Vehicle {
   reminders MaintenanceReminder[]
 
   @@unique([workshopId, plate])
+  /// VIN duplicate check is done at application level (not DB unique) because VIN can be null/empty.
+  /// Use prisma.vehicle.findFirst({ where: { workshopId, vin } }) for duplicate VIN detection.
   @@index([workshopId])
   @@index([customerId])
   @@index([workshopId, vin])
@@ -753,9 +755,13 @@ model OcrLog {
   id             String   @id @default(cuid())
   workshopId     String
   workshop       Workshop @relation(fields: [workshopId], references: [id])
+  /// OCR provider name: "mock", "deepseek", "openai", or "tesseract"
   ocrProvider    String
+  /// Raw OCR text — sensitive, never exposed via public API
   rawText        String?
+  /// JSON of extracted fields before user confirmation
   extractedJson  String?
+  /// JSON of user-confirmed fields
   confirmedJson  String?
   confirmedAt    DateTime?
   userId         String?

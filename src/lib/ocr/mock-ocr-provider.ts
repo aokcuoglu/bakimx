@@ -4,7 +4,7 @@ function field(value: string, confidence?: number): OcrFieldConfidence {
   return { value, confidence }
 }
 
-const MOCK_REGISTRATION_DATA: RegistrationOcrResult = {
+const MOCK_REGISTRATION_DATA: Omit<RegistrationOcrResult, "provider"> = {
   plate: field("34 ABC 123", 0.92),
   vin: field("1HGBH41JXMN109186", 0.88),
   ownerName: field("Mehmet", 0.85),
@@ -29,11 +29,11 @@ Tescil Tarihi: 15.03.2021`,
 }
 
 export class MockOcrProvider implements OcrProvider {
-  readonly name = "mock"
+  readonly name = "mock" as const
 
   async extractRegistration(_imageBuffer: Buffer, _mimeType: string): Promise<RegistrationOcrResult> {
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    return MOCK_REGISTRATION_DATA
+    return { ...MOCK_REGISTRATION_DATA, provider: "mock" }
   }
 }
 

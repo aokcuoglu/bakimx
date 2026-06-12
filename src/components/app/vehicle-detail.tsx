@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import {
   Car,
   ArrowLeft,
@@ -485,9 +486,12 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     >
                       <div className="aspect-[4/3] bg-slate-100 flex items-center justify-center">
                         {p.fileUrl ? (
-                          <img
+                          <Image
                             src={p.fileUrl}
                             alt={p.label || pt?.label || "Fotoğraf"}
+                            width={160}
+                            height={120}
+                            unoptimized
                             className="w-full h-full object-cover"
                           />
                         ) : (
