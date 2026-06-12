@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.2.5 — Tedarikçiler Foundation
+**Versiyon:** v0.3.1 — OCR & Smart Capture Foundation
 
 ## Hızlı Başlangıç
 
@@ -91,6 +91,26 @@ STORAGE_PROVIDER=mock
 # S3_FORCE_PATH_STYLE=false
 ```
 
+### OCR Ortam Değişkenleri
+
+```env
+# Varsayılan: deepseek
+OCR_PROVIDER=deepseek
+DEEPSEEK_API_KEY=...
+
+# İsteğe bağlı, varsayılan: deepseek-v4-flash
+DEEPSEEK_OCR_MODEL=deepseek-v4-flash
+```
+
+**OCR davranışı:**
+- `OCR_PROVIDER` ayarlanmazsa veya `deepseek` ise: Tesseract görüntüden metni çıkarır, DeepSeek alanları JSON olarak eşler
+- DeepSeek için `DEEPSEEK_API_KEY` zorunludur; eksikse sahte veri yerine açık yapılandırma hatası gösterilir
+- DeepSeek resmi API doğrudan görüntü kabul etmediği için ilk metin okuma adımı yerel Tesseract ile yapılır
+- İstenirse `OCR_PROVIDER=openai` ve `OPENAI_API_KEY` ile OpenAI vision sağlayıcısı kullanılabilir
+- Demo verisi yalnızca açıkça `OCR_PROVIDER=mock` ayarlandığında kullanılır
+- HEIC/HEIF dosyaları sunucuda JPEG'e dönüştürülerek okunur
+- Kullanıcı onayı zorunludur — OCR sonucu otomatik kaydedilmez
+
 **Depolama davranışı:**
 - `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Geliştirme için uygundur.
 - `STORAGE_PROVIDER=supabase`: Dosyalar Supabase Storage'a yüklenir. `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` zorunludur.
@@ -116,8 +136,26 @@ STORAGE_PROVIDER=mock
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
+- **OCR:** Tesseract + DeepSeek / OpenAI vision / Mock demo sağlayıcısı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.3.1 Özellikler
+
+### OCR & Smart Capture Foundation
+
+- **OCR sağlayıcı mimarisi:** `lib/ocr/` altında soyut sağlayıcı, mock uygulama, factory
+- **Ruhsat okuma akışı:** `/app/smart-capture/registration` — kamera/dosya yükleme, OCR, onay, kayıt
+- **Mobil-öncelikli kamera:** `capture="environment"` ile doğrudan kamera erişimi
+- **OCR sonucu onayı:** Tüm alanlar düzenlenebilir, kullanıcı onayı zorunlu
+- **Kayıt ön doldurma:** Plaka/VIN ile mevcut araç arama, müşteri/araç otomatik oluşturma
+- **Çift kayıt önleme:** Aynı plaka/VIN ile tekrar araç oluşturmaz
+- **İş emri entegrasyonu:** "Ruhsattan Doldur" kısayolu, sidebar menü öğesi
+- **OCR audit/log:** `OcrLog` modeli ile tam log kaydı (ham metin, çıkarılan JSON, onaylanan JSON)
+- **KVKK uyumu:** OCR verisi workshop-scoped, ham metin public değil, onay zorunlu
+- **Gerçek OCR varsayılan:** Tesseract metin okuma + DeepSeek JSON alan eşleme
 
 ---
 
@@ -472,9 +510,10 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/customers/new` — Yeni müşteri
 - `/app/customers/[id]` — Müşteri detayı
 - `/app/vehicles` — Araç listesi (arama, tip/marka filtresi, desktop tablo, mobil kart)
-- `/app/vehicles/new` — Yeni araç (gelişmiş form, teknik bilgiler, placeholder OCR)
+- `/app/vehicles/new` — Yeni araç (gelişmiş form, teknik bilgiler, ruhsat okuma linki)
 - `/app/vehicles/[id]` — Araç detayı (özet, müşteri, iş emri/kabul/hasar/fotoğraf geçmişi)
 - `/app/vehicles/[id]/edit` — Araç düzenle
+- `/app/smart-capture/registration` — Ruhsat okuma (kamera/dosya yükleme, OCR, onay)
 - `/app/intakes` — Kabul listesi (durum filtreli)
 - `/app/intakes/new` — Yeni kabul sihirbazı
 - `/app/intakes/[id]` — Kabul detayı (sekmeli, fotoğraf galerili)
@@ -493,6 +532,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/reports` — Raporlar (Yakında)
 
 ### API
+- `POST /api/smart-capture/ocr` — OCR çalıştır, sonucu ve ocrLogId döndür
+- `POST /api/smart-capture/confirm` — Onaylanan alanları kaydet, müşteri/araç oluştur
 - `GET /api/vehicles` — Araç listesi (opsiyonel ?customerId=)
 - `POST /api/vehicles` — Araç oluştur
 - `GET /api/vehicles/[id]` — Tek araç getir
@@ -535,9 +576,9 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.2.5)
+## Sınırlamalar (v0.3.1)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
-- Gerçek OCR / plaka tanıma / VIN çıkarımı yok (placeholder)
+- OCR için üretim ortamında OpenAI API anahtarı gerekir
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
 - "Excel İçe Aktar" yalnızca UI placeholder
 - WhatsApp Business API yok (manuel paylaşım linki)
@@ -563,7 +604,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.2.5](docs/releases/v0.2.5.md) — Tedarikçiler Foundation (güncel)
+- [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation (güncel)
+- [v0.3.0](docs/releases/v0.3.0.md) — Kasa & Tahsilat Foundation
 - [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation
 - [v0.2.1](docs/releases/v0.2.1.md) — Araçlar Modülü UX Alignment
 - [v0.2.0](docs/releases/v0.2.0.md) — Dashboard & Operations Overview
@@ -577,6 +619,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.3.1 Manuel QA](docs/QA/v0.3.1-manual-checklist.md)
+- [v0.3.0 Manuel QA](docs/QA/v0.3.0-manual-checklist.md)
 - [v0.2.5 Manuel QA](docs/QA/v0.2.5-manual-checklist.md)
 - [v0.2.2 Manuel QA](docs/QA/v0.2.2-manual-checklist.md)
 - [v0.2.1 Manuel QA](docs/QA/v0.2.1-manual-checklist.md)

@@ -24,6 +24,7 @@ import {
   Wallet,
   BarChart3,
   ChevronRight,
+  ScanLine,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -54,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/app/quotes", label: "Teklifler", icon: FileText },
       { href: "/app/appointments", label: "Randevular", icon: CalendarClock },
       { href: "/app/reminders", label: "Bakım Hatırlatmaları", icon: BellRing },
+      { href: "/app/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine },
     ],
   },
   {

@@ -4,8 +4,13 @@ import { prisma } from "@/lib/db"
 import { IntakeWizard } from "@/components/app/intake-wizard"
 import Link from "next/link"
 
-export default async function NewIntakePage() {
+export default async function NewIntakePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ customerId?: string; vehicleId?: string; source?: string }>
+}) {
   const { user, workshop } = await getAppData()
+  const params = await searchParams
 
   const customers = await prisma.customer.findMany({
     where: { workshopId: user.workshopId },
@@ -24,7 +29,12 @@ export default async function NewIntakePage() {
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Yeni Araç Kabulü</h2>
           <p className="text-sm text-slate-500 mt-0.5">Adım adım araç kabul formu oluşturun</p>
         </div>
-        <IntakeWizard customers={customers} />
+        <IntakeWizard
+          customers={customers}
+          prefillCustomerId={params.customerId}
+          prefillVehicleId={params.vehicleId}
+          source={params.source}
+        />
       </div>
     </AppShell>
   )

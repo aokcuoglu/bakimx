@@ -239,15 +239,18 @@ export function VehicleCreateForm({ customers, initial, mode = "create" }: Vehic
                 </select>
               </div>
 
-              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-4">
-                <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+              <Link
+                href="/app/smart-capture/registration"
+                className="rounded-lg border border-blue-200 bg-blue-50 p-4 hover:bg-blue-100 transition-colors block"
+              >
+                <div className="flex items-center gap-2 text-sm text-blue-700 mb-1">
                   <ScanLine className="size-4" />
                   <span className="font-medium">Ruhsattan Oku</span>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Ruhsattan şase okuma özelliği yakında.
+                <p className="text-xs text-blue-600">
+                  Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun
                 </p>
-              </div>
+              </Link>
             </CardContent>
           </Card>
 
@@ -297,7 +300,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create" }: Vehic
             </div>
             <div className="flex items-start gap-2">
               <ScanLine className="size-4 text-slate-400 mt-0.5 shrink-0" />
-              <span>Şase numarası (VIN) ruhsattan manuel girilebilir. OCR özelliği yakında.</span>
+              <span>Şase numarası (VIN) ruhsattan otomatik okunabilir veya manuel girilebilir.</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="size-4 text-slate-400 mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>

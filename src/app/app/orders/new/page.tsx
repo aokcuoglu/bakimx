@@ -2,7 +2,7 @@ import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
-import { ArrowLeft, ClipboardList, Plus, ArrowRight, AlertCircle } from "lucide-react"
+import { ArrowLeft, ClipboardList, Plus, ArrowRight, AlertCircle, ScanLine } from "lucide-react"
 import { NewOrderSelector } from "@/components/app/new-order-selector"
 
 export default async function NewOrderPage() {
@@ -74,21 +74,39 @@ export default async function NewOrderPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <Link
-            href="/app/intakes/new"
-            className="lg:col-span-1 rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 hover:border-blue-500 hover:bg-blue-50/30 transition-colors group"
-          >
-            <div className="size-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
-              <Plus className="size-5" />
-            </div>
-            <h3 className="font-semibold text-slate-900">Yeni Araç Kabulü</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Sıfırdan yeni bir araç kabul formu oluşturun. Onay sürecinden sonra iş emri oluşturabilirsiniz.
-            </p>
-            <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all">
-              Kabul Oluştur <ArrowRight className="size-4" />
-            </span>
-          </Link>
+          <div className="lg:col-span-1 space-y-3">
+            <Link
+              href="/app/intakes/new"
+              className="block rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 hover:border-blue-500 hover:bg-blue-50/30 transition-colors group"
+            >
+              <div className="size-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
+                <Plus className="size-5" />
+              </div>
+              <h3 className="font-semibold text-slate-900">Yeni Araç Kabulü</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Sıfırdan yeni bir araç kabul formu oluşturun. Onay sürecinden sonra iş emri oluşturabilirsiniz.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all">
+                Kabul Oluştur <ArrowRight className="size-4" />
+              </span>
+            </Link>
+
+            <Link
+              href="/app/smart-capture/registration"
+              className="block rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors group"
+            >
+              <div className="size-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                <ScanLine className="size-5" />
+              </div>
+              <h3 className="font-semibold text-slate-900">Ruhsattan Doldur</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Araç ruhsat fotoğrafını okutarak müşteri ve araç bilgilerini otomatik doldurun.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 group-hover:gap-2 transition-all">
+                Ruhsat Oku <ArrowRight className="size-4" />
+              </span>
+            </Link>
+          </div>
 
           <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-5">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">

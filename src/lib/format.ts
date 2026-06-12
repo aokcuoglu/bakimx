@@ -49,10 +49,10 @@ export function normalizePhone(input: string): string {
 }
 
 /**
- * Normalize a Turkish plate number: uppercase, remove spaces.
+ * Normalize a Turkish plate number: strip non-alphanumeric, uppercase, compact form (e.g. "34ABC123").
  */
 export function normalizePlate(input: string): string {
-  return input.replace(/\s/g, "").toUpperCase()
+  return input.replace(/[^0-9A-Za-zğüşıöçĞÜŞİÖÇ]/g, "").toUpperCase()
 }
 
 /**
