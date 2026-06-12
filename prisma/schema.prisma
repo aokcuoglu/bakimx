@@ -36,6 +36,7 @@ model Workshop {
   stockMovements StockMovement[]
   suppliers     Supplier[]
   collections   CollectionPayment[]
+  ocrLogs      OcrLog[]
 }
 
 model User {
@@ -713,4 +714,26 @@ model Supplier {
   @@index([email])
   @@index([city])
   @@index([isActive])
+}
+
+model OcrLog {
+  id             String   @id @default(cuid())
+  workshopId     String
+  workshop       Workshop @relation(fields: [workshopId], references: [id])
+  ocrProvider    String
+  rawText        String?
+  extractedJson  String?
+  confirmedJson  String?
+  confirmedAt    DateTime?
+  userId         String?
+  customerId     String?
+  vehicleId      String?
+  serviceOrderId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([workshopId])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([serviceOrderId])
 }

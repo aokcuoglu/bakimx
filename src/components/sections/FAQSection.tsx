@@ -33,7 +33,7 @@ const faqs = [
   {
     question: "Ruhsattan şase otomatik okunacak mı?",
     answer:
-      "OCR altyapısı planlanmaktadır. Bu özellik devreye alındığında, ruhsat fotoğrafı yüklediğinizde şase numarası otomatik okunacaktır. Şu anda ruhsat fotoğrafı manuel olarak kaydedilebilir.",
+      "Evet. Ruhsat fotoğrafınızı yüklediğinizde OCR ile plaka, şase numarası, marka, model ve araç sahibi bilgileri otomatik okunur. Okunan bilgiler kaydedilmeden önce onayınıza sunulur, böylece hataları düzeltebilirsiniz.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",
