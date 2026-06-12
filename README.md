@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.3.3 — Smart Capture Hardening & Real OCR Provider
+**Versiyon:** v0.3.4 — AI Service Advisor Lite
 
 ## Hızlı Başlangıç
 
@@ -130,6 +130,39 @@ OCR_PROVIDER=mock
 - Kullanıcı onayı zorunludur — OCR sonucu otomatik kaydedilmez
 - Düşük güven oranlı alanlar sarı vurgu ile işaretlenir
 
+### AI Servis Danışmanı Ortam Değişkenleri
+
+```env
+# Varsayılan: mock (demo önerileri döndürür, API anahtarı gerekmez)
+AI_PROVIDER=mock
+
+# Gerçek AI için: openai veya deepseek
+# AI_PROVIDER=openai
+# AI_PROVIDER=deepseek
+
+# Sağlayıcıdan bağımsız model override (opsiyonel)
+# AI_MODEL=gpt-4o-mini
+
+# OpenAI (AI_PROVIDER=openai iken gerekli)
+# OPENAI_API_KEY=your-key (OCR ile paylaşımlı)
+# AI_MODEL=gpt-4o-mini
+
+# DeepSeek (AI_PROVIDER=deepseek iken gerekli)
+# DEEPSEEK_API_KEY=your-key (OCR ile paylaşımlı)
+# AI_MODEL=deepseek-chat
+```
+
+**AI danışman davranışı:**
+- `AI_PROVIDER` ayarlanmazsa veya `mock` ise: anahtar kelime eşlemeli demo önerileri döndürülür, API anahtarı gerekmez
+- `AI_PROVIDER=openai`: OpenAI Chat Completions API; `OPENAI_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: gpt-4o-mini)
+- `AI_PROVIDER=deepseek`: DeepSeek Chat API; `DEEPSEEK_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: deepseek-chat)
+- `AI_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
+- Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
+- AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir
+- Önerilen kalemler otomatik eklenmez — kullanıcı onayı zorunludur
+- `rawResponse` API yanıtlarında yer almaz; yalnızca geliştirme modunda sunucu loglarında görünür
+- `OPENAI_API_KEY` ve `DEEPSEEK_API_KEY` OCR sağlayıcısı ile paylaşımlıdır
+
 **Depolama davranışı:**
 - `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Geliştirme için uygundur.
 - `STORAGE_PROVIDER=supabase`: Dosyalar Supabase Storage'a yüklenir. `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` zorunludur.
@@ -156,8 +189,28 @@ OCR_PROVIDER=mock
 - **Validasyon:** Zod v4
 - **Depolama:** Mock / Supabase Storage / S3 (placeholder)
 - **OCR:** Tesseract + DeepSeek / OpenAI vision / Tesseract-only / Mock demo sağlayıcısı
+- **AI Danışman:** Mock / OpenAI / DeepSeek servis danışmanı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.3.4 Özellikler
+
+### AI Service Advisor Lite
+
+- **AI sağlayıcı yapılandırması:** `AI_PROVIDER` artık `mock` (varsayılan), `openai`, `deepseek` değerlerini destekler
+- **`AI_MODEL` ortam değişkeni:** Sağlayıcıdan bağımsız model override. Varsayılanlar: gpt-4o-mini (OpenAI), deepseek-chat (DeepSeek)
+- **Mock varsayılan:** `AI_PROVIDER` ayarlanmazsa veya `mock` ise anahtar kelime eşlemeli Türkçe demo önerileri döner
+- **Servis danışmanı paneli:** İş emri detayında şikayet → kontrol, işçilik, parça önerileri, müşteri açıklaması, iç servis notu
+- **Bağımsız danışman:** Yeni iş emri sayfasında serbest form girdi ile AI öneri alma
+- **Kabul entegrasyonu:** Araç kabul detayında AI servis danışmanı paneli
+- **Önceki iş emirleri context'i:** Aynı araca ait son 5 iş emri AI'ya bağlam olarak gönderilir
+- **Kullanıcı onayı zorunlu:** AI önerileri otomatik eklenmez — İş Emrine Ekle / Yoksay / Düzenle ve ekle
+- **Eksik bilgi uyarıları:** KM yoksa, marka/model yoksa otomatik uyarı
+- **Güvenlik:** AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir. rawResponse public outputta görünmez
+- **Audit log:** `ai_advisor_requested` aksiyonu ile workshop-scoped denetim izi
+- **API rotaları:** `POST /api/orders/advisor` (iş emri kapsamlı), `POST /api/advisor` (bağımsız)
 
 ---
 
@@ -589,6 +642,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `POST /api/orders/[id]/meta` — Teknisyen / tahmini teslim / iskonto / KDV / notlar
 - `POST /api/orders/items` — Parça / işçilik ekle
 - `DELETE /api/orders/items` — Parça / işçilik sil
+- `POST /api/orders/advisor` — AI servis danışmanı (iş emri kapsamlı, intakeFormId zorunlu)
+- `POST /api/advisor` — AI servis danışmanı (bağımsız, complaint zorunlu)
 
 ---
 
@@ -616,10 +671,14 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.3.3)
+## Sınırlamalar (v0.3.4)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
 - Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
+- AI Servis Danışmanı mock sağlayıcısı basit anahtar kelime eşlemesi kullanır (LLM gibi bağlamsal değil)
+- AI danışman üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
+- AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir
+- rawResponse yalnızca geliştirme modunda sunucu loglarında görünür, API yanıtında yer almaz
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
 - "Excel İçe Aktar" yalnızca UI placeholder
 - WhatsApp Business API yok (manuel paylaşım linki)
@@ -644,7 +703,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider (güncel)
+- [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite (güncel)
+- [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider
 - [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation
 - [v0.3.0](docs/releases/v0.3.0.md) — Kasa & Tahsilat Foundation
 - [v0.2.2](docs/releases/v0.2.2.md) — Teklifler & Randevular Foundation
@@ -660,6 +720,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.3.4 Manuel QA](docs/QA/v0.3.4-manual-checklist.md)
 - [v0.3.3 Manuel QA](docs/QA/v0.3.3-manual-checklist.md)
 - [v0.3.1 Manuel QA](docs/QA/v0.3.1-manual-checklist.md)
 - [v0.3.0 Manuel QA](docs/QA/v0.3.0-manual-checklist.md)
