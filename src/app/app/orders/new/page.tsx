@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { ArrowLeft, ClipboardList, Plus, ArrowRight, AlertCircle, ScanLine } from "lucide-react"
 import { NewOrderSelector } from "@/components/app/new-order-selector"
+import { StandaloneServiceAdvisor } from "@/components/app/standalone-service-advisor"
 
 export default async function NewOrderPage() {
   const { user, workshop } = await getAppData()
@@ -106,6 +107,8 @@ export default async function NewOrderPage() {
                 Ruhsat Oku <ArrowRight className="size-4" />
               </span>
             </Link>
+
+            <StandaloneServiceAdvisor />
           </div>
 
           <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-5">

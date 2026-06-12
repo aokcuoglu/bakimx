@@ -32,6 +32,7 @@ import {
   EyeOff,
 } from "lucide-react"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
+import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
@@ -523,6 +524,17 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
               </div>
             </CardContent>
           </Card>
+
+          <ServiceAdvisorPanel
+            intakeFormId={intake.id}
+            customerComplaint={intake.customerComplaint}
+            vehicleBrand={intake.vehicle.brand}
+            vehicleModel={intake.vehicle.model}
+            mileage={intake.mileageAtIntake ?? intake.vehicle.mileage}
+            onAddItems={async () => {
+              router.refresh()
+            }}
+          />
         </div>
       )}
 

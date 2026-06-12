@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { formatPrice } from "@/lib/parts/format"
+import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 
 type OrderItem = {
   id: string
@@ -243,6 +244,31 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
     window.open(getWhatsAppShareUrl(text), "_blank")
   }
 
+  async function addAiItems(items: Array<{ type: "labor" | "part"; name: string }>, _customerDescription: string, _internalNote: string) {
+    setLoading(true)
+    setError("")
+    try {
+      for (const item of items) {
+        const formData = new FormData()
+        formData.set("serviceOrderId", order.id)
+        formData.set("type", item.type)
+        formData.set("name", item.name)
+        formData.set("quantity", "1")
+        const res = await fetch("/api/orders/items", { method: "POST", body: formData })
+        const data = await res.json()
+        if (!data.success) {
+          setError(data.error || "Kalem eklenemedi")
+          break
+        }
+      }
+      window.location.reload()
+    } catch {
+      setError("AI önerileri eklenirken hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-slate-500">
@@ -320,6 +346,15 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
           />
 
           <ComplaintNotesCard intake={order.intake} />
+
+          <ServiceAdvisorPanel
+            intakeFormId={order.intake.id}
+            customerComplaint={order.intake.customerComplaint}
+            vehicleBrand={order.vehicle.brand}
+            vehicleModel={order.vehicle.model}
+            mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
+            onAddItems={addAiItems}
+          />
 
           {order.damageMarks.length > 0 && (
             <Card>
