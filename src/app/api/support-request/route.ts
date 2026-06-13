@@ -1,5 +1,27 @@
 import { NextResponse } from "next/server"
 
+const submissionCounts = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_WINDOW = 60_000
+const RATE_LIMIT_MAX = 3
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")
+  if (forwarded) return forwarded.split(",")[0].trim()
+  return request.headers.get("x-real-ip") || "unknown"
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = submissionCounts.get(ip)
+  if (!entry || now > entry.resetAt) {
+    submissionCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
+    return false
+  }
+  entry.count++
+  if (entry.count > RATE_LIMIT_MAX) return true
+  return false
+}
+
 interface SupportRequestBody {
   name: string
   businessName: string
@@ -36,6 +58,14 @@ function validateBody(body: SupportRequestBody): Record<string, string> {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request)
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { success: false, errors: { _general: "Çok fazla istek. Lütfen biraz bekleyin." } },
+      { status: 429 }
+    )
+  }
+
   try {
     const body: SupportRequestBody = await request.json()
 

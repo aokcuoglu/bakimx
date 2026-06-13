@@ -19,6 +19,7 @@ import { getCriticalStockItems } from "@/lib/parts/queries"
 import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
 import { getManagerTechnicianOverview } from "@/lib/technician/queries"
 import { getDashboardWidgetData } from "@/lib/reports/queries"
+import { getRecommendations } from "@/lib/analytics/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
 import { CashWidget } from "@/components/app/dashboard/cash-widget"
 import { CriticalStockWidget } from "@/components/app/dashboard/critical-stock"
@@ -35,6 +36,7 @@ import { TodayAppointments } from "@/components/app/dashboard/today-appointments
 import { ReminderWidget } from "@/components/app/dashboard/reminder-widget"
 import { TechnicianStatusWidget } from "@/components/app/dashboard/technician-status"
 import { DashboardReportWidgets } from "@/components/app/dashboard/report-widgets"
+import { OperationalAlertsWidget } from "@/components/app/analytics/operational-alerts-widget"
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
@@ -54,7 +56,8 @@ export default async function DashboardPage() {
     criticalStock,
     criticalStockSuppliers,
     technicianOverview,
-    reportWidgetData,
+     reportWidgetData,
+     operationalAlerts,
   ] = await Promise.all([
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
@@ -71,6 +74,7 @@ export default async function DashboardPage() {
     getCriticalStockSuppliers(user.workshopId, 5),
     getManagerTechnicianOverview(user.workshopId),
     getDashboardWidgetData(user.workshopId),
+    getRecommendations(user.workshopId),
   ])
 
   return (
@@ -106,6 +110,8 @@ export default async function DashboardPage() {
         <DashboardReportWidgets data={reportWidgetData} />
 
         <AlertBanner stats={stats} />
+
+        <OperationalAlertsWidget recommendations={operationalAlerts} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <WeeklyChart data={weeklyOps} />

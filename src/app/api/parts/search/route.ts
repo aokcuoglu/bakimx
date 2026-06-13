@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const user = await requireAuth()
   const { searchParams } = new URL(request.url)
   const q = (searchParams.get("q") || "").trim()
+  const limit = Math.min(Number(searchParams.get("limit")) || 20, 50)
 
   if (!q) {
     return NextResponse.json({ parts: [] })
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
       isActive: true,
     },
     orderBy: { name: "asc" },
-    take: 20,
+    take: limit,
   })
 
   return NextResponse.json({ parts })
