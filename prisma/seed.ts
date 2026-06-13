@@ -167,6 +167,22 @@ async function main() {
     console.log(`ℹ️  Passport token exists`)
   }
 
+  const technicianCount = await prisma.technician.count({
+    where: { workshopId: workshop.id },
+  })
+  if (technicianCount === 0) {
+    await prisma.technician.createMany({
+      data: [
+        { workshopId: workshop.id, fullName: "Hasan Usta", phone: "0533 111 2233", role: "usta", isActive: true },
+        { workshopId: workshop.id, fullName: "Ali Teknisyen", phone: "0533 444 5566", role: "teknisyen", isActive: true },
+        { workshopId: workshop.id, fullName: "Fatma Danışman", phone: "0533 777 8899", role: "servis_danismani", isActive: true },
+      ],
+    })
+    console.log(`✅ Technicians created`)
+  } else {
+    console.log(`ℹ️  Technicians exist`)
+  }
+
   console.log("\n📋 Demo Login Credentials:")
   console.log("   Email: demo@bakimx.com")
   console.log("   Password: demo123456")

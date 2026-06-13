@@ -25,6 +25,7 @@ import {
   BarChart3,
   ChevronRight,
   ScanLine,
+  HardHat,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -50,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/app/orders", label: "İş Emirleri", icon: WrenchIcon },
       { href: "/app/intakes", label: "Araç Kabulleri", icon: ClipboardList },
+      { href: "/app/technician", label: "Teknisyen Paneli", icon: HardHat },
       { href: "/app/customers", label: "Müşteriler", icon: Users },
       { href: "/app/vehicles", label: "Araçlar", icon: Car },
       { href: "/app/quotes", label: "Teklifler", icon: FileText },
@@ -230,13 +232,19 @@ export function AppShell({
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 safe-area-bottom">
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
+        <div className="grid grid-cols-5 gap-1 px-2 py-1.5">
           <MobileNavLink href="/app" label="Panel" icon={LayoutDashboard} active={pathname === "/app"} />
           <MobileNavLink
             href="/app/orders"
             label="İş Emirleri"
             icon={WrenchIcon}
             active={pathname === "/app/orders" || pathname.startsWith("/app/orders/")}
+          />
+          <MobileNavLink
+            href="/app/technician"
+            label="Teknisyen"
+            icon={HardHat}
+            active={pathname === "/app/technician" || pathname.startsWith("/app/technician/")}
           />
           <MobileNavLink
             href="/app/intakes"

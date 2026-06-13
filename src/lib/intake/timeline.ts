@@ -26,6 +26,18 @@ export type TimelineEventType =
   | "approval_verified"
   | "work_order_created"
   | "delivery_output_generated"
+  | "technician_assigned"
+  | "technician_unassigned"
+  | "work_started"
+  | "work_on_hold"
+  | "work_completed"
+  | "parts_requested"
+  | "parts_request_updated"
+  | "repair_photo_added"
+  | "checklist_item_completed"
+  | "internal_note_added"
+  | "labor_session_started"
+  | "labor_session_stopped"
 
 export async function getTimelineForIntake(intakeFormId: string) {
   return prisma.intakeTimelineEvent.findMany({

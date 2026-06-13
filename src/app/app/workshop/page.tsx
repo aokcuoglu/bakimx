@@ -1,10 +1,12 @@
 import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { WorkshopForm } from "@/components/app/workshop-form"
+import { TechnicianManagement } from "@/components/app/technician-management"
+import { prisma } from "@/lib/db"
 import Link from "next/link"
 
 export default async function WorkshopPage() {
-  const { workshop } = await getAppData()
+  const { user, workshop } = await getAppData()
 
   if (!workshop) {
     return (
@@ -15,6 +17,20 @@ export default async function WorkshopPage() {
       </AppShell>
     )
   }
+
+  const technicians = await prisma.technician.findMany({
+    where: { workshopId: user.workshopId },
+    orderBy: [{ isActive: "desc" }, { fullName: "asc" }],
+  })
+
+  const serializedTechnicians = technicians.map((t) => ({
+    id: t.id,
+    fullName: t.fullName,
+    phone: t.phone,
+    role: t.role,
+    isActive: t.isActive,
+    createdAt: t.createdAt.toISOString(),
+  }))
 
   return (
     <AppShell workshopName={workshop.name} pageTitle="İş Yeri Profili">
@@ -29,6 +45,10 @@ export default async function WorkshopPage() {
           <p className="text-sm text-slate-500 mt-0.5">İş yeri bilgilerinizi güncelleyin</p>
         </div>
         <WorkshopForm workshop={workshop} />
+
+        <div className="pt-4">
+          <TechnicianManagement technicians={serializedTechnicians} />
+        </div>
       </div>
     </AppShell>
   )

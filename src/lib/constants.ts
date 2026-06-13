@@ -225,3 +225,40 @@ export const SUPPLIER_STATUS = {
 } as const
 
 export type SupplierStatusKey = keyof typeof SUPPLIER_STATUS
+
+export const TECHNICIAN_ROLES = {
+  usta: { label: "Usta", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  teknisyen: { label: "Teknisyen", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  servis_danismani: { label: "Servis Danışmanı", color: "bg-purple-100 text-purple-800 border-purple-200" },
+  yonetici: { label: "Yönetici", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+} as const
+
+export type TechnicianRoleKey = keyof typeof TECHNICIAN_ROLES
+
+export const CHECKLIST_CATEGORIES = {
+  inspection: { label: "Kontrol", color: "bg-sky-100 text-sky-800 border-sky-200" },
+  repair: { label: "Onarım", color: "bg-orange-100 text-orange-800 border-orange-200" },
+  delivery: { label: "Teslim", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+} as const
+
+export type ChecklistCategoryKey = keyof typeof CHECKLIST_CATEGORIES
+
+export const PARTS_REQUEST_STATUS = {
+  requested: { label: "Talep Edildi", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  prepared: { label: "Hazırlandı", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  delivered: { label: "Teslim Edildi", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+} as const
+
+export type PartsRequestStatusKey = keyof typeof PARTS_REQUEST_STATUS
+
+export const TECHNICIAN_ORDER_STATUSES = {
+  waiting: { label: "Bekliyor", color: "bg-slate-100 text-slate-800 border-slate-200", icon: "clock" },
+  in_progress: { label: "İşlemde", color: "bg-blue-100 text-blue-800 border-blue-200", icon: "wrench" },
+  completed: { label: "Tamamlandı", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: "check-circle" },
+} as const
+
+export const REPAIR_PHOTO_PHASES = {
+  before_repair: { label: "Onarım Öncesi", color: "bg-rose-100 text-rose-800" },
+  during_repair: { label: "Onarım Sırasında", color: "bg-amber-100 text-amber-800" },
+  after_repair: { label: "Onarım Sonrası", color: "bg-emerald-100 text-emerald-800" },
+} as const
