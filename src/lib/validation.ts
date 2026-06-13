@@ -313,3 +313,17 @@ export const partsRequestSchema = z.object({
   quantity: z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır").default(1),
   note: z.string().optional().or(z.literal("")),
 })
+
+export const communicationTemplateSchema = z.object({
+  templateKey: z.string().min(1, "Şablon anahtarı zorunludur"),
+  channel: z.enum(["sms", "whatsapp", "email"], {
+    error: "Geçerli bir kanal seçiniz",
+  }),
+  content: z.string().min(1, "Şablon içeriği zorunludur").max(2000, "Şablon içeriği en fazla 2000 karakter olmalıdır"),
+})
+
+export const customerPreferencesSchema = z.object({
+  smsConsent: z.boolean().default(false),
+  whatsappConsent: z.boolean().default(false),
+  emailConsent: z.boolean().default(false),
+})

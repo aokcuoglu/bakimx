@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const publicPaths = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"]
-  const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request"]
+  const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
 
   if (publicPaths.includes(pathname)) {
     const session = await getSession()
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
       "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
       "/api/smart-capture", "/api/reminders", "/api/suppliers",
       "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
-      "/api/advisor",
+      "/api/advisor", "/api/communications",
     ]
     const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
     if (isProtected && !session?.userId) {

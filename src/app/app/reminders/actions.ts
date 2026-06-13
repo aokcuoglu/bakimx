@@ -7,6 +7,7 @@ import { getCurrentUser, assertWorkshopAccess } from "@/lib/auth"
 import { reminderCreateSchema, getValidationError } from "@/lib/validation"
 import { AuditLogAction } from "@/lib/audit"
 import { deriveReminderStatus } from "@/lib/reminders/status"
+import { notifyMaintenanceReminder } from "@/lib/communications/triggers"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
 
 export async function createReminderAction(formData: FormData) {
@@ -86,6 +87,19 @@ export async function createReminderAction(formData: FormData) {
   })
 
   await AuditLogAction(user.workshopId, user.id, "MaintenanceReminder", reminder.id, "created", JSON.stringify({ title: data.title }))
+
+  if (data.preferredChannel && data.preferredChannel !== "none" && (data.dueDate || data.dueMileage)) {
+    try {
+      const vehicle = await prisma.vehicle.findFirst({ where: { id: data.vehicleId, workshopId: user.workshopId } })
+      await notifyMaintenanceReminder(
+        user.workshopId,
+        data.customerId,
+        vehicle?.plate || null,
+        data.title,
+        dueDate ? dueDate.toISOString() : null,
+      )
+    } catch {}
+  }
 
   revalidatePath("/app/reminders")
   redirect(`/app/reminders/${reminder.id}`)

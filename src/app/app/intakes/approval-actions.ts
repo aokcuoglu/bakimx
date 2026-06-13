@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
+import { notifyIntakeApproval } from "@/lib/communications/triggers"
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -52,6 +53,15 @@ export async function requestApprovalAction(intakeFormId: string) {
     eventType: "approval_requested",
     description: "Müşteri onayı istendi",
   })
+
+  try {
+    await notifyIntakeApproval(
+      user.workshopId,
+      intake.customerId,
+      intake.vehicle?.plate || null,
+      `approval-${approval.id}`,
+    )
+  } catch {}
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return {

@@ -8,6 +8,7 @@ import { getValidationError } from "@/lib/validation"
 import { generateQuoteNo, formatQuoteNo } from "@/lib/work-order-number"
 import { generateWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
+import { notifyQuoteReady } from "@/lib/communications/triggers"
 
 export async function createQuoteAction(formData: FormData) {
   const user = await requireAuth()
@@ -102,6 +103,26 @@ export async function updateQuoteStatusAction(formData: FormData) {
   })
 
   await AuditLogAction(workshopId, user.id, "Quote", quoteId, `quote_status_${parsed.data.status}`)
+
+  if (parsed.data.status === "sent") {
+    const quoteWithDetails = await prisma.quote.findFirst({
+      where: { id: quoteId, workshopId },
+      include: { customer: true, vehicle: true },
+    })
+    if (quoteWithDetails) {
+      const { formatTRY } = await import("@/lib/format")
+      try {
+        await notifyQuoteReady(
+          workshopId,
+          quote.customerId,
+          quoteWithDetails.vehicle?.plate || null,
+          quote.quoteNo || formatQuoteNo(quote),
+          quote.grandTotal != null ? formatTRY(quote.grandTotal) : null,
+        )
+      } catch {}
+    }
+  }
+
   revalidatePath(`/app/quotes/${quoteId}`)
   revalidatePath("/app/quotes")
   return { success: true }
