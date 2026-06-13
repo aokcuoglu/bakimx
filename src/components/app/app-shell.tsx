@@ -26,6 +26,7 @@ import {
   ChevronRight,
   ScanLine,
   HardHat,
+  Activity,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -71,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Analiz",
     items: [
+      { href: "/app/analytics", label: "Operasyonel Analiz", icon: Activity },
       { href: "/app/reports", label: "Raporlar", icon: BarChart3 },
     ],
   },

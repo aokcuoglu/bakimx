@@ -1,8 +1,10 @@
 import { createCollectionAction } from "@/app/app/cashbox/actions"
+import { requireAuth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
+    await requireAuth()
     const formData = await request.formData()
     const result = await createCollectionAction(formData)
     if (result?.error) {

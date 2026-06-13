@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const publicPaths = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"]
-  const publicPrefixes = ["/s/"]
+  const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request"]
 
   if (publicPaths.includes(pathname)) {
     const session = await getSession()
@@ -22,7 +22,13 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) {
     const session = await getSession()
-    const protectedApiPaths = ["/api/intakes", "/api/customers", "/api/vehicles", "/api/orders", "/api/workshop", "/api/photos"]
+    const protectedApiPaths = [
+      "/api/intakes", "/api/customers", "/api/vehicles", "/api/orders",
+      "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
+      "/api/smart-capture", "/api/reminders", "/api/suppliers",
+      "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
+      "/api/advisor",
+    ]
     const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
     if (isProtected && !session?.userId) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })

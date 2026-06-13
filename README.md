@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.4.1 — Reporting & Management Overview
+**Versiyon:** v0.4.2 — Operational Analytics
 
 ## Hızlı Başlangıç
 
@@ -195,7 +195,55 @@ AI_PROVIDER=mock
 
 ---
 
-## v0.4.1 Özellikler
+## v0.4.2 Özellikler
+
+### Operational Analytics
+
+- **Operasyonel Analiz sayfası** (`/app/analytics`) — Atölye operasyonel sağlığı ve performans metrikleri
+- **Sağlık Skoru** (0-100) — Geciken iş emirleri, kritik stok ve ödenmemiş iş emirleri baz alınarak hesaplanır
+- **Sağlık Skoru görselleştirmesi** — Renk kodlu halka grafik (yeşil 80+, sarı 50-79, kırmızı <50)
+- **Metrik kartları** — Aktif iş emri, geciken iş emri, onay bekleyen, kritik stok, açık alacak
+- **Geciken İş Emirleri** — Tahmini teslim tarihi geçmiş iş emirleri, gecikme günü, teknisyen, müşteri bilgisi
+- **Teknisyen Analizi** — Ortalama tamamlama süresi, aktif iş yükü, tamamlanan iş, en hızlı ve en yoğun teknisyen sıralamaları
+- **Müşteri Analizi** — Toplam müşteri, bu ay yeni, geri dönüş oranı (%), pasif müşteri (90+ gün), en yüksek değerli müşteriler
+- **Parça & Stok Analizi** — Toplam parça, stok değeri, kritik stok, tükenen stok, en çok tüketilen parçalar, stok risk listesi
+- **Gelir Analizi** — Toplam tahsilat, açık alacak, ort. iş emri tutarı, iş emri başına gelir, 6 aylık tahsilat trendi
+- **Servis Analizi** — En sık şikayetler, en sık onarımlar, en çok yapılan işçilikler (gelir ile)
+- **Öneri Motoru** — Kural tabanlı, AI/LLM bağımlılığı yok. Uyarı, bilgi ve başarı tiplerinde öneriler
+- **Dashboard widget'ı** — Operasyonel Uyarılar ana panelde gösterilir, analytics sayfasına link
+- **Sidebar navigasyon** — "Operasyonel Analiz" linki Analiz grubuna eklendi
+
+### Yeni Dosyalar
+
+- `src/lib/analytics/queries.ts` — Tüm analitik sorguları ve tipleri
+- `src/app/app/analytics/page.tsx` — Analiz sunucu sayfası
+- `src/components/app/analytics/health-score-card.tsx` — Sağlık skoru ve metrik kartları
+- `src/components/app/analytics/delayed-jobs-table.tsx` — Geciken iş emirleri tablosu
+- `src/components/app/analytics/technician-analytics.tsx` — Teknisyen analizi bölümü
+- `src/components/app/analytics/customer-analytics.tsx` — Müşteri analizi bölümü
+- `src/components/app/analytics/parts-analytics.tsx` — Parça analizi bölümü
+- `src/components/app/analytics/revenue-analytics.tsx` — Gelir analizi bölümü
+- `src/components/app/analytics/service-analytics.tsx` — Servis analizi bölümü
+- `src/components/app/analytics/recommendations-list.tsx` — Öneri listesi
+- `src/components/app/analytics/operational-alerts-widget.tsx` — Dashboard uyarı widget'ı
+
+### Değişen Dosyalar
+
+- `src/app/app/page.tsx` — Dashboard'a Operational Alerts widget eklendi
+- `src/components/app/app-shell.tsx` — Sidebar'a "Operasyonel Analiz" linki eklendi (Activity ikonu)
+- `package.json` — Versiyon 0.4.2'ye güncellendi
+
+### Regresyon Güvenliği
+
+- Tüm v0.4.1 rotaları çalışıyor
+- Dashboard, iş emirleri, müşteriler, araçlar, kabuller, raporlar, kasa, parçalar, tedarikçiler etkilenmedi
+- Hiçbir Docker dosyası eklenmedi
+- Hiçbir AI/LLM bağımlılığı eklenmedi
+- Hiçbir tahmin modeli eklenmedi
+- Hiçbir veritabanı şema değişikliği yapılmadı
+- Hiçbir yeni ortam değişkeni gerekli değil
+
+---
 
 ### Reporting & Management Overview
 
@@ -731,6 +779,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/suppliers/[id]/edit` — Tedarikçi düzenle
 - `/app/cash` — Kasa (Yakında)
 - `/app/reports` — Raporlar (alt menü ile 5 rapor türü)
+- `/app/analytics` — Operasyonel Analiz
 
 ### API
 - `POST /api/smart-capture/ocr` — OCR çalıştır (JSON body veya multipart/form-data), sonucu ve ocrLogId döndür (rawText hariç)
@@ -779,7 +828,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.3.5)
+## Sınırlamalar (v0.4.2)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
 - Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
@@ -800,6 +849,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Satın alma / teklif modülü yok ("Yakında" placeholder)
 - Kasa modülü aktif (tahsilat listesi, ödeme, bakiye özeti)
 - Raporlar modülü aktif (5 rapor türü, CSV dışa aktarma, yazdır görünümü)
+- Operasyonel Analiz modülü aktif (kural tabanlı öneri motoru, AI/LLM bağımlılığı yok)
 - Gerçek SMS/WhatsApp hatırlatma gönderimi yok
 - Takvim senkronizasyonu yok (Google Calendar, Outlook)
 - Yinelenen randevu (recurring appointment) yok
@@ -812,7 +862,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.4.1](docs/releases/v0.4.1.md) — Reporting & Management Overview (güncel)
+- [v0.4.2](docs/releases/v0.4.2.md) — Operational Analytics (güncel)
+- [v0.4.1](docs/releases/v0.4.1.md) — Reporting & Management Overview
 - [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace
 - [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport
 - [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite
@@ -832,6 +883,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.4.2 Manuel QA](docs/QA/v0.4.2-manual-checklist.md)
 - [v0.4.1 Manuel QA](docs/QA/v0.4.1-manual-checklist.md)
 - [v0.3.5 Manuel QA](docs/QA/v0.3.5-manual-checklist.md)
 - [v0.3.4 Manuel QA](docs/QA/v0.3.4-manual-checklist.md)
