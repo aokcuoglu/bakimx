@@ -36,8 +36,9 @@ model Workshop {
   partStockItems PartStockItem[]
   stockMovements StockMovement[]
   suppliers     Supplier[]
-  collections   CollectionPayment[]
-  ocrLogs      OcrLog[]
+  collections       CollectionPayment[]
+  ocrLogs           OcrLog[]
+  passportTokens     VehiclePassportToken[]
 }
 
 model User {
@@ -152,6 +153,7 @@ model Vehicle {
   quotes  Quote[]
   appointments Appointment[]
   reminders MaintenanceReminder[]
+  passportTokens VehiclePassportToken[]
 
   @@unique([workshopId, plate])
   /// VIN duplicate check is done at application level (not DB unique) because VIN can be null/empty.
@@ -749,6 +751,30 @@ model Supplier {
   @@index([email])
   @@index([city])
   @@index([isActive])
+}
+
+model VehiclePassportToken {
+  id                    String    @id @default(cuid())
+  workshopId            String
+  workshop              Workshop  @relation(fields: [workshopId], references: [id])
+  vehicleId             String
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id])
+  token                 String    @unique
+  label                 String?
+  isActive              Boolean   @default(true)
+  expiresAt             DateTime?
+  showServiceHistory    Boolean   @default(true)
+  showWorkOrders        Boolean   @default(true)
+  showDamages           Boolean   @default(true)
+  showPhotos            Boolean   @default(true)
+  showReminders         Boolean   @default(true)
+  showPaymentStatus     Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([workshopId])
+  @@index([vehicleId])
+  @@index([token])
 }
 
 model OcrLog {

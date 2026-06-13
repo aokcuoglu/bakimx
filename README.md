@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.3.4 — AI Service Advisor Lite
+**Versiyon:** v0.3.5 — Digital Vehicle Service Passport
 
 ## Hızlı Başlangıç
 
@@ -192,6 +192,31 @@ AI_PROVIDER=mock
 - **AI Danışman:** Mock / OpenAI / DeepSeek servis danışmanı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.3.5 Özellikler
+
+### Digital Vehicle Service Passport
+
+- **Araç servis pasaportu sayfası** (`/app/vehicles/[id]/passport`): Araç özeti, müşteri bilgisi, servis zaman çizelgesi, iş emri geçmişi, hasar geçmişi, fotoğraf geçmişi, bakım hatırlatmaları, hızlı istatistikler
+- **Paylaşım & QR bölümü**: Pasaport token oluşturma, etkinleştirme/devre dışı bırakma, silme, etiket, son kullanma tarihi, görünürlük kontrolleri, link kopyalama, önizleme, QR kodu
+- **Görünürlük kontrolleri**: 6 ayrı toggle — zaman çizelgesi, iş emirleri, hasarlar, fotoğraflar, hatırlatmalar, ödeme durumu
+- **Public araç pasaportu** (`/p/[token]`): Müşteri-güvenli sayfa, iç notlar/OCR/ID gösterilmez, markalı BakimX düzeni
+- **Yazdırılabilir pasaport** (`/p/[token]/pdf`): Print-optimized HTML
+- **WhatsApp paylaşım metni**: Ön hazırlıklı Türkçe mesaj
+- **QR kodu**: `qrcode.react` ile istemci tarafı SVG QR kodu üretimi
+- **Data sanitization**: `sanitizePassportForPublic()` tüm iç verileri temizler
+- **Güvenlik**: Workshop-scoped sorgular, tahmin edilemez token (nanoid 32), süresi dolmuş/devre dışı token'lar 404 döner
+- **Audit log**: Tüm token oluşturma/güncelleme/silme işlemleri kaydedilir
+- **Seed data**: Demo pasaport token (`demo-vehicle-passport-token-2024`)
+
+### API Rotaları
+- `POST /api/vehicles/[id]/passport` — Pasaport token oluştur
+- `PATCH /api/vehicles/[id]/passport/[tokenId]` — Token güncelle (toggle, visibility)
+- `DELETE /api/vehicles/[id]/passport/[tokenId]` — Token sil
+- `GET /p/[token]` — Public pasaport sayfası (auth gerekmez)
+- `GET /p/[token]/pdf` — Yazdırılabilir HTML (auth gerekmez)
 
 ---
 
@@ -591,6 +616,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/s/[token]` — Müşteri çıktı sayfası
 - `/s/[token]/pdf` — Yazdırılabilir çıktı sayfası
 - `/s/[token]/photos/[photoId]` — Public fotoğraf görüntüleme (token tabanlı)
+- `/p/[token]` — Dijital araç servis pasaportu (public, token tabanlı)
+- `/p/[token]/pdf` — Yazdırılabilir pasaport sayfası
 
 ### Auth
 - `/login` — Giriş
@@ -606,6 +633,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/vehicles/new` — Yeni araç (gelişmiş form, teknik bilgiler, ruhsat okuma linki)
 - `/app/vehicles/[id]` — Araç detayı (özet, müşteri, iş emri/kabul/hasar/fotoğraf geçmişi)
 - `/app/vehicles/[id]/edit` — Araç düzenle
+- `/app/vehicles/[id]/passport` — Dijital servis pasaportu (paylaşım, QR, geçmiş)
 - `/app/smart-capture/registration` — Ruhsat okuma (kamera/dosya yükleme, OCR, onay)
 - `/app/intakes` — Kabul listesi (durum filtreli)
 - `/app/intakes/new` — Yeni kabul sihirbazı
@@ -671,7 +699,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.3.4)
+## Sınırlamalar (v0.3.5)
 - Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
 - OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
 - Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
@@ -698,12 +726,14 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Teklif şablonu / kopyalama yok
 - Stok düşümü yok (tekliften iş emrine geçerken parça rezervasyonu yapılmaz)
 - Docker konteyner desteği yok (lokal bun/npm)
+- Pasaport token'ları için gerçek QR indirme butonu yok (görüntü olarak gösterilir)
 
 ---
 
 ## Sürümler
 
-- [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite (güncel)
+- [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport (güncel)
+- [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite
 - [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider
 - [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation
 - [v0.3.0](docs/releases/v0.3.0.md) — Kasa & Tahsilat Foundation
@@ -720,6 +750,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.3.5 Manuel QA](docs/QA/v0.3.5-manual-checklist.md)
 - [v0.3.4 Manuel QA](docs/QA/v0.3.4-manual-checklist.md)
 - [v0.3.3 Manuel QA](docs/QA/v0.3.3-manual-checklist.md)
 - [v0.3.1 Manuel QA](docs/QA/v0.3.1-manual-checklist.md)
