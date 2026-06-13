@@ -27,6 +27,7 @@ import {
   ScanLine,
   HardHat,
   Activity,
+  MessageSquare,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -77,8 +78,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "İletişim",
+    items: [
+      { href: "/app/communications", label: "İletişim Kayıtları", icon: MessageSquare },
+    ],
+  },
+  {
     label: "Ayarlar",
-    items: [{ href: "/app/workshop", label: "İş Yeri Profili", icon: Settings }],
+    items: [
+      { href: "/app/workshop", label: "İş Yeri Profili", icon: Settings },
+      { href: "/app/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
+    ],
   },
 ]
 

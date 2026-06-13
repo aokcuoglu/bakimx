@@ -262,3 +262,30 @@ export const REPAIR_PHOTO_PHASES = {
   during_repair: { label: "Onarım Sırasında", color: "bg-amber-100 text-amber-800" },
   after_repair: { label: "Onarım Sonrası", color: "bg-emerald-100 text-emerald-800" },
 } as const
+
+export const COMMUNICATION_TYPES = {
+  sms: { label: "SMS", color: "bg-green-100 text-green-800" },
+  whatsapp: { label: "WhatsApp", color: "bg-emerald-100 text-emerald-800" },
+  email: { label: "E-posta", color: "bg-blue-100 text-blue-800" },
+} as const
+
+export type CommunicationTypeKey = keyof typeof COMMUNICATION_TYPES
+
+export const COMMUNICATION_STATUSES = {
+  sent: { label: "Gönderildi", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  failed: { label: "Başarısız", color: "bg-rose-50 text-rose-700 border-rose-200" },
+  pending: { label: "Bekliyor", color: "bg-amber-50 text-amber-700 border-amber-200" },
+} as const
+
+export type CommunicationStatusKey = keyof typeof COMMUNICATION_STATUSES
+
+export const COMMUNICATION_TEMPLATE_LABELS = {
+  appointment_created: "Randevu Oluşturuldu",
+  appointment_reminder: "Randevu Hatırlatması",
+  intake_approval: "Araç Kabul Onayı",
+  quote_ready: "Teklif Hazır",
+  work_order_completed: "İş Emri Tamamlandı",
+  maintenance_reminder: "Bakım Hatırlatması",
+  payment_reminder: "Ödeme Hatırlatması",
+  vehicle_passport_share: "Araç Pasaportu Paylaşım",
+} as const

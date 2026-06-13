@@ -8,6 +8,7 @@ import { getValidationError } from "@/lib/validation"
 import { generateAppointmentNo, formatAppointmentNo } from "@/lib/work-order-number"
 import { generateWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
+import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 
 export async function createAppointmentAction(formData: FormData) {
   const user = await requireAuth()
@@ -57,6 +58,18 @@ export async function createAppointmentAction(formData: FormData) {
   })
 
   await AuditLogAction(workshopId, user.id, "Appointment", appointment.id, "appointment_created")
+
+  try {
+    await notifyAppointmentCreated(
+      workshopId,
+      customerId,
+      data.vehicleId || null,
+      appointmentAt,
+      appointmentTime,
+      appointment.appointmentNo || formatAppointmentNo(appointment),
+    )
+  } catch {}
+
   revalidatePath("/app/appointments")
   return { success: true, id: appointment.id, appointmentNo: appointment.appointmentNo || formatAppointmentNo(appointment) }
 }

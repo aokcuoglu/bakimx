@@ -44,6 +44,8 @@ model Workshop {
   internalNotes      InternalNote[]
   partsRequests      PartsRequest[]
   laborSessions      LaborSession[]
+  communicationTemplates CommunicationTemplate[]
+  communicationLogs  CommunicationLog[]
 }
 
 model User {
@@ -597,6 +599,7 @@ model Appointment {
   customerRequest         String?
   internalNote            String?
   reminderStatus           ReminderStatus    @default(none)
+  lastRemindedAt           DateTime?
   convertedServiceOrderId  String?            @unique
   convertedServiceOrder   ServiceOrder?      @relation("AppointmentToServiceOrder", fields: [convertedServiceOrderId], references: [id])
   createdAt               DateTime           @default(now())
@@ -674,6 +677,7 @@ model MaintenanceReminder {
   reminderKmBefore    Int?
   preferredChannel    MaintenanceChannel         @default(none)
   reminderStatus      ReminderStatus             @default(none)
+  lastRemindedAt      DateTime?
   customerNote        String?
   internalNote        String?
   completedAt         DateTime?
@@ -945,4 +949,56 @@ model LaborSession {
   @@index([workshopId])
   @@index([serviceOrderId])
   @@index([technicianId])
+}
+
+enum CommunicationType {
+  sms
+  whatsapp
+  email
+}
+
+enum CommunicationStatus {
+  pending
+  sent
+  failed
+}
+
+model CommunicationTemplate {
+  id          String             @id @default(cuid())
+  workshopId  String
+  workshop    Workshop           @relation(fields: [workshopId], references: [id])
+  templateKey String
+  channel     CommunicationType
+  content     String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([workshopId, templateKey, channel])
+  @@index([workshopId])
+  @@index([templateKey])
+  @@index([channel])
+}
+
+model CommunicationLog {
+  id           String             @id @default(cuid())
+  workshopId   String
+  workshop     Workshop           @relation(fields: [workshopId], references: [id])
+  type         CommunicationType
+  provider     String
+  recipient    String
+  status       CommunicationStatus @default(pending)
+  templateKey  String?
+  entityType   String?
+  entityId     String?
+  providerId   String?
+  errorMessage String?
+  sentAt       DateTime           @default(now())
+  createdAt    DateTime           @default(now())
+
+  @@index([workshopId])
+  @@index([type])
+  @@index([status])
+  @@index([templateKey])
+  @@index([entityType, entityId])
+  @@index([sentAt])
 }

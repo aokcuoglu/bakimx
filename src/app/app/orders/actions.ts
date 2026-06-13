@@ -6,6 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
 import { generateWorkOrderNo } from "@/lib/work-order-number"
+import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { z } from "zod/v4"
 
 export async function createServiceOrderAction(intakeFormId: string) {
@@ -142,6 +143,41 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
+
+  if (status === "ready_for_delivery") {
+    try {
+      const order = await prisma.serviceOrder.findFirst({
+        where: { id: orderId, workshopId: user.workshopId },
+        include: { intakeForm: { include: { customer: true, vehicle: true } } },
+      })
+      if (order?.intakeForm?.customerId) {
+        await notifyWorkOrderCompleted(
+          user.workshopId,
+          order.intakeForm.customerId,
+          order.intakeForm.vehicle?.plate || null,
+          order.workOrderNo || "BX-???",
+        )
+      }
+    } catch {}
+  }
+
+  if (status === "delivered" && order?.paymentStatus === "unpaid") {
+    try {
+      const fullOrder = await prisma.serviceOrder.findFirst({
+        where: { id: orderId, workshopId: user.workshopId },
+        include: { intakeForm: { include: { customer: true, vehicle: true } } },
+      })
+      if (fullOrder?.intakeForm?.customerId && fullOrder.remainingAmount) {
+        const { formatTRY } = await import("@/lib/format")
+        await notifyPaymentReminder(
+          user.workshopId,
+          fullOrder.intakeForm.customerId,
+          fullOrder.intakeForm.vehicle?.plate || null,
+          formatTRY(fullOrder.remainingAmount),
+        )
+      }
+    } catch {}
+  }
 
   revalidatePath(`/app/orders/${orderId}`)
   revalidatePath("/app/orders")

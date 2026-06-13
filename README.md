@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.4.2 — Operational Analytics
+**Versiyon:** v0.5.0 — Real Communication Integrations
 
 ## Hızlı Başlangıç
 
@@ -157,6 +157,62 @@ AI_PROVIDER=mock
 - `AI_PROVIDER=openai`: OpenAI Chat Completions API; `OPENAI_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: gpt-4o-mini)
 - `AI_PROVIDER=deepseek`: DeepSeek Chat API; `DEEPSEEK_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: deepseek-chat)
 - `AI_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
+
+### İletişim Ortam Değişkenleri
+
+```env
+# SMS Sağlayıcı — mock (varsayılan) veya netgsm
+SMS_PROVIDER=mock
+
+# Netgsm (SMS_PROVIDER=netgsm iken gerekli)
+# NETGSM_USERCODE=your-netgsm-usercode
+# NETGSM_PASSWORD=your-netgsm-password
+# NETGSM_SENDER=BAKIMX
+# NETGSM_API_URL=https://api.netgsm.com.tr/sms/send/get
+
+# WhatsApp Sağlayıcı — mock (varsayılan) veya business
+WHATSAPP_PROVIDER=mock
+
+# WhatsApp Business API (WHATSAPP_PROVIDER=business iken gerekli)
+# WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
+# WHATSAPP_ACCESS_TOKEN=your-access-token
+# WHATSAPP_API_URL=https://graph.facebook.com/v18.0
+
+# E-posta Sağlayıcı — mock (varsayılan) veya resend
+EMAIL_PROVIDER=mock
+
+# Resend (EMAIL_PROVIDER=resend iken gerekli)
+# RESEND_API_KEY=your-resend-api-key
+# RESEND_FROM_EMAIL=no-reply@bakimx.com
+# RESEND_FROM_NAME=BakimX
+# RESEND_API_URL=https://api.resend.com/emails
+```
+
+**İletişim davranışı:**
+- Tüm sağlayıcılar `mock` olarak varsayılan — API anahtarı gerekmez, konsola log yazar
+- `SMS_PROVIDER=netgsm`: Netgsm SMS API ile gerçek SMS gönderimi
+- `WHATSAPP_PROVIDER=business`: WhatsApp Business API ile mesaj gönderimi (template message API henüz yok)
+- `EMAIL_PROVIDER=resend`: Resend API ile gerçek e-posta gönderimi
+- Her sağlayıcı soyut arayüz ile değiştirilebilir, yeni sağlayıcılar eklenebilir
+
+### Zamanlanmış Hatırlatmalar (Cron)
+
+Randevu hatırlatmaları ve bakım hatırlatmaları için bir cron endpoint bulunur:
+
+```bash
+# Her saat çalıştır (Vercel Cron, Upstash QStash veya manuel tetikleyici)
+curl -X POST https://your-domain.com/api/cron/reminders \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+**Ortam değişkeni:**
+```env
+# Üretim ortamında zorunlu — cron endpoint'ini yetkisiz erişime karşı korur
+CRON_SECRET=your-random-secret-string
+```
+
+- `CRON_SECRET` ayarlanmazsa ve `NODE_ENV=production` ise endpoint 500 döndürür
+- Geliştirme ortamında `CRON_SECRET` boş bırakılırsa endpoint herkese açık olur
 - Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
 - AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir
 - Önerilen kalemler otomatik eklenmez — kullanıcı onayı zorunludur
@@ -192,6 +248,70 @@ AI_PROVIDER=mock
 - **AI Danışman:** Mock / OpenAI / DeepSeek servis danışmanı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.5.0 Özellikler
+
+### Real Communication Integrations
+
+- **İletişim sağlayıcı mimarisi** (`src/lib/communications/`) — SMS, WhatsApp ve e-posta için soyut sağlayıcı sistemi
+- **SMS sağlayıcılar** — MockSMSProvider (varsayılan), NetgsmProvider
+- **WhatsApp sağlayıcılar** — MockWhatsAppProvider (varsayılan), WhatsAppBusinessProvider (temel)
+- **E-posta sağlayıcılar** — MockEmailProvider (varsayılan), ResendProvider
+- **Ortam değişkenleri** — `SMS_PROVIDER`, `WHATSAPP_PROVIDER`, `EMAIL_PROVIDER` ile sağlayıcı seçimi
+- **Bildirim Merkezi** (`/app/settings/notifications`) — 8 şablon türü için SMS, WhatsApp, e-posta şablon yönetimi
+- **İletişim Kayıtları** (`/app/communications`) — Tüm iletişimlerin log tablosu, filtreleme, istatistikler
+- **Randevu bildirimleri** — Oluşturma ve hatırlatma bildirimleri
+- **Araç kabul onay bildirimi** — SMS ve WhatsApp onay linki gönderimi
+- **Teklif bildirimi** — Teklif gönderildiğinde müşteriye bildirim
+- **İş emri tamamlama bildirimi** — Araç teslimata hazır + ödeme hatırlatma
+- **Bakım hatırlatma otomasyonu** — Yaklaşan ve gecikmiş bakım bildirimleri
+- **Müşteri iletişim tercihleri** — SMS, WhatsApp, e-posta onay kutuları
+- **Rate limiting** — Müşteri başına kanal başına dakikada 30 mesaj limiti
+- **Şablon sanitizasyonu** — `<script>`, event handler ve `javascript:` temizleme
+- **Workshop kapsamlı loglar** — Tenant izolasyonu iletişim kayıtlarında
+
+### Yeni Dosyalar
+
+- `src/lib/communications/types.ts` — İletişim tip tanımları
+- `src/lib/communications/templates.ts` — Şablon sistemi, varsayılanlar, render
+- `src/lib/communications/sender.ts` — Gönderim mantığı, tercih kontrolü, loglama
+- `src/lib/communications/rate-limit.ts` — Rate limiting temeli
+- `src/lib/communications/index.ts` — Genel API
+- `src/lib/communications/sms/index.ts` — SMS sağlayıcı fabrikası
+- `src/lib/communications/whatsapp/index.ts` — WhatsApp sağlayıcı fabrikası
+- `src/lib/communications/email/index.ts` — E-posta sağlayıcı fabrikası
+- `src/lib/communications/providers/mock-sms-provider.ts`
+- `src/lib/communications/providers/netgsm-provider.ts`
+- `src/lib/communications/providers/mock-whatsapp-provider.ts`
+- `src/lib/communications/providers/whatsapp-business-provider.ts`
+- `src/lib/communications/providers/mock-email-provider.ts`
+- `src/lib/communications/providers/resend-provider.ts`
+- `src/lib/communications/triggers.ts` — Tüm bildirim tetik fonksiyonları
+- `src/app/app/settings/notifications/page.tsx` — Bildirim ayarları sayfası
+- `src/app/app/settings/notifications/actions.ts`
+- `src/app/app/communications/page.tsx` — İletişim kayıtları sayfası
+- `src/app/app/communications/actions.ts`
+- `src/app/api/communications/templates/route.ts`
+- `src/app/api/communications/logs/route.ts`
+- `src/app/api/communications/preferences/route.ts`
+- `src/components/app/notification-settings.tsx`
+- `src/components/app/communication-log-list.tsx`
+
+### Değiştirilen Dosyalar
+
+- `prisma/schema.prisma` — CommunicationType, CommunicationStatus enum'ları; CommunicationTemplate, CommunicationLog modelleri
+- `src/app/app/appointments/actions.ts` — Randevu bildirim tetikleyicisi
+- `src/app/app/intakes/approval-actions.ts` — Kabul onayı bildirim tetikleyicisi
+- `src/app/app/quotes/actions.ts` — Teklif gönderildi bildirim tetikleyicisi
+- `src/app/app/orders/actions.ts` — İş emri tamamlama + ödeme hatırlatma tetikleyicileri
+- `src/app/app/reminders/actions.ts` — Bakım hatırlatma bildirim tetikleyicisi
+- `src/components/app/app-shell.tsx` — İletişim ve Bildirim Ayarları navigasyonu
+- `src/lib/constants.ts` — İletişim tip/durum/şablon etiketleri
+- `src/lib/validation.ts` — communicationTemplateSchema, customerPreferencesSchema
+- `middleware.ts` — /api/communications korumalı rotalar
+- `.env.example` — SMS_PROVIDER, WHATSAPP_PROVIDER, EMAIL_PROVIDER ve sağlayıcı değişkenleri
 
 ---
 
@@ -780,6 +900,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/cash` — Kasa (Yakında)
 - `/app/reports` — Raporlar (alt menü ile 5 rapor türü)
 - `/app/analytics` — Operasyonel Analiz
+- `/app/communications` — İletişim Kayıtları (SMS, WhatsApp, e-posta logları)
+- `/app/settings/notifications` — Bildirim Ayarları (şablon yönetimi)
 
 ### API
 - `POST /api/smart-capture/ocr` — OCR çalıştır (JSON body veya multipart/form-data), sonucu ve ocrLogId döndür (rawText hariç)
@@ -801,6 +923,11 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `DELETE /api/orders/items` — Parça / işçilik sil
 - `POST /api/orders/advisor` — AI servis danışmanı (iş emri kapsamlı, intakeFormId zorunlu)
 - `POST /api/advisor` — AI servis danışmanı (bağımsız, complaint zorunlu)
+- `POST /api/communications/templates` — Bildirim şablonu kaydet
+- `DELETE /api/communications/templates` — Bildirim şablonu sıfırla
+- `GET /api/communications/logs` — İletişim kayıtlarını getir
+- `POST /api/communications/preferences` — Müşteri iletişim tercihlerini güncelle
+- `GET/POST /api/cron/reminders` — Zamanlanmış hatırlatma işleri (CRON_SECRET ile korumalı)
 
 ---
 
@@ -828,8 +955,12 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ---
 
-## Sınırlamalar (v0.4.2)
-- Gerçek SMS entegrasyonu yok (mock/demo modu, OTP production'da gizli)
+## Sınırlamalar (v0.5.0)
+- Gerçek SMS gönderimi için Netgsm API anahtarı gerekir (mock varsayılan)
+- Gerçek WhatsApp gönderimi için WhatsApp Business API gerekir (mock varsayılan, template message API henüz yok)
+- Gerçek e-posta gönderimi için Resend API anahtarı gerekir (mock varsayılan)
+- Randevu hatırlatma zamanlaması (24h/1h öncesi) için cron job gerekir
+- Rate limiting bellek içi (dağıtık ortamda Redis gerekir)
 - OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
 - Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
 - AI Servis Danışmanı mock sağlayıcısı basit anahtar kelime eşlemesi kullanır (LLM gibi bağlamsal değil)
@@ -838,7 +969,6 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - rawResponse yalnızca geliştirme modunda sunucu loglarında görünür, API yanıtında yer almaz
 - Gerçek sesle doldurma / barkod tarama yok (placeholder)
 - "Excel İçe Aktar" yalnızca UI placeholder
-- WhatsApp Business API yok (manuel paylaşım linki)
 - @react-pdf/renderer sunucu PDF üretimi henüz aktif değil (print-optimized HTML mevcut)
 - S3 depolama sağlayıcısı henüz uygulanmadı (placeholder)
 - İstemci tarafı görüntü sıkıştırma henüz uygulanmadı
@@ -846,11 +976,11 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - E-fatura / e-arşiv / fatura modülü yok
 - Çok şubeli kurumsal modül yok
 - Tedarikçi API entegrasyonu yok
-- Satın alma / teklif modülü yok ("Yakında" placeholder)
+- Satın alma / teklip modülü yok ("Yakında" placeholder)
 - Kasa modülü aktif (tahsilat listesi, ödeme, bakiye özeti)
 - Raporlar modülü aktif (5 rapor türü, CSV dışa aktarma, yazdır görünümü)
 - Operasyonel Analiz modülü aktif (kural tabanlı öneri motoru, AI/LLM bağımlılığı yok)
-- Gerçek SMS/WhatsApp hatırlatma gönderimi yok
+- İletişim modülü aktif (SMS, WhatsApp, e-posta; mock ve gerçek sağlayıcılar)
 - Takvim senkronizasyonu yok (Google Calendar, Outlook)
 - Yinelenen randevu (recurring appointment) yok
 - Teklif şablonu / kopyalama yok
@@ -862,7 +992,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.4.2](docs/releases/v0.4.2.md) — Operational Analytics (güncel)
+- [v0.5.0](docs/releases/v0.5.0.md) — Real Communication Integrations (güncel)
+- [v0.4.2](docs/releases/v0.4.2.md) — Operational Analytics
 - [v0.4.1](docs/releases/v0.4.1.md) — Reporting & Management Overview
 - [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace
 - [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport
@@ -883,6 +1014,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.5.0 Manuel QA](docs/QA/v0.5.0-manual-checklist.md)
 - [v0.4.2 Manuel QA](docs/QA/v0.4.2-manual-checklist.md)
 - [v0.4.1 Manuel QA](docs/QA/v0.4.1-manual-checklist.md)
 - [v0.3.5 Manuel QA](docs/QA/v0.3.5-manual-checklist.md)
