@@ -17,6 +17,7 @@ import {
 import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/queries"
 import { getCriticalStockItems } from "@/lib/parts/queries"
 import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
+import { getManagerTechnicianOverview } from "@/lib/technician/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
 import { CashWidget } from "@/components/app/dashboard/cash-widget"
 import { CriticalStockWidget } from "@/components/app/dashboard/critical-stock"
@@ -31,6 +32,7 @@ import { WeeklyChart } from "@/components/app/dashboard/weekly-chart"
 import { StatusChart } from "@/components/app/dashboard/status-chart"
 import { TodayAppointments } from "@/components/app/dashboard/today-appointments"
 import { ReminderWidget } from "@/components/app/dashboard/reminder-widget"
+import { TechnicianStatusWidget } from "@/components/app/dashboard/technician-status"
 
 export default async function DashboardPage() {
   const { user, workshop } = await getAppData()
@@ -49,6 +51,7 @@ export default async function DashboardPage() {
     remindersOverdue,
     criticalStock,
     criticalStockSuppliers,
+    technicianOverview,
   ] = await Promise.all([
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
@@ -63,6 +66,7 @@ export default async function DashboardPage() {
     getOverdueReminders(user.workshopId, 10),
     getCriticalStockItems(user.workshopId, 10),
     getCriticalStockSuppliers(user.workshopId, 5),
+    getManagerTechnicianOverview(user.workshopId),
   ])
 
   return (
@@ -127,6 +131,7 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <RecentCustomers customers={recentCustomers} />
+          <TechnicianStatusWidget technicians={technicianOverview} />
         </div>
       </div>
     </AppShell>

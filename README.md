@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.3.5 — Digital Vehicle Service Passport
+**Versiyon:** v0.4.0 — Technician Mobile Workspace
 
 ## Hızlı Başlangıç
 
@@ -192,6 +192,27 @@ AI_PROVIDER=mock
 - **AI Danışman:** Mock / OpenAI / DeepSeek servis danışmanı
 - **Animasyon:** Framer Motion
 - **İkon:** lucide-react
+
+---
+
+## v0.4.0 Özellikler
+
+### Technician Mobile Workspace
+
+- **Teknisyen modeli**: Workshop-scoped Technician entity with roles (Usta, Teknisyen, Servis Danışmanı, Yönetici)
+- **İş emri ataması**: Work orders can be assigned to technicians with `assignedTechnicianId`, `assignedAt`, `completedAt` fields
+- **Teknisyen paneli** (`/app/technician`): Mobile-first dashboard with KPI cards, active/waiting/completed job sections
+- **Teknisyen iş emri görünümü** (`/app/technician/orders/[id]`): Vehicle summary, customer info, complaint, checklist, photos, parts requests, labor tracking, internal notes
+- **Kontrol listesi**: Inspection, repair, delivery checklists with per-item check/uncheck, notes, and progress bar
+- **Onarım fotoğrafları**: Before/during/after repair photo phases linked to work orders and vehicle passport
+- **İç notlar**: Workshop-only notes never exposed on public passport or customer outputs
+- **Parça talep akışı**: Requested → Prepared → Delivered status flow for parts
+- **İşçilik süre takibi**: Start/stop labor sessions with automatic duration calculation
+- **Mobil UX**: Large touch targets, bottom sticky action bar, camera-first workflow
+- **Araç pasaportu entegrasyonu**: Completed work, repair photos, and timeline events feed into Vehicle Service Passport
+- **Yönetici panosu widget**: "Usta İş Durumu" showing per-technician active/delayed/completed job counts
+- **Güvenlik**: Workshop-scoped queries, no cross-workshop access, internal notes never public
+- **Seed data**: Demo technicians (Hasan Usta, Ali Teknisyen, Fatma Danışman)
 
 ---
 
@@ -732,7 +753,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport (güncel)
+- [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace (güncel)
+- [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport
 - [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite
 - [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider
 - [v0.3.1](docs/releases/v0.3.1.md) — OCR & Smart Capture Foundation

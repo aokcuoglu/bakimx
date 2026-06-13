@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -94,6 +94,10 @@ type OrderDetailData = {
   status: string
   paymentStatus: string
   technicianName: string | null
+  assignedTechnicianId: string | null
+  assignedTechnicianName: string | null
+  assignedAt: string | null
+  completedAt: string | null
   estimatedDeliveryAt: string | null
   createdAt: string
   notes: string | null
@@ -166,7 +170,7 @@ const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string }[]> = 
   cancelled: [],
 }
 
-export function OrderDetail({ order }: { order: OrderDetailData }) {
+export function OrderDetail({ order, technicians }: { order: OrderDetailData; technicians?: { id: string; fullName: string; role: string }[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -448,7 +452,7 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
             customerId={order.customer.id}
           />
 
-          <OrderInfoCard order={order} onChangeStatus={changeStatus} loading={loading} />
+          <OrderInfoCard order={order} onChangeStatus={changeStatus} loading={loading} technicians={technicians} />
 
           <ShareCard shareLink={shareLink} onWhatsApp={handleWhatsApp} />
         </div>
@@ -1002,11 +1006,29 @@ function SummaryRow({
 
 function OrderInfoCard({
   order,
+  technicians,
 }: {
   order: OrderDetailData
   onChangeStatus: (s: string) => void
   loading: boolean
+  technicians?: { id: string; fullName: string; role: string }[]
 }) {
+  const [isPending, startTransition] = useTransition()
+  const handleAssign = (technicianId: string) => {
+    startTransition(async () => {
+      const { assignTechnicianAction } = await import("@/app/app/technician/actions")
+      await assignTechnicianAction(order.id, technicianId)
+      window.location.reload()
+    })
+  }
+  const handleUnassign = () => {
+    startTransition(async () => {
+      const { unassignTechnicianAction } = await import("@/app/app/technician/actions")
+      await unassignTechnicianAction(order.id)
+      window.location.reload()
+    })
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -1023,7 +1045,54 @@ function OrderInfoCard({
           value={order.estimatedDeliveryAt ? formatDateTime(order.estimatedDeliveryAt) : "—"}
           icon={Calendar}
         />
-        <InfoRow label="Teknisyen" value={order.technicianName || "—"} />
+        {order.completedAt && (
+          <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} icon={Calendar} />
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-slate-500">Atanan Usta</span>
+          <div className="flex items-center gap-2">
+            {order.assignedTechnicianName ? (
+              <>
+                <span className="text-sm text-slate-900 flex items-center gap-1.5">
+                  <User className="size-3.5 text-slate-400" />
+                  {order.assignedTechnicianName}
+                </span>
+                <button
+                  onClick={handleUnassign}
+                  disabled={isPending}
+                  className="text-[11px] text-red-500 hover:text-red-700 underline disabled:opacity-50"
+                >
+                  Kaldır
+                </button>
+              </>
+            ) : (
+              <span className="text-sm text-slate-400">—</span>
+            )}
+          </div>
+        </div>
+        {technicians && technicians.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {technicians.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => handleAssign(t.id)}
+                disabled={isPending || t.id === order.assignedTechnicianId}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors touch-manipulation disabled:opacity-50",
+                  t.id === order.assignedTechnicianId
+                    ? "bg-blue-100 text-blue-700 border border-blue-200"
+                    : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+                )}
+              >
+                <User className="size-3" />
+                {t.fullName}
+              </button>
+            ))}
+          </div>
+        )}
+        {order.technicianName && order.technicianName !== order.assignedTechnicianName && (
+          <InfoRow label="Teknisyen (eski)" value={order.technicianName} />
+        )}
         {order.notes && (
           <div className="pt-2 border-t">
             <p className="text-xs text-slate-500 mb-1">Notlar</p>

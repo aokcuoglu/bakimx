@@ -1,19 +1,24 @@
 import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
-import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { OrderDetail } from "@/components/app/order-detail"
+import { prisma } from "@/lib/db"
+import { TechnicianOrderDetail } from "@/components/app/technician-order-detail"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
-import { getTechnicians } from "@/lib/technician/queries"
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export const dynamic = "force-dynamic"
+
+export default async function TechnicianOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { user, workshop } = await getAppData()
 
   const order = await prisma.serviceOrder.findFirst({
-    where: { id, workshopId: user.workshopId },
+    where: {
+      id,
+      workshopId: user.workshopId,
+      assignedTechnicianId: { not: null },
+    },
     include: {
       intakeForm: {
         include: {
@@ -23,21 +28,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           photos: {
             orderBy: { createdAt: "asc" },
             select: {
-              id: true,
-              type: true,
-              label: true,
-              required: true,
-              fileUrl: true,
-              fileName: true,
-              mimeType: true,
-              sizeBytes: true,
+              id: true, type: true, label: true, required: true,
+              fileUrl: true, fileName: true, mimeType: true, sizeBytes: true,
+              phase: true, serviceOrderId: true, note: true, createdAt: true,
             },
           },
-          shareLinks: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" } },
         },
       },
       items: { orderBy: { createdAt: "asc" } },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
+      checklistItems: { orderBy: { sortOrder: "asc" } },
+      internalNotes: { orderBy: { createdAt: "desc" } },
+      partsRequests: { orderBy: { createdAt: "desc" } },
+      laborSessions: { orderBy: { startTime: "desc" } },
     },
   })
 
@@ -56,6 +59,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const totalPaid = collections.reduce((sum, c) => sum + c.amount, 0)
   const paidAmount = order.paidAmount || totalPaid
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
+
+  const allTechnicians = await prisma.technician.findMany({
+    where: { workshopId: user.workshopId, isActive: true },
+    orderBy: { fullName: "asc" },
+  })
 
   const safeOrder = {
     id: order.id,
@@ -106,12 +114,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       email: order.intakeForm.customer.email,
     },
     vehicle: {
+      id: order.intakeForm.vehicle.id,
       plate: order.intakeForm.vehicle.plate,
       brand: order.intakeForm.vehicle.brand,
       model: order.intakeForm.vehicle.model,
       modelYear: order.intakeForm.vehicle.modelYear,
       mileage: order.intakeForm.vehicle.mileage,
       vin: order.intakeForm.vehicle.vin,
+      color: order.intakeForm.vehicle.color,
+      fuelType: order.intakeForm.vehicle.fuelType,
+      transmission: order.intakeForm.vehicle.transmission,
     },
     intake: {
       id: order.intakeForm.id,
@@ -120,8 +132,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       customerComplaint: order.intakeForm.customerComplaint,
       internalNote: order.intakeForm.internalNote,
       createdAt: order.intakeForm.createdAt.toISOString(),
-      approvedAt: order.intakeForm.approvedAt ? order.intakeForm.approvedAt.toISOString() : null,
-      shareToken: order.intakeForm.shareLinks[0]?.token || null,
     },
     damageMarks: order.intakeForm.damageMarks.map((d) => ({
       id: d.id,
@@ -130,27 +140,62 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       severity: d.severity,
       note: d.note,
     })),
-    photos: order.intakeForm.photos,
+    photos: order.intakeForm.photos.map((p) => ({
+      id: p.id,
+      type: p.type,
+      label: p.label,
+      fileUrl: p.fileUrl,
+      phase: p.phase,
+      serviceOrderId: p.serviceOrderId,
+      note: p.note,
+      createdAt: p.createdAt.toISOString(),
+    })),
+    checklistItems: order.checklistItems.map((c) => ({
+      id: c.id,
+      category: c.category,
+      description: c.description,
+      isCompleted: c.isCompleted,
+      completedAt: c.completedAt ? c.completedAt.toISOString() : null,
+      note: c.note,
+      sortOrder: c.sortOrder,
+    })),
+    internalNotes: order.internalNotes.map((n) => ({
+      id: n.id,
+      content: n.content,
+      isPinned: n.isPinned,
+      createdAt: n.createdAt.toISOString(),
+    })),
+    partsRequests: order.partsRequests.map((p) => ({
+      id: p.id,
+      partName: p.partName,
+      partSku: p.partSku,
+      quantity: p.quantity,
+      note: p.note,
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+    })),
+    laborSessions: order.laborSessions.map((l) => ({
+      id: l.id,
+      startTime: l.startTime.toISOString(),
+      endTime: l.endTime ? l.endTime.toISOString() : null,
+      durationMinutes: l.durationMinutes,
+      note: l.note,
+    })),
     paidAmount,
     remainingAmount,
-    collectionHistory: collections.map((c) => ({
-      id: c.id,
-      amount: c.amount,
-      method: c.method,
-      paymentDate: c.paymentDate.toISOString(),
-      referenceNo: c.referenceNo,
-      note: c.note,
-    })),
+    vehicleId: order.intakeForm.vehicle.id,
   }
 
-  const technicians = await getTechnicians(user.workshopId)
-
   return (
-    <AppShell
-      workshopName={workshop?.name}
-      pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
-    >
-      <OrderDetail order={safeOrder} technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))} />
+    <AppShell workshopName={workshop?.name} pageTitle={`İş ${safeOrder.workOrderNo}`} showGlobalSearch={false}>
+      <TechnicianOrderDetail
+        order={safeOrder}
+        technicians={allTechnicians.map((t) => ({
+          id: t.id,
+          fullName: t.fullName,
+          role: t.role,
+        }))}
+      />
     </AppShell>
   )
 }

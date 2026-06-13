@@ -41,6 +41,7 @@ export default async function OrdersPage({
       include: {
         intakeForm: { include: { customer: true, vehicle: true } },
         items: true,
+        assignedTechnician: { select: { id: true, fullName: true, role: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -72,6 +73,8 @@ export default async function OrdersPage({
       status: o.status,
       paymentStatus: o.paymentStatus,
       technicianName: o.technicianName,
+      assignedTechnicianId: o.assignedTechnicianId,
+      assignedTechnicianName: o.assignedTechnician?.fullName || null,
       estimatedDeliveryAt: o.estimatedDeliveryAt ? o.estimatedDeliveryAt.toISOString() : null,
       createdAt: o.createdAt.toISOString(),
       grandTotal: totals.grandTotal,

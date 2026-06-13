@@ -187,11 +187,16 @@ export function sanitizePassportForPublic(
 
   const serviceHistory: SafePassportTimelineEvent[] = (visibility.showServiceHistory !== false)
     ? data.intakes.flatMap((intake) =>
-        (intake.timelineEvents || []).map((e) => ({
-          eventType: e.eventType,
-          description: e.description,
-          createdAt: e.createdAt,
-        }))
+        (intake.timelineEvents || [])
+          .filter((e) => {
+            const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped"]
+            return !internalEventTypes.includes(e.eventType)
+          })
+          .map((e) => ({
+            eventType: e.eventType,
+            description: e.description,
+            createdAt: e.createdAt,
+          }))
       ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     : []
 

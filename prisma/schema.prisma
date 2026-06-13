@@ -39,6 +39,11 @@ model Workshop {
   collections       CollectionPayment[]
   ocrLogs           OcrLog[]
   passportTokens     VehiclePassportToken[]
+  technicians        Technician[]
+  checklistItems     ChecklistItem[]
+  internalNotes      InternalNote[]
+  partsRequests      PartsRequest[]
+  laborSessions      LaborSession[]
 }
 
 model User {
@@ -208,6 +213,8 @@ model VehiclePhoto {
   workshop        Workshop          @relation(fields: [workshopId], references: [id])
   intakeFormId    String
   intakeForm      VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  serviceOrderId  String?
+  serviceOrder    ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
   type            VehiclePhotoType
   phase           PhotoPhase        @default(intake)
   label           String
@@ -225,6 +232,7 @@ model VehiclePhoto {
   @@index([workshopId])
   @@index([intakeFormId])
   @@index([phase])
+  @@index([serviceOrderId])
 }
 
 enum VehiclePhotoType {
@@ -343,6 +351,35 @@ model IntakeTimelineEvent {
   @@index([createdAt])
 }
 
+model Technician {
+  id         String          @id @default(cuid())
+  workshopId String
+  workshop   Workshop        @relation(fields: [workshopId], references: [id])
+  fullName   String
+  phone      String
+  role       TechnicianRole  @default(usta)
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  assignedOrders  ServiceOrder[]
+  checklistItems  ChecklistItem[]
+  internalNotes   InternalNote[]
+  partsRequests   PartsRequest[]
+  laborSessions   LaborSession[]
+
+  @@index([workshopId])
+  @@index([workshopId, isActive])
+  @@index([workshopId, role])
+}
+
+enum TechnicianRole {
+  usta
+  teknisyen
+  servis_danismani
+  yonetici
+}
+
 model ServiceOrder {
   id                   String            @id @default(cuid())
   workshopId           String
@@ -353,6 +390,10 @@ model ServiceOrder {
   status               OrderStatus       @default(draft)
   paymentStatus        PaymentStatus     @default(unpaid)
   technicianName       String?
+  assignedTechnicianId String?
+  assignedTechnician   Technician?       @relation(fields: [assignedTechnicianId], references: [id])
+  assignedAt           DateTime?
+  completedAt          DateTime?
   estimatedDeliveryAt  DateTime?
   discountAmount       Float?
   taxRate              Float?
@@ -364,6 +405,11 @@ model ServiceOrder {
   convertedFromQuote       Quote?       @relation("QuoteToServiceOrder")
   convertedFromAppointment Appointment? @relation("AppointmentToServiceOrder")
   collections             CollectionPayment[]
+  checklistItems          ChecklistItem[]
+  internalNotes           InternalNote[]
+  partsRequests           PartsRequest[]
+  laborSessions           LaborSession[]
+  photos                  VehiclePhoto[]
 
   paidAmount     Float?
   remainingAmount Float?
@@ -372,6 +418,8 @@ model ServiceOrder {
   @@index([workshopId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([assignedTechnicianId])
+  @@index([workshopId, assignedTechnicianId])
 }
 
 enum OrderStatus {
@@ -801,4 +849,100 @@ model OcrLog {
   @@index([customerId])
   @@index([vehicleId])
   @@index([serviceOrderId])
+}
+
+model ChecklistItem {
+  id              String          @id @default(cuid())
+  workshopId      String
+  workshop        Workshop        @relation(fields: [workshopId], references: [id])
+  serviceOrderId  String
+  serviceOrder    ServiceOrder    @relation(fields: [serviceOrderId], references: [id])
+  category        ChecklistCategory @default(inspection)
+  description     String
+  isCompleted     Boolean         @default(false)
+  completedById   String?
+  completedBy     Technician?     @relation(fields: [completedById], references: [id])
+  completedAt     DateTime?
+  note            String?
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([workshopId])
+  @@index([serviceOrderId])
+  @@index([category])
+  @@index([isCompleted])
+}
+
+enum ChecklistCategory {
+  inspection
+  repair
+  delivery
+}
+
+model InternalNote {
+  id              String        @id @default(cuid())
+  workshopId      String
+  workshop        Workshop      @relation(fields: [workshopId], references: [id])
+  serviceOrderId  String
+  serviceOrder    ServiceOrder  @relation(fields: [serviceOrderId], references: [id])
+  authorId        String?
+  author          Technician?   @relation(fields: [authorId], references: [id])
+  content         String
+  isPinned        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([workshopId])
+  @@index([serviceOrderId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model PartsRequest {
+  id              String            @id @default(cuid())
+  workshopId      String
+  workshop        Workshop          @relation(fields: [workshopId], references: [id])
+  serviceOrderId  String
+  serviceOrder    ServiceOrder     @relation(fields: [serviceOrderId], references: [id])
+  requestedById   String?
+  requestedBy     Technician?      @relation(fields: [requestedById], references: [id])
+  partName        String
+  partSku         String?
+  quantity        Int               @default(1)
+  note            String?
+  status          PartsRequestStatus @default(requested)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([workshopId])
+  @@index([serviceOrderId])
+  @@index([status])
+  @@index([requestedById])
+}
+
+enum PartsRequestStatus {
+  requested
+  prepared
+  delivered
+}
+
+model LaborSession {
+  id              String        @id @default(cuid())
+  workshopId      String
+  workshop        Workshop      @relation(fields: [workshopId], references: [id])
+  serviceOrderId  String
+  serviceOrder    ServiceOrder  @relation(fields: [serviceOrderId], references: [id])
+  technicianId    String?
+  technician      Technician?   @relation(fields: [technicianId], references: [id])
+  startTime       DateTime
+  endTime         DateTime?
+  durationMinutes Int?
+  note            String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([workshopId])
+  @@index([serviceOrderId])
+  @@index([technicianId])
 }

@@ -18,7 +18,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
       customer: true,
       intakes: {
         include: {
-          order: { include: { items: true } },
+          order: { include: { items: true, assignedTechnician: { select: { id: true, fullName: true } } } },
           damageMarks: true,
           photos: {
             select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
@@ -93,6 +93,8 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
             status: i.order.status,
             paymentStatus: i.order.paymentStatus,
             estimatedDeliveryAt: i.order.estimatedDeliveryAt?.toISOString() ?? null,
+            assignedTechnicianName: i.order.assignedTechnician?.fullName || i.order.technicianName || null,
+            completedAt: i.order.completedAt?.toISOString() ?? null,
             grandTotal: calculateOrderTotals(i.order.items, {
               discountAmount: i.order.discountAmount,
               taxRate: i.order.taxRate,
