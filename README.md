@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.4.0 — Technician Mobile Workspace
+**Versiyon:** v0.4.1 — Reporting & Management Overview
 
 ## Hızlı Başlangıç
 
@@ -195,7 +195,66 @@ AI_PROVIDER=mock
 
 ---
 
-## v0.4.0 Özellikler
+## v0.4.1 Özellikler
+
+### Reporting & Management Overview
+
+- **Raporlar modülü** (`/app/reports`) — Sidebar'da "Raporlar" menüsü, "Yakında" rozeti kaldırıldı
+- **İş Emri Raporu** (`/app/reports/orders`) — Toplam/açık/tamamlanan/iptal iş emirleri, tarih/teknisyen/durum/müşteri filtreleri, günlük ve aylık bar grafikleri, en yüksek tutarlı ve en uzun süren iş emirleri tabloları
+- **Müşteri Raporu** (`/app/reports/customers`) — Toplam/yeni/tekrar eden müşteri KPI'ları, tarih filtresi, en çok harcayan ve en çok ziyaret eden müşteri tabloları
+- **Tahsilat Raporu** (`/app/reports/collections`) — Toplam tahsilat/açık alacak/gecikmiş alacak KPI'ları, ödeme yöntemi dağılımı (nakit/kredi kartı/havale/diğer), tarih filtresi, günlük ve aylık tahsilat grafikleri
+- **Parça Raporu** (`/app/reports/parts`) — Stok değeri/toplam parça/kritik stok/tükenen parça KPI'ları, en çok kullanılan parçalar, en düşük stoklu parçalar tabloları
+- **Teknisyen Raporu** (`/app/reports/technicians`) — Toplam atanan/tamamlanan iş, ortalama tamamlama süresi, teknisyen performans tablosu
+- **CSV dışa aktarma** — Her rapor sayfasında CSV indirme butonu (BOM destekli UTF-8)
+- **Yazdır görünümü** — Her rapor sayfasında yazdır butonu (`window.print()`)
+- **Dashboard widget'ları** — Aylık Ciro, Bu Ay İş Emri, Bu Ay Tahsilat (raporlar sayfasına linkli KPI kartları)
+- **Güvenlik** — Tüm rapor sorguları workshop-scoped, mevcut veritabanı verisi kullanılır, yeni model eklenmedi
+
+### Rapor Alt Sayfaları
+
+- `/app/reports` — Rapor ana sayfa (alt menü yönlendirmesi)
+- `/app/reports/orders` — İş Emri Raporu
+- `/app/reports/customers` — Müşteri Raporu
+- `/app/reports/collections` — Tahsilat Raporu
+- `/app/reports/parts` — Parça Raporu
+- `/app/reports/technicians` — Teknisyen Raporu
+
+### Yeni Dosyalar
+
+- `src/lib/reports/queries.ts` — Tüm rapor sorguları (workshop-scoped)
+- `src/lib/reports/export.ts` — CSV dışa aktarma ve yazdır yardımcıları
+- `src/components/app/reports/reports-layout.tsx` — Rapor alt menü navigasyonu
+- `src/components/app/reports/report-utils.tsx` — Ortak rapor bileşenleri (StatCard, BarChart, ReportTable, ReportHeader)
+- `src/components/app/reports/orders-report.tsx` — İş emri raporu istemci bileşeni
+- `src/components/app/reports/customers-report.tsx` — Müşteri raporu istemci bileşeni
+- `src/components/app/reports/collections-report.tsx` — Tahsilat raporu istemci bileşeni
+- `src/components/app/reports/parts-report.tsx` — Parça raporu istemci bileşeni
+- `src/components/app/reports/technicians-report.tsx` — Teknisyen raporu istemci bileşeni
+- `src/components/app/dashboard/report-widgets.tsx` — Dashboard rapor widget'ları
+- `src/app/app/reports/orders/page.tsx` — İş emri raporu sunucu sayfası
+- `src/app/app/reports/customers/page.tsx` — Müşteri raporu sunucu sayfası
+- `src/app/app/reports/collections/page.tsx` — Tahsilat raporu sunucu sayfası
+- `src/app/app/reports/parts/page.tsx` — Parça raporu sunucu sayfası
+- `src/app/app/reports/technicians/page.tsx` — Teknisyen raporu sunucu sayfası
+
+### Değişen Dosyalar
+
+- `src/app/app/page.tsx` — Dashboard'a 3 yeni widget eklendi (Aylık Ciro, Bu Ay İş Emri, Bu Ay Tahsilat)
+- `src/app/app/reports/page.tsx` — ComingSoonShell yerine rapor alt menü navigasyonu
+- `src/components/app/app-shell.tsx` — Raporlar "Yakında" rozeti kaldırıldı, COMING_SOON_PREFIXES boşaltıldı
+
+### Regresyon Güvenliği
+
+- Tüm v0.4.0 rotaları çalışıyor
+- Dashboard, iş emirleri, müşteriler, araçlar, kabuller, kasa, parçalar, tedarikçiler, teklifler, randevular, hatırlatmalar etkilenmedi
+- Hiçbir Docker dosyası eklenmedi
+- Hiçbir AI/analitik özelliği eklenmedi
+- Hiçbir tahmin/forecast modülü eklenmedi
+- Hiçbir ödeme ağ geçidi eklenmedi
+- Hiçbir fatura/e-arşiv modülü eklenmedi
+- Hiçbir çok şubeli destek eklenmedi
+
+---
 
 ### Technician Mobile Workspace
 
@@ -671,7 +730,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/suppliers/[id]` — Tedarikçi detayı
 - `/app/suppliers/[id]/edit` — Tedarikçi düzenle
 - `/app/cash` — Kasa (Yakında)
-- `/app/reports` — Raporlar (Yakında)
+- `/app/reports` — Raporlar (alt menü ile 5 rapor türü)
 
 ### API
 - `POST /api/smart-capture/ocr` — OCR çalıştır (JSON body veya multipart/form-data), sonucu ve ocrLogId döndür (rawText hariç)
@@ -739,8 +798,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Çok şubeli kurumsal modül yok
 - Tedarikçi API entegrasyonu yok
 - Satın alma / teklif modülü yok ("Yakında" placeholder)
-- Kasa modülü "Yakında" placeholder
-- Raporlar modülü "Yakında" placeholder
+- Kasa modülü aktif (tahsilat listesi, ödeme, bakiye özeti)
+- Raporlar modülü aktif (5 rapor türü, CSV dışa aktarma, yazdır görünümü)
 - Gerçek SMS/WhatsApp hatırlatma gönderimi yok
 - Takvim senkronizasyonu yok (Google Calendar, Outlook)
 - Yinelenen randevu (recurring appointment) yok
@@ -753,7 +812,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace (güncel)
+- [v0.4.1](docs/releases/v0.4.1.md) — Reporting & Management Overview (güncel)
+- [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace
 - [v0.3.5](docs/releases/v0.3.5.md) — Digital Vehicle Service Passport
 - [v0.3.4](docs/releases/v0.3.4.md) — AI Service Advisor Lite
 - [v0.3.3](docs/releases/v0.3.3.md) — Smart Capture Hardening & Real OCR Provider
@@ -772,6 +832,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.4.1 Manuel QA](docs/QA/v0.4.1-manual-checklist.md)
 - [v0.3.5 Manuel QA](docs/QA/v0.3.5-manual-checklist.md)
 - [v0.3.4 Manuel QA](docs/QA/v0.3.4-manual-checklist.md)
 - [v0.3.3 Manuel QA](docs/QA/v0.3.3-manual-checklist.md)
