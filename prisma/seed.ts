@@ -143,6 +143,30 @@ async function main() {
     console.log(`✅ Intake form created: ${intake.id}`)
   }
 
+  const passportCount = await prisma.vehiclePassportToken.count({
+    where: { workshopId: workshop.id },
+  })
+  if (passportCount === 0 && vehicle) {
+    await prisma.vehiclePassportToken.create({
+      data: {
+        workshopId: workshop.id,
+        vehicleId: vehicle.id,
+        token: "demo-vehicle-passport-token-2024",
+        label: "Demo Pasaport Linki",
+        isActive: true,
+        showServiceHistory: true,
+        showWorkOrders: true,
+        showDamages: true,
+        showPhotos: true,
+        showReminders: true,
+        showPaymentStatus: false,
+      },
+    })
+    console.log(`✅ Passport token created`)
+  } else {
+    console.log(`ℹ️  Passport token exists`)
+  }
+
   console.log("\n📋 Demo Login Credentials:")
   console.log("   Email: demo@bakimx.com")
   console.log("   Password: demo123456")

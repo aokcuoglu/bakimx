@@ -20,6 +20,7 @@ import {
   BellRing,
   Calendar,
   Gauge,
+  ScrollText,
 } from "lucide-react"
 import { PlateBadge } from "@/components/app/plate-badge"
 import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
@@ -163,6 +164,13 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
+            </Link>
+            <Link
+              href={`/app/vehicles/${v.id}/passport`}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#0B1F3A] bg-[#0B1F3A] text-white hover:bg-[#0B1F3A]/90 text-sm font-medium transition-colors touch-manipulation"
+            >
+              <ScrollText className="size-4" />
+              <span className="hidden sm:inline">Pasaport</span>
             </Link>
           </div>
         </div>
@@ -560,6 +568,12 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           </Card>
 
           <div className="flex flex-col gap-2">
+            <Link href={`/app/vehicles/${v.id}/passport`}>
+              <Button className="w-full gap-2 bg-[#0B1F3A] hover:bg-[#0B1F3A]/90">
+                <ScrollText className="size-4" />
+                Servis Pasaportu
+              </Button>
+            </Link>
             <Link href={`/app/vehicles/${v.id}/edit`}>
               <Button variant="outline" className="w-full gap-2">
                 <Pencil className="size-4" />
