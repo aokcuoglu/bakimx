@@ -1,0 +1,390 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { checkRemindersAction } from "@/app/app/calendar/actions"
+
+type ViewMode = "day" | "week" | "month"
+
+interface CalendarViewItem {
+  id: string
+  title: string
+  type: "appointment" | "delivery" | "maintenance_reminder"
+  startAt: string
+  endAt?: string
+  status?: string
+  customerName?: string
+  vehiclePlate?: string
+  entityId?: string
+  entityType?: string
+}
+
+const TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string }> }> = {
+  appointment: { label: "Randevu", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200", icon: CalendarDays },
+  delivery: { label: "Teslimat", color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200", icon: Truck },
+  maintenance_reminder: { label: "Bakım", color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200", icon: BellRing },
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  scheduled: "Planlandı",
+  confirmed: "Onaylandı",
+  arrived: "Geldi",
+  converted: "Dönüştü",
+  completed: "Tamamlandı",
+  cancelled: "İptal",
+  no_show: "Gelmedi",
+  ready_for_delivery: "Teslimata Hazır",
+  delivered: "Teslim Edildi",
+  upcoming: "Yaklaşan",
+  due_soon: "Yaklaşıyor",
+  overdue: "Gecikmiş",
+}
+
+function formatDate(date: Date): string {
+  return date.toISOString().split("T")[0]
+}
+
+function formatTime(isoString: string): string {
+  const d = new Date(isoString)
+  return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+}
+
+function formatDayHeader(date: Date): string {
+  const days = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"]
+  return days[date.getDay()]
+}
+
+function formatMonthHeader(date: Date): string {
+  return date.toLocaleDateString("tr-TR", { month: "long", year: "numeric" })
+}
+
+export function CalendarView({
+  initialEvents,
+  initialView,
+  initialDate,
+}: {
+  initialEvents: CalendarViewItem[]
+  initialView: string
+  initialDate: string
+}) {
+  const [view, setView] = useState<ViewMode>((initialView as ViewMode) || "week")
+  const [currentDate, setCurrentDate] = useState(initialDate)
+  const [checking, setChecking] = useState(false)
+  const [checkResult, setCheckResult] = useState<{ jobType: string; processed: number; sent: number; failed: number }[] | null>(null)
+  const [, startTransition] = useTransition()
+
+  const baseDate = new Date(currentDate + "T00:00:00")
+
+  function navigate(direction: "prev" | "next") {
+    const d = new Date(currentDate + "T00:00:00")
+    if (view === "day") {
+      d.setDate(d.getDate() + (direction === "next" ? 1 : -1))
+    } else if (view === "week") {
+      d.setDate(d.getDate() + (direction === "next" ? 7 : -7))
+    } else {
+      d.setMonth(d.getMonth() + (direction === "next" ? 1 : -1))
+    }
+    setCurrentDate(formatDate(d))
+  }
+
+  function goToToday() {
+    setCurrentDate(formatDate(new Date()))
+  }
+
+  async function handleCheckReminders() {
+    setChecking(true)
+    setCheckResult(null)
+    startTransition(async () => {
+      try {
+        const results = await checkRemindersAction()
+        setCheckResult(results)
+      } catch {
+        setCheckResult([])
+      } finally {
+        setChecking(false)
+      }
+    })
+  }
+
+  const eventsByDate: Record<string, CalendarViewItem[]> = {}
+  for (const event of initialEvents) {
+    const dateKey = new Date(event.startAt).toISOString().split("T")[0]
+    if (!eventsByDate[dateKey]) eventsByDate[dateKey] = []
+    eventsByDate[dateKey].push(event)
+  }
+
+  function getDatesInView(): Date[] {
+    const dates: Date[] = []
+    if (view === "day") {
+      dates.push(baseDate)
+    } else if (view === "week") {
+      const dayOfWeek = baseDate.getDay()
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      const monday = new Date(baseDate)
+      monday.setDate(baseDate.getDate() + mondayOffset)
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + i)
+        dates.push(d)
+      }
+    } else {
+      const year = baseDate.getFullYear()
+      const month = baseDate.getMonth()
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      for (let i = 1; i <= daysInMonth; i++) {
+        dates.push(new Date(year, month, i))
+      }
+    }
+    return dates
+  }
+
+  const dates = getDatesInView()
+  const isToday = (d: Date) => formatDate(d) === formatDate(new Date())
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate("prev")} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 touch-manipulation" aria-label="Önceki">
+            <ChevronLeft className="size-5" />
+          </button>
+          <button onClick={goToToday} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors touch-manipulation">
+            Bugün
+          </button>
+          <button onClick={() => navigate("next")} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 touch-manipulation" aria-label="Sonraki">
+            <ChevronRight className="size-5" />
+          </button>
+          <span className="text-base font-semibold text-slate-900 ml-2">
+            {view === "month" ? formatMonthHeader(baseDate) : `${formatDayHeader(baseDate)}, ${baseDate.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden">
+            {(["day", "week", "month"] as ViewMode[]).map((v) => {
+              const labels: Record<ViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
+              return (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm font-medium transition-colors touch-manipulation",
+                    view === v ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  {labels[v]}
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={handleCheckReminders}
+            disabled={checking}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors touch-manipulation"
+          >
+            {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            Hatırlatmaları Kontrol Et
+          </button>
+        </div>
+      </div>
+
+      {checkResult && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-slate-900">Hatırlatma Sonuçları</h3>
+          {checkResult.map((r) => (
+            <div key={r.jobType} className="flex items-center gap-2 text-sm">
+              {r.failed > 0 ? <XCircle className="size-4 text-red-500" /> : <CheckCircle2 className="size-4 text-emerald-500" />}
+              <span className="text-slate-700 font-medium">{r.jobType === "appointment_reminder" ? "Randevu" : r.jobType === "maintenance_reminder" ? "Bakım" : "Teslimat"} Hatırlatmaları:</span>
+              <span className="text-slate-600">{r.processed} işlendi, {r.sent} gönderildi{r.failed > 0 ? `, ${r.failed} başarısız` : ""}</span>
+            </div>
+          ))}
+          <button onClick={() => setCheckResult(null)} className="text-xs text-slate-400 hover:text-slate-600">Kapat</button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 text-xs text-slate-500">
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-blue-500" /> Randevu</span>
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-500" /> Teslimat</span>
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-amber-500" /> Bakım</span>
+      </div>
+
+      {view === "month" ? (
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+            {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((d) => (
+              <div key={d} className="px-2 py-2 text-center text-xs font-semibold text-slate-500">{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {(() => {
+              const firstDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1)
+              const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
+              const cells: React.ReactNode[] = []
+              for (let i = 0; i < startDay; i++) {
+                cells.push(<div key={`empty-${i}`} className="min-h-24 border-b border-r border-slate-100 bg-slate-50/50" />)
+              }
+              for (const date of dates) {
+                const dateKey = formatDate(date)
+                const dayEvents = eventsByDate[dateKey] || []
+                const today = isToday(date)
+                cells.push(
+                  <div key={dateKey} className={cn("min-h-24 border-b border-r border-slate-100 p-1.5", today && "bg-blue-50/30")}>
+                    <div className={cn("text-xs font-medium mb-1", today ? "text-blue-600" : "text-slate-600")}>
+                      {date.getDate()}
+                    </div>
+                    <div className="space-y-0.5">
+                      {dayEvents.slice(0, 3).map((event) => {
+                        const config = TYPE_CONFIG[event.type]
+                        return (
+                          <Link
+                            key={event.id}
+                            href={getEventLink(event)}
+                            className={cn("block text-[10px] leading-tight px-1 py-0.5 rounded truncate", config.bgColor, config.color)}
+                          >
+                            {formatTime(event.startAt)} {event.title}
+                          </Link>
+                        )
+                      })}
+                      {dayEvents.length > 3 && (
+                        <span className="text-[10px] text-slate-400 pl-1">+{dayEvents.length - 3} daha</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+              return cells
+            })()}
+          </div>
+        </div>
+      ) : view === "week" ? (
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-slate-200">
+            {dates.map((date) => {
+              const today = isToday(date)
+              return (
+                <div key={formatDate(date)} className={cn("px-2 py-2 text-center border-r border-slate-100 last:border-r-0", today && "bg-blue-50")}>
+                  <div className="text-[10px] uppercase font-semibold text-slate-400">{formatDayHeader(date)}</div>
+                  <div className={cn("text-lg font-bold", today ? "text-blue-600" : "text-slate-800")}>{date.getDate()}</div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="grid grid-cols-7 min-h-64">
+            {dates.map((date) => {
+              const dateKey = formatDate(date)
+              const dayEvents = eventsByDate[dateKey] || []
+              return (
+                <div key={dateKey} className="border-r border-slate-100 last:border-r-0 p-1.5 space-y-1.5 min-h-48">
+                  {dayEvents.length === 0 && (
+                    <div className="text-xs text-slate-300 text-center py-4">—</div>
+                  )}
+                  {dayEvents.map((event) => {
+                    const config = TYPE_CONFIG[event.type]
+                    const Icon = config.icon
+                    return (
+                      <Link
+                        key={event.id}
+                        href={getEventLink(event)}
+                        className={cn("block rounded-lg border p-2 text-xs transition-colors hover:shadow-sm", config.bgColor)}
+                      >
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Icon className={cn("size-3 shrink-0", config.color)} />
+                          <span className={cn("font-semibold truncate", config.color)}>{formatTime(event.startAt)}</span>
+                        </div>
+                        <div className="font-medium text-slate-800 truncate">{event.title}</div>
+                        {event.vehiclePlate && (
+                          <div className="text-slate-500 mt-0.5 font-mono">{event.vehiclePlate}</div>
+                        )}
+                        {event.status && (
+                          <span className={cn("inline-block mt-0.5 text-[10px] px-1 py-0.5 rounded", config.color)}>
+                            {STATUS_LABELS[event.status] || event.status}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+            <div className="text-sm font-semibold text-slate-800">
+              {baseDate.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+          </div>
+          <div className="p-4 space-y-2">
+            {(() => {
+              const dateKey = formatDate(baseDate)
+              const dayEvents = eventsByDate[dateKey] || []
+              if (dayEvents.length === 0) {
+                return (
+                  <div className="text-center py-12 text-slate-400">
+                    <CalendarDays className="size-12 mx-auto mb-3 text-slate-300" />
+                    <p className="text-sm font-medium">Bu tarihte etkinlik yok</p>
+                  </div>
+                )
+              }
+              return dayEvents.map((event) => {
+                const config = TYPE_CONFIG[event.type]
+                const Icon = config.icon
+                return (
+                  <Link
+                    key={event.id}
+                    href={getEventLink(event)}
+                    className={cn("flex items-start gap-3 rounded-lg border p-3 transition-colors hover:shadow-sm", config.bgColor)}
+                  >
+                    <Icon className={cn("size-5 shrink-0 mt-0.5", config.color)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 truncate">{event.title}</span>
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", config.bgColor, config.color)}>
+                          {config.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 text-sm text-slate-500">
+                        <Clock className="size-3.5" />
+                        <span>{formatTime(event.startAt)}</span>
+                        {event.endAt && <span> — {formatTime(event.endAt)}</span>}
+                      </div>
+                      {event.vehiclePlate && (
+                        <span className="inline-block mt-1 text-xs font-mono bg-slate-900 text-white px-1.5 py-0.5 rounded">
+                          {event.vehiclePlate}
+                        </span>
+                      )}
+                      {event.status && (
+                        <span className="inline-block mt-1 text-xs text-slate-500">
+                          {STATUS_LABELS[event.status] || event.status}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })
+            })()}
+          </div>
+        </div>
+      )}
+
+      {initialEvents.length === 0 && (
+        <div className="text-center py-8 text-slate-500">
+          <CalendarDays className="size-12 mx-auto mb-3 text-slate-300" />
+          <p className="text-sm font-medium">Bu dönemde etkinlik bulunamadı</p>
+          <p className="text-xs mt-1">Randevu, teslimat veya bakım hatırlatması oluşturarak başlayın</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function getEventLink(event: CalendarViewItem): string {
+  if (event.type === "appointment") return `/app/appointments/${event.entityId}`
+  if (event.type === "delivery") return `/app/orders/${event.entityId}`
+  if (event.type === "maintenance_reminder") return `/app/reminders/${event.entityId}`
+  return "/app/calendar"
+}

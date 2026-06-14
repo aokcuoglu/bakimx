@@ -1,6 +1,6 @@
 export type CommunicationType = "sms" | "whatsapp" | "email"
 
-export type CommunicationStatus = "pending" | "sent" | "failed"
+export type CommunicationStatus = "pending" | "sent" | "failed" | "skipped"
 
 export type CommunicationTemplateKey =
   | "appointment_reminder"

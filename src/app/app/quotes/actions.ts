@@ -118,8 +118,12 @@ export async function updateQuoteStatusAction(formData: FormData) {
           quoteWithDetails.vehicle?.plate || null,
           quote.quoteNo || formatQuoteNo(quote),
           quote.grandTotal != null ? formatTRY(quote.grandTotal) : null,
+          undefined,
+          quoteId,
         )
-      } catch {}
+      } catch (e) {
+        console.error("[notifyQuoteReady] Teklif bildirimi gönderilemedi:", e)
+      }
     }
   }
 

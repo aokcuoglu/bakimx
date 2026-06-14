@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.5.0 — Real Communication Integrations
+**Versiyon:** v0.5.1 — Calendar & Reminder Automation
 
 ## Hızlı Başlangıç
 
@@ -217,6 +217,23 @@ CRON_SECRET=your-random-secret-string
 - AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir
 - Önerilen kalemler otomatik eklenmez — kullanıcı onayı zorunludur
 - `rawResponse` API yanıtlarında yer almaz; yalnızca geliştirme modunda sunucu loglarında görünür
+
+### Takvim Ortam Değişkenleri
+
+```env
+# Takvim Sağlayıcı — mock (varsayılan) veya google
+CALENDAR_PROVIDER=mock
+
+# Google Calendar (CALENDAR_PROVIDER=google iken gerekli)
+# GOOGLE_CALENDAR_ID=your-calendar-id@group.calendar.google.com
+# GOOGLE_CALENDAR_ACCESS_TOKEN=your-access-token
+# GOOGLE_CALENDAR_API_URL=https://www.googleapis.com/calendar/v3
+```
+
+**Takvim davranışı:**
+- `CALENDAR_PROVIDER` ayarlanmazsa veya `mock` ise: takvim etkinlikleri uygulama içinde gösterilir, harici senkronizasyon yapılmaz
+- `CALENDAR_PROVIDER=google`: Google Calendar API v3 ile randevu, teslimat ve bakım hatırlatmalarını senkronize eder
+- Kimlik bilgileri eksikse `google` sağlayıcısı otomatik olarak mock'a döner (hata vermez)
 - `OPENAI_API_KEY` ve `DEEPSEEK_API_KEY` OCR sağlayıcısı ile paylaşımlıdır
 
 **Depolama davranışı:**
@@ -891,6 +908,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/orders/[id]` — İş emri detayı (sticky fiyat paneli, durum/ödeme)
 - `/app/quotes` — Teklifler (arama, durum filtresi, tablo/kart)
 - `/app/appointments` — Randevular (arama, durum filtresi, takvim/kart)
+- `/app/calendar` — Takvim (günlük/haftalık/ayılk görünüm, randevu+teslimat+bakım)
 - `/app/reminders` — Bakım Hatırlatmaları (liste, oluşturma, detay, düzenleme, durum)
 - `/app/inventory` — Stok / Parçalar (Yakında)
 - `/app/suppliers` — Tedarikçiler (liste, oluşturma, detay, düzenleme)
@@ -902,6 +920,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - `/app/analytics` — Operasyonel Analiz
 - `/app/communications` — İletişim Kayıtları (SMS, WhatsApp, e-posta logları)
 - `/app/settings/notifications` — Bildirim Ayarları (şablon yönetimi)
+- `/app/settings/calendar` — Takvim Ayarları (sağlayıcı yapılandırması)
 
 ### API
 - `POST /api/smart-capture/ocr` — OCR çalıştır (JSON body veya multipart/form-data), sonucu ve ocrLogId döndür (rawText hariç)
@@ -981,7 +1000,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Raporlar modülü aktif (5 rapor türü, CSV dışa aktarma, yazdır görünümü)
 - Operasyonel Analiz modülü aktif (kural tabanlı öneri motoru, AI/LLM bağımlılığı yok)
 - İletişim modülü aktif (SMS, WhatsApp, e-posta; mock ve gerçek sağlayıcılar)
-- Takvim senkronizasyonu yok (Google Calendar, Outlook)
+- Takvim senkronizasyonu: Google Calendar çıkış (outbound) destekli, gelişmiş OAuth akışı yok
 - Yinelenen randevu (recurring appointment) yok
 - Teklif şablonu / kopyalama yok
 - Stok düşümü yok (tekliften iş emrine geçerken parça rezervasyonu yapılmaz)
@@ -992,7 +1011,8 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## Sürümler
 
-- [v0.5.0](docs/releases/v0.5.0.md) — Real Communication Integrations (güncel)
+- [v0.5.1](docs/releases/v0.5.1.md) — Calendar & Reminder Automation (güncel)
+- [v0.5.0](docs/releases/v0.5.0.md) — Real Communication Integrations
 - [v0.4.2](docs/releases/v0.4.2.md) — Operational Analytics
 - [v0.4.1](docs/releases/v0.4.1.md) — Reporting & Management Overview
 - [v0.4.0](docs/releases/v0.4.0.md) — Technician Mobile Workspace
@@ -1014,6 +1034,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ## QA
 
+- [v0.5.1 Manuel QA](docs/QA/v0.5.1-manual-checklist.md)
 - [v0.5.0 Manuel QA](docs/QA/v0.5.0-manual-checklist.md)
 - [v0.4.2 Manuel QA](docs/QA/v0.4.2-manual-checklist.md)
 - [v0.4.1 Manuel QA](docs/QA/v0.4.1-manual-checklist.md)
