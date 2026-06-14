@@ -459,24 +459,25 @@ enum CollectionStatus {
 }
 
 model CollectionPayment {
-  id              String          @id @default(cuid())
-  workshopId      String
-  workshop        Workshop        @relation(fields: [workshopId], references: [id])
-  customerId      String
-  customer        Customer        @relation(fields: [customerId], references: [id])
-  serviceOrderId  String?
-  serviceOrder    ServiceOrder?   @relation(fields: [serviceOrderId], references: [id])
-  quoteId         String?
-  amount          Float
-  currency        String          @default("TRY")
-  method          PaymentMethod   @default(cash)
-  status          CollectionStatus @default(completed)
-  paymentDate     DateTime        @default(now())
-  referenceNo     String?
-  note            String?
-  createdByUserId String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  workshopId        String
+  workshop          Workshop        @relation(fields: [workshopId], references: [id])
+  customerId        String
+  customer          Customer        @relation(fields: [customerId], references: [id])
+  serviceOrderId    String?
+  serviceOrder      ServiceOrder?   @relation(fields: [serviceOrderId], references: [id])
+  quoteId           String?
+  amount            Float
+  currency          String          @default("TRY")
+  method            PaymentMethod   @default(cash)
+  status            CollectionStatus @default(completed)
+  paymentDate       DateTime        @default(now())
+  referenceNo       String?
+  note              String?
+  cancellationReason String?
+  createdByUserId   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([workshopId])
   @@index([customerId])

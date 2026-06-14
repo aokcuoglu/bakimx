@@ -234,9 +234,37 @@ export async function notifyVehiclePassportShare(
     workshopId,
     customerId,
     templateKey: "vehicle_passport_share",
+  variables,
+  channels: ["sms", "whatsapp", "email"] as CommunicationType[],
+  entityType: "vehicle",
+    entityId,
+  })
+}
+
+export async function notifyCollectionReminder(
+  workshopId: string,
+  customerId: string,
+  vehiclePlate: string | null,
+  totalAmount: string,
+  shareToken?: string,
+  entityId?: string,
+  channels: CommunicationType[] = ["sms", "whatsapp", "email"],
+) {
+  const workshopName = await getWorkshopName(workshopId)
+  const variables: TemplateVariables = {
+    workshopName,
+    vehiclePlate: vehiclePlate || "",
+    totalAmount,
+    portalLink: shareToken ? buildPortalLink(workshopId, shareToken) : buildPortalLink(workshopId),
+  }
+
+  return sendCommunication({
+    workshopId,
+    customerId,
+    templateKey: "payment_reminder",
     variables,
-    channels: ["sms", "whatsapp", "email"] as CommunicationType[],
-    entityType: "vehicle",
+    channels,
+    entityType: "order",
     entityId,
   })
 }

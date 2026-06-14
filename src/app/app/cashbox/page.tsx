@@ -1,9 +1,10 @@
 import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
-import { getCashboxStats, getRecentCollections, getOpenReceivables, getPaymentMethodBreakdown } from "@/lib/cashbox/queries"
+import { getCashboxStats, getRecentCollections, getOpenReceivables, getPaymentMethodBreakdown, getCashboxDailyCollections } from "@/lib/cashbox/queries"
 import Link from "next/link"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
+import { PrintButton } from "@/components/app/print-button"
 import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/app/status-badge"
 import {
   Wallet,
@@ -18,16 +19,19 @@ import {
   Building2,
   CircleDot,
   ArrowRight,
+  Download,
+  BarChart3,
 } from "lucide-react"
 
 export default async function CashboxPage() {
   const { user, workshop } = await getAppData()
 
-  const [stats, recentCollections, openReceivables, methodBreakdown] = await Promise.all([
+  const [stats, recentCollections, openReceivables, methodBreakdown, dailyCollections] = await Promise.all([
     getCashboxStats(user.workshopId),
     getRecentCollections(user.workshopId, 10),
     getOpenReceivables(user.workshopId, 20),
     getPaymentMethodBreakdown(user.workshopId),
+    getCashboxDailyCollections(user.workshopId, 14),
   ])
 
   return (
@@ -44,13 +48,22 @@ export default async function CashboxPage() {
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Kasa</h2>
             <p className="text-sm text-slate-500 mt-0.5">Tahsilat ve alacak takibi</p>
           </div>
-          <Link
-            href="/app/cashbox/payments/new"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
-          >
-            <Plus className="size-4" />
-            Yeni Tahsilat
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/app/cashbox/aging"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation"
+            >
+              <BarChart3 className="size-4" />
+              Yaşlandırma
+            </Link>
+            <Link
+              href="/app/cashbox/payments/new"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
+            >
+              <Plus className="size-4" />
+              Yeni Tahsilat
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-500 flex items-start gap-2">
@@ -111,6 +124,15 @@ export default async function CashboxPage() {
             <MethodBreakdownSection breakdown={methodBreakdown} />
             <OpenReceivablesSection receivables={openReceivables.slice(0, 5)} />
           </div>
+        </div>
+
+        <DailyChartSection dailyCollections={dailyCollections} />
+
+        <div className="flex flex-wrap gap-2">
+          <ExportButton type="collections" label="Tahsilatlar CSV" />
+          <ExportButton type="receivables" label="Alacaklar CSV" />
+          <ExportButton type="aging" label="Yaşlandırma CSV" />
+          <PrintButton />
         </div>
       </div>
     </AppShell>
@@ -237,9 +259,11 @@ function OpenReceivablesSection({ receivables }: { receivables: import("@/lib/ca
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-slate-900">Açık Alacaklar</h3>
-        <Link href="/app/customers/balances" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-          Tümünü Gör <ArrowRight className="size-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/app/cashbox/aging" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+            Yaşlandırma <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
       </div>
 
       {receivables.length === 0 ? (
@@ -324,5 +348,50 @@ function MethodBreakdownSection({ breakdown }: { breakdown: import("@/lib/cashbo
         </div>
       </div>
     </div>
+  )
+}
+
+function DailyChartSection({ dailyCollections }: { dailyCollections: Array<{ date: string; label: string; amount: number; count: number }> }) {
+  const maxAmount = Math.max(1, ...dailyCollections.map((d) => d.amount))
+  const hasData = dailyCollections.some((d) => d.amount > 0)
+
+  if (!hasData) return null
+
+  return (
+    <div>
+      <h3 className="text-base font-semibold text-slate-900 mb-3">Son 14 Gün Tahsilat</h3>
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-end gap-1 h-32">
+          {dailyCollections.map((d) => {
+            const pct = (d.amount / maxAmount) * 100
+            return (
+              <div key={d.date} className="flex-1 flex flex-col items-center gap-1 h-full justify-end min-w-0" title={`${d.date}: ${formatTRY(d.amount)}`}>
+                <span className="text-[10px] font-semibold text-slate-600 truncate max-w-full">
+                  {d.amount > 0 ? formatTRY(d.amount) : ""}
+                </span>
+                <div
+                  className="w-full rounded-t-md bg-blue-500 transition-all min-h-[4px]"
+                  style={{ height: `${Math.max(2, pct)}%` }}
+                />
+                <span className="text-[10px] text-slate-400 font-medium truncate max-w-full">{d.label}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExportButton({ type, label }: { type: "collections" | "receivables" | "aging"; label: string }) {
+  return (
+    <a
+      href={`/api/cashbox/export?type=${type}`}
+      download
+      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors print:hidden"
+    >
+      <Download className="size-3.5" />
+      {label}
+    </a>
   )
 }

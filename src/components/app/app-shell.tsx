@@ -24,11 +24,13 @@ import {
   Wallet,
   BarChart3,
   ChevronRight,
+  ChevronDown,
   ScanLine,
   HardHat,
   Activity,
   MessageSquare,
   Calendar,
+  Receipt,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -37,6 +39,7 @@ type NavItem = {
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: string
+  children?: NavItem[]
 }
 
 type NavGroup = {
@@ -69,7 +72,10 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/app/parts", label: "Stok / Parçalar", icon: Boxes },
       { href: "/app/suppliers", label: "Tedarikçiler", icon: Truck },
-      { href: "/app/cashbox", label: "Kasa", icon: Wallet },
+      { href: "/app/cashbox", label: "Kasa", icon: Wallet, children: [
+        { href: "/app/cashbox/payments", label: "Tahsilatlar", icon: Receipt },
+        { href: "/app/cashbox/aging", label: "Yaşlandırma", icon: BarChart3 },
+      ] },
     ],
   },
   {
@@ -328,6 +334,29 @@ function SidebarContent({
   workshopName?: string
   onClose?: () => void
 }) {
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (item.children) {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            || item.children.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`))
+          if (isActive) initial.add(item.href)
+        }
+      }
+    }
+    return initial
+  })
+
+  function toggleExpanded(href: string) {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(href)) next.delete(href)
+      else next.add(href)
+      return next
+    })
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 py-5 border-b border-slate-800/80">
@@ -357,34 +386,99 @@ function SidebarContent({
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon
-                const isActive =
+                const hasChildren = item.children && item.children.length > 0
+                const isParentActive =
                   item.href === "/app"
                     ? pathname === "/app"
                     : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                const isAnyChildActive = hasChildren
+                  ? item.children!.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`))
+                  : false
+                const isActive = hasChildren ? isAnyChildActive : isParentActive
+                const isExpanded = expandedKeys.has(item.href)
                 const isSoon = isComingSoon(item.href)
 
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      isActive
-                        ? "bg-blue-600/20 text-white border border-blue-500/30"
-                        : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
-                      isSoon && !isActive && "opacity-60"
+                  <div key={item.href}>
+                    {hasChildren ? (
+                      <button
+                        onClick={() => toggleExpanded(item.href)}
+                        className={cn(
+                          "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all w-full text-left",
+                          isActive
+                            ? "bg-blue-600/20 text-white border border-blue-500/30"
+                            : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
+                          isSoon && !isActive && "opacity-60"
+                        )}
+                      >
+                        <Icon className={cn("size-4 shrink-0", isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-200")} />
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {isExpanded
+                          ? <ChevronDown className="size-3.5 text-slate-400" />
+                          : <ChevronRight className="size-3.5 text-slate-400" />}
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={onClose}
+                        className={cn(
+                          "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                          isActive
+                            ? "bg-blue-600/20 text-white border border-blue-500/30"
+                            : "text-slate-300 hover:bg-slate-800/60 hover:text-white",
+                          isSoon && !isActive && "opacity-60"
+                        )}
+                      >
+                        <Icon className={cn("size-4 shrink-0", isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-200")} />
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {item.badge && (
+                          <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                            {item.badge}
+                          </span>
+                        )}
+                        {isActive && <ChevronRight className="size-3.5 text-blue-300" />}
+                      </Link>
                     )}
-                  >
-                    <Icon className={cn("size-4 shrink-0", isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-200")} />
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.badge && (
-                      <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                        {item.badge}
-                      </span>
+
+                    {hasChildren && isExpanded && (
+                      <div className="ml-4 mt-0.5 space-y-0.5">
+                        <Link
+                          href={item.href}
+                          onClick={onClose}
+                          className={cn(
+                            "group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
+                            pathname === item.href
+                              ? "bg-blue-600/20 text-white border border-blue-500/30"
+                              : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+                          )}
+                        >
+                          <span className="flex-1 truncate">{item.label} Özeti</span>
+                          {pathname === item.href && <ChevronRight className="size-3 text-blue-300" />}
+                        </Link>
+                        {item.children!.map((child) => {
+                          const ChildIcon = child.icon
+                          const isChildActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={onClose}
+                              className={cn(
+                                "group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
+                                isChildActive
+                                  ? "bg-blue-600/20 text-white border border-blue-500/30"
+                                  : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+                              )}
+                            >
+                              <ChildIcon className={cn("size-3.5 shrink-0", isChildActive ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300")} />
+                              <span className="flex-1 truncate">{child.label}</span>
+                              {isChildActive && <ChevronRight className="size-3 text-blue-300" />}
+                            </Link>
+                          )
+                        })}
+                      </div>
                     )}
-                    {isActive && <ChevronRight className="size-3.5 text-blue-300" />}
-                  </Link>
+                  </div>
                 )
               })}
             </div>

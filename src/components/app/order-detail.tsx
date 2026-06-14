@@ -42,6 +42,7 @@ import {
 import { cn } from "@/lib/utils"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
+import { SendReminderButton } from "@/components/app/send-reminder-button"
 import { formatPrice } from "@/lib/parts/format"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 
@@ -135,9 +136,11 @@ type OrderDetailData = {
     id: string
     amount: number
     method: string
+    status: string
     paymentDate: string
     referenceNo: string | null
     note: string | null
+    cancellationReason: string | null
   }>
 }
 
@@ -447,9 +450,9 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
             totals={order.totals}
             paidAmount={order.paidAmount}
             remainingAmount={order.remainingAmount}
-            paymentStatus={order.paymentStatus}
             collections={order.collectionHistory}
             customerId={order.customer.id}
+            customerName={order.customer.type === "corporate" ? (order.customer.companyName || "Kurumsal Müşteri") : (order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri")}
           />
 
           <OrderInfoCard order={order} onChangeStatus={changeStatus} loading={loading} technicians={technicians} />
@@ -1201,15 +1204,19 @@ function PaymentHistoryCard({
   paidAmount,
   remainingAmount,
   collections,
+  customerId,
+  customerName,
 }: {
   orderId: string
   totals: Totals
   paidAmount: number
   remainingAmount: number
-  paymentStatus: string
-  collections: Array<{ id: string; amount: number; method: string; paymentDate: string; referenceNo: string | null; note: string | null }>
+  collections: Array<{ id: string; amount: number; method: string; status: string; paymentDate: string; referenceNo: string | null; note: string | null; cancellationReason: string | null }>
   customerId: string
+  customerName: string
 }) {
+  const cancelledCollections = collections.filter((c) => c.status === "cancelled")
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -1243,15 +1250,27 @@ function PaymentHistoryCard({
           <div className="space-y-1.5">
             {collections.map((c) => {
               const methodLabel = PAYMENT_METHOD_LABELS[c.method as PaymentMethodKey] || c.method
+              const isCancelled = c.status === "cancelled"
               return (
                 <Link
                   key={c.id}
                   href={`/app/cashbox/payments/${c.id}`}
-                  className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isCancelled ? "bg-rose-50/60 hover:bg-rose-50 border border-rose-100" : "bg-slate-50 hover:bg-slate-100"}`}
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{formatTRY(c.amount)}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(c.paymentDate)} &bull; {methodLabel}</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-semibold ${isCancelled ? "text-rose-700 line-through" : "text-slate-900"}`}>{formatTRY(c.amount)}</p>
+                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isCancelled ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                        {isCancelled ? "İptal" : methodLabel}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(c.paymentDate)}</p>
+                    {isCancelled && c.cancellationReason && (
+                      <p className="text-xs text-rose-600 mt-0.5 truncate">{c.cancellationReason}</p>
+                    )}
+                    {!isCancelled && c.referenceNo && (
+                      <p className="text-xs text-slate-400 mt-0.5">Ref: {c.referenceNo}</p>
+                    )}
                   </div>
                   <ChevronRight className="size-4 text-slate-400 shrink-0" />
                 </Link>
@@ -1259,7 +1278,7 @@ function PaymentHistoryCard({
             })}
           </div>
         )}
-        {paidAmount > 0 && totals.hasAnyPrice && (
+        {totals.hasAnyPrice && (
           <div className="border-t pt-2 mt-2 space-y-1">
             <div className="flex justify-between text-xs text-slate-500">
               <span>Genel Toplam</span>
@@ -1269,10 +1288,26 @@ function PaymentHistoryCard({
               <span>Tahsil Edilen</span>
               <span className="font-medium text-emerald-700">{formatTRY(paidAmount)}</span>
             </div>
+            {cancelledCollections.length > 0 && (
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>İptal Edilen</span>
+                <span className="font-medium text-rose-700">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
+              </div>
+            )}
             <div className="flex justify-between text-xs">
               <span className="text-slate-500 font-medium">Kalan</span>
               <span className={cn("font-bold", remainingAmount > 0 ? "text-rose-700" : "text-emerald-700")}>{formatTRY(remainingAmount)}</span>
             </div>
+          </div>
+        )}
+        {remainingAmount > 0 && totals.hasAnyPrice && (
+          <div className="pt-2 mt-1">
+            <SendReminderButton
+              customerId={customerId}
+              serviceOrderId={orderId}
+              customerName={customerName}
+              remainingAmount={remainingAmount}
+            />
           </div>
         )}
       </CardContent>
