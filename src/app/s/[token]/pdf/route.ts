@@ -8,12 +8,17 @@ import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 export const dynamic = "force-dynamic"
 
 async function generatePdfHtml(data: {
-  workshop: { name: string; phone: string; city: string; address: string }
+  workshop: { name: string; phone: string; city: string; address: string; logoUrl?: string | null }
   intakeForm: ReturnType<typeof sanitizeIntakeForPublic>
+  branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }
+  customTemplate?: string | null
   createdAt: Date
   photoCompletion: { percentage: number; requiredCompleted: number; required: number; total: number; completed: number; missingLabels: string[] }
 }): Promise<string> {
-  const { workshop, intakeForm, createdAt, photoCompletion } = data
+  const { workshop, intakeForm, branding, customTemplate, createdAt, photoCompletion } = data
+  const primaryColor = branding?.themeColor || "#0B1F3A"
+  const accentColor = branding?.accentColor || "#2563EB"
+  const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
   const orderItems = intakeForm.order?.items ?? []
   const parts = orderItems.filter((i) => i.type === "part")
@@ -130,7 +135,7 @@ async function generatePdfHtml(data: {
       <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Servis Emri</h3>
       <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;">
         ${parts.length > 0 ? `
-          <div style="font-size:8px;font-weight:700;color:#2563EB;margin-bottom:4px;text-transform:uppercase;">Parçalar</div>
+          <div style="font-size:8px;font-weight:700;color:${accentColor};margin-bottom:4px;text-transform:uppercase;">Parçalar</div>
           <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:8px;">
             <thead><tr style="background:#f8fafc;">
               <th style="padding:4px 8px;text-align:left;border-bottom:1px solid #e2e8f0;">Kalem</th>
@@ -152,7 +157,7 @@ async function generatePdfHtml(data: {
           </table>
         ` : ""}
         ${(partsTotal > 0 || laborTotal > 0) ? `
-          <div style="border-top:2px solid #0B1F3A;padding-top:6px;margin-top:4px;">
+          <div style="border-top:2px solid ${primaryColor};padding-top:6px;margin-top:4px;">
             ${partsTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>Parça Toplamı</span><span>${formatTRY(partsTotal)}</span></div>` : ""}
             ${laborTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>İşçilik Toplamı</span><span>${formatTRY(laborTotal)}</span></div>` : ""}
             <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-top:4px;"><span>Genel Toplam</span><span>${formatTRY(grandTotal)}</span></div>
@@ -199,10 +204,13 @@ async function generatePdfHtml(data: {
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0B1F3A;padding-bottom:8px;margin-bottom:16px;">
-    <div>
-      <h1 style="font-size:20px;font-weight:700;color:#0B1F3A;margin:0;">${workshop.name}</h1>
-      <p style="font-size:10px;color:#666;margin:2px 0 0;">Araç Kabul ve İşlem Özeti</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${primaryColor};padding-bottom:8px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      ${logoUrl ? `<img src="${logoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
+      <div>
+        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${workshop.name}</h1>
+        <p style="font-size:10px;color:#666;margin:2px 0 0;">Araç Kabul ve İşlem Özeti</p>
+      </div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:10px;color:#333;">${fmtDate(intakeForm.createdAt)}</div>
@@ -211,7 +219,7 @@ async function generatePdfHtml(data: {
   </div>
 
   <div style="margin-bottom:6px;">
-    <span style="font-size:9px;padding:2px 8px;border:1px solid #0B1F3A;border-radius:10px;color:#0B1F3A;">${statusInfo?.label || intakeForm.status}</span>
+    <span style="font-size:9px;padding:2px 8px;border:1px solid ${primaryColor};border-radius:10px;color:${primaryColor};">${statusInfo?.label || intakeForm.status}</span>
   </div>
 
   ${evidenceSummarySection}
@@ -256,6 +264,11 @@ async function generatePdfHtml(data: {
   ${approvalSection}
   ${orderSection}
 
+  ${customTemplate ? `<div style="margin-bottom:12px;">
+    <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Özel Notlar</h3>
+    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${customTemplate}</div>
+  </div>` : ""}
+
   <div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Yeri Bilgileri</h3>
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;">
@@ -294,7 +307,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
           order: { select: { status: true, paymentStatus: true, items: { select: { type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
         },
       },
-      workshop: { select: { name: true, phone: true, city: true, address: true } },
+      workshop: { select: { name: true, phone: true, city: true, address: true, logoUrl: true } },
     },
   })
 
@@ -303,6 +316,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   }
 
   const { intakeForm, workshop } = shareLink
+
+  const workshopSettings = await prisma.workshopSettings.findUnique({
+    where: { workshopId: shareLink.workshopId },
+    select: { pdfLogoUrl: true, themeColor: true, accentColor: true, workOrderTemplate: true },
+  })
 
   const visibility = {
     showPhotos: shareLink.showPhotos,
@@ -321,6 +339,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const html = await generatePdfHtml({
     workshop,
     intakeForm: safeIntakeForm,
+    branding: workshopSettings ? { pdfLogoUrl: workshopSettings.pdfLogoUrl, themeColor: workshopSettings.themeColor, accentColor: workshopSettings.accentColor } : undefined,
+    customTemplate: workshopSettings?.workOrderTemplate || null,
     createdAt: shareLink.createdAt,
     photoCompletion,
   })

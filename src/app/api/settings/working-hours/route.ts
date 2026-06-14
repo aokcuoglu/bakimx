@@ -1,10 +1,10 @@
-import { updateBusinessProfileAction } from "@/app/app/settings/actions"
+import { updateWorkingHoursAction } from "@/app/app/settings/actions"
 import { rateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request) {
+export async function POST(request: Request) {
   const clientId = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown"
-  const { allowed, retryAfterMs } = rateLimit(`settings-profile:${clientId}`)
+  const { allowed, retryAfterMs } = rateLimit(`settings-working-hours:${clientId}`)
   if (!allowed) {
     return NextResponse.json(
       { error: "Çok fazla istek. Lütfen bekleyin." },
@@ -13,12 +13,8 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const body = await request.json()
-    const formData = new FormData()
-    for (const [key, value] of Object.entries(body)) {
-      formData.set(key, String(value ?? ""))
-    }
-    const result = await updateBusinessProfileAction(formData)
+    const formData = await request.formData()
+    const result = await updateWorkingHoursAction(formData)
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }

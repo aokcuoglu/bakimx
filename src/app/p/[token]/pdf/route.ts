@@ -6,14 +6,19 @@ import { VEHICLE_ZONES } from "@/lib/constants"
 export const dynamic = "force-dynamic"
 
 async function generatePassportPdfHtml(data: {
-  workshop: { name: string; phone: string; city: string; address: string }
+  workshop: { name: string; phone: string; city: string; address: string; logoUrl?: string | null }
   passportData: ReturnType<typeof sanitizePassportForPublic>
   vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; vehicleType: string | null; color: string | null; fuelType: string | null; transmission: string | null }
   customer: { firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; contactName: string | null; type: string; phone: string }
   visibility: { showServiceHistory: boolean; showWorkOrders: boolean; showDamages: boolean; showPhotos: boolean; showReminders: boolean; showPaymentStatus: boolean }
+  branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }
+  customTemplate?: string | null
   createdAt: string
 }): Promise<string> {
-  const { workshop, passportData, vehicle, customer, visibility, createdAt } = data
+  const { workshop, passportData, vehicle, customer, visibility, branding, customTemplate, createdAt } = data
+  const primaryColor = branding?.themeColor || "#0B1F3A"
+  const accentColor = branding?.accentColor || "#2563EB"
+  const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
   const customerName = customer.type === "corporate"
     ? customer.companyName || customer.contactName || "Kurumsal Müşteri"
     : customer.fullName || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "Müşteri"
@@ -36,12 +41,12 @@ async function generatePassportPdfHtml(data: {
 
       workOrdersHtml += `<div style="border:1px solid #E5E7EB;border-radius:6px;padding:8px;margin-bottom:6px;background:#fff;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <div><span style="font-family:monospace;font-size:9px;font-weight:600;color:#666;">${wo.workOrderNo || "—"}</span> <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid #0B1F3A;color:#0B1F3A;">${wo.statusLabel}</span>${wo.paymentStatusLabel && visibility.showPaymentStatus ? ` <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid #999;color:#666;">${wo.paymentStatusLabel}</span>` : ""}</div>
+          <div><span style="font-family:monospace;font-size:9px;font-weight:600;color:#666;">${wo.workOrderNo || "—"}</span> <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid ${primaryColor};color:${primaryColor};">${wo.statusLabel}</span>${wo.paymentStatusLabel && visibility.showPaymentStatus ? ` <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid #999;color:#666;">${wo.paymentStatusLabel}</span>` : ""}</div>
           <span style="font-size:9px;color:#999;">${fmtDate(wo.createdAt)}</span>
         </div>
         <div style="font-size:10px;color:#333;margin-bottom:4px;">${wo.customerComplaint}</div>
         ${wo.items.length > 0 ? `<div style="border-top:1px solid #f1f5f9;padding-top:4px;margin-top:4px;">${itemsHtml}</div>` : ""}
-        ${wo.grandTotal && wo.grandTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;border-top:2px solid #0B1F3A;padding-top:4px;margin-top:4px;"><span>Toplam</span><span>${formatTRY(wo.grandTotal)}</span></div>` : ""}
+        ${wo.grandTotal && wo.grandTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;border-top:2px solid ${primaryColor};padding-top:4px;margin-top:4px;"><span>Toplam</span><span>${formatTRY(wo.grandTotal)}</span></div>` : ""}
       </div>`
     }
     workOrdersHtml += `</div>`
@@ -121,7 +126,7 @@ async function generatePassportPdfHtml(data: {
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Servis Özeti</h3>
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;display:flex;gap:16px;">
       <div style="text-align:center;flex:1;">
-        <div style="font-size:16px;font-weight:700;color:#2563EB;">${passportData.workOrders.length}</div>
+        <div style="font-size:16px;font-weight:700;color:${accentColor};">${passportData.workOrders.length}</div>
         <div style="font-size:8px;color:#666;">İş Emri</div>
       </div>
       <div style="text-align:center;flex:1;">
@@ -150,10 +155,13 @@ async function generatePassportPdfHtml(data: {
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0B1F3A;padding-bottom:8px;margin-bottom:16px;">
-    <div>
-      <h1 style="font-size:20px;font-weight:700;color:#0B1F3A;margin:0;">${workshop.name}</h1>
-      <p style="font-size:10px;color:#666;margin:2px 0 0;">Dijital Servis Pasaportu</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${primaryColor};padding-bottom:8px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      ${logoUrl ? `<img src="${logoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
+      <div>
+        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${workshop.name}</h1>
+        <p style="font-size:10px;color:#666;margin:2px 0 0;">Dijital Servis Pasaportu</p>
+      </div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:10px;color:#333;">${fmtDate(createdAt)}</div>
@@ -185,6 +193,11 @@ async function generatePassportPdfHtml(data: {
   ${photosHtml}
   ${remindersHtml}
   ${timelineHtml}
+
+  ${customTemplate ? `<div style="margin-bottom:12px;">
+    <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Özel Notlar</h3>
+    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${customTemplate}</div>
+  </div>` : ""}
 
   <div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Yeri Bilgileri</h3>
@@ -241,6 +254,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   }
 
   const { vehicle, workshop } = passportToken
+
+  const workshopSettings = await prisma.workshopSettings.findUnique({
+    where: { workshopId: passportToken.workshopId },
+    select: { pdfLogoUrl: true, themeColor: true, accentColor: true, servicePassportTemplate: true },
+  })
 
   const reminders = await prisma.maintenanceReminder.findMany({
     where: { vehicleId: vehicle.id, status: { notIn: ["cancelled"] } },
@@ -365,6 +383,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       phone: vehicle.customer.phone,
     },
     visibility,
+    branding: workshopSettings ? { pdfLogoUrl: workshopSettings.pdfLogoUrl, themeColor: workshopSettings.themeColor, accentColor: workshopSettings.accentColor } : undefined,
+    customTemplate: workshopSettings?.servicePassportTemplate || null,
     createdAt: passportToken.createdAt.toISOString(),
   })
 

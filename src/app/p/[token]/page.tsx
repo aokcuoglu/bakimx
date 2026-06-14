@@ -40,6 +40,11 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
 
   const { vehicle, workshop } = passportToken
 
+  const workshopSettings = await prisma.workshopSettings.findUnique({
+    where: { workshopId: passportToken.workshopId },
+    select: { publicPortalLogoUrl: true, passportLogoUrl: true, themeColor: true, accentColor: true },
+  })
+
   const reminders = await prisma.maintenanceReminder.findMany({
     where: { vehicleId: vehicle.id, status: { notIn: ["cancelled"] } },
     orderBy: { dueDate: "asc" },
@@ -184,6 +189,12 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
       city: workshop.city,
       address: workshop.address,
       logoUrl: workshop.logoUrl,
+      branding: workshopSettings ? {
+        publicPortalLogoUrl: workshopSettings.publicPortalLogoUrl,
+        passportLogoUrl: workshopSettings.passportLogoUrl,
+        themeColor: workshopSettings.themeColor,
+        accentColor: workshopSettings.accentColor,
+      } : null,
     },
   }
 
