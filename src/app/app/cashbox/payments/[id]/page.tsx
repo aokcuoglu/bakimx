@@ -8,7 +8,7 @@ import { formatDateTime } from "@/lib/utils-client"
 import { PaymentMethodBadge, CollectionStatusBadge, PaymentBadge } from "@/components/app/status-badge"
 import { CancelCollectionButton } from "@/components/app/collection-cancel-button"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
-import { ArrowLeft, Receipt, Calendar, User, FileText, Hash, MessageSquare, CreditCard, Banknote, Info } from "lucide-react"
+import { ArrowLeft, Receipt, Calendar, User, FileText, Hash, MessageSquare, CreditCard, Banknote, Info, AlertTriangle } from "lucide-react"
 
 const methodIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   cash: Banknote,
@@ -88,6 +88,15 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
           </div>
           {collection.status === "completed" && (
             <CancelCollectionButton collectionId={collection.id} />
+          )}
+          {collection.status === "cancelled" && collection.cancellationReason && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-rose-800 flex items-center gap-2">
+                <AlertTriangle className="size-4" />
+                İptal Bilgisi
+              </h3>
+              <p className="text-sm text-rose-700">{collection.cancellationReason}</p>
+            </div>
           )}
         </div>
 

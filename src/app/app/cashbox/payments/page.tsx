@@ -5,9 +5,65 @@ import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/app/stat
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 import Link from "next/link"
-import { Plus, Search, Filter, Wallet, Eye } from "lucide-react"
+import { PrintButton } from "@/components/app/print-button"
+import { Plus, Search, Filter, Wallet, Eye, Download } from "lucide-react"
 
-type SP = { q?: string; method?: string; status?: string; period?: string }
+type SP = { q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
+
+const DATE_PRESETS = [
+  { value: "", label: "Tüm Dönem" },
+  { value: "today", label: "Bugün" },
+  { value: "yesterday", label: "Dün" },
+  { value: "this_week", label: "Bu Hafta" },
+  { value: "last_week", label: "Geçen Hafta" },
+  { value: "this_month", label: "Bu Ay" },
+  { value: "last_month", label: "Geçen Ay" },
+  { value: "last_30", label: "Son 30 Gün" },
+  { value: "last_90", label: "Son 90 Gün" },
+  { value: "custom", label: "Özel" },
+]
+
+function getDateRange(period: string, dateFromStr?: string, dateToStr?: string): { dateFrom?: Date; dateTo?: Date } {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+
+  switch (period) {
+    case "today":
+      return { dateFrom: today }
+    case "yesterday": {
+      const yesterday = new Date(today.getTime() - 86400000)
+      return { dateFrom: yesterday, dateTo: today }
+    }
+    case "this_week": {
+      const day = now.getDay() || 7
+      return { dateFrom: new Date(today.getTime() - (day - 1) * 86400000) }
+    }
+    case "last_week": {
+      const day = now.getDay() || 7
+      const endOfLastWeek = new Date(today.getTime() - day * 86400000)
+      const startOfLastWeek = new Date(endOfLastWeek.getTime() - 6 * 86400000)
+      return { dateFrom: startOfLastWeek, dateTo: endOfLastWeek }
+    }
+    case "this_month":
+      return { dateFrom: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0) }
+    case "last_month": {
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      return { dateFrom: startOfLastMonth, dateTo: endOfLastMonth }
+    }
+    case "last_30":
+      return { dateFrom: new Date(today.getTime() - 29 * 86400000) }
+    case "last_90":
+      return { dateFrom: new Date(today.getTime() - 89 * 86400000) }
+    case "custom": {
+      const dateFrom = dateFromStr ? new Date(dateFromStr) : undefined
+      const dateTo = dateToStr ? new Date(dateToStr) : undefined
+      return { dateFrom, dateTo }
+    }
+    default:
+      return {}
+  }
+}
 
 export default async function PaymentsListPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { user, workshop } = await getAppData()
@@ -17,18 +73,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   const status = params.status || ""
   const period = params.period || ""
 
-  const now = new Date()
-  let dateFrom: Date | undefined
-  let dateTo: Date | undefined
-
-  if (period === "today") {
-    dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-  } else if (period === "week") {
-    const day = now.getDay() || 7
-    dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0)
-  } else if (period === "month") {
-    dateFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-  }
+  const { dateFrom, dateTo } = getDateRange(period, params.dateFrom, params.dateTo)
 
   const { rows: collections, total } = await getCollections(user.workshopId, {
     q: q || undefined,
@@ -38,6 +83,12 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
     dateTo,
     limit: 200,
   })
+
+  const exportParams = new URLSearchParams()
+  if (method) exportParams.set("method", method)
+  if (status) exportParams.set("status", status)
+  if (dateFrom) exportParams.set("dateFrom", dateFrom.toISOString().slice(0, 10))
+  if (dateTo) exportParams.set("dateTo", dateTo.toISOString().slice(0, 10))
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Tahsilatlar">
@@ -55,30 +106,43 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Tahsilatlar</h2>
             <p className="text-sm text-slate-500 mt-0.5">{total} kayıt bulundu</p>
           </div>
-          <Link
-            href="/app/cashbox/payments/new"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
-          >
-            <Plus className="size-4" />
-            Yeni Tahsilat
-          </Link>
+          <div className="flex gap-2">
+            <a
+              href={`/api/cashbox/export?type=collections&${exportParams.toString()}`}
+              download
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation print:hidden"
+            >
+              <Download className="size-4" />
+              CSV
+            </a>
+            <PrintButton className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation print:hidden" />
+            <Link
+              href="/app/cashbox/payments/new"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
+            >
+              <Plus className="size-4" />
+              Yeni Tahsilat
+            </Link>
+          </div>
         </div>
 
-        <form action="/app/cashbox/payments" method="get" className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Müşteri, telefon, iş emri no, referans ara…"
-              className="w-full h-11 pl-10 pr-3 rounded-lg border border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
-            />
+        <form action="/app/cashbox/payments" method="get" className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Müşteri, telefon, iş emri no, referans ara…"
+                className="w-full h-11 pl-10 pr-3 rounded-lg border border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
+              />
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <select
               name="method"
               defaultValue={method}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             >
               <option value="">Tüm Yöntemler</option>
               <option value="cash">Nakit</option>
@@ -89,7 +153,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
             <select
               name="status"
               defaultValue={status}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             >
               <option value="">Tüm Durumlar</option>
               <option value="completed">Tamamlandı</option>
@@ -98,16 +162,31 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
             <select
               name="period"
               defaultValue={period}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             >
-              <option value="">Tüm Dönem</option>
-              <option value="today">Bugün</option>
-              <option value="week">Bu Hafta</option>
-              <option value="month">Bu Ay</option>
+              {DATE_PRESETS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </select>
+            {period === "custom" && (
+              <>
+                <input
+                  name="dateFrom"
+                  type="date"
+                  defaultValue={params.dateFrom || ""}
+                  className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                />
+                <input
+                  name="dateTo"
+                  type="date"
+                  defaultValue={params.dateTo || ""}
+                  className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                />
+              </>
+            )}
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
             >
               <Filter className="size-4" />
               Filtrele

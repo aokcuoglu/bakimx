@@ -49,11 +49,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   })
 
   const collections = await prisma.collectionPayment.findMany({
-    where: { serviceOrderId: id, workshopId: user.workshopId, status: "completed" },
+    where: { serviceOrderId: id, workshopId: user.workshopId, status: { in: ["completed", "cancelled"] } },
     orderBy: { paymentDate: "desc" },
   })
 
-  const totalPaid = collections.reduce((sum, c) => sum + c.amount, 0)
+  const totalPaid = collections.filter(c => c.status === "completed").reduce((sum, c) => sum + c.amount, 0)
   const paidAmount = order.paidAmount || totalPaid
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
 
@@ -137,9 +137,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       id: c.id,
       amount: c.amount,
       method: c.method,
+      status: c.status,
       paymentDate: c.paymentDate.toISOString(),
       referenceNo: c.referenceNo,
       note: c.note,
+      cancellationReason: c.cancellationReason,
     })),
   }
 

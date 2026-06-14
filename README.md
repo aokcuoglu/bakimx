@@ -2,7 +2,7 @@
 
 Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş emri platformu.
 
-**Versiyon:** v0.5.1 — Calendar & Reminder Automation
+**Versiyon:** v0.5.2 — Billing & Collections Enhancement
 
 ## Hızlı Başlangıç
 

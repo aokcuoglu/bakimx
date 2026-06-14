@@ -18,6 +18,7 @@ export type RecentCollection = {
   paymentDate: string
   referenceNo: string | null
   note: string | null
+  cancellationReason: string | null
   customer: {
     id: string
     type: string
@@ -190,6 +191,7 @@ export async function getRecentCollections(
     paymentDate: c.paymentDate.toISOString(),
     referenceNo: c.referenceNo,
     note: c.note,
+    cancellationReason: c.cancellationReason,
     customer: {
       id: c.customer.id,
       type: c.customer.type,
@@ -304,6 +306,7 @@ export type CollectionListRow = {
   paymentDate: string
   referenceNo: string | null
   note: string | null
+  cancellationReason: string | null
   customer: {
     id: string
     type: string
@@ -390,6 +393,7 @@ export async function getCollections(
       paymentDate: r.paymentDate.toISOString(),
       referenceNo: r.referenceNo,
       note: r.note,
+      cancellationReason: r.cancellationReason,
       customer: {
         id: r.customer.id,
         type: r.customer.type,
@@ -447,7 +451,6 @@ export async function getCustomerBalances(workshopId: string): Promise<CustomerB
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 200,
   })
 
   return customers.map((c) => {
@@ -496,21 +499,162 @@ export async function getCustomerBalances(workshopId: string): Promise<CustomerB
 
 export async function getOrderPaymentHistory(workshopId: string, serviceOrderId: string) {
   const collections = await prisma.collectionPayment.findMany({
-    where: { workshopId, serviceOrderId, status: "completed" },
+    where: { workshopId, serviceOrderId, status: { in: ["completed", "cancelled"] } },
     orderBy: { paymentDate: "desc" },
   })
 
-  const totalPaid = collections.reduce((sum, c) => sum + c.amount, 0)
+  const totalPaid = collections
+    .filter((c) => c.status === "completed")
+    .reduce((sum, c) => sum + c.amount, 0)
+
+  const totalCancelled = collections
+    .filter((c) => c.status === "cancelled")
+    .reduce((sum, c) => sum + c.amount, 0)
 
   return {
     collections: collections.map((c) => ({
       id: c.id,
       amount: c.amount,
       method: c.method,
+      status: c.status,
       paymentDate: c.paymentDate.toISOString(),
       referenceNo: c.referenceNo,
       note: c.note,
+      cancellationReason: c.cancellationReason,
     })),
     totalPaid,
+    totalCancelled,
   }
+}
+
+export type AgingBucket = {
+  label: string
+  key: string
+  totalAmount: number
+  count: number
+  customers: Array<{
+    customerId: string
+    customerName: string
+    customerPhone: string
+    amount: number
+  }>
+}
+
+export async function getReceivableAging(workshopId: string): Promise<AgingBucket[]> {
+  const now = new Date()
+  const day7 = new Date(now.getTime() - 7 * 86400000)
+  const day30 = new Date(now.getTime() - 30 * 86400000)
+  const day60 = new Date(now.getTime() - 60 * 86400000)
+
+  const orders = await prisma.serviceOrder.findMany({
+    where: {
+      workshopId,
+      status: { notIn: ["cancelled"] },
+      paymentStatus: { in: ["unpaid", "partial"] },
+    },
+    include: {
+      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      intakeForm: {
+        select: {
+          customer: { select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true, phone: true } },
+          vehicle: { select: { plate: true } },
+        },
+      },
+    },
+  })
+
+  const allCompletedCollections = await prisma.collectionPayment.findMany({
+    where: { workshopId, status: "completed", serviceOrderId: { in: orders.map((o) => o.id) } },
+    select: { serviceOrderId: true, amount: true },
+  })
+
+  const paidByOrder = new Map<string, number>()
+  for (const c of allCompletedCollections) {
+    if (c.serviceOrderId) {
+      paidByOrder.set(c.serviceOrderId, (paidByOrder.get(c.serviceOrderId) || 0) + c.amount)
+    }
+  }
+
+  const buckets: Record<string, { total: number; customers: Map<string, { id: string; name: string; phone: string; amount: number }> }> = {
+    current: { total: 0, customers: new Map() },
+    "0-7": { total: 0, customers: new Map() },
+    "8-30": { total: 0, customers: new Map() },
+    "31-60": { total: 0, customers: new Map() },
+    "60+": { total: 0, customers: new Map() },
+  }
+
+  const nameFor = (c: { type: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null }) =>
+    c.type === "corporate" ? c.companyName || "—" : c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "—"
+
+  for (const order of orders) {
+    const totals = calculateOrderTotalsFromMinimal(order.items, {
+      discountAmount: order.discountAmount,
+      taxRate: order.taxRate,
+    })
+    if (!totals.hasAnyPrice) continue
+    const paid = paidByOrder.get(order.id) || order.paidAmount || 0
+    const remaining = Math.max(0, totals.grandTotal - paid)
+    if (remaining <= 0) continue
+
+    const createdAt = order.createdAt
+    let bucket: string
+    if (createdAt >= day7) bucket = "0-7"
+    else if (createdAt >= day30) bucket = "8-30"
+    else if (createdAt >= day60) bucket = "31-60"
+    else bucket = "60+"
+
+    buckets[bucket].total += remaining
+    const cust = order.intakeForm.customer
+    const custId = cust.id
+    const existing = buckets[bucket].customers.get(custId)
+    if (existing) {
+      existing.amount += remaining
+    } else {
+      buckets[bucket].customers.set(custId, { id: custId, name: nameFor(cust), phone: cust.phone, amount: remaining })
+    }
+  }
+
+  return [
+    { label: "0-7 Gün", key: "0-7", totalAmount: buckets["0-7"].total, count: buckets["0-7"].customers.size, customers: Array.from(buckets["0-7"].customers.entries()).map(([id, c]) => ({ customerId: id, customerName: c.name, customerPhone: c.phone, amount: c.amount })) },
+    { label: "8-30 Gün", key: "8-30", totalAmount: buckets["8-30"].total, count: buckets["8-30"].customers.size, customers: Array.from(buckets["8-30"].customers.entries()).map(([id, c]) => ({ customerId: id, customerName: c.name, customerPhone: c.phone, amount: c.amount })) },
+    { label: "31-60 Gün", key: "31-60", totalAmount: buckets["31-60"].total, count: buckets["31-60"].customers.size, customers: Array.from(buckets["31-60"].customers.entries()).map(([id, c]) => ({ customerId: id, customerName: c.name, customerPhone: c.phone, amount: c.amount })) },
+    { label: "60+ Gün", key: "60+", totalAmount: buckets["60+"].total, count: buckets["60+"].customers.size, customers: Array.from(buckets["60+"].customers.entries()).map(([id, c]) => ({ customerId: id, customerName: c.name, customerPhone: c.phone, amount: c.amount })) },
+  ]
+}
+
+export async function getCashboxDailyCollections(workshopId: string, days = 30): Promise<Array<{ date: string; label: string; amount: number; count: number }>> {
+  const start = new Date()
+  start.setDate(start.getDate() - (days - 1))
+  start.setHours(0, 0, 0, 0)
+
+  const collections = await prisma.collectionPayment.findMany({
+    where: { workshopId, status: "completed", paymentDate: { gte: start } },
+    select: { amount: true, paymentDate: true },
+  })
+
+  const dayNames = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"]
+  const dayMap = new Map<string, { amount: number; count: number }>()
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start.getTime() + i * 86400000)
+    const key = d.toISOString().slice(0, 10)
+    dayMap.set(key, { amount: 0, count: 0 })
+  }
+
+  for (const c of collections) {
+    const key = c.paymentDate.toISOString().slice(0, 10)
+    const entry = dayMap.get(key)
+    if (entry) {
+      entry.amount += c.amount
+      entry.count += 1
+    }
+  }
+
+  const result: Array<{ date: string; label: string; amount: number; count: number }> = []
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start.getTime() + i * 86400000)
+    const key = d.toISOString().slice(0, 10)
+    const entry = dayMap.get(key) || { amount: 0, count: 0 }
+    result.push({ date: key, label: dayNames[d.getDay()], amount: entry.amount, count: entry.count })
+  }
+  return result
 }

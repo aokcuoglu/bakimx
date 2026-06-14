@@ -99,7 +99,7 @@ export async function createCollectionAction(formData: FormData) {
   return { success: true, id: collection.id }
 }
 
-export async function cancelCollectionAction(collectionId: string) {
+export async function cancelCollectionAction(collectionId: string, reason?: string) {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
 
@@ -109,16 +109,30 @@ export async function cancelCollectionAction(collectionId: string) {
   if (!collection) return { error: "Tahsilat kaydı bulunamadı" }
   if (collection.status !== "completed") return { error: "Sadece tamamlanmış tahsilatlar iptal edilebilir" }
 
+  const trimmedReason = (reason || "").trim()
+  if (!trimmedReason) return { error: "İptal nedeni zorunludur" }
+  const cancellationReason = trimmedReason
+
   await prisma.collectionPayment.updateMany({
     where: { id: collectionId, workshopId: user.workshopId },
-    data: { status: "cancelled" },
+    data: {
+      status: "cancelled",
+      cancellationReason,
+    },
   })
 
   if (collection.serviceOrderId) {
     await updateOrderPaymentStatus(collection.serviceOrderId, user.workshopId)
   }
 
-  await AuditLogAction(user.workshopId, user.id, "CollectionPayment", collectionId, "collection_cancelled")
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "CollectionPayment",
+    collectionId,
+    "collection_cancelled",
+    JSON.stringify({ reason: cancellationReason, amount: collection.amount, method: collection.method })
+  )
 
   revalidatePath("/app/cashbox")
   revalidatePath("/app/cashbox/payments")
