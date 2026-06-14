@@ -33,6 +33,11 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
   const { intakeForm, workshop } = shareLink
 
+  const workshopSettings = await prisma.workshopSettings.findUnique({
+    where: { workshopId: shareLink.workshopId },
+    select: { publicPortalLogoUrl: true, themeColor: true, accentColor: true },
+  })
+
   const visibility = {
     showPhotos: shareLink.showPhotos,
     showDamage: shareLink.showDamage,
@@ -69,6 +74,11 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       city: workshop.city,
       address: workshop.address,
       logoUrl: workshop.logoUrl,
+      branding: workshopSettings ? {
+        publicPortalLogoUrl: workshopSettings.publicPortalLogoUrl,
+        themeColor: workshopSettings.themeColor,
+        accentColor: workshopSettings.accentColor,
+      } : null,
     },
     intakeForm: safeIntakeForm,
     photoCompletion,

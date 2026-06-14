@@ -89,7 +89,7 @@ export async function loginAction(formData: FormData) {
   session.workshopId = user.workshopId
   await session.save()
 
-  redirect("/app")
+  return { success: true }
 }
 
 export async function logoutAction() {

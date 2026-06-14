@@ -94,7 +94,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Ayarlar",
     items: [
-      { href: "/app/workshop", label: "İş Yeri Profili", icon: Settings },
+      { href: "/app/settings?tab=profile", label: "Ayarlar", icon: Settings },
       { href: "/app/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
       { href: "/app/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
     ],
@@ -452,6 +452,7 @@ function SidebarContent({
                               : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
                           )}
                         >
+                          <Icon className={cn("size-3.5 shrink-0", pathname === item.href ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300")} />
                           <span className="flex-1 truncate">{item.label} Özeti</span>
                           {pathname === item.href && <ChevronRight className="size-3 text-blue-300" />}
                         </Link>

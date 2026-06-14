@@ -23,6 +23,21 @@ export default async function WorkshopPage() {
     orderBy: [{ isActive: "desc" }, { fullName: "asc" }],
   })
 
+  const serializedWorkshop = {
+    id: workshop.id,
+    name: workshop.name,
+    phone: workshop.phone,
+    city: workshop.city,
+    district: workshop.district,
+    address: workshop.address,
+    email: workshop.email,
+    website: workshop.website,
+    logoUrl: workshop.logoUrl,
+    taxNumber: workshop.taxNumber,
+    taxOffice: workshop.taxOffice,
+    invoiceTitle: workshop.invoiceTitle,
+  }
+
   const serializedTechnicians = technicians.map((t) => ({
     id: t.id,
     fullName: t.fullName,
@@ -38,13 +53,15 @@ export default async function WorkshopPage() {
         <div className="flex items-center text-sm text-slate-500">
           <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
           <span className="mx-2">/</span>
+          <Link href="/app/settings?tab=profile" className="hover:text-slate-700">Ayarlar</Link>
+          <span className="mx-2">/</span>
           <span className="text-slate-700 font-medium">İş Yeri Profili</span>
         </div>
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900">İş Yeri Profili</h2>
           <p className="text-sm text-slate-500 mt-0.5">İş yeri bilgilerinizi güncelleyin</p>
         </div>
-        <WorkshopForm workshop={workshop} />
+        <WorkshopForm workshop={serializedWorkshop} />
 
         <div className="pt-4">
           <TechnicianManagement technicians={serializedTechnicians} />

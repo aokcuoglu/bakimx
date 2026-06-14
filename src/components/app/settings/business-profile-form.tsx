@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
-type Workshop = {
+type WorkshopData = {
   id: string
   name: string
   phone: string
@@ -21,21 +21,24 @@ type Workshop = {
   invoiceTitle: string | null
 }
 
-export function WorkshopForm({ workshop }: { workshop: Workshop }) {
+export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSuccess(false)
     setError("")
+    setLoading(true)
 
     const formData = new FormData(e.currentTarget)
 
     try {
       const res = await fetch("/api/workshop", {
-        method: "POST",
-        body: formData,
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(formData)),
       })
       const data = await res.json()
       if (data.success) {
@@ -45,6 +48,8 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
       }
     } catch {
       setError("Bir hata oluştu")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -55,7 +60,7 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
         <CardDescription>İş yeri temel bilgilerinizi güncelleyin</CardDescription>
       </CardHeader>
       <CardContent>
-        <form id="workshop-form" onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
           {success && <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm">Bilgiler güncellendi</div>}
 
@@ -121,8 +126,8 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
             </div>
           </div>
 
-          <Button type="submit" form="workshop-form" className="w-full">
-            Güncelle
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Kaydediliyor..." : "Güncelle"}
           </Button>
         </form>
       </CardContent>

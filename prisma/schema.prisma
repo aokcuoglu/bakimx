@@ -11,13 +11,18 @@ model Workshop {
   name         String
   phone        String
   city         String
+  district     String?
   address      String
+  email        String?
+  website      String?
   logoUrl      String?
   taxNumber    String?
+  taxOffice    String?
   invoiceTitle String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  settings     WorkshopSettings?
   users        User[]
   customers    Customer[]
   vehicles     Vehicle[]
@@ -48,6 +53,51 @@ model Workshop {
   communicationLogs  CommunicationLog[]
   calendarSyncLogs   CalendarSyncLog[]
   reminderExecutionLogs ReminderExecutionLog[]
+}
+
+model WorkshopSettings {
+  id                    String   @id @default(cuid())
+  workshopId            String   @unique
+  workshop              Workshop @relation(fields: [workshopId], references: [id])
+
+  pdfLogoUrl            String?
+  publicPortalLogoUrl   String?
+  passportLogoUrl       String?
+  themeColor            String?
+  accentColor           String?
+
+  smsProvider           String   @default("mock")
+  smsApiKey             String?
+  smsSenderName         String?
+  whatsappProvider      String   @default("mock")
+  whatsappApiKey        String?
+  whatsappPhoneNumber   String?
+  emailProvider         String   @default("mock")
+  emailApiKey           String?
+  emailFromAddress      String?
+  emailFromName         String?
+
+  weekdayStart         String   @default("09:00")
+  weekdayEnd           String   @default("18:00")
+  weekdayWorkingDays   String   @default("1,2,3,4,5")
+  weekendStart         String   @default("10:00")
+  weekendEnd           String   @default("14:00")
+  weekendWorkingDays   String   @default("6")
+  holidayEnabled       Boolean  @default(false)
+  holidayDates         String?
+
+  defaultAppointmentDuration Int @default(60)
+  bufferDuration             Int @default(15)
+  reminderTimings             String @default("60,30")
+
+  workOrderTemplate     String?
+  servicePassportTemplate String?
+  collectionReceiptTemplate String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([workshopId])
 }
 
 model User {
