@@ -7,6 +7,7 @@ import { serviceOrderItemSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
 import { generateWorkOrderNo } from "@/lib/work-order-number"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
+import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 
 export async function createServiceOrderAction(intakeFormId: string) {
@@ -156,9 +157,14 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
           order.intakeForm.customerId,
           order.intakeForm.vehicle?.plate || null,
           order.workOrderNo || "BX-???",
+          undefined,
+          undefined,
+          orderId,
         )
       }
-    } catch {}
+    } catch (e) {
+      console.error("[notifyWorkOrderCompleted] İş emri tamamlama bildirimi gönderilemedi:", e)
+    }
   }
 
   if (status === "delivered" && order?.paymentStatus === "unpaid") {
@@ -174,9 +180,13 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
           fullOrder.intakeForm.customerId,
           fullOrder.intakeForm.vehicle?.plate || null,
           formatTRY(fullOrder.remainingAmount),
+          undefined,
+          orderId,
         )
       }
-    } catch {}
+    } catch (e) {
+      console.error("[notifyPaymentReminder] Ödeme hatırlatma bildirimi gönderilemedi:", e)
+    }
   }
 
   revalidatePath(`/app/orders/${orderId}`)
@@ -258,6 +268,14 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
   })
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated")
+
+  if (estimatedDeliveryAt) {
+    try {
+      await syncDeliveryToCalendar(orderId, user.workshopId)
+    } catch (e) {
+      console.error("[syncDeliveryToCalendar] Teslimat takvim senkronizasyonu başarısız:", e)
+    }
+  }
 
   revalidatePath(`/app/orders/${orderId}`)
   return { success: true }

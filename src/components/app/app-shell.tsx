@@ -28,6 +28,7 @@ import {
   HardHat,
   Activity,
   MessageSquare,
+  Calendar,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -58,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/app/vehicles", label: "Araçlar", icon: Car },
       { href: "/app/quotes", label: "Teklifler", icon: FileText },
       { href: "/app/appointments", label: "Randevular", icon: CalendarClock },
+      { href: "/app/calendar", label: "Takvim", icon: Calendar },
       { href: "/app/reminders", label: "Bakım Hatırlatmaları", icon: BellRing },
       { href: "/app/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine },
     ],
@@ -88,6 +90,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/app/workshop", label: "İş Yeri Profili", icon: Settings },
       { href: "/app/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
+      { href: "/app/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
     ],
   },
 ]

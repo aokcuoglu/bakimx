@@ -60,8 +60,11 @@ export async function requestApprovalAction(intakeFormId: string) {
       intake.customerId,
       intake.vehicle?.plate || null,
       `approval-${approval.id}`,
+      intakeFormId,
     )
-  } catch {}
+  } catch (e) {
+    console.error("[notifyIntakeApproval] Onay bildirimi gönderilemedi:", e)
+  }
 
   revalidatePath(`/app/intakes/${intakeFormId}`)
   return {

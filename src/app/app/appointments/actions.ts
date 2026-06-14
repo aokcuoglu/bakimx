@@ -9,6 +9,7 @@ import { generateAppointmentNo, formatAppointmentNo } from "@/lib/work-order-num
 import { generateWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyAppointmentCreated } from "@/lib/communications/triggers"
+import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
 
 export async function createAppointmentAction(formData: FormData) {
   const user = await requireAuth()
@@ -67,8 +68,17 @@ export async function createAppointmentAction(formData: FormData) {
       appointmentAt,
       appointmentTime,
       appointment.appointmentNo || formatAppointmentNo(appointment),
+      appointment.id,
     )
-  } catch {}
+  } catch (e) {
+    console.error("[notifyAppointmentCreated] Randevu bildirimi gönderilemedi:", e)
+  }
+
+  try {
+    await syncAppointmentToCalendar(appointment.id, workshopId)
+  } catch (e) {
+    console.error("[syncAppointmentToCalendar] Takvim senkronizasyonu başarısız:", e)
+  }
 
   revalidatePath("/app/appointments")
   return { success: true, id: appointment.id, appointmentNo: appointment.appointmentNo || formatAppointmentNo(appointment) }

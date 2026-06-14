@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
       "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
       "/api/smart-capture", "/api/reminders", "/api/suppliers",
       "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
-      "/api/advisor", "/api/communications",
+      "/api/advisor", "/api/communications", "/api/calendar",
     ]
     const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
     if (isProtected && !session?.userId) {

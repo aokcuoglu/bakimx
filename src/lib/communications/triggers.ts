@@ -25,6 +25,7 @@ export async function notifyAppointmentCreated(
   appointmentDate: string,
   appointmentTime: string,
   appointmentNo?: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -43,7 +44,7 @@ export async function notifyAppointmentCreated(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "appointment",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -54,6 +55,7 @@ export async function notifyAppointmentReminder(
   appointmentDate: string,
   appointmentTime: string,
   hoursBefore: number,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -72,7 +74,7 @@ export async function notifyAppointmentReminder(
     variables,
     channels: ["sms", "whatsapp"] as CommunicationType[],
     entityType: "appointment",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -81,6 +83,7 @@ export async function notifyIntakeApproval(
   customerId: string,
   vehiclePlate: string | null,
   approvalToken: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -96,7 +99,7 @@ export async function notifyIntakeApproval(
     variables,
     channels: ["sms", "whatsapp"] as CommunicationType[],
     entityType: "intake",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -107,6 +110,7 @@ export async function notifyQuoteReady(
   quoteNo: string,
   totalAmount: string | null,
   shareToken?: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -124,7 +128,7 @@ export async function notifyQuoteReady(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "quote",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -135,6 +139,7 @@ export async function notifyWorkOrderCompleted(
   workOrderNo: string,
   shareToken?: string,
   passportToken?: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -152,7 +157,7 @@ export async function notifyWorkOrderCompleted(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "order",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -162,6 +167,7 @@ export async function notifyMaintenanceReminder(
   vehiclePlate: string | null,
   maintenanceType: string,
   dueDate: string | null,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -179,7 +185,7 @@ export async function notifyMaintenanceReminder(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "reminder",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -189,6 +195,7 @@ export async function notifyPaymentReminder(
   vehiclePlate: string | null,
   totalAmount: string,
   shareToken?: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -205,7 +212,7 @@ export async function notifyPaymentReminder(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "order",
-    entityId: undefined,
+    entityId,
   })
 }
 
@@ -214,6 +221,7 @@ export async function notifyVehiclePassportShare(
   customerId: string,
   vehiclePlate: string | null,
   passportToken: string,
+  entityId?: string,
 ) {
   const workshopName = await getWorkshopName(workshopId)
   const variables: TemplateVariables = {
@@ -229,6 +237,6 @@ export async function notifyVehiclePassportShare(
     variables,
     channels: ["sms", "whatsapp", "email"] as CommunicationType[],
     entityType: "vehicle",
-    entityId: undefined,
+    entityId,
   })
 }

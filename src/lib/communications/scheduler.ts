@@ -71,6 +71,7 @@ export async function processAppointmentReminders(): Promise<SchedulerResult> {
         appointmentDate,
         appointmentTime,
         hoursBefore,
+        appointment.id,
       )
 
       await prisma.appointment.update({
@@ -178,6 +179,7 @@ export async function processMaintenanceReminders(): Promise<SchedulerResult> {
         reminder.vehicle?.plate || null,
         formatReminderType(reminder.type),
         dueDateStr,
+        reminder.id,
       )
 
       await prisma.maintenanceReminder.update({

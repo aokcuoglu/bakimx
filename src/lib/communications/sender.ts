@@ -49,7 +49,7 @@ async function logCommunication(params: {
   type: CommunicationType
   provider: string
   recipient: string
-  status: "sent" | "failed"
+  status: "sent" | "failed" | "skipped"
   templateKey: string
   entityType: string | null
   entityId: string | null
@@ -88,9 +88,51 @@ export async function sendCommunication(options: SendOptions): Promise<{
   }
 
   for (const channel of channels) {
-    if (channel === "sms" && !customer.smsConsent) continue
-    if (channel === "whatsapp" && !customer.whatsappConsent) continue
-    if (channel === "email" && !customer.emailConsent) continue
+    if (channel === "sms" && !customer.smsConsent) {
+      await logCommunication({
+        workshopId,
+        type: channel,
+        provider: "none",
+        recipient: customer.phone,
+        status: "skipped",
+        templateKey,
+        entityType: entityType ?? null,
+        entityId: entityId ?? null,
+        errorMessage: "Müşteri SMS onayı vermemiş",
+        providerId: null,
+      })
+      continue
+    }
+    if (channel === "whatsapp" && !customer.whatsappConsent) {
+      await logCommunication({
+        workshopId,
+        type: channel,
+        provider: "none",
+        recipient: customer.phone,
+        status: "skipped",
+        templateKey,
+        entityType: entityType ?? null,
+        entityId: entityId ?? null,
+        errorMessage: "Müşteri WhatsApp onayı vermemiş",
+        providerId: null,
+      })
+      continue
+    }
+    if (channel === "email" && !customer.emailConsent) {
+      await logCommunication({
+        workshopId,
+        type: channel,
+        provider: "none",
+        recipient: customer.email || "",
+        status: "skipped",
+        templateKey,
+        entityType: entityType ?? null,
+        entityId: entityId ?? null,
+        errorMessage: "Müşteri e-posta onayı vermemiş",
+        providerId: null,
+      })
+      continue
+    }
 
     const rateLimitKey = `${workshopId}:${channel}:${customerId}`
     const rateCheck = checkRateLimit(rateLimitKey)

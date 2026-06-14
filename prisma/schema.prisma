@@ -46,6 +46,8 @@ model Workshop {
   laborSessions      LaborSession[]
   communicationTemplates CommunicationTemplate[]
   communicationLogs  CommunicationLog[]
+  calendarSyncLogs   CalendarSyncLog[]
+  reminderExecutionLogs ReminderExecutionLog[]
 }
 
 model User {
@@ -957,12 +959,6 @@ enum CommunicationType {
   email
 }
 
-enum CommunicationStatus {
-  pending
-  sent
-  failed
-}
-
 model CommunicationTemplate {
   id          String             @id @default(cuid())
   workshopId  String
@@ -979,6 +975,53 @@ model CommunicationTemplate {
   @@index([channel])
 }
 
+enum CalendarEventType {
+  appointment
+  delivery
+  maintenance_reminder
+}
+
+model CalendarSyncLog {
+  id              String   @id @default(cuid())
+  workshopId      String
+  workshop        Workshop @relation(fields: [workshopId], references: [id])
+  provider        String
+  direction       String   @default("outbound")
+  status          String   @default("pending")
+  eventType       String?
+  entityId        String?
+  externalEventId String?
+  errorMessage    String?
+  syncedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([workshopId])
+  @@index([provider])
+  @@index([status])
+  @@index([syncedAt])
+}
+
+model ReminderExecutionLog {
+  id              String   @id @default(cuid())
+  workshopId      String
+  workshop        Workshop @relation(fields: [workshopId], references: [id])
+  jobType         String
+  entityType      String?
+  entityId        String?
+  status          String   @default("pending")
+  processedCount  Int      @default(0)
+  sentCount       Int      @default(0)
+  failedCount     Int      @default(0)
+  errorMessage    String?
+  executedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([workshopId])
+  @@index([jobType])
+  @@index([status])
+  @@index([executedAt])
+}
+
 model CommunicationLog {
   id           String             @id @default(cuid())
   workshopId   String
@@ -986,7 +1029,7 @@ model CommunicationLog {
   type         CommunicationType
   provider     String
   recipient    String
-  status       CommunicationStatus @default(pending)
+  status       String              @default("pending")
   templateKey  String?
   entityType   String?
   entityId     String?

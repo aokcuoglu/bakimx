@@ -8,6 +8,7 @@ import { reminderCreateSchema, getValidationError } from "@/lib/validation"
 import { AuditLogAction } from "@/lib/audit"
 import { deriveReminderStatus } from "@/lib/reminders/status"
 import { notifyMaintenanceReminder } from "@/lib/communications/triggers"
+import { syncMaintenanceReminderToCalendar } from "@/lib/calendar/sync"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
 
 export async function createReminderAction(formData: FormData) {
@@ -97,8 +98,19 @@ export async function createReminderAction(formData: FormData) {
         vehicle?.plate || null,
         data.title,
         dueDate ? dueDate.toISOString() : null,
+        reminder.id,
       )
-    } catch {}
+    } catch (e) {
+      console.error("[notifyMaintenanceReminder] Bakım hatırlatma bildirimi gönderilemedi:", e)
+    }
+  }
+
+  if (dueDate) {
+    try {
+      await syncMaintenanceReminderToCalendar(reminder.id, user.workshopId)
+    } catch (e) {
+      console.error("[syncMaintenanceReminderToCalendar] Bakım takvim senkronizasyonu başarısız:", e)
+    }
   }
 
   revalidatePath("/app/reminders")
