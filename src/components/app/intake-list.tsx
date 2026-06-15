@@ -1,7 +1,5 @@
 "use client"
 
-"use client"
-
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Car, ClipboardList } from "lucide-react"

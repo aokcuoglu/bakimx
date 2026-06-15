@@ -81,11 +81,13 @@ export default async function OrdersPage({
       itemsCount: o.items.length,
       hasPrice: totals.hasAnyPrice,
       vehicle: {
+        id: o.intakeForm.vehicle.id,
         plate: o.intakeForm.vehicle.plate,
         brand: o.intakeForm.vehicle.brand,
         model: o.intakeForm.vehicle.model,
       },
       customer: {
+        id: o.intakeForm.customer.id,
         firstName: o.intakeForm.customer.firstName,
         lastName: o.intakeForm.customer.lastName,
         fullName: o.intakeForm.customer.fullName,

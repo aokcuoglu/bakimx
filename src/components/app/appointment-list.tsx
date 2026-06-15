@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Eye, ChevronRight } from "lucide-react"
 import { AppointmentStatusBadge } from "@/components/app/appointment-status-badge"
 import { PlateBadge } from "@/components/app/status-badge"
+import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
 import { REMINDER_STATUS } from "@/lib/constants"
 import { customerDisplayName } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
@@ -110,9 +110,9 @@ export function AppointmentList({
       </div>
 
       <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Randevu No</th>
                 <th className="px-4 py-3 text-left font-semibold">Tarih/Saat</th>
@@ -121,26 +121,38 @@ export function AppointmentList({
                 <th className="px-4 py-3 text-left font-semibold">Talep</th>
                 <th className="px-4 py-3 text-left font-semibold">Durum</th>
                 <th className="px-4 py-3 text-left font-semibold">Hatırlatma</th>
-                <th className="px-4 py-3 text-right font-semibold">İşlem</th>
+                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {appointments.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">
-                    {a.appointmentNo}
+                <tr key={a.id} className="hover:bg-slate-50/60 transition-colors group">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/app/appointments/${a.id}`}
+                      className="font-mono text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                    >
+                      {a.appointmentNo}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                     {formatDateTime(a.appointmentAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-slate-900 font-medium">{customerDisplayName(a.customer)}</div>
+                    <Link
+                      href={`/app/customers/${a.customer.id}`}
+                      className="text-slate-900 font-medium hover:text-blue-600 transition-colors"
+                    >
+                      {customerDisplayName(a.customer)}
+                    </Link>
                     <div className="text-xs text-slate-500">{a.customer.phone}</div>
                   </td>
                   <td className="px-4 py-3">
                     {a.vehicle ? (
                       <div className="flex flex-col gap-1.5">
-                        <PlateBadge plate={a.vehicle.plate} />
+                        <Link href={`/app/vehicles/${a.vehicle.id}`}>
+                          <PlateBadge plate={a.vehicle.plate} />
+                        </Link>
                         <span className="text-xs text-slate-500">{a.vehicle.brand} {a.vehicle.model}</span>
                       </div>
                     ) : (
@@ -158,15 +170,13 @@ export function AppointmentList({
                   <td className="px-4 py-3">
                     <ReminderStatusBadge status={a.reminderStatus} />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link
-                        href={`/app/appointments/${a.id}`}
-                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-                      >
-                        <Eye className="size-3.5" />
-                        Görüntüle
-                      </Link>
+                  <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                    <div className="flex items-center justify-end">
+                      <ActionsMenu
+                        viewHref={`/app/appointments/${a.id}`}
+                        editHref={`/app/appointments/${a.id}?edit=1`}
+                        workOrderHref={a.vehicle ? `/app/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/app/orders/new?customerId=${a.customer.id}`}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -178,20 +188,31 @@ export function AppointmentList({
 
       <div className="lg:hidden space-y-2.5">
         {appointments.map((a) => (
-          <Link
+          <div
             key={a.id}
-            href={`/app/appointments/${a.id}`}
-            className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation hover:border-slate-300 transition-colors"
+            className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-xs font-semibold text-slate-500">{a.appointmentNo}</span>
-                  {a.vehicle && <PlateBadge plate={a.vehicle.plate} />}
+                  <Link
+                    href={`/app/appointments/${a.id}`}
+                    className="font-mono text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+                  >
+                    {a.appointmentNo}
+                  </Link>
+                  {a.vehicle && (
+                    <Link href={`/app/vehicles/${a.vehicle.id}`}>
+                      <PlateBadge plate={a.vehicle.plate} />
+                    </Link>
+                  )}
                 </div>
-                <p className="mt-1.5 text-sm font-semibold text-slate-900 truncate">
+                <Link
+                  href={`/app/customers/${a.customer.id}`}
+                  className="mt-1.5 text-sm font-semibold text-slate-900 truncate block hover:text-blue-600 transition-colors"
+                >
                   {customerDisplayName(a.customer)}
-                </p>
+                </Link>
                 {a.vehicle && (
                   <p className="text-xs text-slate-500 truncate">
                     {a.vehicle.brand} {a.vehicle.model}
@@ -204,13 +225,17 @@ export function AppointmentList({
                   <p className="text-xs text-slate-600 mt-1 line-clamp-2">{a.customerRequest}</p>
                 )}
               </div>
-              <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
+              <MobileActionsMenu
+                viewHref={`/app/appointments/${a.id}`}
+                editHref={`/app/appointments/${a.id}?edit=1`}
+                workOrderHref={a.vehicle ? `/app/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/app/orders/new?customerId=${a.customer.id}`}
+              />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <AppointmentStatusBadge status={a.status} />
               <ReminderStatusBadge status={a.reminderStatus} />
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

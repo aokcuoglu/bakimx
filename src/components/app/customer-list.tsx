@@ -6,19 +6,13 @@ import {
   Users,
   Search,
   Phone,
-  Mail,
-  Eye,
-  Pencil,
-  Car as CarIcon,
-  Wrench,
-  CalendarClock,
-  ChevronRight,
   X,
   Filter,
   Building2,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/app/customer-badges"
+import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 
@@ -38,6 +32,12 @@ export type CustomerRow = {
   workOrdersCount: number
   grandTotal: number
   vehiclesPlates: string[]
+}
+
+type CustomerKpis = {
+  total: number
+  newThisMonth: number
+  returning: number
 }
 
 type Filters = {
@@ -66,17 +66,18 @@ function initialsFor(row: CustomerRow) {
 export function CustomerList({
   customers,
   initialFilters,
+  kpis,
   onDelete,
 }: {
   customers: CustomerRow[]
   initialFilters: Filters
+  kpis?: CustomerKpis
   onDelete?: (id: string, label: string) => void
 }) {
   const [q, setQ] = useState(initialFilters.q)
   const [type, setType] = useState<Filters["type"]>(initialFilters.type)
   const [tag, setTag] = useState(initialFilters.tag)
   const [source, setSource] = useState(initialFilters.source)
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     return customers.filter((row) => {
@@ -98,6 +99,38 @@ export function CustomerList({
 
   return (
     <div className="space-y-4">
+      {kpis && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Toplam</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-slate-50 text-slate-600 border-slate-200">
+                {kpis.total}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.total}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Yeni</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                {kpis.newThisMonth}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.newThisMonth}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Tekrar Eden</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-emerald-50 text-emerald-700 border-emerald-200">
+                {kpis.returning}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.returning}</p>
+          </div>
+        </div>
+      )}
+
       <form
         action="/app/customers"
         method="get"
@@ -194,8 +227,6 @@ export function CustomerList({
         <>
           <DesktopTable
             rows={filtered}
-            confirmingId={confirmingId}
-            setConfirmingId={setConfirmingId}
             onDelete={onDelete}
           />
           <MobileCards rows={filtered} />
@@ -229,20 +260,18 @@ function EmptyState({ hasFilter }: { hasFilter: boolean }) {
 
 function DesktopTable({
   rows,
-  confirmingId,
-  setConfirmingId,
   onDelete,
 }: {
   rows: CustomerRow[]
-  confirmingId: string | null
-  setConfirmingId: (id: string | null) => void
+  confirmingId?: string | null
+  setConfirmingId?: (id: string | null) => void
   onDelete?: (id: string, label: string) => void
 }) {
   return (
     <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
             <tr>
               <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
               <th className="px-4 py-3 text-left font-semibold">Telefon</th>
@@ -252,102 +281,71 @@ function DesktopTable({
               <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
               <th className="px-4 py-3 text-right font-semibold">Toplam İşlem</th>
               <th className="px-4 py-3 text-left font-semibold">Kayıt Tarihi</th>
-              <th className="px-4 py-3 text-right font-semibold">İşlem</th>
+              <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => {
-              const isConfirming = confirmingId === row.id
-              return (
-                <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold shrink-0">
-                        {row.type === "corporate" ? (
-                          <Building2 className="size-4" />
-                        ) : (
-                          initialsFor(row)
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <Link
-                          href={`/app/customers/${row.id}`}
-                          className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors truncate block"
-                        >
-                          {nameFor(row)}
-                        </Link>
-                        {row.email ? (
-                          <div className="text-xs text-slate-500 truncate">{row.email}</div>
-                        ) : null}
-                      </div>
+            {rows.map((row) => (
+              <tr key={row.id} className="hover:bg-slate-50/60 transition-colors group">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold shrink-0">
+                      {row.type === "corporate" ? (
+                        <Building2 className="size-4" />
+                      ) : (
+                        initialsFor(row)
+                      )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                    <a
-                      href={`tel:${row.phone}`}
-                      className="inline-flex items-center gap-1.5 hover:text-blue-600"
-                    >
-                      <Phone className="size-3.5 text-slate-400" />
-                      {row.phone}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3">
-                    <CustomerTypeBadge type={row.type} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <CustomerTagBadge tag={row.tag} />
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.vehiclesCount}</td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.workOrdersCount}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900 tabular-nums">
-                    {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
-                    {formatDate(row.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="min-w-0">
                       <Link
                         href={`/app/customers/${row.id}`}
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors touch-manipulation"
+                        className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors truncate block"
                       >
-                        <Eye className="size-3.5" />
-                        Görüntüle
+                        {nameFor(row)}
                       </Link>
-                      <Link
-                        href={`/app/customers/${row.id}?edit=1`}
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-                      >
-                        <Pencil className="size-3.5" />
-                        Düzenle
-                      </Link>
-                      {onDelete ? (
-                        isConfirming ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onDelete(row.id, nameFor(row))
-                              setConfirmingId(null)
-                            }}
-                            className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition-colors touch-manipulation"
-                          >
-                            Onayla
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmingId(row.id)}
-                            className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors touch-manipulation"
-                          >
-                            Sil
-                          </button>
-                        )
+                      {row.email ? (
+                        <div className="text-xs text-slate-500 truncate">{row.email}</div>
                       ) : null}
                     </div>
-                  </td>
-                </tr>
-              )
-            })}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                  <a
+                    href={`tel:${row.phone}`}
+                    className="inline-flex items-center gap-1.5 hover:text-blue-600"
+                  >
+                    <Phone className="size-3.5 text-slate-400" />
+                    {row.phone}
+                  </a>
+                </td>
+                <td className="px-4 py-3">
+                  <CustomerTypeBadge type={row.type} />
+                </td>
+                <td className="px-4 py-3">
+                  <CustomerTagBadge tag={row.tag} />
+                </td>
+                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.vehiclesCount}</td>
+                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.workOrdersCount}</td>
+                <td className="px-4 py-3 text-right font-semibold text-slate-900 tabular-nums">
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                  {formatDate(row.createdAt)}
+                </td>
+                <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                  <div className="flex items-center justify-end">
+                    <ActionsMenu
+                      viewHref={`/app/customers/${row.id}`}
+                      editHref={`/app/customers/${row.id}?edit=1`}
+                      workOrderHref={`/app/orders/new?customerId=${row.id}`}
+                      appointmentHref={`/app/appointments/new?customerId=${row.id}`}
+                      onArchive={onDelete ? () => onDelete(row.id, nameFor(row)) : undefined}
+                      archiveLabel="Sil"
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -355,57 +353,58 @@ function DesktopTable({
   )
 }
 
-function MobileCards({ rows }: { rows: CustomerRow[] }) {
+function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, label: string) => void }) {
+
   return (
     <div className="lg:hidden space-y-2.5">
       {rows.map((row) => (
-        <Link
+        <div
           key={row.id}
-          href={`/app/customers/${row.id}`}
-          className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation hover:border-slate-300 transition-colors"
+          className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
         >
-          <div className="flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
-              {row.type === "corporate" ? (
-                <Building2 className="size-4" />
-              ) : (
-                initialsFor(row)
-              )}
-            </div>
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-slate-900 truncate">
-                  {nameFor(row)}
-                </p>
-                <CustomerTypeBadge type={row.type} />
-                {row.tag && row.tag !== "standard" ? <CustomerTagBadge tag={row.tag} /> : null}
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
+                  {row.type === "corporate" ? (
+                    <Building2 className="size-4" />
+                  ) : (
+                    initialsFor(row)
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <Link
+                    href={`/app/customers/${row.id}`}
+                    className="text-sm font-semibold text-slate-900 truncate block hover:text-blue-600 transition-colors"
+                  >
+                    {nameFor(row)}
+                  </Link>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CustomerTypeBadge type={row.type} />
+                    {row.tag && row.tag !== "standard" ? <CustomerTagBadge tag={row.tag} /> : null}
+                  </div>
+                </div>
               </div>
-              <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    window.location.href = `tel:${row.phone}`
-                  }}
-                  className="inline-flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+              <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                <a
+                  href={`tel:${row.phone}`}
+                  className="inline-flex items-center gap-1 hover:text-blue-600"
                 >
                   <Phone className="size-3" />
                   {row.phone}
-                </button>
-                {row.email ? (
-                  <span className="inline-flex items-center gap-1 truncate">
-                    <Mail className="size-3" />
-                    {row.email}
-                  </span>
-                ) : null}
+                </a>
               </div>
             </div>
-            <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
+            <MobileActionsMenu
+              viewHref={`/app/customers/${row.id}`}
+              editHref={`/app/customers/${row.id}?edit=1`}
+              workOrderHref={`/app/orders/new?customerId=${row.id}`}
+              appointmentHref={`/app/appointments/new?customerId=${row.id}`}
+            />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
             <div className="rounded-lg bg-slate-50 px-2 py-1.5">
               <p className="text-slate-500 flex items-center gap-1">
-                <CarIcon className="size-3" />
                 Araç
               </p>
               <p className="text-sm font-semibold text-slate-900 tabular-nums">
@@ -413,25 +412,19 @@ function MobileCards({ rows }: { rows: CustomerRow[] }) {
               </p>
             </div>
             <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-              <p className="text-slate-500 flex items-center gap-1">
-                <Wrench className="size-3" />
-                İş Emri
-              </p>
+              <p className="text-slate-500">İş Emri</p>
               <p className="text-sm font-semibold text-slate-900 tabular-nums">
                 {row.workOrdersCount}
               </p>
             </div>
             <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-              <p className="text-slate-500 flex items-center gap-1">
-                <CalendarClock className="size-3" />
-                Toplam
-              </p>
+              <p className="text-slate-500">Toplam</p>
               <p className="text-sm font-semibold text-slate-900 truncate">
                 {row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"}
               </p>
             </div>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   )

@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Car, Search, Eye, Plus, X, Filter, ChevronRight, Calendar, Gauge } from "lucide-react"
-import { PlateBadge } from "@/components/app/plate-badge"
+import { Car, Search, X, Filter, Calendar, Gauge, Plus } from "lucide-react"
+import { PlateBadge } from "@/components/app/status-badge"
+import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
 import { Input } from "@/components/ui/input"
 import { formatDate } from "@/lib/utils-client"
 import { VEHICLE_TYPES } from "@/lib/constants"
@@ -25,6 +26,15 @@ export type VehicleRow = {
   }
   workOrdersCount: number
   lastServiceDate: string | null
+  hasExpiringDocs?: boolean
+  hasServiceDue?: boolean
+}
+
+type VehicleKpis = {
+  total: number
+  active: number
+  documentsExpiring: number
+  serviceDue: number
 }
 
 type Filters = {
@@ -37,17 +47,18 @@ export function VehicleList({
   vehicles,
   brands,
   initialFilters,
+  kpis,
   onDelete,
 }: {
   vehicles: VehicleRow[]
   brands: string[]
   initialFilters: Filters
+  kpis?: VehicleKpis
   onDelete?: (id: string, label: string) => void
 }) {
   const [q, setQ] = useState(initialFilters.q)
   const [vehicleType, setVehicleType] = useState(initialFilters.vehicleType)
   const [brand, setBrand] = useState(initialFilters.brand)
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     return vehicles.filter((row) => {
@@ -75,6 +86,53 @@ export function VehicleList({
 
   return (
     <div className="space-y-4">
+      {kpis && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Toplam</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-slate-50 text-slate-600 border-slate-200">
+                {kpis.total}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.total}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Aktif</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                {kpis.active}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.active}</p>
+          </div>
+          {/* TODO: Enable when documents/muayene tracking is implemented */}
+          {kpis.documentsExpiring > 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Belge Bitiyor</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-amber-50 text-amber-700 border-amber-200">
+                {kpis.documentsExpiring}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.documentsExpiring}</p>
+          </div>
+          )}
+          {/* TODO: Enable when maintenance reminders are linked to vehicles */}
+          {kpis.serviceDue > 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Bakım Gerekli</span>
+              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-rose-50 text-rose-700 border-rose-200">
+                {kpis.serviceDue}
+              </span>
+            </div>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{kpis.serviceDue}</p>
+          </div>
+          )}
+        </div>
+      )}
+
       <form
         action="/app/vehicles"
         method="get"
@@ -157,11 +215,9 @@ export function VehicleList({
         <>
           <DesktopTable
             rows={filtered}
-            confirmingId={confirmingId}
-            setConfirmingId={setConfirmingId}
             onDelete={onDelete}
           />
-          <MobileCards rows={filtered} onDelete={onDelete} />
+          <MobileCards rows={filtered} />
         </>
       )}
     </div>
@@ -193,20 +249,17 @@ function EmptyState({ hasFilter }: { hasFilter: boolean }) {
 
 function DesktopTable({
   rows,
-  confirmingId,
-  setConfirmingId,
-  onDelete,
 }: {
   rows: VehicleRow[]
-  confirmingId: string | null
-  setConfirmingId: (id: string | null) => void
+  confirmingId?: string | null
+  setConfirmingId?: (id: string | null) => void
   onDelete?: (id: string, label: string) => void
 }) {
   return (
     <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
             <tr>
               <th className="px-4 py-3 text-left font-semibold">Plaka</th>
               <th className="px-4 py-3 text-left font-semibold">Araç</th>
@@ -215,106 +268,77 @@ function DesktopTable({
               <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
               <th className="px-4 py-3 text-left font-semibold">Son İşlem</th>
               <th className="px-4 py-3 text-left font-semibold">Kayıt Tarihi</th>
-              <th className="px-4 py-3 text-right font-semibold">İşlem</th>
+              <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => {
-              const isConfirming = confirmingId === row.id
-              return (
-                <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3">
+            {rows.map((row) => (
+              <tr key={row.id} className="hover:bg-slate-50/60 transition-colors group">
+                <td className="px-4 py-3">
+                  <Link href={`/app/vehicles/${row.id}`}>
                     <PlateBadge plate={row.plate} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-slate-900 truncate max-w-[180px]">
-                        {row.brand} {row.model}
-                      </span>
-                      {row.modelYear ? (
-                        <span className="text-xs text-slate-500">{row.modelYear}</span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/app/customers/${row.customer.id}`}
-                      className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
-                    >
-                      {row.customer.displayName}
-                    </Link>
-                    <div className="text-xs text-slate-500">{row.customer.phone}</div>
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
-                    {row.mileage ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Gauge className="size-3.5 text-slate-400" />
-                        {row.mileage.toLocaleString("tr-TR")} km
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    <span className={row.workOrdersCount > 0 ? "text-slate-700 font-medium" : "text-slate-400"}>
-                      {row.workOrdersCount}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-slate-900 truncate max-w-[180px]">
+                      {row.brand} {row.model}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
-                    {row.lastServiceDate ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="size-3 text-slate-400" />
-                        {formatDate(row.lastServiceDate)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
-                    {formatDate(row.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link
-                        href={`/app/vehicles/${row.id}`}
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-                      >
-                        <Eye className="size-3.5" />
-                        Görüntüle
-                      </Link>
-                      <Link
-                        href={`/app/vehicles/${row.id}/edit`}
-                        className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors touch-manipulation"
-                      >
-                        Düzenle
-                      </Link>
-                      {onDelete ? (
-                        isConfirming ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onDelete(row.id, `${row.plate} ${row.brand} ${row.model}`)
-                              setConfirmingId(null)
-                            }}
-                            className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition-colors touch-manipulation"
-                          >
-                            Onayla
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmingId(row.id)}
-                            className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors touch-manipulation"
-                          >
-                            Sil
-                          </button>
-                        )
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
+                    {row.modelYear ? (
+                      <span className="text-xs text-slate-500">{row.modelYear}</span>
+                    ) : null}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/app/customers/${row.customer.id}`}
+                    className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+                  >
+                    {row.customer.displayName}
+                  </Link>
+                  <div className="text-xs text-slate-500">{row.customer.phone}</div>
+                </td>
+                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
+                  {row.mileage ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Gauge className="size-3.5 text-slate-400" />
+                      {row.mileage.toLocaleString("tr-TR")} km
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums">
+                  <span className={row.workOrdersCount > 0 ? "text-slate-700 font-medium" : "text-slate-400"}>
+                    {row.workOrdersCount}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                  {row.lastServiceDate ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="size-3 text-slate-400" />
+                      {formatDate(row.lastServiceDate)}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                  {formatDate(row.createdAt)}
+                </td>
+                <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                  <div className="flex items-center justify-end">
+                    <ActionsMenu
+                      viewHref={`/app/vehicles/${row.id}`}
+                      editHref={`/app/vehicles/${row.id}/edit`}
+                      workOrderHref={`/app/orders/new?vehicleId=${row.id}`}
+                      appointmentHref={`/app/appointments/new?vehicleId=${row.id}`}
+                      passportHref={`/app/vehicles/${row.id}/passport`}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -324,12 +348,10 @@ function DesktopTable({
 
 function MobileCards({
   rows,
-  onDelete,
 }: {
   rows: VehicleRow[]
   onDelete?: (id: string, label: string) => void
 }) {
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   return (
     <div className="lg:hidden space-y-2.5">
@@ -338,27 +360,30 @@ function MobileCards({
           key={row.id}
           className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
         >
-          <Link href={`/app/vehicles/${row.id}`} className="block">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <Link href={`/app/vehicles/${row.id}`}>
                 <PlateBadge plate={row.plate} />
-                <p className="mt-1.5 text-sm font-semibold text-slate-900 truncate">
-                  {row.brand} {row.model}
-                  {row.modelYear ? ` (${row.modelYear})` : ""}
-                </p>
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    window.location.href = `/app/customers/${row.customer.id}`
-                  }}
-                  className="text-xs text-slate-500 hover:text-blue-600 cursor-pointer"
-                >
-                  {row.customer.displayName}
-                </span>
-              </div>
-              <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
+              </Link>
+              <p className="mt-1.5 text-sm font-semibold text-slate-900 truncate">
+                {row.brand} {row.model}
+                {row.modelYear ? ` (${row.modelYear})` : ""}
+              </p>
+              <Link
+                href={`/app/customers/${row.customer.id}`}
+                className="text-xs text-slate-500 hover:text-blue-600 cursor-pointer"
+              >
+                {row.customer.displayName}
+              </Link>
             </div>
-          </Link>
+            <MobileActionsMenu
+              viewHref={`/app/vehicles/${row.id}`}
+              editHref={`/app/vehicles/${row.id}/edit`}
+              workOrderHref={`/app/orders/new?vehicleId=${row.id}`}
+              appointmentHref={`/app/appointments/new?vehicleId=${row.id}`}
+              passportHref={`/app/vehicles/${row.id}/passport`}
+            />
+          </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
             <div className="rounded-lg bg-slate-50 px-2 py-1.5">
               <p className="text-slate-500">Kilometre</p>
@@ -378,50 +403,6 @@ function MobileCards({
                 {row.lastServiceDate ? formatDate(row.lastServiceDate) : "—"}
               </p>
             </div>
-          </div>
-          <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-            <Link
-              href={`/app/vehicles/${row.id}`}
-              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-            >
-              <Eye className="size-3.5" />
-              Görüntüle
-            </Link>
-            <Link
-              href={`/app/vehicles/${row.id}/edit`}
-              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors touch-manipulation"
-            >
-              Düzenle
-            </Link>
-            <Link
-              href={`/app/intakes/new?vehicleId=${row.id}`}
-              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors touch-manipulation"
-            >
-              <Plus className="size-3" />
-              Kabul
-            </Link>
-            {onDelete ? (
-              confirmingId === row.id ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDelete(row.id, `${row.plate} ${row.brand} ${row.model}`)
-                    setConfirmingId(null)
-                  }}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 transition-colors touch-manipulation"
-                >
-                  Onayla
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmingId(row.id)}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors touch-manipulation"
-                >
-                  Sil
-                </button>
-              )
-            ) : null}
           </div>
         </div>
       ))}
