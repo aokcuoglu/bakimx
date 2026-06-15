@@ -1,7 +1,6 @@
 export type { StorageProvider, StorageUploadResult, UploadValidation } from "./types"
 export { getStorageProvider, resetStorageProvider } from "./storage-provider"
 export { getMockStorageProvider, MockStorageProvider } from "./mock-storage-provider"
-export { SupabaseStorageProvider } from "./supabase-storage-provider"
 export { S3StorageProvider } from "./s3-storage-provider"
 export {
   validateUploadFile,
