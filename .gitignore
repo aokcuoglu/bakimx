@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# docker / infra
+.env.production
+pgdata/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
