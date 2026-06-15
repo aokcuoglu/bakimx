@@ -1,11 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Eye, ChevronRight } from "lucide-react"
 import { QuoteStatusBadge } from "@/components/app/quote-status-badge"
 import { PlateBadge } from "@/components/app/status-badge"
-import { formatTRY } from "@/lib/format"
-import { customerDisplayName } from "@/lib/format"
+import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
+import { formatTRY, customerDisplayName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type QuoteRow = {
@@ -69,9 +68,9 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
       </div>
 
       <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Teklif No</th>
                 <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
@@ -80,23 +79,35 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 <th className="px-4 py-3 text-right font-semibold">Tahmini Tutar</th>
                 <th className="px-4 py-3 text-left font-semibold">Geçerlilik Tarihi</th>
                 <th className="px-4 py-3 text-left font-semibold">Oluşturma Tarihi</th>
-                <th className="px-4 py-3 text-right font-semibold">İşlem</th>
+                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {quotes.map((quote) => (
-                <tr key={quote.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">
-                    {quote.quoteNo}
+                <tr key={quote.id} className="hover:bg-slate-50/60 transition-colors group">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/app/quotes/${quote.id}`}
+                      className="font-mono text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                    >
+                      {quote.quoteNo}
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-slate-900 font-medium">{customerDisplayName(quote.customer)}</div>
+                    <Link
+                      href={`/app/customers/${quote.customer.id}`}
+                      className="text-slate-900 font-medium hover:text-blue-600 transition-colors"
+                    >
+                      {customerDisplayName(quote.customer)}
+                    </Link>
                     <div className="text-xs text-slate-500">{quote.customer.phone}</div>
                   </td>
                   <td className="px-4 py-3">
                     {quote.vehicle ? (
                       <div className="flex flex-col gap-1.5">
-                        <PlateBadge plate={quote.vehicle.plate} />
+                        <Link href={`/app/vehicles/${quote.vehicle.id}`}>
+                          <PlateBadge plate={quote.vehicle.plate} />
+                        </Link>
                         <span className="text-xs text-slate-500">{quote.vehicle.brand} {quote.vehicle.model}</span>
                       </div>
                     ) : (
@@ -115,15 +126,16 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                   <td className="px-4 py-3 text-xs text-slate-500">
                     {formatDate(quote.createdAt)}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link
-                        href={`/app/quotes/${quote.id}`}
-                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-                      >
-                        <Eye className="size-3.5" />
-                        Görüntüle
-                      </Link>
+                  <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                    <div className="flex items-center justify-end">
+                      <ActionsMenu
+                        viewHref={`/app/quotes/${quote.id}`}
+                        editHref={`/app/quotes/${quote.id}?edit=1`}
+                        workOrderHref={quote.vehicle
+                          ? `/app/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                          : `/app/orders/new?customerId=${quote.customer.id}`
+                        }
+                      />
                     </div>
                   </td>
                 </tr>
@@ -135,27 +147,45 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
 
       <div className="lg:hidden space-y-2.5">
         {quotes.map((quote) => (
-          <Link
+          <div
             key={quote.id}
-            href={`/app/quotes/${quote.id}`}
-            className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation hover:border-slate-300 transition-colors"
+            className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-xs font-semibold text-slate-500">{quote.quoteNo}</span>
-                  {quote.vehicle && <PlateBadge plate={quote.vehicle.plate} />}
+                  <Link
+                    href={`/app/quotes/${quote.id}`}
+                    className="font-mono text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+                  >
+                    {quote.quoteNo}
+                  </Link>
+                  {quote.vehicle && (
+                    <Link href={`/app/vehicles/${quote.vehicle.id}`}>
+                      <PlateBadge plate={quote.vehicle.plate} />
+                    </Link>
+                  )}
                 </div>
-                <p className="mt-1.5 text-sm font-semibold text-slate-900 truncate">
+                <Link
+                  href={`/app/customers/${quote.customer.id}`}
+                  className="mt-1.5 text-sm font-semibold text-slate-900 truncate block hover:text-blue-600 transition-colors"
+                >
                   {customerDisplayName(quote.customer)}
-                </p>
+                </Link>
                 {quote.vehicle && (
                   <p className="text-xs text-slate-500 truncate">
                     {quote.vehicle.brand} {quote.vehicle.model}
                   </p>
                 )}
               </div>
-              <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
+              <MobileActionsMenu
+                viewHref={`/app/quotes/${quote.id}`}
+                editHref={`/app/quotes/${quote.id}?edit=1`}
+                workOrderHref={quote.vehicle
+                  ? `/app/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                  : `/app/orders/new?customerId=${quote.customer.id}`
+                }
+              />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <QuoteStatusBadge status={quote.status} />
@@ -172,7 +202,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 {quote.grandTotal != null ? formatTRY(quote.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
               </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

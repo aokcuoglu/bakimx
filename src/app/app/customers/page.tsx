@@ -83,6 +83,22 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     }
   })
 
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const newThisMonth = customers.filter((c) => c.createdAt >= monthStart).length
+  const returning = customers.filter((c) => {
+    const orders = c.intakes
+      .map((i) => i.order)
+      .filter((o): o is NonNullable<typeof o> => o != null)
+    return orders.length > 1
+  }).length
+
+  const customerKpis = {
+    total: customers.length,
+    newThisMonth,
+    returning,
+  }
+
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Müşteriler">
       <div className="space-y-5 sm:space-y-6">
@@ -133,6 +149,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         <CustomerListWithDelete
           customers={rows}
           initialFilters={{ q, type: type as "" | "individual" | "corporate", tag, source }}
+          kpis={customerKpis}
         />
       </div>
     </AppShell>

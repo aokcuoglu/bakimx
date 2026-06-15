@@ -9,6 +9,7 @@ import { deleteCustomerAction } from "@/app/app/customers/actions"
 export function CustomerListWithDelete({
   customers,
   initialFilters,
+  kpis,
 }: {
   customers: CustomerRow[]
   initialFilters: {
@@ -17,6 +18,7 @@ export function CustomerListWithDelete({
     tag: string
     source: string
   }
+  kpis?: { total: number; newThisMonth: number; returning: number }
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -50,6 +52,7 @@ export function CustomerListWithDelete({
           tag: initialFilters.tag ?? "",
           source: initialFilters.source ?? "",
         }}
+        kpis={kpis}
         onDelete={onDelete}
       />
       {pending ? (

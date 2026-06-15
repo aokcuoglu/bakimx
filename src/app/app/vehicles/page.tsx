@@ -41,7 +41,7 @@ export default async function VehiclesPage({
     include: {
       customer: true,
       intakes: {
-        include: { order: { select: { id: true } } },
+        include: { order: { select: { id: true, status: true } } },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -49,6 +49,17 @@ export default async function VehiclesPage({
   })
 
   const brands = [...new Set(vehicles.map((v) => v.brand).filter(Boolean))].sort()
+
+  const activeVehicleCount = vehicles.filter((v) =>
+    v.intakes.some((i) => i.order && !["delivered", "cancelled"].includes(i.order.status))
+  ).length
+
+  const vehicleKpis = {
+    total: vehicles.length,
+    active: activeVehicleCount,
+    documentsExpiring: 0,
+    serviceDue: 0,
+  }
 
   const serialized = vehicles.map((v) => ({
     id: v.id,
@@ -125,6 +136,7 @@ export default async function VehiclesPage({
           vehicles={serialized}
           brands={brands}
           initialFilters={{ q, vehicleType, brand }}
+          kpis={vehicleKpis}
           onDelete={deleteVehicleAction}
         />
       </div>
