@@ -495,7 +495,6 @@ export function SmartCaptureRegistration() {
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-              capture="environment"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]
