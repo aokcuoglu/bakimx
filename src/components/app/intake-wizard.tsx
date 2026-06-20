@@ -319,7 +319,18 @@ export function IntakeWizard({
                 <Label>Mevcut Müşteri</Label>
                 <Select value={selectedCustomerId} onValueChange={(v) => setSelectedCustomerId(v || "")}>
                   <SelectTrigger className="w-full h-12 text-base">
-                    <SelectValue placeholder="Müşteri seçiniz..." />
+                    <SelectValue placeholder="Müşteri seçiniz...">
+                      {(value: string | null) => {
+                        if (!value) return null
+                        const c = customers.find((x) => x.id === value)
+                        if (!c) return value
+                        const name =
+                          c.type === "corporate"
+                            ? c.companyName || "Kurumsal Müşteri"
+                            : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
+                        return `${name} - ${c.phone}`
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((c) => (

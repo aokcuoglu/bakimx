@@ -7,8 +7,8 @@ Oto servisler için dijital araç kabul, hasar kaydı, müşteri onayı ve iş e
 ## Hızlı Başlangıç
 
 ### Gereksinimler
-- Node.js 18+ veya Bun
-- PostgreSQL veritabanı (geliştirme için)
+- Bun (veya Node.js 18+)
+- OrbStack veya Docker Desktop (PostgreSQL + MinIO için)
 
 ### Kurulum
 
@@ -20,15 +20,22 @@ cd bakimx
 # Bağımlılıkları yükleyin
 bun install
 
-# .env dosyasını oluşturun
-cp .env.example .env
-# .env dosyasını düzenleyin: DATABASE_URL, SESSION_SECRET
+# Yerel altyapıyı başlatın (PostgreSQL + MinIO)
+docker compose -f docker-compose.local.yml up -d
+
+# .env.local dosyasını oluşturun
+cp .env.example .env.local
+# .env.local dosyasını düzenleyin — yerel geliştirme için varsayılanlar:
+#   DATABASE_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
+#   STORAGE_PROVIDER=s3
+#   S3_ENDPOINT=http://localhost:9000
+#   S3_ACCESS_KEY_ID=bakimx
+#   S3_SECRET_ACCESS_KEY=bakimx-dev-secret
+#   S3_BUCKET=bakimx-media
+#   S3_FORCE_PATH_STYLE=true
 
 # Veritabanını hazırlayın
-bunx prisma db push
-bunx prisma generate
-
-# Demo verileri ekleyin (isteğe bağlı)
+bun run db:push
 bun run db:seed
 
 # Geliştirme sunucusunu başlatın
@@ -36,7 +43,30 @@ bun run dev
 # http://localhost:3000
 ```
 
-**Önemli:** Bu projede Docker kullanılmamaktadır. Lokal geliştirme bun/npm ile yapılır.
+**Mimari:** Uygulama host üzerinde `bun run dev` ile çalışır. PostgreSQL ve MinIO (S3-compatible storage) OrbStack/Docker içinde `docker-compose.local.yml` ile koşar.
+
+**MinIO Console:** http://localhost:9001 (bakimx / bakimx-dev-secret)
+
+### Yerel Altyapı Komutları
+
+```bash
+# Servisleri başlat (PostgreSQL + MinIO)
+docker compose -f docker-compose.local.yml up -d
+
+# Servisleri durdur
+docker compose -f docker-compose.local.yml down
+
+# Veritabanı + Storage'ı sıfırla (tüm veriler silinir)
+docker compose -f docker-compose.local.yml down -v
+docker compose -f docker-compose.local.yml up -d
+bun run db:push && bun run db:seed
+```
+
+| Servis | Port | Erişim |
+|--------|------|--------|
+| PostgreSQL | 5432 | `postgresql://bakimx:bakimx@localhost:5432/bakimx` |
+| MinIO API | 9000 | S3-compatible endpoint |
+| MinIO Console | 9001 | http://localhost:9001 (bakimx / bakimx-dev-secret) |
 
 ### Demo Giriş Bilgileri
 - **E-posta:** `demo@bakimx.com`
@@ -60,10 +90,21 @@ bun run dev
 
 ### Ortam Değişkenleri
 
+#### Lokal Geliştirme (Varsayılanlar)
+
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/bakimx"
+DATABASE_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
+DIRECT_URL="postgresql://bakimx:bakimx@localhost:5432/bakimx"
 SESSION_SECRET="rastgele-32-karakter"
 APP_URL="http://localhost:3000"
+
+STORAGE_PROVIDER=s3
+S3_ENDPOINT=http://localhost:9000
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=bakimx
+S3_SECRET_ACCESS_KEY=bakimx-dev-secret
+S3_BUCKET=bakimx-media
+S3_FORCE_PATH_STYLE=true
 ```
 
 #### DATABASE_URL Davranışı
@@ -74,21 +115,26 @@ APP_URL="http://localhost:3000"
 #### Depolama (Storage) Ortam Değişkenleri
 
 ```env
-# Varsayılan: mock (dosyalar bellekte tutulur, yeniden başlatmada kaybolur)
-STORAGE_PROVIDER=mock
+# Yerel geliştirme: MinIO (S3-compatible) — docker-compose.local.yml ile otomatik başlar
+STORAGE_PROVIDER=s3
+S3_ENDPOINT=http://localhost:9000
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=bakimx
+S3_SECRET_ACCESS_KEY=bakimx-dev-secret
+S3_BUCKET=bakimx-media
+S3_FORCE_PATH_STYLE=true
 
-# Supabase Storage (STORAGE_PROVIDER=supabase iken gerekli)
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-# SUPABASE_STORAGE_BUCKET=bakimx-media
+# Alternatif: mock (dosyalar bellekte tutulur, yeniden başlatmada kaybolur)
+# STORAGE_PROVIDER=mock
 
-# S3-compatible (henüz uygulanmadı — placeholder)
-# S3_ENDPOINT=https://s3.amazonaws.com
-# S3_REGION=us-east-1
-# S3_ACCESS_KEY_ID=your-access-key
-# S3_SECRET_ACCESS_KEY=your-secret-key
+# Üretim: Cloudflare R2 (STORAGE_PROVIDER=s3)
+# S3_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+# S3_REGION=auto
+# S3_ACCESS_KEY_ID=your-r2-access-key-id
+# S3_SECRET_ACCESS_KEY=your-r2-secret-access-key
 # S3_BUCKET=bakimx-media
-# S3_FORCE_PATH_STYLE=false
+# S3_FORCE_PATH_STYLE=true
+# S3_PUBLIC_DOMAIN=pub-YOUR_HASH.r2.dev
 ```
 
 ### OCR Ortam Değişkenleri
@@ -237,11 +283,10 @@ CALENDAR_PROVIDER=mock
 - `OPENAI_API_KEY` ve `DEEPSEEK_API_KEY` OCR sağlayıcısı ile paylaşımlıdır
 
 **Depolama davranışı:**
-- `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Geliştirme için uygundur.
-- `STORAGE_PROVIDER=supabase`: Dosyalar Supabase Storage'a yüklenir. `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` zorunludur.
-- `STORAGE_PROVIDER=s3`: Henüz uygulanmamıştır. Seçildiğinde açık hata mesajı gösterilir.
-- Depolama ortam değişkenleri olmadan build ve运行 çalışır.
-- `SUPABASE_SERVICE_ROLE_KEY` asla tarayıcıya açıklanmaz. Tüm yükleme işlemleri sunucu taraflı yapılır.
+- `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Hızlı geliştirme için uygundur.
+- `STORAGE_PROVIDER=s3`: MinIO (lokal) veya Cloudflare R2 (üretim) ile S3-compatible depolama. `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` zorunludur. Lokal geliştirme için `docker-compose.local.yml` ile MinIO otomatik başlar.
+- Depolama ortam değişkenleri olmadan build çalışır.
+- Tüm yükleme işlemleri sunucu taraflı yapılır; erişim presigned URL ile sağlanır.
 
 **Dosya kısıtlamaları:**
 - İzin verilen MIME tipleri: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `image/heif`
@@ -260,7 +305,7 @@ CALENDAR_PROVIDER=mock
 - **Veritabanı:** PostgreSQL
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4
-- **Depolama:** Mock / Supabase Storage / S3 (placeholder)
+- **Depolama:** Mock / S3-compatible (MinIO local / Cloudflare R2 production)
 - **OCR:** Tesseract + DeepSeek / OpenAI vision / Tesseract-only / Mock demo sağlayıcısı
 - **AI Danışman:** Mock / OpenAI / DeepSeek servis danışmanı
 - **Animasyon:** Framer Motion
