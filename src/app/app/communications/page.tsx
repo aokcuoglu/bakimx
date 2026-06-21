@@ -5,7 +5,7 @@ import { getCommunicationLogs, getCommunicationStats } from "./actions"
 import Link from "next/link"
 
 export default async function CommunicationsPage() {
-  const { user, workshop } = await getAppData()
+  const { workshop } = await getAppData()
 
   if (!workshop) {
     return (
@@ -18,8 +18,8 @@ export default async function CommunicationsPage() {
   }
 
   const [logs, stats] = await Promise.all([
-    getCommunicationLogs(user.workshopId),
-    getCommunicationStats(user.workshopId),
+    getCommunicationLogs(),
+    getCommunicationStats(),
   ])
 
   return (

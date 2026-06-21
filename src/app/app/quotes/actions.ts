@@ -55,7 +55,12 @@ export async function createQuoteAction(formData: FormData) {
 
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
-    const items = JSON.parse(itemsJson) as Array<Record<string, unknown>>
+    let items: Array<Record<string, unknown>>
+    try {
+      items = JSON.parse(itemsJson) as Array<Record<string, unknown>>
+    } catch {
+      return { error: "Teklif kalemleri geçersiz" }
+    }
     for (const item of items) {
       const parsedItem = quoteItemSchema.safeParse(item)
       if (parsedItem.success) {

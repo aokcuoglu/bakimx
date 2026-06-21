@@ -4,7 +4,7 @@ import { getCommunicationLogs, getCommunicationStats } from "@/app/app/communica
 
 export async function GET(request: Request) {
   try {
-    const user = await requireAuth()
+    await requireAuth()
     const { searchParams } = new URL(request.url)
 
     const type = searchParams.get("type") || undefined
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || undefined
 
     const [logs, stats] = await Promise.all([
-      getCommunicationLogs(user.workshopId, { type, status, search }),
-      getCommunicationStats(user.workshopId),
+      getCommunicationLogs({ type, status, search }),
+      getCommunicationStats(),
     ])
 
     return NextResponse.json({ logs, stats })

@@ -59,8 +59,8 @@ export default async function PartsPage(props: {
 
   const [kpis, brands, categories] = await Promise.all([
     getPartKPIs(user.workshopId),
-    getUniqueBrandsAction(user.workshopId),
-    getUniqueCategoriesAction(user.workshopId),
+    getUniqueBrandsAction(),
+    getUniqueCategoriesAction(),
   ])
 
   const serialized = parts.map((p) => ({

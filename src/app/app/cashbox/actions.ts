@@ -186,7 +186,9 @@ async function updateOrderPaymentStatus(serviceOrderId: string, workshopId: stri
   }
 }
 
-export async function getCustomerOrdersForPayment(workshopId: string, customerId: string) {
+export async function getCustomerOrdersForPayment(customerId: string) {
+  const { requireAuth } = await import("@/lib/auth")
+  const { workshopId } = await requireAuth()
   const intakes = await prisma.vehicleIntakeForm.findMany({
     where: { customerId, workshopId },
     include: {

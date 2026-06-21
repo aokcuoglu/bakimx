@@ -295,9 +295,9 @@ export type CustomerListFilter = {
 }
 
 export async function listCustomersForWorkshop(
-  workshopId: string,
   filter: CustomerListFilter
 ) {
+  const { workshopId } = await requireAuth()
   const where: Prisma.CustomerWhereInput = { workshopId }
   if (filter.q && filter.q.trim()) {
     const q = filter.q.trim()
