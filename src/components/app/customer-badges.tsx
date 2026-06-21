@@ -12,7 +12,7 @@ export function CustomerTypeBadge({ type, className }: { type: string; className
   const info = CUSTOMER_TYPES[type as CustomerTypeKey]
   if (!info) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-slate-50 text-slate-600 border-slate-200 text-xs font-medium", className)}>
+      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-xs font-medium", className)}>
       —
     </span>
     )
@@ -27,7 +27,7 @@ export function CustomerTypeBadge({ type, className }: { type: string; className
 export function CustomerTagBadge({ tag, className }: { tag: string | null | undefined; className?: string }) {
   if (!tag) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-slate-50 text-slate-400 border-slate-200 text-[11px] font-medium", className)}>
+      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground/70 border-border text-[11px] font-medium", className)}>
         —
       </span>
     )
@@ -35,7 +35,7 @@ export function CustomerTagBadge({ tag, className }: { tag: string | null | unde
   const info = CUSTOMER_TAGS[tag as CustomerTagKey]
   if (!info) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-slate-50 text-slate-500 border-slate-200 text-[11px] font-medium", className)}>
+      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-[11px] font-medium", className)}>
         {tag}
       </span>
     )

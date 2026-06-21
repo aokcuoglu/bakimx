@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import type { TemplateChannel } from "@/lib/communications/templates"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 
 type TemplateData = {
   key: string
@@ -25,9 +27,9 @@ const CHANNEL_LABELS: Record<TemplateChannel, string> = {
 }
 
 const CHANNEL_COLORS: Record<TemplateChannel, string> = {
-  sms: "bg-green-50 text-green-700 border-green-200",
-  whatsapp: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  email: "bg-blue-50 text-blue-700 border-blue-200",
+  sms: "bg-success/10 text-foreground border-success/20",
+  whatsapp: "bg-success/10 text-foreground border-success/20",
+  email: "bg-primary/10 text-foreground border-primary/20",
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -102,42 +104,42 @@ export function NotificationSettings({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-3">Aktif Sağlayıcılar</h3>
+      <div className="bg-white rounded-lg border border-border p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Aktif Sağlayıcılar</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {(["sms", "whatsapp", "email"] as const).map((ch) => (
-            <div key={ch} className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <div key={ch} className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border">
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[ch as TemplateChannel]}`}>
                 {CHANNEL_LABELS[ch as TemplateChannel]}
               </span>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 {PROVIDER_LABELS[providers[ch]] || providers[ch]}
               </span>
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-muted-foreground/70 mt-2">
           Sağlayıcılar ortam değişkenleri ile yapılandırılır. Varsayılan: mock (test modu)
         </p>
       </div>
 
       {message && (
-        <div className={`rounded-lg px-4 py-2.5 text-sm ${message.type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+        <div className={`rounded-lg px-4 py-2.5 text-sm ${message.type === "success" ? "bg-success/10 text-foreground border border-success/20" : "bg-destructive/10 text-foreground border border-destructive/20"}`}>
           {message.text}
         </div>
       )}
 
       <div className="space-y-3">
         {templates.map((template) => (
-          <div key={template.key} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div key={template.key} className="bg-white rounded-lg border border-border overflow-hidden">
             <button
               type="button"
               onClick={() => setExpandedKey(expandedKey === template.key ? null : template.key)}
-              className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted transition-colors"
             >
               <div className="text-left">
-                <h3 className="text-sm font-semibold text-slate-900">{template.label}</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{template.description}</p>
+                <h3 className="text-sm font-semibold text-foreground">{template.label}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
@@ -150,12 +152,12 @@ export function NotificationSettings({
                     </span>
                   ))}
                 </div>
-                <svg className={`size-4 text-slate-400 transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                <svg className={`size-4 text-muted-foreground/70 transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
             </button>
 
             {expandedKey === template.key && (
-              <div className="border-t border-slate-100 px-5 py-4 space-y-4">
+              <div className="border-t border-border px-5 py-4 space-y-4">
                 {template.channels.map((ch) => {
                   const savedContent = template.savedTemplates[ch]?.content
                   const defaultContent = template.defaults[ch]
@@ -173,7 +175,7 @@ export function NotificationSettings({
                               type="button"
                               onClick={() => handleReset(template.key, ch)}
                               disabled={saving}
-                              className="text-xs text-slate-500 hover:text-rose-600 transition-colors disabled:opacity-50"
+                              className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                             >
                               Varsayılana Sıfırla
                             </button>
@@ -182,7 +184,7 @@ export function NotificationSettings({
                             <button
                               type="button"
                               onClick={() => startEdit(template.key, ch)}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                             >
                               Düzenle
                             </button>
@@ -192,40 +194,41 @@ export function NotificationSettings({
 
                       {isEditing ? (
                         <div className="space-y-2">
-                          <textarea
+                          <Textarea
                             value={editContent}
                             onChange={(e) => setEditContent(e.target.value)}
                             rows={ch === "email" ? 8 : 3}
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                            className="bg-muted font-mono border-border focus-visible:border-primary focus-visible:ring-primary/30"
                           />
                           <div className="flex gap-2">
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleSave(template.key, ch)}
                               disabled={saving || !editContent.trim()}
-                              className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                              size="sm"
                             >
                               {saving ? "Kaydediliyor..." : "Kaydet"}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="outline"
+                              size="sm"
                               onClick={() => setEditingChannel(null)}
-                              className="px-3 py-1.5 text-xs font-medium bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                             >
                               İptal
-                            </button>
+                            </Button>
                           </div>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-muted-foreground/70">
                             Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDate}"}, {"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
                           </p>
                         </div>
                       ) : (
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-                          <p className="text-xs text-slate-600 font-mono whitespace-pre-wrap line-clamp-3">
+                        <div className="rounded-lg bg-muted border border-border px-3 py-2">
+                          <p className="text-xs text-muted-foreground font-mono whitespace-pre-wrap line-clamp-3">
                             {savedContent || defaultContent}
                           </p>
                           {savedContent && (
-                            <p className="text-[10px] text-blue-600 mt-1 font-medium">Özel şablon</p>
+                            <p className="text-[10px] text-primary mt-1 font-medium">Özel şablon</p>
                           )}
                         </div>
                       )}

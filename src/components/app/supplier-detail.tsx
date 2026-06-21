@@ -72,22 +72,22 @@ export function SupplierDetail({
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <Link href="/app/suppliers" className="hover:text-slate-700 inline-flex items-center gap-1">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link href="/app/suppliers" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           Tedarikçiler
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">{supplier.name}</span>
+        <span className="text-foreground font-medium">{supplier.name}</span>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{supplier.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">{supplier.name}</h2>
             <SupplierStatusBadge isActive={supplier.isActive} size="md" />
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {supplier.category && <span>Kategori: {supplier.category}</span>}
             {supplier.contactPerson && <span>Yetkili: {supplier.contactPerson}</span>}
             {supplier.phone && <span>Telefon: {supplier.phone}</span>}
@@ -117,7 +117,7 @@ export function SupplierDetail({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Truck className="size-4 text-slate-500" />
+                <Truck className="size-4 text-muted-foreground" />
                 Tedarikçi Özeti
               </CardTitle>
             </CardHeader>
@@ -127,16 +127,16 @@ export function SupplierDetail({
                 <InfoItem label="Yetkili Kişi" value={supplier.contactPerson || "—"} />
                 <InfoItem label="Kategori" value={supplier.category || "—"} />
                 {supplier.phone && (
-                  <InfoItem label="Telefon" value={<a href={`tel:${supplier.phone}`} className="text-blue-600 hover:text-blue-700">{supplier.phone}</a>} />
+                  <InfoItem label="Telefon" value={<a href={`tel:${supplier.phone}`} className="text-primary hover:text-primary">{supplier.phone}</a>} />
                 )}
                 {supplier.phone2 && (
-                  <InfoItem label="Telefon 2" value={<a href={`tel:${supplier.phone2}`} className="text-blue-600 hover:text-blue-700">{supplier.phone2}</a>} />
+                  <InfoItem label="Telefon 2" value={<a href={`tel:${supplier.phone2}`} className="text-primary hover:text-primary">{supplier.phone2}</a>} />
                 )}
                 {supplier.email && (
-                  <InfoItem label="E-posta" value={<a href={`mailto:${supplier.email}`} className="text-blue-600 hover:text-blue-700 break-all">{supplier.email}</a>} />
+                  <InfoItem label="E-posta" value={<a href={`mailto:${supplier.email}`} className="text-primary hover:text-primary break-all">{supplier.email}</a>} />
                 )}
                 {supplier.website && (
-                  <InfoItem label="Web Sitesi" value={<a href={supplier.website.startsWith("http") ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 break-all">{supplier.website}</a>} />
+                  <InfoItem label="Web Sitesi" value={<a href={supplier.website.startsWith("http") ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary break-all">{supplier.website}</a>} />
                 )}
                 <InfoItem label="Şehir" value={supplier.city || "—"} />
                 <InfoItem label="Adres" value={supplier.address || "—"} />
@@ -149,31 +149,31 @@ export function SupplierDetail({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Boxes className="size-4 text-slate-500" />
+                <Boxes className="size-4 text-muted-foreground" />
                 İlişkili Parçalar
               </CardTitle>
             </CardHeader>
             <CardContent>
               {supplier.parts.length === 0 ? (
-                <div className="text-center py-6 text-sm text-slate-500">
-                  <Boxes className="size-8 mx-auto mb-2 text-slate-300" />
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  <Boxes className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                   Bu tedarikçiye bağlı parça yok.
                 </div>
               ) : (
                 <div className="space-y-1.5">
                   {supplier.parts.map((p) => (
                     <Link key={p.id} href={`/app/parts/${p.id}`}>
-                      <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg text-sm hover:bg-slate-100 transition-colors">
+                      <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm hover:bg-muted transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-medium text-slate-900 truncate">{p.name}</span>
-                          {p.sku && <span className="text-[10px] font-mono text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded shrink-0">{p.sku}</span>}
-                          {p.oemNo && <span className="text-[10px] font-mono text-slate-400 shrink-0">{p.oemNo}</span>}
+                          <span className="font-medium text-foreground truncate">{p.name}</span>
+                          {p.sku && <span className="text-[10px] font-mono text-muted-foreground bg-border px-1.5 py-0.5 rounded shrink-0">{p.sku}</span>}
+                          {p.oemNo && <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">{p.oemNo}</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
-                          <span className="text-xs font-semibold text-slate-700 w-16 text-right">{formatStockQty(p.stockQty)} {p.unit}</span>
+                          <span className="text-xs font-semibold text-foreground w-16 text-right">{formatStockQty(p.stockQty)} {p.unit}</span>
                           {p.salePrice != null && (
-                            <span className="text-xs text-slate-500 w-20 text-right">{formatPrice(p.salePrice)}</span>
+                            <span className="text-xs text-muted-foreground w-20 text-right">{formatPrice(p.salePrice)}</span>
                           )}
                         </div>
                       </div>
@@ -188,7 +188,7 @@ export function SupplierDetail({
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-red-500" />
+                  <AlertTriangle className="size-4 text-destructive" />
                   Kritik Stok Parçaları
                 </CardTitle>
               </CardHeader>
@@ -196,17 +196,17 @@ export function SupplierDetail({
                 <div className="space-y-1.5">
                   {criticalParts.map((p) => (
                     <Link key={p.id} href={`/app/parts/${p.id}`}>
-                      <div className="flex items-center justify-between p-2.5 bg-red-50 rounded-lg text-sm hover:bg-red-100 transition-colors">
+                      <div className="flex items-center justify-between p-2.5 bg-destructive/10 rounded-lg text-sm hover:bg-destructive/20 transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
-                          <AlertTriangle className="size-3.5 text-red-500 shrink-0" />
-                          <span className="font-medium text-slate-900 truncate">{p.name}</span>
-                          {p.sku && <span className="text-[10px] font-mono text-slate-500 shrink-0">{p.sku}</span>}
+                          <AlertTriangle className="size-3.5 text-destructive shrink-0" />
+                          <span className="font-medium text-foreground truncate">{p.name}</span>
+                          {p.sku && <span className="text-[10px] font-mono text-muted-foreground shrink-0">{p.sku}</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold text-red-600">
+                          <span className="text-xs font-semibold text-foreground">
                             {p.status === "out_of_stock" ? "Stokta Yok" : "Kritik"}
                           </span>
-                          <span className="text-xs text-slate-700">{formatStockQty(p.stockQty)} / {formatStockQty(p.criticalStockQty)}</span>
+                          <span className="text-xs text-foreground">{formatStockQty(p.stockQty)} / {formatStockQty(p.criticalStockQty)}</span>
                         </div>
                       </div>
                     </Link>
@@ -217,7 +217,7 @@ export function SupplierDetail({
           )}
 
           {criticalParts.length === 0 && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+            <div className="rounded-lg border border-border bg-muted p-4 text-sm text-muted-foreground">
               Bu tedarikçiye bağlı kritik stokta parça yok.
             </div>
           )}
@@ -227,7 +227,7 @@ export function SupplierDetail({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Settings2 className="size-4 text-slate-500" />
+                <Settings2 className="size-4 text-muted-foreground" />
                 Operasyon Bilgileri
               </CardTitle>
             </CardHeader>
@@ -236,8 +236,8 @@ export function SupplierDetail({
               <InfoRow label="Ödeme Vadesi" value={formatPaymentTermDays(supplier.paymentTermDays)} />
               {supplier.performanceNote && (
                 <div className="pt-2 border-t">
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Performans Notu</p>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{supplier.performanceNote}</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Performans Notu</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{supplier.performanceNote}</p>
                 </div>
               )}
             </CardContent>
@@ -247,12 +247,12 @@ export function SupplierDetail({
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="size-4 text-slate-500" />
+                  <FileText className="size-4 text-muted-foreground" />
                   Dahili Notlar
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{supplier.internalNote}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{supplier.internalNote}</p>
               </CardContent>
             </Card>
           )}
@@ -260,7 +260,7 @@ export function SupplierDetail({
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <ShoppingCart className="size-4 text-slate-500" />
+                <ShoppingCart className="size-4 text-muted-foreground" />
                 Satın Alma / Teklif
               </CardTitle>
             </CardHeader>
@@ -268,14 +268,14 @@ export function SupplierDetail({
               <Button variant="outline" className="w-full justify-start" disabled>
                 <DollarSign className="size-3.5 mr-2" />
                 Teklif İste
-                <span className="ml-auto text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Yakında</span>
+                <span className="ml-auto text-[10px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Yakında</span>
               </Button>
               <Button variant="outline" className="w-full justify-start" disabled>
                 <ShoppingCart className="size-3.5 mr-2" />
                 Satın Alma Talebi Oluştur
-                <span className="ml-auto text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Yakında</span>
+                <span className="ml-auto text-[10px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Yakında</span>
               </Button>
-              <p className="text-[11px] text-slate-400 flex items-center gap-1">
+              <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
                 <HelpCircle className="size-3" />
                 Satın alma ve teklif modülleri ilerleyen sürümlerde eklenecektir.
               </p>
@@ -288,12 +288,12 @@ export function SupplierDetail({
             </CardHeader>
             <CardContent className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Oluşturulma</span>
-                <span className="text-slate-900">{formatDate(supplier.createdAt)}</span>
+                <span className="text-muted-foreground">Oluşturulma</span>
+                <span className="text-foreground">{formatDate(supplier.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Güncellenme</span>
-                <span className="text-slate-900">{formatDate(supplier.updatedAt)}</span>
+                <span className="text-muted-foreground">Güncellenme</span>
+                <span className="text-foreground">{formatDate(supplier.updatedAt)}</span>
               </div>
             </CardContent>
           </Card>
@@ -306,8 +306,8 @@ export function SupplierDetail({
 function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-semibold text-slate-900 mt-0.5">{value}</p>
+      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
     </div>
   )
 }
@@ -315,8 +315,8 @@ function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   )
 }

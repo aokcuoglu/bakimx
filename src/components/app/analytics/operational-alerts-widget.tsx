@@ -16,11 +16,11 @@ function recIcon(type: Recommendation["type"]) {
 function iconColor(type: Recommendation["type"]): string {
   switch (type) {
     case "warning":
-      return "text-amber-500"
+      return "text-warning"
     case "success":
-      return "text-emerald-500"
+      return "text-success"
     default:
-      return "text-blue-500"
+      return "text-primary"
   }
 }
 
@@ -29,13 +29,13 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
     return (
       <Link
         href="/app/analytics"
-        className="block rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 hover:border-emerald-300 transition-colors"
+        className="block rounded-lg border border-success/20 bg-success/5 p-4 hover:border-success/30 transition-colors"
       >
         <div className="flex items-center gap-2 mb-2">
-          <CheckCircle2 className="size-4 text-emerald-600" />
-          <h3 className="text-sm font-semibold text-emerald-800">Operasyon Uyarıları</h3>
+          <CheckCircle2 className="size-4 text-success" />
+          <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         </div>
-        <p className="text-xs text-emerald-600">Tüm işlemler yolunda.</p>
+        <p className="text-xs text-foreground">Tüm işlemler yolunda.</p>
       </Link>
     )
   }
@@ -43,12 +43,12 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
   return (
     <Link
       href="/app/analytics"
-      className="block rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm hover:border-slate-300 transition-all"
+      className="block rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all"
     >
       <div className="flex items-center gap-2 mb-3">
-        <AlertIcon className="size-4 text-amber-600" />
-        <h3 className="text-sm font-semibold text-slate-900">Operasyon Uyarıları</h3>
-        <span className="ml-auto text-xs text-slate-500">{recommendations.length} öneri</span>
+        <AlertIcon className="size-4 text-warning" />
+        <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
+        <span className="ml-auto text-xs text-muted-foreground">{recommendations.length} öneri</span>
       </div>
       <div className="space-y-2">
         {recommendations.slice(0, 3).map((rec) => {
@@ -56,12 +56,12 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
           return (
             <div key={rec.id} className="flex items-start gap-2">
               <Icon className={`size-3.5 mt-0.5 shrink-0 ${iconColor(rec.type)}`} />
-              <p className="text-xs text-slate-700 line-clamp-2">{rec.message}</p>
+              <p className="text-xs text-foreground line-clamp-2">{rec.message}</p>
             </div>
           )
         })}
         {recommendations.length > 3 && (
-          <p className="text-xs text-blue-600 font-medium">+{recommendations.length - 3} daha</p>
+          <p className="text-xs text-foreground font-medium">+{recommendations.length - 3} daha</p>
         )}
       </div>
     </Link>

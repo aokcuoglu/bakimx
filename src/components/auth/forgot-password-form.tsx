@@ -109,17 +109,17 @@ export function ForgotPasswordForm() {
         className="w-full text-center"
       >
         <div className="mb-8">
-          <div className="mx-auto size-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-            <CheckCircle2 className="size-8 text-green-600" />
+          <div className="mx-auto size-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+            <CheckCircle2 className="size-8 text-success" />
           </div>
-          <h1 className="text-2xl font-bold text-[#0B1F3A] tracking-tight">Talep Alındı</h1>
-          <p className="mt-3 text-[#475569] text-sm leading-relaxed max-w-sm mx-auto">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Talep Alındı</h1>
+          <p className="mt-3 text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">
             Talebiniz alındı. Ekibimiz sizinle en kısa sürede iletişime geçecektir.
           </p>
         </div>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-sm text-[#2563EB] hover:text-[#1D4ED8] hover:underline transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-primary hover:underline transition-colors"
         >
           <ArrowLeft className="size-4" />
           Giriş sayfasına dön
@@ -138,72 +138,72 @@ export function ForgotPasswordForm() {
       <div className="mb-8">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1.5 text-sm text-[#475569] hover:text-[#0B1F3A] transition-colors mb-4"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="size-4" />
           Giriş sayfasına dön
         </Link>
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#0B1F3A] tracking-tight">
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
           Şifre Desteği Talebi
         </h1>
-        <p className="mt-2 text-[#475569] text-sm lg:text-base">
+        <p className="mt-2 text-muted-foreground text-sm lg:text-base">
           Şifre sıfırlama işlemi için bizimle iletişime geçin. Ekibimiz size dönüş sağlayacaktır.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {errors._general && (
-          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {errors._general}
           </div>
         )}
 
-        <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#475569] leading-relaxed">
+        <div className="p-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground leading-relaxed">
           Giriş yaptığınız e-posta adresini ve işletme adınızı belirtmeniz süreci hızlandırır.
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-[#475569]">
+            <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">
               Ad Soyad
             </Label>
             <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
               <Input
                 id="name"
                 name="name"
                 placeholder="Adınız Soyadınız"
                 required
-                className="h-11 pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+                className="h-10 pl-9"
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? "name-error" : undefined}
               />
             </div>
             {errors.name && (
-              <p id="name-error" className="text-xs text-red-600">
+              <p id="name-error" className="text-xs text-destructive">
                 {errors.name}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="businessName" className="text-sm font-medium text-[#475569]">
+            <Label htmlFor="businessName" className="text-sm font-medium text-muted-foreground">
               İşletme Adı
             </Label>
             <div className="relative">
-              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
               <Input
                 id="businessName"
                 name="businessName"
                 placeholder="İşletme Adı"
                 required
-                className="h-11 pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+                className="h-10 pl-9"
                 aria-invalid={!!errors.businessName}
                 aria-describedby={errors.businessName ? "businessName-error" : undefined}
               />
             </div>
             {errors.businessName && (
-              <p id="businessName-error" className="text-xs text-red-600">
+              <p id="businessName-error" className="text-xs text-destructive">
                 {errors.businessName}
               </p>
             )}
@@ -212,48 +212,48 @@ export function ForgotPasswordForm() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-[#475569]">
+            <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
               E-posta
             </Label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="ornek@email.com"
                 required
-                className="h-11 pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+                className="h-10 pl-9"
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
               />
             </div>
             {errors.email && (
-              <p id="email-error" className="text-xs text-red-600">
+              <p id="email-error" className="text-xs text-destructive">
                 {errors.email}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-medium text-[#475569]">
+            <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground">
               Telefon
             </Label>
             <div className="relative">
-              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
               <Input
                 id="phone"
                 name="phone"
                 type="tel"
                 placeholder="0 (5XX) XXX XX XX"
                 required
-                className="h-11 pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+                className="h-10 pl-9"
                 aria-invalid={!!errors.phone}
                 aria-describedby={errors.phone ? "phone-error" : undefined}
               />
             </div>
             {errors.phone && (
-              <p id="phone-error" className="text-xs text-red-600">
+              <p id="phone-error" className="text-xs text-destructive">
                 {errors.phone}
               </p>
             )}
@@ -261,7 +261,7 @@ export function ForgotPasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="subject" className="text-sm font-medium text-[#475569]">
+          <Label htmlFor="subject" className="text-sm font-medium text-muted-foreground">
             Konu
           </Label>
           <Input
@@ -269,29 +269,29 @@ export function ForgotPasswordForm() {
             name="subject"
             value="Şifre Desteği"
             readOnly
-            className="h-11 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] text-[#475569] text-base cursor-not-allowed"
+            className="h-10 bg-muted text-muted-foreground cursor-not-allowed"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message" className="text-sm font-medium text-[#475569]">
+          <Label htmlFor="message" className="text-sm font-medium text-muted-foreground">
             Mesaj
           </Label>
           <div className="relative">
-            <MessageSquare className="absolute left-3.5 top-3.5 size-4 text-[#94A3B8] pointer-events-none" />
+            <MessageSquare className="absolute left-3 top-3 size-4 text-muted-foreground/70 pointer-events-none" />
             <Textarea
               id="message"
               name="message"
               placeholder="Mesajınızı buraya yazın..."
               required
               rows={4}
-              className="pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 min-h-[100px]"
+              className="pl-9 min-h-[100px]"
               aria-invalid={!!errors.message}
               aria-describedby={errors.message ? "message-error" : undefined}
             />
           </div>
           {errors.message && (
-            <p id="message-error" className="text-xs text-red-600">
+            <p id="message-error" className="text-xs text-destructive">
               {errors.message}
             </p>
           )}
@@ -299,8 +299,9 @@ export function ForgotPasswordForm() {
 
         <Button
           type="submit"
+          size="lg"
           disabled={loading}
-          className="w-full h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-base font-medium transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full h-10"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

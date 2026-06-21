@@ -1,0 +1,29 @@
+BakimX – 4 Parçalı Logo Sistemi
+
+1. Primary Light
+Dosya: 01-bakimx-primary-light.svg / .png
+Kullanım: Beyaz, açık gri ve açık renkli arka planlar.
+Önerilen alanlar: Web sitesi header, landing page, teklif, sunum, PDF.
+
+2. Primary Dark
+Dosya: 02-bakimx-primary-dark.svg / .png
+Kullanım: Lacivert, siyah ve fotoğraf üstü koyu alanlar.
+Önerilen alanlar: Login ekranı sol paneli, dark mode, sunum kapağı.
+
+3. Icon Light
+Dosya: 03-bakimx-icon-light.svg / .png
+Kullanım: Açık arka planlarda yalnızca sembol gerektiğinde.
+Önerilen alanlar: Favicon, LinkedIn profil görseli, app icon, dar sidebar.
+
+4. Icon Dark
+Dosya: 04-bakimx-icon-dark.svg / .png
+Kullanım: Koyu arka planlarda yalnızca sembol gerektiğinde.
+Önerilen alanlar: Dark sidebar, koyu mobil header, login ekranı.
+
+Temel kullanım kuralları
+- Marka adı her zaman “BakimX” olarak yazılmalıdır.
+- Yeni marka olduğu için geniş alanlarda primary logo tercih edilmelidir.
+- 40 px altındaki kullanımlarda yalnızca icon tercih edilmelidir.
+- Koyu zeminde koyu renkli logo kullanılmamalıdır.
+- Logonun çevresinde en az ikonun X kolu kalınlığı kadar boşluk bırakılmalıdır.
+- Logo orantıları bozulmamalı, eğilmemeli ve yeniden renklendirilmemelidir.

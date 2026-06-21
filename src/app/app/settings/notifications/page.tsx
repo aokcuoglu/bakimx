@@ -25,16 +25,16 @@ export default async function NotificationsPage() {
   return (
     <AppShell workshopName={workshop.name} pageTitle="Bildirim Ayarları">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/app/workshop" className="hover:text-slate-700">Ayarlar</Link>
+          <Link href="/app/workshop" className="hover:text-foreground">Ayarlar</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Bildirim Ayarları</span>
+          <span className="text-foreground font-medium">Bildirim Ayarları</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Bildirim Ayarları</h2>
-          <p className="text-sm text-slate-500 mt-0.5">SMS, WhatsApp ve e-posta bildirim şablonlarını yönetin</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bildirim Ayarları</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">SMS, WhatsApp ve e-posta bildirim şablonlarını yönetin</p>
         </div>
         <NotificationSettings templates={templates} providers={providers} />
       </div>

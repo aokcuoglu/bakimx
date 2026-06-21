@@ -64,10 +64,10 @@ function ConfidenceIndicator({ confidence }: { confidence?: number }) {
   const pct = Math.round(confidence * 100)
   return (
     <span
-      className={`ml-2 inline-flex items-center gap-0.5 text-xs font-medium ${isLow ? "text-amber-600" : "text-emerald-600"}`}
+      className={`ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-foreground`}
       title={`Güven: %${pct}`}
     >
-      {isLow && <AlertTriangle className="size-3" />}
+      {isLow && <AlertTriangle className="size-3 text-warning" />}
       %{pct}
     </span>
   )
@@ -201,14 +201,14 @@ export function SmartCaptureRegistration() {
   if (saveResult) {
     return (
       <div className="space-y-5">
-        <Card className="border-emerald-200 bg-emerald-50/40">
+        <Card className="border-success/20 bg-success/10">
           <CardContent className="py-8">
             <div className="mx-auto max-w-2xl text-center">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                <CheckCircle2 className="size-7" />
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle2 className="size-7 text-success" />
               </div>
-              <h3 className="mt-4 text-xl font-bold text-slate-900">Müşteri ve araç hazır</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <h3 className="mt-4 text-xl font-bold text-foreground">Müşteri ve araç hazır</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Ruhsat bilgileri kaydedildi. Şimdi araç kabul sürecine geçebilirsiniz.
               </p>
             </div>
@@ -216,10 +216,10 @@ export function SmartCaptureRegistration() {
         </Card>
 
         {saveResult.warnings && saveResult.warnings.length > 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-1">
+          <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 space-y-1">
             {saveResult.warnings.map((w, i) => (
-              <p key={i} className="text-sm text-amber-800 flex items-start gap-2">
-                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+              <p key={i} className="text-sm text-foreground flex items-start gap-2">
+                <AlertTriangle className="size-4 text-warning shrink-0 mt-0.5" />
                 {w}
               </p>
             ))}
@@ -229,16 +229,16 @@ export function SmartCaptureRegistration() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <User className="size-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Müşteri</p>
-                <p className="mt-1 font-semibold text-slate-900">{saveResult.customerName}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Müşteri</p>
+                <p className="mt-1 font-semibold text-foreground">{saveResult.customerName}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   {saveResult.customerCreated ? "Müşteriler bölümüne yeni kayıt eklendi." : "Mevcut müşteri kaydı kullanıldı."}
                 </p>
-                <Link href={`/app/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-blue-600 hover:text-blue-700">
+                <Link href={`/app/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
                   Müşteriyi görüntüle
                 </Link>
               </div>
@@ -247,20 +247,20 @@ export function SmartCaptureRegistration() {
 
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Car className="size-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Araç</p>
-                <p className="mt-1 font-semibold text-slate-900">{saveResult.vehicleLabel}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Araç</p>
+                <p className="mt-1 font-semibold text-foreground">{saveResult.vehicleLabel}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   {saveResult.vehicleCreated
                     ? "Araçlar bölümüne yeni kayıt eklendi."
                     : saveResult.vehicleCustomerChanged
                       ? "Mevcut araç bilgileri ve müşteri bağlantısı güncellendi."
                       : "Mevcut araç bilgileri güncellendi."}
                 </p>
-                <Link href={`/app/vehicles/${saveResult.vehicleId}`} className="mt-3 inline-flex text-sm font-medium text-blue-600 hover:text-blue-700">
+                <Link href={`/app/vehicles/${saveResult.vehicleId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
                   Aracı görüntüle
                 </Link>
               </div>
@@ -272,12 +272,12 @@ export function SmartCaptureRegistration() {
           <CardContent className="py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">Sıradaki adım: Araç kabulü</p>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="font-semibold text-foreground">Sıradaki adım: Araç kabulü</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     Kilometre, müşteri şikayeti, fotoğraflar, hasar ve onay bilgilerini tamamlayın.
                   </p>
                 </div>
@@ -323,12 +323,12 @@ export function SmartCaptureRegistration() {
       <Card>
         <CardContent className="py-16">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="size-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center animate-pulse">
+            <div className="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center animate-pulse">
               <ScanLine className="size-8" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Ruhsat okunuyor...</h3>
-              <p className="text-sm text-slate-500 mt-1">Lütfen bekleyin, fotoğraf analiz ediliyor</p>
+              <h3 className="text-lg font-semibold text-foreground">Ruhsat okunuyor...</h3>
+              <p className="text-sm text-muted-foreground mt-1">Lütfen bekleyin, fotoğraf analiz ediliyor</p>
             </div>
           </div>
         </CardContent>
@@ -339,21 +339,21 @@ export function SmartCaptureRegistration() {
   if ((step === "confirm" || step === "saving") && ocrResult) {
     return (
       <div className="space-y-5">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
-          <AlertTriangle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="size-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-800">
+            <p className="text-sm font-medium text-foreground">
               Ruhsat okuma sonucu otomatik öneridir. Lütfen bilgileri kontrol edip onaylayın.
             </p>
-            <p className="text-xs text-amber-700 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Hatalı alanları düzelttikten sonra &quot;Onayla ve Kaydet&quot; butonuna basın.
             </p>
           </div>
         </div>
 
         {ocrProvider && (
-          <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 flex items-center gap-2 text-sm text-blue-700">
-            <Info className="size-4 shrink-0" />
+          <div className="rounded-lg border border-primary/20 bg-primary/10 p-3 flex items-center gap-2 text-sm text-foreground">
+            <Info className="size-4 text-primary shrink-0" />
             <span>OCR sağlayıcı: <strong>{PROVIDER_LABELS[ocrProvider] || ocrProvider}</strong></span>
           </div>
         )}
@@ -370,7 +370,7 @@ export function SmartCaptureRegistration() {
                 width={1200}
                 height={600}
                 unoptimized
-                className="max-h-48 rounded-lg border border-slate-200 object-contain"
+                className="max-h-48 rounded-lg border border-border object-contain"
               />
             </CardContent>
           </Card>
@@ -379,7 +379,7 @@ export function SmartCaptureRegistration() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CheckCircle2 className="size-4 text-blue-600" />
+              <CheckCircle2 className="size-4 text-foreground" />
               Okunan Bilgiler
             </CardTitle>
           </CardHeader>
@@ -394,7 +394,7 @@ export function SmartCaptureRegistration() {
                   >
                     <Label htmlFor={field.key} className="flex items-center">
                       {field.label}
-                      {field.required && <span className="text-destructive ml-0.5">*</span>}
+                      {field.required && <span className="text-foreground ml-0.5">*</span>}
                       <ConfidenceIndicator confidence={getFieldConfidence(field.key)} />
                     </Label>
                     <Input
@@ -405,14 +405,14 @@ export function SmartCaptureRegistration() {
                       onChange={(e) => handleInputChange(field.key, field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
                       placeholder={field.placeholder}
                       required={field.required}
-                      className={lowConf ? "border-amber-300 bg-amber-50/50 focus:border-amber-400" : ""}
+                      className={lowConf ? "border-warning/30 bg-warning/10 focus:border-warning" : ""}
                     />
                     {field.helperText && (
-                      <p className="text-xs text-slate-500">{field.helperText}</p>
+                      <p className="text-xs text-muted-foreground">{field.helperText}</p>
                     )}
                     {lowConf && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1">
-                        <AlertTriangle className="size-3" />
+                      <p className="text-xs text-foreground flex items-center gap-1">
+                        <AlertTriangle className="size-3 text-warning" />
                         Düşük güven oranı — lütfen bu alanı dikkatle kontrol edin
                       </p>
                     )}
@@ -424,7 +424,7 @@ export function SmartCaptureRegistration() {
         </Card>
 
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm">{error}</div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -464,7 +464,7 @@ export function SmartCaptureRegistration() {
   return (
     <div className="space-y-5">
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm">{error}</div>
       )}
 
       <Card>
@@ -475,16 +475,16 @@ export function SmartCaptureRegistration() {
             onDrop={handleDrop}
           >
             <div
-              className="w-full max-w-md rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-8 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+              className="w-full max-w-md rounded-lg border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className="size-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                <div className="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                   <Camera className="size-7" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-700">Fotoğraf çekin veya yükleyin</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm font-medium text-foreground">Fotoğraf çekin veya yükleyin</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Araç ruhsatının ön yüzünü net bir şekilde çekin
                   </p>
                 </div>
@@ -503,9 +503,9 @@ export function SmartCaptureRegistration() {
             />
 
             <div className="flex items-center gap-3 w-full max-w-md">
-              <div className="flex-1 h-px bg-slate-200" />
-              <span className="text-xs text-slate-400">veya</span>
-              <div className="flex-1 h-px bg-slate-200" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground/70">veya</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             <Button
@@ -524,17 +524,17 @@ export function SmartCaptureRegistration() {
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Bilgilendirme</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-slate-600">
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
-            <ScanLine className="size-4 text-slate-400 mt-0.5 shrink-0" />
+            <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
             <span>OCR ile ruhsat bilgileri otomatik okunur ve önerilir.</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="size-4 text-slate-400 mt-0.5 shrink-0" />
+            <CheckCircle2 className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
             <span>Okunan bilgiler kaydedilmeden önce onayınıza sunulur.</span>
           </div>
           <div className="flex items-start gap-2">
-            <AlertTriangle className="size-4 text-slate-400 mt-0.5 shrink-0" />
+            <AlertTriangle className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
             <span>Otomatik okuma hatalı olabilir. Lütfen tüm alanları kontrol edin.</span>
           </div>
         </CardContent>

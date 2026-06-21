@@ -12,15 +12,15 @@ function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
   accentBg: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>
           <Icon className={`size-3.5 ${accent}`} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
     </div>
   )
 }
@@ -33,104 +33,104 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
           label="Toplam Parça"
           value={analytics.totalParts}
           icon={Boxes}
-          accent="text-blue-600"
-          accentBg="bg-blue-100"
+          accent="text-primary"
+          accentBg="bg-primary/10"
         />
         <StatCard
           label="Stok Değeri"
           value={formatTRY(analytics.stockValue)}
           icon={BarChart3}
-          accent="text-emerald-600"
-          accentBg="bg-emerald-100"
+          accent="text-success"
+          accentBg="bg-success/10"
         />
         <StatCard
           label="Kritik Stok"
           value={analytics.criticalStockCount}
           icon={AlertTriangle}
-          accent="text-amber-600"
-          accentBg="bg-amber-100"
+          accent="text-warning"
+          accentBg="bg-warning/10"
           subtitle="Kritik seviyede"
         />
         <StatCard
           label="Tükenen Stok"
           value={analytics.outOfStockCount}
           icon={PackageX}
-          accent="text-red-600"
-          accentBg="bg-red-100"
+          accent="text-destructive"
+          accentBg="bg-destructive/10"
           subtitle="Stokta yok"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex items-center gap-2">
-            <TrendingUp className="size-4 text-blue-600" />
-            <h3 className="text-base font-semibold text-slate-900">En Çok Tüketilen Parçalar</h3>
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
+            <TrendingUp className="size-4 text-primary" />
+            <h3 className="text-base font-semibold text-foreground">En Çok Tüketilen Parçalar</h3>
           </div>
           {analytics.mostConsumed.length === 0 ? (
-            <div className="p-6 text-center text-sm text-slate-500">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               Henüz stok çıkışı yapılmamış.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {analytics.mostConsumed.map((part, i) => (
                 <div key={part.partId} className="flex items-center justify-between px-4 sm:px-6 py-3">
                   <div className="flex items-center gap-3">
-                    <span className="size-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold">
+                    <span className="size-6 rounded-full bg-primary/10 text-foreground flex items-center justify-center text-xs font-bold">
                       {i + 1}
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{part.name}</p>
-                      <p className="text-xs text-slate-500">{part.sku || "—"}{part.category ? ` · ${part.category}` : ""}</p>
+                      <p className="text-sm font-medium text-foreground">{part.name}</p>
+                      <p className="text-xs text-muted-foreground">{part.sku || "—"}{part.category ? ` · ${part.category}` : ""}</p>
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-slate-900">{part.totalUsed} adet</span>
+                  <span className="text-sm font-semibold text-foreground">{part.totalUsed} adet</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex items-center gap-2">
-            <AlertTriangle className="size-4 text-red-600" />
-            <h3 className="text-base font-semibold text-slate-900">Stok Risk Listesi</h3>
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
+            <AlertTriangle className="size-4 text-destructive" />
+            <h3 className="text-base font-semibold text-foreground">Stok Risk Listesi</h3>
           </div>
           {analytics.stockRiskList.length === 0 ? (
-            <div className="p-6 text-center text-sm text-slate-500">
+            <div className="p-6 text-center text-sm text-muted-foreground">
               Kritik stok seviyesinde parça yok.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left px-4 py-2 font-medium text-slate-500">Parça</th>
-                    <th className="text-center px-4 py-2 font-medium text-slate-500">Stok</th>
-                    <th className="text-center px-4 py-2 font-medium text-slate-500">Kritik</th>
-                    <th className="text-center px-4 py-2 font-medium text-slate-500">Durum</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">Parça</th>
+                    <th className="text-center px-4 py-2 font-medium text-muted-foreground">Stok</th>
+                    <th className="text-center px-4 py-2 font-medium text-muted-foreground">Kritik</th>
+                    <th className="text-center px-4 py-2 font-medium text-muted-foreground">Durum</th>
                   </tr>
                 </thead>
                 <tbody>
                   {analytics.stockRiskList.slice(0, 10).map((item) => (
-                    <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <tr key={item.id} className="border-b border-border hover:bg-muted/50">
                       <td className="px-4 py-2">
-                        <Link href={`/app/parts/${item.id}`} className="font-medium text-blue-600 hover:text-blue-800">
+                        <Link href={`/app/parts/${item.id}`} className="font-medium text-primary hover:underline">
                           {item.name}
                         </Link>
-                        {item.sku && <p className="text-xs text-slate-500">{item.sku}</p>}
+                        {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
                       </td>
                       <td className="px-4 py-2 text-center">
-                        <span className={item.stockQty <= 0 ? "text-red-600 font-semibold" : "text-amber-600 font-semibold"}>
+                        <span className={item.stockQty <= 0 ? "text-destructive font-semibold" : "text-warning font-semibold"}>
                           {item.stockQty}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-center text-slate-600">{item.criticalStockQty}</td>
+                      <td className="px-4 py-2 text-center text-muted-foreground">{item.criticalStockQty}</td>
                       <td className="px-4 py-2 text-center">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           item.status === "out_of_stock"
-                            ? "bg-red-50 text-red-700"
-                            : "bg-amber-50 text-amber-700"
+                            ? "bg-destructive/10 text-foreground"
+                            : "bg-warning/10 text-foreground"
                         }`}>
                           {item.status === "out_of_stock" ? "Tükendi" : "Kritik"}
                         </span>

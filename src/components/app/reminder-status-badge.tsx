@@ -12,7 +12,7 @@ export function ReminderStatusBadge({
 }) {
   const info = MAINTENANCE_REMINDER_STATUS[status as MaintenanceReminderStatusKey]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-100 text-slate-700 border-slate-200"
+  const color = info?.color || "bg-muted text-foreground border-border"
   return (
     <span
       className={cn(
@@ -47,7 +47,7 @@ export function ReminderTypeBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border bg-slate-50 text-slate-600 border-slate-200 whitespace-nowrap",
+        "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border bg-muted text-muted-foreground border-border whitespace-nowrap",
         className
       )}
     >

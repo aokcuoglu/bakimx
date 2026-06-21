@@ -3,8 +3,11 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { StatCard, ReportHeader, BarChart, ReportTable } from "@/components/app/reports/report-utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 interface OrdersReportProps {
   stats: {
@@ -100,60 +103,66 @@ export function OrdersReport({
         <StatCard label="İptal" value={stats.cancelled} accent="red" />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">Filtreler</h4>
+      <div className="rounded-lg border border-border bg-white p-4">
+        <h4 className="text-sm font-semibold text-foreground mb-3">Filtreler</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Başlangıç</label>
-            <input
+            <label className="text-xs text-muted-foreground mb-1 block">Başlangıç</label>
+            <Input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Bitiş</label>
-            <input
+            <label className="text-xs text-muted-foreground mb-1 block">Bitiş</label>
+            <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Teknisyen</label>
-            <select
+            <label className="text-xs text-muted-foreground mb-1 block">Teknisyen</label>
+            <Select
               value={technician}
-              onChange={(e) => setTechnician(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
+              onValueChange={(v) => setTechnician(v ?? "")}
             >
-              <option value="">Tümü</option>
-              {technicians.map((t) => (
-                <option key={t.id} value={t.id}>{t.fullName}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full h-9">
+                <SelectValue placeholder="Tümü" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tümü</SelectItem>
+                {technicians.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.fullName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Durum</label>
-            <select
+            <label className="text-xs text-muted-foreground mb-1 block">Durum</label>
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
+              onValueChange={(v) => setStatus(v ?? "")}
             >
-              <option value="">Tümü</option>
-              {statusOptions.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full h-9">
+                <SelectValue placeholder="Tümü" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tümü</SelectItem>
+                {statusOptions.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-end gap-2">
-            <button onClick={applyFilters} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+            <Button onClick={applyFilters} size="sm">
               Uygula
-            </button>
-            <button onClick={clearFilters} className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+            </Button>
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               Temizle
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -164,7 +173,7 @@ export function OrdersReport({
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Yüksek Tutarlı İş Emirleri</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Yüksek Tutarlı İş Emirleri</h4>
         <ReportTable
           headers={[
             { key: "workOrderNo", label: "İş Emri No" },
@@ -176,20 +185,20 @@ export function OrdersReport({
           ]}
           rows={expensiveOrders}
           renderRow={(row) => (
-            <tr key={row.id} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.workOrderNo || "—"}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.customerName}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.plate}</td>
-              <td className="px-4 py-2.5 font-semibold text-slate-900">{row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.status}</td>
-              <td className="px-4 py-2.5 text-slate-500 text-xs">{formatDate(row.createdAt)}</td>
+            <tr key={row.id} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.workOrderNo || "—"}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.customerName}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.plate}</td>
+              <td className="px-4 py-2.5 font-semibold text-foreground">{row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.status}</td>
+              <td className="px-4 py-2.5 text-muted-foreground text-xs">{formatDate(row.createdAt)}</td>
             </tr>
           )}
         />
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Uzun Süren İş Emirleri</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Uzun Süren İş Emirleri</h4>
         <ReportTable
           headers={[
             { key: "workOrderNo", label: "İş Emri No" },
@@ -201,13 +210,13 @@ export function OrdersReport({
           ]}
           rows={longestDuration}
           renderRow={(row) => (
-            <tr key={row.id} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.workOrderNo || "—"}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.customerName}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.plate}</td>
-              <td className="px-4 py-2.5 font-semibold text-amber-700">{row.durationDays} gün</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.status}</td>
-              <td className="px-4 py-2.5 text-slate-500 text-xs">{formatDate(row.createdAt)}</td>
+            <tr key={row.id} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.workOrderNo || "—"}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.customerName}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.plate}</td>
+              <td className="px-4 py-2.5 font-semibold text-warning">{row.durationDays} gün</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.status}</td>
+              <td className="px-4 py-2.5 text-muted-foreground text-xs">{formatDate(row.createdAt)}</td>
             </tr>
           )}
         />

@@ -7,9 +7,9 @@ export function FinalCTASection() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section className="relative py-16 sm:py-24 bg-[#0F172A] text-white overflow-hidden">
+    <section className="relative py-16 sm:py-24 bg-navy-light text-white overflow-hidden">
       <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-      <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-sky-500/20 blur-3xl" />
+      <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         <motion.h2
           initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
@@ -41,7 +41,7 @@ export function FinalCTASection() {
             href="#demo-talep"
             className={buttonVariants({
               size: "lg",
-              className: "bg-white text-[#0B1F3A] hover:bg-white/90 text-base h-12 px-8",
+              className: "bg-white !text-navy hover:!bg-white/90 text-base h-10 px-8",
             })}
           >
             Demo Talep Et
@@ -51,7 +51,7 @@ export function FinalCTASection() {
             className={buttonVariants({
               variant: "outline",
               size: "lg",
-              className: "border-white/30 !bg-transparent !text-white hover:!bg-white/10 text-base h-12 px-8",
+              className: "border-white/30 !bg-transparent !text-white hover:!bg-white/10 text-base h-10 px-8",
             })}
           >
             İletişime Geç

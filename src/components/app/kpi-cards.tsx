@@ -28,12 +28,12 @@ export function KpiCards({ items, className }: { items: KpiItem[]; className?: s
         const content = (
           <div
             className={cn(
-              "rounded-xl border bg-white p-3 sm:p-4 transition-all hover:shadow-sm",
-              "border-slate-200"
+              "rounded-lg border bg-white p-3 sm:p-4 transition-all hover:shadow-sm",
+              "border-border"
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-medium">{item.label}</span>
+              <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
               <span
                 className={cn(
                   "h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold",
@@ -43,8 +43,8 @@ export function KpiCards({ items, className }: { items: KpiItem[]; className?: s
                 {item.count}
               </span>
             </div>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{item.count}</p>
-            {Icon && <Icon className="size-4 text-slate-400 mt-1" />}
+            <p className="mt-1 text-2xl font-bold text-foreground">{item.count}</p>
+            {Icon && <Icon className="size-4 text-muted-foreground/70 mt-1" />}
           </div>
         )
 

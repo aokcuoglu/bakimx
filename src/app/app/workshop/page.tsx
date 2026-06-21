@@ -50,16 +50,16 @@ export default async function WorkshopPage() {
   return (
     <AppShell workshopName={workshop.name} pageTitle="İş Yeri Profili">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/app/settings?tab=profile" className="hover:text-slate-700">Ayarlar</Link>
+          <Link href="/app/settings?tab=profile" className="hover:text-foreground">Ayarlar</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">İş Yeri Profili</span>
+          <span className="text-foreground font-medium">İş Yeri Profili</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">İş Yeri Profili</h2>
-          <p className="text-sm text-slate-500 mt-0.5">İş yeri bilgilerinizi güncelleyin</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Yeri Profili</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">İş yeri bilgilerinizi güncelleyin</p>
         </div>
         <WorkshopForm workshop={serializedWorkshop} />
 

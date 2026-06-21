@@ -28,18 +28,18 @@ export default async function NewReminderPage({
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Yeni Hatırlatma">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app/reminders" className="hover:text-slate-700 inline-flex items-center gap-1">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app/reminders" className="hover:text-foreground inline-flex items-center gap-1">
             <ArrowLeft className="size-3.5" />
             Bakım Hatırlatmaları
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Yeni</span>
+          <span className="text-foreground font-medium">Yeni</span>
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Yeni Hatırlatma</h2>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Hatırlatma</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Müşteriniz için yeni bir bakım hatırlatması oluşturun.
           </p>
         </div>

@@ -23,29 +23,29 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="size-5 text-slate-700" />
+            <Shield className="size-5 text-foreground" />
             İş Yeri Güvenliği
           </CardTitle>
           <CardDescription>İş yeri erişim ve veri güvenliği hakkında bilgi</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">İş Yeri ID</div>
-              <div className="text-sm font-mono text-slate-900">{workshop.id}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri ID</div>
+              <div className="text-sm font-mono text-foreground">{workshop.id}</div>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">İş Yeri Adı</div>
-              <div className="text-sm text-slate-900">{workshop.name}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri Adı</div>
+              <div className="text-sm text-foreground">{workshop.name}</div>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+          <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-semibold text-emerald-800">Veri İzolasyonu Aktif</h4>
-                <p className="text-xs text-emerald-700 mt-1">
+                <h4 className="text-sm font-semibold text-foreground">Veri İzolasyonu Aktif</h4>
+                <p className="text-xs text-muted-foreground mt-1">
                   Tüm verileriniz iş yerinize özel olarak izole edilmiştir. Diğer iş yerleri verilerinize erişemez.
                 </p>
               </div>
@@ -57,28 +57,28 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="size-5 text-slate-700" />
+            <Users className="size-5 text-foreground" />
             Hesap Bilgileri
           </CardTitle>
           <CardDescription>Mevcut oturum bilgileriniz</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ad Soyad</div>
-              <div className="text-sm text-slate-900">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad Soyad</div>
+              <div className="text-sm text-foreground">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</div>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">E-posta</div>
-              <div className="text-sm text-slate-900">{user.email}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">E-posta</div>
+              <div className="text-sm text-foreground">{user.email}</div>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Kullanıcı ID</div>
-              <div className="text-sm font-mono text-slate-900">{user.id}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kullanıcı ID</div>
+              <div className="text-sm font-mono text-foreground">{user.id}</div>
             </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">İş Yeri Üyeliği</div>
-              <div className="text-sm text-slate-900">{workshop.name}</div>
+            <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">İş Yeri Üyeliği</div>
+              <div className="text-sm text-foreground">{workshop.name}</div>
             </div>
           </div>
         </CardContent>
@@ -87,7 +87,7 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lock className="size-5 text-slate-700" />
+            <Lock className="size-5 text-foreground" />
             Güvenlik Özellikleri
           </CardTitle>
           <CardDescription>Verilerinizin korunma yöntemleri</CardDescription>
@@ -101,9 +101,9 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
               { label: "İş yeri sahipliği doğrulama (assertWorkshopAccess)", active: true },
               { label: "Denetim günlüğü kaydı", active: true },
             ].map((feature) => (
-              <div key={feature.label} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                <span className="text-sm text-slate-700">{feature.label}</span>
+              <div key={feature.label} className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-border">
+                <CheckCircle2 className="size-4 text-primary shrink-0" />
+                <span className="text-sm text-foreground">{feature.label}</span>
               </div>
             ))}
           </div>

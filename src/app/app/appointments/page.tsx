@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { Plus, CalendarClock, Search, CalendarDays } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { AppointmentList } from "@/components/app/appointment-list"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 import { cn } from "@/lib/utils"
@@ -105,57 +106,61 @@ export default async function AppointmentsPage({
       workshopName={workshop?.name}
       pageTitle="Randevular"
       pageActions={
-        <Link
-          href="/app/appointments/new"
-          className="inline-flex items-center justify-center size-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white touch-manipulation"
+        <Button
+          nativeButton={false}
+          size="icon"
+          render={<Link href="/app/appointments/new" />}
           aria-label="Yeni randevu"
         >
           <Plus className="size-5" />
-        </Link>
+        </Button>
       }
     >
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Randevular</span>
+          <span className="text-foreground font-medium">Randevular</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Randevular</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Servis randevularını planlayın ve yönetin</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Randevular</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
           </div>
-          <Link
-            href="/app/appointments/new"
-            className="hidden sm:inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
+          <Button
+            nativeButton={false}
+            size="default"
+            className="hidden sm:inline-flex"
+            render={<Link href="/app/appointments/new" />}
           >
             <Plus className="size-4" />
             Yeni Randevu
-          </Link>
+          </Button>
         </div>
 
         <form action="/app/appointments" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
             <Input
               name="q"
               defaultValue={q}
               placeholder="Randevu no, plaka veya müşteri adı ile ara..."
-              className="pl-10 h-11"
+              className="pl-10"
             />
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="default"
             type="submit"
-            className="inline-flex items-center gap-1.5 h-11 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
           >
             <Search className="size-4" />
             Ara
-          </button>
+          </Button>
         </form>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          <CalendarDays className="size-4 text-slate-400 shrink-0" />
+          <CalendarDays className="size-4 text-muted-foreground/70 shrink-0" />
           {dateTabs.map((tab) => {
             const isActive = activeDate === tab.key
             const href = isActive
@@ -170,8 +175,8 @@ export default async function AppointmentsPage({
                 className={cn(
                   "h-8 px-3 inline-flex items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors touch-manipulation",
                   isActive
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 )}
               >
                 {tab.label}
@@ -196,8 +201,8 @@ export default async function AppointmentsPage({
         />
 
         {appointments.length === 0 && (
-          <div className="text-center py-16 text-slate-500">
-            <CalendarClock className="size-14 mx-auto mb-4 text-slate-300" />
+          <div className="text-center py-16 text-muted-foreground">
+            <CalendarClock className="size-14 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-base font-medium">
               {q || activeStatus || activeDate !== "today"
                 ? "Filtrelere uyan randevu bulunamadı"
@@ -210,7 +215,7 @@ export default async function AppointmentsPage({
             </p>
             <Link
               href="/app/appointments/new"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
             >
               <Plus className="size-4" />
               Yeni Randevu

@@ -25,15 +25,15 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center text-sm text-slate-500">
-              <Link href="/app/vehicles" className="hover:text-slate-700">Araçlar</Link>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Link href="/app/vehicles" className="hover:text-foreground">Araçlar</Link>
               <span className="mx-2">/</span>
-              <Link href={`/app/vehicles/${vehicle.id}`} className="hover:text-slate-700">{vehicle.plate}</Link>
+              <Link href={`/app/vehicles/${vehicle.id}`} className="hover:text-foreground">{vehicle.plate}</Link>
               <span className="mx-2">/</span>
-              <span className="text-slate-700 font-medium">Düzenle</span>
+              <span className="text-foreground font-medium">Düzenle</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Aracı Düzenle</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{vehicle.plate} • {vehicle.brand} {vehicle.model}</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mt-1">Aracı Düzenle</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">{vehicle.plate} • {vehicle.brand} {vehicle.model}</p>
           </div>
         </div>
 

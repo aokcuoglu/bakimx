@@ -22,16 +22,16 @@ export default async function CalendarSettingsPage() {
   return (
     <AppShell workshopName={workshop.name} pageTitle="Takvim Ayarları">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/app/settings/notifications" className="hover:text-slate-700">Ayarlar</Link>
+          <Link href="/app/settings/notifications" className="hover:text-foreground">Ayarlar</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Takvim Ayarları</span>
+          <span className="text-foreground font-medium">Takvim Ayarları</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Takvim Ayarları</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Takvim sağlayıcısı ve senkronizasyon ayarları</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Takvim Ayarları</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Takvim sağlayıcısı ve senkronizasyon ayarları</p>
         </div>
         <CalendarSettings settings={settings} />
       </div>

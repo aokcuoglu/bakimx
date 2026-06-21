@@ -6,28 +6,28 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
   if (suppliers.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 overflow-hidden">
-      <div className="px-4 py-3 border-b border-indigo-100 flex items-center justify-between gap-2">
+    <div className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+      <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Truck className="size-4 text-indigo-600" />
-          <h3 className="text-sm font-semibold text-indigo-900">Kritik Stok Tedarikçileri</h3>
+          <Truck className="size-4 text-primary" />
+          <h3 className="text-sm font-semibold text-primary">Kritik Stok Tedarikçileri</h3>
         </div>
-        <Link href="/app/suppliers" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+        <Link href="/app/suppliers" className="text-xs text-primary hover:text-primary/80 font-medium">
           Tümünü Gör →
         </Link>
       </div>
-      <div className="divide-y divide-indigo-100">
+      <div className="divide-y divide-primary/10">
         {suppliers.map((s) => (
           <Link
             key={s.id}
             href={`/app/suppliers/${s.id}`}
-            className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-indigo-50/50 transition-colors"
+            className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-primary/5 transition-colors"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-900 truncate">{s.name}</p>
-              {s.phone && <p className="text-xs text-slate-500 mt-0.5">{s.phone}</p>}
+              <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
+              {s.phone && <p className="text-xs text-muted-foreground mt-0.5">{s.phone}</p>}
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive shrink-0">
               {s.criticalPartCount} parça
             </span>
           </Link>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
@@ -29,21 +29,16 @@ export function Header() {
       initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
+      className="sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a href="#" onClick={handleLogoClick} className="flex items-center gap-2">
-          <Image
-            src="/logo.svg"
-            alt="BakimX"
-            width={32}
-            height={32}
-            priority
-            loading="eager"
-          />
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-foreground">Bakim</span><span className="text-primary">X</span>
-          </span>
+        <a
+          href="#"
+          onClick={handleLogoClick}
+          aria-label="BakimX ana sayfa"
+          className="flex items-center mr-4 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+        >
+          <BrandLogo variant="primary-light" size="lg" priority alt="BakimX" />
         </a>
 
         <nav className="hidden lg:flex items-center gap-8">
@@ -73,13 +68,15 @@ export function Header() {
           </a>
         </div>
 
-        <button
-          className="lg:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-foreground"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Menüyü kapat" : "Menüyü aç"}
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        </Button>
       </div>
 
       {mobileOpen && (

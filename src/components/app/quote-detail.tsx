@@ -145,41 +145,41 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <Link href="/app/quotes" className="hover:text-slate-700 inline-flex items-center gap-1 touch-manipulation">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link href="/app/quotes" className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
           <ArrowLeft className="size-3.5" />
           Teklifler
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">{quote.quoteNo}</span>
+        <span className="text-foreground font-medium">{quote.quoteNo}</span>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
-      <header className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900">{quote.quoteNo}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">{quote.quoteNo}</h2>
                 <QuoteStatusBadge status={quote.status} size="md" />
               </div>
               {quote.title && (
-                <p className="text-sm text-slate-500 mt-1">{quote.title}</p>
+                <p className="text-sm text-muted-foreground mt-1">{quote.title}</p>
               )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-2xl font-bold text-slate-900">
+            <span className="text-2xl font-bold text-foreground">
               {grandTotal > 0 ? formatTRY(grandTotal) : "—"}
             </span>
             {quote.validUntil && (
-              <span className="text-xs text-slate-500 flex items-center gap-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Calendar className="size-3" />
                 {formatDate(quote.validUntil)}
               </span>
@@ -193,7 +193,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <User className="size-4 text-slate-500" />
+                <User className="size-4 text-muted-foreground" />
                 Müşteri
               </CardTitle>
             </CardHeader>
@@ -202,13 +202,13 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                 <div>
                   <Link
                     href={`/app/customers/${quote.customer.id}`}
-                    className="text-sm font-semibold text-slate-900 hover:text-blue-600"
+                    className="text-sm font-semibold text-foreground hover:text-primary"
                   >
                     {customerDisplayName(quote.customer)}
                   </Link>
                   <a
                     href={`tel:${quote.customer.phone}`}
-                    className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600 mt-1"
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mt-1"
                   >
                     <Phone className="size-3.5" />
                     {quote.customer.phone}
@@ -216,7 +216,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                 </div>
                 <Link
                   href={`/app/customers/${quote.customer.id}`}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                  className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                 >
                   Müşteri Detayı
                   <ArrowRight className="size-3" />
@@ -229,7 +229,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Car className="size-4 text-slate-500" />
+                  <Car className="size-4 text-muted-foreground" />
                   Araç
                 </CardTitle>
               </CardHeader>
@@ -237,13 +237,13 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <PlateBadge plate={quote.vehicle.plate} />
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-sm font-medium text-foreground">
                       {quote.vehicle.brand} {quote.vehicle.model}
                     </span>
                   </div>
                   <Link
                     href={`/app/vehicles/${quote.vehicle.id}`}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                    className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                   >
                     Araç Detayı
                     <ArrowRight className="size-3" />
@@ -257,12 +257,12 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="size-4 text-slate-500" />
+                  <FileText className="size-4 text-muted-foreground" />
                   Müşteri Talebi
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{quote.customerRequest}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{quote.customerRequest}</p>
               </CardContent>
             </Card>
           )}
@@ -271,16 +271,16 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold">Teklif Kalemleri</CardTitle>
-                <span className="text-xs text-slate-500">{quote.items.length} kalem</span>
+                <span className="text-xs text-muted-foreground">{quote.items.length} kalem</span>
               </div>
             </CardHeader>
             <CardContent>
               {quote.items.length === 0 ? (
-                <div className="text-center py-6 text-sm text-slate-500">Henüz kalem eklenmemiş</div>
+                <div className="text-center py-6 text-sm text-muted-foreground">Henüz kalem eklenmemiş</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                    <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                       <tr>
                         <th className="text-left pb-2 font-semibold pr-3">Tip</th>
                         <th className="text-left pb-2 font-semibold pr-3">Ad</th>
@@ -290,28 +290,28 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                         <th className="text-left pb-2 font-semibold">Not</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                       {quote.items.map((item) => (
-                        <tr key={item.id} className="text-slate-700">
+                        <tr key={item.id} className="text-foreground">
                           <td className="py-2 pr-3">
                             <span className={cn(
                               "inline-flex items-center h-5 px-1.5 rounded text-[10px] font-semibold uppercase tracking-wider",
                               item.type === "part"
-                                ? "bg-slate-100 text-slate-600"
-                                : "bg-blue-50 text-blue-700"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-primary/10 text-foreground"
                             )}>
                               {item.type === "part" ? "Parça" : "İşçilik"}
                             </span>
                           </td>
                           <td className="py-2 pr-3 font-medium">{item.name}</td>
-                          <td className="py-2 pr-3 text-right text-slate-500">{item.quantity}</td>
-                          <td className="py-2 pr-3 text-right text-slate-500">
+                          <td className="py-2 pr-3 text-right text-muted-foreground">{item.quantity}</td>
+                          <td className="py-2 pr-3 text-right text-muted-foreground">
                             {item.unitPrice != null ? formatTRY(item.unitPrice) : "—"}
                           </td>
                           <td className="py-2 pr-3 text-right font-medium">
                             {item.totalPrice != null ? formatTRY(item.totalPrice) : "—"}
                           </td>
-                          <td className="py-2 text-xs text-slate-500">{item.note || "—"}</td>
+                          <td className="py-2 text-xs text-muted-foreground">{item.note || "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -327,8 +327,8 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                 <CardTitle className="text-sm font-semibold">İç Not</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{quote.internalNote}</p>
-                <p className="mt-1 text-[11px] text-slate-500 italic">Bu not müşteri çıktısında gösterilmez</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{quote.internalNote}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
               </CardContent>
             </Card>
           )}
@@ -338,11 +338,11 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
-                    <Info className="size-4 text-indigo-600" />
-                    <span className="font-medium text-slate-700">Bu teklif iş emrine çevrildi</span>
+                    <Info className="size-4 text-primary" />
+                    <span className="font-medium text-foreground">Bu teklif iş emrine çevrildi</span>
                     <Link
                       href={`/app/orders/${quote.convertedServiceOrder.id}`}
-                      className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                      className="text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                     >
                       {quote.convertedServiceOrder.workOrderNo || "İş Emri"}
                       <ArrowRight className="size-3" />
@@ -391,7 +391,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                       type="button"
                       size="sm"
                       variant={s === "cancelled" ? "outline" : "default"}
-                      className={cn("w-full gap-2", s === "cancelled" && "text-rose-600 border-rose-200 hover:bg-rose-50")}
+                      className={cn("w-full gap-2", s === "cancelled" && "text-destructive border-destructive/20 hover:bg-destructive/10")}
                       disabled={statusLoading}
                       onClick={() => handleStatusChange(s)}
                     >
@@ -418,11 +418,11 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
           )}
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Paylaş</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Paylaş</span>
             <button
               type="button"
               disabled
-              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-slate-200 bg-white text-slate-400 text-sm cursor-not-allowed touch-manipulation"
+              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border bg-card text-muted-foreground/70 text-sm cursor-not-allowed touch-manipulation"
               title="PDF çıktısı yakında"
             >
               <Printer className="size-4" />
@@ -458,8 +458,8 @@ function SummaryRow({
 }) {
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
-      <span className={cn("text-slate-600", bold && "text-slate-900")}>{label}</span>
-      <span className={cn(muted ? "text-slate-400" : "text-slate-900", large && "text-lg font-bold text-slate-900")}>
+      <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
+      <span className={cn(muted ? "text-muted-foreground/70" : "text-foreground", large && "text-lg font-bold text-foreground")}>
         {value}
       </span>
     </div>

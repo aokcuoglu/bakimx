@@ -5,6 +5,26 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8FAFC",
-  "theme_color": "#2563EB",
-  "orientation": "portrait-primary"
+  "theme_color": "#0865E8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/03-bakimx-icon-light.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/03-bakimx-icon-light.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/04-bakimx-icon-dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

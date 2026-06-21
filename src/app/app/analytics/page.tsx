@@ -45,9 +45,9 @@ export default async function AnalyticsPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Operasyonel Analiz">
       <div className="space-y-6 max-w-full">
-        <div className="rounded-2xl bg-gradient-to-br from-[#0B1F3A] to-[#0F172A] text-white p-5 sm:p-6 shadow-sm">
+        <div className="rounded-lg bg-gradient-to-br from-navy to-navy-light text-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-xl sm:text-2xl font-bold">Operasyonel Analiz</h2>
-          <p className="text-sm text-slate-300 mt-1">
+          <p className="text-sm text-muted-foreground/50 mt-1">
             Atölyenizin operasyonel sağlığını ve performans metriklerini izleyin
           </p>
         </div>
@@ -68,27 +68,27 @@ export default async function AnalyticsPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Teknisyen Analizi</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">Teknisyen Analizi</h2>
           <TechnicianAnalyticsSection ranking={technicianRanking} />
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Müşteri Analizi</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">Müşteri Analizi</h2>
           <CustomerAnalyticsSection analytics={customerAnalytics} />
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Parça & Stok Analizi</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">Parça & Stok Analizi</h2>
           <PartsAnalyticsSection analytics={partsAnalytics} />
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Gelir Analizi</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">Gelir Analizi</h2>
           <RevenueAnalyticsSection analytics={revenueAnalytics} />
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Servis Analizi</h2>
+          <h2 className="text-lg font-bold text-foreground mb-4">Servis Analizi</h2>
           <ServiceAnalyticsSection analytics={serviceAnalytics} />
         </section>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useActionState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Building2,
@@ -15,16 +15,28 @@ import {
   ShieldCheck,
   FileText,
   Loader2,
-  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomerTagBadge, PriceGroupBadge } from "@/components/app/customer-badges"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createCustomerAction, updateCustomerAction } from "@/app/app/customers/actions"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils-client"
+import { useForm } from "react-hook-form"
+import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
+import { typedResolver } from "@/lib/validations/resolver"
 
 export type CustomerFormInitial = {
   id?: string
@@ -61,512 +73,701 @@ type CustomerFormInitialStrict = Omit<CustomerFormInitial, "whatsappConsent" | "
   emailConsent: boolean
 }
 
+function toDefaults(initial?: CustomerFormInitial | CustomerFormInitialStrict): CustomerFormValues {
+  return {
+    type: initial?.type === "corporate" ? "corporate" : "individual",
+    firstName: initial?.firstName || "",
+    lastName: initial?.lastName || "",
+    fullName: initial?.fullName || "",
+    companyName: initial?.companyName || "",
+    contactName: initial?.contactName || "",
+    phone: initial?.phone || "",
+    phone2: initial?.phone2 || "",
+    email: initial?.email || "",
+    city: initial?.city || "",
+    district: initial?.district || "",
+    address: initial?.address || "",
+    identityNumber: initial?.identityNumber || "",
+    taxNumber: initial?.taxNumber || "",
+    taxOffice: initial?.taxOffice || "",
+    notes: initial?.notes || "",
+    riskNote: initial?.riskNote || "",
+    tag: initial?.tag || "standard",
+    source: initial?.source || "",
+    priceGroup: initial?.priceGroup || "standard",
+    discountRate: initial?.discountRate ?? 0,
+    whatsappConsent: !!initial?.whatsappConsent,
+    smsConsent: !!initial?.smsConsent,
+    emailConsent: !!initial?.emailConsent,
+    kvkkApprovedAt: initial?.kvkkApprovedAt ? initial.kvkkApprovedAt.slice(0, 10) : "",
+  }
+}
+
 export function CustomerCreateForm({ initial, mode = "create" }: { initial?: CustomerFormInitial | CustomerFormInitialStrict; mode?: "create" | "edit" }) {
   const router = useRouter()
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [type, setType] = useState<"individual" | "corporate">(initial?.type === "corporate" ? "corporate" : "individual")
-  const [tag, setTag] = useState<string>(initial?.tag || "standard")
-  const [source, setSource] = useState<string>(initial?.source || "")
-  const [priceGroup, setPriceGroup] = useState<string>(initial?.priceGroup || "standard")
-  const [discountRate, setDiscountRate] = useState<string>(
-    initial?.discountRate != null ? String(initial.discountRate) : "0"
-  )
-  const [whatsappConsent, setWhatsappConsent] = useState<boolean>(!!initial?.whatsappConsent)
-  const [smsConsent, setSmsConsent] = useState<boolean>(!!initial?.smsConsent)
-  const [emailConsent, setEmailConsent] = useState<boolean>(!!initial?.emailConsent)
-  const [kvkkApprovedAt, setKvkkApprovedAt] = useState<string>(
-    initial?.kvkkApprovedAt ? initial.kvkkApprovedAt.slice(0, 10) : ""
-  )
+  const isEdit = mode === "edit" && !!initial?.id
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-    const formData = new FormData(e.currentTarget)
-    formData.set("type", type)
-    formData.set("tag", tag)
-    formData.set("source", source)
-    formData.set("priceGroup", priceGroup)
-    formData.set("discountRate", discountRate)
-    if (whatsappConsent) formData.set("whatsappConsent", "on")
-    if (smsConsent) formData.set("smsConsent", "on")
-    if (emailConsent) formData.set("emailConsent", "on")
-    if (kvkkApprovedAt) formData.set("kvkkApprovedAt", kvkkApprovedAt)
-    try {
-      const result =
-        mode === "edit" && initial?.id
-          ? await updateCustomerAction(initial.id, formData)
-          : await createCustomerAction(formData)
-      if (result?.error) {
-        setError(result.error)
-        setLoading(false)
-        return
-      }
-      if (mode === "edit" && initial?.id) {
-        router.push(`/app/customers/${initial.id}`)
-        router.refresh()
-        return
-      }
-      router.push("/app/customers")
-      router.refresh()
-    } catch {
-      setError("Bir hata oluştu")
-      setLoading(false)
+  const form = useForm<CustomerFormValues, unknown, CustomerFormValues>({
+    resolver: typedResolver(customerSchema),
+    defaultValues: toDefaults(initial),
+  })
+
+  const type = form.watch("type")
+  const tag = form.watch("tag")
+  const priceGroup = form.watch("priceGroup")
+  const kvkkApprovedAt = form.watch("kvkkApprovedAt")
+
+  type ActionState = { error?: string; success?: boolean; id?: string }
+
+  const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
+    if (isEdit && initial?.id) {
+      return updateCustomerAction(initial.id, formData) as unknown as ActionState | null
     }
+    return createCustomerAction(formData) as unknown as ActionState | null
+  }
+
+  const [state, formAction, pending] = useActionState(action, null as ActionState | null)
+
+  useEffect(() => {
+    if (state?.success) {
+      if (isEdit && initial?.id) {
+        router.push(`/app/customers/${initial.id}`)
+      } else if (state.id) {
+        router.push(`/app/customers/${state.id}`)
+      } else {
+        router.push("/app/customers")
+      }
+      router.refresh()
+    }
+  }, [state, router, isEdit, initial?.id])
+
+  function onSubmit(values: CustomerFormValues) {
+    const formData = new FormData()
+    for (const [key, value] of Object.entries(values)) {
+      if (typeof value === "boolean") {
+        if (value) formData.set(key, "on")
+      } else {
+        formData.set(key, String(value))
+      }
+    }
+    formAction(formData)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-3 py-2 text-sm flex items-start gap-2">
-          <AlertCircle className="size-4 mt-0.5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      ) : null}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {state?.error && (
+          <Alert variant="destructive">
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-            <header className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">Temel Bilgiler</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Bireysel veya kurumsal müşteri seçimi</p>
-              </div>
-              <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setType("individual")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
-                    type === "individual"
-                      ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  <UserIcon className="size-3.5" />
-                  Bireysel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType("corporate")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
-                    type === "corporate"
-                      ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                      : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  <Building2 className="size-3.5" />
-                  Kurumsal
-                </button>
-              </div>
-            </header>
-
-            {type === "individual" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Ad" htmlFor="firstName" required>
-                  <Input id="firstName" name="firstName" defaultValue={initial?.firstName || ""} placeholder="Ahmet" />
-                </Field>
-                <Field label="Soyad" htmlFor="lastName" required>
-                  <Input id="lastName" name="lastName" defaultValue={initial?.lastName || ""} placeholder="Yılmaz" />
-                </Field>
-                <Field label="Telefon" htmlFor="phone" required>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    defaultValue={initial?.phone || ""}
-                    placeholder="0555 123 4567"
-                  />
-                </Field>
-                <Field label="Telefon 2" htmlFor="phone2">
-                  <Input
-                    id="phone2"
-                    name="phone2"
-                    type="tel"
-                    defaultValue={initial?.phone2 || ""}
-                    placeholder="0555 987 6543"
-                  />
-                </Field>
-                <Field label="E-posta" htmlFor="email" className="sm:col-span-2">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    defaultValue={initial?.email || ""}
-                    placeholder="ornek@email.com"
-                  />
-                </Field>
-                <Field label="İl" htmlFor="city">
-                  <Input id="city" name="city" defaultValue={initial?.city || ""} placeholder="İstanbul" />
-                </Field>
-                <Field label="İlçe" htmlFor="district">
-                  <Input id="district" name="district" defaultValue={initial?.district || ""} placeholder="Kadıköy" />
-                </Field>
-                <Field label="Adres" htmlFor="address" className="sm:col-span-2">
-                  <Textarea
-                    id="address"
-                    name="address"
-                    defaultValue={initial?.address || ""}
-                    placeholder="Mahalle / Sokak / No"
-                    rows={2}
-                  />
-                </Field>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Şirket Adı" htmlFor="companyName" required>
-                  <Input
-                    id="companyName"
-                    name="companyName"
-                    defaultValue={initial?.companyName || ""}
-                    placeholder="ABC Lojistik A.Ş."
-                  />
-                </Field>
-                <Field label="Yetkili Kişi" htmlFor="contactName">
-                  <Input
-                    id="contactName"
-                    name="contactName"
-                    defaultValue={initial?.contactName || ""}
-                    placeholder="Mehmet Bey"
-                  />
-                </Field>
-                <Field label="Telefon" htmlFor="phone" required>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    defaultValue={initial?.phone || ""}
-                    placeholder="0212 555 0000"
-                  />
-                </Field>
-                <Field label="Telefon 2" htmlFor="phone2">
-                  <Input
-                    id="phone2"
-                    name="phone2"
-                    type="tel"
-                    defaultValue={initial?.phone2 || ""}
-                    placeholder="0555 987 6543"
-                  />
-                </Field>
-                <Field label="E-posta" htmlFor="email" className="sm:col-span-2">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    defaultValue={initial?.email || ""}
-                    placeholder="info@sirket.com"
-                  />
-                </Field>
-                <Field label="İl" htmlFor="city">
-                  <Input id="city" name="city" defaultValue={initial?.city || ""} placeholder="İstanbul" />
-                </Field>
-                <Field label="İlçe" htmlFor="district">
-                  <Input id="district" name="district" defaultValue={initial?.district || ""} placeholder="Kadıköy" />
-                </Field>
-                <Field label="Adres" htmlFor="address" className="sm:col-span-2">
-                  <Textarea
-                    id="address"
-                    name="address"
-                    defaultValue={initial?.address || ""}
-                    placeholder="Mahalle / Sokak / No"
-                    rows={2}
-                  />
-                </Field>
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-            <header>
-              <h3 className="text-sm font-semibold text-slate-900">Vergi / Kimlik Bilgileri</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Fatura ve resmi kayıtlar için</p>
-            </header>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Field label="TC Kimlik No" htmlFor="identityNumber">
-                <Input
-                  id="identityNumber"
-                  name="identityNumber"
-                  defaultValue={initial?.identityNumber || ""}
-                  inputMode="numeric"
-                  maxLength={11}
-                  placeholder="12345678901"
-                />
-              </Field>
-              <Field label="Vergi No" htmlFor="taxNumber">
-                <Input
-                  id="taxNumber"
-                  name="taxNumber"
-                  defaultValue={initial?.taxNumber || ""}
-                  inputMode="numeric"
-                  placeholder="1234567890"
-                />
-              </Field>
-              <Field label="Vergi Dairesi" htmlFor="taxOffice">
-                <Input
-                  id="taxOffice"
-                  name="taxOffice"
-                  defaultValue={initial?.taxOffice || ""}
-                  placeholder="Kadıköy VD"
-                />
-              </Field>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-3">
-            <header className="flex items-center gap-2">
-              <FileText className="size-4 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">Müşteri Notu</h3>
-            </header>
-            <Textarea
-              name="notes"
-              defaultValue={initial?.notes || ""}
-              rows={4}
-              placeholder="Bu müşteriye özel notlar (iç kullanım). Müşteri çıktısında gösterilmez."
-            />
-          </section>
-        </div>
-
-        <aside className="space-y-5">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-            <header>
-              <h3 className="text-sm font-semibold text-slate-900">Müşteri Profili</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Etiket, kaynak, fiyat grubu</p>
-            </header>
-            <div className="space-y-3">
-              <Field label="Etiket" htmlFor="tag">
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { key: "standard", label: "Standart" },
-                    { key: "vip", label: "VIP" },
-                    { key: "risky", label: "Riskli" },
-                    { key: "fleet", label: "Filo" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setTag(opt.key)}
-                      className={cn(
-                        "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
-                        tag === opt.key
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-5">
+            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+              <header className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Temel Bilgiler</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Bireysel veya kurumsal müşteri seçimi</p>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Önizleme: <CustomerTagBadge tag={tag} />
-                </p>
-              </Field>
-              <Field label="Müşteri Kaynağı" htmlFor="source">
-                <select
-                  id="source"
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-                >
-                  <option value="">Seçilmedi</option>
-                  <option value="referral">Tavsiye</option>
-                  <option value="google">Google</option>
-                  <option value="social_media">Sosyal Medya</option>
-                  <option value="walk_in">Yoldan Geldi</option>
-                  <option value="existing">Mevcut Müşteri</option>
-                  <option value="other">Diğer</option>
-                </select>
-              </Field>
-              <Field label="Fiyat Grubu" htmlFor="priceGroup">
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { key: "standard", label: "Standart" },
-                    { key: "discounted", label: "İndirimli" },
-                    { key: "fleet", label: "Filo" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setPriceGroup(opt.key)}
-                      className={cn(
-                        "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
-                        priceGroup === opt.key
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-                {priceGroup ? (
-                  <p className="text-[11px] text-slate-400 mt-1.5">
-                    Önizleme: <PriceGroupBadge group={priceGroup} />
-                  </p>
-                ) : null}
-              </Field>
-              <Field label="İndirim %" htmlFor="discountRate">
-                <Input
-                  id="discountRate"
-                  name="discountRate"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step="0.5"
-                  value={discountRate}
-                  onChange={(e) => setDiscountRate(e.target.value)}
-                  className="max-w-[10rem]"
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <div className="inline-flex rounded-lg border border-border bg-muted p-0.5 text-xs font-medium">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("individual")}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
+                          field.value === "individual"
+                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <UserIcon className="size-3.5" />
+                        Bireysel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("corporate")}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
+                          field.value === "corporate"
+                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Building2 className="size-3.5" />
+                        Kurumsal
+                      </button>
+                    </div>
+                  )}
                 />
-                <p className="text-[11px] text-slate-400 mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
-              </Field>
-              <Field label="Risk / Uyarı Notu" htmlFor="riskNote">
-                <Textarea
-                  id="riskNote"
-                  name="riskNote"
-                  defaultValue={initial?.riskNote || ""}
-                  rows={3}
-                  placeholder="Örn: Ödemelerde gecikme yaşanabilir, dikkatli olun."
-                />
-              </Field>
-            </div>
-          </section>
+              </header>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-3">
-            <header className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">İletişim İzinleri</h3>
-            </header>
-            <div className="space-y-2">
-              <ConsentRow
-                label="WhatsApp izni var"
-                icon={<MessageCircle className="size-4 text-emerald-600" />}
-                checked={whatsappConsent}
-                onChange={setWhatsappConsent}
-              />
-              <ConsentRow
-                label="SMS izni var"
-                icon={<Smartphone className="size-4 text-sky-600" />}
-                checked={smsConsent}
-                onChange={setSmsConsent}
-              />
-              <ConsentRow
-                label="E-posta izni var"
-                icon={<Mail className="size-4 text-indigo-600" />}
-                checked={emailConsent}
-                onChange={setEmailConsent}
-              />
-            </div>
-            <div className="pt-2 border-t border-slate-100">
-              <Label htmlFor="kvkkApprovedAt" className="text-xs">KVKK Onay Tarihi</Label>
-              <Input
-                id="kvkkApprovedAt"
-                type="date"
-                value={kvkkApprovedAt}
-                onChange={(e) => setKvkkApprovedAt(e.target.value)}
-                className="mt-1.5"
-              />
-              {kvkkApprovedAt ? (
-                <p className="text-[11px] text-slate-400 mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
+              {type === "individual" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ad *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ahmet" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Soyad *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Yılmaz" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" placeholder="0555 123 4567" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon 2</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" placeholder="0555 987 6543" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>E-posta</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" placeholder="ornek@email.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İl</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="İstanbul" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İlçe</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Kadıköy" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Adres</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Mahalle / Sokak / No" rows={2} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               ) : (
-                <p className="text-[11px] text-slate-400 mt-1">Henüz kaydedilmedi</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Şirket Adı *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="ABC Lojistik A.Ş." />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contactName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yetkili Kişi</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Mehmet Bey" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon *</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" placeholder="0212 555 0000" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon 2</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="tel" placeholder="0555 987 6543" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>E-posta</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" placeholder="info@sirket.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İl</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="İstanbul" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İlçe</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Kadıköy" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Adres</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Mahalle / Sokak / No" rows={2} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
-            </div>
-          </section>
+            </section>
 
-          <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-            <div className="flex items-start gap-2">
-              <Info className="size-4 text-slate-400 mt-0.5" />
-              <div className="text-xs text-slate-600">
-                <p className="font-medium text-slate-700">Sesle Doldur</p>
-                <p className="mt-0.5">Sesle doldurma özelliği yakında. Şimdilik formu manuel doldurun.</p>
+            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+              <header>
+                <h3 className="text-sm font-semibold text-foreground">Vergi / Kimlik Bilgileri</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Fatura ve resmi kayıtlar için</p>
+              </header>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="identityNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TC Kimlik No</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="numeric" maxLength={11} placeholder="12345678901" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="taxNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vergi No</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="numeric" placeholder="1234567890" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="taxOffice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vergi Dairesi</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Kadıköy VD" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-            <Button type="button" variant="outline" size="sm" disabled className="w-full gap-1.5">
-              <Mic className="size-4" />
-              Sesle Doldur (Yakında)
-            </Button>
-          </section>
-        </aside>
-      </div>
+            </section>
 
-      <div className="lg:hidden sticky bottom-0 left-0 right-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-white border-t border-slate-200 flex items-center justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
-          İptal
-        </Button>
-        <Button type="submit" disabled={loading} className="gap-1.5">
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
-        </Button>
-      </div>
+            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+              <header className="flex items-center gap-2">
+                <FileText className="size-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Müşteri Notu</h3>
+              </header>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea {...field} rows={4} placeholder="Bu müşteriye özel notlar (iç kullanım). Müşteri çıktısında gösterilmez." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
+          </div>
 
-      <div className="hidden lg:flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
-          İptal
-        </Button>
-        <Button type="submit" disabled={loading} className="gap-1.5">
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
-        </Button>
-      </div>
+          <aside className="space-y-5">
+            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+              <header>
+                <h3 className="text-sm font-semibold text-foreground">Müşteri Profili</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Etiket, kaynak, fiyat grubu</p>
+              </header>
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="tag"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Etiket</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { key: "standard", label: "Standart" },
+                            { key: "vip", label: "VIP" },
+                            { key: "risky", label: "Riskli" },
+                            { key: "fleet", label: "Filo" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => field.onChange(opt.key)}
+                              className={cn(
+                                "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
+                                field.value === opt.key
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                        Önizleme: <CustomerTagBadge tag={tag} />
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="source"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Müşteri Kaynağı</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="Seçilmedi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Seçilmedi</SelectItem>
+                            <SelectItem value="referral">Tavsiye</SelectItem>
+                            <SelectItem value="google">Google</SelectItem>
+                            <SelectItem value="social_media">Sosyal Medya</SelectItem>
+                            <SelectItem value="walk_in">Yoldan Geldi</SelectItem>
+                            <SelectItem value="existing">Mevcut Müşteri</SelectItem>
+                            <SelectItem value="other">Diğer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="priceGroup"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fiyat Grubu</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { key: "standard", label: "Standart" },
+                            { key: "discounted", label: "İndirimli" },
+                            { key: "fleet", label: "Filo" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => field.onChange(opt.key)}
+                              className={cn(
+                                "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
+                                field.value === opt.key
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </FormControl>
+                      {priceGroup ? (
+                        <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                          Önizleme: <PriceGroupBadge group={priceGroup} />
+                        </p>
+                      ) : null}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="discountRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>İndirim %</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.5"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          className="max-w-[10rem]"
+                        />
+                      </FormControl>
+                      <p className="text-[11px] text-muted-foreground/70 mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="riskNote"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Risk / Uyarı Notu</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={3} placeholder="Örn: Ödemelerde gecikme yaşanabilir, dikkatli olun." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </section>
 
-      <div className="flex items-center gap-2 text-[11px] text-slate-400">
-        <Phone className="size-3" />
-        <span>Telefon numaraları otomatik olarak +90 formatına normalleştirilir.</span>
-      </div>
-    </form>
-  )
-}
+            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+              <header className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">İletişim İzinleri</h3>
+              </header>
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="whatsappConsent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <MessageCircle className="size-4 text-success" />
+                          <span>WhatsApp izni var</span>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(c) => field.onChange(c)}
+                          />
+                        </FormControl>
+                      </label>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="smsConsent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Smartphone className="size-4 text-primary" />
+                          <span>SMS izni var</span>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(c) => field.onChange(c)}
+                          />
+                        </FormControl>
+                      </label>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="emailConsent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Mail className="size-4 text-primary" />
+                          <span>E-posta izni var</span>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(c) => field.onChange(c)}
+                          />
+                        </FormControl>
+                      </label>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="pt-2 border-t border-border">
+                <FormField
+                  control={form.control}
+                  name="kvkkApprovedAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">KVKK Onay Tarihi</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" className="mt-1.5" />
+                      </FormControl>
+                      {kvkkApprovedAt ? (
+                        <p className="text-[11px] text-muted-foreground/70 mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground/70 mt-1">Henüz kaydedilmedi</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </section>
 
-function Field({
-  label,
-  htmlFor,
-  required,
-  children,
-  className,
-}: {
-  label: string
-  htmlFor: string
-  required?: boolean
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={cn("space-y-1.5", className)}>
-      <Label htmlFor={htmlFor} className="text-xs text-slate-600">
-        {label}
-        {required ? <span className="text-rose-500 ml-0.5">*</span> : null}
-      </Label>
-      {children}
-    </div>
-  )
-}
+            <section className="rounded-lg border border-border bg-muted p-4 space-y-2">
+              <div className="flex items-start gap-2">
+                <Info className="size-4 text-muted-foreground/70 mt-0.5" />
+                <div className="text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground">Sesle Doldur</p>
+                  <p className="mt-0.5">Sesle doldurma özelliği yakında. Şimdilik formu manuel doldurun.</p>
+                </div>
+              </div>
+              <Button type="button" variant="outline" size="sm" disabled className="w-full gap-1.5">
+                <Mic className="size-4" />
+                Sesle Doldur (Yakında)
+              </Button>
+            </section>
+          </aside>
+        </div>
 
-function ConsentRow({
-  label,
-  icon,
-  checked,
-  onChange,
-}: {
-  label: string
-  icon: React.ReactNode
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 cursor-pointer touch-manipulation">
-      <div className="flex items-center gap-2 text-sm text-slate-700">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-      />
-    </label>
+        <div className="lg:hidden sticky bottom-0 left-0 right-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-white border-t border-border flex items-center justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
+            İptal
+          </Button>
+          <Button type="submit" disabled={pending} className="gap-1.5">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
+          </Button>
+        </div>
+
+        <div className="hidden lg:flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
+            İptal
+          </Button>
+          <Button type="submit" disabled={pending} className="gap-1.5">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground/70">
+          <Phone className="size-3" />
+          <span>Telefon numaraları otomatik olarak +90 formatına normalleştirilir.</span>
+        </div>
+      </form>
+    </Form>
   )
 }

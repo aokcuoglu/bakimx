@@ -67,11 +67,11 @@ export function OrderList({
   activePayment: string
 }) {
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-blue-50 text-blue-700 border-blue-200" },
-    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-amber-50 text-amber-700 border-amber-200" },
-    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-rose-50 text-rose-700 border-rose-200" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-primary/10 text-primary border-primary/20" },
+    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning border-warning/20" },
+    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary border-primary/20" },
+    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success border-success/20" },
+    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive border-destructive/20" },
   ]
 
   const paymentParam = activePayment ? `&payment=${activePayment}` : ""
@@ -90,26 +90,26 @@ export function OrderList({
               href={href}
               prefetch={false}
               className={cn(
-                "rounded-xl border bg-white p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
-                isActive ? "ring-2 ring-blue-500 border-blue-500" : "border-slate-200"
+                "rounded-lg border bg-card p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
+                isActive ? "ring-2 ring-primary border-primary" : "border-border"
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">{cfg.label}</span>
+                <span className="text-xs text-muted-foreground font-medium">{cfg.label}</span>
                 <span className={cn("h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold", cfg.accent)}>
                   {cfg.count}
                 </span>
               </div>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{cfg.count}</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{cfg.count}</p>
             </Link>
           )
         })}
       </div>
 
-      <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
+            <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">İş No</th>
                 <th className="px-4 py-3 text-left font-semibold">Plaka / Araç</th>
@@ -120,16 +120,16 @@ export function OrderList({
                 <th className="px-4 py-3 text-right font-semibold">Toplam</th>
                 <th className="px-4 py-3 text-left font-semibold">Giriş</th>
                 <th className="px-4 py-3 text-left font-semibold">Tahmini Teslim</th>
-                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
+                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50/60 transition-colors group">
+                <tr key={order.id} className="hover:bg-muted/60 transition-colors group">
                   <td className="px-4 py-3">
                     <Link
                       href={`/app/orders/${order.id}`}
-                      className="font-mono text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                      className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
                     >
                       {order.workOrderNo}
                     </Link>
@@ -143,7 +143,7 @@ export function OrderList({
                       ) : (
                         <PlateBadge plate={order.vehicle.plate} />
                       )}
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         {order.vehicle.brand} {order.vehicle.model}
                       </span>
                     </div>
@@ -152,17 +152,17 @@ export function OrderList({
                     {order.customer.id ? (
                       <Link
                         href={`/app/customers/${order.customer.id}`}
-                        className="text-slate-900 font-medium hover:text-blue-600 transition-colors block"
+                        className="text-foreground font-medium hover:text-primary transition-colors block"
                       >
                         {customerName(order.customer)}
                       </Link>
                     ) : (
-                      <div className="text-slate-900 font-medium">{customerName(order.customer)}</div>
+                      <div className="text-foreground font-medium">{customerName(order.customer)}</div>
                     )}
-                    <div className="text-xs text-slate-500">{order.customer.phone}</div>
+                    <div className="text-xs text-muted-foreground">{order.customer.phone}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-700">
-                    {order.technicianName || <span className="text-slate-400">—</span>}
+                  <td className="px-4 py-3 text-foreground">
+                    {order.technicianName || <span className="text-muted-foreground/70">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={order.status} />
@@ -170,16 +170,16 @@ export function OrderList({
                   <td className="px-4 py-3">
                     <PaymentBadge status={order.paymentStatus} />
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
+                  <td className="px-4 py-3 text-right font-semibold text-foreground">
+                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
                     {formatDate(order.createdAt)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-slate-400">—</span>}
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground/70">—</span>}
                   </td>
-                  <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                  <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/app/orders/${order.id}`}
@@ -198,14 +198,14 @@ export function OrderList({
         {orders.map((order) => (
           <div
             key={order.id}
-            className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
+            className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/app/orders/${order.id}`}
-                    className="font-mono text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+                    className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
                     {order.workOrderNo}
                   </Link>
@@ -219,11 +219,11 @@ export function OrderList({
                 </div>
                 <Link
                   href={order.customer.id ? `/app/customers/${order.customer.id}` : "#"}
-                  className="mt-1.5 text-sm font-semibold text-slate-900 truncate block hover:text-blue-600 transition-colors"
+                  className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                 >
                   {customerName(order.customer)}
                 </Link>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {order.vehicle.brand} {order.vehicle.model}
                 </p>
               </div>
@@ -237,15 +237,15 @@ export function OrderList({
               <PaymentBadge status={order.paymentStatus} />
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
-              <div className="text-slate-500">
+              <div className="text-muted-foreground">
                 {order.estimatedDeliveryAt ? (
-                  <>Tahmini: <span className="text-slate-700 font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
+                  <>Tahmini: <span className="text-foreground font-medium">{formatDate(order.estimatedDeliveryAt)}</span></>
                 ) : (
                   <span>Giriş: {formatDate(order.createdAt)}</span>
                 )}
               </div>
-              <div className="font-semibold text-slate-900">
-                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
+              <div className="font-semibold text-foreground">
+                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { QUOTE_STATUS, type QuoteStatusKey } from "@/lib/constants"
 export function QuoteStatusBadge({ status, size = "sm", className }: { status: string; size?: "sm" | "md"; className?: string }) {
   const info = QUOTE_STATUS[status as QuoteStatusKey]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-100 text-slate-700 border-slate-200"
+  const color = info?.color || "bg-muted text-foreground border-border"
 
   return (
     <span

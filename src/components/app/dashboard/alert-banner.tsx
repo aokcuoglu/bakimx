@@ -45,31 +45,31 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
 
   if (alerts.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-3">
-        <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-        <p className="text-sm text-emerald-700">Bugün kritik operasyon uyarısı bulunmuyor.</p>
+      <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-4 py-3">
+        <CheckCircle2 className="size-4 text-success shrink-0" />
+        <p className="text-sm text-foreground">Bugün kritik operasyon uyarısı bulunmuyor.</p>
       </div>
     )
   }
 
   const colorMap = {
     red: {
-      bg: "bg-red-50 border-red-200",
-      text: "text-red-800",
-      icon: "text-red-500",
-      hover: "hover:bg-red-100/60",
+      bg: "bg-destructive/10 border-destructive/20",
+      text: "text-foreground",
+      icon: "text-destructive",
+      hover: "hover:bg-destructive/20",
     },
     rose: {
-      bg: "bg-rose-50 border-rose-200",
-      text: "text-rose-800",
-      icon: "text-rose-500",
-      hover: "hover:bg-rose-100/60",
+      bg: "bg-destructive/10 border-destructive/20",
+      text: "text-foreground",
+      icon: "text-destructive",
+      hover: "hover:bg-destructive/20",
     },
     amber: {
-      bg: "bg-amber-50 border-amber-200",
-      text: "text-amber-800",
-      icon: "text-amber-500",
-      hover: "hover:bg-amber-100/60",
+      bg: "bg-warning/10 border-warning/20",
+      text: "text-foreground",
+      icon: "text-warning",
+      hover: "hover:bg-warning/20",
     },
   }
 
@@ -82,7 +82,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
           <Link
             key={i}
             href={alert.href}
-            className={`flex items-center gap-3 rounded-xl border ${colors.bg} ${colors.hover} px-4 py-3 transition-colors group`}
+            className={`flex items-center gap-3 rounded-lg border ${colors.bg} ${colors.hover} px-4 py-3 transition-colors group`}
           >
             <div className={`shrink-0 ${colors.icon}`}>
               <Icon className="size-4" />

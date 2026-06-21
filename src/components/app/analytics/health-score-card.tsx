@@ -2,17 +2,10 @@ import Link from "next/link"
 import type { OperationsHealth } from "@/lib/analytics/queries"
 import { Wrench, Clock, MessageCircle, AlertTriangle, Wallet } from "lucide-react"
 
-function scoreColor(score: number): string {
-  if (score >= 80) return "text-emerald-600"
-  if (score >= 50) return "text-amber-600"
-  return "text-red-600"
-}
-
-
 function scoreRingColor(score: number): string {
-  if (score >= 80) return "stroke-emerald-500"
-  if (score >= 50) return "stroke-amber-500"
-  return "stroke-red-500"
+  if (score >= 80) return "stroke-success"
+  if (score >= 50) return "stroke-warning"
+  return "stroke-destructive"
 }
 
 function scoreLabel(score: number): string {
@@ -26,11 +19,11 @@ export function HealthScoreCard({ health }: { health: OperationsHealth }) {
   const offset = circumference - (health.healthScore / 100) * circumference
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+    <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-col sm:flex-row items-center gap-5">
         <div className="relative size-32 shrink-0">
           <svg className="size-32 -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#E2E8F0" strokeWidth="8" />
+            <circle cx="50" cy="50" r="45" fill="none" className="stroke-border" strokeWidth="8" />
             <circle
               cx="50"
               cy="50"
@@ -44,30 +37,30 @@ export function HealthScoreCard({ health }: { health: OperationsHealth }) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-3xl font-bold ${scoreColor(health.healthScore)}`}>
+            <span className="text-3xl font-bold text-foreground">
               {health.healthScore}
             </span>
-            <span className="text-xs text-slate-500">{scoreLabel(health.healthScore)}</span>
+            <span className="text-xs text-muted-foreground">{scoreLabel(health.healthScore)}</span>
           </div>
         </div>
         <div className="flex-1 text-center sm:text-left">
-          <h3 className="text-lg font-bold text-slate-900">Operasyon Sağlık Skoru</h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <h3 className="text-lg font-bold text-foreground">Operasyon Sağlık Skoru</h3>
+          <p className="text-sm text-muted-foreground mt-1">
             Geciken iş emirleri, kritik stok ve ödenmemiş iş emirleri baz alınarak hesaplanır.
           </p>
           <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
             health.healthScore >= 80
-              ? "bg-emerald-50 text-emerald-700"
+              ? "bg-success/10 text-foreground"
               : health.healthScore >= 50
-                ? "bg-amber-50 text-amber-700"
-                : "bg-red-50 text-red-700"
+                ? "bg-warning/10 text-foreground"
+                : "bg-destructive/10 text-foreground"
           }`}>
             <div className={`size-2 rounded-full ${
               health.healthScore >= 80
-                ? "bg-emerald-500"
+                ? "bg-success"
                 : health.healthScore >= 50
-                  ? "bg-amber-500"
-                  : "bg-red-500"
+                  ? "bg-warning"
+                  : "bg-destructive"
             }`} />
             {scoreLabel(health.healthScore)} Durum
           </div>
@@ -91,16 +84,16 @@ function MetricCard({ label, value, icon: Icon, href, accent, accentBg, subtitle
   return (
     <Link
       href={href}
-      className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm hover:border-slate-300 transition-all group"
+      className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>
           <Icon className={`size-3.5 ${accent}`} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
     </Link>
   )
 }
@@ -113,16 +106,16 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.activeJobs}
         icon={Wrench}
         href="/app/orders"
-        accent="text-blue-600"
-        accentBg="bg-blue-100"
+        accent="text-primary"
+        accentBg="bg-primary/10"
       />
       <MetricCard
         label="Geciken İş Emri"
         value={health.delayedJobs}
         icon={Clock}
         href="/app/analytics"
-        accent="text-red-600"
-        accentBg="bg-red-100"
+        accent="text-destructive"
+        accentBg="bg-destructive/10"
         subtitle={health.delayedJobs > 0 ? "Teslim tarihi geçti" : undefined}
       />
       <MetricCard
@@ -130,24 +123,24 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.waitingApprovals}
         icon={MessageCircle}
         href="/app/orders?status=waiting_approval"
-        accent="text-amber-600"
-        accentBg="bg-amber-100"
+        accent="text-warning"
+        accentBg="bg-warning/10"
       />
       <MetricCard
         label="Kritik Stok"
         value={health.criticalStock}
         icon={AlertTriangle}
         href="/app/parts"
-        accent="text-orange-600"
-        accentBg="bg-orange-100"
+        accent="text-warning"
+        accentBg="bg-warning/10"
       />
       <MetricCard
         label="Açık Alacak"
         value={health.unpaidWorkOrders}
         icon={Wallet}
         href="/app/reports/collections"
-        accent="text-purple-600"
-        accentBg="bg-purple-100"
+        accent="text-destructive"
+        accentBg="bg-destructive/10"
         subtitle={health.openReceivables > 0 ? "Ödenmemiş iş emri" : undefined}
       />
     </div>

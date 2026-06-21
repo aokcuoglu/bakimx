@@ -30,8 +30,38 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Button uses `render` prop (NOT `asChild`) for link rendering
 - Accordion uses Base UI API (no `type`/`collapsible` props)
 - Select `onValueChange` receives `(value: string | null)`
+- Form: react-hook-form + zod + shadcn Form component (uses @radix-ui/react-slot transitively)
+- Toast: sonner (<Toaster /> in root layout)
 - Prisma ORM with PostgreSQL
 - Storage: mock (default) / S3-compatible (MinIO local / Cloudflare R2 production)
+
+## UI Component Rules
+- **NO raw HTML interactive elements** — always use shadcn/ui components:
+  - `<button>` → `<Button>`
+  - `<input>` → `<Input>`
+  - `<select>` → `<Select>`
+  - `<textarea>` → `<Textarea>`
+  - `<input type="checkbox">` → `<Checkbox>`
+  - `<input type="radio">` → `<RadioGroup>`
+  - `<nav>` with tab logic → `<Tabs>`
+  - `fixed inset-0` modals → `<Dialog>` or `<Sheet>`
+  - toggle button groups → `<ToggleGroup>` + `<ToggleGroupItem>`
+  - on/off switches → `<Switch>` (NOT checkbox for toggle)
+- **`<Link>` as button:** use `<Button nativeButton={false} render={<Link href={...} />}>` (NOT `<Link><Button>...</Button></Link>`)
+- **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
+- **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
+- **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
+- **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
+
+## Form Rules
+- **All forms use react-hook-form + zod + shadcn Form component** (NOT useState)
+- Zod schemas live in `src/lib/validations/<entity>.ts`
+- Pattern: `useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues })`
+- Fields: `<FormField control={form.control} name="..." render={({ field }) => (<FormItem><FormLabel>...</FormLabel><FormControl>...</FormControl><FormMessage /></FormItem>)} />`
+- Server actions kept — `onSubmit` builds `FormData` from form values and calls the action
+- Server errors shown via `<Alert variant="destructive">`
+- Dynamic arrays (line items): use `useFieldArray` from react-hook-form
+- Multi-step wizards: single `useForm` for all steps, `form.trigger(["field1"])` to validate per step
 
 ## Architecture
 - **Application** runs on host via `bun run dev` — NOT in a Docker container

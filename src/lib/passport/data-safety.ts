@@ -1,4 +1,5 @@
 import { ORDER_STATUS, PAYMENT_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, MAINTENANCE_REMINDER_TYPES, MAINTENANCE_REMINDER_STATUS } from "@/lib/constants"
+import { escapeHtml } from "@/lib/html-escape"
 
 export type SafePassportVehicle = {
   plate: string
@@ -205,19 +206,23 @@ export function sanitizePassportForPublic(
         .filter((i) => i.order)
         .map((i) => {
           const order = i.order!
-          const items = order.items.map((item) => ({
-            type: item.type,
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
-          }))
+          // Monetary amounts (line prices + grand total) are financial data and
+          // are only exposed when the share explicitly enables showPaymentStatus.
+          const showMoney = visibility.showPaymentStatus === true
 
-          const grandTotal = items.reduce((sum, item) => {
+          const grandTotal = order.items.reduce((sum, item) => {
             if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
             if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
             return sum
           }, 0)
+
+          const items = order.items.map((item) => ({
+            type: item.type,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: showMoney ? item.unitPrice : null,
+            totalPrice: showMoney ? item.totalPrice : null,
+          }))
 
           return {
             workOrderNo: order.workOrderNo,
@@ -232,7 +237,7 @@ export function sanitizePassportForPublic(
             customerComplaint: i.customerComplaint,
             createdAt: i.createdAt,
             items,
-            grandTotal: grandTotal > 0 ? grandTotal : null,
+            grandTotal: showMoney && grandTotal > 0 ? grandTotal : null,
           }
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -296,6 +301,42 @@ export function sanitizePassportForPublic(
     damageHistory,
     photoHistory,
     reminders,
+  }
+}
+
+const passportOrNull = (v: string | null): string | null => (v == null ? null : escapeHtml(v))
+
+/**
+ * Escape human-readable string fields of SafePassportData for safe
+ * interpolation into the raw HTML passport/PDF route. Enum keys, colors,
+ * numbers and dates are left untouched. Do NOT use for React pages.
+ */
+export function escapePassportForHtml(data: SafePassportData): SafePassportData {
+  return {
+    ...data,
+    serviceHistory: data.serviceHistory.map((e) => ({ ...e, description: escapeHtml(e.description) })),
+    workOrders: data.workOrders.map((wo) => ({
+      ...wo,
+      workOrderNo: passportOrNull(wo.workOrderNo),
+      statusLabel: escapeHtml(wo.statusLabel),
+      paymentStatusLabel: passportOrNull(wo.paymentStatusLabel),
+      customerComplaint: escapeHtml(wo.customerComplaint),
+      items: wo.items.map((i) => ({ ...i, name: escapeHtml(i.name) })),
+    })),
+    damageHistory: data.damageHistory.map((dm) => ({
+      ...dm,
+      zoneLabel: escapeHtml(dm.zoneLabel),
+      damageTypeLabel: escapeHtml(dm.damageTypeLabel),
+      severityLabel: escapeHtml(dm.severityLabel),
+      note: passportOrNull(dm.note),
+    })),
+    photoHistory: data.photoHistory.map((p) => ({ ...p, label: escapeHtml(p.label) })),
+    reminders: data.reminders.map((r) => ({
+      ...r,
+      title: escapeHtml(r.title),
+      typeLabel: escapeHtml(r.typeLabel),
+      statusLabel: escapeHtml(r.statusLabel),
+    })),
   }
 }
 

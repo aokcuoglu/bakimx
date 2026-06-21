@@ -253,12 +253,12 @@ curl -X POST https://your-domain.com/api/cron/reminders \
 
 **Ortam değişkeni:**
 ```env
-# Üretim ortamında zorunlu — cron endpoint'ini yetkisiz erişime karşı korur
-CRON_SECRET=your-random-secret-string
+# TÜM ortamlarda zorunlu — cron endpoint'ini yetkisiz erişime karşı korur
+CRON_SECRET=change-me-to-a-long-random-string
 ```
 
-- `CRON_SECRET` ayarlanmazsa ve `NODE_ENV=production` ise endpoint 500 döndürür
-- Geliştirme ortamında `CRON_SECRET` boş bırakılırsa endpoint herkese açık olur
+- `CRON_SECRET` **tüm ortamlarda zorunludur**; ayarlanmazsa endpoint 500 döndürür (asla herkese açık olmaz)
+- Bearer token eşleşmezse endpoint 401 döndürür (sabit-zamanlı karşılaştırma)
 - Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
 - AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir
 - Önerilen kalemler otomatik eklenmez — kullanıcı onayı zorunludur
@@ -931,7 +931,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ### Auth
 - `/login` — Giriş
-- `/register` — Kayıt
+- Genel kayıt (register) akışı yoktur; hesaplar seed/yönetici ile sağlanır. `/register` `/login`'e yönlenir.
 
 ### Panel (`/app/*`)
 - `/app` — Genel Bakış (dashboard)
@@ -1025,6 +1025,16 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 - Gerçek e-posta gönderimi için Resend API anahtarı gerekir (mock varsayılan)
 - Randevu hatırlatma zamanlaması (24h/1h öncesi) için cron job gerekir
 - Rate limiting bellek içi (dağıtık ortamda Redis gerekir)
+- **Login rate-limit'i istemci IP'sine dayanır — ters proxy (nginx) yapılandırması zorunludur.** Login ve cron gibi uç noktalar istemci IP'sini `X-Forwarded-For` başlığından okur. nginx (veya kullanılan ters proxy) gerçek istemci IP'sini bu başlığa yazmalıdır; aksi halde (a) tüm istekler tek `"unknown"` kovasında toplanır ve yanlışlıkla toplu kilitlenme/DoS oluşabilir, (b) başlık istemci tarafından taklit edilerek limit aşılabilir. Önerilen nginx yapılandırması:
+  ```nginx
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $remote_addr;   # istemci IP'sini üzerine yaz (zincire ekleme)
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+  ```
 - OCR için üretim ortamında ilgili sağlayıcının API anahtarı gerekir (mock harici)
 - Tesseract-only sağlayıcısının doğruluğu DeepSeek/OpenAI'dan düşüktür
 - AI Servis Danışmanı mock sağlayıcısı basit anahtar kelime eşlemesi kullanır (LLM gibi bağlamsal değil)

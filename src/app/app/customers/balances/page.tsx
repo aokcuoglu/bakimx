@@ -2,12 +2,14 @@ import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
-import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/app/customer-badges"
 import { formatTRY } from "@/lib/format"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
 import { cn } from "@/lib/utils"
+import { FilterSelect } from "@/components/app/filter-select"
 
 type SP = { q?: string; type?: string }
 
@@ -133,39 +135,41 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Müşteri Bakiye Özeti">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/app/customers" className="hover:text-slate-700">Müşteriler</Link>
+          <Link href="/app/customers" className="hover:text-foreground">Müşteriler</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Bakiye Özeti</span>
+          <span className="text-foreground font-medium">Bakiye Özeti</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Bakiye Özeti</h2>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bakiye Özeti</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Tahsilat kayıtlarına dayalı müşteri bakiye görünümü
             </p>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/app/cashbox"
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={<Link href="/app/cashbox" />}
             >
               <Wallet className="size-4" />
               Kasa
-            </Link>
-            <Link
-              href="/app/customers"
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={<Link href="/app/customers" />}
             >
               Müşteri Listesi
-            </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-500 flex items-start gap-2">
+        <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
           <span>
             Bu ekran operasyonel tahsilat takibi içindir. Resmi muhasebe veya e-fatura/e-arşiv yerine geçmez.
@@ -173,47 +177,46 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-slate-50 text-slate-700" />
-          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-blue-50 text-blue-700" />
-          <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-emerald-50 text-emerald-700" />
-          <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-rose-50 text-rose-700" />
-          <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-amber-50 text-amber-700" />
-          <KpiCard label="Ödenmiş" value={totals.settled.toString()} accent="bg-emerald-50 text-emerald-700" />
+          <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-muted text-foreground" />
+          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary" />
+          <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-success/10 text-success" />
+          <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-destructive/10 text-destructive" />
+          <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-warning/10 text-warning" />
+          <KpiCard label="Ödenmiş" value={totals.settled.toString()} accent="bg-success/10 text-success" />
         </div>
 
         <form action="/app/customers/balances" method="get" className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
             <Input
               name="q"
               defaultValue={q}
               placeholder="Müşteri adı, telefon veya plaka ara…"
-              className="pl-10 h-11"
+              className="pl-10"
             />
           </div>
           <div className="flex gap-2">
-            <select
+            <FilterSelect
               name="type"
               defaultValue={type}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">Tüm Tipler</option>
-              <option value="individual">Bireysel</option>
-              <option value="corporate">Kurumsal</option>
-            </select>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
-            >
-              Filtrele
-            </button>
+              placeholder="Tüm Tipler"
+              options={[
+                { value: "", label: "Tüm Tipler" },
+                { value: "individual", label: "Bireysel" },
+                { value: "corporate", label: "Kurumsal" },
+              ]}
+            />
+            <Button variant="outline" size="default" type="submit">
+              <Filter className="size-4" />
+              <span className="hidden sm:inline">Filtrele</span>
+            </Button>
           </div>
         </form>
 
         {rows.length === 0 ? (
-          <div className="text-center py-16 text-slate-500 bg-white border border-dashed border-slate-200 rounded-xl">
-            <Wallet className="size-12 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm font-medium text-slate-700">Sonuç bulunamadı</p>
+          <div className="text-center py-16 text-muted-foreground bg-card border border-dashed border-border rounded-lg">
+            <Wallet className="size-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground">Sonuç bulunamadı</p>
             <p className="text-xs mt-1">Farklı bir arama veya filtre deneyin</p>
           </div>
         ) : (
@@ -229,8 +232,8 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
 
 function KpiCard({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div className={cn("rounded-xl border border-slate-200 bg-white p-3.5", accent.split(" ")[0])}>
-      <p className="text-[11px] font-medium text-slate-600 uppercase tracking-wider truncate">{label}</p>
+    <div className={cn("rounded-lg border border-border bg-card p-3.5", accent.split(" ")[0])}>
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">{label}</p>
       <p className={cn("text-base sm:text-lg font-bold mt-1 truncate", accent.split(" ")[1])}>{value}</p>
     </div>
   )
@@ -242,17 +245,17 @@ function nameFor(c: { type: string; firstName: string | null; lastName: string |
 }
 
 function BalanceStatusBadge({ remaining, grandTotal }: { remaining: number; grandTotal: number }) {
-  if (grandTotal <= 0) return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-slate-50 text-slate-500 border-slate-200">Pasif</span>
-  if (remaining > 0) return <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-medium bg-rose-50 text-rose-700 border-rose-200"><AlertTriangle className="size-3" /> Alacak</span>
-  return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-200">Ödendi</span>
+  if (grandTotal <= 0) return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-muted text-muted-foreground border-border">Pasif</span>
+  if (remaining > 0) return <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-medium bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="size-3" /> Alacak</span>
+  return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-success/10 text-success border-success/20">Ödendi</span>
 }
 
 function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; phone: string; tag: string | null; vehicleCount: number; ordersCount: number; grandTotal: number; paidAmount: number; remainingAmount: number; lastPaymentDate: string | null; lastActivityDate: string | null }> }) {
   return (
-    <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+          <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider">
             <tr>
               <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
               <th className="px-4 py-3 text-left font-semibold">Telefon</th>
@@ -264,16 +267,16 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
               <th className="px-4 py-3 text-left font-semibold">Durum</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {rows.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+              <tr key={row.id} className="hover:bg-muted/60 transition-colors">
                 <td className="px-4 py-3">
-                  <Link href={`/app/customers/${row.id}`} className="flex items-center gap-2.5 min-w-0 hover:text-blue-600">
-                    <div className="size-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold shrink-0">
+                  <Link href={`/app/customers/${row.id}`} className="flex items-center gap-2.5 min-w-0 hover:text-primary">
+                    <div className="size-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                       {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(row)}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{nameFor(row)}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <CustomerTypeBadge type={row.type || "individual"} />
                         {row.tag ? <CustomerTagBadge tag={row.tag} /> : null}
@@ -281,20 +284,20 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
                     </div>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                  <a href={`tel:${row.phone}`} className="hover:text-blue-600">{row.phone}</a>
+                <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                  <a href={`tel:${row.phone}`} className="hover:text-primary">{row.phone}</a>
                 </td>
-                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{row.ordersCount}</td>
-                <td className="px-4 py-3 text-right text-slate-700 tabular-nums">
-                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-slate-400">—</span>}
+                <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.ordersCount}</td>
+                <td className="px-4 py-3 text-right text-foreground tabular-nums">
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground/70">—</span>}
                 </td>
-                <td className="px-4 py-3 text-right text-emerald-700 tabular-nums">
-                  {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-slate-400">—</span>}
+                <td className="px-4 py-3 text-right text-success tabular-nums">
+                  {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-muted-foreground/70">—</span>}
                 </td>
-                <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-rose-700" : "text-slate-500")}>
+                <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-destructive" : "text-muted-foreground")}>
                   {row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {row.lastPaymentDate ? new Date(row.lastPaymentDate).toLocaleDateString("tr-TR") : "—"}
                 </td>
                 <td className="px-4 py-3">
@@ -316,20 +319,20 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
         <Link
           key={row.id}
           href={`/app/customers/${row.id}`}
-          className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation"
+          className="block rounded-lg border border-border bg-card p-3.5 active:bg-muted touch-manipulation"
         >
           <div className="flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
+            <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
               {row.type === "corporate" ? <Building2 className="size-4" /> : nameFor(row).slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-slate-900 truncate">{nameFor(row)}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{nameFor(row)}</p>
                 <CustomerTypeBadge type={row.type || "individual"} />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{row.phone}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{row.phone}</p>
             </div>
-            <ChevronRight className="size-4 text-slate-400 shrink-0 mt-1" />
+            <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 mt-1" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
             <MiniStat label="İş Emri" value={row.ordersCount.toString()} />
@@ -350,13 +353,13 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
 function MiniStat({ label, value, tone = "slate" }: { label: string; value: string; tone?: "slate" | "emerald" | "rose" }) {
   const color =
     tone === "emerald"
-      ? "text-emerald-700"
+      ? "text-success"
       : tone === "rose"
-      ? "text-rose-700"
-      : "text-slate-700"
+      ? "text-destructive"
+      : "text-foreground"
   return (
-    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-      <p className="text-slate-500">{label}</p>
+    <div className="rounded-lg bg-muted px-2 py-1.5">
+      <p className="text-muted-foreground">{label}</p>
       <p className={cn("text-sm font-semibold tabular-nums truncate", color)}>{value}</p>
     </div>
   )

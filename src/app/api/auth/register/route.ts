@@ -1,18 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
-import { registerAction } from "@/app/(auth)/login/actions"
+import { NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
-  try {
-    const formData = await request.formData()
-    const result = await registerAction(formData)
-    if (result && "error" in result) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
-    }
-    return NextResponse.json({ success: true })
-  } catch (error: unknown) {
-    if (error && typeof error === "object" && "message" in error && (error as { message: string }).message === "NEXT_REDIRECT") {
-      return NextResponse.json({ success: true })
-    }
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
-  }
+// Public self-registration is disabled. BakımX has no public register flow;
+// accounts are provisioned out-of-band (seed / admin). This endpoint is kept
+// only to return a clear 404 for any old clients still calling it.
+export async function POST() {
+  return NextResponse.json({ error: "Kayıt akışı kullanılmıyor" }, { status: 404 })
 }

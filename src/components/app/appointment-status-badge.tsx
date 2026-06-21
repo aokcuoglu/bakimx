@@ -4,7 +4,7 @@ import { APPOINTMENT_STATUS, type AppointmentStatusKey } from "@/lib/constants"
 export function AppointmentStatusBadge({ status, size = "sm", className }: { status: string; size?: "sm" | "md"; className?: string }) {
   const info = APPOINTMENT_STATUS[status as AppointmentStatusKey]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-100 text-slate-700 border-slate-200"
+  const color = info?.color || "bg-muted text-foreground border-border"
 
   return (
     <span

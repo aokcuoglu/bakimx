@@ -6,6 +6,8 @@ import { Plus, ScanLine } from "lucide-react"
 import { VehicleList } from "@/components/app/vehicle-list"
 import { customerDisplayName } from "@/lib/format"
 import { deleteVehicleAction } from "./actions"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 export default async function VehiclesPage({
   searchParams,
@@ -85,50 +87,41 @@ export default async function VehiclesPage({
       workshopName={workshop?.name}
       pageTitle="Araçlar"
       pageActions={
-        <Link
-          href="/app/vehicles/new"
-          className="inline-flex items-center justify-center size-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white touch-manipulation"
-          aria-label="Yeni araç"
-        >
+        <Button nativeButton={false} size="icon" render={<Link href="/app/vehicles/new" />} aria-label="Yeni araç">
           <Plus className="size-5" />
-        </Link>
+        </Button>
       }
     >
       <div className="space-y-5 sm:space-y-6">
         <div className="hidden sm:flex items-center justify-between">
-          <div className="flex items-center text-sm text-slate-500">
-            <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
             <span className="mx-2">/</span>
-            <span className="text-slate-700 font-medium">Araçlar</span>
+            <span className="text-foreground font-medium">Araçlar</span>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Araçlar</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{vehicles.length} araç kayıtlı</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Araçlar</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">{vehicles.length} araç kayıtlı</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled
-              title="Plaka tanıma entegrasyonu yakında"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-slate-400 text-sm font-medium cursor-not-allowed touch-manipulation"
-            >
-              <ScanLine className="size-4" />
-              <span className="hidden sm:inline">Plaka Tara</span>
-            </button>
-            <Link
-              href="/app/vehicles/new"
-              className="hidden sm:inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
-            >
+            <Tooltip>
+              <TooltipTrigger render={<Button variant="outline" size="default" disabled />}>
+                <ScanLine className="size-4" />
+                <span className="hidden sm:inline">Plaka Tara</span>
+              </TooltipTrigger>
+              <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
+            </Tooltip>
+            <Button nativeButton={false} variant="default" size="default" className="hidden sm:inline-flex" render={<Link href="/app/vehicles/new" />}>
               <Plus className="size-4" />
               Yeni Araç
-            </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="hidden sm:block text-xs text-slate-400 -mt-2">
+        <div className="hidden sm:block text-xs text-muted-foreground/70 -mt-2">
           Plaka tanıma entegrasyonu yakında.
         </div>
 

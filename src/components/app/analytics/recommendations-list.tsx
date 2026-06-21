@@ -16,21 +16,21 @@ function recStyles(type: Recommendation["type"]) {
   switch (type) {
     case "warning":
       return {
-        bg: "bg-amber-50 border-amber-200",
-        icon: "text-amber-600",
-        text: "text-amber-800",
+        bg: "bg-warning/10 border-warning/20",
+        icon: "text-warning",
+        text: "text-foreground",
       }
     case "success":
       return {
-        bg: "bg-emerald-50 border-emerald-200",
-        icon: "text-emerald-600",
-        text: "text-emerald-800",
+        bg: "bg-success/10 border-success/20",
+        icon: "text-success",
+        text: "text-foreground",
       }
     default:
       return {
-        bg: "bg-blue-50 border-blue-200",
-        icon: "text-blue-600",
-        text: "text-blue-800",
+        bg: "bg-primary/10 border-primary/20",
+        icon: "text-primary",
+        text: "text-foreground",
       }
   }
 }
@@ -50,10 +50,10 @@ function categoryLabel(category: string): string {
 export function RecommendationsList({ recommendations }: { recommendations: Recommendation[] }) {
   if (recommendations.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 text-center">
-        <CheckCircle2 className="size-8 text-emerald-600 mx-auto mb-2" />
-        <h3 className="text-base font-semibold text-emerald-800">Her Şey Yolunda</h3>
-        <p className="text-sm text-emerald-700 mt-1">Şu anda dikkat gerektiren bir öneri yok.</p>
+      <div className="rounded-lg border border-success/20 bg-success/5 p-6 text-center">
+        <CheckCircle2 className="size-8 text-success mx-auto mb-2" />
+        <h3 className="text-base font-semibold text-foreground">Her Şey Yolunda</h3>
+        <p className="text-sm text-muted-foreground mt-1">Şu anda dikkat gerektiren bir öneri yok.</p>
       </div>
     )
   }
@@ -66,13 +66,13 @@ export function RecommendationsList({ recommendations }: { recommendations: Reco
         return (
           <div
             key={rec.id}
-            className={`flex items-start gap-3 rounded-xl border ${styles.bg} px-4 py-3`}
+            className={`flex items-start gap-3 rounded-lg border ${styles.bg} px-4 py-3`}
           >
             <Icon className={`size-4 mt-0.5 shrink-0 ${styles.icon}`} />
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-medium ${styles.text}`}>{rec.message}</p>
             </div>
-            <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/60 text-slate-500 shrink-0">
+            <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-card/60 text-muted-foreground shrink-0">
               {categoryLabel(rec.category)}
             </span>
           </div>

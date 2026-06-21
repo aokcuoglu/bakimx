@@ -3,15 +3,15 @@ import { AuthVisualPanel } from "@/components/auth/auth-visual-panel"
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form"
 
 export const metadata: Metadata = {
-  title: "Şifre Desteği | BakimX",
+  title: "Şifre Desteği",
   description: "BakimX şifre desteği talep formu.",
 }
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-muted">
       <div className="lg:w-[45%] lg:min-h-screen p-0 lg:p-3">
-        <div className="h-full lg:rounded-2xl overflow-hidden shadow-2xl">
+        <div className="h-full lg:rounded-lg overflow-hidden shadow-2xl">
           <AuthVisualPanel />
         </div>
       </div>

@@ -10,21 +10,21 @@ export default async function SmartCaptureRegistrationPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Ruhsat Okuma" showGlobalSearch={false}>
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700 inline-flex items-center gap-1">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground inline-flex items-center gap-1">
             <ArrowLeft className="size-3.5" />
             Panel
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Ruhsat Okuma</span>
+          <span className="text-foreground font-medium">Ruhsat Okuma</span>
         </div>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <ScanLine className="size-6 text-blue-600" />
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <ScanLine className="size-6 text-primary" />
             Ruhsat Okuma
           </h2>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Araç ruhsat fotoğrafını yükleyin veya çekin, sistem otomatik okusun
           </p>
         </div>

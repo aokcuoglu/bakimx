@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,12 +23,10 @@ type Workshop = {
 }
 
 export function WorkshopForm({ workshop }: { workshop: Workshop }) {
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setSuccess(false)
     setError("")
 
     const formData = new FormData(e.currentTarget)
@@ -39,7 +38,7 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
       })
       const data = await res.json()
       if (data.success) {
-        setSuccess(true)
+        toast.success("Bilgiler güncellendi")
       } else {
         setError(data.error || "Güncelleme başarısız")
       }
@@ -57,7 +56,6 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
       <CardContent>
         <form id="workshop-form" onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
-          {success && <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm">Bilgiler güncellendi</div>}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 sm:col-span-2">
@@ -101,8 +99,8 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 pt-4 mt-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Vergi Bilgileri</h3>
+          <div className="border-t border-border pt-4 mt-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Vergi Bilgileri</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="taxOffice">Vergi Dairesi</Label>

@@ -112,29 +112,29 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link href="/app/vehicles" className="hover:text-slate-700 inline-flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/app/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-4" />
           Araçlar
         </Link>
         <span className="mx-1">/</span>
-        <span className="text-slate-700 font-medium truncate">{v.plate}</span>
+        <span className="text-foreground font-medium truncate">{v.plate}</span>
       </div>
 
-      <header className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-xl bg-[#0B1F3A] flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
               <Car className="size-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <PlateBadge plate={v.plate} className="h-8 min-w-[6rem] text-sm" />
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 truncate">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
                   {v.brand} {v.model}
                 </h2>
               </div>
-              <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-slate-500 flex-wrap">
+              <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
                 {v.vehicleType ? <span>{v.vehicleType}</span> : null}
                 {v.modelYear ? <span>{v.modelYear}</span> : null}
                 {v.color ? <span>{v.color}</span> : null}
@@ -146,28 +146,32 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/app/orders/new?vehicleId=${v.id}`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-4" />
               <span className="hidden sm:inline">Yeni İş Emri</span>
             </Link>
-            <Link
-              href={`/app/intakes/new?vehicleId=${v.id}`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              render={<Link href={`/app/intakes/new?vehicleId=${v.id}`} />}
             >
               <ClipboardList className="size-4" />
               <span className="hidden sm:inline">Yeni Kabul</span>
-            </Link>
-            <Link
-              href={`/app/vehicles/${v.id}/edit`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              render={<Link href={`/app/vehicles/${v.id}/edit`} />}
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
-            </Link>
+            </Button>
             <Link
               href={`/app/vehicles/${v.id}/passport`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#0B1F3A] bg-[#0B1F3A] text-white hover:bg-[#0B1F3A]/90 text-sm font-medium transition-colors touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-navy bg-navy text-white hover:bg-navy/90 text-sm font-medium transition-colors touch-manipulation"
             >
               <ScrollText className="size-4" />
               <span className="hidden sm:inline">Pasaport</span>
@@ -181,7 +185,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Car className="size-4 text-slate-500" />
+                <Car className="size-4 text-muted-foreground" />
                 Araç Özeti
               </CardTitle>
             </CardHeader>
@@ -209,12 +213,12 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   label="Şase Teyit"
                   value={
                     v.vinConfirmed ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 text-success">
                         <ShieldCheck className="size-3" />
                         Teyit Edildi
                       </span>
                     ) : v.vin ? (
-                      <span className="text-amber-600">Teyit Bekliyor</span>
+                      <span className="text-warning">Teyit Bekliyor</span>
                     ) : (
                       "—"
                     )
@@ -222,7 +226,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                 />
                 <SummaryItem label="Motor No" value={v.engineNo || "—"} />
               </dl>
-              <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 text-xs text-slate-500">
+              <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 text-xs text-muted-foreground">
                 <span>Kayıt: {formatDate(v.createdAt)}</span>
                 <span>Güncelleme: {formatDateTime(v.updatedAt)}</span>
               </div>
@@ -233,17 +237,17 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             <div className="flex items-start gap-3">
               <Link
                 href={`/app/customers/${v.customer.id}`}
-                className="flex items-center gap-3 hover:bg-slate-50 rounded-lg p-2 -m-2 transition-colors flex-1"
+                className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors flex-1"
               >
-                <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors">
+                  <p className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
                     {customerDisplayName(v.customer)}
                   </p>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                    <span onClick={() => window.location.href = `tel:${v.customer.phone}`} className="inline-flex items-center gap-1 hover:text-blue-600 cursor-pointer">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                    <span onClick={() => window.location.href = `tel:${v.customer.phone}`} className="inline-flex items-center gap-1 hover:text-primary cursor-pointer">
                       <Phone className="size-3" />
                       {v.customer.phone}
                     </span>
@@ -252,7 +256,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     ) : null}
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-slate-400 shrink-0 ml-auto" />
+                <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 ml-auto" />
               </Link>
             </div>
           </SectionCard>
@@ -264,7 +268,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             action={
               <Link
                 href={`/app/orders/new?vehicleId=${v.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
                 Yeni İş Emri
@@ -272,35 +276,35 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             }
           >
             {workOrders.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <Wrench className="size-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-6 text-muted-foreground">
+                <Wrench className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için iş emri bulunmuyor</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {workOrders.map((i) =>
                   i.order ? (
                     <Link
                       key={i.order.id}
                       href={`/app/orders/${i.order.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-semibold text-slate-500">
+                          <span className="font-mono text-xs font-semibold text-muted-foreground">
                             {i.order.workOrderNo || "—"}
                           </span>
                           <StatusBadge status={i.order.status} />
                           <PaymentBadge status={i.order.paymentStatus} />
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">{i.customerComplaint}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
+                        <p className="text-sm font-semibold text-foreground">
+                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
                         </p>
                         {i.order.estimatedDeliveryAt ? (
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-muted-foreground">
                             Tahmini: {formatDate(i.order.estimatedDeliveryAt)}
                           </p>
                         ) : null}
@@ -319,7 +323,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             action={
               <Link
                 href={`/app/intakes/new?vehicleId=${v.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
                 Yeni Kabul
@@ -327,39 +331,39 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             }
           >
             {v.intakes.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <ClipboardList className="size-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-6 text-muted-foreground">
+                <ClipboardList className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için kabul kaydı bulunmuyor</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {v.intakes.map((i) => {
                   const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
                   return (
                     <Link
                       key={i.id}
                       href={`/app/intakes/${i.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className={cn(
                               "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",
-                              intakeStatus?.color || "bg-slate-100 text-slate-700 border-slate-200"
+                              intakeStatus?.color || "bg-muted text-foreground border-border"
                             )}
                           >
                             {intakeStatus?.label || i.status}
                           </span>
                           {i.approvedAt ? (
-                            <span className="text-[11px] text-emerald-600 font-medium">Onaylandı</span>
+                            <span className="text-[11px] text-foreground font-medium">Onaylandı</span>
                           ) : i.status === "waiting_approval" ? (
-                            <span className="text-[11px] text-amber-600 font-medium">Onay Bekliyor</span>
+                            <span className="text-[11px] text-foreground font-medium">Onay Bekliyor</span>
                           ) : null}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">{i.customerComplaint}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                       </div>
-                      <span className="text-xs text-slate-400 shrink-0">{formatDate(i.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground/70 shrink-0">{formatDate(i.createdAt)}</span>
                     </Link>
                   )
                 })}
@@ -374,7 +378,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             action={
               <Link
                 href={`/app/reminders/new?customerId=${v.customer.id}&vehicleId=${v.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
                 Yeni Hatırlatma
@@ -382,25 +386,25 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             }
           >
             {v.reminders.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <BellRing className="size-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-6 text-muted-foreground">
+                <BellRing className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için bakım hatırlatması bulunmuyor</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {v.reminders.map((r) => (
                   <Link
                     key={r.id}
                     href={`/app/reminders/${r.id}`}
-                    className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-slate-900">{r.title}</span>
+                        <span className="text-sm font-medium text-foreground">{r.title}</span>
                         <ReminderStatusBadge status={r.status} />
                         <ReminderTypeBadge type={r.type} />
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                         {r.dueDate ? (
                           <span className="inline-flex items-center gap-1">
                             <Calendar className="size-3" />
@@ -415,7 +419,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                         ) : null}
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                    <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -424,12 +428,12 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
           <SectionCard title="Hasar Geçmişi" icon={AlertTriangle} count={allDamageMarks.length}>
             {allDamageMarks.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <AlertTriangle className="size-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-6 text-muted-foreground">
+                <AlertTriangle className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için kayıtlı hasar bulunmuyor</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {allDamageMarks.map((dm) => {
                   const dt = DAMAGE_TYPES[dm.damageType as keyof typeof DAMAGE_TYPES]
                   const sev = DAMAGE_SEVERITY[dm.severity as keyof typeof DAMAGE_SEVERITY]
@@ -441,7 +445,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-semibold text-slate-700">{dm.zone}</span>
+                            <span className="text-xs font-semibold text-foreground">{dm.zone}</span>
                             <span
                               className="inline-flex items-center h-4 px-1.5 rounded text-[10px] font-medium text-white"
                               style={{ backgroundColor: dt?.color || "#6B7280" }}
@@ -456,15 +460,15 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                             </span>
                           </div>
                           {dm.note ? (
-                            <p className="text-xs text-slate-500 mt-0.5">{dm.note}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{dm.note}</p>
                           ) : null}
                         </div>
-                        <span className="text-[11px] text-slate-400 shrink-0">{formatDate(dm.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground/70 shrink-0">{formatDate(dm.createdAt)}</span>
                       </div>
                       <div className="mt-1">
                         <Link
                           href={`/app/intakes/${dm.intakeId}`}
-                          className="text-[11px] text-blue-600 hover:text-blue-700"
+                          className="text-[11px] text-primary hover:text-primary"
                         >
                           Kabul detayı →
                         </Link>
@@ -478,8 +482,8 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
           <SectionCard title="Fotoğraf Geçmişi" icon={Camera} count={allPhotos.length}>
             {allPhotos.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <Camera className="size-8 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-6 text-muted-foreground">
+                <Camera className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için fotoğraf bulunmuyor</p>
               </div>
             ) : (
@@ -490,9 +494,9 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     <Link
                       key={p.id}
                       href={`/app/intakes/${p.intakeId}`}
-                      className="block rounded-lg border border-slate-200 overflow-hidden hover:border-slate-300 transition-colors"
+                      className="block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
                     >
-                      <div className="aspect-[4/3] bg-slate-100 flex items-center justify-center">
+                      <div className="aspect-[4/3] bg-muted flex items-center justify-center">
                         {p.fileUrl ? (
                           <Image
                             src={p.fileUrl}
@@ -503,14 +507,14 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Camera className="size-6 text-slate-300" />
+                          <Camera className="size-6 text-muted-foreground/50" />
                         )}
                       </div>
                       <div className="px-2 py-1.5">
-                        <p className="text-[11px] font-medium text-slate-700 truncate">
+                        <p className="text-[11px] font-medium text-foreground truncate">
                           {pt?.label || p.label || p.type}
                         </p>
-                        <p className="text-[10px] text-slate-400">{formatDate(p.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground/70">{formatDate(p.createdAt)}</p>
                       </div>
                     </Link>
                   )
@@ -521,7 +525,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
           {v.notes ? (
             <SectionCard title="Notlar" icon={FileText}>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{v.notes}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{v.notes}</p>
             </SectionCard>
           ) : null}
         </div>
@@ -530,7 +534,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Hash className="size-4 text-slate-500" />
+                <Hash className="size-4 text-muted-foreground" />
                 Araç Durumu
               </CardTitle>
             </CardHeader>
@@ -538,38 +542,38 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
               <StatusIndicator
                 label="İşlem"
                 value={v.intakes.length > 0 ? "İşlem var" : "Pasif"}
-                color={v.intakes.length > 0 ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-slate-500 bg-slate-50 border-slate-200"}
+                color={v.intakes.length > 0 ? "text-foreground bg-success/10 border-success/20" : "text-muted-foreground bg-muted border-border"}
               />
               {workOrders.length > 0 && (
                 <StatusIndicator
                   label="Açık İş Emri"
                   value={workOrders.filter((i) => i.order && !["delivered", "cancelled"].includes(i.order.status)).length > 0 ? "Var" : "Yok"}
-                  color={workOrders.filter((i) => i.order && !["delivered", "cancelled"].includes(i.order.status)).length > 0 ? "text-amber-700 bg-amber-50 border-amber-200" : "text-slate-500 bg-slate-50 border-slate-200"}
+                  color={workOrders.filter((i) => i.order && !["delivered", "cancelled"].includes(i.order.status)).length > 0 ? "text-foreground bg-warning/10 border-warning/20" : "text-muted-foreground bg-muted border-border"}
                 />
               )}
               {v.intakes.some((i) => i.status === "waiting_approval") && (
-                <StatusIndicator
-                  label="Onay Bekliyor"
-                  value="Var"
-                  color="text-amber-700 bg-amber-50 border-amber-200"
-                />
+                  <StatusIndicator
+                    label="Onay Bekliyor"
+                    value="Var"
+                    color="text-foreground bg-warning/10 border-warning/20"
+                  />
               )}
               <StatusIndicator
                 label="Hasar Kaydı"
                 value={allDamageMarks.length > 0 ? `${allDamageMarks.length} hasar` : "Yok"}
-                color={allDamageMarks.length > 0 ? "text-rose-700 bg-rose-50 border-rose-200" : "text-slate-500 bg-slate-50 border-slate-200"}
+                color={allDamageMarks.length > 0 ? "text-foreground bg-destructive/10 border-destructive/20" : "text-muted-foreground bg-muted border-border"}
               />
               <StatusIndicator
                 label="Fotoğraf"
                 value={allPhotos.length > 0 ? `${allPhotos.length} fotoğraf` : "Yok"}
-                color={allPhotos.length > 0 ? "text-blue-700 bg-blue-50 border-blue-200" : "text-slate-500 bg-slate-50 border-slate-200"}
+                color={allPhotos.length > 0 ? "text-foreground bg-primary/10 border-primary/20" : "text-muted-foreground bg-muted border-border"}
               />
             </CardContent>
           </Card>
 
           <div className="flex flex-col gap-2">
             <Link href={`/app/vehicles/${v.id}/passport`}>
-              <Button className="w-full gap-2 bg-[#0B1F3A] hover:bg-[#0B1F3A]/90">
+              <Button className="w-full gap-2 bg-navy hover:bg-navy/90">
                 <ScrollText className="size-4" />
                 Servis Pasaportu
               </Button>
@@ -595,9 +599,9 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
 function SummaryItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-      <dt className="text-[11px] text-slate-500 font-medium">{label}</dt>
-      <dd className="text-sm font-semibold text-slate-800 mt-0.5">{value}</dd>
+    <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+      <dt className="text-[11px] text-muted-foreground font-medium">{label}</dt>
+      <dd className="text-sm font-semibold text-foreground mt-0.5">{value}</dd>
     </div>
   )
 }
@@ -628,10 +632,10 @@ function SectionCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <Icon className="size-4 text-slate-500" />
+          <Icon className="size-4 text-muted-foreground" />
           {title}
           {typeof count === "number" ? (
-            <span className="text-xs text-slate-500 font-normal">({count})</span>
+            <span className="text-xs text-muted-foreground font-normal">({count})</span>
           ) : null}
         </CardTitle>
         {action}

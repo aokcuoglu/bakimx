@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db"
-import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
+import { sanitizePassportForPublic, escapePassportForHtml } from "@/lib/passport/data-safety"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { VEHICLE_ZONES } from "@/lib/constants"
+import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
+import { escapeHtml } from "@/lib/html-escape"
 
 export const dynamic = "force-dynamic"
 
@@ -23,6 +25,21 @@ async function generatePassportPdfHtml(data: {
     ? customer.companyName || customer.contactName || "Kurumsal Müşteri"
     : customer.fullName || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "Müşteri"
   const vehicleLabel = `${vehicle.brand} ${vehicle.model}${vehicle.modelYear ? ` ${vehicle.modelYear}` : ""}`
+  // Escape workshop/vehicle/customer text interpolated into the raw HTML below.
+  // (passportData fields are already escaped via escapePassportForHtml.)
+  const safeWorkshopName = escapeHtml(workshop.name)
+  const safeWorkshopCity = escapeHtml(workshop.city)
+  const safeWorkshopAddress = escapeHtml(workshop.address)
+  const safeWorkshopPhone = escapeHtml(workshop.phone)
+  const safeLogoUrl = logoUrl ? escapeHtml(logoUrl) : logoUrl
+  const safeCustomTemplate = customTemplate ? escapeHtml(customTemplate) : customTemplate
+  const safePlate = escapeHtml(vehicle.plate)
+  const safeVehicleLabel = escapeHtml(vehicleLabel)
+  const safeVehicleColor = vehicle.color ? escapeHtml(vehicle.color) : null
+  const safeVehicleFuel = vehicle.fuelType ? escapeHtml(vehicle.fuelType) : null
+  const safeVin = vehicle.vin ? escapeHtml(vehicle.vin) : null
+  const safeCustomerName = escapeHtml(customerName)
+  const safeCustomerPhone = escapeHtml(customer.phone)
 
   const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString("tr-TR")
 
@@ -157,15 +174,14 @@ async function generatePassportPdfHtml(data: {
 <body>
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${primaryColor};padding-bottom:8px;margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:8px;">
-      ${logoUrl ? `<img src="${logoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
+      ${logoUrl ? `<img src="${safeLogoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
       <div>
-        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${workshop.name}</h1>
+        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${safeWorkshopName}</h1>
         <p style="font-size:10px;color:#666;margin:2px 0 0;">Dijital Servis Pasaportu</p>
       </div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:10px;color:#333;">${fmtDate(createdAt)}</div>
-      <div style="font-size:8px;color:#999;">BakimX ile oluşturuldu</div>
     </div>
   </div>
 
@@ -174,15 +190,15 @@ async function generatePassportPdfHtml(data: {
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;display:flex;gap:24px;">
       <div style="flex:1;">
         <div style="font-size:10px;color:#666;">Araç</div>
-        <div style="font-weight:700;">${vehicle.plate}</div>
-        <div style="font-size:9px;color:#666;">${vehicleLabel}${vehicle.color ? ` • ${vehicle.color}` : ""}${vehicle.fuelType ? ` • ${vehicle.fuelType}` : ""}</div>
+        <div style="font-weight:700;">${safePlate}</div>
+        <div style="font-size:9px;color:#666;">${safeVehicleLabel}${safeVehicleColor ? ` • ${safeVehicleColor}` : ""}${safeVehicleFuel ? ` • ${safeVehicleFuel}` : ""}</div>
         ${vehicle.mileage ? `<div style="font-size:9px;color:#666;">Kilometre: ${formatMileage(vehicle.mileage)}</div>` : ""}
-        ${vehicle.vin ? `<div style="font-size:8px;color:#999;font-family:monospace;">VIN: ${vehicle.vin}</div>` : ""}
+        ${safeVin ? `<div style="font-size:8px;color:#999;font-family:monospace;">VIN: ${safeVin}</div>` : ""}
       </div>
       <div style="flex:1;">
         <div style="font-size:10px;color:#666;">Müşteri</div>
-        <div style="font-weight:700;">${customerName}</div>
-        <div style="font-size:9px;color:#666;">Tel: ${customer.phone}</div>
+        <div style="font-weight:700;">${safeCustomerName}</div>
+        <div style="font-size:9px;color:#666;">Tel: ${safeCustomerPhone}</div>
       </div>
     </div>
   </div>
@@ -196,15 +212,15 @@ async function generatePassportPdfHtml(data: {
 
   ${customTemplate ? `<div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Özel Notlar</h3>
-    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${customTemplate}</div>
+    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${safeCustomTemplate}</div>
   </div>` : ""}
 
   <div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Yeri Bilgileri</h3>
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;">
-      <div style="font-weight:700;">★ ${workshop.name}</div>
-      <div style="font-size:9px;color:#666;">${workshop.city}, ${workshop.address}</div>
-      <div style="font-size:9px;color:#666;">Tel: ${workshop.phone}</div>
+      <div style="font-weight:700;">★ ${safeWorkshopName}</div>
+      <div style="font-size:9px;color:#666;">${safeWorkshopCity}, ${safeWorkshopAddress}</div>
+      <div style="font-size:9px;color:#666;">Tel: ${safeWorkshopPhone}</div>
     </div>
   </div>
 
@@ -212,10 +228,7 @@ async function generatePassportPdfHtml(data: {
     Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
   </div>
 
-  <div style="text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;color:#999;font-size:8px;">
-    <div>Bu çıktı, araç dijital servis pasaportu amacıyla oluşturulmuştur.</div>
-    <div style="margin-top:4px;">BakimX ile oluşturuldu • ${fmtDate(createdAt)}</div>
-  </div>
+  ${bakimxPdfFooterBar(createdAt)}
 </body>
 </html>`
 }
@@ -360,7 +373,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
 
   const html = await generatePassportPdfHtml({
     workshop,
-    passportData,
+    passportData: escapePassportForHtml(passportData),
     vehicle: {
       plate: vehicle.plate,
       brand: vehicle.brand,

@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { addTimelineEvent } from "@/lib/intake/timeline"
+import { isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
+import type { IntakeStatus } from "@prisma/client"
 import { nanoid } from "nanoid"
 
 export async function createIntakeAction(formData: FormData) {
@@ -351,14 +353,27 @@ export async function removePhotoAction(photoId: string, intakeFormId: string) {
 export async function updateIntakeStatusAction(intakeFormId: string, status: string) {
   const user = await requireAuth()
 
+  if (!isIntakeStatus(status)) return { error: "Geçersiz durum" }
+
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
 
+  // `approved` is reachable only through the customer OTP flow (verifyOtpAction);
+  // block any attempt to set it (or make an illegal jump) via the generic action.
+  if (!canTransitionIntake(intake.status as IntakeStatus, status)) {
+    return {
+      error:
+        status === "approved"
+          ? "Onay yalnızca müşteri doğrulaması (OTP) ile verilebilir"
+          : "Bu durum geçişine izin verilmiyor",
+    }
+  }
+
   const updateResult = await prisma.vehicleIntakeForm.updateMany({
     where: { id: intakeFormId, workshopId: user.workshopId },
-    data: { status: status as import("@prisma/client").IntakeStatus },
+    data: { status },
   })
   if (updateResult.count === 0) return { error: "Kabul formu bulunamadı" }
 

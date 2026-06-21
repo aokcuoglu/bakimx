@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
+import { BrandLogo } from "@/components/shared/brand-logo";
 
 const footerLinks = {
   product: [
@@ -25,7 +25,7 @@ export function Footer() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <footer className="border-t bg-[#0B1F3A] text-white">
+    <footer className="border-t bg-navy text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
@@ -35,11 +35,12 @@ export function Footer() {
             transition={{ duration: 0.5 }}
             className="sm:col-span-2 lg:col-span-1"
           >
-            <Link href="/" className="inline-flex items-center gap-2 mb-4">
-              <Image src="/logo.svg" alt="BakimX" width={32} height={32} />
-              <span className="text-xl font-bold tracking-tight">
-                <span className="text-white">Bakim</span><span className="text-sky-400">X</span>
-              </span>
+            <Link
+              href="/"
+              aria-label="BakimX ana sayfa"
+              className="inline-flex items-center mb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
+            >
+              <BrandLogo variant="primary-dark" size="lg" alt="BakimX" />
             </Link>
             <p className="text-sm text-white/70 leading-relaxed max-w-xs">
               Oto servisler için dijital araç kabul ve müşteri onay platformu.
@@ -80,6 +81,9 @@ export function Footer() {
             <p className="text-sm text-white/50">
               &copy; {currentYear} BakimX. Tüm hakları saklıdır.
             </p>
+            <span className="text-xs text-white/30">
+              v{process.env.NEXT_PUBLIC_APP_VERSION}
+            </span>
           </div>
         </div>
       </div>

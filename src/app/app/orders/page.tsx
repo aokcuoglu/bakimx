@@ -3,8 +3,10 @@ import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { Plus, ClipboardList, Search, Filter } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/app/order-list"
+import { FilterSelect } from "@/components/app/filter-select"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 
@@ -103,81 +105,71 @@ export default async function OrdersPage({
       workshopName={workshop?.name}
       pageTitle="İş Emirleri"
       pageActions={
-        <Link
-          href="/app/orders/new"
-          className="inline-flex items-center justify-center size-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white touch-manipulation"
-          aria-label="Yeni iş emri"
-        >
+        <Button nativeButton={false} size="icon" render={<Link href="/app/orders/new" />} aria-label="Yeni iş emri">
           <Plus className="size-5" />
-        </Link>
+        </Button>
       }
     >
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">İş Emirleri</span>
+          <span className="text-foreground font-medium">İş Emirleri</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">İş Emirleri</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Servis operasyonlarını yönetin</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emirleri</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
           </div>
-          <Link
-            href="/app/orders/new"
-            className="hidden sm:inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
-          >
+          <Button nativeButton={false} size="default" className="hidden sm:inline-flex" render={<Link href="/app/orders/new" />}>
             <Plus className="size-4" />
             Yeni İş Emri
-          </Link>
+          </Button>
         </div>
 
         <form action="/app/orders" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
             <Input
               name="q"
               defaultValue={q}
               placeholder="İş emri no, plaka veya müşteri adı ile ara..."
-              className="pl-10 h-11"
+              className="pl-10"
             />
           </div>
           <div className="flex gap-2">
-            <select
+            <FilterSelect
               name="status"
               defaultValue={status}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              aria-label="Durum filtresi"
-            >
-              <option value="">Tüm Durumlar</option>
-              <option value="draft">Taslak</option>
-              <option value="waiting_approval">Onay Bekliyor</option>
-              <option value="approved">Onaylandı</option>
-              <option value="in_progress">Devam Ediyor</option>
-              <option value="waiting_parts">Parça Bekliyor</option>
-              <option value="ready_for_delivery">Teslime Hazır</option>
-              <option value="delivered">Teslim Edildi</option>
-              <option value="cancelled">İptal</option>
-            </select>
-            <select
+              placeholder="Tüm Durumlar"
+              options={[
+                { value: "", label: "Tüm Durumlar" },
+                { value: "draft", label: "Taslak" },
+                { value: "waiting_approval", label: "Onay Bekliyor" },
+                { value: "approved", label: "Onaylandı" },
+                { value: "in_progress", label: "Devam Ediyor" },
+                { value: "waiting_parts", label: "Parça Bekliyor" },
+                { value: "ready_for_delivery", label: "Teslime Hazır" },
+                { value: "delivered", label: "Teslim Edildi" },
+                { value: "cancelled", label: "İptal" },
+              ]}
+            />
+            <FilterSelect
               name="payment"
               defaultValue={payment}
-              className="h-11 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              aria-label="Ödeme filtresi"
-            >
-              <option value="">Tüm Ödemeler</option>
-              <option value="unpaid">Ödenmedi</option>
-              <option value="partial">Kısmi</option>
-              <option value="paid">Ödendi</option>
-            </select>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
-            >
+              placeholder="Tüm Ödemeler"
+              options={[
+                { value: "", label: "Tüm Ödemeler" },
+                { value: "unpaid", label: "Ödenmedi" },
+                { value: "partial", label: "Kısmi" },
+                { value: "paid", label: "Ödendi" },
+              ]}
+            />
+            <Button variant="outline" size="default" type="submit">
               <Filter className="size-4" />
               Filtrele
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -189,8 +181,8 @@ export default async function OrdersPage({
         />
 
         {orders.length === 0 && (
-          <div className="text-center py-16 text-slate-500">
-            <ClipboardList className="size-14 mx-auto mb-4 text-slate-300" />
+          <div className="text-center py-16 text-muted-foreground">
+            <ClipboardList className="size-14 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-base font-medium">
               {q || status || payment
                 ? "Filtrelere uyan iş emri bulunamadı"
@@ -201,13 +193,10 @@ export default async function OrdersPage({
                 ? "Farklı bir filtre deneyin"
                 : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
             </p>
-            <Link
-              href="/app/orders/new"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <Button nativeButton={false} variant="link" size="sm" className="mt-4" render={<Link href="/app/orders/new" />}>
               <Plus className="size-4" />
               Yeni İş Emri
-            </Link>
+            </Button>
           </div>
         )}
       </div>

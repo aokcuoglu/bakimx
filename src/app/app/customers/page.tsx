@@ -2,7 +2,9 @@ import { getAppData } from "@/app/app/data"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { Plus, Wallet, FileSpreadsheet, Info } from "lucide-react"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { CustomerListWithDelete } from "@/components/app/customer-list-with-delete"
 import { type CustomerRow } from "@/components/app/customer-list"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
@@ -102,46 +104,50 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Müşteriler">
       <div className="space-y-5 sm:space-y-6">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Müşteriler</span>
+          <span className="text-foreground font-medium">Müşteriler</span>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Müşteriler</h2>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Müşteriler</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {rows.length} müşteri{rows.length === 1 ? "" : ""} kayıtlı
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/app/customers/balances"
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={<Link href="/app/customers/balances" />}
             >
               <Wallet className="size-4" />
               Bakiye Özeti
-            </Link>
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-dashed border-slate-200 bg-white text-slate-400 text-sm font-medium cursor-not-allowed touch-manipulation"
-              title="Excel içe aktarma yakında"
-            >
-              <FileSpreadsheet className="size-4" />
-              Excel İçe Aktar
-            </button>
-            <Link
-              href="/app/customers/new"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors touch-manipulation"
+            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="outline" size="default" disabled />
+                }
+              >
+                <FileSpreadsheet className="size-4" />
+                <span className="hidden sm:inline">Excel</span>
+              </TooltipTrigger>
+              <TooltipContent side="top">Excel içe aktarma yakında</TooltipContent>
+            </Tooltip>
+            <Button
+              nativeButton={false}
+              size="default"
+              render={<Link href="/app/customers/new" />}
             >
               <Plus className="size-4" />
               Yeni Müşteri
-            </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-500 flex items-start gap-2">
+        <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
           <span>Excel içe aktarma yakında. Bakiye Özeti sayfası henüz temel düzeydedir ve ödeme/tahsilat modülü aktifleştiğinde gerçek değerlere geçecektir.</span>
         </div>

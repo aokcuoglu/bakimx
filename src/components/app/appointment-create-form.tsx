@@ -8,8 +8,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createAppointmentAction } from "@/app/app/appointments/actions"
 import { Loader2, Info, User, CalendarClock, Bell, Plus, Search } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { typedResolver } from "@/lib/validations/resolver"
+import { appointmentCreateFormSchema, type AppointmentCreateFormValues } from "@/lib/validations/appointment"
 import { customerDisplayName } from "@/lib/format"
 
 type CustomerOption = {
@@ -49,8 +63,24 @@ export function AppointmentCreateForm({
     return createAppointmentAction(formData) as unknown as Promise<ActionState | null>
   }
   const [state, formAction, pending] = useActionState(wrappedAction, null)
-  const [selectedCustomerId, setSelectedCustomerId] = useState("")
   const [customerSearch, setCustomerSearch] = useState("")
+
+  const form = useForm<AppointmentCreateFormValues, unknown, AppointmentCreateFormValues>({
+    resolver: typedResolver(appointmentCreateFormSchema),
+    defaultValues: {
+      customerId: "",
+      vehicleId: "",
+      appointmentAt: "",
+      appointmentTime: "",
+      estimatedDurationMinutes: "",
+      title: "",
+      customerRequest: "",
+      internalNote: "",
+      reminderEnabled: false,
+    },
+  })
+
+  const customerId = form.watch("customerId")
 
   const filteredCustomers = customers.filter((c) => {
     if (!customerSearch.trim()) return true
@@ -59,7 +89,7 @@ export function AppointmentCreateForm({
     return name.includes(q) || c.phone.includes(q)
   })
 
-  const customerVehicles = vehicles.filter((v) => v.customerId === selectedCustomerId)
+  const customerVehicles = vehicles.filter((v) => v.customerId === customerId)
 
   useEffect(() => {
     if (state?.success && state.id) {
@@ -67,185 +97,307 @@ export function AppointmentCreateForm({
     }
   }, [state, router])
 
+  useEffect(() => {
+    if (customerId && form.getValues("vehicleId") && !customerVehicles.some((v) => v.id === form.getValues("vehicleId"))) {
+      form.setValue("vehicleId", "")
+    }
+    if (!customerId && form.getValues("vehicleId")) {
+      form.setValue("vehicleId", "")
+    }
+  }, [customerId, customerVehicles, form])
+
+  function onSubmit(values: AppointmentCreateFormValues) {
+    const formData = new FormData()
+    formData.set("customerId", values.customerId)
+    formData.set("vehicleId", values.vehicleId || "")
+    formData.set("appointmentAt", values.appointmentAt)
+    formData.set("appointmentTime", values.appointmentTime)
+    formData.set("estimatedDurationMinutes", values.estimatedDurationMinutes || "")
+    formData.set("title", values.title || "")
+    formData.set("customerRequest", values.customerRequest || "")
+    formData.set("internalNote", values.internalNote || "")
+    formData.set("reminderEnabled", values.reminderEnabled ? "true" : "")
+    formAction(formData)
+  }
+
   return (
-    <form action={formAction} className="space-y-5 sm:space-y-6">
-      {state?.error && (
-        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
-          <span>{state.error}</span>
-        </div>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
+        {state?.error && (
+          <Alert variant="destructive">
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="size-4 text-slate-500" />
-            Müşteri & Araç
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="customerSearch">Müşteri Ara</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <Input
-                id="customerSearch"
-                type="search"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                placeholder="İsim veya telefon ile ara..."
-                className="pl-9"
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="size-4 text-muted-foreground" />
+              Müşteri & Araç
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerSearch">Müşteri Ara</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+                <Input
+                  id="customerSearch"
+                  type="search"
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  placeholder="İsim veya telefon ile ara..."
+                  className="pl-9"
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Müşteri *</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="Müşteri Seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredCustomers.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {customerDisplayName(c)} - {c.phone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
+              <div className="flex justify-end">
+                <Link
+                  href="/app/customers/new"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
+                >
+                  <Plus className="size-3" />
+                  Yeni Müşteri Ekle
+                </Link>
+              </div>
             </div>
-            <select
-              name="customerId"
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              required
-              className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">Müşteri Seçin</option>
-              {filteredCustomers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {customerDisplayName(c)} - {c.phone}
-                </option>
-              ))}
-            </select>
-            <div className="flex justify-end">
-              <Link
-                href="/app/customers/new"
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <Plus className="size-3" />
-                Yeni Müşteri Ekle
-              </Link>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="vehicleId">Araç</Label>
-            <select
-              id="vehicleId"
+            <FormField
+              control={form.control}
               name="vehicleId"
-              disabled={!selectedCustomerId}
-              className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">Araç Seçin (Opsiyonel)</option>
-              {customerVehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.plate} - {v.brand} {v.model}
-                </option>
-              ))}
-            </select>
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Araç</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "")}
+                      disabled={!customerId}
+                    >
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Araç Seçin (Opsiyonel)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Araç Seçin (Opsiyonel)</SelectItem>
+                        {customerVehicles.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.plate} - {v.brand} {v.model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="flex justify-end">
               <Link
-                href={selectedCustomerId ? `/app/vehicles/new?customerId=${selectedCustomerId}` : "/app/vehicles/new"}
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                href={customerId ? `/app/vehicles/new?customerId=${customerId}` : "/app/vehicles/new"}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
               >
                 <Plus className="size-3" />
                 Yeni Araç Ekle
               </Link>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <CalendarClock className="size-4 text-slate-500" />
-            Randevu Bilgileri
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="appointmentAt">Randevu Tarihi *</Label>
-              <Input id="appointmentAt" name="appointmentAt" type="date" required />
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarClock className="size-4 text-muted-foreground" />
+              Randevu Bilgileri
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="appointmentAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Randevu Tarihi *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="appointmentTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Randevu Saati *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="appointmentTime">Randevu Saati *</Label>
-              <Input id="appointmentTime" name="appointmentTime" type="time" required />
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="estimatedDurationMinutes">Tahmini Süre</Label>
-            <select
-              id="estimatedDurationMinutes"
+            <FormField
+              control={form.control}
               name="estimatedDurationMinutes"
-              className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">Seçiniz</option>
-              <option value="15">15 dk</option>
-              <option value="30">30 dk</option>
-              <option value="45">45 dk</option>
-              <option value="60">1 saat</option>
-              <option value="90">1.5 saat</option>
-              <option value="120">2 saat</option>
-            </select>
-          </div>
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tahmini Süre</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Seçiniz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Seçiniz</SelectItem>
+                        <SelectItem value="15">15 dk</SelectItem>
+                        <SelectItem value="30">30 dk</SelectItem>
+                        <SelectItem value="45">45 dk</SelectItem>
+                        <SelectItem value="60">1 saat</SelectItem>
+                        <SelectItem value="90">1.5 saat</SelectItem>
+                        <SelectItem value="120">2 saat</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="space-y-2">
-            <Label htmlFor="title">Başlık</Label>
-            <Input id="title" name="title" placeholder="Örn: Periyodik Bakım" />
-          </div>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Başlık</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Örn: Periyodik Bakım" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="space-y-2">
-            <Label htmlFor="customerRequest">Müşteri Talebi</Label>
-            <Textarea
-              id="customerRequest"
+            <FormField
+              control={form.control}
               name="customerRequest"
-              placeholder="Müşterinin randevu talebini açıklayın..."
-              rows={3}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Müşteri Talebi</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Müşterinin randevu talebini açıklayın..." rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="internalNote">İç Not</Label>
-            <Textarea
-              id="internalNote"
+            <FormField
+              control={form.control}
               name="internalNote"
-              placeholder="Teknisyen için özel not..."
-              rows={2}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>İç Not</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Teknisyen için özel not..." rows={2} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bell className="size-4 text-slate-500" />
-            Hatırlatma
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="size-4 text-muted-foreground" />
+              Hatırlatma
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <FormField
+              control={form.control}
               name="reminderEnabled"
-              value="true"
-              className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2.5 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(c) => field.onChange(c)}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-sm font-medium cursor-pointer">
+                    Randevu hatırlatması planla
+                  </FormLabel>
+                </FormItem>
+              )}
             />
-            <span className="text-sm text-slate-700 font-medium">Randevu hatırlatması planla</span>
-          </label>
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
-            <Info className="size-4 shrink-0 mt-0.5" />
-            <span>Hatırlatma entegrasyonu yakında. Bu sürümde gerçek SMS/WhatsApp gönderimi yapılmaz.</span>
-          </div>
-        </CardContent>
-      </Card>
+            <Alert>
+              <Info className="size-4" />
+              <AlertDescription className="text-xs">
+                Hatırlatma entegrasyonu yakında. Bu sürümde gerçek SMS/WhatsApp gönderimi yapılmaz.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button type="submit" disabled={pending} className="flex-1 h-11">
+        <div className="flex flex-col sm:flex-row gap-3 pb-24 lg:pb-0">
+          <Button type="submit" disabled={pending} className="flex-1 h-11">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
+            {pending ? "Kaydediliyor..." : "Randevu Kaydet"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="h-11"
+          >
+            İptal
+          </Button>
+        </div>
+      </form>
+
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-bottom flex gap-2">
+        <Button type="submit" disabled={pending} className="flex-1 h-11" onClick={() => form.handleSubmit(onSubmit)()}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
-          {pending ? "Kaydediliyor..." : "Randevu Kaydet"}
+          {pending ? "Kaydediliyor..." : "Kaydet"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()} className="h-11">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          className="flex-1 h-11"
+        >
           İptal
         </Button>
       </div>
-    </form>
+    </Form>
   )
 }

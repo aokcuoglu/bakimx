@@ -2,8 +2,11 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Loader2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export function CancelCollectionButton({ collectionId }: { collectionId: string }) {
   const router = useRouter()
@@ -24,43 +27,44 @@ export function CancelCollectionButton({ collectionId }: { collectionId: string 
       if (data.success) {
         router.refresh()
       } else {
-        alert(data.error || "Tahsilat iptal edilemedi")
+        toast.error(data.error || "Tahsilat iptal edilemedi")
       }
     } catch {
-      alert("Bir hata oluştu")
+      toast.error("Bir hata oluştu")
     } finally {
       setLoading(false)
       setShowConfirm(false)
     }
   }
 
-  if (!showConfirm) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-rose-600 border-rose-200 hover:bg-rose-50">
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-destructive border-destructive/20 hover:bg-destructive/10">
         <XCircle className="size-3.5 mr-1" />
         İptal Et
       </Button>
-    )
-  }
-
-  return (
-    <div className="space-y-3 p-4 rounded-xl border border-rose-200 bg-rose-50/50">
-      <p className="text-sm font-semibold text-rose-800">Tahsilat İptali</p>
-      <p className="text-xs text-rose-600">İptal nedenini yazınız. Bu işlem geri alınamaz.</p>
-      <textarea
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-        placeholder="İptal nedeni (zorunlu)…"
-        rows={2}
-        className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-      />
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => { setShowConfirm(false); setReason("") }}>Vazgeç</Button>
-        <Button variant="destructive" size="sm" onClick={handleCancel} disabled={loading || !reason.trim()}>
-          {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <XCircle className="size-3.5 mr-1" />}
-          İptal Et
-        </Button>
-      </div>
-    </div>
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tahsilat İptali</DialogTitle>
+            <DialogDescription>İptal nedenini yazınız. Bu işlem geri alınamaz.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="İptal nedeni (zorunlu)…"
+            rows={2}
+            className="border-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/30"
+          />
+          <div className="flex items-center gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => { setShowConfirm(false); setReason("") }}>Vazgeç</Button>
+            <Button variant="destructive" size="sm" onClick={handleCancel} disabled={loading || !reason.trim()}>
+              {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <XCircle className="size-3.5 mr-1" />}
+              İptal Et
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

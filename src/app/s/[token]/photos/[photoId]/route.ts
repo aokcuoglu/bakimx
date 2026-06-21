@@ -15,6 +15,7 @@ export async function GET(
       select: {
         isActive: true,
         expiresAt: true,
+        showPhotos: true,
         intakeForm: {
           select: {
             workshopId: true,
@@ -35,6 +36,7 @@ export async function GET(
     if (
       !shareLink ||
       !shareLink.isActive ||
+      !shareLink.showPhotos ||
       (shareLink.expiresAt && shareLink.expiresAt < new Date())
     ) {
       notFound()

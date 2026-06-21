@@ -218,14 +218,32 @@ export async function deleteCustomerAction(customerId: string) {
   const user = await requireAuth()
   const existing = await prisma.customer.findFirst({
     where: { id: customerId, workshopId: user.workshopId },
-    include: { _count: { select: { vehicles: true, intakes: true } } },
+    include: {
+      _count: {
+        select: {
+          vehicles: true,
+          intakes: true,
+          quotes: true,
+          appointments: true,
+          reminders: true,
+          collections: true,
+        },
+      },
+    },
   })
   if (!existing) {
     return { error: "Müşteri bulunamadı veya bu iş yerine ait değil" }
   }
-  if (existing._count.vehicles > 0 || existing._count.intakes > 0) {
+  const related: string[] = []
+  if (existing._count.vehicles > 0) related.push(`${existing._count.vehicles} araç`)
+  if (existing._count.intakes > 0) related.push(`${existing._count.intakes} kabul kaydı`)
+  if (existing._count.quotes > 0) related.push(`${existing._count.quotes} teklif`)
+  if (existing._count.appointments > 0) related.push(`${existing._count.appointments} randevu`)
+  if (existing._count.reminders > 0) related.push(`${existing._count.reminders} hatırlatma`)
+  if (existing._count.collections > 0) related.push(`${existing._count.collections} tahsilat`)
+  if (related.length > 0) {
     return {
-      error: `Bu müşteriye bağlı ${existing._count.vehicles} araç / ${existing._count.intakes} kabul kaydı var. Önce ilişkili kayıtları silmeniz gerekir.`,
+      error: `Bu müşteriye bağlı ${related.join(", ")} var. Önce ilişkili kayıtları silmeniz gerekir.`,
     }
   }
   await prisma.customer.delete({

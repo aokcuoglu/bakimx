@@ -160,17 +160,17 @@ export function ServiceAdvisorPanel({
     result?.provider === "mock" ? "Demo (Mock)" : result?.provider === "openai" ? "OpenAI" : result?.provider === "deepseek" ? "DeepSeek" : ""
 
   return (
-    <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-white">
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="size-4 text-blue-600" />
+            <Sparkles className="size-4 text-primary" />
             AI Servis Danışmanı
           </CardTitle>
           {result && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-slate-400 hover:text-slate-600 p-1"
+              className="text-muted-foreground/70 hover:text-muted-foreground p-1"
               aria-label={expanded ? "Daralt" : "Genişlet"}
             >
               {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
@@ -181,13 +181,13 @@ export function ServiceAdvisorPanel({
       <CardContent className="space-y-3">
         {!result && !loading && (
           <>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Müşteri şikayetini analiz ederek kontrol, işçilik ve parça önerileri alın.
             </p>
             {customerComplaint && (
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Şikayet</p>
-                <p className="text-slate-700 line-clamp-3">{customerComplaint}</p>
+              <div className="p-2.5 rounded-lg bg-muted border border-border text-sm">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Şikayet</p>
+                <p className="text-foreground line-clamp-3">{customerComplaint}</p>
               </div>
             )}
             <Button onClick={fetchAdvice} size="sm" className="w-full">
@@ -199,13 +199,13 @@ export function ServiceAdvisorPanel({
 
         {loading && (
           <div className="flex flex-col items-center py-6 gap-2">
-            <Loader2 className="size-8 text-blue-500 animate-spin" />
-            <p className="text-sm text-slate-600">AI önerileriniz hazırlanıyor...</p>
+            <Loader2 className="size-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">AI önerileriniz hazırlanıyor...</p>
           </div>
         )}
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
             <AlertTriangle className="size-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -216,7 +216,7 @@ export function ServiceAdvisorPanel({
             {result.missingInfoWarnings.length > 0 && (
               <div className="space-y-1.5">
                 {result.missingInfoWarnings.map((w, i) => (
-                  <div key={i} className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-1.5">
+                  <div key={i} className="p-2 rounded-lg bg-warning/10 border border-warning/20 text-foreground text-xs flex items-start gap-1.5">
                     <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                     <span>{w}</span>
                   </div>
@@ -226,19 +226,19 @@ export function ServiceAdvisorPanel({
 
             {inspections.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <ClipboardList className="size-3" /> Önerilen Kontroller
                 </p>
                 <div className="space-y-1">
                   {inspections.map((item, i) => {
                     const globalIndex = items.indexOf(item)
                     return (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm">
+                      <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
                         <button
                           onClick={() => toggleItem(globalIndex)}
                           className={cn(
                             "size-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                            item.selected ? "bg-blue-600 border-blue-600" : "border-slate-300 bg-white"
+                            item.selected ? "bg-primary border-primary" : "border-border bg-card"
                           )}
                         >
                           {item.selected && <CheckCircle2 className="size-3 text-white" />}
@@ -254,17 +254,17 @@ export function ServiceAdvisorPanel({
                           />
                         ) : (
                           <span
-                            className={cn("flex-1 truncate", item.selected ? "text-slate-900" : "text-slate-400 line-through")}
+                            className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground/70 line-through")}
                           >
                             {item.label}
                           </span>
                         )}
                         {editMode !== String(globalIndex) && (
                           <div className="flex items-center gap-0.5 shrink-0">
-                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-slate-400 hover:text-blue-600 rounded" aria-label="Düzenle">
+                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-primary rounded" aria-label="Düzenle">
                               <Edit3 className="size-3" />
                             </button>
-                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-slate-400 hover:text-rose-600 rounded" aria-label="Yoksay">
+                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-destructive rounded" aria-label="Yoksay">
                               <X className="size-3" />
                             </button>
                           </div>
@@ -278,24 +278,24 @@ export function ServiceAdvisorPanel({
 
             {laborAndParts.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Wrench className="size-3" /> İşçilikler & Parçalar
                 </p>
                 <div className="space-y-1">
                   {laborAndParts.map((item, i) => {
                     const globalIndex = items.indexOf(item)
                     return (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm">
+                      <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
                         <button
                           onClick={() => toggleItem(globalIndex)}
                           className={cn(
                             "size-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                            item.selected ? "bg-blue-600 border-blue-600" : "border-slate-300 bg-white"
+                            item.selected ? "bg-primary border-primary" : "border-border bg-card"
                           )}
                         >
                           {item.selected && <CheckCircle2 className="size-3 text-white" />}
                         </button>
-                        <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0", item.type === "labor" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700")}>
+                        <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0", item.type === "labor" ? "bg-primary/10 text-foreground" : "bg-success/10 text-foreground")}>
                           {item.type === "labor" ? "İşçilik" : "Parça"}
                         </span>
                         {editMode === String(globalIndex) ? (
@@ -308,16 +308,16 @@ export function ServiceAdvisorPanel({
                             autoFocus
                           />
                         ) : (
-                          <span className={cn("flex-1 truncate", item.selected ? "text-slate-900" : "text-slate-400 line-through", item.edited && "italic text-blue-700")}>
+                          <span className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground/70 line-through", item.edited && "italic text-primary")}>
                             {item.label}
                           </span>
                         )}
                         {editMode !== String(globalIndex) && (
                           <div className="flex items-center gap-0.5 shrink-0">
-                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-slate-400 hover:text-blue-600 rounded" aria-label="Düzenle">
+                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-primary rounded" aria-label="Düzenle">
                               <Edit3 className="size-3" />
                             </button>
-                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-slate-400 hover:text-rose-600 rounded" aria-label="Kaldır">
+                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-destructive rounded" aria-label="Kaldır">
                               <X className="size-3" />
                             </button>
                           </div>
@@ -361,10 +361,10 @@ export function ServiceAdvisorPanel({
 
             {result.customerDescription && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <FileText className="size-3" /> Müşteri Açıklaması
                 </p>
-                <p className="text-sm text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200">
+                <p className="text-sm text-foreground bg-white p-2.5 rounded-lg border border-border">
                   {result.customerDescription}
                 </p>
               </div>
@@ -372,21 +372,21 @@ export function ServiceAdvisorPanel({
 
             {result.internalNote && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <StickyNote className="size-3" /> Servis İç Notu
                 </p>
-                <p className="text-sm text-slate-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                <p className="text-sm text-muted-foreground bg-warning/10 p-2.5 rounded-lg border border-warning/20">
                   {result.internalNote}
                 </p>
-                <p className="text-[11px] text-slate-500 italic mt-1">Bu not müşteri çıktısında gösterilmez</p>
+                <p className="text-[11px] text-muted-foreground italic mt-1">Bu not müşteri çıktısında gösterilmez</p>
               </div>
             )}
 
-            <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600 flex items-start gap-1.5">
-              <Shield className="size-3.5 shrink-0 mt-0.5 text-slate-500" />
+            <div className="p-2.5 rounded-lg bg-muted border border-border text-xs text-muted-foreground flex items-start gap-1.5">
+              <Shield className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
               <span>
                 AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir. Önerilen kalemler otomatik eklenmez — eklemek için onaylamanız gerekir.
-                {providerLabel && <span className="ml-1 text-slate-500">Sağlayıcı: {providerLabel}</span>}
+                {providerLabel && <span className="ml-1 text-muted-foreground">Sağlayıcı: {providerLabel}</span>}
               </span>
             </div>
 

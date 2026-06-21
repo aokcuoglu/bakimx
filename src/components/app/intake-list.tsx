@@ -78,7 +78,7 @@ export function IntakeList({
               <Link
                 key={intake.id}
                 href={`/app/intakes/${intake.id}`}
-                className="flex items-center justify-between p-4 bg-card border rounded-xl hover:bg-muted/50 transition-colors active:bg-muted/70 touch-manipulation"
+                className="flex items-center justify-between p-4 bg-card border rounded-lg hover:bg-muted/50 transition-colors active:bg-muted/70 touch-manipulation"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Car className="size-5 text-muted-foreground shrink-0" />
@@ -93,7 +93,7 @@ export function IntakeList({
                     </p>
                   </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap shrink-0 ml-2 ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap shrink-0 ml-2 ${statusInfo?.color || "bg-muted text-muted-foreground"}`}>
                   {statusInfo?.label || intake.status}
                 </span>
               </Link>

@@ -54,7 +54,7 @@ export function PartsReport({ stats, mostUsed, lowestStock }: PartsReportProps) 
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Çok Kullanılan Parçalar</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Çok Kullanılan Parçalar</h4>
         <ReportTable
           headers={[
             { key: "name", label: "Parça" },
@@ -63,17 +63,17 @@ export function PartsReport({ stats, mostUsed, lowestStock }: PartsReportProps) 
           ]}
           rows={mostUsed}
           renderRow={(row) => (
-            <tr key={row.partId} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.sku || "—"}</td>
-              <td className="px-4 py-2.5 font-semibold text-blue-700">{row.totalUsed}</td>
+            <tr key={row.partId} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.name}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.sku || "—"}</td>
+              <td className="px-4 py-2.5 font-semibold text-primary">{row.totalUsed}</td>
             </tr>
           )}
         />
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Düşük Stoklu Parçalar</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Düşük Stoklu Parçalar</h4>
         <ReportTable
           headers={[
             { key: "name", label: "Parça" },
@@ -85,19 +85,19 @@ export function PartsReport({ stats, mostUsed, lowestStock }: PartsReportProps) 
           ]}
           rows={lowestStock}
           renderRow={(row) => (
-            <tr key={row.id} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.name}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.sku || "—"}</td>
-              <td className={`px-4 py-2.5 font-semibold ${row.status === "out_of_stock" ? "text-red-700" : "text-amber-700"}`}>
+            <tr key={row.id} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.name}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.sku || "—"}</td>
+              <td className={`px-4 py-2.5 font-semibold ${row.status === "out_of_stock" ? "text-destructive" : "text-warning"}`}>
                 {row.stockQty}
               </td>
-              <td className="px-4 py-2.5 text-slate-600">{row.criticalStockQty}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.salePrice != null ? formatTRY(row.salePrice) : "—"}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.criticalStockQty}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.salePrice != null ? formatTRY(row.salePrice) : "—"}</td>
               <td className="px-4 py-2.5">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                   row.status === "out_of_stock"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-warning/10 text-warning"
                 }`}>
                   {row.status === "out_of_stock" ? "Tükendi" : "Kritik"}
                 </span>

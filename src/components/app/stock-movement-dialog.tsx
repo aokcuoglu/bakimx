@@ -4,8 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { createStockMovementAction } from "@/app/app/parts/actions"
-import { Loader2, X, Package } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Loader2, Package } from "lucide-react"
 
 export function StockMovementDialog({
   partId,
@@ -56,51 +58,33 @@ export function StockMovementDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-            <Package className="size-4 text-blue-600" />
+    <Dialog defaultOpen onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="size-4 text-primary" />
             Stok Hareketi
-          </h3>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-md" aria-label="Kapat">
-            <X className="size-4" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <p className="text-sm text-slate-700">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-sm text-foreground">
             <strong>{partName}</strong>
-            <span className="block text-xs text-slate-500">Mevcut Stok: {currentStock} {unit}</span>
+            <span className="block text-xs text-muted-foreground">Mevcut Stok: {currentStock} {unit}</span>
           </p>
 
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">{error}</div>
+            <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">{error}</div>
           )}
 
           <div className="space-y-2">
             <Label className="text-xs">Hareket Tipi</Label>
-            <div className="flex gap-2">
-              {(["in", "out", "adjustment"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => { setType(t); setError("") }}
-                  className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${
-                    type === t
-                      ? t === "in"
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                        : t === "out"
-                          ? "bg-red-50 border-red-300 text-red-700"
-                          : "bg-amber-50 border-amber-300 text-amber-700"
-                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {t === "in" ? "Giriş" : t === "out" ? "Çıkış" : "Düzeltme"}
-                </button>
-              ))}
-            </div>
-            <p className="text-[11px] text-slate-400">
+            <ToggleGroup value={[type]} onValueChange={(v) => { if (v.length) { setType(v[0] as "in" | "out" | "adjustment"); setError("") } }} variant="outline" className="w-full">
+              <ToggleGroupItem value="in" className="flex-1">Giriş</ToggleGroupItem>
+              <ToggleGroupItem value="out" className="flex-1">Çıkış</ToggleGroupItem>
+              <ToggleGroupItem value="adjustment" className="flex-1">Düzeltme</ToggleGroupItem>
+            </ToggleGroup>
+            <p className="text-[11px] text-muted-foreground/70">
               {type === "in" ? "Stoğa ekleme yapar" : type === "out" ? "Stoktan düşüş yapar" : "Stok miktarını doğrudan belirlediğiniz değere ayarlar"}
             </p>
           </div>
@@ -138,7 +122,7 @@ export function StockMovementDialog({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
