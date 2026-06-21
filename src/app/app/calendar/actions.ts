@@ -27,7 +27,8 @@ export async function getCalendarSettings() {
   }
 }
 
-export async function getCalendarLogsAction(workshopId: string) {
+export async function getCalendarLogsAction() {
+  const { workshopId } = await requireAuth()
   const [syncLogs, executionLogs] = await Promise.all([
     getCalendarSyncLogs(workshopId, 20),
     getReminderExecutionLogs(workshopId, 20),

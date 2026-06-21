@@ -1,14 +1,16 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { requireAuth } from "@/lib/auth"
 
-export async function getCommunicationLogs(workshopId: string, filters?: {
+export async function getCommunicationLogs(filters?: {
   type?: string
   status?: string
   search?: string
   dateFrom?: string
   dateTo?: string
 }) {
+  const { workshopId } = await requireAuth()
   const where: Record<string, unknown> = { workshopId }
 
   if (filters?.type) where.type = filters.type
@@ -52,7 +54,8 @@ export async function getCommunicationLogs(workshopId: string, filters?: {
   }))
 }
 
-export async function getCommunicationStats(workshopId: string) {
+export async function getCommunicationStats() {
+  const { workshopId } = await requireAuth()
   const [sent, failed, pending] = await Promise.all([
     prisma.communicationLog.count({ where: { workshopId, status: "sent" } }),
     prisma.communicationLog.count({ where: { workshopId, status: "failed" } }),

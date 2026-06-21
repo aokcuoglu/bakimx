@@ -7,7 +7,8 @@ import { COMMUNICATION_TEMPLATES, getDefaultTemplate, sanitizeTemplate } from "@
 import type { CommunicationTemplateKey, CommunicationType } from "@/lib/communications/types"
 import type { TemplateChannel } from "@/lib/communications/templates"
 
-export async function getNotificationTemplates(workshopId: string) {
+export async function getNotificationTemplates() {
+  const { workshopId } = await requireAuth()
   const saved = await prisma.communicationTemplate.findMany({
     where: { workshopId },
     orderBy: [{ templateKey: "asc" }, { channel: "asc" }],

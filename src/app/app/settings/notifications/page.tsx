@@ -5,7 +5,7 @@ import { getNotificationTemplates, getCommunicationProviders } from "./actions"
 import Link from "next/link"
 
 export default async function NotificationsPage() {
-  const { user, workshop } = await getAppData()
+  const { workshop } = await getAppData()
 
   if (!workshop) {
     return (
@@ -18,7 +18,7 @@ export default async function NotificationsPage() {
   }
 
   const [templates, providers] = await Promise.all([
-    getNotificationTemplates(user.workshopId),
+    getNotificationTemplates(),
     getCommunicationProviders(),
   ])
 

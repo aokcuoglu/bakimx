@@ -261,13 +261,13 @@ export async function createStockMovementAction(formData: FormData) {
 }
 
 export async function getPartsAction(params: {
-  workshopId: string
   search?: string
   stockStatus?: string
   category?: string
   brand?: string
 }) {
-  const { workshopId, search, stockStatus, category, brand } = params
+  const { search, stockStatus, category, brand } = params
+  const { workshopId } = await requireAuth()
 
   const where: Record<string, unknown> = { workshopId }
 
@@ -307,7 +307,8 @@ export async function getPartsAction(params: {
   return parts
 }
 
-export async function getUniqueBrandsAction(workshopId: string) {
+export async function getUniqueBrandsAction() {
+  const { workshopId } = await requireAuth()
   const parts = await prisma.partStockItem.findMany({
     where: { workshopId, brand: { not: null } },
     select: { brand: true },
@@ -316,7 +317,8 @@ export async function getUniqueBrandsAction(workshopId: string) {
   return parts.map((p) => p.brand).filter(Boolean) as string[]
 }
 
-export async function getUniqueCategoriesAction(workshopId: string) {
+export async function getUniqueCategoriesAction() {
+  const { workshopId } = await requireAuth()
   const parts = await prisma.partStockItem.findMany({
     where: { workshopId, category: { not: null } },
     select: { category: true },
