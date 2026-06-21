@@ -1,24 +1,39 @@
 import { NextResponse } from "next/server"
+import { timingSafeEqual } from "node:crypto"
 
 const CRON_SECRET = process.env.CRON_SECRET || ""
 
-export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization")
-  const providedSecret = authHeader?.replace("Bearer ", "")
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
+}
 
-  if (CRON_SECRET && providedSecret !== CRON_SECRET) {
+async function handle(request: Request) {
+  // CRON_SECRET is REQUIRED in every environment. If it is not configured the
+  // endpoint is treated as misconfigured (never silently open).
+  if (!CRON_SECRET) {
+    return NextResponse.json(
+      { error: "CRON_SECRET ayarlanmamış" },
+      { status: 500 }
+    )
+  }
+
+  const authHeader = request.headers.get("authorization") || ""
+  const providedSecret = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : ""
+
+  if (!providedSecret || !safeEqual(providedSecret, CRON_SECRET)) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 })
   }
 
-  if (!CRON_SECRET && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "CRON_SECRET ayarlanmamış" }, { status: 500 })
-  }
-
   try {
-    const { processAppointmentReminders } = await import("@/lib/communications/scheduler")
+    const { processAppointmentReminders, processMaintenanceReminders } = await import(
+      "@/lib/communications/scheduler"
+    )
     const appointmentResult = await processAppointmentReminders()
-
-    const { processMaintenanceReminders } = await import("@/lib/communications/scheduler")
     const maintenanceResult = await processMaintenanceReminders()
 
     return NextResponse.json({
@@ -32,6 +47,10 @@ export async function GET(request: Request) {
   }
 }
 
+export async function GET(request: Request) {
+  return handle(request)
+}
+
 export async function POST(request: Request) {
-  return GET(request)
+  return handle(request)
 }

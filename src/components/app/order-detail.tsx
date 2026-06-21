@@ -278,18 +278,18 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <button onClick={() => router.push("/app/orders")} className="hover:text-slate-700 inline-flex items-center gap-1 touch-manipulation">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <button onClick={() => router.push("/app/orders")} className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
           <ArrowLeft className="size-3.5" />
           İş Emirleri
         </button>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">{order.workOrderNo}</span>
+        <span className="text-foreground font-medium">{order.workOrderNo}</span>
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2">
-          <Info className="size-4 shrink-0 mt-0.5" />
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
+          <Info className="size-4 text-destructive shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
@@ -300,12 +300,12 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
           <StatusBadge status={order.status} size="md" />
           <PaymentBadge status={order.paymentStatus} size="md" />
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
           {order.customer.type === "corporate"
             ? order.customer.companyName || "Kurumsal Müşteri"
             : order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri"}
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           {order.vehicle.brand} {order.vehicle.model}
           {order.vehicle.modelYear ? ` • ${order.vehicle.modelYear}` : ""}
         </p>
@@ -315,7 +315,7 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-slate-500 font-medium mr-1">Durumu Güncelle:</span>
+              <span className="text-sm text-muted-foreground font-medium mr-1">Durumu Güncelle:</span>
               {nextActions.map((a) => (
                 <Button
                   key={a.key}
@@ -324,7 +324,7 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
                   onClick={() => changeStatus(a.key)}
                   disabled={loading}
                   className={cn(
-                    a.key === "cancelled" && "text-rose-600 border-rose-200 hover:bg-rose-50"
+                    a.key === "cancelled" && "text-foreground border-destructive/20 hover:bg-destructive/10"
                   )}
                 >
                   {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : null}
@@ -367,14 +367,14 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-amber-600" />
+                  <AlertTriangle className="size-4 text-warning" />
                   Araç Hasar Haritası ({order.damageMarks.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-1.5">
                   {order.damageMarks.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg text-sm">
+                    <div key={d.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
                       <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -383,18 +383,18 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
                         <span className="font-medium truncate">
                           {VEHICLE_ZONES[d.zone as keyof typeof VEHICLE_ZONES] || d.zone}
                         </span>
-                        <span className="text-slate-500 text-xs shrink-0">
+                        <span className="text-muted-foreground text-xs shrink-0">
                           {DAMAGE_TYPES[d.damageType as keyof typeof DAMAGE_TYPES]?.label || d.damageType}
                         </span>
                       </div>
-                      {d.note && <span className="text-xs text-slate-500 truncate max-w-[40%]">- {d.note}</span>}
+                      {d.note && <span className="text-xs text-muted-foreground truncate max-w-[40%]">- {d.note}</span>}
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 pt-3 border-t">
                   <Link
                     href={`/app/intakes/${order.intake.id}`}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Hasar haritasını tam ekranda görüntüle →
                   </Link>
@@ -407,7 +407,7 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="size-4 text-slate-500" />
+                  <Camera className="size-4 text-muted-foreground" />
                   Fotoğraflar ({order.photos.length})
                 </CardTitle>
               </CardHeader>
@@ -420,7 +420,7 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
                 {order.photos.length > 8 && (
                   <Link
                     href={`/app/intakes/${order.intake.id}`}
-                    className="mt-3 block text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="mt-3 block text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Tüm fotoğrafları gör ({order.photos.length}) →
                   </Link>
@@ -481,47 +481,47 @@ function CustomerVehicleCard({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <User className="size-3" /> Müşteri
             </div>
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-semibold text-foreground">
               {customer.type === "corporate"
                 ? customer.companyName || "Kurumsal Müşteri"
                 : customer.fullName || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "Müşteri"}
             </p>
             {customer.type === "corporate" && customer.contactName ? (
-              <p className="text-xs text-slate-500">Yetkili: {customer.contactName}</p>
+              <p className="text-xs text-muted-foreground">Yetkili: {customer.contactName}</p>
             ) : null}
-            <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600">
+            <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
               <Phone className="size-3.5" />
               {customer.phone}
             </a>
             {customer.email && (
-              <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-600">
+              <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
                 <Mail className="size-3.5" />
                 {customer.email}
               </a>
             )}
           </div>
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <Car className="size-3" /> Araç
             </div>
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-semibold text-foreground">
               {vehicle.brand} {vehicle.model}
               {vehicle.modelYear ? ` (${vehicle.modelYear})` : ""}
             </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {intake.mileageAtIntake != null && <span>Giriş KM: {intake.mileageAtIntake.toLocaleString("tr-TR")}</span>}
               {vehicle.mileage != null && <span>Kayıtlı: {vehicle.mileage.toLocaleString("tr-TR")} km</span>}
               {vehicle.vin && <span className="font-mono">VIN: {vehicle.vin}</span>}
             </div>
           </div>
         </div>
-        <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>Kabul: {formatDate(intake.createdAt)}</span>
           {intake.approvedAt && <span>Onay: {formatDate(intake.approvedAt)}</span>}
-          <Link href={`/app/intakes/${intake.id}`} className="text-blue-600 hover:text-blue-700 font-medium">
+          <Link href={`/app/intakes/${intake.id}`} className="text-primary hover:text-primary/80 font-medium">
             Kabul Detayı →
           </Link>
         </div>
@@ -646,16 +646,16 @@ function PartsLaborCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <Wrench className="size-4 text-slate-500" />
+            <Wrench className="size-4 text-muted-foreground" />
             Kullanılan Parçalar & İşçilikler
           </CardTitle>
-          <span className="text-xs text-slate-500">{items.length} kalem</span>
+          <span className="text-xs text-muted-foreground">{items.length} kalem</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {parts.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Parçalar ({parts.length})</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Parçalar ({parts.length})</p>
             <div className="space-y-1.5">
               {parts.map((item) => (
                 <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={handleRemove} />
@@ -665,7 +665,7 @@ function PartsLaborCard({
         )}
         {labor.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">İşçilikler ({labor.length})</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">İşçilikler ({labor.length})</p>
             <div className="space-y-1.5">
               {labor.map((item) => (
                 <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={handleRemove} />
@@ -675,8 +675,8 @@ function PartsLaborCard({
         )}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-sm text-slate-500">
-            <Wrench className="size-10 mx-auto mb-2 text-slate-300" />
+          <div className="text-center py-6 text-sm text-muted-foreground">
+            <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
             Henüz kalem eklenmedi
           </div>
         )}
@@ -689,19 +689,19 @@ function PartsLaborCard({
             <Button size="sm" variant="outline" onClick={() => setAddingType("labor")} className="flex-1 sm:flex-none">
               <Plus className="size-3.5 mr-1" /> İşçilik Ekle
             </Button>
-            <Button size="sm" variant="ghost" disabled className="text-slate-400">
+            <Button size="sm" variant="ghost" disabled className="text-muted-foreground/70">
               <Plus className="size-3.5 mr-1" /> Barkodla Ekle <span className="ml-1 text-[10px] uppercase">Yakında</span>
             </Button>
           </div>
         ) : (
             <div className="pt-3 border-t space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-foreground">
                 {addingType === "part" ? "Yeni Parça" : "Yeni İşçilik"}
               </p>
               <button
                 onClick={resetForm}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-muted-foreground/70 hover:text-muted-foreground p-1"
                 aria-label="Kapat"
               >
                 <X className="size-4" />
@@ -717,28 +717,28 @@ function PartsLaborCard({
                       onChange={(e) => { setCatalogSearch(e.target.value); searchCatalog(e.target.value) }}
                       placeholder="Katalogdan parça ara..."
                     />
-                    {catalogLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">Aranıyor...</span>}
+                    {catalogLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70">Aranıyor...</span>}
                   </div>
                   <Button type="button" size="sm" variant="outline" onClick={() => setShowCatalog(!showCatalog)}>
                     Katalogdan Ekle
                   </Button>
                 </div>
                 {showCatalog && catalogResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-white shadow-sm">
                     {catalogResults.map((p) => (
                       <button
                         key={p.id}
                         type="button"
                         onClick={() => selectCatalogPart(p.id)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b border-border last:border-0 flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium text-slate-900">{p.name}</span>
-                          {p.sku && <span className="text-xs text-slate-500 ml-2 font-mono">{p.sku}</span>}
+                          <span className="font-medium text-foreground">{p.name}</span>
+                          {p.sku && <span className="text-xs text-muted-foreground ml-2 font-mono">{p.sku}</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
-                          {p.salePrice != null && <span className="text-xs font-medium text-slate-700">{formatPrice(p.salePrice)}</span>}
+                          {p.salePrice != null && <span className="text-xs font-medium text-foreground">{formatPrice(p.salePrice)}</span>}
                         </div>
                       </button>
                     ))}
@@ -795,25 +795,25 @@ function PartsLaborCard({
 
 function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: number | null; onRemove: (id: string) => void }) {
   return (
-    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg gap-2">
+    <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg gap-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-slate-900 truncate">{item.name}</span>
-          {item.sku && <span className="text-[10px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">{item.sku}</span>}
+          <span className="text-sm font-medium text-foreground truncate">{item.name}</span>
+          {item.sku && <span className="text-[10px] font-mono text-muted-foreground bg-white px-1.5 py-0.5 rounded border border-border">{item.sku}</span>}
         </div>
-        <div className="text-xs text-slate-500 mt-0.5">
+        <div className="text-xs text-muted-foreground mt-0.5">
           {item.quantity} {item.unit || (item.type === "part" ? "adet" : "saat")}
           {item.unitPrice ? ` × ${formatTRY(item.unitPrice)}` : ""}
           {item.note && ` • ${item.note}`}
         </div>
       </div>
       <div className="text-right shrink-0 flex items-center gap-2">
-        <span className={cn("text-sm font-semibold", lineTotal == null ? "text-slate-400 font-normal text-xs" : "text-slate-900")}>
+        <span className={cn("text-sm font-semibold", lineTotal == null ? "text-muted-foreground/70 font-normal text-xs" : "text-foreground")}>
           {lineTotal != null ? formatTRY(lineTotal) : "—"}
         </span>
         <button
           onClick={() => onRemove(item.id)}
-          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+          className="p-1 text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
           aria-label="Kalemi sil"
         >
           <Trash2 className="size-3.5" />
@@ -831,14 +831,14 @@ function ComplaintNotesCard({ intake }: { intake: OrderDetailData["intake"] }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Müşteri Şikayeti</p>
-          <p className="text-sm text-slate-700 whitespace-pre-wrap">{intake.customerComplaint}</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Müşteri Şikayeti</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{intake.customerComplaint}</p>
         </div>
         {intake.internalNote && (
           <div className="pt-3 border-t">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Teknisyen İç Notu</p>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap">{intake.internalNote}</p>
-            <p className="mt-1 text-[11px] text-slate-500 italic">Bu not müşteri çıktısında gösterilmez</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Teknisyen İç Notu</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{intake.internalNote}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
           </div>
         )}
       </CardContent>
@@ -875,7 +875,7 @@ function PricingSummaryCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Calculator className="size-4 text-slate-500" />
+            <Calculator className="size-4 text-muted-foreground" />
             Fiyatlandırma
           </CardTitle>
           <PaymentBadge status={paymentStatus} size="md" />
@@ -996,11 +996,11 @@ function SummaryRow({
   muted?: boolean
   tone?: "slate" | "emerald" | "rose"
 }) {
-  const toneColor = tone === "emerald" ? "text-emerald-700" : tone === "rose" ? "text-rose-700" : "text-slate-900"
+  const toneColor = tone === "emerald" ? "text-success" : tone === "rose" ? "text-destructive" : "text-foreground"
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
-      <span className={cn("text-slate-600", bold && "text-slate-900")}>{label}</span>
-      <span className={cn(muted ? "text-slate-400" : toneColor, large && "text-lg font-bold text-slate-900", bold && !large && toneColor)}>
+      <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
+      <span className={cn(muted ? "text-muted-foreground/70" : toneColor, large && "text-lg font-bold text-foreground", bold && !large && toneColor)}>
         {value}
       </span>
     </div>
@@ -1036,7 +1036,7 @@ function OrderInfoCard({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Receipt className="size-4 text-slate-500" />
+          <Receipt className="size-4 text-muted-foreground" />
           İş Emri Bilgileri
         </CardTitle>
       </CardHeader>
@@ -1052,24 +1052,24 @@ function OrderInfoCard({
           <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} icon={Calendar} />
         )}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-slate-500">Atanan Usta</span>
+          <span className="text-xs text-muted-foreground">Atanan Usta</span>
           <div className="flex items-center gap-2">
             {order.assignedTechnicianName ? (
               <>
-                <span className="text-sm text-slate-900 flex items-center gap-1.5">
-                  <User className="size-3.5 text-slate-400" />
+                <span className="text-sm text-foreground flex items-center gap-1.5">
+                  <User className="size-3.5 text-muted-foreground/70" />
                   {order.assignedTechnicianName}
                 </span>
                 <button
                   onClick={handleUnassign}
                   disabled={isPending}
-                  className="text-[11px] text-red-500 hover:text-red-700 underline disabled:opacity-50"
+                  className="text-[11px] text-foreground hover:text-foreground/80 underline disabled:opacity-50"
                 >
                   Kaldır
                 </button>
               </>
             ) : (
-              <span className="text-sm text-slate-400">—</span>
+              <span className="text-sm text-muted-foreground/70">—</span>
             )}
           </div>
         </div>
@@ -1083,8 +1083,8 @@ function OrderInfoCard({
                 className={cn(
                   "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors touch-manipulation disabled:opacity-50",
                   t.id === order.assignedTechnicianId
-                    ? "bg-blue-100 text-blue-700 border border-blue-200"
-                    : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+                    ? "bg-primary/10 text-foreground border border-primary/20"
+                    : "bg-muted text-muted-foreground border border-border hover:bg-primary/10 hover:border-primary/20"
                 )}
               >
                 <User className="size-3" />
@@ -1098,12 +1098,12 @@ function OrderInfoCard({
         )}
         {order.notes && (
           <div className="pt-2 border-t">
-            <p className="text-xs text-slate-500 mb-1">Notlar</p>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap">{order.notes}</p>
+            <p className="text-xs text-muted-foreground mb-1">Notlar</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{order.notes}</p>
           </div>
         )}
         <div className="pt-2 border-t">
-          <p className="text-xs text-slate-500 mb-1.5">Ödeme</p>
+          <p className="text-xs text-muted-foreground mb-1.5">Ödeme</p>
           <PaymentBadge status={order.paymentStatus} size="md" />
         </div>
       </CardContent>
@@ -1124,9 +1124,9 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-slate-500">{label}</span>
-      <span className={cn("text-sm text-slate-900 flex items-center gap-1.5", mono && "font-mono text-xs")}>
-        {Icon && <Icon className="size-3.5 text-slate-400" />}
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={cn("text-sm text-foreground flex items-center gap-1.5", mono && "font-mono text-xs")}>
+        {Icon && <Icon className="size-3.5 text-muted-foreground/70" />}
         {value}
       </span>
     </div>
@@ -1139,13 +1139,13 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Share2 className="size-4 text-slate-500" />
+            <Share2 className="size-4 text-muted-foreground" />
             Müşteri Çıktısı
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600">
-            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/app/intakes" className="text-blue-600 font-medium">Araç Kabulleri</Link> üzerinden oluşturulabilir.
+          <div className="p-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
+            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/app/intakes" className="text-primary font-medium">Araç Kabulleri</Link> üzerinden oluşturulabilir.
           </div>
         </CardContent>
       </Card>
@@ -1158,7 +1158,7 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Share2 className="size-4 text-slate-500" />
+          <Share2 className="size-4 text-muted-foreground" />
           Müşteri Çıktısı
         </CardTitle>
       </CardHeader>
@@ -1167,18 +1167,18 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
           href={shareLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm text-slate-700 touch-manipulation"
+          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation"
         >
-          <FileText className="size-4 text-slate-500" />
+          <FileText className="size-4 text-muted-foreground" />
           Müşteri Çıktısını Aç
         </Link>
         <Link
           href={pdfLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm text-slate-700 touch-manipulation"
+          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation"
         >
-          <Printer className="size-4 text-slate-500" />
+          <Printer className="size-4 text-muted-foreground" />
           Yazdır / PDF
         </Link>
         <button
@@ -1190,8 +1190,8 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
           WhatsApp ile Paylaş
         </button>
         <div className="pt-2">
-          <p className="text-[11px] text-slate-500 break-all">{shareLink}</p>
-          <p className="text-[10px] text-slate-400 mt-0.5">Paylaşım için WhatsApp butonunu kullanın</p>
+          <p className="text-[11px] text-muted-foreground break-all">{shareLink}</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5">Paylaşım için WhatsApp butonunu kullanın</p>
         </div>
       </CardContent>
     </Card>
@@ -1222,12 +1222,12 @@ function PaymentHistoryCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Wallet className="size-4 text-slate-500" />
+            <Wallet className="size-4 text-muted-foreground" />
             Tahsilat Geçmişi
           </CardTitle>
           <Link
             href={`/app/cashbox/payments/new?orderId=${orderId}`}
-            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors touch-manipulation"
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
           >
             <Plus className="size-3" />
             Tahsilat Ekle
@@ -1237,11 +1237,11 @@ function PaymentHistoryCard({
       <CardContent className="space-y-2">
         {collections.length === 0 ? (
           <div className="text-center py-4">
-            <Wallet className="size-8 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm text-slate-500">Henüz tahsilat kaydı yok</p>
+            <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
             <Link
               href={`/app/cashbox/payments/new?orderId=${orderId}`}
-              className="mt-2 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
             >
               <Plus className="size-3.5" /> İlk tahsilatı ekle
             </Link>
@@ -1255,24 +1255,24 @@ function PaymentHistoryCard({
                 <Link
                   key={c.id}
                   href={`/app/cashbox/payments/${c.id}`}
-                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isCancelled ? "bg-rose-50/60 hover:bg-rose-50 border border-rose-100" : "bg-slate-50 hover:bg-slate-100"}`}
+                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isCancelled ? "bg-destructive/10 hover:bg-destructive/10 border border-destructive/20" : "bg-muted hover:bg-muted"}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className={`text-sm font-semibold ${isCancelled ? "text-rose-700 line-through" : "text-slate-900"}`}>{formatTRY(c.amount)}</p>
-                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isCancelled ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                      <p className={`text-sm font-semibold ${isCancelled ? "text-destructive line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
+                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isCancelled ? "bg-destructive/10 text-foreground border-destructive/20" : "bg-success/10 text-foreground border-success/20"}`}>
                         {isCancelled ? "İptal" : methodLabel}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(c.paymentDate)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}</p>
                     {isCancelled && c.cancellationReason && (
-                      <p className="text-xs text-rose-600 mt-0.5 truncate">{c.cancellationReason}</p>
+                      <p className="text-xs text-destructive mt-0.5 truncate">{c.cancellationReason}</p>
                     )}
                     {!isCancelled && c.referenceNo && (
-                      <p className="text-xs text-slate-400 mt-0.5">Ref: {c.referenceNo}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">Ref: {c.referenceNo}</p>
                     )}
                   </div>
-                  <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                  <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
                 </Link>
               )
             })}
@@ -1280,23 +1280,23 @@ function PaymentHistoryCard({
         )}
         {totals.hasAnyPrice && (
           <div className="border-t pt-2 mt-2 space-y-1">
-            <div className="flex justify-between text-xs text-slate-500">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Genel Toplam</span>
-              <span className="font-medium text-slate-900">{formatTRY(totals.grandTotal)}</span>
+              <span className="font-medium text-foreground">{formatTRY(totals.grandTotal)}</span>
             </div>
-            <div className="flex justify-between text-xs text-slate-500">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Tahsil Edilen</span>
-              <span className="font-medium text-emerald-700">{formatTRY(paidAmount)}</span>
+              <span className="font-medium text-foreground">{formatTRY(paidAmount)}</span>
             </div>
             {cancelledCollections.length > 0 && (
-              <div className="flex justify-between text-xs text-slate-500">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>İptal Edilen</span>
-                <span className="font-medium text-rose-700">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
+                <span className="font-medium text-foreground">{formatTRY(cancelledCollections.reduce((s, c) => s + c.amount, 0))}</span>
               </div>
             )}
             <div className="flex justify-between text-xs">
-              <span className="text-slate-500 font-medium">Kalan</span>
-              <span className={cn("font-bold", remainingAmount > 0 ? "text-rose-700" : "text-emerald-700")}>{formatTRY(remainingAmount)}</span>
+              <span className="text-muted-foreground font-medium">Kalan</span>
+              <span className="font-bold text-foreground">{formatTRY(remainingAmount)}</span>
             </div>
           </div>
         )}
@@ -1322,7 +1322,7 @@ function PhotoThumb({ photo }: { photo: Photo }) {
       href={`/api/photos?id=${photo.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="block aspect-square rounded-lg bg-slate-100 border border-slate-200 overflow-hidden hover:border-blue-400 transition-colors"
+      className="block aspect-square rounded-lg bg-muted border border-border overflow-hidden hover:border-primary/40 transition-colors"
       title={typeLabel}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

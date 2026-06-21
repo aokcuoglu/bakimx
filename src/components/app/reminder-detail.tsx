@@ -148,32 +148,32 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link href="/app/reminders" className="hover:text-slate-700 inline-flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/app/reminders" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-4" />
           Bakım Hatırlatmaları
         </Link>
         <span className="mx-1">/</span>
-        <span className="text-slate-700 font-medium truncate">{reminder.title}</span>
+        <span className="text-foreground font-medium truncate">{reminder.title}</span>
       </div>
 
       {actionError ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">{actionError}</div>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive px-4 py-3 text-sm">{actionError}</div>
       ) : null}
 
-      <header className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-xl bg-[#0B1F3A] flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
               <BellRing className="size-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{reminder.title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{reminder.title}</h2>
                 <ReminderStatusBadge status={reminder.status} size="md" />
                 <ReminderTypeBadge type={reminder.type} />
               </div>
-              <div className="mt-1 flex items-center gap-3 text-xs sm:text-sm text-slate-500 flex-wrap">
+              <div className="mt-1 flex items-center gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
                 {reminder.dueDate ? (
                   <span className="inline-flex items-center gap-1">
                     <Calendar className="size-3.5" />
@@ -195,14 +195,14 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 <button
                   onClick={() => handleAction("complete")}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-success hover:bg-success/90 text-white text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
                 >
                   {actionLoading ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   <span className="hidden sm:inline">Tamamlandı</span>
                 </button>
                 <button
                   onClick={() => setShowPostpone(!showPostpone)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Clock className="size-4" />
                   <span className="hidden sm:inline">Ertele</span>
@@ -213,19 +213,21 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-destructive hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>
               </button>
             ) : null}
-            <Link
-              href={`/app/reminders/${reminder.id}/edit`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+              render={<Link href={`/app/reminders/${reminder.id}/edit`} />}
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
-            </Link>
+            </Button>
           </div>
         </div>
 
@@ -235,7 +237,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("create-appointment")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <CalendarClock className="size-3.5" />
                 Randevu Oluştur
@@ -243,7 +245,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             ) : null}
             <Link
               href={`/app/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium transition-colors touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-muted text-foreground hover:bg-border text-xs font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-3.5" />
               İş Emri Oluştur
@@ -253,7 +255,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       </header>
 
       {showPostpone ? (
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-warning/20 bg-warning/5">
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Clock className="size-4" />
@@ -264,11 +266,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <form onSubmit={handlePostpone} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-600">Yeni Tarih</label>
+                  <label className="text-xs font-medium text-muted-foreground">Yeni Tarih</label>
                   <Input type="date" value={postponeDate} onChange={(e) => setPostponeDate(e.target.value)} className="mt-1 h-9" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-600">Yeni KM</label>
+                  <label className="text-xs font-medium text-muted-foreground">Yeni KM</label>
                   <Input type="number" min="1" value={postponeMileage} onChange={(e) => setPostponeMileage(e.target.value)} placeholder="Örn: 20000" className="mt-1 h-9" />
                 </div>
               </div>
@@ -291,7 +293,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <BellRing className="size-4 text-slate-500" />
+                <BellRing className="size-4 text-muted-foreground" />
                 Hatırlatma Detayı
               </CardTitle>
             </CardHeader>
@@ -320,12 +322,12 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <FileText className="size-4 text-slate-500" />
+                  <FileText className="size-4 text-muted-foreground" />
                   Müşteri Notu
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{reminder.customerNote}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{reminder.customerNote}</p>
               </CardContent>
             </Card>
           ) : null}
@@ -334,12 +336,12 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <FileText className="size-4 text-slate-500" />
+                  <FileText className="size-4 text-muted-foreground" />
                   İç Not
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{reminder.internalNote}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{reminder.internalNote}</p>
               </CardContent>
             </Card>
           ) : null}
@@ -348,24 +350,24 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <CalendarClock className="size-4 text-slate-500" />
+                  <CalendarClock className="size-4 text-muted-foreground" />
                   Oluşturulan Randevu
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <Link
                   href={`/app/appointments/${reminder.createdAppointment.id}`}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted transition-colors"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-medium text-foreground">
                       {reminder.createdAppointment.appointmentNo}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       {formatDate(reminder.createdAppointment.appointmentAt)}
                     </p>
                   </div>
-                  <span className="text-xs text-blue-600 font-medium">Görüntüle</span>
+                  <span className="text-xs text-primary font-medium">Görüntüle</span>
                 </Link>
               </CardContent>
             </Card>
@@ -376,23 +378,23 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <User className="size-4 text-slate-500" />
+                <User className="size-4 text-muted-foreground" />
                 Müşteri
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <Link
                 href={`/app/customers/${reminder.customer.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors">
+                  <p className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
                     {customerDisplayName(reminder.customer)}
                   </p>
-                  <p className="text-xs text-slate-500">{reminder.customer.phone}</p>
+                  <p className="text-xs text-muted-foreground">{reminder.customer.phone}</p>
                 </div>
               </Link>
             </CardContent>
@@ -401,27 +403,27 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Car className="size-4 text-slate-500" />
+                <Car className="size-4 text-muted-foreground" />
                 Araç
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <Link
                 href={`/app/vehicles/${reminder.vehicle.id}`}
-                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-[#0B1F3A] text-white flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-lg bg-navy text-white flex items-center justify-center shrink-0">
                   <Car className="size-4" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <PlateBadge plate={reminder.vehicle.plate} />
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {reminder.vehicle.brand} {reminder.vehicle.model}
                   </p>
                   {reminder.vehicle.mileage != null ? (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground/70">
                       KM: {reminder.vehicle.mileage.toLocaleString("tr-TR")}
                     </p>
                   ) : null}
@@ -433,18 +435,18 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Info className="size-4 text-slate-500" />
+                <Info className="size-4 text-muted-foreground" />
                 Kayıt Bilgileri
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Oluşturulma</span>
-                <span className="text-slate-700">{formatDate(reminder.createdAt)}</span>
+                <span className="text-muted-foreground">Oluşturulma</span>
+                <span className="text-foreground">{formatDate(reminder.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Güncelleme</span>
-                <span className="text-slate-700">{formatDate(reminder.updatedAt)}</span>
+                <span className="text-muted-foreground">Güncelleme</span>
+                <span className="text-foreground">{formatDate(reminder.updatedAt)}</span>
               </div>
             </CardContent>
           </Card>
@@ -473,9 +475,9 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-      <dt className="text-[11px] text-slate-500 font-medium">{label}</dt>
-      <dd className="text-sm font-medium text-slate-800 mt-0.5">{value}</dd>
+    <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+      <dt className="text-[11px] text-muted-foreground font-medium">{label}</dt>
+      <dd className="text-sm font-medium text-foreground mt-0.5">{value}</dd>
     </div>
   )
 }

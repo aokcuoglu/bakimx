@@ -70,29 +70,29 @@ export function PartDetail({ part }: { part: PartType }) {
   }
 
   const movementColors: Record<string, string> = {
-    in: "text-emerald-600 bg-emerald-50",
-    out: "text-red-600 bg-red-50",
-    adjustment: "text-amber-600 bg-amber-50",
+    in: "text-success bg-success/10",
+    out: "text-destructive bg-destructive/10",
+    adjustment: "text-warning bg-warning/10",
   }
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <Link href="/app/parts" className="hover:text-slate-700 inline-flex items-center gap-1">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link href="/app/parts" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           Stok / Parçalar
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">{part.name}</span>
+        <span className="text-foreground font-medium">{part.name}</span>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{part.name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">{part.name}</h2>
             <StockStatusBadge stockQty={part.stockQty} criticalStockQty={part.criticalStockQty} isActive={part.isActive} size="md" />
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {part.sku && <span className="font-mono text-xs">Kod: {part.sku}</span>}
             {part.oemNo && <span className="font-mono text-xs">OEM: {part.oemNo}</span>}
             {part.brand && <span>Marka: {part.brand}</span>}
@@ -120,7 +120,7 @@ export function PartDetail({ part }: { part: PartType }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Package className="size-4 text-slate-500" />
+                <Package className="size-4 text-muted-foreground" />
                 Parça Özeti
               </CardTitle>
             </CardHeader>
@@ -140,8 +140,8 @@ export function PartDetail({ part }: { part: PartType }) {
               </div>
               {part.description && (
                 <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Açıklama</p>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{part.description}</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Açıklama</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{part.description}</p>
                 </div>
               )}
             </CardContent>
@@ -150,31 +150,31 @@ export function PartDetail({ part }: { part: PartType }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <History className="size-4 text-slate-500" />
+                <History className="size-4 text-muted-foreground" />
                 Stok Hareketleri
               </CardTitle>
             </CardHeader>
             <CardContent>
               {part.movements.length === 0 ? (
-                <div className="text-center py-6 text-sm text-slate-500">
-                  <History className="size-8 mx-auto mb-2 text-slate-300" />
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  <History className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                   Henüz stok hareketi yok
                 </div>
               ) : (
                 <div className="space-y-1.5">
                   {part.movements.slice(0, 20).map((m) => (
-                    <div key={m.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg text-sm">
+                    <div key={m.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={cn("text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded", movementColors[m.type] || "bg-slate-100 text-slate-600")}>
+                        <span className={cn("text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded", movementColors[m.type] || "bg-muted text-muted-foreground")}>
                           {movementLabels[m.type] || m.type}
                         </span>
-                        <span className="text-slate-700 font-medium">{m.quantity} {part.unit}</span>
-                        {m.reason && <span className="text-xs text-slate-500 truncate">— {m.reason}</span>}
+                        <span className="text-foreground font-medium">{m.quantity} {part.unit}</span>
+                        {m.reason && <span className="text-xs text-muted-foreground truncate">— {m.reason}</span>}
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-[11px] text-slate-400">{formatDateTime(m.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground/70">{formatDateTime(m.createdAt)}</span>
                         {m.previousQty != null && m.newQty != null && (
-                          <div className="text-[10px] text-slate-400">
+                          <div className="text-[10px] text-muted-foreground/70">
                             {m.previousQty} → {m.newQty}
                           </div>
                         )}
@@ -191,7 +191,7 @@ export function PartDetail({ part }: { part: PartType }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <DollarSign className="size-4 text-slate-500" />
+                <DollarSign className="size-4 text-muted-foreground" />
                 Fiyat Bilgileri
               </CardTitle>
             </CardHeader>
@@ -205,7 +205,7 @@ export function PartDetail({ part }: { part: PartType }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Truck className="size-4 text-slate-500" />
+                <Truck className="size-4 text-muted-foreground" />
                 Tedarikçi Bilgisi
               </CardTitle>
             </CardHeader>
@@ -213,13 +213,13 @@ export function PartDetail({ part }: { part: PartType }) {
               {part.supplier ? (
                 <>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Tedarikçi</span>
-                    <Link href={`/app/suppliers/${part.supplier.id}`} className="font-medium text-blue-600 hover:text-blue-700">
+                    <span className="text-muted-foreground">Tedarikçi</span>
+                    <Link href={`/app/suppliers/${part.supplier.id}`} className="font-medium text-primary hover:text-primary/80">
                       {part.supplier.name}
                     </Link>
                   </div>
                   {part.supplier.phone && (
-                    <a href={`tel:${part.supplier.phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
+                    <a href={`tel:${part.supplier.phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
                       {part.supplier.phone}
                     </a>
                   )}
@@ -228,7 +228,7 @@ export function PartDetail({ part }: { part: PartType }) {
                 <>
                   <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
                   {part.supplierPhone && (
-                    <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
+                    <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
                       {part.supplierPhone}
                     </a>
                   )}
@@ -243,12 +243,12 @@ export function PartDetail({ part }: { part: PartType }) {
             </CardHeader>
             <CardContent className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Oluşturulma</span>
-                <span className="text-slate-900">{formatDate(part.createdAt)}</span>
+                <span className="text-muted-foreground">Oluşturulma</span>
+                <span className="text-foreground">{formatDate(part.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Güncellenme</span>
-                <span className="text-slate-900">{formatDate(part.updatedAt)}</span>
+                <span className="text-muted-foreground">Güncellenme</span>
+                <span className="text-foreground">{formatDate(part.updatedAt)}</span>
               </div>
             </CardContent>
           </Card>
@@ -274,9 +274,9 @@ export function PartDetail({ part }: { part: PartType }) {
 function SummaryItem({ label, value, unit }: { label: string; value: React.ReactNode; unit?: string }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-semibold text-slate-900 mt-0.5">{value}</p>
-      {unit && <p className="text-[10px] text-slate-400">{unit}</p>}
+      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
+      {unit && <p className="text-[10px] text-muted-foreground/70">{unit}</p>}
     </div>
   )
 }
@@ -284,8 +284,8 @@ function SummaryItem({ label, value, unit }: { label: string; value: React.React
 function PriceRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   )
 }

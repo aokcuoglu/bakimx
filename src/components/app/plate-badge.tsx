@@ -21,18 +21,18 @@ export function PlateBadge({ plate, className }: { plate: string; className?: st
   return (
     <span
       className={cn(
-        "inline-flex items-stretch rounded-md overflow-hidden border-2 border-blue-700 bg-white shadow-sm h-8",
+        "inline-flex items-stretch rounded-md overflow-hidden border-2 border-primary bg-card shadow-sm h-8",
         className
       )}
     >
-      <span className="flex items-center justify-center bg-blue-700 text-white text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
+      <span className="flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
         {cityCode}
       </span>
-      <span className="flex items-center justify-center bg-white text-blue-900 font-mono text-[11px] font-extrabold px-1.5 tracking-wider">
+      <span className="flex items-center justify-center bg-card text-card-foreground font-mono text-[11px] font-extrabold px-1.5 tracking-wider">
         {letters}
       </span>
       {numbers && (
-        <span className="flex items-center justify-center bg-blue-700 text-white text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
+        <span className="flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
           {numbers}
         </span>
       )}

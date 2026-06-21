@@ -43,16 +43,16 @@ export default async function CalendarPage({
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Takvim">
       <div className="space-y-5 sm:space-y-6">
-        <div className="hidden sm:flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="hidden sm:flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Takvim</span>
+          <span className="text-foreground font-medium">Takvim</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Takvim</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Randevular, teslimatlar ve bakım hatırlatmaları</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Takvim</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Randevular, teslimatlar ve bakım hatırlatmaları</p>
           </div>
         </div>
 

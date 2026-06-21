@@ -48,7 +48,7 @@ type StatusCounts = {
 function ReminderStatusBadge({ status }: { status: string }) {
   const info = REMINDER_STATUS[status as keyof typeof REMINDER_STATUS]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-50 text-slate-400 border-slate-100"
+  const color = info?.color || "bg-muted text-muted-foreground/70 border-border"
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-5 px-2 text-[11px]", color)}>
       {label}
@@ -93,26 +93,26 @@ export function AppointmentList({
               key={cfg.key}
               href={href}
               className={cn(
-                "rounded-xl border bg-white p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
-                isActive ? "ring-2 ring-blue-500 border-blue-500" : "border-slate-200"
+                "rounded-lg border bg-card p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
+                isActive ? "ring-2 ring-primary border-primary" : "border-border"
               )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">{cfg.label}</span>
-                <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-slate-50 text-slate-600 border-slate-200">
+                <span className="text-xs text-muted-foreground font-medium">{cfg.label}</span>
+                <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-muted text-muted-foreground border-border">
                   {cfg.count}
                 </span>
               </div>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{cfg.count}</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{cfg.count}</p>
             </Link>
           )
         })}
       </div>
 
-      <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10">
+            <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Randevu No</th>
                 <th className="px-4 py-3 text-left font-semibold">Tarih/Saat</th>
@@ -121,31 +121,31 @@ export function AppointmentList({
                 <th className="px-4 py-3 text-left font-semibold">Talep</th>
                 <th className="px-4 py-3 text-left font-semibold">Durum</th>
                 <th className="px-4 py-3 text-left font-semibold">Hatırlatma</th>
-                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-slate-50">İşlem</th>
+                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {appointments.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50/60 transition-colors group">
+                <tr key={a.id} className="hover:bg-muted/60 transition-colors group">
                   <td className="px-4 py-3">
                     <Link
                       href={`/app/appointments/${a.id}`}
-                      className="font-mono text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                      className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
                     >
                       {a.appointmentNo}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                     {formatDateTime(a.appointmentAt)}
                   </td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/app/customers/${a.customer.id}`}
-                      className="text-slate-900 font-medium hover:text-blue-600 transition-colors"
+                      className="text-foreground font-medium hover:text-primary transition-colors"
                     >
                       {customerDisplayName(a.customer)}
                     </Link>
-                    <div className="text-xs text-slate-500">{a.customer.phone}</div>
+                    <div className="text-xs text-muted-foreground">{a.customer.phone}</div>
                   </td>
                   <td className="px-4 py-3">
                     {a.vehicle ? (
@@ -153,15 +153,15 @@ export function AppointmentList({
                         <Link href={`/app/vehicles/${a.vehicle.id}`}>
                           <PlateBadge plate={a.vehicle.plate} />
                         </Link>
-                        <span className="text-xs text-slate-500">{a.vehicle.brand} {a.vehicle.model}</span>
+                        <span className="text-xs text-muted-foreground">{a.vehicle.brand} {a.vehicle.model}</span>
                       </div>
                     ) : (
-                      <span className="text-slate-400 text-xs">—</span>
+                      <span className="text-muted-foreground/70 text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs text-slate-600 line-clamp-2">
-                      {a.customerRequest || <span className="text-slate-400">—</span>}
+                    <span className="text-xs text-muted-foreground line-clamp-2">
+                      {a.customerRequest || <span className="text-muted-foreground/70">—</span>}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -170,7 +170,7 @@ export function AppointmentList({
                   <td className="px-4 py-3">
                     <ReminderStatusBadge status={a.reminderStatus} />
                   </td>
-                  <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-slate-50/60">
+                  <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/app/appointments/${a.id}`}
@@ -190,14 +190,14 @@ export function AppointmentList({
         {appointments.map((a) => (
           <div
             key={a.id}
-            className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors"
+            className="rounded-lg border border-border bg-card p-3.5 hover:border-border transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/app/appointments/${a.id}`}
-                    className="font-mono text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+                    className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
                     {a.appointmentNo}
                   </Link>
@@ -209,20 +209,20 @@ export function AppointmentList({
                 </div>
                 <Link
                   href={`/app/customers/${a.customer.id}`}
-                  className="mt-1.5 text-sm font-semibold text-slate-900 truncate block hover:text-blue-600 transition-colors"
+                  className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                 >
                   {customerDisplayName(a.customer)}
                 </Link>
                 {a.vehicle && (
-                  <p className="text-xs text-slate-500 truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     {a.vehicle.brand} {a.vehicle.model}
                   </p>
                 )}
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {formatDateTime(a.appointmentAt)}
                 </p>
                 {a.customerRequest && (
-                  <p className="text-xs text-slate-600 mt-1 line-clamp-2">{a.customerRequest}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.customerRequest}</p>
                 )}
               </div>
               <MobileActionsMenu

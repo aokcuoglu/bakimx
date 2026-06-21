@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Funnel_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
-const geistSans = Geist({
+const funnelSans = Funnel_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -13,7 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BakimX | Oto Servisler İçin Dijital Araç Kabul Platformu",
+  applicationName: "BakimX",
+  title: {
+    default: "BakimX | Oto Servis Yönetim Platformu",
+    template: "%s | BakimX",
+  },
   description:
     "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
   keywords: [
@@ -27,13 +33,26 @@ export const metadata: Metadata = {
     "oto tamir",
     "sanayi",
   ],
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/apple-icon.png",
+  },
   openGraph: {
-    title: "BakimX | Oto Servisler İçin Dijital Araç Kabul Platformu",
+    title: "BakimX | Oto Servis Yönetim Platformu",
     description:
       "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
     type: "website",
     locale: "tr_TR",
     siteName: "BakimX",
+  },
+  appleWebApp: {
+    title: "BakimX",
+    statusBarStyle: "default",
+    capable: true,
   },
 };
 
@@ -53,10 +72,13 @@ export default function RootLayout({
     <html
       lang="tr"
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${funnelSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground">
-        {children}
+        <TooltipProvider>
+          {children}
+          <Toaster />
+        </TooltipProvider>
       </body>
     </html>
   );

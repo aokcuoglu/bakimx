@@ -19,10 +19,10 @@ export default async function TechnicianPage() {
       <AppShell workshopName={workshop?.name} pageTitle="Teknisyen Paneli">
         <div className="space-y-5 sm:space-y-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Teknisyen Paneli</h2>
-            <p className="text-sm text-slate-500 mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
           </div>
-          <div className="text-center py-16 text-slate-500">
+          <div className="text-center py-16 text-muted-foreground">
             <p className="text-base font-medium">Henüz teknisyen kaydı yok</p>
             <p className="text-sm mt-1">Önce İş Yeri Profili sayfasından bir teknisyen ekleyin</p>
           </div>

@@ -17,7 +17,7 @@ export function StockStatusBadge({
   const status = getStockStatus(stockQty, criticalStockQty, isActive)
   const info = STOCK_STATUS[status as StockStatusKey]
   const label = info?.label || "Bilinmiyor"
-  const color = info?.color || "bg-slate-100 text-slate-700 border-slate-200"
+  const color = info?.color || "bg-muted text-foreground border-border"
 
   return (
     <span

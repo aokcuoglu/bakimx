@@ -12,10 +12,10 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodKey, string> = {
 }
 
 export const PAYMENT_METHOD_COLORS: Record<PaymentMethodKey, string> = {
-  cash: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  credit_card: "bg-blue-50 text-blue-700 border-blue-200",
-  bank_transfer: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  other: "bg-slate-50 text-slate-600 border-slate-200",
+  cash: "bg-success/10 text-foreground border-success/20",
+  credit_card: "bg-primary/10 text-foreground border-primary/20",
+  bank_transfer: "bg-primary/10 text-foreground border-primary/20",
+  other: "bg-muted text-foreground border-border",
 }
 
 export const COLLECTION_STATUS_LABELS: Record<CollectionStatusKey, string> = {
@@ -25,16 +25,16 @@ export const COLLECTION_STATUS_LABELS: Record<CollectionStatusKey, string> = {
 }
 
 export const COLLECTION_STATUS_COLORS: Record<CollectionStatusKey, string> = {
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
-  refunded: "bg-amber-50 text-amber-700 border-amber-200",
+  completed: "bg-success/10 text-foreground border-success/20",
+  cancelled: "bg-destructive/10 text-foreground border-destructive/20",
+  refunded: "bg-warning/10 text-foreground border-warning/20",
 }
 
 export const EXTENDED_PAYMENT_STATUS: Record<PaymentStatusKey, { label: string; color: string }> = {
   unpaid: PAYMENT_STATUS.unpaid,
   partial: PAYMENT_STATUS.partial,
   paid: PAYMENT_STATUS.paid,
-  overpaid: { label: "Fazla Ödeme", color: "bg-sky-50 text-sky-700 border-sky-200" },
+  overpaid: { label: "Fazla Ödeme", color: "bg-primary/10 text-foreground border-primary/20" },
   cancelled: PAYMENT_STATUS.cancelled,
 }
 

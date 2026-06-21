@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kullanım Koşulları | BakimX",
+  title: "Kullanım Koşulları",
   description: "BakimX kullanım koşulları sayfası.",
 };
 

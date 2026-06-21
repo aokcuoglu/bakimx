@@ -12,7 +12,7 @@ type StatusBadgeProps = {
 export function StatusBadge({ status, size = "sm", className }: StatusBadgeProps) {
   const info = ORDER_STATUS[status as OrderStatusKey]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-100 text-slate-700 border-slate-200"
+  const color = info?.color || "bg-muted text-foreground border-border"
 
   return (
     <span
@@ -31,7 +31,7 @@ export function StatusBadge({ status, size = "sm", className }: StatusBadgeProps
 export function PaymentBadge({ status, size = "sm", className }: StatusBadgeProps) {
   const info = PAYMENT_STATUS[status as PaymentStatusKey]
   const label = info?.label || status
-  const color = info?.color || "bg-slate-50 text-slate-500 border-slate-200"
+  const color = info?.color || "bg-muted text-muted-foreground border-border"
 
   return (
     <span
@@ -50,7 +50,7 @@ export function PaymentBadge({ status, size = "sm", className }: StatusBadgeProp
 export function PaymentMethodBadge({ method, size = "sm", className }: { method: string; size?: "sm" | "md"; className?: string }) {
   const key = method as PaymentMethodKey
   const label = PAYMENT_METHOD_LABELS[key] || method
-  const color = PAYMENT_METHOD_COLORS[key] || "bg-slate-50 text-slate-600 border-slate-200"
+  const color = PAYMENT_METHOD_COLORS[key] || "bg-muted text-muted-foreground border-border"
 
   return (
     <span
@@ -69,7 +69,7 @@ export function PaymentMethodBadge({ method, size = "sm", className }: { method:
 export function CollectionStatusBadge({ status, size = "sm", className }: { status: string; size?: "sm" | "md"; className?: string }) {
   const key = status as CollectionStatusKey
   const label = COLLECTION_STATUS_LABELS[key] || status
-  const color = COLLECTION_STATUS_COLORS[key] || "bg-slate-50 text-slate-500 border-slate-200"
+  const color = COLLECTION_STATUS_COLORS[key] || "bg-muted text-muted-foreground border-border"
 
   return (
     <span

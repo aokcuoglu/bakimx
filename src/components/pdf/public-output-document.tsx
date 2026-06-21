@@ -5,6 +5,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   Font,
 } from "@react-pdf/renderer"
@@ -126,6 +127,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
   },
+  brandFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  brandLogo: {
+    height: 12,
+    width: "auto",
+    objectFit: "contain",
+  },
   grid2: {
     flexDirection: "row",
     gap: 8,
@@ -220,7 +236,6 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
             <Text style={{ fontSize: 9, color: "#333" }}>
               {new Date(createdAt).toLocaleDateString("tr-TR")}
             </Text>
-            <Text style={{ fontSize: 7, color: "#999" }}>BakimX ile oluşturuldu</Text>
           </View>
         </View>
 
@@ -424,7 +439,15 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
         {/* Disclaimer */}
         <View style={styles.disclaimer}>
           <Text>Bu çıktı, servis kabul ve işlem özeti amacıyla oluşturulmuştur.</Text>
-          <Text>BakimX ile oluşturuldu • {new Date(createdAt).toLocaleDateString("tr-TR")}</Text>
+        </View>
+
+        {/* Brand footer */}
+        <View style={styles.brandFooter}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt */}
+          <Image src="/01-bakimx-primary-light.png" style={styles.brandLogo} />
+          <Text style={{ fontSize: 7, color: "#999" }}>
+            ile oluşturuldu • {new Date(createdAt).toLocaleDateString("tr-TR")}
+          </Text>
         </View>
       </Page>
     </Document>

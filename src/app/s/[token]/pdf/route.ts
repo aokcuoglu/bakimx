@@ -2,8 +2,10 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
-import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
+import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-safety"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
+import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
+import { escapeHtml } from "@/lib/html-escape"
 
 export const dynamic = "force-dynamic"
 
@@ -19,6 +21,14 @@ async function generatePdfHtml(data: {
   const primaryColor = branding?.themeColor || "#0B1F3A"
   const accentColor = branding?.accentColor || "#2563EB"
   const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
+  // Escape workshop-controlled text interpolated into the raw HTML below.
+  // (intakeForm fields are already escaped via escapeIntakeForHtml.)
+  const safeWorkshopName = escapeHtml(workshop.name)
+  const safeWorkshopCity = escapeHtml(workshop.city)
+  const safeWorkshopAddress = escapeHtml(workshop.address)
+  const safeWorkshopPhone = escapeHtml(workshop.phone)
+  const safeLogoUrl = logoUrl ? escapeHtml(logoUrl) : logoUrl
+  const safeCustomTemplate = customTemplate ? escapeHtml(customTemplate) : customTemplate
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
   const orderItems = intakeForm.order?.items ?? []
   const parts = orderItems.filter((i) => i.type === "part")
@@ -206,15 +216,14 @@ async function generatePdfHtml(data: {
 <body>
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid ${primaryColor};padding-bottom:8px;margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:8px;">
-      ${logoUrl ? `<img src="${logoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
+      ${logoUrl ? `<img src="${safeLogoUrl}" alt="" style="height:32px;width:auto;max-width:120px;object-fit:contain;" />` : ""}
       <div>
-        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${workshop.name}</h1>
+        <h1 style="font-size:20px;font-weight:700;color:${primaryColor};margin:0;">${safeWorkshopName}</h1>
         <p style="font-size:10px;color:#666;margin:2px 0 0;">Araç Kabul ve İşlem Özeti</p>
       </div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:10px;color:#333;">${fmtDate(intakeForm.createdAt)}</div>
-      <div style="font-size:8px;color:#999;">BakimX ile oluşturuldu</div>
     </div>
   </div>
 
@@ -266,15 +275,15 @@ async function generatePdfHtml(data: {
 
   ${customTemplate ? `<div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Özel Notlar</h3>
-    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${customTemplate}</div>
+    <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;white-space:pre-wrap;font-size:10px;">${safeCustomTemplate}</div>
   </div>` : ""}
 
   <div style="margin-bottom:12px;">
     <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Yeri Bilgileri</h3>
     <div style="border:1px solid #E5E7EB;border-radius:6px;padding:10px;background:#fff;">
-      <div style="font-weight:700;">★ ${workshop.name}</div>
-      <div style="font-size:9px;color:#666;">${workshop.city}, ${workshop.address}</div>
-      <div style="font-size:9px;color:#666;">Tel: ${workshop.phone}</div>
+      <div style="font-weight:700;">★ ${safeWorkshopName}</div>
+      <div style="font-size:9px;color:#666;">${safeWorkshopCity}, ${safeWorkshopAddress}</div>
+      <div style="font-size:9px;color:#666;">Tel: ${safeWorkshopPhone}</div>
     </div>
   </div>
 
@@ -282,10 +291,7 @@ async function generatePdfHtml(data: {
     Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
   </div>
 
-  <div style="text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;color:#999;font-size:8px;">
-    <div>Bu çıktı, servis kabul ve işlem özeti amacıyla oluşturulmuştur.</div>
-    <div style="margin-top:4px;">BakimX ile oluşturuldu • ${fmtDate(createdAt)}</div>
-  </div>
+  ${bakimxPdfFooterBar(createdAt)}
 </body>
 </html>`
 }
@@ -330,7 +336,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     showTimeline: shareLink.showTimeline,
   }
 
-  const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
+  const safeIntakeForm = escapeIntakeForHtml(sanitizeIntakeForPublic(intakeForm, visibility))
 
   const photoTypes = intakeForm.photos.map((p) => p.type)
   const { calculatePhotoCompletion } = await import("@/lib/intake/completeness")

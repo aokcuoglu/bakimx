@@ -50,7 +50,7 @@ export function TechniciansReport({ stats, performance, roleLabels }: Technician
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">Teknisyen Performans Tablosu</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">Teknisyen Performans Tablosu</h4>
         <ReportTable
           headers={[
             { key: "fullName", label: "Teknisyen" },
@@ -62,17 +62,17 @@ export function TechniciansReport({ stats, performance, roleLabels }: Technician
           ]}
           rows={performance}
           renderRow={(row) => (
-            <tr key={row.id} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.fullName}</td>
+            <tr key={row.id} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.fullName}</td>
               <td className="px-4 py-2.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                   {roleLabels[row.role] || row.role}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-slate-600">{row.assignedJobs}</td>
-              <td className="px-4 py-2.5 font-semibold text-emerald-700">{row.completedJobs}</td>
-              <td className="px-4 py-2.5 font-semibold text-amber-700">{row.activeJobs}</td>
-              <td className="px-4 py-2.5 text-slate-600">
+              <td className="px-4 py-2.5 text-muted-foreground">{row.assignedJobs}</td>
+              <td className="px-4 py-2.5 font-semibold text-success">{row.completedJobs}</td>
+              <td className="px-4 py-2.5 font-semibold text-warning">{row.activeJobs}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">
                 {row.avgCompletionDays != null ? `${row.avgCompletionDays} gün` : "—"}
               </td>
             </tr>

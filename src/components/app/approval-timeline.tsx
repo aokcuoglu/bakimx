@@ -60,7 +60,7 @@ export function ApprovalTimeline({ events, intakeCreatedAt, approvedAt, compact 
                   compact ? "size-7" : "size-9"
                 } ${
                   isApproval
-                    ? "bg-emerald-100 text-emerald-600 border-2 border-emerald-300"
+                    ? "bg-success/10 text-success border-2 border-success/30"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -71,14 +71,14 @@ export function ApprovalTimeline({ events, intakeCreatedAt, approvedAt, compact 
               )}
             </div>
             <div className={`pb-4 ${isLast ? "pb-0" : ""}`}>
-              <p className={`font-medium ${isApproval ? "text-emerald-700" : ""}`}>
+              <p className={`font-medium ${isApproval ? "text-success" : ""}`}>
                 {label}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatTimelineDate(event.createdAt)}
               </p>
               {isApproval && approvedAt && (
-                <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-success mt-1 flex items-center gap-1">
                   <CheckCircle2 className="size-3" />
                   Müşteri onayı doğrulandı
                 </p>

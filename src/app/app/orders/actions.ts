@@ -5,7 +5,9 @@ import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema } from "@/lib/validation"
 import { revalidatePath } from "next/cache"
-import { generateWorkOrderNo } from "@/lib/work-order-number"
+import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
+import { isOrderStatus, isPaymentStatus, canTransitionOrder } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
@@ -24,11 +26,20 @@ export async function createServiceOrderAction(intakeFormId: string) {
   })
   if (existing) return { error: "Bu kabul için zaten bir servis emri var", id: existing.id }
 
+  const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
+    prisma.serviceOrder
+      .findFirst({
+        where: { workshopId: user.workshopId, workOrderNo: candidate },
+        select: { id: true },
+      })
+      .then((clash) => clash !== null)
+  )
+
   const order = await prisma.serviceOrder.create({
     data: {
       workshopId: user.workshopId,
       intakeFormId,
-      workOrderNo: generateWorkOrderNo(),
+      workOrderNo,
       status: "draft",
     },
   })
@@ -132,14 +143,20 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
 
+  if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
+
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
 
+  if (!canTransitionOrder(order.status as OrderStatus, status)) {
+    return { error: "Bu durum geçişine izin verilmiyor" }
+  }
+
   const updateResult = await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
-    data: { status: status as import("@prisma/client").OrderStatus },
+    data: { status },
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
@@ -198,6 +215,8 @@ export async function updateOrderPaymentStatusAction(orderId: string, paymentSta
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
 
+  if (!isPaymentStatus(paymentStatus)) return { error: "Geçersiz ödeme durumu" }
+
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
@@ -205,7 +224,7 @@ export async function updateOrderPaymentStatusAction(orderId: string, paymentSta
 
   const updateResult = await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
-    data: { paymentStatus: paymentStatus as import("@prisma/client").PaymentStatus },
+    data: { paymentStatus },
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 

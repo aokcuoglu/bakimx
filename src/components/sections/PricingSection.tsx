@@ -107,7 +107,7 @@ export function PricingSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
+          <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-foreground mb-4">
             Fiyatlandırma
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -147,7 +147,7 @@ export function PricingSection() {
             >
               Yıllık
               {billing === "yearly" && (
-                <span className="text-[10px] font-semibold bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-semibold bg-primary/10 text-foreground px-1.5 py-0.5 rounded-full">
                   %20 avantaj
                 </span>
               )}
@@ -169,9 +169,9 @@ export function PricingSection() {
                 <button
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan.id)}
-                  className={`w-full text-left rounded-xl border-2 p-4 sm:p-5 transition-all duration-200 ${
+                  className={`w-full text-left rounded-lg border-2 p-4 sm:p-5 transition-all duration-200 ${
                     isSelected
-                      ? "border-primary bg-gradient-to-br from-[#0B1F3A] to-primary/90 text-white shadow-lg"
+                      ? "border-primary bg-gradient-to-br from-navy to-primary/90 text-white shadow-lg"
                       : "border-border bg-card hover:border-primary/30 hover:shadow-sm"
                   }`}
                 >
@@ -184,7 +184,7 @@ export function PricingSection() {
                             : "border-muted-foreground/40"
                         }`}
                       >
-                        {isSelected && <Check className="h-3 w-3 text-[#0B1F3A]" strokeWidth={3} />}
+                        {isSelected && <Check className="h-3 w-3 text-navy" strokeWidth={3} />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -194,10 +194,10 @@ export function PricingSection() {
                           <span
                             className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
                               isSelected
-                                ? "bg-white/20 text-white"
-                                : plan.id === "standart"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-muted text-muted-foreground"
+                                  ? "bg-white/20 text-white"
+                                  : plan.id === "standart"
+                                    ? "bg-primary/10 text-foreground"
+                                    : "bg-muted text-muted-foreground"
                             }`}
                           >
                             {plan.badge}
@@ -223,8 +223,8 @@ export function PricingSection() {
             })}
           </div>
 
-          <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/5 to-sky-50 border-b px-5 py-4">
+          <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/5 to-primary/5 border-b px-5 py-4">
               <h3 className="font-semibold text-base text-foreground">
                 Pakete dahil olanlar
               </h3>
@@ -254,7 +254,7 @@ export function PricingSection() {
         >
           <a
             href="#demo-talep"
-            className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-primary text-primary-foreground font-medium text-base hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center justify-center h-10 px-8 rounded-lg bg-primary text-primary-foreground font-medium text-base hover:bg-primary/90 transition-colors"
           >
             Demo Talep Et
           </a>

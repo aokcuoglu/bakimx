@@ -27,12 +27,12 @@ export function ReportsLayout({ children }: { children: React.ReactNode }) {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <BarChart3 className="size-5 text-blue-600" />
-          <h2 className="text-lg font-bold text-slate-900">Raporlar</h2>
+          <BarChart3 className="size-5 text-primary" />
+          <h2 className="text-lg font-bold text-foreground">Raporlar</h2>
         </div>
       </div>
 
-      <nav className="flex gap-1.5 overflow-x-auto pb-3 mb-4 border-b border-slate-200 scrollbar-hide">
+      <nav className="flex gap-1.5 overflow-x-auto pb-3 mb-4 border-b border-border scrollbar-hide">
         {REPORT_NAV.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -43,8 +43,8 @@ export function ReportsLayout({ children }: { children: React.ReactNode }) {
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-border hover:text-foreground"
               )}
             >
               <Icon className="size-4" />

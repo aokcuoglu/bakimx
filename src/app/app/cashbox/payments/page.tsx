@@ -5,8 +5,11 @@ import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/app/stat
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { PrintButton } from "@/components/app/print-button"
+import { FilterSelect } from "@/components/app/filter-select"
 import { Plus, Search, Filter, Wallet, Eye, Download } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 type SP = { q?: string; method?: string; status?: string; period?: string; dateFrom?: string; dateTo?: string }
 
@@ -93,119 +96,111 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Tahsilatlar">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/app/cashbox" className="hover:text-slate-700">Kasa</Link>
+          <Link href="/app/cashbox" className="hover:text-foreground">Kasa</Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Tahsilatlar</span>
+          <span className="text-foreground font-medium">Tahsilatlar</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Tahsilatlar</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{total} kayıt bulundu</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Tahsilatlar</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">{total} kayıt bulundu</p>
           </div>
           <div className="flex gap-2">
-            <a
-              href={`/api/cashbox/export?type=collections&${exportParams.toString()}`}
-              download
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation print:hidden"
+            <Button
+              nativeButton={false}
+              variant="outline"
+              className="print:hidden"
+              render={<a href={`/api/cashbox/export?type=collections&${exportParams.toString()}`} download />}
             >
               <Download className="size-4" />
               CSV
-            </a>
-            <PrintButton className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors touch-manipulation print:hidden" />
-            <Link
-              href="/app/cashbox/payments/new"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors touch-manipulation"
-            >
+            </Button>
+            <PrintButton className="print:hidden" />
+            <Button nativeButton={false} size="default" render={<Link href="/app/cashbox/payments/new" />}>
               <Plus className="size-4" />
               Yeni Tahsilat
-            </Link>
+            </Button>
           </div>
         </div>
 
         <form action="/app/cashbox/payments" method="get" className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <input
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Input
                 name="q"
                 defaultValue={q}
                 placeholder="Müşteri, telefon, iş emri no, referans ara…"
-                className="w-full h-11 pl-10 pr-3 rounded-lg border border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
+                className="pl-10"
               />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <select
+            <FilterSelect
               name="method"
               defaultValue={method}
-              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">Tüm Yöntemler</option>
-              <option value="cash">Nakit</option>
-              <option value="credit_card">Kredi Kartı</option>
-              <option value="bank_transfer">Havale/EFT</option>
-              <option value="other">Diğer</option>
-            </select>
-            <select
+              placeholder="Tüm Yöntemler"
+              options={[
+                { value: "", label: "Tüm Yöntemler" },
+                { value: "cash", label: "Nakit" },
+                { value: "credit_card", label: "Kredi Kartı" },
+                { value: "bank_transfer", label: "Havale/EFT" },
+                { value: "other", label: "Diğer" },
+              ]}
+            />
+            <FilterSelect
               name="status"
               defaultValue={status}
-              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              <option value="">Tüm Durumlar</option>
-              <option value="completed">Tamamlandı</option>
-              <option value="cancelled">İptal</option>
-            </select>
-            <select
+              placeholder="Tüm Durumlar"
+              options={[
+                { value: "", label: "Tüm Durumlar" },
+                { value: "completed", label: "Tamamlandı" },
+                { value: "cancelled", label: "İptal" },
+              ]}
+            />
+            <FilterSelect
               name="period"
               defaultValue={period}
-              className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-            >
-              {DATE_PRESETS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
+              placeholder="Tüm Dönem"
+              options={DATE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+            />
             {period === "custom" && (
               <>
-                <input
+                <Input
                   name="dateFrom"
                   type="date"
                   defaultValue={params.dateFrom || ""}
-                  className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 />
-                <input
+                <Input
                   name="dateTo"
                   type="date"
                   defaultValue={params.dateTo || ""}
-                  className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 />
               </>
             )}
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors touch-manipulation"
-            >
+            <Button variant="outline" size="default" type="submit">
               <Filter className="size-4" />
-              Filtrele
-            </button>
+              <span className="hidden sm:inline">Filtrele</span>
+            </Button>
           </div>
         </form>
 
         {collections.length === 0 ? (
-          <div className="text-center py-16 text-slate-500 bg-white border border-dashed border-slate-200 rounded-xl">
-            <Wallet className="size-12 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm font-medium text-slate-700">Tahsilat kaydı bulunamadı</p>
+          <div className="text-center py-16 text-muted-foreground bg-card border border-dashed border-border rounded-lg">
+            <Wallet className="size-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground">Tahsilat kaydı bulunamadı</p>
             <p className="text-xs mt-1">Farklı filtreler deneyin veya yeni tahsilat ekleyin</p>
           </div>
         ) : (
           <>
-            <div className="hidden lg:block rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                  <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3 text-left font-semibold">Tarih</th>
                       <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
@@ -217,41 +212,38 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                       <th className="px-4 py-3 text-right font-semibold">İşlem</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-border">
                     {collections.map((c) => {
                       const nameFor = () =>
                         c.customer.type === "corporate"
                           ? c.customer.companyName || "—"
                           : c.customer.fullName || `${c.customer.firstName ?? ""} ${c.customer.lastName ?? ""}`.trim() || "—"
                       return (
-                        <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{formatDate(c.paymentDate)}</td>
+                        <tr key={c.id} className="hover:bg-muted/60 transition-colors">
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDate(c.paymentDate)}</td>
                           <td className="px-4 py-3">
-                            <Link href={`/app/customers/${c.customer.id}`} className="text-sm font-medium text-slate-900 hover:text-blue-600">
+                            <Link href={`/app/customers/${c.customer.id}`} className="text-sm font-medium text-foreground hover:text-primary">
                               {nameFor()}
                             </Link>
                           </td>
                           <td className="px-4 py-3">
                             {c.serviceOrder ? (
-                              <Link href={`/app/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-blue-600 hover:text-blue-700">
+                              <Link href={`/app/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-primary hover:text-primary/80">
                                 {c.serviceOrder.workOrderNo || "—"}
                               </Link>
                             ) : (
-                              <span className="text-slate-400 text-xs">—</span>
+                              <span className="text-muted-foreground/70 text-xs">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatTRY(c.amount)}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-foreground">{formatTRY(c.amount)}</td>
                           <td className="px-4 py-3"><PaymentMethodBadge method={c.method} /></td>
-                          <td className="px-4 py-3 text-xs text-slate-500 font-mono">{c.referenceNo || "—"}</td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{c.referenceNo || "—"}</td>
                           <td className="px-4 py-3"><CollectionStatusBadge status={c.status} /></td>
                           <td className="px-4 py-3 text-right">
-                            <Link
-                              href={`/app/cashbox/payments/${c.id}`}
-                              className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors touch-manipulation"
-                            >
+                            <Button nativeButton={false} variant="link" size="sm" render={<Link href={`/app/cashbox/payments/${c.id}`} />}>
                               <Eye className="size-3.5" />
                               Görüntüle
-                            </Link>
+                            </Button>
                           </td>
                         </tr>
                       )
@@ -271,22 +263,22 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                   <Link
                     key={c.id}
                     href={`/app/cashbox/payments/${c.id}`}
-                    className="block rounded-xl border border-slate-200 bg-white p-3.5 active:bg-slate-50 touch-manipulation hover:border-slate-300 transition-colors"
+                    className="block rounded-lg border border-border bg-card p-3.5 active:bg-muted touch-manipulation hover:border-border transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold text-slate-900">{nameFor()}</span>
+                          <span className="text-sm font-semibold text-foreground">{nameFor()}</span>
                           <PaymentMethodBadge method={c.method} />
                           <CollectionStatusBadge status={c.status} />
                         </div>
                         {c.serviceOrder && (
-                          <p className="text-xs text-slate-500 mt-0.5 font-mono">{c.serviceOrder.workOrderNo} &bull; {c.serviceOrder.vehicle.plate}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 font-mono">{c.serviceOrder.workOrderNo} &bull; {c.serviceOrder.vehicle.plate}</p>
                         )}
-                        <p className="text-[11px] text-slate-500 mt-0.5">{formatDate(c.paymentDate)}{c.referenceNo ? ` &bull; Ref: ${c.referenceNo}` : ""}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}{c.referenceNo ? ` &bull; Ref: ${c.referenceNo}` : ""}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-slate-900">{formatTRY(c.amount)}</p>
+                        <p className="text-sm font-bold text-foreground">{formatTRY(c.amount)}</p>
                       </div>
                     </div>
                   </Link>

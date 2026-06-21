@@ -1,10 +1,25 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
+import { Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useForm } from "react-hook-form"
+import { typedResolver } from "@/lib/validations/resolver"
+import { workingHoursFormSchema, type WorkingHoursFormValues } from "@/lib/validations/settings"
 
 type SettingsData = {
   weekdayStart: string
@@ -35,32 +50,48 @@ function serializeWorkingDays(arr: string[]): string {
   return arr.join(",")
 }
 
+function toDefaults(settings: SettingsData): WorkingHoursFormValues {
+  return {
+    weekdayStart: settings.weekdayStart || "09:00",
+    weekdayEnd: settings.weekdayEnd || "18:00",
+    weekdayWorkingDays: settings.weekdayWorkingDays || "",
+    weekendStart: settings.weekendStart || "10:00",
+    weekendEnd: settings.weekendEnd || "14:00",
+    weekendWorkingDays: settings.weekendWorkingDays || "",
+    holidayEnabled: settings.holidayEnabled,
+    holidayDates: settings.holidayDates || "",
+  }
+}
+
 export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [weekdayDays, setWeekdayDays] = useState<string[]>(parseWorkingDays(settings.weekdayWorkingDays))
-  const [weekendDays, setWeekendDays] = useState<string[]>(parseWorkingDays(settings.weekendWorkingDays))
-  const [holidayEnabled, setHolidayEnabled] = useState(settings.holidayEnabled)
 
-  function toggleDay(currentDays: string[], setDays: (v: string[]) => void, dayValue: string) {
-    if (currentDays.includes(dayValue)) {
-      setDays(currentDays.filter((d) => d !== dayValue))
-    } else {
-      setDays([...currentDays, dayValue])
-    }
+  const form = useForm<WorkingHoursFormValues, unknown, WorkingHoursFormValues>({
+    resolver: typedResolver(workingHoursFormSchema),
+    defaultValues: toDefaults(settings),
+  })
+
+  const weekdayDays = parseWorkingDays(form.watch("weekdayWorkingDays"))
+  const weekendDays = parseWorkingDays(form.watch("weekendWorkingDays"))
+  const holidayEnabled = form.watch("holidayEnabled")
+
+  function toggleDay(field: "weekdayWorkingDays" | "weekendWorkingDays", dayValue: string) {
+    const current = parseWorkingDays(form.getValues(field))
+    const next = current.includes(dayValue)
+      ? current.filter((d) => d !== dayValue)
+      : [...current, dayValue]
+    form.setValue(field, serializeWorkingDays(next), { shouldValidate: true })
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setSuccess(false)
+  async function onSubmit(values: WorkingHoursFormValues) {
     setError("")
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    formData.set("weekdayWorkingDays", serializeWorkingDays(weekdayDays))
-    formData.set("weekendWorkingDays", serializeWorkingDays(weekendDays))
-    formData.set("holidayEnabled", String(holidayEnabled))
+    const formData = new FormData()
+    for (const [key, value] of Object.entries(values)) {
+      formData.set(key, String(value ?? ""))
+    }
 
     try {
       const res = await fetch("/api/settings/working-hours", {
@@ -69,7 +100,7 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
       })
       const data = await res.json()
       if (data.success) {
-        setSuccess(true)
+        toast.success("Çalışma saatleri güncellendi")
       } else {
         setError(data.error || "Güncelleme başarısız")
       }
@@ -81,120 +112,199 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
-      {success && <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm">Çalışma saatleri güncellendi</div>}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Hafta İçi Çalışma Saatleri</CardTitle>
-          <CardDescription>Hafta içi çalışma günlerini ve saatlerini belirleyin</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Çalışma Günleri</Label>
-            <div className="flex flex-wrap gap-2">
-              {DAY_OPTIONS.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDay(weekdayDays, setWeekdayDays, day.value)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                    weekdayDays.includes(day.value)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
-                  }`}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="weekdayStart">Başlangıç Saati</Label>
-              <Input id="weekdayStart" name="weekdayStart" type="time" defaultValue={settings.weekdayStart} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="weekdayEnd">Bitiş Saati</Label>
-              <Input id="weekdayEnd" name="weekdayEnd" type="time" defaultValue={settings.weekdayEnd} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Hafta Sonu Çalışma Saatleri</CardTitle>
-          <CardDescription>Hafta sonu çalışma günlerini ve saatlerini belirleyin</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Çalışma Günleri</Label>
-            <div className="flex flex-wrap gap-2">
-              {DAY_OPTIONS.map((day) => (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => toggleDay(weekendDays, setWeekendDays, day.value)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                    weekendDays.includes(day.value)
-                      ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300"
-                  }`}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="weekendStart">Başlangıç Saati</Label>
-              <Input id="weekendStart" name="weekendStart" type="time" defaultValue={settings.weekendStart} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="weekendEnd">Bitiş Saati</Label>
-              <Input id="weekendEnd" name="weekendEnd" type="time" defaultValue={settings.weekendEnd} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tatil Günleri</CardTitle>
-          <CardDescription>Resmi tatil günlerinde çalışma durumunu belirleyin</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="holidayEnabled"
-              checked={holidayEnabled}
-              onChange={(e) => setHolidayEnabled(e.target.checked)}
-              className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+        <Card>
+          <CardHeader>
+            <CardTitle>Hafta İçi Çalışma Saatleri</CardTitle>
+            <CardDescription>Hafta içi çalışma günlerini ve saatlerini belirleyin</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="weekdayWorkingDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Çalışma Günleri</FormLabel>
+                  <FormControl>
+                    <input type="hidden" {...field} />
+                  </FormControl>
+                  <div className="flex flex-wrap gap-2">
+                    {DAY_OPTIONS.map((day) => {
+                      const active = weekdayDays.includes(day.value)
+                      return (
+                        <Button
+                          key={day.value}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleDay("weekdayWorkingDays", day.value)}
+                        >
+                          {day.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <Label htmlFor="holidayEnabled" className="cursor-pointer">Tatil günlerinde çalışma kapalı olsun</Label>
-          </div>
 
-          {holidayEnabled && (
-            <div className="space-y-2">
-              <Label htmlFor="holidayDates">Tatil Günleri</Label>
-              <Input id="holidayDates" name="holidayDates" defaultValue={settings.holidayDates || ""} placeholder="2026-01-01, 2026-04-23, 2026-05-19" />
-              <p className="text-xs text-slate-500">Virgülle ayrılmış tarih formatı (YYYY-MM-DD)</p>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="weekdayStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Başlangıç Saati</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="weekdayEnd"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bitiş Saati</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Kaydediliyor..." : "Çalışma Saatlerini Kaydet"}
-      </Button>
-    </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>Hafta Sonu Çalışma Saatleri</CardTitle>
+            <CardDescription>Hafta sonu çalışma günlerini ve saatlerini belirleyin</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="weekendWorkingDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Çalışma Günleri</FormLabel>
+                  <FormControl>
+                    <input type="hidden" {...field} />
+                  </FormControl>
+                  <div className="flex flex-wrap gap-2">
+                    {DAY_OPTIONS.map((day) => {
+                      const active = weekendDays.includes(day.value)
+                      return (
+                        <Button
+                          key={day.value}
+                          type="button"
+                          variant={active ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleDay("weekendWorkingDays", day.value)}
+                        >
+                          {day.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="weekendStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Başlangıç Saati</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="weekendEnd"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bitiş Saati</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="time" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tatil Günleri</CardTitle>
+            <CardDescription>Resmi tatil günlerinde çalışma durumunu belirleyin</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="holidayEnabled"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(c) => field.onChange(c)}
+                      />
+                    </FormControl>
+                    <FormLabel className="cursor-pointer">Tatil günlerinde çalışma kapalı olsun</FormLabel>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {holidayEnabled && (
+              <FormField
+                control={form.control}
+                name="holidayDates"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tatil Günleri</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="2026-01-01, 2026-04-23, 2026-05-19" />
+                    </FormControl>
+                    <FormDescription>Virgülle ayrılmış tarih formatı (YYYY-MM-DD)</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+          {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
+          Çalışma Saatlerini Kaydet
+        </Button>
+      </form>
+    </Form>
   )
 }

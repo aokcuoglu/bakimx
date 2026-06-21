@@ -71,9 +71,9 @@ export function FeaturesSection() {
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
               whileHover={prefersReducedMotion ? undefined : { y: -4 }}
-              className="group rounded-2xl border bg-card p-6 shadow-sm hover:shadow-md transition-all duration-200"
+              className="group rounded-lg border bg-card p-6 shadow-sm hover:shadow-md transition-all duration-200"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary/20 transition-colors">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary/20 transition-colors">
                 <feature.icon className="h-6 w-6" />
               </div>
               <div className="flex items-center gap-2 mb-2">

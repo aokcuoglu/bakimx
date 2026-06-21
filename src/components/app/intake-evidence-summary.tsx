@@ -21,16 +21,12 @@ export function PhotoCompletionBar({
 }: PhotoCompletionBarProps) {
   const isComplete = percentage === 100
   const colorClass = isComplete
-    ? "bg-emerald-500"
+    ? "bg-success"
     : percentage >= 60
-      ? "bg-amber-500"
-      : "bg-rose-500"
+      ? "bg-warning"
+      : "bg-destructive"
 
-  const textColorClass = isComplete
-    ? "text-emerald-700"
-    : percentage >= 60
-      ? "text-amber-700"
-      : "text-rose-700"
+  const textColorClass = "text-foreground"
 
   return (
     <div className="space-y-2">
@@ -54,7 +50,7 @@ export function PhotoCompletionBar({
       </div>
       {missingLabels.length > 0 && (
         <div className="space-y-1 pt-1">
-          <p className="text-xs font-medium text-rose-600 flex items-center gap-1">
+          <p className="text-xs font-medium text-destructive flex items-center gap-1">
             <AlertTriangle className="size-3" />
             Eksik zorunlu fotoğraflar
           </p>
@@ -62,7 +58,7 @@ export function PhotoCompletionBar({
             {missingLabels.map((label) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1 text-xs bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200"
+                className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-foreground px-2 py-0.5 rounded-full border border-destructive/20"
               >
                 <XCircle className="size-3" />
                 {label}
@@ -72,7 +68,7 @@ export function PhotoCompletionBar({
         </div>
       )}
       {isComplete && (
-        <div className="flex items-center gap-1 text-xs text-emerald-600">
+        <div className="flex items-center gap-1 text-xs text-success">
           <CheckCircle2 className="size-3.5" />
           <span>Tüm zorunlu fotoğraflar tamamlandı</span>
         </div>
@@ -159,17 +155,17 @@ function EvidenceStatCard({
   status: "success" | "warning" | "danger" | "neutral"
 }) {
   const statusColors = {
-    success: "bg-emerald-50 border-emerald-200 text-emerald-700",
-    warning: "bg-amber-50 border-amber-200 text-amber-700",
-    danger: "bg-rose-50 border-rose-200 text-rose-700",
-    neutral: "bg-slate-50 border-slate-200 text-slate-600",
+    success: "bg-success/10 border-success/20 text-foreground",
+    warning: "bg-warning/10 border-warning/20 text-foreground",
+    danger: "bg-destructive/10 border-destructive/20 text-foreground",
+    neutral: "bg-muted border-border text-muted-foreground",
   }
 
   const iconColors = {
-    success: "text-emerald-600",
-    warning: "text-amber-600",
-    danger: "text-rose-600",
-    neutral: "text-slate-500",
+    success: "text-success",
+    warning: "text-warning",
+    danger: "text-destructive",
+    neutral: "text-muted-foreground",
   }
 
   return (

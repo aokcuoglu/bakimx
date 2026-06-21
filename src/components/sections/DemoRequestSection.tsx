@@ -136,10 +136,10 @@ export function DemoRequestSection() {
             initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
-            className="rounded-2xl border bg-card p-8 sm:p-12"
+            className="rounded-lg border bg-card p-8 sm:p-12"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 mx-auto mb-4">
-              <CheckCircle2 className="h-7 w-7 text-green-600" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 mx-auto mb-4">
+              <CheckCircle2 className="h-7 w-7 text-success" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Demo talebiniz alındı!
@@ -197,14 +197,14 @@ export function DemoRequestSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="lg:col-span-3"
           >
-            <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+            <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
               <div className="border-b bg-gradient-to-r from-primary/5 to-transparent px-6 py-4">
                 <h3 className="font-semibold text-foreground">İletişim Bilgileri</h3>
                 <p className="text-sm text-muted-foreground mt-0.5">Bilgilerinizi girin, sizi arayalım.</p>
               </div>
               <div className="p-6">
                 {errors._general && (
-                  <div className="mb-5 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  <div className="mb-5 rounded-lg border border-destructive/50 bg-destructive/5 px-4 py-3 text-sm text-foreground">
                     {errors._general}
                   </div>
                 )}
@@ -348,7 +348,7 @@ export function DemoRequestSection() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 text-base"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -372,7 +372,7 @@ export function DemoRequestSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <div className="rounded-2xl bg-[#0B1F3A] text-white p-6 sm:p-8 h-full flex flex-col justify-between">
+            <div className="rounded-lg bg-navy text-white p-6 sm:p-8 h-full flex flex-col justify-between">
               <div>
                 <h3 className="text-xl font-bold leading-tight">
                   BakimX demo sürecinde neler var?
@@ -416,7 +416,7 @@ export function DemoRequestSection() {
                 <ul className="space-y-2.5">
                   {benefitItems.map((item) => (
                     <li key={item} className="flex items-center gap-2.5 text-sm text-white/80">
-                      <CheckCircle2 className="h-4 w-4 text-sky-400 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                       {item}
                     </li>
                   ))}

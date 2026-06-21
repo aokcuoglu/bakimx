@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app/app-shell"
 import { SettingsTabs } from "./settings-tabs"
 
 export const metadata = {
-  title: "Ayarlar | BakimX",
+  title: "Ayarlar",
 }
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -80,8 +80,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <AppShell workshopName={workshop.name} pageTitle="Ayarlar">
       <div className="space-y-5 sm:space-y-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Ayarlar</h2>
-          <p className="text-sm text-slate-500 mt-0.5">İş yeri profilinizi, markanızı ve operasyonel ayarlarınızı yönetin</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ayarlar</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">İş yeri profilinizi, markanızı ve operasyonel ayarlarınızı yönetin</p>
         </div>
         <SettingsTabs
           tab={params.tab || "profile"}

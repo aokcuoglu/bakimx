@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
 import { loginSchema } from "@/lib/validation"
 import { getSession } from "@/lib/session"
-import bcrypt from "bcryptjs"
+import {
+  verifyCredentials,
+  loginRateLimit,
+  clientIpFromHeaders,
+  TOO_MANY_ATTEMPTS_MESSAGE,
+} from "@/lib/auth-login"
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIpFromHeaders(request.headers)
+    const limit = loginRateLimit(ip)
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: TOO_MANY_ATTEMPTS_MESSAGE },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } }
+      )
+    }
+
     const formData = await request.formData()
     const raw = {
       email: (formData.get("email") as string || "").trim().toLowerCase(),
@@ -20,33 +33,17 @@ export async function POST(request: Request) {
       )
     }
 
-    const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
-    if (!user) {
-      return NextResponse.json(
-        { error: "E-posta adresi veya şifre hatalı" },
-        { status: 400 }
-      )
+    const result = await verifyCredentials(parsed.data.email, parsed.data.password)
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    const valid = await bcrypt.compare(parsed.data.password, user.password)
-    if (!valid) {
-      return NextResponse.json(
-        { error: "E-posta adresi veya şifre hatalı" },
-        { status: 400 }
-      )
-    }
-
-    const workshop = await prisma.workshop.findUnique({ where: { id: user.workshopId } })
-    if (!workshop) {
-      return NextResponse.json(
-        { error: "Hesabınıza bağlı iş yeri bulunamadı. Lütfen destek ile iletişime geçin." },
-        { status: 400 }
-      )
-    }
-
+    // Rotate the session on login: clear any pre-existing (possibly fixated)
+    // session data before writing the authenticated identity.
     const session = await getSession()
-    session.userId = user.id
-    session.workshopId = user.workshopId
+    session.destroy()
+    session.userId = result.userId
+    session.workshopId = result.workshopId
     await session.save()
 
     return NextResponse.json({ success: true })

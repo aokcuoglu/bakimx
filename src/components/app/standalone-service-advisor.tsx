@@ -77,15 +77,15 @@ export function StandaloneServiceAdvisor() {
     result?.provider === "mock" ? "Demo (Mock)" : result?.provider === "openai" ? "OpenAI" : result?.provider === "deepseek" ? "DeepSeek" : ""
 
   return (
-    <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-white">
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="size-4 text-blue-600" />
+            <Sparkles className="size-4 text-primary" />
             AI Servis Danışmanı
           </CardTitle>
           {result && (
-            <button onClick={() => setExpanded(!expanded)} className="text-slate-400 hover:text-slate-600 p-1" aria-label={expanded ? "Daralt" : "Genişlet"}>
+            <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground/70 hover:text-muted-foreground p-1" aria-label={expanded ? "Daralt" : "Genişlet"}>
               {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
           )}
@@ -127,13 +127,13 @@ export function StandaloneServiceAdvisor() {
 
         {loading && (
           <div className="flex flex-col items-center py-6 gap-2">
-            <Loader2 className="size-8 text-blue-500 animate-spin" />
-            <p className="text-sm text-slate-600">AI önerileriniz hazırlanıyor...</p>
+            <Loader2 className="size-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">AI önerileriniz hazırlanıyor...</p>
           </div>
         )}
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
             <AlertTriangle className="size-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -144,7 +144,7 @@ export function StandaloneServiceAdvisor() {
             {result.missingInfoWarnings.length > 0 && (
               <div className="space-y-1.5">
                 {result.missingInfoWarnings.map((w, i) => (
-                  <div key={i} className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-1.5">
+                  <div key={i} className="p-2 rounded-lg bg-warning/10 border border-warning/20 text-foreground text-xs flex items-start gap-1.5">
                     <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                     <span>{w}</span>
                   </div>
@@ -154,13 +154,13 @@ export function StandaloneServiceAdvisor() {
 
             {result.suggestedInspections.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <ClipboardList className="size-3" /> Önerilen Kontroller
                 </p>
                 <div className="space-y-1">
                   {result.suggestedInspections.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm text-slate-700">
-                      <CheckCircle2 className="size-3.5 text-blue-500 shrink-0" />
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-foreground">
+                      <CheckCircle2 className="size-3.5 text-primary shrink-0" />
                       <span>{s}</span>
                     </div>
                   ))}
@@ -170,13 +170,13 @@ export function StandaloneServiceAdvisor() {
 
             {result.suggestedLabor.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Wrench className="size-3" /> Önerilen İşçilikler
                 </p>
                 <div className="space-y-1">
                   {result.suggestedLabor.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm text-slate-700">
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 shrink-0">İşçilik</span>
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-foreground">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-foreground shrink-0">İşçilik</span>
                       <span>{s}</span>
                     </div>
                   ))}
@@ -186,13 +186,13 @@ export function StandaloneServiceAdvisor() {
 
             {result.suggestedParts.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Package className="size-3" /> Olası Parça İhtiyaçları
                 </p>
                 <div className="space-y-1">
                   {result.suggestedParts.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm text-slate-700">
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 shrink-0">Parça</span>
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-foreground">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-success/10 text-foreground shrink-0">Parça</span>
                       <span>{s}</span>
                     </div>
                   ))}
@@ -202,28 +202,28 @@ export function StandaloneServiceAdvisor() {
 
             {result.customerDescription && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <FileText className="size-3" /> Müşteri Açıklaması
                 </p>
-                <p className="text-sm text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200">{result.customerDescription}</p>
+                <p className="text-sm text-foreground bg-card p-2.5 rounded-lg border border-border">{result.customerDescription}</p>
               </div>
             )}
 
             {result.internalNote && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <StickyNote className="size-3" /> Servis İç Notu
                 </p>
-                <p className="text-sm text-slate-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">{result.internalNote}</p>
-                <p className="text-[11px] text-slate-500 italic mt-1">Bu not müşteri çıktısında gösterilmez</p>
+                <p className="text-sm text-muted-foreground bg-warning/10 p-2.5 rounded-lg border border-warning/20">{result.internalNote}</p>
+                <p className="text-[11px] text-muted-foreground italic mt-1">Bu not müşteri çıktısında gösterilmez</p>
               </div>
             )}
 
-            <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600 flex items-start gap-1.5">
-              <Shield className="size-3.5 shrink-0 mt-0.5 text-slate-500" />
+            <div className="p-2.5 rounded-lg bg-muted border border-border text-xs text-muted-foreground flex items-start gap-1.5">
+              <Shield className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
               <span>
                 AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir.
-                {providerLabel && <span className="ml-1 text-slate-500">Sağlayıcı: {providerLabel}</span>}
+                {providerLabel && <span className="ml-1 text-muted-foreground">Sağlayıcı: {providerLabel}</span>}
               </span>
             </div>
           </div>

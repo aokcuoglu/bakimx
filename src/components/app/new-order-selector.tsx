@@ -6,6 +6,7 @@ import { Search, Loader2 } from "lucide-react"
 import { StatusBadge, PlateBadge } from "@/components/app/status-badge"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils-client"
+import { Input } from "@/components/ui/input"
 
 type IntakeRow = {
   id: string
@@ -76,25 +77,25 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
   return (
     <div className="mt-4 space-y-3">
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-        <input
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+        <Input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Plaka, müşteri veya telefon ile ara..."
-          className="w-full h-10 pl-10 pr-3 rounded-lg border border-slate-200 bg-slate-50 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white"
+          className="h-10 pl-10"
         />
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm">
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           {error}
         </div>
       )}
 
       {filtered(eligible).length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">İş Emri Oluşturmaya Uygun</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">İş Emri Oluşturmaya Uygun</p>
           {filtered(eligible).map((i) => (
             <SelectableIntakeCard
               key={i.id}
@@ -109,7 +110,7 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
 
       {filtered(others).length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-3">Diğer Kabuller</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-3">Diğer Kabuller</p>
           {filtered(others).slice(0, 5).map((i) => (
             <SelectableIntakeCard
               key={i.id}
@@ -147,28 +148,28 @@ function SelectableIntakeCard({
       className={cn(
         "w-full text-left flex items-center gap-3 p-3 rounded-lg border bg-white transition-all touch-manipulation",
         disabled
-          ? "border-slate-100 bg-slate-50 opacity-70 cursor-not-allowed"
-          : "border-slate-200 hover:border-blue-400 hover:bg-blue-50/30"
+          ? "border-border bg-muted opacity-70 cursor-not-allowed"
+          : "border-border hover:border-primary hover:bg-primary/5"
       )}
     >
       <div className="shrink-0">
         <PlateBadge plate={intake.vehicle.plate} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-900 truncate">
+        <p className="text-sm font-semibold text-foreground truncate">
           {intake.customer.type === "corporate"
             ? intake.customer.companyName || "Kurumsal Müşteri"
             : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
         </p>
-        <p className="text-xs text-slate-500 truncate">
+        <p className="text-xs text-muted-foreground truncate">
           {intake.vehicle.brand} {intake.vehicle.model} • {formatDate(intake.createdAt)}
         </p>
         <div className="mt-1 flex items-center gap-1.5">
           <StatusBadge status={intake.status} />
-          {intake.hasOrder && <span className="text-[11px] text-emerald-700 font-medium">İş emri var</span>}
+          {intake.hasOrder && <span className="text-[11px] text-success font-medium">İş emri var</span>}
         </div>
       </div>
-      <div className="shrink-0 text-xs font-medium text-blue-600">
+      <div className="shrink-0 text-xs font-medium text-primary">
         {loading ? <Loader2 className="size-4 animate-spin" /> : actionLabel}
       </div>
     </button>

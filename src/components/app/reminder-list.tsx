@@ -135,10 +135,10 @@ export function ReminderList({ initialReminders, stats }: Props) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <Link href="/app" className="hover:text-slate-700">Ana Panel</Link>
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">Bakım Hatırlatmaları</span>
+        <span className="text-foreground font-medium">Bakım Hatırlatmaları</span>
       </div>
 
       <KpiCards stats={stats} />
@@ -146,31 +146,29 @@ export function ReminderList({ initialReminders, stats }: Props) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            <BellRing className="size-4 text-slate-500" />
+            <BellRing className="size-4 text-muted-foreground" />
             Hatırlatmalar
-            <span className="text-xs text-slate-500 font-normal">({filtered.length})</span>
+            <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <Link href="/app/reminders/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="size-4" />
-              Yeni Hatırlatma
-            </Button>
-          </Link>
+          <Button nativeButton={false} size="sm" className="gap-1.5" render={<Link href="/app/reminders/new" />}>
+            <Plus className="size-4" />
+            Yeni Hatırlatma
+          </Button>
         </CardHeader>
         <CardContent className="pt-0 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
               <Input
                 placeholder="Müşteri, plaka, başlık ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm"
+                className="pl-9 text-sm"
               />
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}>
-                <SelectTrigger className="h-9 w-[130px] text-sm">
+                <SelectTrigger className="w-[130px] text-sm">
                   <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,7 +182,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || "")}>
-                <SelectTrigger className="h-9 w-[140px] text-sm">
+                <SelectTrigger className="w-[140px] text-sm">
                   <SelectValue placeholder="Bakım Türü" />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,7 +193,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v || "")}>
-                <SelectTrigger className="h-9 w-[130px] text-sm">
+                <SelectTrigger className="w-[130px] text-sm">
                   <SelectValue placeholder="Tarih" />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,12 +208,12 @@ export function ReminderList({ initialReminders, stats }: Props) {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <BellRing className="size-10 mx-auto mb-2 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <BellRing className="size-10 mx-auto mb-2 text-muted-foreground/50" />
               <p className="text-sm">Henüz hatırlatma bulunmuyor</p>
               <Link
                 href="/app/reminders/new"
-                className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
               >
                 <Plus className="size-3.5" />
                 Yeni hatırlatma oluştur
@@ -226,99 +224,105 @@ export function ReminderList({ initialReminders, stats }: Props) {
               <div className="hidden md:block">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Hatırlatma</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Müşteri</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Plaka / Araç</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Bakım Türü</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Planlanan Tarih</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Planlanan KM</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Durum</th>
-                      <th className="text-left py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">Kanal</th>
-                      <th className="text-right py-2.5 px-3 font-medium text-slate-500 text-xs uppercase tracking-wider">İşlem</th>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Hatırlatma</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Müşteri</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Plaka / Araç</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Bakım Türü</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Planlanan Tarih</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Planlanan KM</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Durum</th>
+                      <th className="text-left py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Kanal</th>
+                      <th className="text-right py-2.5 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">İşlem</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-border">
                     {filtered.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={r.id} className="hover:bg-muted transition-colors">
                         <td className="py-3 px-3">
-                          <Link href={`/app/reminders/${r.id}`} className="font-medium text-slate-900 hover:text-blue-600">
+                          <Link href={`/app/reminders/${r.id}`} className="font-medium text-foreground hover:text-primary">
                             {r.title}
                           </Link>
                         </td>
                         <td className="py-3 px-3">
                           <div>
-                            <Link href={`/app/customers/${r.customer.id}`} className="text-slate-700 hover:text-blue-600">
+                            <Link href={`/app/customers/${r.customer.id}`} className="text-foreground hover:text-primary">
                               {customerName(r.customer)}
                             </Link>
-                            <p className="text-[11px] text-slate-400">{r.customer.phone}</p>
+                            <p className="text-[11px] text-muted-foreground/70">{r.customer.phone}</p>
                           </div>
                         </td>
                         <td className="py-3 px-3">
                           <Link href={`/app/vehicles/${r.vehicle.id}`} className="flex items-center gap-2">
                             <PlateBadge plate={r.vehicle.plate} />
-                            <span className="text-xs text-slate-500">{r.vehicle.brand} {r.vehicle.model}</span>
+                            <span className="text-xs text-muted-foreground">{r.vehicle.brand} {r.vehicle.model}</span>
                           </Link>
                         </td>
                         <td className="py-3 px-3">
                           <ReminderTypeBadge type={r.type} />
                         </td>
-                        <td className="py-3 px-3 text-slate-700">
+                        <td className="py-3 px-3 text-foreground">
                           {r.dueDate ? (
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="size-3 text-slate-400" />
+                              <Calendar className="size-3 text-muted-foreground/70" />
                               {formatDate(r.dueDate)}
                             </span>
-                          ) : <span className="text-slate-400">—</span>}
+                          ) : <span className="text-muted-foreground/70">—</span>}
                         </td>
-                        <td className="py-3 px-3 text-slate-700">
+                        <td className="py-3 px-3 text-foreground">
                           {r.dueMileage ? (
                             <span className="inline-flex items-center gap-1">
-                              <Gauge className="size-3 text-slate-400" />
+                              <Gauge className="size-3 text-muted-foreground/70" />
                               {r.dueMileage.toLocaleString("tr-TR")} km
                             </span>
-                          ) : <span className="text-slate-400">—</span>}
+                          ) : <span className="text-muted-foreground/70">—</span>}
                         </td>
                         <td className="py-3 px-3">
                           <ReminderStatusBadge status={r.status} />
                         </td>
-                        <td className="py-3 px-3 text-xs text-slate-500">
+                        <td className="py-3 px-3 text-xs text-muted-foreground">
                           {channelLabel(r.preferredChannel)}
                         </td>
                         <td className="py-3 px-3 text-right">
                           <div className="inline-flex items-center gap-1">
                             <Link
                               href={`/app/reminders/${r.id}`}
-                              className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                              className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
                             >
                               Görüntüle
                             </Link>
                             {r.status === "upcoming" || r.status === "due_soon" || r.status === "overdue" ? (
                               <>
-                                <button
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-success"
                                   onClick={() => handleAction("complete", r.id)}
                                   disabled={actionLoading === r.id}
-                                  className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-50"
                                 >
                                   {actionLoading === r.id ? <Loader2 className="size-3 animate-spin" /> : "Tamamla"}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary"
                                   onClick={() => handleAction("create-appointment", r.id)}
                                   disabled={actionLoading === r.id}
-                                  className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
                                 >
                                   Randevu
-                                </button>
+                                </Button>
                               </>
                             ) : null}
                             {r.status !== "cancelled" && r.status !== "completed" ? (
-                              <button
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive"
                                 onClick={() => handleAction("cancel", r.id)}
                                 disabled={actionLoading === r.id}
-                                className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
                               >
                                 İptal
-                              </button>
+                              </Button>
                             ) : null}
                           </div>
                         </td>
@@ -333,7 +337,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                   <Link
                     key={r.id}
                     href={`/app/reminders/${r.id}`}
-                    className="block rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors"
+                    className="block rounded-lg border border-border bg-card p-4 hover:border-border transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="min-w-0 flex-1">
@@ -341,11 +345,11 @@ export function ReminderList({ initialReminders, stats }: Props) {
                           <PlateBadge plate={r.vehicle.plate} />
                           <ReminderTypeBadge type={r.type} />
                         </div>
-                        <h3 className="text-sm font-semibold text-slate-900 mt-1">{r.title}</h3>
+                        <h3 className="text-sm font-semibold text-foreground mt-1">{r.title}</h3>
                       </div>
                       <ReminderStatusBadge status={r.status} />
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>{customerName(r.customer)}</span>
                       {r.dueDate ? (
                         <span className="inline-flex items-center gap-1">
@@ -363,20 +367,24 @@ export function ReminderList({ initialReminders, stats }: Props) {
                     <div className="mt-2 flex items-center gap-2">
                       {r.status === "upcoming" || r.status === "due_soon" || r.status === "overdue" ? (
                         <>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-success"
                             onClick={(e) => { e.preventDefault(); handleAction("complete", r.id) }}
                             disabled={actionLoading === r.id}
-                            className="inline-flex items-center h-7 px-2.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50"
                           >
                             Tamamla
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary"
                             onClick={(e) => { e.preventDefault(); handleAction("create-appointment", r.id) }}
                             disabled={actionLoading === r.id}
-                            className="inline-flex items-center h-7 px-2.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50"
                           >
                             Randevu
-                          </button>
+                          </Button>
                         </>
                       ) : null}
                     </div>
@@ -393,19 +401,19 @@ export function ReminderList({ initialReminders, stats }: Props) {
 
 function KpiCards({ stats }: { stats: Record<string, number> }) {
   const items = [
-    { key: "upcoming", label: "Yaklaşan", color: "bg-sky-50 text-sky-700 border-sky-200" },
-    { key: "due_soon", label: "Yaklaşıyor", color: "bg-amber-50 text-amber-700 border-amber-200" },
-    { key: "overdue", label: "Geciken", color: "bg-rose-50 text-rose-700 border-rose-200" },
-    { key: "completed", label: "Tamamlanan", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    { key: "postponed", label: "Ertelenen", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-    { key: "cancelled", label: "İptal", color: "bg-slate-50 text-slate-500 border-slate-200" },
+    { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "due_soon", label: "Yaklaşıyor", color: "bg-warning/10 text-warning border-warning/20" },
+    { key: "overdue", label: "Geciken", color: "bg-destructive/10 text-destructive border-destructive/20" },
+    { key: "completed", label: "Tamamlanan", color: "bg-success/10 text-success border-success/20" },
+    { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "cancelled", label: "İptal", color: "bg-muted text-muted-foreground border-border" },
   ]
   return (
     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
       {items.map((item) => (
         <div
           key={item.key}
-          className={cn("rounded-xl border px-3 py-2.5 text-center", item.color)}
+          className={cn("rounded-lg border px-3 py-2.5 text-center", item.color)}
         >
           <p className="text-lg sm:text-xl font-bold">{stats[item.key] || 0}</p>
           <p className="text-[10px] sm:text-xs font-medium opacity-80">{item.label}</p>

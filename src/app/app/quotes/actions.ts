@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemSchema } from "@/lib/validation"
 import { getValidationError } from "@/lib/validation"
 import { generateQuoteNo, formatQuoteNo } from "@/lib/work-order-number"
-import { generateWorkOrderNo } from "@/lib/work-order-number"
+import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyQuoteReady } from "@/lib/communications/triggers"
 
@@ -168,11 +168,17 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
     },
   })
 
+  const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
+    prisma.serviceOrder
+      .findFirst({ where: { workshopId, workOrderNo: candidate }, select: { id: true } })
+      .then((clash) => clash !== null)
+  )
+
   const order = await prisma.serviceOrder.create({
     data: {
       workshopId,
       intakeFormId: intake.id,
-      workOrderNo: generateWorkOrderNo(),
+      workOrderNo,
       status: "draft",
       discountAmount: quote.discountAmount,
       taxRate: quote.taxRate,

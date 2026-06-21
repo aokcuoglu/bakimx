@@ -65,27 +65,27 @@ export function LoginForm() {
       className="w-full"
     >
       <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#0B1F3A] tracking-tight">
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
           BakimX hesabınıza giriş yapın
         </h1>
-        <p className="mt-2 text-[#475569] text-sm lg:text-base">
+        <p className="mt-2 text-muted-foreground text-sm lg:text-base">
           Servis süreçlerinizi yönetmek için giriş yapın.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {error}
           </div>
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-[#475569]">
+          <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
             E-posta
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
             <Input
               id="email"
               name="email"
@@ -94,17 +94,17 @@ export function LoginForm() {
               placeholder="ornek@email.com"
               defaultValue="demo@bakimx.com"
               required
-              className="h-12 pl-10 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+              className="h-10 pl-9"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-[#475569]">
+          <Label htmlFor="password" className="text-sm font-medium text-muted-foreground">
             Şifre
           </Label>
           <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#94A3B8] pointer-events-none" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
             <Input
               id="password"
               name="password"
@@ -113,12 +113,12 @@ export function LoginForm() {
               placeholder="••••••"
               defaultValue="demo123456"
               required
-              className="h-12 pl-10 pr-11 rounded-xl border-[#E2E8F0] bg-white text-base focus-visible:border-[#2563EB] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20"
+              className="h-10 pl-9 pr-9"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#475569] transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
               tabIndex={-1}
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
@@ -129,8 +129,9 @@ export function LoginForm() {
 
         <Button
           type="submit"
+          size="lg"
           disabled={loading}
-          className="w-full h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-base font-medium transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full h-10"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -145,7 +146,7 @@ export function LoginForm() {
         <div className="text-center">
           <Link
             href="/forgot-password"
-            className="text-sm text-[#2563EB] hover:text-[#1D4ED8] hover:underline transition-colors"
+            className="text-sm text-primary hover:underline transition-colors"
           >
             Şifremi Unuttum
           </Link>

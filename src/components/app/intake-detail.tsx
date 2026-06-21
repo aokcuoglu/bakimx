@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Car,
   User,
@@ -31,6 +33,9 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
@@ -382,13 +387,13 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/app/intakes")} className="p-2.5 hover:bg-muted rounded-xl touch-manipulation">
+        <button onClick={() => router.push("/app/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
           <ArrowLeft className="size-5" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold truncate">{intake.vehicle.plate}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-gray-100 text-gray-800"}`}>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-muted text-muted-foreground"}`}>
               {statusInfo?.label || intake.status}
             </span>
           </div>
@@ -401,7 +406,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive/10 text-foreground text-sm flex items-start gap-2">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -441,32 +446,22 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b">
-        {tabs.map((tab) => {
-          const Icon = tab.icon
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
-                activeTab === tab.id
-                  ? "text-primary border-primary"
-                  : "text-muted-foreground border-transparent hover:text-foreground"
-              }`}
-            >
-              <Icon className="size-4" />
-              {tab.label}
-              {tab.count != null && tab.count > 0 && (
-                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "info" && (
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <TabsList variant="line" className="border-b gap-1 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2.5">
+                <Icon className="size-4" />
+                {tab.label}
+                {tab.count != null && tab.count > 0 && (
+                  <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
+                )}
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
+      <TabsContent value="info">
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><User className="size-4" /> Müşteri Bilgileri</CardTitle></CardHeader>
@@ -536,9 +531,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             }}
           />
         </div>
-      )}
+      </TabsContent>
 
-      {activeTab === "evidence" && (
+      <TabsContent value="evidence">
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
@@ -626,11 +621,11 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   {intake.shareLinks[0].isActive ? (
-                    <Eye className="size-4 text-emerald-600" />
+                    <Eye className="size-4 text-success" />
                   ) : (
-                    <EyeOff className="size-4 text-rose-600" />
+                    <EyeOff className="size-4 text-destructive" />
                   )}
-                  <span className={intake.shareLinks[0].isActive ? "text-emerald-700 font-medium" : "text-rose-700 font-medium"}>
+                  <span className={intake.shareLinks[0].isActive ? "text-success font-medium" : "text-destructive font-medium"}>
                     {intake.shareLinks[0].isActive ? "Link aktif" : "Link devre dışı"}
                   </span>
                 </div>
@@ -686,9 +681,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </Card>
           )}
         </div>
-      )}
+      </TabsContent>
 
-      {activeTab === "photos" && (
+      <TabsContent value="photos">
         <div className="space-y-4">
           {/* Required photo checklist */}
           <Card>
@@ -750,34 +745,42 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             <CardContent className="space-y-3">
               <div>
                 <Label>Fotoğraf Türü</Label>
-                <select
-                  className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+                <Select
                   value={photoType}
-                  onChange={(e) => {
-                    setPhotoType(e.target.value)
+                  onValueChange={(v) => {
+                    setPhotoType(v ?? "")
                     setPhotoFile(null)
                     setPhotoPreview(null)
                   }}
                 >
-                  <option value="">Seçiniz...</option>
-                  {Object.entries(PHOTO_TYPES).map(([key, val]) => (
-                    <option key={key} value={key}>
-                      {val.label} {val.required ? "(Zorunlu)" : "(Opsiyonel)"}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder="Seçiniz..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Seçiniz...</SelectItem>
+                    {Object.entries(PHOTO_TYPES).map(([key, val]) => (
+                      <SelectItem key={key} value={key}>
+                        {val.label} {val.required ? "(Zorunlu)" : "(Opsiyonel)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Aşama</Label>
-                <select
-                  className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+                <Select
                   value={photoPhase}
-                  onChange={(e) => setPhotoPhase(e.target.value)}
+                  onValueChange={(v) => setPhotoPhase(v ?? "intake")}
                 >
-                  <option value="intake">Kabul (Intake)</option>
-                  <option value="repair_progress">Onarım Aşaması</option>
-                  <option value="delivery">Teslim</option>
-                </select>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder="Aşama seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="intake">Kabul (Intake)</SelectItem>
+                    <SelectItem value="repair_progress">Onarım Aşaması</SelectItem>
+                    <SelectItem value="delivery">Teslim</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Fotoğraf Çek / Yükle</Label>
@@ -798,7 +801,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                 <button
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
                 >
                   <Camera className="size-5 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
@@ -861,9 +864,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </Card>
           )}
         </div>
-      )}
+      </TabsContent>
 
-      {activeTab === "damage" && (
+      <TabsContent value="damage">
         <div className="space-y-4">
           <VehicleDamageMap
             damageMarks={intake.damageMarks}
@@ -875,45 +878,43 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
               setShowDamageModal(true)
             }}
             onRemoveMark={handleRemoveDamageMark}
+            vehicle={{ plate: intake.vehicle.plate, brand: intake.vehicle.brand, model: intake.vehicle.model }}
           />
 
-          {showDamageModal && (
-            <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50" onClick={() => setShowDamageModal(false)}>
-              <div className="bg-card w-full md:max-w-md md:rounded-xl rounded-t-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                <h3 className="font-semibold text-lg">
+          <Dialog open={showDamageModal} onOpenChange={setShowDamageModal}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
                   Hasar Ekle: {VEHICLE_ZONES[selectedZone as keyof typeof VEHICLE_ZONES] || selectedZone}
-                </h3>
+                </DialogTitle>
+              </DialogHeader>
                 <div>
                   <Label>Hasar Tipi</Label>
-                  <select
-                    className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+                  <Select
                     value={damageType}
-                    onChange={(e) => setDamageType(e.target.value)}
+                    onValueChange={(v) => setDamageType(v ?? "")}
                   >
-                    <option value="">Seçiniz...</option>
-                    {Object.entries(DAMAGE_TYPES).map(([key, val]) => (
-                      <option key={key} value={key}>{val.label}</option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Seçiniz..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Seçiniz...</SelectItem>
+                      {Object.entries(DAMAGE_TYPES).map(([key, val]) => (
+                        <SelectItem key={key} value={key}>{val.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Şiddet</Label>
-                  <div className="flex gap-2 mt-1">
+                  <ToggleGroup value={severity ? [severity] : []} onValueChange={(v) => setSeverity(v[0] ?? "")} variant="outline" className="w-full mt-1">
                     {Object.entries(DAMAGE_SEVERITY).map(([key, val]) => (
-                      <button
-                        key={key}
-                        onClick={() => setSeverity(key)}
-                        className={`flex-1 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation ${
-                          severity === key
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:border-muted-foreground"
-                        }`}
-                      >
+                      <ToggleGroupItem key={key} value={key} className="flex-1 py-3">
                         <span className="w-3 h-3 rounded-full inline-block mr-1.5" style={{ backgroundColor: val.color }} />
                         {val.label}
-                      </button>
+                      </ToggleGroupItem>
                     ))}
-                  </div>
+                  </ToggleGroup>
                 </div>
                 <div>
                   <Label>Not</Label>
@@ -927,13 +928,12 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                     İptal
                   </Button>
                 </div>
-              </div>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
         </div>
-      )}
+      </TabsContent>
 
-      {activeTab === "approval" && (
+      <TabsContent value="approval">
         <div className="space-y-4">
           {!approvalSent && !approvalVerified && (
             <Card>
@@ -942,21 +942,20 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                 <p className="text-sm text-muted-foreground">
                   Müşteri onayı için SMS ile doğrulama kodu gönderilir.
                 </p>
-                <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                <div className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-foreground text-sm">
                   <p className="font-medium mb-1">Demo Modu</p>
                   <p>Demo modunda SMS gönderilmez. Test kodu ekranda gösterilir. Gerçek SMS entegrasyonu sonraki sürümlerde eklenecektir.</p>
                 </div>
 
-                <div className="space-y-3 border rounded-xl p-4 bg-muted/20">
+                <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
                   <p className="text-sm font-medium">Onay Gereksinimleri</p>
 
                   <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="detail-terms"
                       checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                      onCheckedChange={(c) => setTermsAccepted(c)}
+                      className="mt-0.5"
                     />
                     <label htmlFor="detail-terms" className="text-sm">
                       Araç kabul formunu onaylıyorum. <span className="text-destructive">*</span>
@@ -964,12 +963,11 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="detail-privacy"
                       checked={privacyAccepted}
-                      onChange={(e) => setPrivacyAccepted(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                      onCheckedChange={(c) => setPrivacyAccepted(c)}
+                      className="mt-0.5"
                     />
                     <label htmlFor="detail-privacy" className="text-sm">
                       Aydınlatma metnini okudum. <span className="text-destructive">*</span>
@@ -977,12 +975,11 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="detail-serviceInfo"
                       checked={serviceInfoAccepted}
-                      onChange={(e) => setServiceInfoAccepted(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                      onCheckedChange={(c) => setServiceInfoAccepted(c)}
+                      className="mt-0.5"
                     />
                     <label htmlFor="detail-serviceInfo" className="text-sm text-muted-foreground">
                       Servis süreciyle ilgili bilgilendirme almak istiyorum.
@@ -990,12 +987,11 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="detail-promo"
                       checked={promoAccepted}
-                      onChange={(e) => setPromoAccepted(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                      onCheckedChange={(c) => setPromoAccepted(c)}
+                      className="mt-0.5"
                     />
                     <label htmlFor="detail-promo" className="text-sm text-muted-foreground">
                       Kampanya ve ticari ileti almak istiyorum.
@@ -1014,10 +1010,10 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Onay Kodu Doğrulama</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-5 rounded-xl bg-green-50 border-2 border-green-200 text-green-800 text-center">
+                <div className="p-5 rounded-lg bg-success/10 border-2 border-success/20 text-foreground text-center">
                   <p className="text-sm font-medium mb-2">Demo Test Kodu</p>
                   <p className="text-4xl font-bold tracking-[0.3em]">{generatedOtp}</p>
-                  <p className="text-xs mt-2 text-green-600">Bu kodu müşteriye göstererek onay alabilirsiniz</p>
+                  <p className="text-xs mt-2 text-success">Bu kodu müşteriye göstererek onay alabilirsiniz</p>
                 </div>
                 <div>
                   <Label>Onay Kodu</Label>
@@ -1042,7 +1038,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Onaylanmış</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm flex items-center gap-2">
+                <div className="p-4 rounded-lg bg-success/10 border border-success/20 text-foreground text-sm flex items-center gap-2">
                   <CheckCircle2 className="size-5 shrink-0" />
                   <span>Müşteri onayı başarıyla doğrulandı.</span>
                 </div>
@@ -1052,7 +1048,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   </Button>
                 )}
                 {shareToken && (
-                  <div className="p-4 bg-muted rounded-xl border">
+                  <div className="p-4 bg-muted rounded-lg border">
                     <p className="text-sm font-medium mb-2">Müşteri Çıktı Linki:</p>
                     <div className="break-all text-sm bg-background p-3 rounded-lg">
                       <a
@@ -1100,9 +1096,9 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </Card>
           )}
         </div>
-      )}
+      </TabsContent>
 
-      {activeTab === "order" && (
+      <TabsContent value="order">
         <div className="space-y-4">
           {!intake.order ? (
             <Card>
@@ -1139,7 +1135,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium truncate">{item.name}</span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${item.type === "part" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                                <span className="text-xs px-1.5 py-0.5 rounded-full shrink-0 bg-primary/10 text-foreground">
                                   {item.type === "part" ? "Parça" : "İşçilik"}
                                 </span>
                               </div>
@@ -1149,7 +1145,7 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-3">
-                              <span className={`text-sm font-medium ${lineTotal == null ? "text-gray-400 italic text-xs" : ""}`}>
+                              <span className={`text-sm font-medium ${lineTotal == null ? "text-muted-foreground italic text-xs" : ""}`}>
                                 {lineTotal != null ? formatTRY(lineTotal) : "Fiyat girilmedi"}
                               </span>
                               <button
@@ -1215,14 +1211,18 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
                   <CardContent className="space-y-3">
                     <div>
                       <Label>Tip</Label>
-                      <select
-                        className="w-full h-10 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+                      <Select
                         value={itemType}
-                        onChange={(e) => setItemType(e.target.value)}
+                        onValueChange={(v) => setItemType(v ?? "part")}
                       >
-                        <option value="part">Parça</option>
-                        <option value="labor">İşçilik</option>
-                      </select>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="Tip seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="part">Parça</SelectItem>
+                          <SelectItem value="labor">İşçilik</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Kalem Adı</Label>
@@ -1248,7 +1248,8 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </>
           )}
         </div>
-      )}
+      </TabsContent>
+      </Tabs>
     </div>
   )
 }
@@ -1273,7 +1274,7 @@ function PhotoGalleryCard({
   }
 
   return (
-    <div className="rounded-xl border overflow-hidden bg-white">
+    <div className="rounded-lg border overflow-hidden bg-white">
       <div className="relative aspect-square bg-muted flex items-center justify-center">
         {photo.fileUrl ? (
           <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
@@ -1462,15 +1463,15 @@ function PhotoChecklistItem({
   return (
     <div
       className={`flex flex-col rounded-lg text-sm ${
-        taken ? "bg-green-50 border border-green-200" : required ? "bg-red-50 border border-red-200" : "bg-muted/30 border border-muted"
+        taken ? "bg-success/10 border border-success/20" : required ? "bg-destructive/10 border border-destructive/20" : "bg-muted/30 border border-muted"
       }`}
     >
       <div className="flex items-center justify-between p-2.5">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {taken ? (
-            <CheckCircle2 className="size-4 text-green-600 shrink-0" />
+            <CheckCircle2 className="size-4 text-success shrink-0" />
           ) : required ? (
-            <Camera className="size-4 text-red-400 shrink-0" />
+            <Camera className="size-4 text-destructive shrink-0" />
           ) : (
             <Camera className="size-4 text-muted-foreground/40 shrink-0" />
           )}
@@ -1488,7 +1489,7 @@ function PhotoChecklistItem({
           )}
           {taken && (
             <>
-              <span className="text-xs font-medium text-green-700">✓ Tamam</span>
+              <span className="text-xs font-medium text-success">✓ Tamam</span>
               <input
                 ref={replaceInputRef}
                 type="file"

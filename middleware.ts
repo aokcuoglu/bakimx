@@ -5,12 +5,14 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const publicPaths = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"]
+  // No public register flow: /register is intentionally absent here. The
+  // /register page itself redirects to /login.
+  const publicPaths = ["/", "/login", "/forgot-password", "/privacy", "/terms"]
   const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
 
   if (publicPaths.includes(pathname)) {
     const session = await getSession()
-    if (session?.userId && (pathname === "/login" || pathname === "/register")) {
+    if (session?.userId && pathname === "/login") {
       return NextResponse.redirect(new URL("/app", request.url))
     }
     return NextResponse.next()

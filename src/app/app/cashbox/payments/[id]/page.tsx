@@ -69,18 +69,18 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Tahsilat Detayı" showGlobalSearch={false}>
       <div className="space-y-5 sm:space-y-6 max-w-3xl">
-        <div className="flex items-center text-sm text-slate-500">
-          <Link href="/app/cashbox/payments" className="hover:text-slate-700 inline-flex items-center gap-1">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/app/cashbox/payments" className="hover:text-foreground inline-flex items-center gap-1">
             <ArrowLeft className="size-3.5" />
             Tahsilatlar
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700 font-medium">Tahsilat Detayı</span>
+          <span className="text-foreground font-medium">Tahsilat Detayı</span>
         </div>
 
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{formatTRY(collection.amount)}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">{formatTRY(collection.amount)}</h2>
             <div className="flex items-center gap-2 mt-1">
               <PaymentMethodBadge method={collection.method} size="md" />
               <CollectionStatusBadge status={collection.status} size="md" />
@@ -90,21 +90,21 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
             <CancelCollectionButton collectionId={collection.id} />
           )}
           {collection.status === "cancelled" && collection.cancellationReason && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-rose-800 flex items-center gap-2">
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-destructive flex items-center gap-2">
                 <AlertTriangle className="size-4" />
                 İptal Bilgisi
               </h3>
-              <p className="text-sm text-rose-700">{collection.cancellationReason}</p>
+              <p className="text-sm text-destructive">{collection.cancellationReason}</p>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-5">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <Receipt className="size-4 text-slate-500" />
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Receipt className="size-4 text-muted-foreground" />
                 Tahsilat Bilgileri
               </h3>
               <DetailRow icon={Calendar} label="Tahsilat Tarihi" value={formatDateTime(collection.paymentDate)} />
@@ -118,61 +118,61 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
               <DetailRow icon={Calendar} label="Kayıt Tarihi" value={formatDateTime(collection.createdAt)} />
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <User className="size-4 text-slate-500" />
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <User className="size-4 text-muted-foreground" />
                 Müşteri
               </h3>
-              <Link href={`/app/customers/${collection.customer.id}`} className="block rounded-lg border border-slate-100 bg-slate-50 p-3 hover:bg-slate-100 transition-colors">
-                <p className="text-sm font-semibold text-slate-900">{nameFor()}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{collection.customer.phone}</p>
-                {collection.customer.email && <p className="text-xs text-slate-500">{collection.customer.email}</p>}
+              <Link href={`/app/customers/${collection.customer.id}`} className="block rounded-lg border border-border bg-muted p-3 hover:bg-muted transition-colors">
+                <p className="text-sm font-semibold text-foreground">{nameFor()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{collection.customer.phone}</p>
+                {collection.customer.email && <p className="text-xs text-muted-foreground">{collection.customer.email}</p>}
               </Link>
             </div>
           </div>
 
           {collection.serviceOrder && orderTotals && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <FileText className="size-4 text-slate-500" />
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <FileText className="size-4 text-muted-foreground" />
                 İş Emri
               </h3>
-              <Link href={`/app/orders/${collection.serviceOrder!.id}`} className="block rounded-lg border border-slate-100 bg-slate-50 p-3 hover:bg-slate-100 transition-colors">
+              <Link href={`/app/orders/${collection.serviceOrder!.id}`} className="block rounded-lg border border-border bg-muted p-3 hover:bg-muted transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-sm font-semibold text-slate-900">{collection.serviceOrder.workOrderNo || "—"}</span>
+                  <span className="font-mono text-sm font-semibold text-foreground">{collection.serviceOrder.workOrderNo || "—"}</span>
                   <PaymentBadge status={collection.serviceOrder.paymentStatus} size="sm" />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {collection.serviceOrder.intakeForm.vehicle.plate} &bull; {collection.serviceOrder.intakeForm.vehicle.brand} {collection.serviceOrder.intakeForm.vehicle.model}
                 </p>
               </Link>
 
-              <div className="border-t border-slate-100 pt-3 space-y-2">
+              <div className="border-t border-border pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">İş Emri Toplamı</span>
-                  <span className="font-medium text-slate-900">{formatTRY(orderTotals.grandTotal)}</span>
+                  <span className="text-muted-foreground">İş Emri Toplamı</span>
+                  <span className="font-medium text-foreground">{formatTRY(orderTotals.grandTotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Bu Tahsilat</span>
-                  <span className="font-medium text-blue-700">{formatTRY(collection.amount)}</span>
+                  <span className="text-muted-foreground">Bu Tahsilat</span>
+                  <span className="font-medium text-primary">{formatTRY(collection.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Diğer Tahsilatlar</span>
-                  <span className="font-medium text-emerald-700">{formatTRY(paidByOtherCollections)}</span>
+                  <span className="text-muted-foreground">Diğer Tahsilatlar</span>
+                  <span className="font-medium text-success">{formatTRY(paidByOtherCollections)}</span>
                 </div>
-                <div className="flex justify-between text-sm border-t border-slate-100 pt-2">
-                  <span className="text-slate-500 font-medium">Toplam Tahsil Edilen</span>
-                  <span className="font-bold text-emerald-700">{formatTRY(collection.amount + paidByOtherCollections)}</span>
+                <div className="flex justify-between text-sm border-t border-border pt-2">
+                  <span className="text-muted-foreground font-medium">Toplam Tahsil Edilen</span>
+                  <span className="font-bold text-success">{formatTRY(collection.amount + paidByOtherCollections)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Kalan Bakiye</span>
-                  <span className="font-bold text-rose-700">{formatTRY(Math.max(0, orderTotals.grandTotal - collection.amount - paidByOtherCollections))}</span>
+                  <span className="text-muted-foreground font-medium">Kalan Bakiye</span>
+                  <span className="font-bold text-destructive">{formatTRY(Math.max(0, orderTotals.grandTotal - collection.amount - paidByOtherCollections))}</span>
                 </div>
               </div>
 
               <Link
                 href={`/app/orders/${collection.serviceOrder.id}`}
-                className="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium mt-2"
+                className="block text-center text-sm text-primary hover:text-primary/80 font-medium mt-2"
               >
                 İş Emri Detayına Git →
               </Link>
@@ -181,7 +181,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         </div>
 
         {!collection.serviceOrder && (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 flex items-start gap-2">
+          <div className="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
             <Info className="size-3.5 mt-0.5 shrink-0" />
             <span>Bu tahsilat herhangi bir iş emrine bağlı değil.</span>
           </div>
@@ -194,11 +194,11 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
 function DetailRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 text-sm">
-      <span className="text-slate-500 flex items-center gap-1.5">
+      <span className="text-muted-foreground flex items-center gap-1.5">
         <Icon className="size-3.5" />
         {label}
       </span>
-      <span className="text-slate-900 font-medium text-right">{value}</span>
+      <span className="text-foreground font-medium text-right">{value}</span>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { checkRemindersAction } from "@/app/app/calendar/actions"
+import { Button } from "@/components/ui/button"
 
 type ViewMode = "day" | "week" | "month"
 
@@ -22,9 +23,9 @@ interface CalendarViewItem {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string }> }> = {
-  appointment: { label: "Randevu", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200", icon: CalendarDays },
-  delivery: { label: "Teslimat", color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200", icon: Truck },
-  maintenance_reminder: { label: "Bakım", color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200", icon: BellRing },
+  appointment: { label: "Randevu", color: "text-foreground", bgColor: "bg-primary/10 border-primary/20", icon: CalendarDays },
+  delivery: { label: "Teslimat", color: "text-foreground", bgColor: "bg-success/10 border-success/20", icon: Truck },
+  maintenance_reminder: { label: "Bakım", color: "text-foreground", bgColor: "bg-warning/10 border-warning/20", icon: BellRing },
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -147,22 +148,22 @@ export function CalendarView({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate("prev")} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 touch-manipulation" aria-label="Önceki">
+          <button onClick={() => navigate("prev")} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground touch-manipulation" aria-label="Önceki">
             <ChevronLeft className="size-5" />
           </button>
-          <button onClick={goToToday} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors touch-manipulation">
+          <Button variant="outline" size="sm" onClick={goToToday}>
             Bugün
-          </button>
-          <button onClick={() => navigate("next")} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 touch-manipulation" aria-label="Sonraki">
+          </Button>
+          <button onClick={() => navigate("next")} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground touch-manipulation" aria-label="Sonraki">
             <ChevronRight className="size-5" />
           </button>
-          <span className="text-base font-semibold text-slate-900 ml-2">
+          <span className="text-base font-semibold text-foreground ml-2">
             {view === "month" ? formatMonthHeader(baseDate) : `${formatDayHeader(baseDate)}, ${baseDate.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}`}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden">
+          <div className="flex items-center rounded-lg border border-border overflow-hidden">
             {(["day", "week", "month"] as ViewMode[]).map((v) => {
               const labels: Record<ViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
               return (
@@ -171,7 +172,7 @@ export function CalendarView({
                   onClick={() => setView(v)}
                   className={cn(
                     "px-3 py-1.5 text-sm font-medium transition-colors touch-manipulation",
-                    view === v ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                    view === v ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
                   {labels[v]}
@@ -183,7 +184,7 @@ export function CalendarView({
           <button
             onClick={handleCheckReminders}
             disabled={checking}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors touch-manipulation"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-warning hover:bg-warning/90 disabled:opacity-50 text-warning-foreground text-sm font-medium transition-colors touch-manipulation"
           >
             {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
             Hatırlatmaları Kontrol Et
@@ -192,30 +193,30 @@ export function CalendarView({
       </div>
 
       {checkResult && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
-          <h3 className="text-sm font-semibold text-slate-900">Hatırlatma Sonuçları</h3>
+        <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Hatırlatma Sonuçları</h3>
           {checkResult.map((r) => (
             <div key={r.jobType} className="flex items-center gap-2 text-sm">
-              {r.failed > 0 ? <XCircle className="size-4 text-red-500" /> : <CheckCircle2 className="size-4 text-emerald-500" />}
-              <span className="text-slate-700 font-medium">{r.jobType === "appointment_reminder" ? "Randevu" : r.jobType === "maintenance_reminder" ? "Bakım" : "Teslimat"} Hatırlatmaları:</span>
-              <span className="text-slate-600">{r.processed} işlendi, {r.sent} gönderildi{r.failed > 0 ? `, ${r.failed} başarısız` : ""}</span>
+              {r.failed > 0 ? <XCircle className="size-4 text-destructive" /> : <CheckCircle2 className="size-4 text-success" />}
+              <span className="text-foreground font-medium">{r.jobType === "appointment_reminder" ? "Randevu" : r.jobType === "maintenance_reminder" ? "Bakım" : "Teslimat"} Hatırlatmaları:</span>
+              <span className="text-muted-foreground">{r.processed} işlendi, {r.sent} gönderildi{r.failed > 0 ? `, ${r.failed} başarısız` : ""}</span>
             </div>
           ))}
-          <button onClick={() => setCheckResult(null)} className="text-xs text-slate-400 hover:text-slate-600">Kapat</button>
+          <button onClick={() => setCheckResult(null)} className="text-xs text-muted-foreground/70 hover:text-muted-foreground">Kapat</button>
         </div>
       )}
 
-      <div className="flex items-center gap-4 text-xs text-slate-500">
-        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-blue-500" /> Randevu</span>
-        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-emerald-500" /> Teslimat</span>
-        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-amber-500" /> Bakım</span>
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-primary" /> Randevu</span>
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-success" /> Teslimat</span>
+        <span className="flex items-center gap-1"><span className="size-2.5 rounded-full bg-warning" /> Bakım</span>
       </div>
 
       {view === "month" ? (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-border bg-muted">
             {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((d) => (
-              <div key={d} className="px-2 py-2 text-center text-xs font-semibold text-slate-500">{d}</div>
+              <div key={d} className="px-2 py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7">
@@ -224,15 +225,15 @@ export function CalendarView({
               const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
               const cells: React.ReactNode[] = []
               for (let i = 0; i < startDay; i++) {
-                cells.push(<div key={`empty-${i}`} className="min-h-24 border-b border-r border-slate-100 bg-slate-50/50" />)
+                cells.push(<div key={`empty-${i}`} className="min-h-24 border-b border-r border-border bg-muted/50" />)
               }
               for (const date of dates) {
                 const dateKey = formatDate(date)
                 const dayEvents = eventsByDate[dateKey] || []
                 const today = isToday(date)
                 cells.push(
-                  <div key={dateKey} className={cn("min-h-24 border-b border-r border-slate-100 p-1.5", today && "bg-blue-50/30")}>
-                    <div className={cn("text-xs font-medium mb-1", today ? "text-blue-600" : "text-slate-600")}>
+                  <div key={dateKey} className={cn("min-h-24 border-b border-r border-border p-1.5", today && "bg-primary/5")}>
+                    <div className={cn("text-xs font-medium mb-1", today ? "text-primary" : "text-muted-foreground")}>
                       {date.getDate()}
                     </div>
                     <div className="space-y-0.5">
@@ -249,7 +250,7 @@ export function CalendarView({
                         )
                       })}
                       {dayEvents.length > 3 && (
-                        <span className="text-[10px] text-slate-400 pl-1">+{dayEvents.length - 3} daha</span>
+                        <span className="text-[10px] text-muted-foreground/70 pl-1">+{dayEvents.length - 3} daha</span>
                       )}
                     </div>
                   </div>
@@ -260,14 +261,14 @@ export function CalendarView({
           </div>
         </div>
       ) : view === "week" ? (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-slate-200">
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-border">
             {dates.map((date) => {
               const today = isToday(date)
               return (
-                <div key={formatDate(date)} className={cn("px-2 py-2 text-center border-r border-slate-100 last:border-r-0", today && "bg-blue-50")}>
-                  <div className="text-[10px] uppercase font-semibold text-slate-400">{formatDayHeader(date)}</div>
-                  <div className={cn("text-lg font-bold", today ? "text-blue-600" : "text-slate-800")}>{date.getDate()}</div>
+                <div key={formatDate(date)} className={cn("px-2 py-2 text-center border-r border-border last:border-r-0", today && "bg-primary/5")}>
+                  <div className="text-[10px] uppercase font-semibold text-muted-foreground/70">{formatDayHeader(date)}</div>
+                  <div className={cn("text-lg font-bold", today ? "text-primary" : "text-foreground")}>{date.getDate()}</div>
                 </div>
               )
             })}
@@ -277,9 +278,9 @@ export function CalendarView({
               const dateKey = formatDate(date)
               const dayEvents = eventsByDate[dateKey] || []
               return (
-                <div key={dateKey} className="border-r border-slate-100 last:border-r-0 p-1.5 space-y-1.5 min-h-48">
+                <div key={dateKey} className="border-r border-border last:border-r-0 p-1.5 space-y-1.5 min-h-48">
                   {dayEvents.length === 0 && (
-                    <div className="text-xs text-slate-300 text-center py-4">—</div>
+                    <div className="text-xs text-muted-foreground/50 text-center py-4">—</div>
                   )}
                   {dayEvents.map((event) => {
                     const config = TYPE_CONFIG[event.type]
@@ -294,9 +295,9 @@ export function CalendarView({
                           <Icon className={cn("size-3 shrink-0", config.color)} />
                           <span className={cn("font-semibold truncate", config.color)}>{formatTime(event.startAt)}</span>
                         </div>
-                        <div className="font-medium text-slate-800 truncate">{event.title}</div>
+                        <div className="font-medium text-foreground truncate">{event.title}</div>
                         {event.vehiclePlate && (
-                          <div className="text-slate-500 mt-0.5 font-mono">{event.vehiclePlate}</div>
+                          <div className="text-muted-foreground mt-0.5 font-mono">{event.vehiclePlate}</div>
                         )}
                         {event.status && (
                           <span className={cn("inline-block mt-0.5 text-[10px] px-1 py-0.5 rounded", config.color)}>
@@ -312,9 +313,9 @@ export function CalendarView({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-            <div className="text-sm font-semibold text-slate-800">
+        <div className="rounded-lg border border-border bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-border bg-muted">
+            <div className="text-sm font-semibold text-foreground">
               {baseDate.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
           </div>
@@ -324,8 +325,8 @@ export function CalendarView({
               const dayEvents = eventsByDate[dateKey] || []
               if (dayEvents.length === 0) {
                 return (
-                  <div className="text-center py-12 text-slate-400">
-                    <CalendarDays className="size-12 mx-auto mb-3 text-slate-300" />
+                  <div className="text-center py-12 text-muted-foreground/70">
+                    <CalendarDays className="size-12 mx-auto mb-3 text-muted-foreground/50" />
                     <p className="text-sm font-medium">Bu tarihte etkinlik yok</p>
                   </div>
                 )
@@ -342,23 +343,23 @@ export function CalendarView({
                     <Icon className={cn("size-5 shrink-0 mt-0.5", config.color)} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800 truncate">{event.title}</span>
+                        <span className="font-semibold text-foreground truncate">{event.title}</span>
                         <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", config.bgColor, config.color)}>
                           {config.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5 text-sm text-slate-500">
+                      <div className="flex items-center gap-1 mt-0.5 text-sm text-muted-foreground">
                         <Clock className="size-3.5" />
                         <span>{formatTime(event.startAt)}</span>
                         {event.endAt && <span> — {formatTime(event.endAt)}</span>}
                       </div>
                       {event.vehiclePlate && (
-                        <span className="inline-block mt-1 text-xs font-mono bg-slate-900 text-white px-1.5 py-0.5 rounded">
+                        <span className="inline-block mt-1 text-xs font-mono bg-card text-foreground px-1.5 py-0.5 rounded">
                           {event.vehiclePlate}
                         </span>
                       )}
                       {event.status && (
-                        <span className="inline-block mt-1 text-xs text-slate-500">
+                        <span className="inline-block mt-1 text-xs text-muted-foreground">
                           {STATUS_LABELS[event.status] || event.status}
                         </span>
                       )}
@@ -372,8 +373,8 @@ export function CalendarView({
       )}
 
       {initialEvents.length === 0 && (
-        <div className="text-center py-8 text-slate-500">
-          <CalendarDays className="size-12 mx-auto mb-3 text-slate-300" />
+        <div className="text-center py-8 text-muted-foreground">
+          <CalendarDays className="size-12 mx-auto mb-3 text-muted-foreground/50" />
           <p className="text-sm font-medium">Bu dönemde etkinlik bulunamadı</p>
           <p className="text-xs mt-1">Randevu, teslimat veya bakım hatırlatması oluşturarak başlayın</p>
         </div>

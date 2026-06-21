@@ -144,14 +144,14 @@ export function CustomerDetail({
     return (
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center text-sm text-slate-500">
-            <Link href="/app/customers" className="hover:text-slate-700">Müşteriler</Link>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Link href="/app/customers" className="hover:text-foreground">Müşteriler</Link>
             <span className="mx-2">/</span>
-            <Link href={`/app/customers/${customer.id}`} className="hover:text-slate-700">
+            <Link href={`/app/customers/${customer.id}`} className="hover:text-foreground">
               {displayName}
             </Link>
             <span className="mx-2">/</span>
-            <span className="text-slate-700 font-medium">Düzenle</span>
+            <span className="text-foreground font-medium">Düzenle</span>
           </div>
           <Button variant="outline" size="sm" onClick={() => setEditing(false)} className="gap-1.5">
             <X className="size-4" />
@@ -165,31 +165,31 @@ export function CustomerDetail({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex items-center text-sm text-slate-500">
-        <Link href="/app/customers" className="hover:text-slate-700">Müşteriler</Link>
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Link href="/app/customers" className="hover:text-foreground">Müşteriler</Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700 font-medium">{displayName}</span>
+        <span className="text-foreground font-medium">{displayName}</span>
       </div>
 
-      <header className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-lg font-semibold shrink-0">
+            <div className="size-12 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-lg font-semibold shrink-0">
               {customer.type === "corporate" ? <Building2 className="size-5" /> : initials(displayName)}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{displayName}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{displayName}</h2>
                 <CustomerTypeBadge type={customer.type || "individual"} />
                 {customer.tag ? <CustomerTagBadge tag={customer.tag} /> : null}
               </div>
-              <div className="mt-1 flex items-center gap-3 text-xs sm:text-sm text-slate-500 flex-wrap">
-                <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1 hover:text-blue-600">
+              <div className="mt-1 flex items-center gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1 hover:text-primary">
                   <Phone className="size-3.5" />
                   {customer.phone}
                 </a>
                 {customer.email ? (
-                  <a href={`mailto:${customer.email}`} className="inline-flex items-center gap-1 hover:text-blue-600 truncate">
+                  <a href={`mailto:${customer.email}`} className="inline-flex items-center gap-1 hover:text-primary truncate">
                     <Mail className="size-3.5" />
                     {customer.email}
                   </a>
@@ -205,26 +205,28 @@ export function CustomerDetail({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/app/orders/new?customerId=${customer.id}`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
-            >
-              <Wrench className="size-4" />
-              Yeni İş Emri
-            </Link>
+             <Button
+               nativeButton={false}
+               variant="outline"
+               size="sm"
+               render={<Link href={`/app/orders/new?customerId=${customer.id}`} />}
+             >
+               <Wrench className="size-4" />
+               Yeni İş Emri
+             </Button>
             <button
               type="button"
               disabled
               title="WhatsApp paylaşımı yakında"
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-400 text-sm font-medium cursor-not-allowed touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white text-muted-foreground/70 text-sm font-medium cursor-not-allowed touch-manipulation"
             >
               <MessageCircle className="size-4" />
               <span className="hidden sm:inline">WhatsApp</span>
             </button>
             <Button
               type="button"
+              variant="outline"
               size="sm"
-              className="gap-1.5"
               onClick={() => setEditing(true)}
             >
               <Pencil className="size-4" />
@@ -233,7 +235,7 @@ export function CustomerDetail({
           </div>
         </div>
         {customer.riskNote ? (
-          <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-800 px-3 py-2 text-sm flex items-start gap-2">
+          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/10 text-foreground px-3 py-2 text-sm flex items-start gap-2">
             <AlertTriangle className="size-4 mt-0.5 shrink-0" />
             <div>
               <p className="font-medium">Risk / Uyarı Notu</p>
@@ -254,7 +256,7 @@ export function CustomerDetail({
             action={
               <Link
                 href={`/app/vehicles/new?customerId=${customer.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
                 Araç Ekle
@@ -262,39 +264,39 @@ export function CustomerDetail({
             }
           >
             {vehicles.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <CarIcon className="size-10 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <CarIcon className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz araç kaydı yok</p>
                 <Link
                   href={`/app/vehicles/new?customerId=${customer.id}`}
-                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
                   Araç ekle
                 </Link>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {vehicles.map((v) => (
                   <li key={v.id}>
                     <Link
                       href={`/app/vehicles/${v.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <PlateBadge plate={v.plate} />
-                          <span className="text-sm font-medium text-slate-700 truncate">
+                          <span className="text-sm font-medium text-foreground truncate">
                             {v.brand} {v.model}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {v.modelYear ? `${v.modelYear} • ` : ""}
                           {v.mileage ? `${v.mileage.toLocaleString("tr-TR")} km • ` : ""}
                           {v.vin ? `VIN: ${v.vin}` : "VIN girilmemiş"}
                         </p>
                       </div>
-                      <ChevronRight className="size-4 text-slate-400" />
+                      <ChevronRight className="size-4 text-muted-foreground/70" />
                     </Link>
                   </li>
                 ))}
@@ -308,44 +310,44 @@ export function CustomerDetail({
             count={orderIntakes.length}
           >
             {orderIntakes.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <Wrench className="size-10 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz iş emri yok</p>
                 <Link
                   href={`/app/orders/new?customerId=${customer.id}`}
-                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
                   Yeni İş Emri
                 </Link>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {orderIntakes.map((i) =>
                   i.order ? (
                     <li key={i.id}>
                       <Link
                         href={`/app/orders/${i.order.id}`}
-                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-mono font-semibold text-slate-500">
+                            <span className="text-xs font-mono font-semibold text-muted-foreground">
                               {i.order.workOrderNo || "—"}
                             </span>
                             <PlateBadge plate={i.vehicle.plate} />
                             <StatusBadge status={i.order.status} />
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {i.vehicle.brand} {i.vehicle.model} • {i.customerComplaint}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-slate-400 font-normal">—</span>}
+                          <p className="text-sm font-semibold text-foreground">
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
                           </p>
                           {i.order.estimatedDeliveryAt ? (
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-muted-foreground">
                               Tahmini: {formatDate(i.order.estimatedDeliveryAt)}
                             </p>
                           ) : null}
@@ -365,7 +367,7 @@ export function CustomerDetail({
             action={
               <Link
                 href={`/app/reminders/new?customerId=${customer.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
                 Yeni Hatırlatma
@@ -373,33 +375,33 @@ export function CustomerDetail({
             }
           >
             {reminders.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <BellRing className="size-10 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <BellRing className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz bakım hatırlatması yok</p>
                 <Link
                   href={`/app/reminders/new?customerId=${customer.id}`}
-                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
                   Yeni hatırlatma oluştur
                 </Link>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {reminders.map((r) => (
                   <li key={r.id}>
                     <Link
                       href={`/app/reminders/${r.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <PlateBadge plate={r.vehicle.plate} />
-                          <span className="text-sm font-medium text-slate-900 truncate">{r.title}</span>
+                          <span className="text-sm font-medium text-foreground truncate">{r.title}</span>
                           <ReminderStatusBadge status={r.status} />
                           <ReminderTypeBadge type={r.type} />
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                           {r.dueDate ? (
                             <span className="inline-flex items-center gap-1">
                               <Calendar className="size-3" />
@@ -414,7 +416,7 @@ export function CustomerDetail({
                           ) : null}
                         </div>
                       </div>
-                      <ChevronRight className="size-4 text-slate-400" />
+                      <ChevronRight className="size-4 text-muted-foreground/70" />
                     </Link>
                   </li>
                 ))}
@@ -424,14 +426,14 @@ export function CustomerDetail({
 
           {otherIntakes.length > 0 ? (
             <SectionCard title="Araç Kabulleri (İş Emri Yok)" icon={ClipboardList} count={otherIntakes.length}>
-              <ul className="divide-y divide-slate-100 -mx-4 sm:-mx-5">
+              <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {otherIntakes.map((i) => {
                   const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
                   return (
                     <li key={i.id}>
                       <Link
                         href={`/app/intakes/${i.id}`}
-                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -439,15 +441,15 @@ export function CustomerDetail({
                             <span
                               className={cn(
                                 "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",
-                                intakeStatus?.color || "bg-slate-100 text-slate-700 border-slate-200"
+                                intakeStatus?.color || "bg-muted text-foreground border-border"
                               )}
                             >
                               {intakeStatus?.label || i.status}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">{i.customerComplaint}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                         </div>
-                        <span className="text-xs text-slate-400">{formatDate(i.createdAt)}</span>
+                        <span className="text-xs text-muted-foreground/70">{formatDate(i.createdAt)}</span>
                       </Link>
                     </li>
                   )
@@ -458,7 +460,7 @@ export function CustomerDetail({
 
           {customer.notes ? (
             <SectionCard title="Müşteri Notu" icon={FileText}>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{customer.notes}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{customer.notes}</p>
             </SectionCard>
           ) : null}
         </div>
@@ -487,7 +489,7 @@ export function CustomerDetail({
                     <span className="inline-flex items-center gap-2">
                       <PriceGroupBadge group={customer.priceGroup} />
                       {customer.discountRate ? (
-                        <span className="text-xs text-slate-500">%{customer.discountRate} iskonto</span>
+                        <span className="text-xs text-muted-foreground">%{customer.discountRate} iskonto</span>
                       ) : null}
                     </span>
                   }
@@ -500,15 +502,15 @@ export function CustomerDetail({
 
           <SectionCard title="İletişim İzinleri" icon={ShieldCheck}>
             <ul className="space-y-2 text-sm">
-              <ConsentRow icon={<MessageCircle className="size-4 text-emerald-600" />} label="WhatsApp izni" granted={customer.whatsappConsent} />
-              <ConsentRow icon={<Smartphone className="size-4 text-sky-600" />} label="SMS izni" granted={customer.smsConsent} />
-              <ConsentRow icon={<Mail className="size-4 text-indigo-600" />} label="E-posta izni" granted={customer.emailConsent} />
-              <li className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <ShieldCheck className="size-4 text-slate-500" />
+              <ConsentRow icon={<MessageCircle className="size-4 text-success" />} label="WhatsApp izni" granted={customer.whatsappConsent} />
+              <ConsentRow icon={<Smartphone className="size-4 text-primary" />} label="SMS izni" granted={customer.smsConsent} />
+              <ConsentRow icon={<Mail className="size-4 text-primary" />} label="E-posta izni" granted={customer.emailConsent} />
+              <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
+                <div className="flex items-center gap-2 text-foreground">
+                  <ShieldCheck className="size-4 text-muted-foreground" />
                   <span>KVKK Onay Tarihi</span>
                 </div>
-                <span className="text-xs font-medium text-slate-600">
+                <span className="text-xs font-medium text-muted-foreground">
                   {customer.kvkkApprovedAt ? formatDate(customer.kvkkApprovedAt) : "Kayıt yok"}
                 </span>
               </li>
@@ -537,9 +539,9 @@ export function CustomerDetail({
             </SectionCard>
           ) : null}
 
-          <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-4 space-y-2">
-            <p className="text-xs font-semibold text-rose-800 uppercase tracking-wider">Tehlikeli Bölge</p>
-            <p className="text-xs text-rose-700">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Tehlikeli Bölge</p>
+            <p className="text-xs text-muted-foreground">
               Müşteriyi silmek ilişkili araç ve kabul/iş emri kayıtlarını otomatik silmez. Önce ilişkili kayıtları silmeniz gerekir.
             </p>
             <DeleteCustomerButton
@@ -572,10 +574,10 @@ function SectionCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <Icon className="size-4 text-slate-500" />
+          <Icon className="size-4 text-muted-foreground" />
           {title}
           {typeof count === "number" ? (
-            <span className="text-xs text-slate-500 font-normal">({count})</span>
+            <span className="text-xs text-muted-foreground font-normal">({count})</span>
           ) : null}
         </CardTitle>
         {action}
@@ -591,20 +593,20 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <Wallet className="size-4 text-slate-500" />
+          <Wallet className="size-4 text-muted-foreground" />
           Bakiye Özeti
         </CardTitle>
         <div className="flex items-center gap-2">
           <Link
             href={`/app/cashbox/payments/new?customerId=${customerId}`}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+            className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
           >
             <Plus className="size-3" />
             Tahsilat Ekle
           </Link>
           <Link
             href="/app/customers/balances"
-            className="text-xs text-slate-500 hover:text-slate-700 font-medium inline-flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1"
           >
             Bakiye listesi
             <ExternalLink className="size-3" />
@@ -613,13 +615,13 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <Stat label="İş Emri" value={balance.ordersCount.toString()} accent="bg-slate-50 text-slate-700" />
-          <Stat label="Genel Toplam" value={balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : "—"} accent="bg-indigo-50 text-indigo-700" />
-          <Stat label="Tahsil Edilen" value={totalPaid > 0 ? formatTRY(totalPaid) : "—"} accent="bg-emerald-50 text-emerald-700" />
+          <Stat label="İş Emri" value={balance.ordersCount.toString()} accent="bg-muted text-foreground" />
+          <Stat label="Genel Toplam" value={balance.grandTotal > 0 ? formatTRY(balance.grandTotal) : "—"} accent="bg-primary/10 text-foreground" />
+          <Stat label="Tahsil Edilen" value={totalPaid > 0 ? formatTRY(totalPaid) : "—"} accent="bg-success/10 text-foreground" />
           <Stat
             label="Kalan Bakiye"
             value={actualRemaining > 0 ? formatTRY(actualRemaining) : formatTRY(0)}
-            accent={actualRemaining > 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}
+            accent={actualRemaining > 0 ? "bg-destructive/10 text-foreground" : "bg-success/10 text-foreground"}
           />
         </div>
       </CardContent>
@@ -629,7 +631,7 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
 
 function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div className={cn("rounded-lg px-3 py-2.5 border border-slate-200/60", accent)}>
+    <div className={cn("rounded-lg px-3 py-2.5 border border-border/60", accent)}>
       <p className="text-[11px] font-medium opacity-80 uppercase tracking-wider">{label}</p>
       <p className="text-base font-bold mt-0.5 truncate">{value}</p>
     </div>
@@ -639,23 +641,23 @@ function Stat({ label, value, accent }: { label: string; value: string; accent: 
 function DefinitionRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <dt className="text-xs text-slate-500 shrink-0">{label}</dt>
-      <dd className="text-sm text-slate-800 text-right break-words">{value}</dd>
+      <dt className="text-xs text-muted-foreground shrink-0">{label}</dt>
+      <dd className="text-sm text-foreground text-right break-words">{value}</dd>
     </div>
   )
 }
 
 function ConsentRow({ icon, label, granted }: { icon: React.ReactNode; label: string; granted: boolean }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
-      <div className="flex items-center gap-2 text-slate-700">
+    <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
+      <div className="flex items-center gap-2 text-foreground">
         {icon}
         <span>{label}</span>
       </div>
       <span
         className={cn(
           "inline-flex items-center gap-1 text-xs font-medium",
-          granted ? "text-emerald-700" : "text-slate-400"
+          granted ? "text-success" : "text-muted-foreground/70"
         )}
       >
         {granted ? (

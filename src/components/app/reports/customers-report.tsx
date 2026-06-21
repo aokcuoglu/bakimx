@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { StatCard, ReportHeader, ReportTable } from "@/components/app/reports/report-utils"
 import { formatTRY } from "@/lib/format"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 interface CustomersReportProps {
   stats: {
@@ -67,38 +69,36 @@ export function CustomersReport({ stats, topBySpend, mostVisited, filters }: Cus
         <StatCard label="Tekrar Eden" value={stats.returning} accent="purple" />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">Tarih Filtresi</h4>
+      <div className="rounded-lg border border-border bg-white p-4">
+        <h4 className="text-sm font-semibold text-foreground mb-3">Tarih Filtresi</h4>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Başlangıç</label>
-            <input
+            <label className="text-xs text-muted-foreground mb-1 block">Başlangıç</label>
+            <Input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">Bitiş</label>
-            <input
+            <label className="text-xs text-muted-foreground mb-1 block">Bitiş</label>
+            <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm"
             />
           </div>
-          <button onClick={applyFilters} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+          <Button onClick={applyFilters} size="sm">
             Uygula
-          </button>
-          <button onClick={clearFilters} className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+          </Button>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
             Temizle
-          </button>
+          </Button>
         </div>
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Çok Harcayan Müşteriler</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Çok Harcayan Müşteriler</h4>
         <ReportTable
           headers={[
             { key: "customerName", label: "Müşteri" },
@@ -108,18 +108,18 @@ export function CustomersReport({ stats, topBySpend, mostVisited, filters }: Cus
           ]}
           rows={topBySpend}
           renderRow={(row) => (
-            <tr key={row.customerId} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.customerName}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.customerPhone}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.ordersCount}</td>
-              <td className="px-4 py-2.5 font-semibold text-slate-900">{formatTRY(row.totalSpent)}</td>
+            <tr key={row.customerId} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.customerName}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.customerPhone}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.ordersCount}</td>
+              <td className="px-4 py-2.5 font-semibold text-foreground">{formatTRY(row.totalSpent)}</td>
             </tr>
           )}
         />
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">En Çok Ziyaret Eden Müşteriler</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">En Çok Ziyaret Eden Müşteriler</h4>
         <ReportTable
           headers={[
             { key: "customerName", label: "Müşteri" },
@@ -128,10 +128,10 @@ export function CustomersReport({ stats, topBySpend, mostVisited, filters }: Cus
           ]}
           rows={mostVisited}
           renderRow={(row) => (
-            <tr key={row.customerId} className="hover:bg-slate-50">
-              <td className="px-4 py-2.5 font-medium text-slate-900">{row.customerName}</td>
-              <td className="px-4 py-2.5 text-slate-600">{row.customerPhone}</td>
-              <td className="px-4 py-2.5 font-semibold text-blue-700">{row.visitCount}</td>
+            <tr key={row.customerId} className="hover:bg-muted">
+              <td className="px-4 py-2.5 font-medium text-foreground">{row.customerName}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.customerPhone}</td>
+              <td className="px-4 py-2.5 font-semibold text-primary">{row.visitCount}</td>
             </tr>
           )}
         />

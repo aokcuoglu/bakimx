@@ -6,10 +6,22 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createPartAction, updatePartAction } from "@/app/app/parts/actions"
 import { ArrowLeft, Loader2, Save } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { typedResolver } from "@/lib/validations/resolver"
+import { partSchema, type PartFormValues } from "@/lib/validations/part"
 
 type PartData = {
   id: string
@@ -44,9 +56,36 @@ type ActionState = {
   id?: string
 }
 
+function toDefaults(part?: PartData): PartFormValues {
+  return {
+    name: part?.name || "",
+    sku: part?.sku || "",
+    oemNo: part?.oemNo || "",
+    brand: part?.brand || "",
+    category: part?.category || "",
+    description: part?.description || "",
+    unit: part?.unit || "adet",
+    stockQty: part?.stockQty ?? 0,
+    criticalStockQty: part?.criticalStockQty ?? 0,
+    purchasePrice: part?.purchasePrice ?? 0,
+    salePrice: part?.salePrice ?? 0,
+    currency: (part?.currency as "TRY" | "USD" | "EUR") || "TRY",
+    supplierName: part?.supplierName || "",
+    supplierPhone: part?.supplierPhone || "",
+    supplierId: part?.supplierId || "",
+    shelfLocation: part?.shelfLocation || "",
+    barcode: part?.barcode || "",
+  }
+}
+
 export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: SupplierOption[] }) {
   const router = useRouter()
   const isEdit = !!part
+
+  const form = useForm<PartFormValues, unknown, PartFormValues>({
+    resolver: typedResolver(partSchema),
+    defaultValues: toDefaults(part),
+  })
 
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && part) {
@@ -63,178 +102,343 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
     }
   }, [state, router])
 
+  function onSubmit(values: PartFormValues) {
+    const formData = new FormData()
+    for (const [key, value] of Object.entries(values)) {
+      formData.set(key, String(value))
+    }
+    formAction(formData)
+  }
+
   return (
-    <form action={formAction}>
-      {state?.error && (
-        <div className="mb-5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm">{state.error}</div>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        {state?.error && (
+          <Alert variant="destructive" className="mb-5">
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="flex items-center gap-3 mb-5">
-        <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="text-slate-400 hover:text-slate-600">
-          <ArrowLeft className="size-4" />
-        </Link>
-        <h2 className="text-lg font-bold text-slate-900">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
-      </div>
+        <div className="flex items-center gap-3 mb-5">
+          <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="text-muted-foreground/70 hover:text-muted-foreground">
+            <ArrowLeft className="size-4" />
+          </Link>
+          <h2 className="text-lg font-bold text-foreground">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
+        </div>
 
-      <div className="space-y-5 max-w-3xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Parça Bilgileri</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="name">Parça Adı *</Label>
-              <Input id="name" name="name" defaultValue={part?.name || ""} placeholder="Fren balatası, yağ filtresi..." required />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="sku">Parça Kodu / SKU</Label>
-                <Input id="sku" name="sku" defaultValue={part?.sku || ""} placeholder="Opsiyonel" />
+        <div className="space-y-5 max-w-3xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">Parça Bilgileri</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parça Adı *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Fren balatası, yağ filtresi..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parça Kodu / SKU</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Opsiyonel" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="oemNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>OEM No</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Opsiyonel" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="oemNo">OEM No</Label>
-                <Input id="oemNo" name="oemNo" defaultValue={part?.oemNo || ""} placeholder="Opsiyonel" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="brand"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Marka</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Bosch, Mann, OEM..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kategori</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Fren, Motor, Filtre..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="brand">Marka</Label>
-                <Input id="brand" name="brand" defaultValue={part?.brand || ""} placeholder="Bosch, Mann, OEM..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Kategori</Label>
-                <Input id="category" name="category" defaultValue={part?.category || ""} placeholder="Fren, Motor, Filtre..." />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Açıklama</Label>
-              <Textarea id="description" name="description" defaultValue={part?.description || ""} rows={2} placeholder="Opsiyonel açıklama..." />
-            </div>
-          </CardContent>
-        </Card>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Açıklama</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} rows={2} placeholder="Opsiyonel açıklama..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Stok Bilgileri</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="stockQty">Stok Miktarı</Label>
-                <Input id="stockQty" name="stockQty" type="number" min="0" defaultValue={part?.stockQty ?? 0} />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">Stok Bilgileri</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="stockQty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Stok Miktarı</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="criticalStockQty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kritik Stok Miktarı</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Birim</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="adet, litre, kg..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="criticalStockQty">Kritik Stok Miktarı</Label>
-                <Input id="criticalStockQty" name="criticalStockQty" type="number" min="0" defaultValue={part?.criticalStockQty ?? 0} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="shelfLocation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Raf / Lokasyon</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="A-01, B-12..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Barkod</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Opsiyonel" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit">Birim</Label>
-                <Input id="unit" name="unit" defaultValue={part?.unit || "adet"} placeholder="adet, litre, kg..." />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="shelfLocation">Raf / Lokasyon</Label>
-                <Input id="shelfLocation" name="shelfLocation" defaultValue={part?.shelfLocation || ""} placeholder="A-01, B-12..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="barcode">Barkod</Label>
-                <Input id="barcode" name="barcode" defaultValue={part?.barcode || ""} placeholder="Opsiyonel" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Fiyat Bilgileri</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="purchasePrice">Alış Fiyatı</Label>
-                <Input id="purchasePrice" name="purchasePrice" type="number" min="0" step="0.01" defaultValue={part?.purchasePrice ?? ""} placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="salePrice">Satış Fiyatı</Label>
-                <Input id="salePrice" name="salePrice" type="number" min="0" step="0.01" defaultValue={part?.salePrice ?? ""} placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Para Birimi</Label>
-                <select
-                  id="currency"
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">Fiyat Bilgileri</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="purchasePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Alış Fiyatı</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" step="0.01" placeholder="0" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="salePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Satış Fiyatı</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" step="0.01" placeholder="0" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="currency"
-                  defaultValue={part?.currency || "TRY"}
-                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                >
-                  <option value="TRY">₺ TRY</option>
-                  <option value="USD">$ USD</option>
-                  <option value="EUR">€ EUR</option>
-                </select>
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Para Birimi</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "TRY")}>
+                          <SelectTrigger className="w-full h-8">
+                            <SelectValue placeholder="Para Birimi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="TRY">₺ TRY</SelectItem>
+                            <SelectItem value="USD">$ USD</SelectItem>
+                            <SelectItem value="EUR">€ EUR</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Tedarikçi Bilgisi</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {suppliers && suppliers.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="supplierId">Tedarikçi Seç</Label>
-                <select
-                  id="supplierId"
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">Tedarikçi Bilgisi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {suppliers && suppliers.length > 0 && (
+                <FormField
+                  control={form.control}
                   name="supplierId"
-                  defaultValue={part?.supplierId || ""}
-                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                >
-                  <option value="">Tedarikçi seçin (opsiyonel)</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}{s.phone ? ` — ${s.phone}` : ""}</option>
-                  ))}
-                </select>
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tedarikçi Seç</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                          <SelectTrigger className="w-full h-8">
+                            <SelectValue placeholder="Tedarikçi seçin (opsiyonel)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Tedarikçi seçin (opsiyonel)</SelectItem>
+                            {suppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` — ${s.phone}` : ""}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="supplierName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tedarikçi Adı (metin)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Tedarikçi adı..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="supplierPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tedarikçi Telefonu</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="05XX XXX XX XX" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="supplierName">Tedarikçi Adı (metin)</Label>
-                <Input id="supplierName" name="supplierName" defaultValue={part?.supplierName || ""} placeholder="Tedarikçi adı..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="supplierPhone">Tedarikçi Telefonu</Label>
-                <Input id="supplierPhone" name="supplierPhone" defaultValue={part?.supplierPhone || ""} placeholder="05XX XXX XX XX" />
-              </div>
-            </div>
-            <p className="text-[11px] text-slate-400">Seçili tedarikçi önceliklidir. Eski kayıtlar metin alanını kullanmaya devam eder.</p>
-          </CardContent>
-        </Card>
+              <p className="text-[11px] text-muted-foreground/70">Seçili tedarikçi önceliklidir. Eski kayıtlar metin alanını kullanmaya devam eder.</p>
+            </CardContent>
+          </Card>
 
-        <div className="flex gap-3 pb-24 lg:pb-0">
-          <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
-            {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
+          <div className="flex gap-3 pb-24 lg:pb-0">
+            <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
+              {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
+              {isEdit ? "Güncelle" : "Parça Oluştur"}
+            </Button>
+            <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"}>
+              <Button type="button" variant="outline">
+                İptal
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border p-3 safe-area-bottom flex gap-2">
+          <Button type="submit" disabled={pending} className="flex-1">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : null}
             {isEdit ? "Güncelle" : "Parça Oluştur"}
           </Button>
-          <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"}>
-            <Button type="button" variant="outline">
+          <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="flex-1">
+            <Button type="button" variant="outline" className="w-full">
               İptal
             </Button>
           </Link>
         </div>
-      </div>
-
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 p-3 safe-area-bottom flex gap-2">
-        <Button type="submit" disabled={pending} className="flex-1">
-          {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-          {isEdit ? "Güncelle" : "Parça Oluştur"}
-        </Button>
-        <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="flex-1">
-          <Button type="button" variant="outline" className="w-full">
-            İptal
-          </Button>
-        </Link>
-      </div>
-    </form>
+      </form>
+    </Form>
   )
 }

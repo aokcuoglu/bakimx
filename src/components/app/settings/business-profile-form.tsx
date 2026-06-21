@@ -1,10 +1,26 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
+import { Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useForm } from "react-hook-form"
+import { typedResolver } from "@/lib/validations/resolver"
+import {
+  businessProfileFormSchema,
+  type BusinessProfileFormValues,
+} from "@/lib/validations/settings"
 
 type WorkshopData = {
   id: string
@@ -21,28 +37,44 @@ type WorkshopData = {
   invoiceTitle: string | null
 }
 
+function toDefaults(workshop: WorkshopData): BusinessProfileFormValues {
+  return {
+    name: workshop.name || "",
+    phone: workshop.phone || "",
+    city: workshop.city || "",
+    district: workshop.district || "",
+    address: workshop.address || "",
+    email: workshop.email || "",
+    website: workshop.website || "",
+    logoUrl: workshop.logoUrl || "",
+    taxNumber: workshop.taxNumber || "",
+    taxOffice: workshop.taxOffice || "",
+    invoiceTitle: workshop.invoiceTitle || "",
+  }
+}
+
 export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setSuccess(false)
+  const form = useForm<BusinessProfileFormValues, unknown, BusinessProfileFormValues>({
+    resolver: typedResolver(businessProfileFormSchema),
+    defaultValues: toDefaults(workshop),
+  })
+
+  async function onSubmit(values: BusinessProfileFormValues) {
     setError("")
     setLoading(true)
-
-    const formData = new FormData(e.currentTarget)
 
     try {
       const res = await fetch("/api/workshop", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.fromEntries(formData)),
+        body: JSON.stringify(values),
       })
       const data = await res.json()
       if (data.success) {
-        setSuccess(true)
+        toast.success("Bilgiler güncellendi")
       } else {
         setError(data.error || "Güncelleme başarısız")
       }
@@ -60,76 +92,181 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
         <CardDescription>İş yeri temel bilgilerinizi güncelleyin</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
-          {success && <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm">Bilgiler güncellendi</div>}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">İş Yeri Adı *</Label>
-              <Input id="name" name="name" defaultValue={workshop.name} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefon *</Label>
-              <Input id="phone" name="phone" type="tel" defaultValue={workshop.phone} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">E-posta</Label>
-              <Input id="email" name="email" type="email" defaultValue={workshop.email || ""} placeholder="info@isyeri.com" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="city">Şehir *</Label>
-              <Input id="city" name="city" defaultValue={workshop.city} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="district">İlçe</Label>
-              <Input id="district" name="district" defaultValue={workshop.district || ""} />
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="address">Adres *</Label>
-              <Input id="address" name="address" defaultValue={workshop.address} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="website">Web Sitesi</Label>
-              <Input id="website" name="website" type="url" defaultValue={workshop.website || ""} placeholder="https://..." />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="logoUrl">Logo URL</Label>
-              <Input id="logoUrl" name="logoUrl" type="url" defaultValue={workshop.logoUrl || ""} placeholder="https://..." />
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-4 mt-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Vergi Bilgileri</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="taxOffice">Vergi Dairesi</Label>
-                <Input id="taxOffice" name="taxOffice" defaultValue={workshop.taxOffice || ""} />
-              </div>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>İş Yeri Adı *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="İş yeri adı" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="taxNumber">Vergi Numarası</Label>
-                <Input id="taxNumber" name="taxNumber" defaultValue={workshop.taxNumber || ""} />
-              </div>
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefon *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="tel" placeholder="Telefon" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="invoiceTitle">Fatura Ünvanı</Label>
-                <Input id="invoiceTitle" name="invoiceTitle" defaultValue={workshop.invoiceTitle || ""} />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-posta</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" placeholder="info@isyeri.com" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Şehir *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Şehir" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="district"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>İlçe</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="İlçe" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Adres *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Açık adres" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Web Sitesi</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Logo URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Vergi Bilgileri</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="taxOffice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vergi Dairesi</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Vergi dairesi" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="taxNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vergi Numarası</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Vergi numarası" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="invoiceTitle"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>Fatura Ünvanı</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Fatura ünvanı" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
-          </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Kaydediliyor..." : "Güncelle"}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+              {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
+              Güncelle
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )

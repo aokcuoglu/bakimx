@@ -30,7 +30,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
             <Link
               key={action.key}
               href={action.href}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors touch-manipulation"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation"
             >
               <Plus className="size-4" />
               {action.label}
@@ -41,7 +41,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
           <Link
             key={action.key}
             href={action.href}
-            className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors touch-manipulation"
+            className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
           >
             <Icon className="size-4" />
             <span className="hidden sm:inline">{action.label}</span>

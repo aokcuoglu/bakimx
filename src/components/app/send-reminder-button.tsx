@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Send, Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 type ReminderResult = {
   sms?: { success: boolean; error?: string }
@@ -43,6 +44,7 @@ export function SendReminderButton({
         setError(data.error)
       } else {
         setResult(data.result || {})
+        setShowConfirm(false)
       }
     } catch {
       setError("Hatırlatma gönderilemedi")
@@ -51,60 +53,60 @@ export function SendReminderButton({
     }
   }
 
-  if (result) {
-    return (
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-1">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="size-4 text-emerald-600" />
-          <p className="text-sm font-medium text-emerald-800">Hatırlatma gönderildi</p>
-        </div>
-        <p className="text-xs text-emerald-600">
-          {customerName}{vehiclePlate ? ` — ${vehiclePlate}` : ""} için tahsilat hatırlatması gönderildi.
-        </p>
-        <button
-          onClick={() => { setResult(null); setShowConfirm(false) }}
-          className="text-xs text-emerald-700 hover:text-emerald-800 font-medium"
-        >
-          Kapat
-        </button>
-      </div>
-    )
-  }
-
-  if (showConfirm) {
-    return (
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
-        <div className="flex items-start gap-2">
-          <MessageSquare className="size-4 text-blue-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-blue-900">Tahsilat Hatırlatması Gönder</p>
-            <p className="text-xs text-blue-700 mt-0.5">
-              {customerName} müşterisine{vehiclePlate ? ` (${vehiclePlate})` : ""} {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(remainingAmount)} tutarındaki alacak için hatırlatma gönderilecek.
-            </p>
-            <p className="text-xs text-blue-600 mt-1">Müşterinin iletişim izinlerine göre SMS, WhatsApp veya e-posta gönderilir.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>Vazgeç</Button>
-          <Button size="sm" onClick={handleSend} disabled={loading}>
-            {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Send className="size-3.5 mr-1" />}
-            Gönder
-          </Button>
-        </div>
-        {error && (
-          <div className="flex items-center gap-1.5 text-xs text-rose-600">
-            <AlertCircle className="size-3.5" />
-            {error}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-blue-600 border-blue-200 hover:bg-blue-50">
-      <Send className="size-3.5 mr-1" />
-      Hatırlatma Gönder
-    </Button>
+    <>
+      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-primary border-primary/20 hover:bg-primary/5">
+        <Send className="size-3.5 mr-1" />
+        Hatırlatma Gönder
+      </Button>
+
+      {result && (
+        <div className="rounded-lg border border-success/20 bg-success/10 p-3 space-y-1">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-4 text-success" />
+            <p className="text-sm font-medium text-success-foreground">Hatırlatma gönderildi</p>
+          </div>
+          <p className="text-xs text-success">
+            {customerName}{vehiclePlate ? ` — ${vehiclePlate}` : ""} için tahsilat hatırlatması gönderildi.
+          </p>
+          <button
+            onClick={() => { setResult(null) }}
+            className="text-xs text-success hover:text-success-foreground font-medium"
+          >
+            Kapat
+          </button>
+        </div>
+      )}
+
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              <span className="flex items-center gap-2">
+                <MessageSquare className="size-4 text-primary" />
+                Tahsilat Hatırlatması Gönder
+              </span>
+            </DialogTitle>
+            <DialogDescription>
+              {customerName} müşterisine{vehiclePlate ? ` (${vehiclePlate})` : ""} {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(remainingAmount)} tutarındaki alacak için hatırlatma gönderilecek.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Müşterinin iletişim izinlerine göre SMS, WhatsApp veya e-posta gönderilir.</p>
+          <div className="flex items-center gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>Vazgeç</Button>
+            <Button size="sm" onClick={handleSend} disabled={loading}>
+              {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Send className="size-3.5 mr-1" />}
+              Gönder
+            </Button>
+          </div>
+          {error && (
+            <div className="flex items-center gap-1.5 text-xs text-destructive">
+              <AlertCircle className="size-3.5" />
+              {error}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

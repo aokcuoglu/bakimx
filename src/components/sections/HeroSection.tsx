@@ -32,6 +32,9 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/30 pt-8 pb-16 sm:pt-16 sm:pb-24 lg:pt-24 lg:pb-32">
+      {/* Dekoratif marka gradient şekilleri */}
+      <div aria-hidden="true" className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-brand/5 via-brand/10 to-transparent blur-3xl pointer-events-none" />
+      <div aria-hidden="true" className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-navy/5 via-navy/10 to-transparent blur-3xl pointer-events-none" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
           <div className="flex flex-col gap-6 sm:gap-8 max-w-xl">
@@ -39,7 +42,7 @@ export function HeroSection() {
               initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary w-fit"
+              className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-foreground w-fit"
             >
               <Smartphone className="h-4 w-4" />
               Mobil öncelikli platform
@@ -85,14 +88,14 @@ export function HeroSection() {
             >
               <a
                 href="#demo-talep"
-                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base h-12 px-8 gap-2" })}
+                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base h-10 px-8 gap-2 shadow-lg shadow-primary/25" })}
               >
                 Demo Talep Et
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#cozumler"
-                className={buttonVariants({ variant: "outline", size: "lg", className: "text-base h-12 px-8" })}
+                className={buttonVariants({ variant: "outline", size: "lg", className: "text-base h-10 px-8 border-primary/30" })}
               >
                 Nasıl Çalıştığını Gör
               </a>
@@ -129,8 +132,8 @@ export function HeroSection() {
 function HeroComposition() {
   return (
     <div className="relative w-full max-w-md">
-      <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-3">
+      <div className="rounded-lg border bg-card shadow-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-brand to-brand/80 px-5 py-3">
           <div className="flex items-center gap-2 text-primary-foreground">
             <Car className="h-5 w-5" />
             <h3 className="font-semibold text-sm">Araç Kabul Formu</h3>
@@ -155,14 +158,14 @@ function HeroComposition() {
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Hasar İşaretleme</p>
             <div className="relative rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
               <Car className="h-16 w-16 text-muted-foreground/30 mx-auto" />
-              <div className="absolute top-4 left-6 h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-300 animate-pulse" />
-              <div className="absolute bottom-5 right-8 h-3 w-3 rounded-full bg-sky-500 ring-2 ring-sky-300 animate-pulse" />
+              <div className="absolute top-4 left-6 h-3 w-3 rounded-full bg-destructive ring-2 ring-destructive/30 animate-pulse" />
+              <div className="absolute bottom-5 right-8 h-3 w-3 rounded-full bg-brand ring-2 ring-brand/60 animate-pulse" />
               <p className="text-xs text-muted-foreground mt-2 text-center">2 hasar işaretli</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <MessageSquare className="h-4 w-4 text-primary shrink-0" />
-            <span className="text-xs font-medium text-sky-900">Onay bekleniyor — SMS gönderildi</span>
+          <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
+            <MessageSquare className="size-3.5 text-primary shrink-0" />
+            <span className="text-xs font-medium text-foreground">Onay bekleniyor — SMS gönderildi</span>
           </div>
         </div>
       </div>
@@ -177,7 +180,7 @@ function HeroComposition() {
 
       <FloatingCard
         className="absolute -bottom-2 -left-3"
-        icon={<CheckCircle2 className="h-4 w-4 text-green-600" />}
+        icon={<CheckCircle2 className="h-4 w-4 text-success" />}
         title="WhatsApp Çıktı"
         subtitle="Müşteriye gönderildi"
         delay={0.75}
@@ -221,7 +224,7 @@ function FloatingCard({
           ? { duration: 0.3 }
           : { y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay }, opacity: { duration: 0.3, delay } }
       }
-      className={`${className} bg-card border rounded-xl shadow-lg p-2.5 flex items-center gap-2`}
+      className={`${className} bg-card border rounded-lg shadow-lg p-2.5 flex items-center gap-2`}
     >
       <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
         {icon}
