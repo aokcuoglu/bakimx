@@ -45,12 +45,12 @@ export function generateWorkOrderNo(): string {
  * current workshop (scoped Prisma lookup). Falls back to a high-entropy value
  * if every attempt collides (effectively impossible).
  *
- * NOTE (deferred migration): the durable fix is a DB constraint
- * `@@unique([workshopId, workOrderNo])` on ServiceOrder. That is intentionally
- * NOT added here because existing rows may contain duplicate/null values from
- * the previous timestamp-only generator, so the constraint must be applied via
- * a backfill migration (dedupe/regenerate existing values first) to avoid a
- * failed/destructive migration on production data.
+ * The durable guarantee is the DB constraint `@@unique([workshopId, workOrderNo])`
+ * on ServiceOrder (added in v0.5.8). This runtime check is kept as defense in
+ * depth and to surface a friendly error before hitting a P2002. Postgres treats
+ * NULL workOrderNo values as distinct, so legacy null rows are unaffected; any
+ * pre-existing non-null duplicates must be cleaned before baselining an existing
+ * database (see docs/DEPLOYMENT.md).
  */
 export async function generateUniqueWorkOrderNo(
   isTaken: (candidate: string) => Promise<boolean>,

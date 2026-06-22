@@ -26,22 +26,24 @@ export async function createServiceOrderAction(intakeFormId: string) {
   })
   if (existing) return { error: "Bu kabul için zaten bir servis emri var", id: existing.id }
 
-  const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
-    prisma.serviceOrder
-      .findFirst({
-        where: { workshopId: user.workshopId, workOrderNo: candidate },
-        select: { id: true },
-      })
-      .then((clash) => clash !== null)
-  )
+  const order = await prisma.$transaction(async (tx) => {
+    const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
+      tx.serviceOrder
+        .findFirst({
+          where: { workshopId: user.workshopId, workOrderNo: candidate },
+          select: { id: true },
+        })
+        .then((clash) => clash !== null)
+    )
 
-  const order = await prisma.serviceOrder.create({
-    data: {
-      workshopId: user.workshopId,
-      intakeFormId,
-      workOrderNo,
-      status: "draft",
-    },
+    return tx.serviceOrder.create({
+      data: {
+        workshopId: user.workshopId,
+        intakeFormId,
+        workOrderNo,
+        status: "draft",
+      },
+    })
   })
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")

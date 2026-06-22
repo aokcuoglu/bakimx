@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
-import type { Customer } from "@prisma/client"
+import type { Customer, Prisma, Vehicle } from "@prisma/client"
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
@@ -104,127 +104,126 @@ export async function POST(request: Request) {
       )
     }
 
-    let customer: Customer | null =
+    const seedCustomer: Customer | null =
       existingVehicle && normalizePhone(existingVehicle.customer.phone) === phone
         ? existingVehicle.customer
         : null
-    let customerCreated = false
-    let vehicleCreated = false
-    let vehicleCustomerChanged = false
 
-    if (!customer) {
-      customer = await prisma.customer.findFirst({
-        where: { workshopId: user.workshopId, phone },
-      })
-
-      if (!customer) {
-        customer = await prisma.customer.create({
-          data: {
-            workshopId: user.workshopId,
-            type: "individual",
-            firstName: ownerName,
-            lastName: ownerSurname,
-            fullName: `${ownerName} ${ownerSurname}`.trim(),
-            phone,
-            source: "walk_in",
-            notes: "Ruhsat okuma ile oluşturuldu.",
-          },
-        })
-        customerCreated = true
-        await AuditLogAction(
-          user.workshopId,
-          user.id,
-          "Customer",
-          customer.id,
-          "customer_created_via_ocr"
-        )
-      }
+    let result: {
+      customer: Customer
+      vehicle: Vehicle
+      customerCreated: boolean
+      vehicleCreated: boolean
+      vehicleCustomerChanged: boolean
     }
 
-    let vehicle = existingVehicle
-    if (vehicle) {
-      const updateData: Record<string, unknown> = {
-        brand,
-        model,
-        plate,
-      }
-      if (vehicle.customerId !== customer.id) {
-        updateData.customerId = customer.id
-        vehicleCustomerChanged = true
-      }
-      if (vin) updateData.vin = vin
-      if (vehicleType) updateData.vehicleType = vehicleType
-      if (modelYear) updateData.modelYear = modelYear
-      if (engineNo) updateData.engineNo = engineNo
-      if (vin && vin.length === 17) updateData.vinConfirmed = true
+    try {
+      result = await prisma.$transaction(async (tx) => {
+        let customer = seedCustomer
+        let customerCreated = false
+        let vehicleCreated = false
+        let vehicleCustomerChanged = false
 
-      vehicle = await prisma.vehicle.update({
-        where: { id: vehicle.id },
-        data: updateData,
-        include: { customer: true },
-      })
-      await AuditLogAction(
-        user.workshopId,
-        user.id,
-        "Vehicle",
-        vehicle.id,
-        "vehicle_updated_via_ocr"
-      )
-    } else {
-      try {
-        vehicle = await prisma.vehicle.create({
-          data: {
-            workshopId: user.workshopId,
-            customerId: customer.id,
-            plate,
-            brand,
-            model,
-            vehicleType: vehicleType || null,
-            modelYear,
-            vin: vin || null,
-            vinConfirmed: vin.length === 17,
-            engineNo: engineNo || null,
-          },
-          include: { customer: true },
-        })
-        vehicleCreated = true
-        await AuditLogAction(
-          user.workshopId,
-          user.id,
-          "Vehicle",
-          vehicle.id,
-          "vehicle_created_via_ocr"
-        )
-      } catch (createError: unknown) {
-        if (
-          createError instanceof Error &&
-          (createError.message.includes("Unique constraint") ||
-            createError.message.includes("UniqueConstraint"))
-        ) {
-          return NextResponse.json(
-            {
-              error:
-                "Bu plaka ile kayıtlı bir araç zaten var. " +
-                "Lütfen sayfayı yenileyip tekrar deneyin veya Araçlar bölümünden düzenleyin.",
-            },
-            { status: 409 }
-          )
+        if (!customer) {
+          customer = await tx.customer.findFirst({
+            where: { workshopId: user.workshopId, phone },
+          })
+
+          if (!customer) {
+            customer = await tx.customer.create({
+              data: {
+                workshopId: user.workshopId,
+                type: "individual",
+                firstName: ownerName,
+                lastName: ownerSurname,
+                fullName: `${ownerName} ${ownerSurname}`.trim(),
+                phone,
+                source: "walk_in",
+                notes: "Ruhsat okuma ile oluşturuldu.",
+              },
+            })
+            customerCreated = true
+          }
         }
-        throw createError
+
+        let vehicle: Vehicle
+        if (existingVehicle) {
+          const updateData: Prisma.VehicleUpdateInput = { brand, model, plate }
+          if (existingVehicle.customerId !== customer.id) {
+            updateData.customer = { connect: { id: customer.id } }
+            vehicleCustomerChanged = true
+          }
+          if (vin) updateData.vin = vin
+          if (vehicleType) updateData.vehicleType = vehicleType
+          if (modelYear) updateData.modelYear = modelYear
+          if (engineNo) updateData.engineNo = engineNo
+          if (vin && vin.length === 17) updateData.vinConfirmed = true
+
+          vehicle = await tx.vehicle.update({
+            where: { id: existingVehicle.id },
+            data: updateData,
+          })
+        } else {
+          vehicle = await tx.vehicle.create({
+            data: {
+              workshopId: user.workshopId,
+              customerId: customer.id,
+              plate,
+              brand,
+              model,
+              vehicleType: vehicleType || null,
+              modelYear,
+              vin: vin || null,
+              vinConfirmed: vin.length === 17,
+              engineNo: engineNo || null,
+            },
+          })
+          vehicleCreated = true
+        }
+
+        await tx.ocrLog.update({
+          where: { id: ocrLogId },
+          data: {
+            confirmedJson: JSON.stringify(confirmedFields),
+            confirmedAt: new Date(),
+            customerId: customer.id,
+            vehicleId: vehicle.id,
+            userId: user.id,
+          },
+        })
+
+        return { customer, vehicle, customerCreated, vehicleCreated, vehicleCustomerChanged }
+      })
+    } catch (createError: unknown) {
+      if (
+        createError instanceof Error &&
+        (createError.message.includes("Unique constraint") ||
+          createError.message.includes("UniqueConstraint"))
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Bu plaka ile kayıtlı bir araç zaten var. " +
+              "Lütfen sayfayı yenileyip tekrar deneyin veya Araçlar bölümünden düzenleyin.",
+          },
+          { status: 409 }
+        )
       }
+      throw createError
     }
 
-    await prisma.ocrLog.update({
-      where: { id: ocrLogId },
-      data: {
-        confirmedJson: JSON.stringify(confirmedFields),
-        confirmedAt: new Date(),
-        customerId: customer.id,
-        vehicleId: vehicle.id,
-        userId: user.id,
-      },
-    })
+    const { customer, vehicle, customerCreated, vehicleCreated, vehicleCustomerChanged } = result
 
+    if (customerCreated) {
+      await AuditLogAction(user.workshopId, user.id, "Customer", customer.id, "customer_created_via_ocr")
+    }
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "Vehicle",
+      vehicle.id,
+      vehicleCreated ? "vehicle_created_via_ocr" : "vehicle_updated_via_ocr"
+    )
     await AuditLogAction(
       user.workshopId,
       user.id,

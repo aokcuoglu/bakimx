@@ -29,20 +29,24 @@ export async function requestApprovalAction(intakeFormId: string) {
       : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"
   const approvalTextVersion = `Araç Kabul Formu\n\nMüşteri: ${customerName}\nPlaka: ${intake.vehicle.plate}\nŞikayet: ${intake.customerComplaint}\n\nOnaylıyorum.`
 
-  const approval = await prisma.approvalRequest.create({
-    data: {
-      workshopId: user.workshopId,
-      intakeFormId,
-      phone: intake.customer.phone,
-      otpCode,
-      approvalTextVersion,
-      status: "pending",
-    },
-  })
+  const approval = await prisma.$transaction(async (tx) => {
+    const created = await tx.approvalRequest.create({
+      data: {
+        workshopId: user.workshopId,
+        intakeFormId,
+        phone: intake.customer.phone,
+        otpCode,
+        approvalTextVersion,
+        status: "pending",
+      },
+    })
 
-  await prisma.vehicleIntakeForm.updateMany({
-    where: { id: intakeFormId, workshopId: user.workshopId },
-    data: { status: "waiting_approval", approvalTextVersion },
+    await tx.vehicleIntakeForm.updateMany({
+      where: { id: intakeFormId, workshopId: user.workshopId },
+      data: { status: "waiting_approval", approvalTextVersion },
+    })
+
+    return created
   })
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "approval_requested")
@@ -93,17 +97,19 @@ export async function verifyOtpAction(intakeFormId: string, otpCode: string) {
     return { error: "Geçersiz doğrulama kodu" }
   }
 
-  await prisma.approvalRequest.updateMany({
-    where: { id: approval.id, workshopId: user.workshopId },
-    data: {
-      status: "verified",
-      approvedAt: new Date(),
-    },
-  })
+  await prisma.$transaction(async (tx) => {
+    await tx.approvalRequest.updateMany({
+      where: { id: approval.id, workshopId: user.workshopId },
+      data: {
+        status: "verified",
+        approvedAt: new Date(),
+      },
+    })
 
-  await prisma.vehicleIntakeForm.updateMany({
-    where: { id: intakeFormId, workshopId: user.workshopId },
-    data: { status: "approved", approvedAt: new Date() },
+    await tx.vehicleIntakeForm.updateMany({
+      where: { id: intakeFormId, workshopId: user.workshopId },
+      data: { status: "approved", approvedAt: new Date() },
+    })
   })
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "approval_verified")

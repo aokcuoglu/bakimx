@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod/v4"
 import { computePaymentStatus, computeRemainingAmount } from "@/lib/cashbox/status"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { roundMoney, sumMoney } from "@/lib/money"
+import type { Prisma } from "@prisma/client"
 
 const collectionCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
@@ -64,24 +66,38 @@ export async function createCollectionAction(formData: FormData) {
   const paymentDate = new Date(data.paymentDate)
   if (isNaN(paymentDate.getTime())) return { error: "Geçersiz tahsilat tarihi" }
 
-  const collection = await prisma.collectionPayment.create({
-    data: {
-      workshopId: user.workshopId,
-      customerId: data.customerId,
-      serviceOrderId: data.serviceOrderId || null,
-      quoteId: data.quoteId || null,
-      amount: data.amount,
-      method: data.method as import("@prisma/client").PaymentMethod,
-      status: "completed",
-      paymentDate,
-      referenceNo: data.referenceNo || null,
-      note: data.note || null,
-      createdByUserId: user.id,
-    },
+  const { collection, recalc } = await prisma.$transaction(async (tx) => {
+    const created = await tx.collectionPayment.create({
+      data: {
+        workshopId: user.workshopId,
+        customerId: data.customerId,
+        serviceOrderId: data.serviceOrderId || null,
+        quoteId: data.quoteId || null,
+        amount: data.amount,
+        method: data.method as import("@prisma/client").PaymentMethod,
+        status: "completed",
+        paymentDate,
+        referenceNo: data.referenceNo || null,
+        note: data.note || null,
+        createdByUserId: user.id,
+      },
+    })
+
+    const recalcResult = data.serviceOrderId
+      ? await recalcOrderPayment(tx, data.serviceOrderId, user.workshopId)
+      : null
+
+    return { collection: created, recalc: recalcResult }
   })
 
-  if (data.serviceOrderId) {
-    await updateOrderPaymentStatus(data.serviceOrderId, user.workshopId)
+  if (recalc?.statusChanged && data.serviceOrderId) {
+    await AuditLogAction(
+      user.workshopId,
+      undefined,
+      "ServiceOrder",
+      data.serviceOrderId,
+      `payment_status_changed_to_${recalc.newStatus}`
+    )
   }
 
   await AuditLogAction(user.workshopId, user.id, "CollectionPayment", collection.id, "collection_created")
@@ -113,16 +129,28 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
   if (!trimmedReason) return { error: "İptal nedeni zorunludur" }
   const cancellationReason = trimmedReason
 
-  await prisma.collectionPayment.updateMany({
-    where: { id: collectionId, workshopId: user.workshopId },
-    data: {
-      status: "cancelled",
-      cancellationReason,
-    },
+  const recalc = await prisma.$transaction(async (tx) => {
+    await tx.collectionPayment.updateMany({
+      where: { id: collectionId, workshopId: user.workshopId },
+      data: {
+        status: "cancelled",
+        cancellationReason,
+      },
+    })
+
+    return collection.serviceOrderId
+      ? await recalcOrderPayment(tx, collection.serviceOrderId, user.workshopId)
+      : null
   })
 
-  if (collection.serviceOrderId) {
-    await updateOrderPaymentStatus(collection.serviceOrderId, user.workshopId)
+  if (recalc?.statusChanged && collection.serviceOrderId) {
+    await AuditLogAction(
+      user.workshopId,
+      undefined,
+      "ServiceOrder",
+      collection.serviceOrderId,
+      `payment_status_changed_to_${recalc.newStatus}`
+    )
   }
 
   await AuditLogAction(
@@ -148,30 +176,35 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
   return { success: true }
 }
 
-async function updateOrderPaymentStatus(serviceOrderId: string, workshopId: string) {
-  const order = await prisma.serviceOrder.findFirst({
+async function recalcOrderPayment(
+  tx: Prisma.TransactionClient,
+  serviceOrderId: string,
+  workshopId: string
+): Promise<{ statusChanged: boolean; newStatus: string } | null> {
+  const order = await tx.serviceOrder.findFirst({
     where: { id: serviceOrderId, workshopId },
     include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
   })
-  if (!order) return
+  if (!order) return null
 
   const totals = calculateOrderTotalsFromMinimal(order.items, {
     discountAmount: order.discountAmount,
     taxRate: order.taxRate,
   })
 
-  const collections = await prisma.collectionPayment.findMany({
+  const collections = await tx.collectionPayment.findMany({
     where: { serviceOrderId, workshopId, status: "completed" },
   })
 
-  const paidAmount = collections.reduce((sum, c) => sum + c.amount, 0)
+  const paidAmount = sumMoney(collections.map((c) => c.amount))
   const newPaymentStatus = computePaymentStatus(totals.grandTotal, paidAmount)
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
-  const lastPaymentAt = collections.length > 0
-    ? collections.sort((a, b) => b.paymentDate.getTime() - a.paymentDate.getTime())[0].paymentDate
-    : null
+  const lastPaymentAt =
+    collections.length > 0
+      ? collections.sort((a, b) => b.paymentDate.getTime() - a.paymentDate.getTime())[0].paymentDate
+      : null
 
-  await prisma.serviceOrder.updateMany({
+  await tx.serviceOrder.updateMany({
     where: { id: serviceOrderId, workshopId },
     data: {
       paymentStatus: newPaymentStatus as import("@prisma/client").PaymentStatus,
@@ -181,9 +214,7 @@ async function updateOrderPaymentStatus(serviceOrderId: string, workshopId: stri
     },
   })
 
-  if (order.paymentStatus !== newPaymentStatus) {
-    await AuditLogAction(workshopId, undefined, "ServiceOrder", serviceOrderId, `payment_status_changed_to_${newPaymentStatus}`)
-  }
+  return { statusChanged: order.paymentStatus !== newPaymentStatus, newStatus: newPaymentStatus }
 }
 
 export async function getCustomerOrdersForPayment(customerId: string) {
@@ -225,8 +256,8 @@ export async function getCustomerOrdersForPayment(customerId: string) {
         discountAmount: order.discountAmount,
         taxRate: order.taxRate,
       })
-      const paid = paidByOrder.get(order.id) || order.paidAmount || 0
-      const remaining = Math.max(0, totals.grandTotal - paid)
+      const paid = roundMoney(paidByOrder.get(order.id) || order.paidAmount || 0)
+      const remaining = Math.max(0, roundMoney(totals.grandTotal - paid))
       return {
         id: order.id,
         workOrderNo: order.workOrderNo,
