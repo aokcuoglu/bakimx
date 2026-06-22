@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "bunx tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "bun test"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"

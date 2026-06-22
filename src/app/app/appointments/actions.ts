@@ -136,36 +136,40 @@ export async function convertAppointmentToWorkOrderAction(formData: FormData) {
     return { error: "Dönüştürme için müşteriye ait bir araç bulunamadı" }
   }
 
-  const intake = await prisma.vehicleIntakeForm.create({
-    data: {
-      workshopId,
-      customerId: appointment.customerId,
-      vehicleId: resolvedVehicleId,
-      customerComplaint: appointment.customerRequest || "Randevudan dönüştürüldü",
-      internalNote: appointment.internalNote || undefined,
-      status: "draft",
-    },
-  })
+  const order = await prisma.$transaction(async (tx) => {
+    const intake = await tx.vehicleIntakeForm.create({
+      data: {
+        workshopId,
+        customerId: appointment.customerId,
+        vehicleId: resolvedVehicleId,
+        customerComplaint: appointment.customerRequest || "Randevudan dönüştürüldü",
+        internalNote: appointment.internalNote || undefined,
+        status: "draft",
+      },
+    })
 
-  const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
-    prisma.serviceOrder
-      .findFirst({ where: { workshopId, workOrderNo: candidate }, select: { id: true } })
-      .then((clash) => clash !== null)
-  )
+    const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
+      tx.serviceOrder
+        .findFirst({ where: { workshopId, workOrderNo: candidate }, select: { id: true } })
+        .then((clash) => clash !== null)
+    )
 
-  const order = await prisma.serviceOrder.create({
-    data: {
-      workshopId,
-      intakeFormId: intake.id,
-      workOrderNo,
-      status: "draft",
-      notes: appointment.customerRequest || "Randevudan dönüştürüldü",
-    },
-  })
+    const createdOrder = await tx.serviceOrder.create({
+      data: {
+        workshopId,
+        intakeFormId: intake.id,
+        workOrderNo,
+        status: "draft",
+        notes: appointment.customerRequest || "Randevudan dönüştürüldü",
+      },
+    })
 
-  await prisma.appointment.update({
-    where: { id: appointmentId },
-    data: { status: "converted", convertedServiceOrderId: order.id },
+    await tx.appointment.update({
+      where: { id: appointmentId },
+      data: { status: "converted", convertedServiceOrderId: createdOrder.id },
+    })
+
+    return createdOrder
   })
 
   await AuditLogAction(workshopId, user.id, "Appointment", appointmentId, "appointment_converted_to_work_order")
