@@ -162,53 +162,57 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
     return { error: "Dönüştürme için müşteriye ait bir araç bulunamadı" }
   }
 
-  const intake = await prisma.vehicleIntakeForm.create({
-    data: {
-      workshopId,
-      customerId: quote.customerId,
-      vehicleId: resolvedVehicleId,
-      customerComplaint: quote.customerRequest || "Tekliften dönüştürüldü",
-      internalNote: quote.internalNote || undefined,
-      status: "draft",
-    },
-  })
-
-  const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
-    prisma.serviceOrder
-      .findFirst({ where: { workshopId, workOrderNo: candidate }, select: { id: true } })
-      .then((clash) => clash !== null)
-  )
-
-  const order = await prisma.serviceOrder.create({
-    data: {
-      workshopId,
-      intakeFormId: intake.id,
-      workOrderNo,
-      status: "draft",
-      discountAmount: quote.discountAmount,
-      taxRate: quote.taxRate,
-      notes: `${quote.customerRequest || ""}\n\nTeklif No: ${formatQuoteNo(quote)}`.trim(),
-    },
-  })
-
-  for (const item of quote.items) {
-    await prisma.serviceOrderItem.create({
+  const order = await prisma.$transaction(async (tx) => {
+    const intake = await tx.vehicleIntakeForm.create({
       data: {
         workshopId,
-        serviceOrderId: order.id,
-        type: item.type === "part" ? "part" : "labor",
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-        note: item.note,
+        customerId: quote.customerId,
+        vehicleId: resolvedVehicleId,
+        customerComplaint: quote.customerRequest || "Tekliften dönüştürüldü",
+        internalNote: quote.internalNote || undefined,
+        status: "draft",
       },
     })
-  }
 
-  await prisma.quote.update({
-    where: { id: quoteId },
-    data: { status: "converted", convertedServiceOrderId: order.id },
+    const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
+      tx.serviceOrder
+        .findFirst({ where: { workshopId, workOrderNo: candidate }, select: { id: true } })
+        .then((clash) => clash !== null)
+    )
+
+    const createdOrder = await tx.serviceOrder.create({
+      data: {
+        workshopId,
+        intakeFormId: intake.id,
+        workOrderNo,
+        status: "draft",
+        discountAmount: quote.discountAmount,
+        taxRate: quote.taxRate,
+        notes: `${quote.customerRequest || ""}\n\nTeklif No: ${formatQuoteNo(quote)}`.trim(),
+      },
+    })
+
+    for (const item of quote.items) {
+      await tx.serviceOrderItem.create({
+        data: {
+          workshopId,
+          serviceOrderId: createdOrder.id,
+          type: item.type === "part" ? "part" : "labor",
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          note: item.note,
+        },
+      })
+    }
+
+    await tx.quote.update({
+      where: { id: quoteId },
+      data: { status: "converted", convertedServiceOrderId: createdOrder.id },
+    })
+
+    return createdOrder
   })
 
   await AuditLogAction(workshopId, user.id, "Quote", quoteId, "quote_converted_to_work_order")

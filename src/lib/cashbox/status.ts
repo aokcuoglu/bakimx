@@ -1,4 +1,5 @@
 import { PAYMENT_STATUS } from "@/lib/constants"
+import { moneyEquals, moneyGte, roundMoney } from "@/lib/money"
 
 export type PaymentMethodKey = "cash" | "credit_card" | "bank_transfer" | "other"
 export type PaymentStatusKey = "unpaid" | "partial" | "paid" | "overpaid" | "cancelled"
@@ -40,12 +41,12 @@ export const EXTENDED_PAYMENT_STATUS: Record<PaymentStatusKey, { label: string; 
 
 export function computePaymentStatus(grandTotal: number, paidAmount: number): PaymentStatusKey {
   if (paidAmount <= 0) return "unpaid"
-  if (paidAmount >= grandTotal && grandTotal > 0) {
-    return paidAmount > grandTotal ? "overpaid" : "paid"
+  if (moneyGte(paidAmount, grandTotal) && grandTotal > 0) {
+    return moneyEquals(paidAmount, grandTotal) ? "paid" : "overpaid"
   }
   return "partial"
 }
 
 export function computeRemainingAmount(grandTotal: number, paidAmount: number): number {
-  return Math.max(0, grandTotal - paidAmount)
+  return Math.max(0, roundMoney(grandTotal - paidAmount))
 }
