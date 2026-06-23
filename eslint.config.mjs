@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendor/third-party files in public/ must not be linted:
+    "public/opencv/**",
   ]),
 ]);
 
