@@ -10,7 +10,9 @@
 
 ## Global Constraints
 
-- **Paket yöneticisi: Bun.** Komutlar: `bun install`, `bun run lint` (eslint), `bun run typecheck` (`tsc --noEmit`), `bun test`, `bun run build`. DB: `bunx prisma migrate dev --name <ad>`, `bunx prisma generate`, `bunx prisma validate`. Tek test dosyası: `bun test <path>`.
+- **Paket yöneticisi: Bun.** İzinli komutlar: `bun run lint` (eslint), `bun run typecheck` (`tsc --noEmit`), `bun test`, `bun run build`, `bunx prisma ...`. **`bun install` / `bun add` / `bun update` ÇALIŞTIRMAYIN** — bağımlılıklar kurulu; stray install Next yamasını (`patches/next@*.patch`) bozar. DB: `bunx prisma migrate dev --name <ad>`, `bunx prisma generate`, `bunx prisma validate`. Tek test dosyası: `bun test <path>`.
+- **Sadece adı geçen dosyaları commit'leyin:** çalışma ağacında ilgisiz untracked dosyalar var (`.claude/settings.json`, başka workstream docs'ları). `git add -A` / `git add .` **KULLANMAYIN** — yalnızca görevin belirttiği dosyaları `git add <dosya>` ile ekleyin.
+- **Branch guard:** her görevde önce `git checkout feat/billing-purchase-flow` çalıştırın (main checkout başka workstream'lerce çekişiliyor, branch kayabilir). Dokunmayın: `patches/`, `.env`, prod/deploy config, `.claude/`.
 - **Para:** Yeni faturalama tutarları **Int kuruş** (`amountMinor`). Katalog fiyatları **KDV dahil / nihai** (müşteri gördüğü sayıyı öder). Mevcut Float para (`src/lib/money.ts`) ve para kolonları **DEĞİŞTİRİLMEZ**.
 - **Vergi/fatura bilgisi:** Workshop'taki mevcut alanlar yeniden kullanılır — `invoiceTitle`, `taxNumber`, `taxOffice`, `email`, `name`, `address`, `phone`. **Yeni vergi kolonu EKLENMEZ.**
 - **Tenant izolasyonu:** Uygulama içi aksiyonlar `workshopId`'yi `requireAuth()` / `getCurrentUserWithWorkshop()`'tan türetir — client'tan ASLA. Admin aksiyonları `requireAdmin()` çağırır (non-admin'e 404).
