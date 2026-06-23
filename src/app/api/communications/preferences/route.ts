@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { customerPreferencesSchema } from "@/lib/validation"
+import { customerPreferencesSchema } from "@/lib/validations/communication"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function POST(request: Request) {

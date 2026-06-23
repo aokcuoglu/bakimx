@@ -32,10 +32,6 @@ Eskiden proje `db push` ile yürüyordu çünkü `prisma/migrations/` eksik bir 
 Artık **`db push`'u terk et**; aşağıdaki migrate akışını kullan. (`db:push` script'i sadece
 tek seferlik hızlı prototip için durur; prod'da ASLA kullanma — bkz. §5.)
 
-> **Not:** `prisma/sql/2026-06-22_*.sql` dosyalarındaki kolonlar artık `0_init`'e dahildir; bu dosyalar
-> **geçmiş artıktır**. Baseline'lanmış bir DB'ye ASLA elle uygulama (içlerindeki eski `db push`/`psql -f`
-> talimatları geçersiz).
-
 ---
 
 ## 3. Şema değişikliği iş akışı (local → prod)

@@ -5,12 +5,16 @@ import { requireAdmin } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
+import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 
 type Result = { ok: true } | { ok: false; error: string }
 
 const TIERS: PlanTier[] = ["starter", "pro", "premium"]
 const STATUSES = ["trialing", "active", "past_due", "canceled"] as const
 type SubStatus = (typeof STATUSES)[number]
+
+const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
+const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
 
 /** Approve a pending workshop and start its 15-day trial. */
 export async function approveWorkshop(workshopId: string): Promise<Result> {
@@ -96,6 +100,50 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
     "admin_extra_seats_set",
     JSON.stringify({ extraSeats })
   )
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
+/** Update the workflow status of a public demo request lead.
+ *  No AuditLog — DemoRequest is not workshop-scoped; its `status`/`updatedAt`
+ *  fields already track changes. AuditLog is workshop-bound and inappropriate
+ *  for public leads. */
+export async function updateDemoRequestStatus(
+  requestId: string,
+  status: string
+): Promise<Result> {
+  await requireAdmin()
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+  if (!DEMO_STATUSES.includes(status as DemoRequestStatus)) {
+    return { ok: false, error: "Geçersiz durum." }
+  }
+
+  await prisma.demoRequest.update({
+    where: { id: requestId },
+    data: { status: status as DemoRequestStatus },
+  })
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
+/** Update the workflow status of a public support request.
+ *  No AuditLog — SupportRequest is not workshop-scoped; its `status`/`updatedAt`
+ *  fields already track changes. AuditLog is workshop-bound and inappropriate
+ *  for public leads. */
+export async function updateSupportRequestStatus(
+  requestId: string,
+  status: string
+): Promise<Result> {
+  await requireAdmin()
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+  if (!SUPPORT_STATUSES.includes(status as SupportRequestStatus)) {
+    return { ok: false, error: "Geçersiz durum." }
+  }
+
+  await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { status: status as SupportRequestStatus },
+  })
   revalidatePath("/admin")
   return { ok: true }
 }

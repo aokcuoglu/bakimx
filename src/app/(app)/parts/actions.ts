@@ -3,8 +3,8 @@
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validation"
-import { getValidationError } from "@/lib/validation"
+import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validations/part"
+import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function createPartAction(formData: FormData) {

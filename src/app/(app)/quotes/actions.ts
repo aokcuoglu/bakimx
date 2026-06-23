@@ -3,8 +3,8 @@
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemSchema } from "@/lib/validation"
-import { getValidationError } from "@/lib/validation"
+import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemActionSchema } from "@/lib/validations/quote"
+import { getValidationError } from "@/lib/validations/shared"
 import { generateQuoteNo, formatQuoteNo } from "@/lib/work-order-number"
 import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
@@ -62,7 +62,7 @@ export async function createQuoteAction(formData: FormData) {
       return { error: "Teklif kalemleri geçersiz" }
     }
     for (const item of items) {
-      const parsedItem = quoteItemSchema.safeParse(item)
+      const parsedItem = quoteItemActionSchema.safeParse(item)
       if (parsedItem.success) {
         await prisma.quoteItem.create({
           data: {

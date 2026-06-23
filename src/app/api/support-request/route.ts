@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
 
 const submissionCounts = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW = 60_000
@@ -78,15 +79,26 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log("[support-request] New support request:", {
-      name: body.name,
-      businessName: body.businessName,
-      email: body.email,
-      phone: body.phone,
-      subject: body.subject,
-      message: body.message,
-      createdAt: new Date().toISOString(),
-    })
+    // Persist to database for admin console follow-up.
+    try {
+      await prisma.supportRequest.create({
+        data: {
+          name: body.name.trim(),
+          businessName: body.businessName.trim(),
+          email: body.email.trim(),
+          phone: body.phone.trim(),
+          subject: (body.subject ?? "").trim(),
+          message: body.message.trim(),
+          clientIp: ip,
+        },
+      })
+    } catch (err) {
+      console.error("[support-request] Failed to persist:", err)
+      return NextResponse.json(
+        { success: false, errors: { _general: "Talep kaydedilemedi. Lütfen daha sonra tekrar deneyin." } },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json(
       {

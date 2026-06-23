@@ -1,13 +1,5 @@
-import { getAppData } from "@/app/(app)/data"
-import { ComingSoonShell } from "@/components/app/coming-soon-shell"
+import { redirect } from "next/navigation"
 
-export default async function InventoryPage() {
-  const { workshop } = await getAppData()
-  return (
-    <ComingSoonShell
-      workshopName={workshop?.name}
-      title="Stok / Parçalar"
-      description="Parça ve malzeme stokunuzu yönetin, iş emri ile entegre edin."
-    />
-  )
+export default function InventoryPage() {
+  redirect("/parts")
 }

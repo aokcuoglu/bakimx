@@ -8,8 +8,19 @@ import type { Workshop } from "@prisma/client"
  *  - subscriptionStatus + trialEndsAt: billing/trial lifecycle
  *
  * Today only the ACCESS gate (`hasAccess`) is enforced (login + /app layout).
- * Per-feature gating (`assertFeature`) is scaffolded for when premium features
- * such as e-Fatura land, but is not yet wired into existing features.
+ *
+ * Per-feature gating:
+ *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
+ *    `/api/orders/advisor` API routes (return 403 + feature_locked). The UI
+ *    conditionally renders the panel/`AdvisorPremiumLock` CTA based on
+ *    `hasFeature(workshop.planTier, "aiAdvisor")`.
+ *  - `assertFeature` (throw-based) is ready to adopt inside server actions as
+ *    further premium features ship.
+ *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands
+ *    (work-order completion flow).
+ *  - `multiBranch`: planned gate on branch creation (`/app/branches`).
+ *  - `rbac`: defined for completeness; today RBAC roles (owner/manager/staff)
+ *    are available across all tiers, so the gate is informational only.
  */
 
 export const TRIAL_DAYS = 15
@@ -123,8 +134,9 @@ export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {
 }
 
 /**
- * Throws if the workshop's tier does not include the feature. Adopt incrementally
- * inside server actions / API routes as premium features ship.
+ * Throws if the workshop's tier does not include the feature. Adopt inside
+ * server actions as premium features ship (API routes should prefer the
+ * `hasFeature`-based 403 pattern instead of throwing).
  */
 export function assertFeature(
   workshop: WorkshopPlanFields,

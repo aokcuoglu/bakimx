@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v4"
 
 export const intakeSchema = z.object({
   // Step 1: Customer selection
@@ -30,3 +30,27 @@ export const intakeSchema = z.object({
 })
 
 export type IntakeFormValues = z.infer<typeof intakeSchema>
+
+export const intakeCreateSchema = z.object({
+  customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
+  vehicleId: z.string().min(1, "Araç seçimi zorunludur"),
+  mileageAtIntake: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
+  customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
+  internalNote: z.string().optional(),
+})
+
+export const damageMarkSchema = z.object({
+  zone: z.string().min(1, "Bölge seçimi zorunludur"),
+  damageType: z.enum(["scratch", "dent", "broken", "cracked", "paint_damage", "missing_part", "other"], {
+    error: "Geçerli bir hasar tipi seçiniz",
+  }),
+  severity: z.enum(["light", "medium", "heavy"], {
+    error: "Geçerli bir şiddet seviyesi seçiniz",
+  }),
+  note: z.string().optional(),
+  photoUrl: z.string().optional(),
+})
+
+export const otpVerifySchema = z.object({
+  otpCode: z.string().min(4, "Doğrulama kodu gerekli").max(6, "Doğrulama kodu en fazla 6 haneli olmalıdır"),
+})

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { serviceOrderItemSchema } from "@/lib/validation"
+import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder } from "@/lib/status-transitions"

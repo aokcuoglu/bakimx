@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { supplierCreateSchema, supplierUpdateSchema, getValidationError } from "@/lib/validation"
+import { supplierCreateSchema, supplierUpdateSchema } from "@/lib/validations/supplier"
+import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function createSupplierAction(formData: FormData) {

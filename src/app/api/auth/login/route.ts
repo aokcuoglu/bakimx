@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { loginSchema } from "@/lib/validation"
+import { loginSchema } from "@/lib/validations/auth"
 import { getSession } from "@/lib/session"
 import {
   verifyCredentials,

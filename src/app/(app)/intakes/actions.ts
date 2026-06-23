@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
-import { intakeCreateSchema, damageMarkSchema } from "@/lib/validation"
+import { intakeCreateSchema, damageMarkSchema } from "@/lib/validations/intake"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"

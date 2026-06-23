@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
-import { businessProfileSchema } from "@/lib/validation"
+import { businessProfileSchema } from "@/lib/validations/settings"
 import { revalidatePath } from "next/cache"
 
 export async function updateWorkshopAction(formData: FormData) {

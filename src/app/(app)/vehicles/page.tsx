@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Plus, ScanLine } from "lucide-react"
 import { VehicleList } from "@/components/app/vehicle-list"
 import { customerDisplayName } from "@/lib/format"
+import { countVehiclesWithServiceDue } from "@/lib/reminders/queries"
 import { deleteVehicleAction } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -56,11 +57,19 @@ export default async function VehiclesPage({
     v.intakes.some((i) => i.order && !["delivered", "cancelled"].includes(i.order.status))
   ).length
 
+  // Service due: vehicles with an active (non-completed/cancelled/postponed) maintenance reminder
+  // whose dueDate is within the next 30 days or already passed. Restricted to the currently
+  // filtered vehicle list so the KPI stays consistent with total/active.
+  const serviceDueVehicleCount = await countVehiclesWithServiceDue(
+    user.workshopId,
+    vehicles.map((v) => v.id)
+  )
+
   const vehicleKpis = {
     total: vehicles.length,
     active: activeVehicleCount,
     documentsExpiring: 0,
-    serviceDue: 0,
+    serviceDue: serviceDueVehicleCount,
   }
 
   const serialized = vehicles.map((v) => ({

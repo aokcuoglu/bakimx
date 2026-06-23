@@ -10,7 +10,10 @@ import {
   workingHoursSchema,
   appointmentRulesSchema,
   pdfTemplateSchema,
-} from "@/lib/validation"
+  normalizeSmsProvider,
+  normalizeWhatsAppProvider,
+  normalizeEmailProvider,
+} from "@/lib/validations/settings"
 
 async function auditLog(workshopId: string, actorUserId: string | null, action: string, entityType: string) {
   await prisma.auditLog.create({
@@ -39,6 +42,17 @@ export async function getWorkshopSettings() {
     settings = await prisma.workshopSettings.create({
       data: { workshopId: user.workshopId },
     })
+  }
+
+  // Normalize legacy provider values (iletimerkezi/sendgrid/custom) to "mock"
+  // before they reach any consumer (page serializer, API route, form). This
+  // prevents form-lock when a workshop previously selected a now-removed
+  // provider and never migrated.
+  settings = {
+    ...settings,
+    smsProvider: normalizeSmsProvider(settings.smsProvider),
+    whatsappProvider: normalizeWhatsAppProvider(settings.whatsappProvider),
+    emailProvider: normalizeEmailProvider(settings.emailProvider),
   }
 
   return { workshop, settings, workshopId: user.workshopId }

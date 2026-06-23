@@ -1,10 +1,10 @@
 import { getAdvisorProvider } from "@/lib/advisor"
-import type { PlanTier } from "@/lib/plan"
+import { AuditLogAction } from "@/lib/audit"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  const { getCurrentUserWithWorkshop } = await import("@/lib/auth")
-  const { hasFeature } = await import("@/lib/plan")
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   if (!hasFeature(workshop.planTier as PlanTier, "aiAdvisor")) {
@@ -41,7 +41,6 @@ export async function POST(request: Request) {
     const provider = await getAdvisorProvider()
     const result = await provider.suggest(advisorInput)
 
-    const { AuditLogAction } = await import("@/lib/audit")
     await AuditLogAction(user.workshopId, user.id, "ServiceAdvisor", "standalone", "ai_advisor_requested", JSON.stringify({ provider: result.provider }))
 
     const { rawResponse, ...safeResult } = result

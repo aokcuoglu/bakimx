@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 const submissionCounts = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW = 60_000
@@ -78,19 +79,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: Persist to database when DATABASE_URL is available
-    // Example: await prisma.demoRequest.create({ data: { ...body } })
-    // For now, we log and return success
-
-    console.log("[demo-request] New demo request:", {
-      name: body.name,
-      businessName: body.businessName,
-      phone: body.phone,
-      city: body.city,
-      monthlyVehicles: body.monthlyVehicles,
-      notes: body.notes || "",
-      createdAt: new Date().toISOString(),
-    });
+    // Persist to database for admin console follow-up.
+    try {
+      await prisma.demoRequest.create({
+        data: {
+          name: body.name.trim(),
+          businessName: body.businessName.trim(),
+          phone: body.phone.trim(),
+          city: body.city.trim(),
+          monthlyVehicles: body.monthlyVehicles.trim(),
+          notes: body.notes?.trim() || null,
+          clientIp: ip,
+        },
+      });
+    } catch (err) {
+      console.error("[demo-request] Failed to persist:", err);
+      return NextResponse.json(
+        { success: false, errors: { _general: "Talep kaydedilemedi. Lütfen daha sonra tekrar deneyin." } },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {

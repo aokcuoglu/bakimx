@@ -20,6 +20,9 @@ import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   communicationSettingsFormSchema,
+  normalizeSmsProvider,
+  normalizeWhatsAppProvider,
+  normalizeEmailProvider,
   type CommunicationSettingsFormValues,
 } from "@/lib/validations/settings"
 
@@ -34,14 +37,17 @@ type SettingsData = {
 }
 
 function toDefaults(settings: SettingsData): CommunicationSettingsFormValues {
+  // Normalize legacy DB provider values (iletimerkezi/sendgrid/custom) to
+  // "mock" so the form never initializes with a value that no longer has a
+  // matching Select option — that would lock the user out of saving.
   return {
-    smsProvider: (settings.smsProvider as CommunicationSettingsFormValues["smsProvider"]) || "mock",
+    smsProvider: normalizeSmsProvider(settings.smsProvider),
     smsSenderName: settings.smsSenderName || "",
     smsApiKey: "",
-    whatsappProvider: (settings.whatsappProvider as CommunicationSettingsFormValues["whatsappProvider"]) || "mock",
+    whatsappProvider: normalizeWhatsAppProvider(settings.whatsappProvider),
     whatsappPhoneNumber: settings.whatsappPhoneNumber || "",
     whatsappApiKey: "",
-    emailProvider: (settings.emailProvider as CommunicationSettingsFormValues["emailProvider"]) || "mock",
+    emailProvider: normalizeEmailProvider(settings.emailProvider),
     emailFromName: settings.emailFromName || "",
     emailFromAddress: settings.emailFromAddress || "",
     emailApiKey: "",
@@ -118,8 +124,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>
                           <SelectItem value="netgsm">Netgsm</SelectItem>
-                          <SelectItem value="iletimerkezi">İletimerkezi</SelectItem>
-                          <SelectItem value="custom">Özel</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -188,7 +192,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>
                           <SelectItem value="business_api">WhatsApp Business API</SelectItem>
-                          <SelectItem value="custom">Özel</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -257,8 +260,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>
                           <SelectItem value="resend">Resend</SelectItem>
-                          <SelectItem value="sendgrid">SendGrid</SelectItem>
-                          <SelectItem value="custom">Özel</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>

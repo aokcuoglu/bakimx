@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
-import { z } from "zod/v4"
+import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireAuth } = await import("@/lib/auth")
@@ -169,13 +169,6 @@ export async function completeWorkAction(orderId: string) {
   return { success: true }
 }
 
-const checklistItemSchema = z.object({
-  serviceOrderId: z.string().min(1),
-  category: z.enum(["inspection", "repair", "delivery"]),
-  description: z.string().min(1, "Açıklama zorunludur").max(500),
-  sortOrder: z.coerce.number().int().min(0).default(0),
-})
-
 export async function addChecklistItemAction(formData: FormData) {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
@@ -273,11 +266,6 @@ export async function deleteChecklistItemAction(itemId: string) {
   return { success: true }
 }
 
-const internalNoteSchema = z.object({
-  serviceOrderId: z.string().min(1),
-  content: z.string().min(1, "Not içeriği zorunludur").max(2000),
-})
-
 export async function addInternalNoteAction(formData: FormData) {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
@@ -327,14 +315,6 @@ export async function deleteInternalNoteAction(noteId: string) {
   revalidatePath(`/orders/${note.serviceOrderId}`)
   return { success: true }
 }
-
-const partsRequestSchema = z.object({
-  serviceOrderId: z.string().min(1),
-  partName: z.string().min(1, "Parça adı zorunludur").max(200),
-  partSku: z.string().optional().or(z.literal("")),
-  quantity: z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır").default(1),
-  note: z.string().optional().or(z.literal("")),
-})
 
 export async function createPartsRequestAction(formData: FormData) {
   const { requireAuth } = await import("@/lib/auth")

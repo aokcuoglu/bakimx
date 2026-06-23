@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
-import { vehicleCreateSchema, vehicleUpdateSchema } from "@/lib/validation"
+import { vehicleCreateSchema, vehicleUpdateSchema } from "@/lib/validations/vehicle"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"

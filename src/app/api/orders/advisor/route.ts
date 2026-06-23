@@ -1,12 +1,11 @@
 import { getAdvisorProvider } from "@/lib/advisor"
 import { AuditLogAction } from "@/lib/audit"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import type { PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  const { getCurrentUserWithWorkshop } = await import("@/lib/auth")
-  const { hasFeature } = await import("@/lib/plan")
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   if (!hasFeature(workshop.planTier as PlanTier, "aiAdvisor")) {

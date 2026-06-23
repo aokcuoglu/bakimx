@@ -1183,3 +1183,52 @@ model CommunicationLog {
   @@index([entityType, entityId])
   @@index([sentAt])
 }
+
+model DemoRequest {
+  id              String             @id @default(cuid())
+  name            String
+  businessName    String
+  phone           String
+  city            String
+  monthlyVehicles String
+  notes           String?
+  clientIp        String?
+  status          DemoRequestStatus @default(new)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum DemoRequestStatus {
+  new
+  contacted
+  qualified
+  converted
+  archived
+}
+
+model SupportRequest {
+  id           String              @id @default(cuid())
+  name         String
+  businessName String
+  email        String
+  phone        String
+  subject      String
+  message      String
+  clientIp     String?
+  status       SupportRequestStatus @default(new)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum SupportRequestStatus {
+  new
+  in_progress
+  resolved
+  archived
+}

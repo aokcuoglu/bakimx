@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v4"
 
 export const partSchema = z.object({
   name: z.string().min(1, "Parça adı zorunludur"),
@@ -21,3 +21,32 @@ export const partSchema = z.object({
 })
 
 export type PartFormValues = z.infer<typeof partSchema>
+
+export const partCreateSchema = z.object({
+  name: z.string().min(1, "Parça adı zorunludur"),
+  sku: z.string().optional().or(z.literal("")),
+  oemNo: z.string().optional().or(z.literal("")),
+  brand: z.string().optional().or(z.literal("")),
+  category: z.string().optional().or(z.literal("")),
+  description: z.string().optional().or(z.literal("")),
+  unit: z.string().default("adet"),
+  stockQty: z.coerce.number().int("Stok miktarı tam sayı olmalıdır").min(0, "Stok miktarı negatif olamaz").default(0),
+  criticalStockQty: z.coerce.number().int("Kritik stok miktarı tam sayı olmalıdır").min(0, "Kritik stok miktarı negatif olamaz").default(0),
+  purchasePrice: z.coerce.number().min(0, "Alış fiyatı negatif olamaz").optional(),
+  salePrice: z.coerce.number().min(0, "Satış fiyatı negatif olamaz").optional(),
+  currency: z.string().default("TRY"),
+  supplierName: z.string().optional().or(z.literal("")),
+  supplierPhone: z.string().optional().or(z.literal("")),
+  supplierId: z.string().optional().or(z.literal("")),
+  shelfLocation: z.string().optional().or(z.literal("")),
+  barcode: z.string().optional().or(z.literal("")),
+})
+
+export const partUpdateSchema = partCreateSchema
+
+export const stockMovementSchema = z.object({
+  partId: z.string().min(1, "Parça seçimi zorunludur"),
+  type: z.enum(["in", "out", "adjustment"], { error: "Geçerli bir hareket tipi seçiniz" }),
+  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır"),
+  reason: z.string().optional().or(z.literal("")),
+})

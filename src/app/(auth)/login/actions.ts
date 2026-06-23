@@ -1,6 +1,6 @@
 "use server"
 
-import { loginSchema } from "@/lib/validation"
+import { loginSchema } from "@/lib/validations/auth"
 import { getSession } from "@/lib/session"
 import { headers } from "next/headers"
 import {

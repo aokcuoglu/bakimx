@@ -130,7 +130,6 @@ export function VehicleList({
               accent="bg-warning/10 text-warning border-warning/20"
             />
           )}
-          {/* TODO: Enable when maintenance reminders are linked to vehicles */}
           {kpis.serviceDue > 0 && (
             <StatCard
               label="Bakım Gerekli"

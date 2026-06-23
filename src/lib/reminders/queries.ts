@@ -318,3 +318,30 @@ export async function getCustomerReminders(workshopId: string, customerId: strin
   })
   return reminders.map(serializeDates)
 }
+
+/**
+ * Count vehicles (optionally restricted to a set of vehicle IDs) that have at least one
+ * active maintenance reminder whose dueDate is within the next 30 days or already passed.
+ * Active = not completed/cancelled/postponed.
+ *
+ * Kept as a lib helper (not inline in the server component) so the impure `Date.now()` call
+ * is evaluated outside of React Compiler's render scope.
+ */
+export async function countVehiclesWithServiceDue(
+  workshopId: string,
+  vehicleIds?: string[]
+): Promise<number> {
+  const cutoff = new Date(Date.now() + 30 * 86400000)
+  return prisma.vehicle.count({
+    where: {
+      workshopId,
+      ...(vehicleIds && vehicleIds.length > 0 ? { id: { in: vehicleIds } } : {}),
+      reminders: {
+        some: {
+          status: { in: ["upcoming", "due_soon", "overdue"] },
+          dueDate: { lte: cutoff },
+        },
+      },
+    },
+  })
+}
