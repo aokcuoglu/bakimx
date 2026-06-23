@@ -167,24 +167,42 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
   const periodStart = periodStartFrom(workshop?.currentPeriodEnd ?? null, now)
   const periodEnd = addPeriod(periodStart, order.billingCycle)
 
-  await prisma.$transaction(async (tx) => {
-    await tx.workshop.update({
-      where: { id: order.workshopId },
-      data: {
-        planTier: order.planTier,
-        billingCycle: order.billingCycle,
-        subscriptionStatus: "active",
-        approvalStatus: "approved",
-        currentPeriodEnd: periodEnd,
-        requestedPlanTier: null,
-        planRequestedAt: null,
-      },
+  try {
+    await prisma.$transaction(async (tx) => {
+      const claimed = await tx.billingOrder.updateMany({
+        where: { id: order.id, status: "pending_payment" },
+        data: {
+          status: "confirmed",
+          confirmedAt: now,
+          confirmedByEmail: admin.email,
+          periodStart,
+          periodEnd,
+        },
+      })
+      if (claimed.count === 0) {
+        // Another confirm already processed this order — abort the whole tx.
+        throw new Error("ALREADY_PROCESSED")
+      }
+      await tx.workshop.update({
+        where: { id: order.workshopId },
+        data: {
+          planTier: order.planTier,
+          billingCycle: order.billingCycle,
+          subscriptionStatus: "active",
+          approvalStatus: "approved",
+          currentPeriodEnd: periodEnd,
+          requestedPlanTier: null,
+          planRequestedAt: null,
+        },
+      })
     })
-    await tx.billingOrder.update({
-      where: { id: order.id },
-      data: { status: "confirmed", confirmedAt: now, confirmedByEmail: admin.email, periodStart, periodEnd },
-    })
-  })
+  } catch (err) {
+    if (err instanceof Error && err.message === "ALREADY_PROCESSED") {
+      return { ok: false, error: "Bu sipariş zaten işlenmiş." }
+    }
+    console.error("[confirmBillingOrder] failed:", err instanceof Error ? err.message : err)
+    return { ok: false, error: "İşlem başarısız. Lütfen tekrar deneyin." }
+  }
 
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
     JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
@@ -200,7 +218,11 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
   if (order.status !== "pending_payment") return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
 
-  await prisma.billingOrder.update({ where: { id: orderId }, data: { status: "cancelled" } })
+  const cancelled = await prisma.billingOrder.updateMany({
+    where: { id: orderId, status: "pending_payment" },
+    data: { status: "cancelled" },
+  })
+  if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", orderId, "billing_order_cancelled")
   revalidatePath("/admin")
   return { ok: true }
