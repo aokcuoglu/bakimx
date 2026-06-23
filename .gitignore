@@ -26,6 +26,7 @@
 
 # local tooling artifacts
 .playwright-mcp/
+.superpowers/
 
 # docker / infra
 .env.production
