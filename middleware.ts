@@ -9,17 +9,17 @@ const APP_ORIGIN = "https://app.bakimx.com"
 const LANDING_ORIGIN = "https://bakimx.com"
 
 // Pages served on the landing host. Everything else is app surface.
-const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms"])
-const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo"]
+const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/fiyatlar"])
+const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al"]
 
 // API auth (host-agnostic — same container serves both hosts).
-const PUBLIC_API_PREFIX = ["/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
+const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
 const PROTECTED_API_PREFIX = [
   "/api/intakes", "/api/customers", "/api/vehicles", "/api/orders",
   "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
   "/api/smart-capture", "/api/reminders", "/api/suppliers",
   "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
-  "/api/advisor", "/api/communications", "/api/calendar",
+  "/api/advisor", "/api/billing", "/api/communications", "/api/calendar",
 ]
 
 function isPublicPage(pathname: string): boolean {
