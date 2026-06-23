@@ -21,7 +21,7 @@ export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) 
           customers.map((c) => (
             <Link
               key={c.id}
-              href={`/app/customers/${c.id}`}
+              href={`/customers/${c.id}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
             >
               <div className="size-9 rounded-lg bg-muted flex items-center justify-center shrink-0">

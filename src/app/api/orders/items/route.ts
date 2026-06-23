@@ -1,4 +1,4 @@
-import { addOrderItemAction, removeOrderItemAction } from "@/app/app/orders/actions"
+import { addOrderItemAction, removeOrderItemAction } from "@/app/(app)/orders/actions"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {

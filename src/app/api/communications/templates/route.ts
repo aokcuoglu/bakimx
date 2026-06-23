@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import { saveNotificationTemplateAction, resetNotificationTemplateAction } from "@/app/app/settings/notifications/actions"
+import { saveNotificationTemplateAction, resetNotificationTemplateAction } from "@/app/(app)/settings/notifications/actions"
 
 export async function POST(request: Request) {
   try {

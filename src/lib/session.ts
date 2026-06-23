@@ -35,6 +35,9 @@ export const sessionOptions = {
     sameSite: "lax" as const,
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
+    // Share the session across bakimx.com (login) and app.bakimx.com (app).
+    // Host-only on localhost dev (no subdomains).
+    domain: process.env.NODE_ENV === "production" ? ".bakimx.com" : undefined,
   },
 }
 

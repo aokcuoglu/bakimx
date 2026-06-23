@@ -145,9 +145,9 @@ export function CustomerDetail({
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center text-sm text-muted-foreground">
-            <Link href="/app/customers" className="hover:text-foreground">Müşteriler</Link>
+            <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
             <span className="mx-2">/</span>
-            <Link href={`/app/customers/${customer.id}`} className="hover:text-foreground">
+            <Link href={`/customers/${customer.id}`} className="hover:text-foreground">
               {displayName}
             </Link>
             <span className="mx-2">/</span>
@@ -166,7 +166,7 @@ export function CustomerDetail({
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app/customers" className="hover:text-foreground">Müşteriler</Link>
+        <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground font-medium">{displayName}</span>
       </div>
@@ -209,7 +209,7 @@ export function CustomerDetail({
                nativeButton={false}
                variant="outline"
                size="sm"
-               render={<Link href={`/app/orders/new?customerId=${customer.id}`} />}
+               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
              >
                <Wrench className="size-4" />
                Yeni İş Emri
@@ -255,7 +255,7 @@ export function CustomerDetail({
             count={vehicles.length}
             action={
               <Link
-                href={`/app/vehicles/new?customerId=${customer.id}`}
+                href={`/vehicles/new?customerId=${customer.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -268,7 +268,7 @@ export function CustomerDetail({
                 <CarIcon className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz araç kaydı yok</p>
                 <Link
-                  href={`/app/vehicles/new?customerId=${customer.id}`}
+                  href={`/vehicles/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -280,7 +280,7 @@ export function CustomerDetail({
                 {vehicles.map((v) => (
                   <li key={v.id}>
                     <Link
-                      href={`/app/vehicles/${v.id}`}
+                      href={`/vehicles/${v.id}`}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
@@ -314,7 +314,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz iş emri yok</p>
                 <Link
-                  href={`/app/orders/new?customerId=${customer.id}`}
+                  href={`/orders/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -327,7 +327,7 @@ export function CustomerDetail({
                   i.order ? (
                     <li key={i.id}>
                       <Link
-                        href={`/app/orders/${i.order.id}`}
+                        href={`/orders/${i.order.id}`}
                         className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                       >
                         <div className="min-w-0 flex-1">
@@ -366,7 +366,7 @@ export function CustomerDetail({
             count={reminders.length}
             action={
               <Link
-                href={`/app/reminders/new?customerId=${customer.id}`}
+                href={`/reminders/new?customerId=${customer.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -379,7 +379,7 @@ export function CustomerDetail({
                 <BellRing className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz bakım hatırlatması yok</p>
                 <Link
-                  href={`/app/reminders/new?customerId=${customer.id}`}
+                  href={`/reminders/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -391,7 +391,7 @@ export function CustomerDetail({
                 {reminders.map((r) => (
                   <li key={r.id}>
                     <Link
-                      href={`/app/reminders/${r.id}`}
+                      href={`/reminders/${r.id}`}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
@@ -432,7 +432,7 @@ export function CustomerDetail({
                   return (
                     <li key={i.id}>
                       <Link
-                        href={`/app/intakes/${i.id}`}
+                        href={`/intakes/${i.id}`}
                         className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                       >
                         <div className="min-w-0 flex-1">
@@ -598,14 +598,14 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
         </CardTitle>
         <div className="flex items-center gap-2">
           <Link
-            href={`/app/cashbox/payments/new?customerId=${customerId}`}
+            href={`/cashbox/payments/new?customerId=${customerId}`}
             className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
           >
             <Plus className="size-3" />
             Tahsilat Ekle
           </Link>
           <Link
-            href="/app/customers/balances"
+            href="/customers/balances"
             className="text-xs text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1"
           >
             Bakiye listesi

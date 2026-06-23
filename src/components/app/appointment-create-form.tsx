@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAppointmentAction } from "@/app/app/appointments/actions"
+import { createAppointmentAction } from "@/app/(app)/appointments/actions"
 import { Loader2, Info, User, CalendarClock, Bell, Plus, Search } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -93,7 +93,7 @@ export function AppointmentCreateForm({
 
   useEffect(() => {
     if (state?.success && state.id) {
-      router.push(`/app/appointments/${state.id}`)
+      router.push(`/appointments/${state.id}`)
     }
   }, [state, router])
 
@@ -176,7 +176,7 @@ export function AppointmentCreateForm({
               />
               <div className="flex justify-end">
                 <Link
-                  href="/app/customers/new"
+                  href="/customers/new"
                   className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
                 >
                   <Plus className="size-3" />
@@ -216,7 +216,7 @@ export function AppointmentCreateForm({
             />
             <div className="flex justify-end">
               <Link
-                href={customerId ? `/app/vehicles/new?customerId=${customerId}` : "/app/vehicles/new"}
+                href={customerId ? `/vehicles/new?customerId=${customerId}` : "/vehicles/new"}
                 className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
               >
                 <Plus className="size-3" />

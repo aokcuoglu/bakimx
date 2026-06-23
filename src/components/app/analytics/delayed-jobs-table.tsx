@@ -55,7 +55,7 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
               return (
                 <tr key={job.id} className="border-b border-border hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <Link href={`/app/orders/${job.id}`} className="font-medium text-primary hover:text-primary/80">
+                    <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:text-primary/80">
                       {job.workOrderNo}
                     </Link>
                     {badge && (

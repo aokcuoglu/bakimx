@@ -105,7 +105,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         label="Aktif İş Emri"
         value={health.activeJobs}
         icon={Wrench}
-        href="/app/orders"
+        href="/orders"
         accent="text-primary"
         accentBg="bg-primary/10"
       />
@@ -113,7 +113,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         label="Geciken İş Emri"
         value={health.delayedJobs}
         icon={Clock}
-        href="/app/analytics"
+        href="/analytics"
         accent="text-destructive"
         accentBg="bg-destructive/10"
         subtitle={health.delayedJobs > 0 ? "Teslim tarihi geçti" : undefined}
@@ -122,7 +122,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         label="Onay Bekleyen"
         value={health.waitingApprovals}
         icon={MessageCircle}
-        href="/app/orders?status=waiting_approval"
+        href="/orders?status=waiting_approval"
         accent="text-warning"
         accentBg="bg-warning/10"
       />
@@ -130,7 +130,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         label="Kritik Stok"
         value={health.criticalStock}
         icon={AlertTriangle}
-        href="/app/parts"
+        href="/parts"
         accent="text-warning"
         accentBg="bg-warning/10"
       />
@@ -138,7 +138,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         label="Açık Alacak"
         value={health.unpaidWorkOrders}
         icon={Wallet}
-        href="/app/reports/collections"
+        href="/reports/collections"
         accent="text-destructive"
         accentBg="bg-destructive/10"
         subtitle={health.openReceivables > 0 ? "Ödenmemiş iş emri" : undefined}

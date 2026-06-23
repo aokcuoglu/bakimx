@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createPartAction, updatePartAction } from "@/app/app/parts/actions"
+import { createPartAction, updatePartAction } from "@/app/(app)/parts/actions"
 import { ArrowLeft, Loader2, Save } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -98,7 +98,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
 
   useEffect(() => {
     if (state?.success && state.id) {
-      router.push(`/app/parts/${state.id}`)
+      router.push(`/parts/${state.id}`)
     }
   }, [state, router])
 
@@ -120,7 +120,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
         )}
 
         <div className="flex items-center gap-3 mb-5">
-          <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href={isEdit ? `/parts/${part?.id}` : "/parts"} className="text-muted-foreground/70 hover:text-muted-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
@@ -419,7 +419,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
               {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
               {isEdit ? "Güncelle" : "Parça Oluştur"}
             </Button>
-            <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"}>
+            <Link href={isEdit ? `/parts/${part?.id}` : "/parts"}>
               <Button type="button" variant="outline">
                 İptal
               </Button>
@@ -432,7 +432,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
             {pending ? <Loader2 className="size-4 animate-spin" /> : null}
             {isEdit ? "Güncelle" : "Parça Oluştur"}
           </Button>
-          <Link href={isEdit ? `/app/parts/${part?.id}` : "/app/parts"} className="flex-1">
+          <Link href={isEdit ? `/parts/${part?.id}` : "/parts"} className="flex-1">
             <Button type="button" variant="outline" className="w-full">
               İptal
             </Button>

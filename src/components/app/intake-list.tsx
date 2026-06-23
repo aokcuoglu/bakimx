@@ -46,7 +46,7 @@ export function IntakeList({
           return (
             <Link
               key={f.value}
-              href={f.value ? `/app/intakes?status=${f.value}` : "/app/intakes"}
+              href={f.value ? `/intakes?status=${f.value}` : "/intakes"}
               className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors touch-manipulation ${
                 active
                   ? "bg-primary text-primary-foreground"
@@ -66,7 +66,7 @@ export function IntakeList({
           <p className="text-sm mt-1">
             {currentStatus ? "Bu durumda kabul kaydı yok" : ""}
           </p>
-          <Link href="/app/intakes/new" className="text-primary hover:underline text-sm mt-3 inline-block">
+          <Link href="/intakes/new" className="text-primary hover:underline text-sm mt-3 inline-block">
             Yeni araç kabulü başlatın
           </Link>
         </div>
@@ -77,7 +77,7 @@ export function IntakeList({
             return (
               <Link
                 key={intake.id}
-                href={`/app/intakes/${intake.id}`}
+                href={`/intakes/${intake.id}`}
                 className="flex items-center justify-between p-4 bg-card border rounded-lg hover:bg-muted/50 transition-colors active:bg-muted/70 touch-manipulation"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">

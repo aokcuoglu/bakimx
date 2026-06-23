@@ -54,35 +54,35 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
 
 export function orderQuickActions(): QuickAction[] {
   return [
-    { key: "new-order", label: "Yeni İş Emri", href: "/app/orders/new", icon: Wrench, variant: "primary" },
-    { key: "new-appointment", label: "Randevu", href: "/app/appointments/new", icon: CalendarClock, variant: "secondary" },
+    { key: "new-order", label: "Yeni İş Emri", href: "/orders/new", icon: Wrench, variant: "primary" },
+    { key: "new-appointment", label: "Randevu", href: "/appointments/new", icon: CalendarClock, variant: "secondary" },
   ]
 }
 
 export function vehicleQuickActions(): QuickAction[] {
   return [
-    { key: "new-vehicle", label: "Yeni Araç", href: "/app/vehicles/new", icon: Car, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/app/orders/new", icon: Wrench, variant: "secondary" },
+    { key: "new-vehicle", label: "Yeni Araç", href: "/vehicles/new", icon: Car, variant: "primary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }
 
 export function customerQuickActions(): QuickAction[] {
   return [
-    { key: "new-customer", label: "Yeni Müşteri", href: "/app/customers/new", icon: Users, variant: "primary" },
-    { key: "new-appointment", label: "Randevu", href: "/app/appointments/new", icon: CalendarClock, variant: "secondary" },
+    { key: "new-customer", label: "Yeni Müşteri", href: "/customers/new", icon: Users, variant: "primary" },
+    { key: "new-appointment", label: "Randevu", href: "/appointments/new", icon: CalendarClock, variant: "secondary" },
   ]
 }
 
 export function appointmentQuickActions(): QuickAction[] {
   return [
-    { key: "new-appointment", label: "Yeni Randevu", href: "/app/appointments/new", icon: CalendarClock, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/app/orders/new", icon: Wrench, variant: "secondary" },
+    { key: "new-appointment", label: "Yeni Randevu", href: "/appointments/new", icon: CalendarClock, variant: "primary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }
 
 export function quoteQuickActions(): QuickAction[] {
   return [
-    { key: "new-quote", label: "Yeni Teklif", href: "/app/quotes/new", icon: FileText, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/app/orders/new", icon: Wrench, variant: "secondary" },
+    { key: "new-quote", label: "Yeni Teklif", href: "/quotes/new", icon: FileText, variant: "primary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }

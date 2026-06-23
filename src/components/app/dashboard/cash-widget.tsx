@@ -16,7 +16,7 @@ export function CashWidget({ data }: { data: CashWidgetData }) {
           <Wallet className="size-4 text-primary" />
           Kasa Özeti
         </h3>
-        <Link href="/app/cashbox" className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+        <Link href="/cashbox" className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
           Tümünü Gör <ArrowRight className="size-3" />
         </Link>
       </div>
@@ -41,7 +41,7 @@ export function CashWidget({ data }: { data: CashWidgetData }) {
       </div>
       <div className="px-4 py-2.5 bg-muted border-t border-border">
         <Link
-          href="/app/cashbox/payments/new"
+          href="/cashbox/payments/new"
           className="text-xs font-medium text-primary hover:text-primary/80 flex items-center justify-center gap-1"
         >
           + Yeni Tahsilat

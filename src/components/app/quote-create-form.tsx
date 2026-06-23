@@ -27,7 +27,7 @@ import { Plus, Trash2, Loader2, Calculator } from "lucide-react"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { formatPrice } from "@/lib/parts/format"
 import { cn } from "@/lib/utils"
-import { createQuoteAction } from "@/app/app/quotes/actions"
+import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { customerDisplayName } from "@/lib/format"
 import { formatTRY } from "@/lib/format"
 import { useForm, useFieldArray } from "react-hook-form"
@@ -128,7 +128,7 @@ export function QuoteCreateForm() {
 
   useEffect(() => {
     if (state?.success && state.id) {
-      router.push(`/app/quotes/${state.id}`)
+      router.push(`/quotes/${state.id}`)
     }
   }, [state, router])
 
@@ -358,7 +358,7 @@ export function QuoteCreateForm() {
                     variant="link"
                     size="xs"
                     className="h-auto p-0"
-                    render={<Link href="/app/customers/new" />}
+                    render={<Link href="/customers/new" />}
                   >
                     + Yeni Müşteri
                   </Button>
@@ -368,7 +368,7 @@ export function QuoteCreateForm() {
                       variant="link"
                       size="xs"
                       className="h-auto p-0"
-                      render={<Link href={`/app/vehicles/new?customerId=${customerId}`} />}
+                      render={<Link href={`/vehicles/new?customerId=${customerId}`} />}
                     >
                       + Yeni Araç
                     </Button>

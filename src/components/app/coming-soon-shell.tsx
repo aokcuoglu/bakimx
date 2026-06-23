@@ -29,7 +29,7 @@ export function ComingSoonShell({
             Bu özellik sonraki sürümlerde eklenecektir
           </div>
           <div className="pt-2">
-            <Link href="/app" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="size-4" />
               Ana panele dön
             </Link>

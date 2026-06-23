@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import { getCommunicationLogs, getCommunicationStats } from "@/app/app/communications/actions"
+import { getCommunicationLogs, getCommunicationStats } from "@/app/(app)/communications/actions"
 
 export async function GET(request: Request) {
   try {

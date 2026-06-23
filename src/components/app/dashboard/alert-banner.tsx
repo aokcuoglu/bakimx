@@ -17,7 +17,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     alerts.push({
       count: stats.overdueDeliveries,
       message: `${stats.overdueDeliveries} iş emri tahmini teslim tarihini geçti.`,
-      href: "/app/orders?status=active",
+      href: "/orders?status=active",
       icon: AlertTriangle,
       color: "red",
     })
@@ -27,7 +27,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     alerts.push({
       count: stats.missingPhotoIntakes,
       message: `${stats.missingPhotoIntakes} araç kabulünde zorunlu fotoğraflar eksik.`,
-      href: "/app/intakes",
+      href: "/intakes",
       icon: Camera,
       color: "rose",
     })
@@ -37,7 +37,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     alerts.push({
       count: stats.waitingApprovals,
       message: `${stats.waitingApprovals} müşteri onayı bekleyen iş emri var.`,
-      href: "/app/orders?status=waiting_approval",
+      href: "/orders?status=waiting_approval",
       icon: MessageCircle,
       color: "amber",
     })

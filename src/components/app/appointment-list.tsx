@@ -84,10 +84,10 @@ export function AppointmentList({
         {kpiConfig.map((cfg) => {
           const isActive = cfg.filter === "date" ? activeDate === cfg.value : activeStatus === cfg.value
           const href = isActive
-            ? `/app/appointments${search ? `?q=${search}` : ""}`
+            ? `/appointments${search ? `?q=${search}` : ""}`
             : cfg.filter === "date"
-            ? `/app/appointments?date=${cfg.value}${search ? `&q=${search}` : ""}`
-            : `/app/appointments?status=${cfg.value}${search ? `&q=${search}` : ""}`
+            ? `/appointments?date=${cfg.value}${search ? `&q=${search}` : ""}`
+            : `/appointments?status=${cfg.value}${search ? `&q=${search}` : ""}`
           return (
             <Link
               key={cfg.key}
@@ -129,7 +129,7 @@ export function AppointmentList({
                 <tr key={a.id} className="hover:bg-muted/60 transition-colors group">
                   <td className="px-4 py-3">
                     <Link
-                      href={`/app/appointments/${a.id}`}
+                      href={`/appointments/${a.id}`}
                       className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
                     >
                       {a.appointmentNo}
@@ -140,7 +140,7 @@ export function AppointmentList({
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/app/customers/${a.customer.id}`}
+                      href={`/customers/${a.customer.id}`}
                       className="text-foreground font-medium hover:text-primary transition-colors"
                     >
                       {customerDisplayName(a.customer)}
@@ -150,7 +150,7 @@ export function AppointmentList({
                   <td className="px-4 py-3">
                     {a.vehicle ? (
                       <div className="flex flex-col gap-1.5">
-                        <Link href={`/app/vehicles/${a.vehicle.id}`}>
+                        <Link href={`/vehicles/${a.vehicle.id}`}>
                           <PlateBadge plate={a.vehicle.plate} />
                         </Link>
                         <span className="text-xs text-muted-foreground">{a.vehicle.brand} {a.vehicle.model}</span>
@@ -173,9 +173,9 @@ export function AppointmentList({
                   <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
-                        viewHref={`/app/appointments/${a.id}`}
-                        editHref={`/app/appointments/${a.id}?edit=1`}
-                        workOrderHref={a.vehicle ? `/app/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/app/orders/new?customerId=${a.customer.id}`}
+                        viewHref={`/appointments/${a.id}`}
+                        editHref={`/appointments/${a.id}?edit=1`}
+                        workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
                       />
                     </div>
                   </td>
@@ -196,19 +196,19 @@ export function AppointmentList({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
-                    href={`/app/appointments/${a.id}`}
+                    href={`/appointments/${a.id}`}
                     className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
                     {a.appointmentNo}
                   </Link>
                   {a.vehicle && (
-                    <Link href={`/app/vehicles/${a.vehicle.id}`}>
+                    <Link href={`/vehicles/${a.vehicle.id}`}>
                       <PlateBadge plate={a.vehicle.plate} />
                     </Link>
                   )}
                 </div>
                 <Link
-                  href={`/app/customers/${a.customer.id}`}
+                  href={`/customers/${a.customer.id}`}
                   className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                 >
                   {customerDisplayName(a.customer)}
@@ -226,9 +226,9 @@ export function AppointmentList({
                 )}
               </div>
               <MobileActionsMenu
-                viewHref={`/app/appointments/${a.id}`}
-                editHref={`/app/appointments/${a.id}?edit=1`}
-                workOrderHref={a.vehicle ? `/app/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/app/orders/new?customerId=${a.customer.id}`}
+                viewHref={`/appointments/${a.id}`}
+                editHref={`/appointments/${a.id}?edit=1`}
+                workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">

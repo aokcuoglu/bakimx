@@ -1,4 +1,4 @@
-import { updateWorkingHoursAction } from "@/app/app/settings/actions"
+import { updateWorkingHoursAction } from "@/app/(app)/settings/actions"
 import { rateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { deleteCustomerAction } from "@/app/app/customers/actions"
+import { deleteCustomerAction } from "@/app/(app)/customers/actions"
 
 export function DeleteCustomerButton({
   customerId,

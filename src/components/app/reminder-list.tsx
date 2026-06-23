@@ -31,7 +31,7 @@ import {
   completeReminderAction,
   cancelReminderAction,
   createAppointmentFromReminderAction,
-} from "@/app/app/reminders/actions"
+} from "@/app/(app)/reminders/actions"
 
 type Props = {
   initialReminders: ReminderRow[]
@@ -136,7 +136,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
+        <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground font-medium">Bakım Hatırlatmaları</span>
       </div>
@@ -150,7 +150,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
             Hatırlatmalar
             <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <Button nativeButton={false} size="sm" className="gap-1.5" render={<Link href="/app/reminders/new" />}>
+          <Button nativeButton={false} size="sm" className="gap-1.5" render={<Link href="/reminders/new" />}>
             <Plus className="size-4" />
             Yeni Hatırlatma
           </Button>
@@ -212,7 +212,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               <BellRing className="size-10 mx-auto mb-2 text-muted-foreground/50" />
               <p className="text-sm">Henüz hatırlatma bulunmuyor</p>
               <Link
-                href="/app/reminders/new"
+                href="/reminders/new"
                 className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
               >
                 <Plus className="size-3.5" />
@@ -240,20 +240,20 @@ export function ReminderList({ initialReminders, stats }: Props) {
                     {filtered.map((r) => (
                       <tr key={r.id} className="hover:bg-muted transition-colors">
                         <td className="py-3 px-3">
-                          <Link href={`/app/reminders/${r.id}`} className="font-medium text-foreground hover:text-primary">
+                          <Link href={`/reminders/${r.id}`} className="font-medium text-foreground hover:text-primary">
                             {r.title}
                           </Link>
                         </td>
                         <td className="py-3 px-3">
                           <div>
-                            <Link href={`/app/customers/${r.customer.id}`} className="text-foreground hover:text-primary">
+                            <Link href={`/customers/${r.customer.id}`} className="text-foreground hover:text-primary">
                               {customerName(r.customer)}
                             </Link>
                             <p className="text-[11px] text-muted-foreground/70">{r.customer.phone}</p>
                           </div>
                         </td>
                         <td className="py-3 px-3">
-                          <Link href={`/app/vehicles/${r.vehicle.id}`} className="flex items-center gap-2">
+                          <Link href={`/vehicles/${r.vehicle.id}`} className="flex items-center gap-2">
                             <PlateBadge plate={r.vehicle.plate} />
                             <span className="text-xs text-muted-foreground">{r.vehicle.brand} {r.vehicle.model}</span>
                           </Link>
@@ -286,7 +286,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                         <td className="py-3 px-3 text-right">
                           <div className="inline-flex items-center gap-1">
                             <Link
-                              href={`/app/reminders/${r.id}`}
+                              href={`/reminders/${r.id}`}
                               className="inline-flex items-center h-7 px-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
                             >
                               Görüntüle
@@ -336,7 +336,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                 {filtered.map((r) => (
                   <Link
                     key={r.id}
-                    href={`/app/reminders/${r.id}`}
+                    href={`/reminders/${r.id}`}
                     className="block rounded-lg border border-border bg-card p-4 hover:border-border transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">

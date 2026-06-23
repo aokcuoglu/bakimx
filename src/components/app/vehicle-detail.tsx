@@ -113,7 +113,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/app/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-4" />
           Araçlar
         </Link>
@@ -145,7 +145,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/app/orders/new?vehicleId=${v.id}`}
+              href={`/orders/new?vehicleId=${v.id}`}
               className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-4" />
@@ -155,7 +155,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
               nativeButton={false}
               variant="outline"
               size="sm"
-              render={<Link href={`/app/intakes/new?vehicleId=${v.id}`} />}
+              render={<Link href={`/intakes/new?vehicleId=${v.id}`} />}
             >
               <ClipboardList className="size-4" />
               <span className="hidden sm:inline">Yeni Kabul</span>
@@ -164,13 +164,13 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
               nativeButton={false}
               variant="outline"
               size="sm"
-              render={<Link href={`/app/vehicles/${v.id}/edit`} />}
+              render={<Link href={`/vehicles/${v.id}/edit`} />}
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
             </Button>
             <Link
-              href={`/app/vehicles/${v.id}/passport`}
+              href={`/vehicles/${v.id}/passport`}
               className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-navy bg-navy text-white hover:bg-navy/90 text-sm font-medium transition-colors touch-manipulation"
             >
               <ScrollText className="size-4" />
@@ -236,7 +236,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <SectionCard title="Müşteri Bilgisi" icon={User} count={0}>
             <div className="flex items-start gap-3">
               <Link
-                href={`/app/customers/${v.customer.id}`}
+                href={`/customers/${v.customer.id}`}
                 className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors flex-1"
               >
                 <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
@@ -267,7 +267,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             count={workOrders.length}
             action={
               <Link
-                href={`/app/orders/new?vehicleId=${v.id}`}
+                href={`/orders/new?vehicleId=${v.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -286,7 +286,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   i.order ? (
                     <Link
                       key={i.order.id}
-                      href={`/app/orders/${i.order.id}`}
+                      href={`/orders/${i.order.id}`}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
@@ -322,7 +322,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             count={v.intakes.length}
             action={
               <Link
-                href={`/app/intakes/new?vehicleId=${v.id}`}
+                href={`/intakes/new?vehicleId=${v.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -342,7 +342,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   return (
                     <Link
                       key={i.id}
-                      href={`/app/intakes/${i.id}`}
+                      href={`/intakes/${i.id}`}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
@@ -377,7 +377,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             count={v.reminders.length}
             action={
               <Link
-                href={`/app/reminders/new?customerId=${v.customer.id}&vehicleId=${v.id}`}
+                href={`/reminders/new?customerId=${v.customer.id}&vehicleId=${v.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -395,7 +395,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                 {v.reminders.map((r) => (
                   <Link
                     key={r.id}
-                    href={`/app/reminders/${r.id}`}
+                    href={`/reminders/${r.id}`}
                     className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                   >
                     <div className="min-w-0 flex-1">
@@ -467,7 +467,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                       </div>
                       <div className="mt-1">
                         <Link
-                          href={`/app/intakes/${dm.intakeId}`}
+                          href={`/intakes/${dm.intakeId}`}
                           className="text-[11px] text-primary hover:text-primary"
                         >
                           Kabul detayı →
@@ -493,7 +493,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   return (
                     <Link
                       key={p.id}
-                      href={`/app/intakes/${p.intakeId}`}
+                      href={`/intakes/${p.intakeId}`}
                       className="block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
                     >
                       <div className="aspect-[4/3] bg-muted flex items-center justify-center">
@@ -572,19 +572,19 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           </Card>
 
           <div className="flex flex-col gap-2">
-            <Link href={`/app/vehicles/${v.id}/passport`}>
+            <Link href={`/vehicles/${v.id}/passport`}>
               <Button className="w-full gap-2 bg-navy hover:bg-navy/90">
                 <ScrollText className="size-4" />
                 Servis Pasaportu
               </Button>
             </Link>
-            <Link href={`/app/vehicles/${v.id}/edit`}>
+            <Link href={`/vehicles/${v.id}/edit`}>
               <Button variant="outline" className="w-full gap-2">
                 <Pencil className="size-4" />
                 Aracı Düzenle
               </Button>
             </Link>
-            <Link href={`/app/intakes/new?vehicleId=${v.id}`}>
+            <Link href={`/intakes/new?vehicleId=${v.id}`}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
                 Yeni Araç Kabulü

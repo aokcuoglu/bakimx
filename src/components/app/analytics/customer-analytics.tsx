@@ -84,7 +84,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <Link href={`/app/customers/${c.id}`} className="font-medium text-primary hover:text-primary/80">
+                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:text-primary/80">
                         {c.name}
                       </Link>
                     </td>

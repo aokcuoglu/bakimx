@@ -13,11 +13,11 @@ import {
 } from "lucide-react"
 
 const REPORT_NAV = [
-  { href: "/app/reports/orders", label: "İş Emirleri", icon: Wrench },
-  { href: "/app/reports/customers", label: "Müşteriler", icon: Users },
-  { href: "/app/reports/collections", label: "Tahsilatlar", icon: Wallet },
-  { href: "/app/reports/parts", label: "Parçalar", icon: Boxes },
-  { href: "/app/reports/technicians", label: "Teknisyenler", icon: HardHat },
+  { href: "/reports/orders", label: "İş Emirleri", icon: Wrench },
+  { href: "/reports/customers", label: "Müşteriler", icon: Users },
+  { href: "/reports/collections", label: "Tahsilatlar", icon: Wallet },
+  { href: "/reports/parts", label: "Parçalar", icon: Boxes },
+  { href: "/reports/technicians", label: "Teknisyenler", icon: HardHat },
 ]
 
 export function ReportsLayout({ children }: { children: React.ReactNode }) {

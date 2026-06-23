@@ -2,58 +2,101 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/session"
 import type { NextRequest } from "next/server"
 
+// Two subdomains, one container (nginx preserves Host):
+//   bakimx.com      = landing + auth + public token pages + /api
+//   app.bakimx.com  = the authenticated app (clean URLs, no /app prefix)
+const APP_ORIGIN = "https://app.bakimx.com"
+const LANDING_ORIGIN = "https://bakimx.com"
+
+// Pages served on the landing host. Everything else is app surface.
+const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms"])
+const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo"]
+
+// API auth (host-agnostic — same container serves both hosts).
+const PUBLIC_API_PREFIX = ["/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
+const PROTECTED_API_PREFIX = [
+  "/api/intakes", "/api/customers", "/api/vehicles", "/api/orders",
+  "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
+  "/api/smart-capture", "/api/reminders", "/api/suppliers",
+  "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
+  "/api/advisor", "/api/communications", "/api/calendar",
+]
+
+function isPublicPage(pathname: string): boolean {
+  return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIX.some((p) => pathname.startsWith(p))
+}
+
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
+  const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
+  const isLocal =
+    host === "" || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
 
-  // Self-serve signup is an approval-gated trial application: /register creates a
-  // workshop in `pending` status that cannot sign in until an admin approves it
-  // (no instant provisioning). /register is public via the fall-through below;
-  // the page redirects already-authenticated users to /app. The registration
-  // POST is public through the "/api/auth" prefix.
-  const publicPaths = ["/", "/login", "/forgot-password", "/privacy", "/terms"]
-  const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
-
-  if (publicPaths.includes(pathname)) {
-    const session = await getSession()
-    if (session?.userId && pathname === "/login") {
-      return NextResponse.redirect(new URL("/app", request.url))
-    }
-    return NextResponse.next()
-  }
-
-  if (publicPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    return NextResponse.next()
-  }
-
+  // ---- API: host-agnostic ----
   if (pathname.startsWith("/api/")) {
-    const session = await getSession()
-    const protectedApiPaths = [
-      "/api/intakes", "/api/customers", "/api/vehicles", "/api/orders",
-      "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
-      "/api/smart-capture", "/api/reminders", "/api/suppliers",
-      "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
-      "/api/advisor", "/api/communications", "/api/calendar",
-    ]
-    const isProtected = protectedApiPaths.some((p) => pathname.startsWith(p))
-    if (isProtected && !session?.userId) {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+    if (PUBLIC_API_PREFIX.some((p) => pathname.startsWith(p))) return NextResponse.next()
+    if (PROTECTED_API_PREFIX.some((p) => pathname.startsWith(p))) {
+      const session = await getSession()
+      if (!session?.userId) return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
     }
     return NextResponse.next()
   }
 
-  if (pathname.startsWith("/app") || pathname.startsWith("/admin")) {
+  // ---- LOCAL DEV: single host, path-based auth (clean URLs, no host split) ----
+  if (isLocal) {
+    if (isPublicPage(pathname)) {
+      if (pathname === "/login") {
+        const session = await getSession()
+        if (session?.userId) return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
+      return NextResponse.next()
+    }
     const session = await getSession()
     if (!session?.userId) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
-    // /admin additionally requires an allow-listed e-mail; the page enforces
-    // that (404 for non-admins) — middleware can't reach the DB on the edge.
     return NextResponse.next()
   }
 
-  return NextResponse.next()
+  // ---- PROD: host-aware ----
+  if (host === "www.bakimx.com") {
+    return NextResponse.redirect(`${LANDING_ORIGIN}${pathname}${search}`, 301)
+  }
+
+  // Legacy /app/* → clean URLs on the app host (works from either host)
+  if (pathname === "/app") return NextResponse.redirect(`${APP_ORIGIN}/dashboard`, 301)
+  if (pathname.startsWith("/app/")) {
+    return NextResponse.redirect(`${APP_ORIGIN}${pathname.slice(4)}${search}`, 301)
+  }
+
+  // ---- APP HOST (app.bakimx.com) ----
+  if (host === "app.bakimx.com") {
+    if (pathname === "/") return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    // landing / auth / public-token pages belong on the landing host
+    if (isPublicPage(pathname)) {
+      return NextResponse.redirect(`${LANDING_ORIGIN}${pathname}${search}`)
+    }
+    // real app route → require auth (login lives on the landing host)
+    const session = await getSession()
+    if (!session?.userId) {
+      const target = encodeURIComponent(`${APP_ORIGIN}${pathname}${search}`)
+      return NextResponse.redirect(`${LANDING_ORIGIN}/login?redirect=${target}`)
+    }
+    return NextResponse.next()
+  }
+
+  // ---- LANDING HOST (bakimx.com) + unknown hosts ----
+  if (isPublicPage(pathname)) {
+    if (pathname === "/login") {
+      const session = await getSession()
+      if (session?.userId) return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    }
+    return NextResponse.next()
+  }
+  // app path requested on the landing host → move it to the app host
+  return NextResponse.redirect(`${APP_ORIGIN}${pathname}${search}`, 301)
 }
 
 export const config = {

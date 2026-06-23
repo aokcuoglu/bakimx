@@ -238,7 +238,7 @@ export function SmartCaptureRegistration() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {saveResult.customerCreated ? "Müşteriler bölümüne yeni kayıt eklendi." : "Mevcut müşteri kaydı kullanıldı."}
                 </p>
-                <Link href={`/app/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
                   Müşteriyi görüntüle
                 </Link>
               </div>
@@ -260,7 +260,7 @@ export function SmartCaptureRegistration() {
                       ? "Mevcut araç bilgileri ve müşteri bağlantısı güncellendi."
                       : "Mevcut araç bilgileri güncellendi."}
                 </p>
-                <Link href={`/app/vehicles/${saveResult.vehicleId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
                   Aracı görüntüle
                 </Link>
               </div>

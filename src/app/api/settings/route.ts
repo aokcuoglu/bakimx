@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getWorkshopSettings } from "@/app/app/settings/actions"
+import { getWorkshopSettings } from "@/app/(app)/settings/actions"
 
 export async function GET() {
   try {

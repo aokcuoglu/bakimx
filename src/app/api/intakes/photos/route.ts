@@ -1,4 +1,4 @@
-import { addPhotoAction, removePhotoAction, replacePhotoAction } from "@/app/app/intakes/actions"
+import { addPhotoAction, removePhotoAction, replacePhotoAction } from "@/app/(app)/intakes/actions"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {

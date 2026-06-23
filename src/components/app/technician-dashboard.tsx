@@ -171,7 +171,7 @@ function OrderCard({ order }: { order: OrderRow }) {
 
   return (
     <Link
-      href={`/app/technician/orders/${order.id}`}
+      href={`/technician/orders/${order.id}`}
       className="block rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-primary/5 transition-colors touch-manipulation"
     >
       <div className="flex items-start justify-between gap-3">

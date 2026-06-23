@@ -233,10 +233,10 @@ export async function POST(request: Request) {
       JSON.stringify({ vehicleId: vehicle.id, customerId: customer.id })
     )
 
-    revalidatePath("/app/customers")
-    revalidatePath(`/app/customers/${customer.id}`)
-    revalidatePath("/app/vehicles")
-    revalidatePath(`/app/vehicles/${vehicle.id}`)
+    revalidatePath("/customers")
+    revalidatePath(`/customers/${customer.id}`)
+    revalidatePath("/vehicles")
+    revalidatePath(`/vehicles/${vehicle.id}`)
 
     const customerName =
       customer.type === "corporate"
@@ -254,7 +254,7 @@ export async function POST(request: Request) {
       vehicleCustomerChanged,
       customerName,
       vehicleLabel: `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}`,
-      intakeUrl: `/app/intakes/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
+      intakeUrl: `/intakes/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
       ...(warnings.length > 0 ? { warnings } : {}),
     })
   } catch (err) {

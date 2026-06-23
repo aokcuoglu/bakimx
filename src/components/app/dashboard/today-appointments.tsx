@@ -24,7 +24,7 @@ export function TodayAppointments({ appointments }: { appointments: TodayAppoint
           appointments.map((a) => (
             <Link
               key={a.id}
-              href={`/app/appointments/${a.id}`}
+              href={`/appointments/${a.id}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
             >
               <div className="shrink-0 w-12 text-center">
@@ -43,7 +43,7 @@ export function TodayAppointments({ appointments }: { appointments: TodayAppoint
         )}
       </div>
       <div className="px-4 py-2.5 border-t border-border">
-        <Link href="/app/appointments" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+        <Link href="/appointments" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
           Tüm Randevular &rarr;
         </Link>
       </div>

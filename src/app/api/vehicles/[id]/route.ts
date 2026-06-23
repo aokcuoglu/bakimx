@@ -1,7 +1,7 @@
-import { getAppData } from "@/app/app/data"
+import { getAppData } from "@/app/(app)/data"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
-import { updateVehicleAction, deleteVehicleAction } from "@/app/app/vehicles/actions"
+import { updateVehicleAction, deleteVehicleAction } from "@/app/(app)/vehicles/actions"
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

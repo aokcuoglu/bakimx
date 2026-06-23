@@ -63,7 +63,7 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
       })
       const data = await res.json()
       if (data.success && data.id) {
-        router.push(`/app/orders/${data.id}`)
+        router.push(`/orders/${data.id}`)
       } else {
         setError(data.error || "İş emri oluşturulamadı")
         setLoadingId(null)
@@ -116,7 +116,7 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
               key={i.id}
               intake={i}
               loading={false}
-              onSelect={i.hasOrder && i.orderId ? () => router.push(`/app/orders/${i.orderId}`) : undefined}
+              onSelect={i.hasOrder && i.orderId ? () => router.push(`/orders/${i.orderId}`) : undefined}
               actionLabel={i.hasOrder ? "Mevcut İş Emrine Git" : "Önce Onaylayın"}
               disabled={!i.hasOrder}
             />

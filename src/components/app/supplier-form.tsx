@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createSupplierAction, updateSupplierAction } from "@/app/app/suppliers/actions"
+import { createSupplierAction, updateSupplierAction } from "@/app/(app)/suppliers/actions"
 import { ArrowLeft, Loader2, Save, Truck, MapPin, Settings2, FileText } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -85,7 +85,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
 
   useEffect(() => {
     if (state?.success && state.id) {
-      router.push(`/app/suppliers/${state.id}`)
+      router.push(`/suppliers/${state.id}`)
     }
   }, [state, router])
 
@@ -107,7 +107,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
         )}
 
         <div className="flex items-center gap-3 mb-5">
-          <Link href={isEdit ? `/app/suppliers/${supplier?.id}` : "/app/suppliers"} className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href={isEdit ? `/suppliers/${supplier?.id}` : "/suppliers"} className="text-muted-foreground/70 hover:text-muted-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Tedarikçi Düzenle" : "Yeni Tedarikçi"}</h2>
@@ -391,7 +391,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
               {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
               {isEdit ? "Güncelle" : "Tedarikçi Oluştur"}
             </Button>
-            <Link href={isEdit ? `/app/suppliers/${supplier?.id}` : "/app/suppliers"}>
+            <Link href={isEdit ? `/suppliers/${supplier?.id}` : "/suppliers"}>
               <Button type="button" variant="outline">
                 İptal
               </Button>
@@ -404,7 +404,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
             {pending ? <Loader2 className="size-4 animate-spin" /> : null}
             {isEdit ? "Güncelle" : "Tedarikçi Oluştur"}
           </Button>
-          <Link href={isEdit ? `/app/suppliers/${supplier?.id}` : "/app/suppliers"} className="flex-1">
+          <Link href={isEdit ? `/suppliers/${supplier?.id}` : "/suppliers"} className="flex-1">
             <Button type="button" variant="outline" className="w-full">
               İptal
             </Button>

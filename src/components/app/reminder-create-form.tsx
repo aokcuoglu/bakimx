@@ -109,8 +109,8 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
         formData.set("id", reminderId)
       }
       const action = mode === "edit" && reminderId
-        ? (await import("@/app/app/reminders/actions")).updateReminderAction
-        : (await import("@/app/app/reminders/actions")).createReminderAction
+        ? (await import("@/app/(app)/reminders/actions")).updateReminderAction
+        : (await import("@/app/(app)/reminders/actions")).createReminderAction
       await action(formData)
     } catch {
       // Hata zaten toast ile gösterilecek
@@ -165,7 +165,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/app/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
                         <Plus className="size-3" />
                         Yeni müşteri ekle
                       </Link>
@@ -198,7 +198,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/app/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
                         <Plus className="size-3" />
                         Yeni araç ekle
                       </Link>
@@ -473,7 +473,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
         </div>
 
         <div className="sticky bottom-0 sm:bottom-0 left-0 right-0 bg-card border-t border-border p-4 -mx-4 sm:-mx-6 sm:px-6 flex items-center justify-between gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:shadow-none lg:border-t lg:border-border lg:bg-transparent lg:p-0 lg:-mx-0">
-          <Button nativeButton={false} variant="outline" render={<Link href="/app/reminders" />}>
+          <Button nativeButton={false} variant="outline" render={<Link href="/reminders" />}>
             İptal
           </Button>
           <Button type="submit" disabled={loading} className="gap-1.5">

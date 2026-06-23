@@ -388,7 +388,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/app/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
+        <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
           <ArrowLeft className="size-5" />
         </button>
         <div className="flex-1 min-w-0">

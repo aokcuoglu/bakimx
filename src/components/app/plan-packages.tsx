@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
 import type { PlanTier } from "@/lib/plan"
-import { requestPlanActivation } from "@/app/app/billing/actions"
+import { requestPlanActivation } from "@/app/(app)/billing/actions"
 
 type BillingCycle = "monthly" | "yearly"
 

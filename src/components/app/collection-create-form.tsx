@@ -143,7 +143,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
       const res = await fetch("/api/cashbox/collections", { method: "POST", body: formData })
       const data = await res.json()
       if (data.success) {
-        router.push("/app/cashbox/payments")
+        router.push("/cashbox/payments")
         router.refresh()
       } else {
         setError(data.error || "Tahsilat kaydedilemedi")
@@ -163,7 +163,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
             type="button"
             variant="link"
             className="p-0 h-auto text-muted-foreground hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
-            render={<Link href="/app/cashbox/payments" />}
+            render={<Link href="/cashbox/payments" />}
           >
             <ArrowLeft className="size-3.5" />
             Tahsilatlar

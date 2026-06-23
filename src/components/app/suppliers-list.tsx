@@ -49,7 +49,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
     if (key === "status" && value && value !== "all") params.set("status", value)
     if (key !== "q" && currentFilters.q) params.set("q", currentFilters.q)
     const qs = params.toString()
-    router.push(`/app/suppliers${qs ? `?${qs}` : ""}`)
+    router.push(`/suppliers${qs ? `?${qs}` : ""}`)
   }
 
   function handleSearch(e: React.FormEvent) {
@@ -59,13 +59,13 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
 
   function clearFilters() {
     setSearch("")
-    router.push("/app/suppliers")
+    router.push("/suppliers")
   }
 
   const hasFilters = currentFilters.q || currentFilters.status !== "all"
 
   async function handleToggleActive(id: string, isActive: boolean) {
-    const mod = await import("@/app/app/suppliers/actions")
+    const mod = await import("@/app/(app)/suppliers/actions")
     if (isActive) {
       await mod.deactivateSupplierAction(id)
     } else {
@@ -76,7 +76,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
 
   async function handleDelete(id: string) {
     setDeleting(id)
-    const { deleteSupplierAction } = await import("@/app/app/suppliers/actions")
+    const { deleteSupplierAction } = await import("@/app/(app)/suppliers/actions")
     const res = await deleteSupplierAction(id) as { error?: string }
     if (res?.error) {
       toast.error(res.error)
@@ -89,7 +89,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
+        <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground font-medium">Tedarikçiler</span>
       </div>
@@ -99,7 +99,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           <Truck className="size-5 text-primary" />
           Tedarikçiler
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/app/suppliers/new" />}>
+        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/suppliers/new" />}>
           <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
         </Button>
       </div>
@@ -174,7 +174,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               {suppliers.map((s) => (
                 <tr key={s.id} className="hover:bg-muted transition-colors">
                   <td className="px-4 py-3">
-                    <Link href={`/app/suppliers/${s.id}`} className="font-medium text-foreground hover:text-primary">
+                    <Link href={`/suppliers/${s.id}`} className="font-medium text-foreground hover:text-primary">
                       {s.name}
                     </Link>
                     {s.category && <span className="block text-[11px] text-muted-foreground">{s.category}</span>}
@@ -202,13 +202,13 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/app/suppliers/${s.id}`} />} />}>
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}`} />} />}>
                           <Eye className="size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/app/suppliers/${s.id}/edit`} />} />}>
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}/edit`} />} />}>
                           <Edit3 className="size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
@@ -242,7 +242,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
 
       <div className="md:hidden space-y-3">
         {suppliers.map((s) => (
-          <Link key={s.id} href={`/app/suppliers/${s.id}`}>
+          <Link key={s.id} href={`/suppliers/${s.id}`}>
             <Card size="sm">
               <CardContent className="p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">

@@ -21,7 +21,7 @@ import {
   addInternalNoteAction, deleteInternalNoteAction,
   createPartsRequestAction, updatePartsRequestStatusAction,
   startLaborSessionAction, stopLaborSessionAction,
-} from "@/app/app/technician/actions"
+} from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
@@ -141,7 +141,7 @@ export function TechnicianOrderDetail({
   return (
     <div className="space-y-4 sm:space-y-5">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app/technician" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/technician" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           Teknisyen Paneli
         </Link>

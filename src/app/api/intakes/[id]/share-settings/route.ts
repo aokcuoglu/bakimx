@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       })
     }
 
-    revalidatePath(`/app/intakes/${id}`)
+    revalidatePath(`/intakes/${id}`)
     revalidatePath(`/s/${link.token}`)
 
     return NextResponse.json({ success: true })

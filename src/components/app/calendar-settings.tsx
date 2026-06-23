@@ -125,7 +125,7 @@ CALENDAR_PROVIDER=mock
             <li>İş emri teslimat tarihi belirlendiğinde takvime eklenir</li>
             <li>Bakım hatırlatmaları due date ile takvime senkronize edilir</li>
             <li>Mock sağlayıcı ile tüm işlemler uygulama içinde gerçekleşir</li>
-            <li>Senkronizasyon logları <Link href="/app/calendar" className="text-primary hover:text-primary underline">Takvim</Link> sayfasından takip edilebilir</li>
+            <li>Senkronizasyon logları <Link href="/calendar" className="text-primary hover:text-primary underline">Takvim</Link> sayfasından takip edilebilir</li>
           </ul>
         </div>
       </div>

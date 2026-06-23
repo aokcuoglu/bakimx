@@ -37,7 +37,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Aktif İş Emri"
         value={stats.activeOrders}
         icon={Wrench}
-        href="/app/orders"
+        href="/orders"
         accent="text-primary"
         accentBg="bg-primary/10"
       />
@@ -45,7 +45,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Bugün Teslim"
         value={stats.todayDeliveries}
         icon={Clock}
-        href="/app/orders"
+        href="/orders"
         accent="text-success"
         accentBg="bg-success/10"
       />
@@ -53,7 +53,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Onay Bekleyen"
         value={stats.waitingApprovals}
         icon={MessageCircle}
-        href="/app/orders?status=waiting_approval"
+        href="/orders?status=waiting_approval"
         accent="text-warning"
         accentBg="bg-warning/10"
       />
@@ -61,7 +61,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Eksik Fotoğraf"
         value={stats.missingPhotoIntakes}
         icon={Camera}
-        href="/app/intakes"
+        href="/intakes"
         accent="text-destructive"
         accentBg="bg-destructive/10"
       />
@@ -69,7 +69,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Geciken Teslim"
         value={stats.overdueDeliveries}
         icon={AlertTriangle}
-        href="/app/orders"
+        href="/orders"
         accent="text-destructive"
         accentBg="bg-destructive/10"
       />
@@ -77,7 +77,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Son 7 Gün"
         value={stats.lastWeekOrders}
         icon={Calendar}
-        href="/app/orders"
+        href="/orders"
         accent="text-primary"
         accentBg="bg-primary/10"
       />

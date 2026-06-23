@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { CustomerList, type CustomerRow } from "@/components/app/customer-list"
-import { deleteCustomerAction } from "@/app/app/customers/actions"
+import { deleteCustomerAction } from "@/app/(app)/customers/actions"
 
 export function CustomerListWithDelete({
   customers,

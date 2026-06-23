@@ -39,7 +39,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
             </span>
           ) : null}
           <Link
-            href="/app/reminders/new"
+            href="/reminders/new"
             className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
           >
             <Plus className="size-3.5" />
@@ -53,7 +53,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
             <BellRing className="size-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm">Yaklaşan veya geciken bakım hatırlatması yok.</p>
             <Link
-              href="/app/reminders/new"
+              href="/reminders/new"
               className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
             >
               <Plus className="size-3.5" />
@@ -65,7 +65,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
             {[...overdue, ...dueSoon].slice(0, 10).map((r) => (
               <Link
                 key={r.id}
-                href={`/app/reminders/${r.id}`}
+                href={`/reminders/${r.id}`}
                 className="flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-muted transition-colors"
               >
                 <div className="min-w-0 flex-1">
@@ -99,7 +99,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
         {hasItems ? (
           <div className="mt-2 pt-2 border-t border-border text-center">
             <Link
-              href="/app/reminders"
+              href="/reminders"
               className="text-xs text-primary hover:text-primary/80 font-medium"
             >
               Tüm hatırlatmaları görüntüle

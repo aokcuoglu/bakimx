@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatTRY, customerDisplayName } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
-import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/app/quotes/actions"
+import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/(app)/quotes/actions"
 import { ArrowLeft, Phone, Car, User, FileText, Printer, Share2, Loader2, ArrowRight, Info, Calendar } from "lucide-react"
 import { QUOTE_STATUS } from "@/lib/constants"
 import { getWhatsAppShareUrl } from "@/lib/share/whatsapp"
@@ -121,7 +121,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
       if (result.error) {
         setError(result.error)
       } else if (result.success && result.orderId) {
-        router.push(`/app/orders/${result.orderId}`)
+        router.push(`/orders/${result.orderId}`)
       }
     } catch {
       setError("Dönüştürme başarısız")
@@ -146,7 +146,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app/quotes" className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
+        <Link href="/quotes" className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
           <ArrowLeft className="size-3.5" />
           Teklifler
         </Link>
@@ -201,7 +201,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Link
-                    href={`/app/customers/${quote.customer.id}`}
+                    href={`/customers/${quote.customer.id}`}
                     className="text-sm font-semibold text-foreground hover:text-primary"
                   >
                     {customerDisplayName(quote.customer)}
@@ -215,7 +215,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                   </a>
                 </div>
                 <Link
-                  href={`/app/customers/${quote.customer.id}`}
+                  href={`/customers/${quote.customer.id}`}
                   className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                 >
                   Müşteri Detayı
@@ -242,7 +242,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                     </span>
                   </div>
                   <Link
-                    href={`/app/vehicles/${quote.vehicle.id}`}
+                    href={`/vehicles/${quote.vehicle.id}`}
                     className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                   >
                     Araç Detayı
@@ -341,7 +341,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                     <Info className="size-4 text-primary" />
                     <span className="font-medium text-foreground">Bu teklif iş emrine çevrildi</span>
                     <Link
-                      href={`/app/orders/${quote.convertedServiceOrder.id}`}
+                      href={`/orders/${quote.convertedServiceOrder.id}`}
                       className="text-primary hover:text-primary font-medium inline-flex items-center gap-1"
                     >
                       {quote.convertedServiceOrder.workOrderNo || "İş Emri"}

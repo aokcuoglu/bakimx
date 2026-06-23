@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { HardHat, Plus, UserCircle, Phone } from "lucide-react"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
 import type { TechnicianRoleKey } from "@/lib/constants"
-import { createTechnicianAction, toggleTechnicianActiveAction } from "@/app/app/technician/actions"
+import { createTechnicianAction, toggleTechnicianActiveAction } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 
 type TechnicianRow = {

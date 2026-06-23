@@ -142,7 +142,7 @@ export function VehicleList({
       )}
 
       <form
-        action="/app/vehicles"
+        action="/vehicles"
         method="get"
         className="flex items-center gap-2"
       >
@@ -233,7 +233,7 @@ export function VehicleList({
               ? "Farklı bir arama veya filtre deneyin"
               : "Yeni bir araç ekleyerek başlayabilirsiniz"
           }
-          action={{ label: "+ Yeni Araç", href: "/app/vehicles/new" }}
+          action={{ label: "+ Yeni Araç", href: "/vehicles/new" }}
         />
       ) : (
         <>
@@ -276,7 +276,7 @@ function DesktopTable({
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-muted/60 transition-colors group">
                 <td className="px-4 py-3">
-                  <Link href={`/app/vehicles/${row.id}`}>
+                  <Link href={`/vehicles/${row.id}`}>
                     <PlateBadge plate={row.plate} />
                   </Link>
                 </td>
@@ -292,7 +292,7 @@ function DesktopTable({
                 </td>
                 <td className="px-4 py-3">
                   <Link
-                    href={`/app/customers/${row.customer.id}`}
+                    href={`/customers/${row.customer.id}`}
                     className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {row.customer.displayName}
@@ -330,11 +330,11 @@ function DesktopTable({
                 <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                   <div className="flex items-center justify-end">
                     <ActionsMenu
-                      viewHref={`/app/vehicles/${row.id}`}
-                      editHref={`/app/vehicles/${row.id}/edit`}
-                      workOrderHref={`/app/orders/new?vehicleId=${row.id}`}
-                      appointmentHref={`/app/appointments/new?vehicleId=${row.id}`}
-                      passportHref={`/app/vehicles/${row.id}/passport`}
+                      viewHref={`/vehicles/${row.id}`}
+                      editHref={`/vehicles/${row.id}/edit`}
+                      workOrderHref={`/orders/new?vehicleId=${row.id}`}
+                      appointmentHref={`/appointments/new?vehicleId=${row.id}`}
+                      passportHref={`/vehicles/${row.id}/passport`}
                     />
                   </div>
                 </td>
@@ -363,7 +363,7 @@ function MobileCards({
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link href={`/app/vehicles/${row.id}`}>
+              <Link href={`/vehicles/${row.id}`}>
                 <PlateBadge plate={row.plate} />
               </Link>
               <p className="mt-1.5 text-sm font-semibold text-foreground truncate">
@@ -371,18 +371,18 @@ function MobileCards({
                 {row.modelYear ? ` (${row.modelYear})` : ""}
               </p>
               <Link
-                href={`/app/customers/${row.customer.id}`}
+                href={`/customers/${row.customer.id}`}
                 className="text-xs text-muted-foreground hover:text-primary cursor-pointer"
               >
                 {row.customer.displayName}
               </Link>
             </div>
             <MobileActionsMenu
-              viewHref={`/app/vehicles/${row.id}`}
-              editHref={`/app/vehicles/${row.id}/edit`}
-              workOrderHref={`/app/orders/new?vehicleId=${row.id}`}
-              appointmentHref={`/app/appointments/new?vehicleId=${row.id}`}
-              passportHref={`/app/vehicles/${row.id}/passport`}
+              viewHref={`/vehicles/${row.id}`}
+              editHref={`/vehicles/${row.id}/edit`}
+              workOrderHref={`/orders/new?vehicleId=${row.id}`}
+              appointmentHref={`/appointments/new?vehicleId=${row.id}`}
+              passportHref={`/vehicles/${row.id}/passport`}
             />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">

@@ -12,7 +12,7 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
           <Truck className="size-4 text-primary" />
           <h3 className="text-sm font-semibold text-primary">Kritik Stok Tedarikçileri</h3>
         </div>
-        <Link href="/app/suppliers" className="text-xs text-primary hover:text-primary/80 font-medium">
+        <Link href="/suppliers" className="text-xs text-primary hover:text-primary/80 font-medium">
           Tümünü Gör →
         </Link>
       </div>
@@ -20,7 +20,7 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
         {suppliers.map((s) => (
           <Link
             key={s.id}
-            href={`/app/suppliers/${s.id}`}
+            href={`/suppliers/${s.id}`}
             className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-primary/5 transition-colors"
           >
             <div className="min-w-0 flex-1">

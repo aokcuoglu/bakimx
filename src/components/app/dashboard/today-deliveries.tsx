@@ -22,7 +22,7 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
           deliveries.map((d) => (
             <Link
               key={d.id}
-              href={`/app/orders/${d.id}`}
+              href={`/orders/${d.id}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
             >
               <PlateBadge plate={d.plate} />

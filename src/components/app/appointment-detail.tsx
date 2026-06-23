@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   updateAppointmentStatusAction,
   convertAppointmentToWorkOrderAction,
-} from "@/app/app/appointments/actions"
+} from "@/app/(app)/appointments/actions"
 import {
   ArrowLeft,
   CalendarClock,
@@ -122,7 +122,7 @@ export function AppointmentDetail({
       formData.set("appointmentId", appointment.id)
       const result = await convertAppointmentToWorkOrderAction(formData)
       if (result.success && result.orderId) {
-        router.push(`/app/orders/${result.orderId}`)
+        router.push(`/orders/${result.orderId}`)
       } else {
         setConvertError(result.error || "İş emrine çevrilemedi")
       }
@@ -139,7 +139,7 @@ export function AppointmentDetail({
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
         <button
-          onClick={() => router.push("/app/appointments")}
+          onClick={() => router.push("/appointments")}
           className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
         >
           <ArrowLeft className="size-3.5" />
@@ -229,7 +229,7 @@ export function AppointmentDetail({
                   </a>
                 </div>
                 <Link
-                  href={`/app/customers/${appointment.customer.id}`}
+                  href={`/customers/${appointment.customer.id}`}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
                 >
                   Müşteri Detayı →
@@ -255,7 +255,7 @@ export function AppointmentDetail({
                     </span>
                   </div>
                   <Link
-                    href={`/app/vehicles/${appointment.vehicle.id}`}
+                    href={`/vehicles/${appointment.vehicle.id}`}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Araç Detayı →
@@ -369,7 +369,7 @@ export function AppointmentDetail({
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  render={<Link href={`/app/orders/${appointment.convertedServiceOrder.id}`} />}
+                  render={<Link href={`/orders/${appointment.convertedServiceOrder.id}`} />}
                 >
                   <Wrench className="size-4" />
                   İş Emrine Git

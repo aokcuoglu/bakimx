@@ -1,4 +1,4 @@
-import { addDamageMarkAction, removeDamageMarkAction } from "@/app/app/intakes/actions"
+import { addDamageMarkAction, removeDamageMarkAction } from "@/app/(app)/intakes/actions"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {

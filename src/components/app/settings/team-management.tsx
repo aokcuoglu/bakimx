@@ -24,7 +24,7 @@ import {
   revokeInviteAction,
   updateMemberRoleAction,
   setMemberActiveAction,
-} from "@/app/app/settings/team/actions"
+} from "@/app/(app)/settings/team/actions"
 
 export type TeamMember = {
   id: string
@@ -138,7 +138,7 @@ export function TeamManagement({
       {canManage && atLimit && (
         <div className="mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900">
           Koltuk limitiniz dolu ({seatUsed}/{seatLimit}). Yeni kullanıcı davet etmek için{" "}
-          <Link href="/app/billing" className="font-semibold underline underline-offset-2">
+          <Link href="/billing" className="font-semibold underline underline-offset-2">
             paketinizi yükseltin
           </Link>{" "}
           ya da ek koltuk için bizimle iletişime geçin.

@@ -59,7 +59,7 @@ export default async function AdminPage() {
             BakimX Yönetim
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <Link href="/app" className="text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
               Uygulamaya dön
             </Link>
             <form action={logoutAction}>

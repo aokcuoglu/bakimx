@@ -117,7 +117,7 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
                 <td className="py-3 px-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     <Link
-                      href={`/app/orders/${o.id}`}
+                      href={`/orders/${o.id}`}
                       className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-muted hover:bg-muted text-xs font-medium text-foreground transition-colors touch-manipulation"
                     >
                       <Eye className="size-3" />
@@ -145,7 +145,7 @@ export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] })
         orders.map((o) => (
           <Link
             key={o.id}
-            href={`/app/orders/${o.id}`}
+            href={`/orders/${o.id}`}
             className="block bg-card border border-border rounded-lg p-4 hover:border-border transition-all"
           >
             <div className="flex items-start justify-between mb-2">
@@ -191,7 +191,7 @@ export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-foreground">Aktif İş Emirleri</h3>
         <Link
-          href="/app/orders"
+          href="/orders"
           className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
         >
           Tümünü Gör →

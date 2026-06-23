@@ -44,8 +44,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
         {statusConfig.map((cfg) => {
           const isActive = activeStatus === cfg.key
           const href = isActive
-            ? `/app/quotes${search ? `?q=${search}` : ""}`
-            : `/app/quotes?status=${cfg.key}${search ? `&q=${search}` : ""}`
+            ? `/quotes${search ? `?q=${search}` : ""}`
+            : `/quotes?status=${cfg.key}${search ? `&q=${search}` : ""}`
           return (
             <Link
               key={cfg.key}
@@ -87,7 +87,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 <tr key={quote.id} className="hover:bg-muted/60 transition-colors group">
                   <td className="px-4 py-3">
                     <Link
-                      href={`/app/quotes/${quote.id}`}
+                      href={`/quotes/${quote.id}`}
                       className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
                     >
                       {quote.quoteNo}
@@ -95,7 +95,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/app/customers/${quote.customer.id}`}
+                      href={`/customers/${quote.customer.id}`}
                       className="text-foreground font-medium hover:text-primary transition-colors"
                     >
                       {customerDisplayName(quote.customer)}
@@ -105,7 +105,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                   <td className="px-4 py-3">
                     {quote.vehicle ? (
                       <div className="flex flex-col gap-1.5">
-                        <Link href={`/app/vehicles/${quote.vehicle.id}`}>
+                        <Link href={`/vehicles/${quote.vehicle.id}`}>
                           <PlateBadge plate={quote.vehicle.plate} />
                         </Link>
                         <span className="text-xs text-muted-foreground">{quote.vehicle.brand} {quote.vehicle.model}</span>
@@ -129,11 +129,11 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                   <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
-                        viewHref={`/app/quotes/${quote.id}`}
-                        editHref={`/app/quotes/${quote.id}?edit=1`}
+                        viewHref={`/quotes/${quote.id}`}
+                        editHref={`/quotes/${quote.id}?edit=1`}
                         workOrderHref={quote.vehicle
-                          ? `/app/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                          : `/app/orders/new?customerId=${quote.customer.id}`
+                          ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                          : `/orders/new?customerId=${quote.customer.id}`
                         }
                       />
                     </div>
@@ -155,19 +155,19 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
-                    href={`/app/quotes/${quote.id}`}
+                    href={`/quotes/${quote.id}`}
                     className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
                     {quote.quoteNo}
                   </Link>
                   {quote.vehicle && (
-                    <Link href={`/app/vehicles/${quote.vehicle.id}`}>
+                    <Link href={`/vehicles/${quote.vehicle.id}`}>
                       <PlateBadge plate={quote.vehicle.plate} />
                     </Link>
                   )}
                 </div>
                 <Link
-                  href={`/app/customers/${quote.customer.id}`}
+                  href={`/customers/${quote.customer.id}`}
                   className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                 >
                   {customerDisplayName(quote.customer)}
@@ -179,11 +179,11 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 )}
               </div>
               <MobileActionsMenu
-                viewHref={`/app/quotes/${quote.id}`}
-                editHref={`/app/quotes/${quote.id}?edit=1`}
+                viewHref={`/quotes/${quote.id}`}
+                editHref={`/quotes/${quote.id}?edit=1`}
                 workOrderHref={quote.vehicle
-                  ? `/app/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                  : `/app/orders/new?customerId=${quote.customer.id}`
+                  ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                  : `/orders/new?customerId=${quote.customer.id}`
                 }
               />
             </div>

@@ -18,7 +18,7 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
           items.map((item) => (
             <Link
               key={item.orderId}
-              href={`/app/intakes/${item.intakeFormId}`}
+              href={`/intakes/${item.intakeFormId}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
             >
               <div className="size-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">

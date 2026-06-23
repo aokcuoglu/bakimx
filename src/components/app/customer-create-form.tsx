@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { createCustomerAction, updateCustomerAction } from "@/app/app/customers/actions"
+import { createCustomerAction, updateCustomerAction } from "@/app/(app)/customers/actions"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils-client"
 import { useForm } from "react-hook-form"
@@ -131,11 +131,11 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
   useEffect(() => {
     if (state?.success) {
       if (isEdit && initial?.id) {
-        router.push(`/app/customers/${initial.id}`)
+        router.push(`/customers/${initial.id}`)
       } else if (state.id) {
-        router.push(`/app/customers/${state.id}`)
+        router.push(`/customers/${state.id}`)
       } else {
-        router.push("/app/customers")
+        router.push("/customers")
       }
       router.refresh()
     }

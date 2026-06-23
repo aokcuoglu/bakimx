@@ -1,4 +1,4 @@
-import { requestApprovalAction, verifyOtpAction } from "@/app/app/intakes/approval-actions"
+import { requestApprovalAction, verifyOtpAction } from "@/app/(app)/intakes/approval-actions"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

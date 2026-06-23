@@ -1,4 +1,4 @@
-import { updatePassportTokenAction, deletePassportTokenAction } from "@/app/app/vehicles/[id]/passport/actions"
+import { updatePassportTokenAction, deletePassportTokenAction } from "@/app/(app)/vehicles/[id]/passport/actions"
 import { NextResponse } from "next/server"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; tokenId: string }> }) {

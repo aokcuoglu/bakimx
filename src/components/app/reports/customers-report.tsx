@@ -38,13 +38,13 @@ export function CustomersReport({ stats, topBySpend, mostVisited, filters }: Cus
     const params = new URLSearchParams()
     if (dateFrom) params.set("dateFrom", dateFrom)
     if (dateTo) params.set("dateTo", dateTo)
-    router.push(`/app/reports/customers?${params.toString()}`)
+    router.push(`/reports/customers?${params.toString()}`)
   }
 
   const clearFilters = () => {
     setDateFrom("")
     setDateTo("")
-    router.push("/app/reports/customers")
+    router.push("/reports/customers")
   }
 
   const csvHeaders = ["Müşteri", "Telefon", "Sipariş Sayısı", "Toplam Harcama"]

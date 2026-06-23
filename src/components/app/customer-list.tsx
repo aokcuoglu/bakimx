@@ -157,7 +157,7 @@ export function CustomerList({
       )}
 
       <form
-        action="/app/customers"
+        action="/customers"
         method="get"
         className="flex items-center gap-2"
       >
@@ -266,7 +266,7 @@ export function CustomerList({
               ? "Farklı bir arama veya filtre deneyin"
               : "Yeni bir müşteri ekleyerek başlayabilirsiniz"
           }
-          action={{ label: "+ Yeni Müşteri", href: "/app/customers/new" }}
+          action={{ label: "+ Yeni Müşteri", href: "/customers/new" }}
         />
       ) : (
         <>
@@ -321,7 +321,7 @@ function DesktopTable({
                     </div>
                     <div className="min-w-0">
                       <Link
-                        href={`/app/customers/${row.id}`}
+                        href={`/customers/${row.id}`}
                         className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate block"
                       >
                         {nameFor(row)}
@@ -358,10 +358,10 @@ function DesktopTable({
                 <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                   <div className="flex items-center justify-end">
                     <ActionsMenu
-                      viewHref={`/app/customers/${row.id}`}
-                      editHref={`/app/customers/${row.id}?edit=1`}
-                      workOrderHref={`/app/orders/new?customerId=${row.id}`}
-                      appointmentHref={`/app/appointments/new?customerId=${row.id}`}
+                      viewHref={`/customers/${row.id}`}
+                      editHref={`/customers/${row.id}?edit=1`}
+                      workOrderHref={`/orders/new?customerId=${row.id}`}
+                      appointmentHref={`/appointments/new?customerId=${row.id}`}
                       onArchive={onDelete ? () => onDelete(row.id, nameFor(row)) : undefined}
                       archiveLabel="Sil"
                     />
@@ -397,7 +397,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
                 </div>
                 <div className="min-w-0">
                   <Link
-                    href={`/app/customers/${row.id}`}
+                    href={`/customers/${row.id}`}
                     className="text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                   >
                     {nameFor(row)}
@@ -419,10 +419,10 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
               </div>
             </div>
             <MobileActionsMenu
-              viewHref={`/app/customers/${row.id}`}
-              editHref={`/app/customers/${row.id}?edit=1`}
-              workOrderHref={`/app/orders/new?customerId=${row.id}`}
-              appointmentHref={`/app/appointments/new?customerId=${row.id}`}
+              viewHref={`/customers/${row.id}`}
+              editHref={`/customers/${row.id}?edit=1`}
+              workOrderHref={`/orders/new?customerId=${row.id}`}
+              appointmentHref={`/appointments/new?customerId=${row.id}`}
             />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">

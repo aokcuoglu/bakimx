@@ -14,6 +14,24 @@ const formVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.15, ease: "easeOut" as const } },
 }
 
+// On success, send the user to the app (app.bakimx.com in prod). The app origin is
+// derived from the current host (no build-time env needed); a validated ?redirect
+// param (set by middleware when bouncing an unauth app request to login) wins.
+function resolveLoginRedirect(): string {
+  const h = window.location.hostname
+  const appOrigin = h === "bakimx.com" || h === "www.bakimx.com" ? "https://app.bakimx.com" : ""
+  const param = new URLSearchParams(window.location.search).get("redirect")
+  if (param) {
+    try {
+      const u = new URL(param, window.location.origin)
+      if (["app.bakimx.com", "bakimx.com", h].includes(u.hostname)) return u.toString()
+    } catch {
+      // ignore malformed redirect param
+    }
+  }
+  return appOrigin ? `${appOrigin}/dashboard` : "/dashboard"
+}
+
 export function LoginForm() {
   const router = useRouter()
   const [error, setError] = useState("")
@@ -46,7 +64,12 @@ export function LoginForm() {
       })
       const data = await res.json()
       if (data.success) {
-        router.push("/app")
+        const dest = new URL(resolveLoginRedirect(), window.location.origin)
+        if (dest.origin === window.location.origin) {
+          router.push(dest.pathname + dest.search)
+        } else {
+          window.location.assign(dest.toString())
+        }
       } else {
         setError(data.error || "Giriş başarısız")
       }

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, Truck, BellRing, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react"
-import { checkRemindersAction } from "@/app/app/calendar/actions"
+import { checkRemindersAction } from "@/app/(app)/calendar/actions"
 import { Button } from "@/components/ui/button"
 
 type ViewMode = "day" | "week" | "month"
@@ -384,8 +384,8 @@ export function CalendarView({
 }
 
 function getEventLink(event: CalendarViewItem): string {
-  if (event.type === "appointment") return `/app/appointments/${event.entityId}`
-  if (event.type === "delivery") return `/app/orders/${event.entityId}`
-  if (event.type === "maintenance_reminder") return `/app/reminders/${event.entityId}`
-  return "/app/calendar"
+  if (event.type === "appointment") return `/appointments/${event.entityId}`
+  if (event.type === "delivery") return `/orders/${event.entityId}`
+  if (event.type === "maintenance_reminder") return `/reminders/${event.entityId}`
+  return "/calendar"
 }

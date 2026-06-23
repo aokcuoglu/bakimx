@@ -29,7 +29,7 @@ export function AdvisorPremiumLock() {
           için AI Servis Danışmanı Premium pakete özeldir.
         </p>
         <Link
-          href="/app/billing"
+          href="/billing"
           className={cn(buttonVariants({ size: "sm" }), "w-full")}
         >
           <Sparkles className="size-3.5" />

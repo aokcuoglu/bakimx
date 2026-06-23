@@ -1,4 +1,4 @@
-import { createServiceOrderAction } from "@/app/app/orders/actions"
+import { createServiceOrderAction } from "@/app/(app)/orders/actions"
 import { requireAuth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 

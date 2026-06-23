@@ -109,7 +109,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
       const res = await fetch(url, { method, body: formData })
       const data = await res.json()
       if (data.success) {
-        router.push(isEdit ? `/app/vehicles/${initial?.id}` : "/app/vehicles")
+        router.push(isEdit ? `/vehicles/${initial?.id}` : "/vehicles")
         router.refresh()
       } else {
         setError(data.error || (isEdit ? "Güncelleme başarısız" : "Oluşturma başarısız"))
@@ -123,7 +123,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
 
   const handleCancel = () => {
     if (isEdit) {
-      router.push(`/app/vehicles/${initial?.id}`)
+      router.push(`/vehicles/${initial?.id}`)
     } else {
       router.back()
     }
@@ -171,7 +171,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   )}
                 />
                 <div className="text-xs text-muted-foreground">
-                  <Link href="/app/customers/new" className="text-primary hover:text-primary/80 font-medium">
+                  <Link href="/customers/new" className="text-primary hover:text-primary/80 font-medium">
                     + Yeni müşteri ekle
                   </Link>
                 </div>
@@ -408,7 +408,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                 />
 
                 <Link
-                  href="/app/smart-capture/registration"
+                  href="/smart-capture/registration"
                   className="rounded-lg border border-primary/20 bg-primary/5 p-4 hover:bg-primary/10 transition-colors block"
                 >
                   <div className="flex items-center gap-2 text-sm text-primary mb-1">

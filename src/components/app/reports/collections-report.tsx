@@ -31,13 +31,13 @@ export function CollectionsReport({ stats, dailyCollections, monthlyCollections,
     const params = new URLSearchParams()
     if (dateFrom) params.set("dateFrom", dateFrom)
     if (dateTo) params.set("dateTo", dateTo)
-    router.push(`/app/reports/collections?${params.toString()}`)
+    router.push(`/reports/collections?${params.toString()}`)
   }
 
   const clearFilters = () => {
     setDateFrom("")
     setDateTo("")
-    router.push("/app/reports/collections")
+    router.push("/reports/collections")
   }
 
   const csvHeaders = ["Tarih", "Miktar"]

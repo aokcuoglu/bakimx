@@ -1,5 +1,5 @@
-import { createVehicleAction } from "@/app/app/vehicles/actions"
-import { getAppData } from "@/app/app/data"
+import { createVehicleAction } from "@/app/(app)/vehicles/actions"
+import { getAppData } from "@/app/(app)/data"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
 

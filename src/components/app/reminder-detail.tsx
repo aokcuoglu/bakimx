@@ -31,7 +31,7 @@ import {
   postponeReminderAction,
   cancelReminderAction,
   createAppointmentFromReminderAction,
-} from "@/app/app/reminders/actions"
+} from "@/app/(app)/reminders/actions"
 
 type SafeReminder = {
   id: string
@@ -149,7 +149,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/app/reminders" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/reminders" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-4" />
           Bakım Hatırlatmaları
         </Link>
@@ -223,7 +223,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               nativeButton={false}
               variant="outline"
               size="sm"
-              render={<Link href={`/app/reminders/${reminder.id}/edit`} />}
+              render={<Link href={`/reminders/${reminder.id}/edit`} />}
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
@@ -244,7 +244,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               </button>
             ) : null}
             <Link
-              href={`/app/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
+              href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-muted text-foreground hover:bg-border text-xs font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-3.5" />
@@ -356,7 +356,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               </CardHeader>
               <CardContent className="pt-0">
                 <Link
-                  href={`/app/appointments/${reminder.createdAppointment.id}`}
+                  href={`/appointments/${reminder.createdAppointment.id}`}
                   className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted transition-colors"
                 >
                   <div className="min-w-0 flex-1">
@@ -384,7 +384,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             </CardHeader>
             <CardContent className="pt-0">
               <Link
-                href={`/app/customers/${reminder.customer.id}`}
+                href={`/customers/${reminder.customer.id}`}
                 className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
                 <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
@@ -409,7 +409,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
             </CardHeader>
             <CardContent className="pt-0">
               <Link
-                href={`/app/vehicles/${reminder.vehicle.id}`}
+                href={`/vehicles/${reminder.vehicle.id}`}
                 className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
                 <div className="size-10 rounded-lg bg-navy text-white flex items-center justify-center shrink-0">
@@ -453,14 +453,14 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
           <div className="flex flex-col gap-2">
             {isActive ? (
-              <Link href={`/app/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
+              <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
                 <Button variant="outline" className="w-full gap-2">
                   <Wrench className="size-4" />
                   İş Emri Oluştur
                 </Button>
               </Link>
             ) : null}
-            <Link href={`/app/reminders/${reminder.id}/edit`}>
+            <Link href={`/reminders/${reminder.id}/edit`}>
               <Button variant="outline" className="w-full gap-2">
                 <Pencil className="size-4" />
                 Düzenle

@@ -12,7 +12,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       <Link
-        href="/app/reports/collections"
+        href="/reports/collections"
         className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
       >
         <div className="flex items-center justify-between mb-1">
@@ -26,7 +26,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
       </Link>
 
       <Link
-        href="/app/reports/orders"
+        href="/reports/orders"
         className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
       >
         <div className="flex items-center justify-between mb-1">
@@ -40,7 +40,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
       </Link>
 
       <Link
-        href="/app/reports/collections"
+        href="/reports/collections"
         className="rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all group"
       >
         <div className="flex items-center justify-between mb-1">

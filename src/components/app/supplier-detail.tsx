@@ -61,7 +61,7 @@ export function SupplierDetail({
   const router = useRouter()
 
   async function handleToggleActive() {
-    const { deactivateSupplierAction, reactivateSupplierAction } = await import("@/app/app/suppliers/actions")
+    const { deactivateSupplierAction, reactivateSupplierAction } = await import("@/app/(app)/suppliers/actions")
     if (supplier.isActive) {
       await deactivateSupplierAction(supplier.id)
     } else {
@@ -73,7 +73,7 @@ export function SupplierDetail({
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app/suppliers" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/suppliers" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           Tedarikçiler
         </Link>
@@ -95,7 +95,7 @@ export function SupplierDetail({
           </div>
         </div>
         <div className="flex gap-2">
-          <Link href={`/app/suppliers/${supplier.id}/edit`}>
+          <Link href={`/suppliers/${supplier.id}/edit`}>
             <Button size="sm" variant="outline">
               <Edit3 className="size-3.5 mr-1" /> Düzenle
             </Button>
@@ -104,7 +104,7 @@ export function SupplierDetail({
             {supplier.isActive ? <Archive className="size-3.5 mr-1" /> : <RotateCcw className="size-3.5 mr-1" />}
             {supplier.isActive ? "Pasifleştir" : "Aktifleştir"}
           </Button>
-          <Link href="/app/suppliers">
+          <Link href="/suppliers">
             <Button size="sm" variant="outline">
               <ArrowLeft className="size-3.5 mr-1" /> Geri
             </Button>
@@ -162,7 +162,7 @@ export function SupplierDetail({
               ) : (
                 <div className="space-y-1.5">
                   {supplier.parts.map((p) => (
-                    <Link key={p.id} href={`/app/parts/${p.id}`}>
+                    <Link key={p.id} href={`/parts/${p.id}`}>
                       <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm hover:bg-muted transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="font-medium text-foreground truncate">{p.name}</span>
@@ -195,7 +195,7 @@ export function SupplierDetail({
               <CardContent>
                 <div className="space-y-1.5">
                   {criticalParts.map((p) => (
-                    <Link key={p.id} href={`/app/parts/${p.id}`}>
+                    <Link key={p.id} href={`/parts/${p.id}`}>
                       <div className="flex items-center justify-between p-2.5 bg-destructive/10 rounded-lg text-sm hover:bg-destructive/20 transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
                           <AlertTriangle className="size-3.5 text-destructive shrink-0" />

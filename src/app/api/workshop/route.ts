@@ -1,4 +1,4 @@
-import { updateBusinessProfileAction } from "@/app/app/settings/actions"
+import { updateBusinessProfileAction } from "@/app/(app)/settings/actions"
 import { rateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 

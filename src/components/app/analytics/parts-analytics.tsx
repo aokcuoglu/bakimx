@@ -115,7 +115,7 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
                   {analytics.stockRiskList.slice(0, 10).map((item) => (
                     <tr key={item.id} className="border-b border-border hover:bg-muted/50">
                       <td className="px-4 py-2">
-                        <Link href={`/app/parts/${item.id}`} className="font-medium text-primary hover:underline">
+                        <Link href={`/parts/${item.id}`} className="font-medium text-primary hover:underline">
                           {item.name}
                         </Link>
                         {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}

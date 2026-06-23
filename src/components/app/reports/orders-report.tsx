@@ -66,7 +66,7 @@ export function OrdersReport({
     if (technician) params.set("technician", technician)
     if (status) params.set("status", status)
     if (customer) params.set("customer", customer)
-    router.push(`/app/reports/orders?${params.toString()}`)
+    router.push(`/reports/orders?${params.toString()}`)
   }
 
   const clearFilters = () => {
@@ -75,7 +75,7 @@ export function OrdersReport({
     setTechnician("")
     setStatus("")
     setCustomer("")
-    router.push("/app/reports/orders")
+    router.push("/reports/orders")
   }
 
   const csvHeaders = ["İş Emri No", "Müşteri", "Plaka", "Tutar", "Durum", "Tarih"]

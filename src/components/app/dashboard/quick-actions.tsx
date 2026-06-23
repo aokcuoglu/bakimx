@@ -15,7 +15,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni İş Emri",
     icon: Plus,
-    href: "/app/orders/new",
+    href: "/orders/new",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,
@@ -23,7 +23,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni Müşteri",
     icon: UserPlus,
-    href: "/app/customers/new",
+    href: "/customers/new",
     color: "text-success",
     bgColor: "bg-success/10",
     enabled: true,
@@ -31,7 +31,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni Araç",
     icon: Car,
-    href: "/app/vehicles/new",
+    href: "/vehicles/new",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,
@@ -39,7 +39,7 @@ const actions: QuickAction[] = [
   {
     label: "Onay Bekleyenler",
     icon: MessageCircle,
-    href: "/app/orders?status=waiting_approval",
+    href: "/orders?status=waiting_approval",
     color: "text-warning",
     bgColor: "bg-warning/10",
     enabled: true,
@@ -47,7 +47,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni Teklif",
     icon: FileText,
-    href: "/app/quotes/new",
+    href: "/quotes/new",
     color: "text-success",
     bgColor: "bg-success/10",
     enabled: true,
@@ -55,7 +55,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni Randevu",
     icon: CalendarClock,
-    href: "/app/appointments/new",
+    href: "/appointments/new",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,
@@ -63,7 +63,7 @@ const actions: QuickAction[] = [
   {
     label: "Eksik Fotoğraflar",
     icon: Camera,
-    href: "/app/intakes",
+    href: "/intakes",
     color: "text-destructive",
     bgColor: "bg-destructive/10",
     enabled: true,
@@ -71,7 +71,7 @@ const actions: QuickAction[] = [
   {
     label: "Müşteri Bakiye Özeti",
     icon: Wallet,
-    href: "/app/customers/balances",
+    href: "/customers/balances",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,

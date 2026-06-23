@@ -13,7 +13,7 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
           <AlertTriangle className="size-4 text-destructive" />
           <h3 className="text-sm font-semibold text-foreground">Kritik Stok</h3>
         </div>
-        <Link href="/app/parts?status=critical" className="text-xs text-destructive hover:text-destructive font-medium">
+        <Link href="/parts?status=critical" className="text-xs text-destructive hover:text-destructive font-medium">
           Tümünü Gör →
         </Link>
       </div>
@@ -21,7 +21,7 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
         {items.slice(0, 5).map((item) => (
           <Link
             key={item.id}
-            href={`/app/parts/${item.id}`}
+            href={`/parts/${item.id}`}
             className="flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-destructive/10 transition-colors"
           >
             <div className="min-w-0 flex-1">
@@ -52,7 +52,7 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
       </div>
       {items.length > 5 && (
         <Link
-          href="/app/parts?status=critical"
+          href="/parts?status=critical"
           className="block px-4 py-2 text-xs text-center text-destructive hover:text-destructive font-medium border-t border-destructive/20"
         >
           +{items.length - 5} kritik parça daha

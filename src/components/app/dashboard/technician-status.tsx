@@ -26,7 +26,7 @@ export function TechnicianStatusWidget({ technicians }: { technicians: Technicia
         </div>
         <div className="text-center py-6 text-muted-foreground text-sm">
           <p>Henüz teknisyen kaydı yok</p>
-          <Link href="/app/workshop" className="text-primary hover:underline text-sm mt-1 inline-block">
+          <Link href="/workshop" className="text-primary hover:underline text-sm mt-1 inline-block">
             İş Yeri Profili sayfasından ekleyin
           </Link>
         </div>
@@ -42,7 +42,7 @@ export function TechnicianStatusWidget({ technicians }: { technicians: Technicia
           <h3 className="text-sm font-semibold text-foreground">Usta İş Durumu</h3>
         </div>
         <Link
-          href="/app/technician"
+          href="/technician"
           className="text-xs text-primary hover:underline"
         >
           Tümünü Gör

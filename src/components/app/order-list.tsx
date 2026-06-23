@@ -82,8 +82,8 @@ export function OrderList({
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
           const href = isActive
-            ? `/app/orders${paymentParam ? `?payment=${activePayment}` : ""}`
-            : `/app/orders?status=${cfg.filterValue}${paymentParam}`
+            ? `/orders${paymentParam ? `?payment=${activePayment}` : ""}`
+            : `/orders?status=${cfg.filterValue}${paymentParam}`
           return (
             <StatCard
               key={cfg.key}
@@ -119,7 +119,7 @@ export function OrderList({
                 <tr key={order.id} className="hover:bg-muted/60 transition-colors group">
                   <td className="px-4 py-3">
                     <Link
-                      href={`/app/orders/${order.id}`}
+                      href={`/orders/${order.id}`}
                       className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
                     >
                       {order.workOrderNo}
@@ -128,7 +128,7 @@ export function OrderList({
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1.5">
                       {order.vehicle.id ? (
-                        <Link href={`/app/vehicles/${order.vehicle.id}`}>
+                        <Link href={`/vehicles/${order.vehicle.id}`}>
                           <PlateBadge plate={order.vehicle.plate} />
                         </Link>
                       ) : (
@@ -142,7 +142,7 @@ export function OrderList({
                   <td className="px-4 py-3">
                     {order.customer.id ? (
                       <Link
-                        href={`/app/customers/${order.customer.id}`}
+                        href={`/customers/${order.customer.id}`}
                         className="text-foreground font-medium hover:text-primary transition-colors block"
                       >
                         {customerName(order.customer)}
@@ -173,8 +173,8 @@ export function OrderList({
                   <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
-                        viewHref={`/app/orders/${order.id}`}
-                        editHref={`/app/orders/${order.id}?edit=1`}
+                        viewHref={`/orders/${order.id}`}
+                        editHref={`/orders/${order.id}?edit=1`}
                       />
                     </div>
                   </td>
@@ -195,13 +195,13 @@ export function OrderList({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
-                    href={`/app/orders/${order.id}`}
+                    href={`/orders/${order.id}`}
                     className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
                   >
                     {order.workOrderNo}
                   </Link>
                   {order.vehicle.id ? (
-                    <Link href={`/app/vehicles/${order.vehicle.id}`}>
+                    <Link href={`/vehicles/${order.vehicle.id}`}>
                       <PlateBadge plate={order.vehicle.plate} />
                     </Link>
                   ) : (
@@ -209,7 +209,7 @@ export function OrderList({
                   )}
                 </div>
                 <Link
-                  href={order.customer.id ? `/app/customers/${order.customer.id}` : "#"}
+                  href={order.customer.id ? `/customers/${order.customer.id}` : "#"}
                   className="mt-1.5 text-sm font-semibold text-foreground truncate block hover:text-primary transition-colors"
                 >
                   {customerName(order.customer)}
@@ -219,8 +219,8 @@ export function OrderList({
                 </p>
               </div>
               <MobileActionsMenu
-                viewHref={`/app/orders/${order.id}`}
-                editHref={`/app/orders/${order.id}?edit=1`}
+                viewHref={`/orders/${order.id}`}
+                editHref={`/orders/${order.id}?edit=1`}
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">

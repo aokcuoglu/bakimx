@@ -224,12 +224,12 @@ export function VehiclePassport({ data }: { data: PassportData }) {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/app/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/vehicles" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-4" />
           Araçlar
         </Link>
         <span className="mx-1">/</span>
-        <Link href={`/app/vehicles/${vehicle.id}`} className="hover:text-foreground font-medium truncate">
+        <Link href={`/vehicles/${vehicle.id}`} className="hover:text-foreground font-medium truncate">
           {vehicle.plate}
         </Link>
         <span className="mx-1">/</span>
@@ -263,7 +263,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               nativeButton={false}
               variant="outline"
               size="sm"
-              render={<Link href={`/app/vehicles/${vehicle.id}`} />}
+              render={<Link href={`/vehicles/${vehicle.id}`} />}
             >
               Araç Detayı
             </Button>
@@ -302,7 +302,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                   i.order ? (
                     <Link
                       key={i.order.id}
-                      href={`/app/orders/${i.order.id}`}
+                      href={`/orders/${i.order.id}`}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
@@ -397,7 +397,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             ) : (
               <div className="divide-y divide-border -mx-4 sm:-mx-5">
                 {reminders.map((r) => (
-                  <Link key={r.id} href={`/app/reminders/${r.id}`} className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors">
+                  <Link key={r.id} href={`/reminders/${r.id}`} className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium text-foreground">{r.title}</span>
@@ -431,7 +431,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <Link href={`/app/customers/${customer.id}`} className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors">
+              <Link href={`/customers/${customer.id}`} className="flex items-center gap-3 hover:bg-muted rounded-lg p-2 -m-2 transition-colors">
                 <div className="size-10 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                   <User className="size-4" />
                 </div>

@@ -912,7 +912,7 @@ export function IntakeWizard({
                       nativeButton={false}
                       size="lg"
                       className="flex-1 h-12"
-                      render={<Link href={`/app/intakes/${intakeId}`} />}
+                      render={<Link href={`/intakes/${intakeId}`} />}
                     >
                       Kabul Detayına Git
                     </Button>

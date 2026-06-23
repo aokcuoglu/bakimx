@@ -56,54 +56,54 @@ type NavGroup = {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Ana Panel",
-    items: [{ href: "/app", label: "Genel Bakış", icon: LayoutDashboard }],
+    items: [{ href: "/dashboard", label: "Genel Bakış", icon: LayoutDashboard }],
   },
   {
     label: "Servis",
     items: [
-      { href: "/app/orders", label: "İş Emirleri", icon: WrenchIcon },
-      { href: "/app/intakes", label: "Araç Kabulleri", icon: ClipboardList },
-      { href: "/app/technician", label: "Teknisyen Paneli", icon: HardHat },
-      { href: "/app/customers", label: "Müşteriler", icon: Users },
-      { href: "/app/vehicles", label: "Araçlar", icon: Car },
-      { href: "/app/quotes", label: "Teklifler", icon: FileText },
-      { href: "/app/appointments", label: "Randevular", icon: CalendarClock },
-      { href: "/app/calendar", label: "Takvim", icon: Calendar },
-      { href: "/app/reminders", label: "Bakım Hatırlatmaları", icon: BellRing },
-      { href: "/app/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine },
+      { href: "/orders", label: "İş Emirleri", icon: WrenchIcon },
+      { href: "/intakes", label: "Araç Kabulleri", icon: ClipboardList },
+      { href: "/technician", label: "Teknisyen Paneli", icon: HardHat },
+      { href: "/customers", label: "Müşteriler", icon: Users },
+      { href: "/vehicles", label: "Araçlar", icon: Car },
+      { href: "/quotes", label: "Teklifler", icon: FileText },
+      { href: "/appointments", label: "Randevular", icon: CalendarClock },
+      { href: "/calendar", label: "Takvim", icon: Calendar },
+      { href: "/reminders", label: "Bakım Hatırlatmaları", icon: BellRing },
+      { href: "/smart-capture/registration", label: "Ruhsat Okuma", icon: ScanLine },
     ],
   },
   {
     label: "Depo & Finans",
     items: [
-      { href: "/app/parts", label: "Stok / Parçalar", icon: Boxes },
-      { href: "/app/suppliers", label: "Tedarikçiler", icon: Truck },
-      { href: "/app/cashbox", label: "Kasa", icon: Wallet, children: [
-        { href: "/app/cashbox/payments", label: "Tahsilatlar", icon: Receipt },
-        { href: "/app/cashbox/aging", label: "Yaşlandırma", icon: BarChart3 },
+      { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
+      { href: "/suppliers", label: "Tedarikçiler", icon: Truck },
+      { href: "/cashbox", label: "Kasa", icon: Wallet, children: [
+        { href: "/cashbox/payments", label: "Tahsilatlar", icon: Receipt },
+        { href: "/cashbox/aging", label: "Yaşlandırma", icon: BarChart3 },
       ] },
     ],
   },
   {
     label: "Analiz",
     items: [
-      { href: "/app/analytics", label: "Operasyonel Analiz", icon: Activity },
-      { href: "/app/reports", label: "Raporlar", icon: BarChart3 },
+      { href: "/analytics", label: "Operasyonel Analiz", icon: Activity },
+      { href: "/reports", label: "Raporlar", icon: BarChart3 },
     ],
   },
   {
     label: "İletişim",
     items: [
-      { href: "/app/communications", label: "İletişim Kayıtları", icon: MessageSquare },
+      { href: "/communications", label: "İletişim Kayıtları", icon: MessageSquare },
     ],
   },
   {
     label: "Ayarlar",
     items: [
-      { href: "/app/settings?tab=profile", label: "Ayarlar", icon: Settings },
-      { href: "/app/settings?tab=team", label: "Ekip", icon: Users },
-      { href: "/app/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
-      { href: "/app/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
+      { href: "/settings?tab=profile", label: "Ayarlar", icon: Settings },
+      { href: "/settings?tab=team", label: "Ekip", icon: Users },
+      { href: "/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
+      { href: "/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
     ],
   },
 ]
@@ -215,7 +215,7 @@ export function AppShellChrome({
     e.preventDefault()
     const value = searchValue.trim()
     if (!value) return
-    router.push(`/app/parts?q=${encodeURIComponent(value)}`)
+    router.push(`/parts?q=${encodeURIComponent(value)}`)
   }
 
   const desktopSidebarWidth = sidebarCollapsed ? "lg:w-16" : "lg:w-64"
@@ -291,35 +291,35 @@ export function AppShellChrome({
 
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
-                  href="/app/orders/new"
+                  href="/orders/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Plus className="size-4" />
                   <span>Yeni İş Emri</span>
                 </Link>
                 <Link
-                  href="/app/quotes/new"
+                  href="/quotes/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <FileText className="size-4" />
                   <span>Yeni Teklif</span>
                 </Link>
                 <Link
-                  href="/app/appointments/new"
+                  href="/appointments/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <CalendarClock className="size-4" />
                   <span>Yeni Randevu</span>
                 </Link>
                 <Link
-                  href="/app/reminders/new"
+                  href="/reminders/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <BellRing className="size-4" />
                   <span>Yeni Hatırlatma</span>
                 </Link>
                 <Link
-                  href="/app/orders/new"
+                  href="/orders/new"
                   className="sm:hidden inline-flex items-center justify-center size-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground touch-manipulation"
                   aria-label="Yeni iş emri"
                 >
@@ -348,30 +348,30 @@ export function AppShellChrome({
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border safe-area-bottom">
         <div className="grid grid-cols-5 gap-1 px-2 py-1.5">
-          <MobileNavLink href="/app" label="Panel" icon={LayoutDashboard} active={pathname === "/app"} />
+          <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
           <MobileNavLink
-            href="/app/orders"
+            href="/orders"
             label="İş Emirleri"
             icon={WrenchIcon}
-            active={pathname === "/app/orders" || pathname.startsWith("/app/orders/")}
+            active={pathname === "/orders" || pathname.startsWith("/orders/")}
           />
           <MobileNavLink
-            href="/app/technician"
+            href="/technician"
             label="Teknisyen"
             icon={HardHat}
-            active={pathname === "/app/technician" || pathname.startsWith("/app/technician/")}
+            active={pathname === "/technician" || pathname.startsWith("/technician/")}
           />
           <MobileNavLink
-            href="/app/intakes"
+            href="/intakes"
             label="Kabuller"
             icon={ClipboardList}
-            active={pathname === "/app/intakes" || pathname.startsWith("/app/intakes/")}
+            active={pathname === "/intakes" || pathname.startsWith("/intakes/")}
           />
           <MobileNavLink
-            href="/app/customers"
+            href="/customers"
             label="Müşteriler"
             icon={Users}
-            active={pathname.startsWith("/app/customers") || pathname.startsWith("/app/vehicles")}
+            active={pathname.startsWith("/customers") || pathname.startsWith("/vehicles")}
           />
         </div>
       </nav>
@@ -457,7 +457,7 @@ function SidebarContent({
       <div className={cn("py-5 border-b border-navy-foreground/10", collapsed ? "px-2" : "px-5")}>
         <div className={collapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between gap-2"}>
           <Tooltip>
-            <TooltipTrigger render={<Link href="/app" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
+            <TooltipTrigger render={<Link href="/dashboard" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
               {collapsed ? (
                 <BrandLogo variant="icon-dark" size="sm" alt="BakimX" />
               ) : (
@@ -491,8 +491,8 @@ function SidebarContent({
                 const Icon = item.icon
                 const hasChildren = item.children && item.children.length > 0
                 const isParentActive =
-                  item.href === "/app"
-                    ? pathname === "/app"
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
                     : pathname === item.href || pathname.startsWith(`${item.href}/`)
                 const isAnyChildActive = hasChildren
                   ? item.children!.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`))

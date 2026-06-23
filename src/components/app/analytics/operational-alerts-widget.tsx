@@ -28,7 +28,7 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
   if (recommendations.length === 0) {
     return (
       <Link
-        href="/app/analytics"
+        href="/analytics"
         className="block rounded-lg border border-success/20 bg-success/5 p-4 hover:border-success/30 transition-colors"
       >
         <div className="flex items-center gap-2 mb-2">
@@ -42,7 +42,7 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
 
   return (
     <Link
-      href="/app/analytics"
+      href="/analytics"
       className="block rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all"
     >
       <div className="flex items-center gap-2 mb-3">

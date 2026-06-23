@@ -54,7 +54,7 @@ export function PartDetail({ part }: { part: PartType }) {
   const [showMovement, setShowMovement] = useState(false)
 
   async function handleDeactivate() {
-    const { deactivatePartAction, reactivatePartAction } = await import("@/app/app/parts/actions")
+    const { deactivatePartAction, reactivatePartAction } = await import("@/app/(app)/parts/actions")
     if (part.isActive) {
       await deactivatePartAction(part.id)
     } else {
@@ -78,7 +78,7 @@ export function PartDetail({ part }: { part: PartType }) {
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app/parts" className="hover:text-foreground inline-flex items-center gap-1">
+        <Link href="/parts" className="hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           Stok / Parçalar
         </Link>
@@ -103,7 +103,7 @@ export function PartDetail({ part }: { part: PartType }) {
           <Button size="sm" variant="outline" onClick={() => setShowMovement(true)}>
             <Boxes className="size-3.5 mr-1" /> Stok Hareketi
           </Button>
-          <Link href={`/app/parts/${part.id}/edit`}>
+          <Link href={`/parts/${part.id}/edit`}>
             <Button size="sm" variant="outline">
               <Edit3 className="size-3.5 mr-1" /> Düzenle
             </Button>
@@ -214,7 +214,7 @@ export function PartDetail({ part }: { part: PartType }) {
                 <>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Tedarikçi</span>
-                    <Link href={`/app/suppliers/${part.supplier.id}`} className="font-medium text-primary hover:text-primary/80">
+                    <Link href={`/suppliers/${part.supplier.id}`} className="font-medium text-primary hover:text-primary/80">
                       {part.supplier.name}
                     </Link>
                   </div>

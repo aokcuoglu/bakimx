@@ -61,7 +61,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
     if (key === "brand" && value) params.set("brand", value)
     if (key !== "q" && currentFilters.q) params.set("q", currentFilters.q)
     const qs = params.toString()
-    router.push(`/app/parts${qs ? `?${qs}` : ""}`)
+    router.push(`/parts${qs ? `?${qs}` : ""}`)
   }
 
   function handleSearch(e: React.FormEvent) {
@@ -71,20 +71,20 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
 
   function clearFilters() {
     setSearch("")
-    router.push("/app/parts")
+    router.push("/parts")
   }
 
   const hasFilters = currentFilters.q || currentFilters.status !== "all" || currentFilters.category || currentFilters.brand
 
   async function handleDeactivate(id: string) {
-    const { deactivatePartAction } = await import("@/app/app/parts/actions")
+    const { deactivatePartAction } = await import("@/app/(app)/parts/actions")
     await deactivatePartAction(id)
     router.refresh()
   }
 
   async function handleDelete(id: string) {
     setDeleting(id)
-    const { deletePartAction } = await import("@/app/app/parts/actions")
+    const { deletePartAction } = await import("@/app/(app)/parts/actions")
     const res = await deletePartAction(id) as { error?: string }
     if (res?.error) {
       toast.error(res.error)
@@ -97,7 +97,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/app" className="hover:text-foreground">Ana Panel</Link>
+        <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground font-medium">Stok / Parçalar</span>
       </div>
@@ -107,7 +107,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Package className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/app/parts/new" />}>
+        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/parts/new" />}>
           <Plus className="size-3.5 mr-1" /> Yeni Parça
         </Button>
       </div>
@@ -220,7 +220,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
               {parts.map((part) => (
                 <tr key={part.id} className="hover:bg-muted transition-colors">
                   <td className="px-4 py-3">
-                    <Link href={`/app/parts/${part.id}`} className="font-medium text-foreground hover:text-primary">
+                    <Link href={`/parts/${part.id}`} className="font-medium text-foreground hover:text-primary">
                       {part.name}
                     </Link>
                     <span className="block text-[11px] text-muted-foreground">{part.unit}</span>
@@ -249,7 +249,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-sm text-muted-foreground">{part.shelfLocation || "—"}</td>
                   <td className="px-4 py-3 text-sm">
                     {part.supplier ? (
-                       <Link href={`/app/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                       <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
                     ) : part.supplierName ? (
                       <span className="text-foreground">{part.supplierName}</span>
                     ) : <span className="text-muted-foreground/50">—</span>}
@@ -264,13 +264,13 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/app/parts/${part.id}`} />} />}>
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}`} />} />}>
                           <Eye className="size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/app/parts/${part.id}/edit`} />} />}>
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}/edit`} />} />}>
                           <Edit3 className="size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
@@ -306,7 +306,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
 
       <div className="md:hidden space-y-3">
         {parts.map((part) => (
-          <Link key={part.id} href={`/app/parts/${part.id}`}>
+          <Link key={part.id} href={`/parts/${part.id}`}>
             <Card size="sm">
               <CardContent className="p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -336,7 +336,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   {(part.supplier || part.supplierName) && (
                     <span className="text-muted-foreground/70 truncate max-w-[120px]">
                       {part.supplier ? (
-                         <Link href={`/app/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                         <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
                       ) : part.supplierName}
                     </span>
                   )}

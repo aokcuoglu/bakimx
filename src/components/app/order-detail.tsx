@@ -280,7 +280,7 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
       <div className="flex items-center text-sm text-muted-foreground">
-        <button onClick={() => router.push("/app/orders")} className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
+        <button onClick={() => router.push("/orders")} className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
           <ArrowLeft className="size-3.5" />
           İş Emirleri
         </button>
@@ -398,7 +398,7 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
                 </div>
                 <div className="mt-3 pt-3 border-t">
                   <Link
-                    href={`/app/intakes/${order.intake.id}`}
+                    href={`/intakes/${order.intake.id}`}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Hasar haritasını tam ekranda görüntüle →
@@ -424,7 +424,7 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
                 </div>
                 {order.photos.length > 8 && (
                   <Link
-                    href={`/app/intakes/${order.intake.id}`}
+                    href={`/intakes/${order.intake.id}`}
                     className="mt-3 block text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Tüm fotoğrafları gör ({order.photos.length}) →
@@ -526,7 +526,7 @@ function CustomerVehicleCard({
         <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>Kabul: {formatDate(intake.createdAt)}</span>
           {intake.approvedAt && <span>Onay: {formatDate(intake.approvedAt)}</span>}
-          <Link href={`/app/intakes/${intake.id}`} className="text-primary hover:text-primary/80 font-medium">
+          <Link href={`/intakes/${intake.id}`} className="text-primary hover:text-primary/80 font-medium">
             Kabul Detayı →
           </Link>
         </div>
@@ -1024,14 +1024,14 @@ function OrderInfoCard({
   const [isPending, startTransition] = useTransition()
   const handleAssign = (technicianId: string) => {
     startTransition(async () => {
-      const { assignTechnicianAction } = await import("@/app/app/technician/actions")
+      const { assignTechnicianAction } = await import("@/app/(app)/technician/actions")
       await assignTechnicianAction(order.id, technicianId)
       window.location.reload()
     })
   }
   const handleUnassign = () => {
     startTransition(async () => {
-      const { unassignTechnicianAction } = await import("@/app/app/technician/actions")
+      const { unassignTechnicianAction } = await import("@/app/(app)/technician/actions")
       await unassignTechnicianAction(order.id)
       window.location.reload()
     })
@@ -1150,7 +1150,7 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
         </CardHeader>
         <CardContent>
           <div className="p-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/app/intakes" className="text-primary font-medium">Araç Kabulleri</Link> üzerinden oluşturulabilir.
+            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/intakes" className="text-primary font-medium">Araç Kabulleri</Link> üzerinden oluşturulabilir.
           </div>
         </CardContent>
       </Card>
@@ -1231,7 +1231,7 @@ function PaymentHistoryCard({
             Tahsilat Geçmişi
           </CardTitle>
           <Link
-            href={`/app/cashbox/payments/new?orderId=${orderId}`}
+            href={`/cashbox/payments/new?orderId=${orderId}`}
             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
           >
             <Plus className="size-3" />
@@ -1245,7 +1245,7 @@ function PaymentHistoryCard({
             <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
             <Link
-              href={`/app/cashbox/payments/new?orderId=${orderId}`}
+              href={`/cashbox/payments/new?orderId=${orderId}`}
               className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
             >
               <Plus className="size-3.5" /> İlk tahsilatı ekle
@@ -1259,7 +1259,7 @@ function PaymentHistoryCard({
               return (
                 <Link
                   key={c.id}
-                  href={`/app/cashbox/payments/${c.id}`}
+                  href={`/cashbox/payments/${c.id}`}
                   className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isCancelled ? "bg-destructive/10 hover:bg-destructive/10 border border-destructive/20" : "bg-muted hover:bg-muted"}`}
                 >
                   <div className="min-w-0">
