@@ -8,8 +8,10 @@ import { PLAN_SEATS, type PlanTier } from "@/lib/plan"
 export interface PlanPackage {
   tier: PlanTier
   name: string
-  /** Monthly price in TRY (excl. VAT). */
+  /** Monthly price in TRY (VAT-included — the customer pays the displayed amount). */
   monthlyPrice: number
+  /** Yearly price in TRY (VAT-included). 10× monthly = "2 ay bedava". */
+  yearlyPrice: number
   monthlyLabel: string
   yearlyLabel: string
   tagline: string
@@ -24,6 +26,7 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     tier: "starter",
     name: "Başlangıç",
     monthlyPrice: 749,
+    yearlyPrice: 7490,
     monthlyLabel: "₺749/ay",
     yearlyLabel: "₺7.490/yıl",
     tagline: "Tek kullanıcı, temel araç kabul akışı",
@@ -39,6 +42,7 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     tier: "pro",
     name: "Profesyonel",
     monthlyPrice: 1299,
+    yearlyPrice: 12990,
     monthlyLabel: "₺1.299/ay",
     yearlyLabel: "₺12.990/yıl",
     tagline: "Aktif 2–6 kişilik servisler için",
@@ -55,6 +59,7 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     tier: "premium",
     name: "Premium",
     monthlyPrice: 2199,
+    yearlyPrice: 21990,
     monthlyLabel: "₺2.199/ay",
     yearlyLabel: "₺21.990/yıl",
     tagline: "e-Fatura, AI ve çoklu şube",
