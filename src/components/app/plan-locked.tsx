@@ -21,6 +21,13 @@ const COPY: Record<
     icon: Lock,
     showPackages: true,
   },
+  subscription_expired: {
+    title: "Aboneliğiniz sona erdi",
+    description:
+      "Ödenmiş dönem sona erdi. Kaldığınız yerden devam etmek için paketinizi yenileyin — verileriniz güvende.",
+    icon: Clock,
+    showPackages: true,
+  },
   pending: {
     title: "Hesabınız onay bekliyor",
     description: "Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.",

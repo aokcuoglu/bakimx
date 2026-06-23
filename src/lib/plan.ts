@@ -46,6 +46,7 @@ export type LockReason =
   | "rejected"
   | "trial_expired"
   | "subscription_inactive"
+  | "subscription_expired"
   | null
 
 const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
@@ -63,7 +64,7 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
 
 type WorkshopPlanFields = Pick<
   Workshop,
-  "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt"
+  "planTier" | "subscriptionStatus" | "approvalStatus" | "trialEndsAt" | "currentPeriodEnd"
 >
 
 export interface PlanState {
@@ -74,6 +75,10 @@ export interface PlanState {
   /** Whole days left in the trial (ceil), or null when not trialing. */
   trialDaysLeft: number | null
   isTrialExpired: boolean
+  /** Paid period end (active subs only), or null. */
+  currentPeriodEnd: Date | null
+  /** Whole days left in the paid period (ceil) when active+period set, else null. */
+  subscriptionDaysLeft: number | null
   /** True when the workshop may use the app. */
   hasAccess: boolean
   /** Why access is blocked, or null when access is granted. */
@@ -85,6 +90,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
   const status = workshop.subscriptionStatus
   const approval = workshop.approvalStatus
   const trialEndsAt = workshop.trialEndsAt ?? null
+  const currentPeriodEnd = workshop.currentPeriodEnd ?? null
 
   const isApproved = approval === "approved"
   const isTrialing = status === "trialing"
@@ -97,13 +103,22 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
       ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now) / DAY_MS))
       : null
 
+  const subscriptionDaysLeft =
+    status === "active" && currentPeriodEnd != null
+      ? Math.max(0, Math.ceil((currentPeriodEnd.getTime() - now) / DAY_MS))
+      : null
+
   let hasAccess = false
   let lockReason: LockReason = null
 
   if (!isApproved) {
     lockReason = approval === "rejected" ? "rejected" : "pending"
   } else if (status === "active") {
-    hasAccess = true
+    if (currentPeriodEnd != null && now > currentPeriodEnd.getTime()) {
+      lockReason = "subscription_expired"
+    } else {
+      hasAccess = true
+    }
   } else if (status === "trialing") {
     if (isTrialExpired) lockReason = "trial_expired"
     else hasAccess = true
@@ -119,6 +134,8 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     trialEndsAt,
     trialDaysLeft,
     isTrialExpired,
+    currentPeriodEnd,
+    subscriptionDaysLeft,
     hasAccess,
     lockReason,
   }

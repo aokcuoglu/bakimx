@@ -26,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       subscriptionStatus: true,
       approvalStatus: true,
       trialEndsAt: true,
+      currentPeriodEnd: true,
       requestedPlanTier: true,
     },
   })
