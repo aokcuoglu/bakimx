@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
+import { addPeriod, periodStartFrom } from "@/lib/billing/period"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -144,6 +145,63 @@ export async function updateSupportRequestStatus(
     where: { id: requestId },
     data: { status: status as SupportRequestStatus },
   })
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
+/** Confirm a pending havale: activate the plan + set the paid period. Doubles
+ *  as approval for public direct-purchase workshops. */
+export async function confirmBillingOrder(orderId: string): Promise<Result> {
+  const admin = await requireAdmin()
+  if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
+
+  const order = await prisma.billingOrder.findUnique({ where: { id: orderId } })
+  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
+  if (order.status !== "pending_payment") return { ok: false, error: "Bu sipariş zaten işlenmiş." }
+
+  const workshop = await prisma.workshop.findUnique({
+    where: { id: order.workshopId },
+    select: { currentPeriodEnd: true },
+  })
+  const now = new Date()
+  const periodStart = periodStartFrom(workshop?.currentPeriodEnd ?? null, now)
+  const periodEnd = addPeriod(periodStart, order.billingCycle)
+
+  await prisma.$transaction(async (tx) => {
+    await tx.workshop.update({
+      where: { id: order.workshopId },
+      data: {
+        planTier: order.planTier,
+        billingCycle: order.billingCycle,
+        subscriptionStatus: "active",
+        approvalStatus: "approved",
+        currentPeriodEnd: periodEnd,
+        requestedPlanTier: null,
+        planRequestedAt: null,
+      },
+    })
+    await tx.billingOrder.update({
+      where: { id: order.id },
+      data: { status: "confirmed", confirmedAt: now, confirmedByEmail: admin.email, periodStart, periodEnd },
+    })
+  })
+
+  await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
+    JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
+/** Cancel a pending order (e.g. havale never arrived). */
+export async function cancelBillingOrder(orderId: string): Promise<Result> {
+  const admin = await requireAdmin()
+  if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
+  const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true } })
+  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
+  if (order.status !== "pending_payment") return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
+
+  await prisma.billingOrder.update({ where: { id: orderId }, data: { status: "cancelled" } })
+  await AuditLogAction(order.workshopId, admin.id, "BillingOrder", orderId, "billing_order_cancelled")
   revalidatePath("/admin")
   return { ok: true }
 }
