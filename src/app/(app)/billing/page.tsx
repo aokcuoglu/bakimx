@@ -29,6 +29,10 @@ export default async function BillingPage() {
     where: { workshopId: workshop.id, status: "pending_payment" },
     orderBy: { createdAt: "desc" },
   })
+  const lastConfirmedOrder = await prisma.billingOrder.findFirst({
+    where: { workshopId: workshop.id, status: "confirmed" },
+    orderBy: { confirmedAt: "desc" },
+  })
   const ownedTier = workshop.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
   const ownedPkg = ownedTier ? getPlanPackage(ownedTier) : null
 
@@ -87,6 +91,16 @@ export default async function BillingPage() {
               <p className="text-muted-foreground mt-0.5">
                 Aboneliğiniz aktif. Daha fazla özellik için paketinizi yükseltebilirsiniz.
               </p>
+              {lastConfirmedOrder && (
+                <a
+                  href={`/api/billing/orders/${lastConfirmedOrder.id}/receipt`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Son ödeme makbuzunu görüntüle
+                </a>
+              )}
             </div>
           </div>
         ) : null}
