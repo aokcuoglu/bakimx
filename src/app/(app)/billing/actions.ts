@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireAuth, getCurrentUserWithWorkshop } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { checkoutInAppSchema } from "@/lib/validations/billing"
@@ -9,47 +9,6 @@ import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import type { BillingCycle, BillingOrderType } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
-
-const VALID_TIERS: PlanTier[] = ["starter", "pro", "premium"]
-
-/**
- * Records a self-serve package-upgrade request. Until iyzico billing lands, an
- * admin activates the requested plan via `scripts/workshop-admin.ts set-plan`.
- *
- * workshopId is derived from the session (requireAuth) — never trusted from the
- * client — to preserve tenant isolation.
- */
-export async function requestPlanActivation(
-  tier: string
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const user = await requireAuth()
-
-  if (!VALID_TIERS.includes(tier as PlanTier)) {
-    return { ok: false, error: "Geçersiz paket seçimi." }
-  }
-
-  await prisma.workshop.update({
-    where: { id: user.workshopId },
-    data: {
-      requestedPlanTier: tier as PlanTier,
-      planRequestedAt: new Date(),
-    },
-  })
-
-  await AuditLogAction(
-    user.workshopId,
-    user.id,
-    "Workshop",
-    user.workshopId,
-    "plan_activation_requested",
-    JSON.stringify({ tier })
-  )
-
-  revalidatePath("/billing")
-  revalidatePath("/dashboard")
-
-  return { ok: true }
-}
 
 /**
  * Creates a pending-payment BillingOrder for the current workshop (upgrade /

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/session"
 import { prisma } from "@/lib/db"
-import { getPlanState, type PlanTier } from "@/lib/plan"
+import { getPlanState } from "@/lib/plan"
 import { PlanLocked } from "@/components/app/plan-locked"
 import { AppShellChrome } from "@/components/app/app-shell"
 
@@ -42,7 +42,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <PlanLocked
         reason={plan.lockReason}
         workshopName={workshop.name}
-        requestedTier={(workshop.requestedPlanTier as PlanTier | null) ?? null}
       />
     )
   }

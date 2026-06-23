@@ -1,7 +1,7 @@
 import { Clock, Lock } from "lucide-react"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { PlanPackages } from "@/components/app/plan-packages"
-import type { LockReason, PlanTier } from "@/lib/plan"
+import type { LockReason } from "@/lib/plan"
 
 const COPY: Record<
   Exclude<LockReason, null>,
@@ -45,11 +45,9 @@ const COPY: Record<
 export function PlanLocked({
   reason,
   workshopName,
-  requestedTier = null,
 }: {
   reason: Exclude<LockReason, null>
   workshopName?: string
-  requestedTier?: PlanTier | null
 }) {
   const { title, description, icon: Icon, showPackages } = COPY[reason]
 
@@ -67,7 +65,7 @@ export function PlanLocked({
         </div>
 
         {showPackages && (
-          <PlanPackages ownedTier={null} requestedTier={requestedTier} workshopName={workshopName} />
+          <PlanPackages ownedTier={null} workshopName={workshopName} />
         )}
 
         <form action={logoutAction} className="mt-8 text-center">

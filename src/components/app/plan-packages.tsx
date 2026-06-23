@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { Check, CircleCheck, Loader2, MessageCircle, Sparkles } from "lucide-react"
+import { useState } from "react"
+import { Check, CircleCheck, MessageCircle, Sparkles } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { PLAN_PACKAGES, getPlanPackage } from "@/lib/plans-catalog"
+import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import type { PlanTier } from "@/lib/plan"
-import { requestPlanActivation } from "@/app/(app)/billing/actions"
 
 type BillingCycle = "monthly" | "yearly"
 
@@ -19,64 +19,22 @@ function whatsappHref(message: string) {
 
 export function PlanPackages({
   ownedTier = null,
-  requestedTier = null,
   workshopName,
+  checkoutBasePath = "/billing/checkout",
 }: {
   ownedTier?: PlanTier | null
-  requestedTier?: PlanTier | null
   workshopName?: string
+  checkoutBasePath?: string
 }) {
   const [billing, setBilling] = useState<BillingCycle>("monthly")
-  const [pending, startTransition] = useTransition()
-  const [pendingTier, setPendingTier] = useState<PlanTier | null>(null)
-  const [requested, setRequested] = useState<PlanTier | null>(requestedTier)
-  const [error, setError] = useState("")
+  const router = useRouter()
 
   function handleSelect(tier: PlanTier) {
-    setError("")
-    setPendingTier(tier)
-    startTransition(async () => {
-      const res = await requestPlanActivation(tier)
-      if (res.ok) {
-        setRequested(tier)
-      } else {
-        setError(res.error)
-      }
-      setPendingTier(null)
-    })
+    router.push(`${checkoutBasePath}?tier=${tier}&cycle=${billing}`)
   }
-
-  const requestedPkg = requested ? getPlanPackage(requested) : null
 
   return (
     <div className="space-y-5">
-      {requested && requestedPkg && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-          <p className="font-medium text-foreground">
-            <span className="font-semibold">{requestedPkg.name}</span> paketi için talebiniz alındı 🎉
-          </p>
-          <p className="mt-1 text-muted-foreground">
-            En kısa sürede etkinleştireceğiz. Hızlandırmak için bize yazabilirsiniz:{" "}
-            <a
-              href={whatsappHref(
-                `Merhaba, ${workshopName ? `${workshopName} için ` : ""}${requestedPkg.name} paketini etkinleştirmek istiyorum.`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium"
-            >
-              WhatsApp
-            </a>
-          </p>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3">
-          {error}
-        </div>
-      )}
-
       <div className="flex justify-center">
         <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
           {(["monthly", "yearly"] as const).map((cycle) => (
@@ -104,8 +62,6 @@ export function PlanPackages({
       <div className="grid gap-4 sm:grid-cols-3">
         {PLAN_PACKAGES.map((pkg) => {
           const isOwned = ownedTier === pkg.tier
-          const isRequested = requested === pkg.tier
-          const isBusy = pending && pendingTier === pkg.tier
 
           return (
             <div
@@ -130,7 +86,7 @@ export function PlanPackages({
                 <span className="text-2xl font-bold text-foreground">
                   {billing === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel}
                 </span>
-                <span className="block text-[11px] text-muted-foreground mt-0.5">+ KDV</span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">KDV dahil</span>
               </div>
 
               <p className="mb-3 text-xs text-muted-foreground">
@@ -153,25 +109,13 @@ export function PlanPackages({
               ) : (
                 <button
                   type="button"
-                  disabled={pending}
                   onClick={() => handleSelect(pkg.tier)}
                   className={cn(
                     buttonVariants({ variant: pkg.popular ? "default" : "outline", size: "default" }),
-                    "w-full h-10",
-                    isRequested && "border-primary/40"
+                    "w-full h-10"
                   )}
                 >
-                  {isBusy ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" /> Gönderiliyor...
-                    </span>
-                  ) : isRequested ? (
-                    <span className="flex items-center gap-1.5">
-                      <Check className="size-4" /> Talep edildi
-                    </span>
-                  ) : (
-                    "Bu paketi seç"
-                  )}
+                  Bu paketi seç
                 </button>
               )}
             </div>
@@ -180,10 +124,9 @@ export function PlanPackages({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Ödeme altyapısı yakında. Şimdilik paketi seçtiğinizde ekibimiz hesabınızı en kısa sürede
-        etkinleştirir.{" "}
+        Havale/EFT ile ödeyin; ödemeniz teyit edilince paketiniz aktifleşir.{" "}
         <a
-          href={whatsappHref("Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.")}
+          href={whatsappHref(`Merhaba, BakimX paket etkinleştirme hakkında bilgi almak istiyorum.${workshopName ? ` (${workshopName})` : ""}`)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-primary hover:underline"

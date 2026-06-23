@@ -92,7 +92,6 @@ export default async function BillingPage() {
 
         <PlanPackages
           ownedTier={ownedTier}
-          requestedTier={(workshop.requestedPlanTier as PlanTier | null) ?? null}
           workshopName={workshop.name}
         />
       </div>
