@@ -10,6 +10,10 @@ import {
   type AdminDemoRequestRow,
   type AdminSupportRequestRow,
 } from "@/app/admin/admin-requests"
+import { AdminBilling, type AdminOrderRow, type AdminSubRow } from "@/app/admin/admin-billing"
+import { formatMinor, getPlanPriceMinor } from "@/lib/billing/pricing"
+import type { PlanTier } from "@/lib/plan"
+import type { BillingCycle } from "@prisma/client"
 
 export const metadata = { title: "Yönetim Paneli" }
 
@@ -19,7 +23,7 @@ export const dynamic = "force-dynamic"
 export default async function AdminPage() {
   await requireAdmin()
 
-  const [workshops, demoRequests, supportRequests] = await Promise.all([
+  const [workshops, demoRequests, supportRequests, pendingOrders, monthOrders] = await Promise.all([
     prisma.workshop.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -32,6 +36,8 @@ export default async function AdminPage() {
         trialEndsAt: true,
         extraSeats: true,
         createdAt: true,
+        billingCycle: true,
+        currentPeriodEnd: true,
         users: { select: { email: true }, take: 1, orderBy: { createdAt: "asc" } },
       },
     }),
@@ -62,6 +68,15 @@ export default async function AdminPage() {
         status: true,
         createdAt: true,
       },
+    }),
+    prisma.billingOrder.findMany({
+      where: { status: "pending_payment" },
+      orderBy: { createdAt: "desc" },
+      include: { workshop: { select: { name: true } } },
+    }),
+    prisma.billingOrder.findMany({
+      where: { status: "confirmed", confirmedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } },
+      select: { amountMinor: true },
     }),
   ])
 
@@ -127,6 +142,52 @@ export default async function AdminPage() {
   const newDemoCount = demoRows.filter((r) => r.status === "new").length
   const newSupportCount = supportRows.filter((r) => r.status === "new").length
 
+  const orderRows: AdminOrderRow[] = pendingOrders.map((o) => {
+    const snap = (o.billingSnapshot ?? {}) as { invoiceTitle?: string; taxNumber?: string }
+    return {
+      id: o.id,
+      workshopName: o.workshop.name,
+      type: o.type,
+      planTier: o.planTier,
+      billingCycle: o.billingCycle,
+      amountLabel: formatMinor(o.amountMinor),
+      reference: o.reference,
+      invoiceTitle: snap.invoiceTitle ?? null,
+      taxNumber: snap.taxNumber ?? null,
+      createdAt: o.createdAt.toISOString(),
+    }
+  })
+
+  const now = Date.now()
+  const subscriptions: AdminSubRow[] = workshops
+    .filter((w) => w.subscriptionStatus === "active" && w.currentPeriodEnd)
+    .map((w) => {
+      const end = w.currentPeriodEnd as Date
+      return {
+        id: w.id,
+        name: w.name,
+        planTier: w.planTier,
+        billingCycle: w.billingCycle ?? null,
+        periodEnd: end.toLocaleDateString("tr-TR"),
+        daysLeft: Math.max(0, Math.ceil((end.getTime() - now) / 86_400_000)),
+      }
+    })
+
+  // MRR: active subs normalized to monthly (yearly /12). Uses live catalog price.
+  const monthRevenueMinor = monthOrders.reduce((sum, o) => sum + o.amountMinor, 0)
+  const revenue = {
+    activeCount: subscriptions.length,
+    mrrLabel: formatMinor(
+      workshops
+        .filter((w) => w.subscriptionStatus === "active" && w.currentPeriodEnd)
+        .reduce((sum, w) => {
+          const minor = getPlanPriceMinor(w.planTier as PlanTier, (w.billingCycle ?? "monthly") as BillingCycle)
+          return sum + (w.billingCycle === "yearly" ? Math.round(minor / 12) : minor)
+        }, 0)
+    ),
+    monthLabel: formatMinor(monthRevenueMinor),
+  }
+
   return (
     <div className="min-h-screen bg-muted">
       <header className="border-b bg-card">
@@ -184,6 +245,14 @@ export default async function AdminPage() {
         </div>
 
         <AdminWorkshops workshops={rows} />
+
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Faturalandırma</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Havaleleri teyit edin, abonelikleri ve geliri görün.</p>
+          </div>
+          <AdminBilling orders={orderRows} subscriptions={subscriptions} revenue={revenue} />
+        </div>
 
         <div className="space-y-3 pt-2">
           <div>
