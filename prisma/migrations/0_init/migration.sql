@@ -11,6 +11,12 @@ CREATE TYPE "SubscriptionStatus" AS ENUM ('trialing', 'active', 'past_due', 'can
 CREATE TYPE "WorkshopApprovalStatus" AS ENUM ('pending', 'approved', 'rejected');
 
 -- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('owner', 'manager', 'staff');
+
+-- CreateEnum
+CREATE TYPE "InviteStatus" AS ENUM ('pending', 'accepted', 'revoked', 'expired');
+
+-- CreateEnum
 CREATE TYPE "CustomerType" AS ENUM ('individual', 'corporate');
 
 -- CreateEnum
@@ -114,6 +120,7 @@ CREATE TABLE "Workshop" (
     "trialEndsAt" TIMESTAMP(3),
     "requestedPlanTier" "PlanTier",
     "planRequestedAt" TIMESTAMP(3),
+    "extraSeats" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Workshop_pkey" PRIMARY KEY ("id")
 );
@@ -165,10 +172,29 @@ CREATE TABLE "User" (
     "firstName" TEXT,
     "lastName" TEXT,
     "workshopId" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'owner',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Invite" (
+    "id" TEXT NOT NULL,
+    "workshopId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'staff',
+    "tokenHash" TEXT NOT NULL,
+    "status" "InviteStatus" NOT NULL DEFAULT 'pending',
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "acceptedAt" TIMESTAMP(3),
+    "createdByUserId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Invite_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -781,6 +807,24 @@ CREATE INDEX "WorkshopSettings_workshopId_idx" ON "WorkshopSettings"("workshopId
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE INDEX "User_workshopId_idx" ON "User"("workshopId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Invite_tokenHash_key" ON "Invite"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "Invite_workshopId_idx" ON "Invite"("workshopId");
+
+-- CreateIndex
+CREATE INDEX "Invite_status_idx" ON "Invite"("status");
+
+-- CreateIndex
+CREATE INDEX "Invite_expiresAt_idx" ON "Invite"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Invite_workshopId_email_key" ON "Invite"("workshopId", "email");
+
+-- CreateIndex
 CREATE INDEX "Customer_workshopId_idx" ON "Customer"("workshopId");
 
 -- CreateIndex
@@ -881,6 +925,9 @@ CREATE INDEX "ServiceOrder_assignedTechnicianId_idx" ON "ServiceOrder"("assigned
 
 -- CreateIndex
 CREATE INDEX "ServiceOrder_workshopId_assignedTechnicianId_idx" ON "ServiceOrder"("workshopId", "assignedTechnicianId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ServiceOrder_workshopId_workOrderNo_key" ON "ServiceOrder"("workshopId", "workOrderNo");
 
 -- CreateIndex
 CREATE INDEX "CollectionPayment_workshopId_idx" ON "CollectionPayment"("workshopId");
@@ -1160,6 +1207,12 @@ ALTER TABLE "WorkshopSettings" ADD CONSTRAINT "WorkshopSettings_workshopId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_workshopId_fkey" FOREIGN KEY ("workshopId") REFERENCES "Workshop"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Invite" ADD CONSTRAINT "Invite_workshopId_fkey" FOREIGN KEY ("workshopId") REFERENCES "Workshop"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Invite" ADD CONSTRAINT "Invite_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Customer" ADD CONSTRAINT "Customer_workshopId_fkey" FOREIGN KEY ("workshopId") REFERENCES "Workshop"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,4 +1,5 @@
 import { formatTRY } from "@/lib/format"
+import { roundMoney, sumMoney } from "@/lib/money"
 
 export type OrderLineItem = {
   type: string
@@ -20,11 +21,13 @@ export type MinimalLineItem = {
 }
 
 export function calculateMinimalTotal(items: MinimalLineItem[]): number {
-  return items.reduce((sum, item) => {
-    if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-    if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
-    return sum
-  }, 0)
+  return sumMoney(
+    items.map((item) => {
+      if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
+      if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
+      return 0
+    })
+  )
 }
 
 export function calculateOrderTotalsFromMinimal(
@@ -35,11 +38,11 @@ export function calculateOrderTotalsFromMinimal(
   hasAnyPrice: boolean
 } {
   const subtotal = calculateMinimalTotal(items)
-  const discountAmount = Math.max(0, options.discountAmount ?? 0)
+  const discountAmount = roundMoney(Math.max(0, options.discountAmount ?? 0))
   const afterDiscount = Math.max(0, subtotal - discountAmount)
   const taxRate = options.taxRate ?? 0
-  const taxAmount = (afterDiscount * taxRate) / 100
-  const grandTotal = afterDiscount + taxAmount
+  const taxAmount = roundMoney((afterDiscount * taxRate) / 100)
+  const grandTotal = roundMoney(afterDiscount + taxAmount)
   const hasAnyPrice = items.some(
     (i) => (i.totalPrice != null && i.totalPrice > 0) || (i.unitPrice != null && i.unitPrice > 0)
   )
@@ -60,11 +63,13 @@ export function formatLineTotal(item: OrderLineItem): string {
 
 export function calculateGroupTotal(items: OrderLineItem[], type?: string): number {
   const filtered = type ? items.filter((i) => i.type === type) : items
-  return filtered.reduce((sum, item) => {
-    if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-    if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
-    return sum
-  }, 0)
+  return sumMoney(
+    filtered.map((item) => {
+      if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
+      if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
+      return 0
+    })
+  )
 }
 
 export function calculateOrderTotals(
@@ -84,12 +89,12 @@ export function calculateOrderTotals(
 } {
   const partsTotal = calculateGroupTotal(items, "part")
   const laborTotal = calculateGroupTotal(items, "labor")
-  const subtotal = partsTotal + laborTotal
-  const discountAmount = Math.max(0, options.discountAmount ?? 0)
+  const subtotal = roundMoney(partsTotal + laborTotal)
+  const discountAmount = roundMoney(Math.max(0, options.discountAmount ?? 0))
   const afterDiscount = Math.max(0, subtotal - discountAmount)
   const taxRate = options.taxRate ?? 0
-  const taxAmount = (afterDiscount * taxRate) / 100
-  const grandTotal = afterDiscount + taxAmount
+  const taxAmount = roundMoney((afterDiscount * taxRate) / 100)
+  const grandTotal = roundMoney(afterDiscount + taxAmount)
 
   return {
     partsTotal,

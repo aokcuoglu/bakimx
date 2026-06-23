@@ -15,7 +15,8 @@
     "db:validate": "prisma validate",
     "db:seed": "bunx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "workshop": "bun scripts/workshop-admin.ts"
+    "workshop": "bun scripts/workshop-admin.ts",
+    "test": "bun test"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"

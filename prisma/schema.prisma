@@ -560,6 +560,7 @@ model ServiceOrder {
   @@index([paymentStatus])
   @@index([assignedTechnicianId])
   @@index([workshopId, assignedTechnicianId])
+  @@unique([workshopId, workOrderNo])
 }
 
 enum OrderStatus {
