@@ -10,6 +10,7 @@ import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 
 const MAX_ATTEMPTS = 5
+const MAX_REF_RETRIES = 5
 const WINDOW_MS = 10 * 60_000
 
 const GENERIC_ERROR = "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin."
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
 
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < MAX_REF_RETRIES; attempt++) {
       const reference = generateOrderReference()
       try {
         await prisma.$transaction(async (tx) => {
@@ -114,11 +115,11 @@ export async function POST(request: Request) {
         })
         return NextResponse.json({ success: true, reference, amountMinor })
       } catch (err) {
-        const code = (err as { code?: string })?.code
-        if (code === "P2002") {
-          // Could be reference collision (retry) or duplicate email (stop).
-          // findUnique above already covers email; treat remaining P2002 as ref → retry.
-          continue
+        const e = err as { code?: string; meta?: { target?: string[] | string } }
+        if (e.code === "P2002") {
+          const target = Array.isArray(e.meta?.target) ? e.meta.target.join(",") : String(e.meta?.target ?? "")
+          if (target.toLowerCase().includes("email")) throw err // duplicate email → outer catch maps to 409
+          continue // reference collision (or unknown unique) → retry, bounded
         }
         throw err
       }
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
     if (code === "P2002") {
       return NextResponse.json({ error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin." }, { status: 409 })
     }
-    console.error("[checkout] failed:", err)
+    console.error("[checkout] failed:", err instanceof Error ? err.message : err)
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 })
   }
 }
