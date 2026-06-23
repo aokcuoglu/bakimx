@@ -931,7 +931,7 @@ Tamamen yenilenmiş operasyonel gösterge paneli:
 
 ### Auth
 - `/login` — Giriş
-- Genel kayıt (register) akışı yoktur; hesaplar seed/yönetici ile sağlanır. `/register` `/login`'e yönlenir.
+- `/register` — Onay tabanlı deneme başvurusu: `pending` durumunda iş yeri oluşturur, yönetici onaylayana kadar giriş yapılamaz (anında erişim yok). Hesaplar ayrıca seed/yönetici ile de sağlanabilir.
 
 ### Panel (`/app/*`)
 - `/app` — Genel Bakış (dashboard)

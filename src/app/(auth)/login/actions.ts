@@ -11,8 +11,9 @@ import {
 } from "@/lib/auth-login"
 import { redirect } from "next/navigation"
 
-// NOTE: public self-registration has been removed (no public register flow).
-// Accounts are provisioned out-of-band (seed / admin). See README.
+// NOTE: self-serve signup is an approval-gated trial application (see /register):
+// it creates a workshop in `pending` status that cannot sign in until an admin
+// approves it. Accounts may also be provisioned via seed / admin.
 
 export async function loginAction(formData: FormData) {
   const raw = {

@@ -1,13 +1,16 @@
 import { getAppData } from "@/app/app/data"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { ArrowLeft, ClipboardList, Plus, ArrowRight, AlertCircle, ScanLine } from "lucide-react"
 import { NewOrderSelector } from "@/components/app/new-order-selector"
 import { StandaloneServiceAdvisor } from "@/components/app/standalone-service-advisor"
+import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 
 export default async function NewOrderPage() {
   const { user, workshop } = await getAppData()
+  const hasAiAdvisor = !!workshop && hasFeature(workshop.planTier as PlanTier, "aiAdvisor")
 
   const recentIntakes = await prisma.vehicleIntakeForm.findMany({
     where: { workshopId: user.workshopId },
@@ -108,7 +111,11 @@ export default async function NewOrderPage() {
               </span>
             </Link>
 
-            <StandaloneServiceAdvisor />
+            {hasAiAdvisor ? (
+              <StandaloneServiceAdvisor />
+            ) : (
+              <AdvisorPremiumLock />
+            )}
           </div>
 
           <div className="lg:col-span-2 rounded-lg border border-border bg-card p-5">

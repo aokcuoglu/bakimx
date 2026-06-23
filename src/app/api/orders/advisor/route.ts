@@ -1,11 +1,24 @@
 import { getAdvisorProvider } from "@/lib/advisor"
 import { AuditLogAction } from "@/lib/audit"
 import { prisma } from "@/lib/db"
+import type { PlanTier } from "@/lib/plan"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { getCurrentUserWithWorkshop } = await import("@/lib/auth")
+  const { hasFeature } = await import("@/lib/plan")
+  const { user, workshop } = await getCurrentUserWithWorkshop()
+
+  if (!hasFeature(workshop.planTier as PlanTier, "aiAdvisor")) {
+    return NextResponse.json(
+      {
+        error:
+          "AI Servis Danışmanı yalnızca Premium pakette kullanılabilir. Yükseltmek için Paketler sayfasını ziyaret edin.",
+        code: "feature_locked",
+      },
+      { status: 403 }
+    )
+  }
 
   let body: { intakeFormId?: string; complaint?: string; vehicleBrand?: string; vehicleModel?: string; mileage?: number }
   try {

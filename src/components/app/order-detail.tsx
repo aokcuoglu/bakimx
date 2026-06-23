@@ -45,6 +45,7 @@ import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { SendReminderButton } from "@/components/app/send-reminder-button"
 import { formatPrice } from "@/lib/parts/format"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
+import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 
 type OrderItem = {
   id: string
@@ -173,7 +174,7 @@ const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string }[]> = 
   cancelled: [],
 }
 
-export function OrderDetail({ order, technicians }: { order: OrderDetailData; technicians?: { id: string; fullName: string; role: string }[] }) {
+export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: OrderDetailData; technicians?: { id: string; fullName: string; role: string }[]; hasAiAdvisor: boolean }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -354,14 +355,18 @@ export function OrderDetail({ order, technicians }: { order: OrderDetailData; te
 
           <ComplaintNotesCard intake={order.intake} />
 
-          <ServiceAdvisorPanel
-            intakeFormId={order.intake.id}
-            customerComplaint={order.intake.customerComplaint}
-            vehicleBrand={order.vehicle.brand}
-            vehicleModel={order.vehicle.model}
-            mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-            onAddItems={addAiItems}
-          />
+          {hasAiAdvisor ? (
+            <ServiceAdvisorPanel
+              intakeFormId={order.intake.id}
+              customerComplaint={order.intake.customerComplaint}
+              vehicleBrand={order.vehicle.brand}
+              vehicleModel={order.vehicle.model}
+              mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
+              onAddItems={addAiItems}
+            />
+          ) : (
+            <AdvisorPremiumLock />
+          )}
 
           {order.damageMarks.length > 0 && (
             <Card>

@@ -5,8 +5,11 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // No public register flow: /register is intentionally absent here. The
-  // /register page itself redirects to /login.
+  // Self-serve signup is an approval-gated trial application: /register creates a
+  // workshop in `pending` status that cannot sign in until an admin approves it
+  // (no instant provisioning). /register is public via the fall-through below;
+  // the page redirects already-authenticated users to /app. The registration
+  // POST is public through the "/api/auth" prefix.
   const publicPaths = ["/", "/login", "/forgot-password", "/privacy", "/terms"]
   const publicPrefixes = ["/s/", "/p/", "/api/auth", "/api/demo-request", "/api/support-request", "/api/cron"]
 

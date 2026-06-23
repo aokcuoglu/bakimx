@@ -38,6 +38,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
+import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
@@ -87,7 +88,7 @@ type IntakeDetailProps = {
   order: { id: string; status: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
-export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
+export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailProps; hasAiAdvisor: boolean }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order" | "evidence">("info")
   const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
@@ -520,16 +521,20 @@ export function IntakeDetail({ intake }: { intake: IntakeDetailProps }) {
             </CardContent>
           </Card>
 
-          <ServiceAdvisorPanel
-            intakeFormId={intake.id}
-            customerComplaint={intake.customerComplaint}
-            vehicleBrand={intake.vehicle.brand}
-            vehicleModel={intake.vehicle.model}
-            mileage={intake.mileageAtIntake ?? intake.vehicle.mileage}
-            onAddItems={async () => {
-              router.refresh()
-            }}
-          />
+          {hasAiAdvisor ? (
+            <ServiceAdvisorPanel
+              intakeFormId={intake.id}
+              customerComplaint={intake.customerComplaint}
+              vehicleBrand={intake.vehicle.brand}
+              vehicleModel={intake.vehicle.model}
+              mileage={intake.mileageAtIntake ?? intake.vehicle.mileage}
+              onAddItems={async () => {
+                router.refresh()
+              }}
+            />
+          ) : (
+            <AdvisorPremiumLock />
+          )}
         </div>
       </TabsContent>
 
