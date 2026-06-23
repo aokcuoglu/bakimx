@@ -13,6 +13,7 @@ const navItems = [
   { label: "Neden BakimX", href: "/#neden" },
   { label: "Yol Haritası", href: "/#yol-haritasi" },
   { label: "SSS", href: "/#sss" },
+  { label: "Fiyatlar", href: "/fiyatlar" },
 ];
 
 export function Header() {
