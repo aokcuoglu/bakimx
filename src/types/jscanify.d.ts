@@ -1,5 +1,5 @@
 // jscanify resmi tip bildirimi sağlamıyorsa kullandığımız yüzeyi daraltıyoruz.
-declare module "jscanify" {
+declare module "jscanify/client" {
   type JScanifyPoint = { x: number; y: number }
   export default class jscanify {
     constructor()
