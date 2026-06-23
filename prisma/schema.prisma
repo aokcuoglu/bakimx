@@ -38,6 +38,12 @@ model Workshop {
   // (paid overage / custom deals — charged offline until usage billing lands).
   extraSeats         Int                    @default(0)
 
+  // --- Paid subscription period (manual/havale billing v1) ---
+  // Set on the first confirmed paid order. Null = legacy/admin-provisioned or
+  // never-paid workshop (no period gate). currentPeriodEnd < now => locked.
+  billingCycle       BillingCycle?
+  currentPeriodEnd   DateTime?
+
   settings     WorkshopSettings?
   users        User[]
   customers    Customer[]
@@ -70,6 +76,7 @@ model Workshop {
   calendarSyncLogs   CalendarSyncLog[]
   reminderExecutionLogs ReminderExecutionLog[]
   invites            Invite[]
+  billingOrders      BillingOrder[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -94,6 +101,53 @@ enum WorkshopApprovalStatus {
   pending
   approved
   rejected
+}
+
+model BillingOrder {
+  id               String             @id @default(cuid())
+  workshopId       String
+  workshop         Workshop           @relation(fields: [workshopId], references: [id])
+  type             BillingOrderType
+  planTier         PlanTier
+  billingCycle     BillingCycle
+  amountMinor      Int                // kuruş — satın alma anındaki KDV-dahil fiyat snapshot'ı
+  currency         String             @default("TRY")
+  status           BillingOrderStatus @default(pending_payment)
+  method           BillingMethod      @default(havale)
+  reference        String             @unique // havale eşleştirme kodu, ör. "BX-7K3Q9"
+  billingSnapshot  Json?              // o anki ünvan/vergi no/adres → makbuz için
+  note             String?
+  createdAt        DateTime           @default(now())
+  confirmedAt      DateTime?
+  confirmedByEmail String?
+  periodStart      DateTime?
+  periodEnd        DateTime?
+
+  @@index([workshopId])
+  @@index([status])
+}
+
+enum BillingCycle {
+  monthly
+  yearly
+}
+
+enum BillingOrderType {
+  new_purchase
+  upgrade
+  renewal
+}
+
+enum BillingOrderStatus {
+  pending_payment
+  confirmed
+  cancelled
+}
+
+enum BillingMethod {
+  havale
+  manual
+  card
 }
 
 model WorkshopSettings {
