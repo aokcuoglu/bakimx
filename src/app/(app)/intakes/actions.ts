@@ -10,6 +10,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
 import type { IntakeStatus } from "@prisma/client"
 import { nanoid } from "nanoid"
+import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 
 export async function createIntakeAction(formData: FormData) {
   const user = await requireAuth()
@@ -37,18 +38,23 @@ export async function createIntakeAction(formData: FormData) {
   })
   if (!vehicle) return { error: "Araç bulunamadı" }
 
-  const intake = await prisma.vehicleIntakeForm.create({
-    data: {
-      workshopId: user.workshopId,
-      customerId: parsed.data.customerId,
-      vehicleId: parsed.data.vehicleId,
-      mileageAtIntake: parsed.data.mileageAtIntake || null,
-      customerComplaint: parsed.data.customerComplaint,
-      internalNote: parsed.data.internalNote || null,
-    },
+  const { intake, order } = await prisma.$transaction(async (tx) => {
+    const intake = await tx.vehicleIntakeForm.create({
+      data: {
+        workshopId: user.workshopId,
+        customerId: parsed.data.customerId,
+        vehicleId: parsed.data.vehicleId,
+        mileageAtIntake: parsed.data.mileageAtIntake || null,
+        customerComplaint: parsed.data.customerComplaint,
+        internalNote: parsed.data.internalNote || null,
+      },
+    })
+    const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id)
+    return { intake, order }
   })
 
   await AuditLogAction(user.workshopId, user.id, "VehicleIntakeForm", intake.id, "intake_created")
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")
 
   await addTimelineEvent({
     workshopId: user.workshopId,
@@ -56,9 +62,16 @@ export async function createIntakeAction(formData: FormData) {
     eventType: "intake_created",
     description: "Araç kabul formu oluşturuldu",
   })
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: intake.id,
+    eventType: "work_order_created",
+    description: "İş emri oluşturuldu",
+  })
 
   revalidatePath("/intakes")
-  return { success: true, id: intake.id }
+  revalidatePath("/orders")
+  return { success: true, id: intake.id, orderId: order.id }
 }
 
 export async function getIntakeAction(id: string) {
