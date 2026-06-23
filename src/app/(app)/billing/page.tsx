@@ -6,6 +6,8 @@ import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
 import { getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { PlanPackages } from "@/components/app/plan-packages"
+import { prisma } from "@/lib/db"
+import { formatMinor } from "@/lib/billing/pricing"
 
 export const metadata = { title: "Paket & Abonelik" }
 
@@ -23,6 +25,10 @@ export default async function BillingPage() {
   }
 
   const plan = getPlanState(workshop)
+  const pendingOrder = await prisma.billingOrder.findFirst({
+    where: { workshopId: workshop.id, status: "pending_payment" },
+    orderBy: { createdAt: "desc" },
+  })
   const ownedTier = workshop.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
   const ownedPkg = ownedTier ? getPlanPackage(ownedTier) : null
 
@@ -45,6 +51,20 @@ export default async function BillingPage() {
             İş yerinize uygun paketi seçin. İhtiyacınız değiştikçe yükseltebilirsiniz.
           </p>
         </div>
+
+        {pendingOrder && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+            <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-foreground">
+                Bekleyen ödeme · {getPlanPackage(pendingOrder.planTier)?.name} ({pendingOrder.billingCycle === "monthly" ? "Aylık" : "Yıllık"}) · {formatMinor(pendingOrder.amountMinor)}
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                Havale açıklamasına <span className="font-semibold">{pendingOrder.reference}</span> yazın. Ödemeniz teyit edilince paketiniz aktifleşecek.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Current status */}
         {plan.isTrialing ? (
