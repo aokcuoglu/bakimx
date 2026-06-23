@@ -1,11 +1,18 @@
 # BakımX — Mimari Analiz ve Teknik Değerlendirme Raporu
 
 **Ürün:** Otomotiv yetkisiz servisleri için mobil öncelikli operasyon yönetim platformu (SaaS)
-**Depo:** `aokcuoglu/bakimx` · **İncelenen sürüm:** v0.5.9 (HEAD)
+**Depo:** `aokcuoglu/bakimx` · **İncelenen sürüm (orijinal):** v0.5.9 (HEAD)
 **Hazırlayan:** Kıdemli Yazılım Mimarı / Teknik Analist · **Tarih:** 2026-06-22
 
 > Bu rapor hem teknik ekibe hem de teknik olmayan paydaşlara (yatırımcı, ürün sahibi, yönetim)
 > hitap edecek şekilde yazılmıştır. Teknik terimler ilk geçtikleri yerde kısaca açıklanmıştır.
+
+> **🔄 Güncelleme — 2026-06-23:** v0.5.9 anlık görüntüsünden sonra gelen işlerle uzlaştırıldı:
+> **v0.5.10** (RBAC/ekipler, admin konsolu, faturalama iskeleti, landing sadeleştirme, migrate-deploy DB),
+> **v0.5.11** (`app.bakimx.com` subdomain ayrımı + temiz URL'ler, AI danışmanın **Premium'a kilitlenmesi**,
+> register-flow doküman uzlaştırması) ve **yayınlanmamış (etiketsiz)** bir `HEAD` commit'i `37cad36`
+> ("Phase-1 teknik borç kapatma") — 2026-06-23'te `origin/main`'e push edildi; henüz sürüm etiketi yok.
+> Güncel durumlar §2 ve §3.3'te işlendi.
 
 ---
 
@@ -102,7 +109,7 @@ bakimx/
 | Özellik | Ne yapar | Modül / Dosya | Durum |
 |---------|----------|---------------|-------|
 | OCR akıllı yakalama | Ruhsat fotoğrafından müşteri/araç oluşturma | `app/smart-capture`, `lib/ocr/` | 🟡 (gerçek OCR doğrulanmamış) |
-| AI servis danışmanı | Şikâyetten öneri (onay zorunlu, otomatik eklemez) | `api/advisor`, `lib/advisor/` | 🟡 |
+| AI servis danışmanı | Şikâyetten öneri (onay zorunlu); artık **Premium'a kilitli** (`hasFeature`→403, UI upsell) | `api/advisor`, `lib/advisor/` | 🟡 (gating ✅, mock varsayılan) |
 | Dijital araç pasaportu | Aracın tüm servis geçmişi + QR + public özet | `vehicles/[id]/passport`, `lib/passport/` | ✅ |
 | Teknisyen mobil çalışma alanı | Teknisyene iş emri, parça talebi, işçilik kaydı | `app/technician`, `lib/technician/` | 🟡 (en yeni, en az test edilmiş) |
 | İletişim altyapısı | SMS/WhatsApp/E-posta sağlayıcı soyutlaması | `lib/communications/` (NetGSM, Resend, WhatsApp Business) | 🟡 (varsayılan mock) |
@@ -110,6 +117,17 @@ bakimx/
 | Depolama (S3/R2) | Fotoğrafların kalıcı, kiracıya özel saklanması | `lib/storage/` | ✅ (mock varsayılan) |
 
 **Özet sayılar:** 33 veritabanı modeli · 47 API ucu · 19 server-action dosyası · 6 sağlayıcı soyutlaması · 30+ sürüm (v0.0.1 → v0.5.9).
+
+### v0.5.9 Sonrası Eklenenler (2026-06-23 uzlaştırması)
+
+| Özellik | Ne yapar | Sürüm | Durum |
+|---------|----------|-------|-------|
+| RBAC & ekipler | owner/manager/staff rolleri, token-hash'li davetler, admin konsolu | v0.5.10 | ✅ |
+| Faturalama iskeleti | Plan tier'ları, deneme süresi, koltuk limiti, yükseltme talebi (DB+UI) | v0.5.10 | 🟡 (gerçek ödeme yok — iyzico'ya kadar manuel) |
+| Lead yönetimi | Demo & destek talepleri DB'ye persist + admin durum yönetimi | HEAD (yayınlanmamış) | ✅ |
+| Subdomain ayrımı | `bakimx.com` (landing/auth/public) + `app.bakimx.com` (uygulama, temiz URL) | v0.5.11 | ✅ |
+| Provider enum temizliği | Uygulanmamış SMS/WhatsApp/e-posta sağlayıcıları (iletimerkezi/sendgrid/custom) düşürüldü | HEAD (yayınlanmamış) | ✅ |
+| Validation konsolidasyonu | Tüm Zod şemaları `src/lib/validations/*` altında (eski `validation.ts` kaldırıldı) | HEAD (yayınlanmamış) | ✅ |
 
 ---
 
@@ -140,15 +158,17 @@ Bu, basit bir prototipin çok ötesinde, ancak tam ölçekli üretime geçişten
 
 ### 3.3. Potansiyel Teknik Borç Alanları
 
-| Alan | Açıklama | Risk |
-|------|----------|------|
-| Para alanları `Float` saklanıyor | Ondalık hassasiyet `Decimal` yerine kayan noktalı; v0.5.9'da epsilon (tolerans) ile hafifletildi ama kök çözüm değil | **Orta** — ölçekte yuvarlama kayması |
-| Bellek-içi hız sınırlama (rate-limit) | Süreç başına; birden çok sunucu kopyası çalışınca paylaşılmıyor | **Yüksek** — yatay ölçeklemeyi engeller |
-| OTP sertleştirme eksik | Kod entropisi/süre/deneme limiti hâlâ açık (v0.5.7'de ertelendi) | **Orta** — onay akışı suistimali |
-| `db.ts` placeholder bağlantı | Veritabanı yapılandırılmamışsa sahte bağlantıya düşüyor — hatalı yapılandırmayı gizleyebilir | **Düşük** |
-| `middleware.ts` eski sözleşme | Next.js 16, `proxy` sözleşmesini öneriyor; mevcut çalışıyor ama deprecated | **Düşük** |
-| İnce test kapsamı | Otomatik güvence az | **Yüksek** |
-| Eksik ürün modülleri | e-Fatura, abonelik/faturalama, çoklu şube yok | Ürün kapsamı |
+| Alan | Açıklama | Risk | Durum (06-23) |
+|------|----------|------|---------------|
+| Para alanları `Float` saklanıyor | Ondalık hassasiyet `Decimal` yerine kayan noktalı; v0.5.9'da epsilon (tolerans) ile hafifletildi ama kök çözüm değil | **Orta** — ölçekte yuvarlama kayması | ⬜ açık → v0.7.0 |
+| Bellek-içi hız sınırlama (rate-limit) | Süreç başına; birden çok sunucu kopyası çalışınca paylaşılmıyor | **Yüksek** — yatay ölçeklemeyi engeller | ⬜ açık → **v0.6.0 (sıradaki)** |
+| OTP sertleştirme eksik | Kod entropisi/süre/deneme limiti hâlâ açık (v0.5.7'de ertelendi) | **Orta** — onay akışı suistimali | ⬜ açık → **v0.6.0 (sıradaki)** |
+| `db.ts` placeholder bağlantı | Veritabanı yapılandırılmamışsa sahte bağlantıya düşüyor — hatalı yapılandırmayı gizleyebilir | **Düşük** | ⬜ açık → v0.6.0 (kodda teyit edildi) |
+| `middleware.ts` eski sözleşme | Next.js 16, `proxy` sözleşmesini öneriyor; mevcut çalışıyor ama deprecated | **Düşük** | 🟡 v0.5.11'de host-aware yeniden yazıldı; `proxy` geçişi hâlâ bekliyor |
+| İnce test kapsamı | Otomatik güvence az | **Yüksek** | ⬜ açık → v0.6.4 (kapsam hâlâ ince) |
+| Eksik ürün modülleri | e-Fatura, abonelik/faturalama, çoklu şube yok | Ürün kapsamı | 🟡 faturalama iskeleti geldi (v0.5.10, ödeme yok); e-Fatura/çoklu şube açık → v0.7.2 / v0.8.0 / v0.9–1.0 |
+
+> **✅ v0.5.9'dan beri kapatılan bakım borcu:** Zod şemaları `src/lib/validations/*` altında konsolide edildi (ölü `validation.ts` kaldırıldı); migration hijyeni — geçici `prisma/sql/` emekliye ayrıldı, tüm şema değişiklikleri artık `0_init` baseline üzerinde Prisma migrate ile akıyor (HEAD/`37cad36`). Net etki: bakımı/okunabilirliği iyileştirdi, yeni çalışma-zamanı davranışı yok.
 
 ---
 
@@ -168,6 +188,8 @@ BakımX, oto servislerin günlük operasyonunu uçtan uca yönetebilecek olgunlu
 
 ### 4.3. Geliştirme Önceliği Önerilen Alanlar
 
+> **2026-06-23 ilerleme notu:** v0.5.10 (RBAC/ekipler + admin + faturalama iskeleti) ve v0.5.11 (subdomain ayrımı + AI danışman Premium gating) geldi; yerel/yayınlanmamış Phase-1 işi ise bakım borcunu (validation, migration) kapatıp lead yönetimi ekledi. Ancak bu işlerin **hiçbiri aşağıdaki 1. maddeye dokunmadı** — bu yüzden öncelik sırası aynen geçerli ve **v0.6.0 hâlâ sıradaki adım**.
+
 1. **Dağıtık dayanıklılık (en yüksek öncelik):** Hız sınırlama ve OTP saklamayı Redis/DB tabanlı paylaşımlı yapıya taşı; bu hem en kritik açık güvenlik borcunu kapatır hem de yatay ölçeklemeyi açar.
 2. **Gerçek iletişim entegrasyonunu canlıya alma:** SMS/WhatsApp/E-posta'yı production'da doğrula, teslim günlüğü, yeniden deneme ve KVKK/opt-out kurallarıyla — "Yakında" denen en görünür vaadi aktive eder.
 3. **Test & CI sertleştirme:** intake → onay → iş emri → tahsilat akışı için E2E testler ve CI kapsam eşiği — regresyon riskini ciddi düşürür.
@@ -178,4 +200,4 @@ BakımX, oto servislerin günlük operasyonunu uçtan uca yönetebilecek olgunlu
 
 ---
 
-*Bu rapor, deponun tam kaynak kodu ve git geçmişi incelenerek 2026-06-22 tarihinde hazırlanmıştır.*
+*Bu rapor, deponun tam kaynak kodu ve git geçmişi incelenerek 2026-06-22 tarihinde hazırlanmıştır. 2026-06-23'te v0.5.10 / v0.5.11 + yerel yayınlanmamış Phase-1 teknik borç işiyle (HEAD `37cad36`) uzlaştırıldı.*

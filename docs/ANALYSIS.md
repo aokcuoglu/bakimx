@@ -1,7 +1,13 @@
 # BakımX — Complete Git History Analysis
 
-**Repo:** `aokcuoglu/bakimx` · **HEAD:** `a342e92` (merge of PR #4 → `v0.5.9`)
-**Span:** 37 commits · 32 tags · v0.0.1 → v0.5.9 over 23 days (2026-05-31 → 2026-06-22)
+**Repo:** `aokcuoglu/bakimx` · **Original HEAD:** `a342e92` (merge of PR #4 → `v0.5.9`)
+**Span (original snapshot):** 37 commits · 32 tags · v0.0.1 → v0.5.9 over 23 days (2026-05-31 → 2026-06-22)
+
+> **🔄 Updated 2026-06-23** — reconciled with work shipped after the original v0.5.9 snapshot:
+> **v0.5.10** (RBAC/teams, admin console, billing scaffold, landing condense, migrate-deploy DB),
+> **v0.5.11** (`app.bakimx.com` subdomain split + clean URLs, AI advisor Premium gating, register-flow
+> doc reconcile), and the **unreleased (untagged)** `HEAD` commit `37cad36` "close Phase 1 technical debt"
+> — pushed to `origin/main` on 2026-06-23; no version tag yet. New timeline rows in §1, debt status in §6, progress note in §8.
 
 > Note: tags are annotated/lightweight on the remote and weren't present locally until fetched.
 > Releases `v0.3.2`, `v0.5.5`, `v0.5.6`, `v0.5.8`, `v0.5.9` ship **without** a `docs/releases/*.md`
@@ -46,6 +52,9 @@
 | v0.5.7 | 06-21 | d859de6 | **P0 security**: register removed, login rate-limit/enum-defense/session-rotation, cron secret, status-transition guards, XSS escaping in PDF/HTML, WO-number uniqueness | Security |
 | v0.5.8 | 06-21 | 10d2922 | **Tenant isolation hotfix**: 8 server actions now derive `workshopId` from session (not client) | Security |
 | v0.5.9 | 06-22 | d9bc608 | **Migration baseline + money consistency**: squashed `0_init`, epsilon money helpers, `$transaction` wrapping, `@@unique([workshopId, workOrderNo])` | Hardening |
+| v0.5.10 | 06-22 | ff67cd2 | **RBAC & teams** (owner/manager/staff roles, token-hashed invites, admin console), **billing/plan scaffold** (tiers, trial window, seat limits, upgrade-request), landing condense, migrate-deploy DB adoption | Feature |
+| v0.5.11 | 06-23 | 7404e84 | **Subdomain split**: `bakimx.com` (landing/auth/public) vs `app.bakimx.com` (app, clean URLs); host-aware `middleware.ts`, `.bakimx.com` session cookie; **AI advisor server-gated to Premium** (`hasFeature`→403 both advisor routes); register-flow docs reconciled (approval-gated trial) | Feature/Infra |
+| _HEAD_ | 06-23 | 37cad36 | **Phase-1 tech-debt closure** — _unreleased/untagged (on `origin/main`)_: validation schemas consolidated to `lib/validations/*` (dead `validation.ts` removed), migration hygiene (`prisma/sql/` retired + Demo/Support migration), **demo & support requests persisted + admin console**, comms provider-enum cleanup, `/inventory`→`/parts`, reminder→vehicle KPI | Hardening/Maint. |
 
 ---
 
@@ -62,12 +71,16 @@
 - **Workshop settings** — 7-tab config + branding propagation
 - **Operations dashboard & reporting & analytics** — real Prisma queries, zero-dep charts
 - **Self-hosted deploy stack** — Docker (prod only), GH Actions GHCR + SSH, VPS provisioning, single migration baseline
+- **RBAC & teams** — owner/manager/staff roles, token-hashed invites, admin console (v0.5.10)
+- **Lead management** — demo & support requests persisted to DB + admin status management (`admin-requests.tsx`, HEAD/unreleased)
+- **Subdomain deployment** — landing/auth/public on `bakimx.com`, app on `app.bakimx.com` (clean URLs, shared `.bakimx.com` session cookie) (v0.5.11)
 
 ## 3. Active / Partial Modules (foundation built, real integration not validated)
 
 - **Communications (SMS/WhatsApp/Email)** — provider abstraction complete (NetGSM/Resend/WhatsApp Business), but **mock is default**; real-send path unproven in production
 - **OCR smart capture** — ruhsat extraction works; real providers (DeepSeek/OpenAI/Tesseract) selectable but not the default; accuracy unvalidated
-- **AI Service Advisor** — suggestion-only, confirm-mandatory; mock default
+- **AI Service Advisor** — suggestion-only, confirm-mandatory; mock default; **now server-gated to Premium** (`hasFeature("aiAdvisor")`→403 in both advisor routes + UI upsell lock, v0.5.11)
+- **Subscription & billing** — plan tiers, trial window, seat limits, upgrade-request flow present in DB+UI (v0.5.10); **no real payment gateway yet** (manual activation until iyzico)
 - **Calendar sync** — Google Calendar provider scaffolded, automation scheduler present; OAuth/real sync not productionized
 - **Maintenance reminders** — records + channel preferences stored; **no guaranteed real dispatch**
 - **Technician workspace** — functional but newer, least-hardened surface
@@ -96,17 +109,19 @@
 
 ## 6. Technical Debt Still Open
 
-| Debt | Source | Risk |
-|------|--------|------|
-| Money stored as `Float` (epsilon-mitigated, not `Decimal`) | v0.5.7 deferred / v0.5.9 note | Med — rounding drift at scale |
-| In-memory rate-limiter (per-process, not shared/durable) | v0.5.7 deferred | High for multi-instance deploy |
-| OTP entropy / expiry / attempt-limit hardening | v0.5.7 deferred, **still open** | Med — approval-flow abuse |
-| `db.ts` placeholder DB connection fallback | v0.5.7 deferred, still in `src/lib/db.ts` | Low — masks misconfig |
-| `middleware.ts` uses deprecated Next 16 convention (`proxy`) | v0.1.2 documented | Low — framework churn |
-| Real comms/OCR/AI/calendar providers unvalidated in prod | foundations only | Med — feature reliability |
-| Minimal automated test coverage | repo-wide | High — regression exposure |
-| `Yakında` stubs: Excel import, voice fill | landing/features | Low — marketing promise gap |
-| No e-fatura, no subscription/billing, no multi-branch | roadmap gaps | Product scope |
+| Debt | Source | Risk | Status (06-23) |
+|------|--------|------|----------------|
+| Money stored as `Float` (epsilon-mitigated, not `Decimal`) | v0.5.7 deferred / v0.5.9 note | Med — rounding drift at scale | ⬜ open → v0.7.0 |
+| In-memory rate-limiter (per-process, not shared/durable) | v0.5.7 deferred | High for multi-instance deploy | ⬜ open → **v0.6.0 (next)** |
+| OTP entropy / expiry / attempt-limit hardening | v0.5.7 deferred | Med — approval-flow abuse | ⬜ open → **v0.6.0 (next)** |
+| `db.ts` placeholder DB connection fallback | still in `src/lib/db.ts` (verified 06-23) | Low — masks misconfig | ⬜ open → v0.6.0 |
+| `middleware.ts` uses deprecated Next 16 convention (`proxy`) | v0.1.2 documented | Low — framework churn | 🟡 rewritten host-aware in v0.5.11; `proxy` convention migration still pending |
+| Real comms/OCR/AI/calendar providers unvalidated in prod | foundations only | Med — feature reliability | 🟡 reduced — unimplemented provider enums (iletimerkezi/sendgrid/custom) dropped + advisor Premium-gated; prod validation still open → v0.6.1–v0.6.3 |
+| Minimal automated test coverage | repo-wide | High — regression exposure | ⬜ open → v0.6.4 (`plan.test.ts` updated; coverage still thin) |
+| `Yakında` stubs: Excel import, voice fill | landing/features | Low — marketing promise gap | 🟡 `/inventory`→`/parts` stub removed; voice-fill stub remains |
+| No e-fatura, no subscription/billing, no multi-branch | roadmap gaps | Product scope | 🟡 billing tiers/trial/seats scaffolded in DB+UI (v0.5.10, no gateway); e-fatura/multi-branch open → v0.7.2 / v0.8.0 / v0.9–1.0 |
+
+**✅ Closed since v0.5.9:** validation schemas consolidated into `src/lib/validations/*` (dead `src/lib/validation.ts` removed); migration hygiene — ad-hoc `prisma/sql/` retired, all schema changes now flow through Prisma migrate on the `0_init` baseline (HEAD/`37cad36`). Net: improved maintainability, no new runtime behavior.
 
 ## 7. Security Hardening Completed
 
@@ -123,6 +138,13 @@
 ## 8. Future Roadmap & Recommended Next 10 Versions (from HEAD = v0.5.9)
 
 **Strategic theme: convert "foundations" into validated, scalable, billable production capability → 1.0.**
+
+> **Progress since v0.5.9 (reconciled 2026-06-23):** v0.5.10 shipped RBAC/teams + admin + billing scaffold;
+> v0.5.11 shipped the subdomain split and **server-side Premium gating of the AI advisor** — partially
+> advancing v0.6.3's "advisor prod-gating" and laying the entitlement groundwork for v0.8.0. The local/
+> unreleased Phase-1 commit (`37cad36`) closed maintainability debt (validations, migrations) and added
+> lead management, but **touched none of v0.6.0's items**. **→ v0.6.0 remains the #1 next step:** the
+> in-memory rate-limiter, OTP hardening, and the `db.ts` placeholder are all still open (verified 06-23).
 
 | Version | Title | Focus | Why now |
 |---------|-------|-------|---------|
@@ -143,4 +165,4 @@ every later version assumes.
 
 ---
 
-*Generated from full git history analysis on 2026-06-22.*
+*Generated from full git history analysis on 2026-06-22. Updated 2026-06-23 — reconciled v0.5.10 / v0.5.11 + local unreleased Phase-1 tech-debt (HEAD `37cad36`).*
