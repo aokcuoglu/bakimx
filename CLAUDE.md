@@ -1,6 +1,6 @@
-# BakımX Project Rules
+# BakimX Project Rules
 
-BakımX is a Next.js auto repair workshop SaaS project.
+BakimX is a Next.js auto repair workshop SaaS project.
 
 ## Product context
 - Target users: auto repair workshops, mostly mobile-first usage.

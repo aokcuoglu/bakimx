@@ -38,13 +38,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (pathname.startsWith("/app")) {
+  if (pathname.startsWith("/app") || pathname.startsWith("/admin")) {
     const session = await getSession()
     if (!session?.userId) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
+    // /admin additionally requires an allow-listed e-mail; the page enforces
+    // that (404 for non-admins) — middleware can't reach the DB on the edge.
     return NextResponse.next()
   }
 

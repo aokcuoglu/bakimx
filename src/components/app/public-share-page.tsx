@@ -519,20 +519,20 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         </div>
 
         {/* Actions (screen only) */}
-        <div className="print:hidden space-y-3 pt-2 pb-8">
-          <Button onClick={handlePrint} className="w-full" variant="default" size="lg">
+        <div className="print:hidden space-y-3 pt-2 pb-8 safe-area-bottom">
+          <Button onClick={handlePrint} className="w-full" variant="default" size="xl">
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button nativeButton={false} render={<Link href={`/s/${token}/pdf`} target="_blank" />} variant="default" size="lg" className="w-full">
+          <Button nativeButton={false} render={<Link href={`/s/${token}/pdf`} target="_blank" />} variant="default" size="xl" className="w-full">
             <FileDown className="size-5" />
             Yazdırılabilir Sayfa
           </Button>
-          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="lg" aria-label="WhatsApp ile paylaş">
+          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <MessageCircle className="size-5" />
             WhatsApp ile Paylaş
           </Button>
-          <Button onClick={handleCopyLink} className="w-full" variant="outline" size="lg">
+          <Button onClick={handleCopyLink} className="w-full" variant="outline" size="xl">
             {copied ? <CheckCircle2 className="size-5 text-success" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
           </Button>

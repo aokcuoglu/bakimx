@@ -3,6 +3,7 @@
 import { Camera, ImageOff, Loader2 } from "lucide-react"
 import { PHOTO_TYPES } from "@/lib/constants"
 import { useState, useEffect } from "react"
+import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 
 type GroupedPhoto = {
   id: string
@@ -31,6 +32,22 @@ const PHASE_ICONS: Record<string, string> = {
 }
 
 export function GroupedPhotoGallery({ groups, token, compact = false }: GroupedPhotoGalleryProps) {
+  const flat: LightboxPhoto[] = []
+  const indexedGroups = groups.map((group) => ({
+    ...group,
+    photos: group.photos.map((photo) => {
+      const idx = flat.length
+      flat.push({
+        id: photo.id,
+        label: PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.label,
+        fileUrl: photo.fileUrl,
+      })
+      return { photo, idx }
+    }),
+  }))
+
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
   if (groups.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
@@ -42,7 +59,7 @@ export function GroupedPhotoGallery({ groups, token, compact = false }: GroupedP
 
   return (
     <div className="space-y-4">
-      {groups.map((group) => (
+      {indexedGroups.map((group) => (
         <div key={group.phase} className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-sm">{PHASE_ICONS[group.phase] || "📷"}</span>
@@ -54,17 +71,29 @@ export function GroupedPhotoGallery({ groups, token, compact = false }: GroupedP
             </span>
           </div>
           <div className={`grid ${compact ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3"} gap-2`}>
-            {group.photos.map((photo) => (
+            {group.photos.map(({ photo, idx }) => (
               <PhotoCard
                 key={photo.id}
                 photo={photo}
                 token={token}
                 compact={compact}
+                onOpen={() => setLightboxIndex(idx)}
               />
             ))}
           </div>
         </div>
       ))}
+
+      <PhotoLightbox
+        photos={flat}
+        index={lightboxIndex ?? 0}
+        onIndexChange={(n) => setLightboxIndex(n)}
+        open={lightboxIndex !== null}
+        onOpenChange={(o) => {
+          if (!o) setLightboxIndex(null)
+        }}
+        token={token}
+      />
     </div>
   )
 }
@@ -73,10 +102,12 @@ function PhotoCard({
   photo,
   token,
   compact,
+  onOpen,
 }: {
   photo: GroupedPhoto
   token?: string
   compact?: boolean
+  onOpen?: () => void
 }) {
   const isDataUrl = photo.fileUrl?.startsWith("data:") ?? false
   const [src, setSrc] = useState<string | null>(() => isDataUrl ? photo.fileUrl! : null)
@@ -123,13 +154,18 @@ function PhotoCard({
   }
 
   return (
-    <div className={`aspect-square overflow-hidden bg-muted ${compact ? "rounded" : "rounded-lg"}`}>
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${typeLabel} — büyüt`}
+      className={`group relative aspect-square overflow-hidden bg-muted touch-manipulation ${compact ? "rounded" : "rounded-lg"}`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={typeLabel}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-transform group-active:scale-95"
       />
-    </div>
+    </button>
   )
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -10,21 +11,13 @@ import {
   ArrowRight,
   Smartphone,
   ClipboardCheck,
-  ShieldCheck,
 } from "lucide-react";
-
-const heroBullets = [
-  { icon: Smartphone, label: "Mobil araç kabul" },
-  { icon: ClipboardCheck, label: "Hasar işaretleme" },
-  { icon: Camera, label: "Fotoğraf checklist'i" },
-  { icon: ShieldCheck, label: "Müşteri onayı" },
-  { icon: MessageSquare, label: "WhatsApp işlem çıktısı" },
-];
+import { CarDamageIllustration } from "@/components/sections/car-damage-illustration";
 
 const trustItems = [
-  "Mobil uyumlu",
-  "Küçük ve orta ölçekli servisler için",
-  "Kurumsal görünüm, kolay kullanım",
+  "15 gün ücretsiz deneme",
+  "Kredi kartı gerekmez",
+  "Mobil uyumlu, kolay kullanım",
 ];
 
 export function HeroSection() {
@@ -53,8 +46,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
             >
-              Oto servisinizde araç kabul sürecini{" "}
-              <span className="text-primary">dijitalleştirin.</span>
+              Aracı teslim alın, hasarı işaretleyin,{" "}
+              <span className="text-primary">onayı anında alın.</span>
             </motion.h1>
             <motion.p
               initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
@@ -62,39 +55,24 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.35 }}
               className="text-base sm:text-lg text-muted-foreground leading-relaxed"
             >
-              BakimX ile aracı telefondan teslim alın, mevcut hasarları
-              işaretleyin, ruhsat ve araç fotoğraflarını kaydedin,
-              müşteriden onay alın ve işlem çıktısını profesyonel şekilde
-              paylaşın.
+              Oto servisiniz için mobil araç kabul: hasar haritası, fotoğraf
+              checklist&apos;i ve WhatsApp ile müşteri onayı — tek akışta.
             </motion.p>
-            <motion.div
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.45 }}
-              className="flex flex-wrap gap-x-4 gap-y-1.5"
-            >
-              {heroBullets.map((b) => (
-                <div key={b.label} className="flex items-center gap-1.5 text-sm text-muted-foreground whitespace-nowrap">
-                  <b.icon className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span>{b.label}</span>
-                </div>
-              ))}
-            </motion.div>
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.55 }}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2"
             >
-              <a
-                href="#demo-talep"
+              <Link
+                href="/register"
                 className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base h-10 px-8 gap-2 shadow-lg shadow-primary/25" })}
               >
-                Demo Talep Et
+                15 Gün Ücretsiz Dene
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
               <a
-                href="#cozumler"
+                href="#nasil-calisir"
                 className={buttonVariants({ variant: "outline", size: "lg", className: "text-base h-10 px-8 border-primary/30" })}
               >
                 Nasıl Çalıştığını Gör
@@ -156,11 +134,9 @@ function HeroComposition() {
           </div>
           <div className="space-y-2">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Hasar İşaretleme</p>
-            <div className="relative rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
-              <Car className="h-16 w-16 text-muted-foreground/30 mx-auto" />
-              <div className="absolute top-4 left-6 h-3 w-3 rounded-full bg-destructive ring-2 ring-destructive/30 animate-pulse" />
-              <div className="absolute bottom-5 right-8 h-3 w-3 rounded-full bg-brand ring-2 ring-brand/60 animate-pulse" />
-              <p className="text-xs text-muted-foreground mt-2 text-center">2 hasar işaretli</p>
+            <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
+              <CarDamageIllustration className="h-28 w-auto" />
+              <p className="text-xs text-muted-foreground mt-2 text-center">3 hasar işaretli</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">

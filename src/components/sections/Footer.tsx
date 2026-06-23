@@ -6,12 +6,13 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 
 const footerLinks = {
   product: [
-    { label: "Özellikler", href: "#ozellikler" },
-    { label: "Fiyatlandırma", href: "#fiyatlandirma" },
-    { label: "Nasıl Çalışır", href: "#cozumler" },
-    { label: "SSS", href: "#sss" },
+    { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
+    { label: "Neden BakimX", href: "/#neden" },
+    { label: "Yol Haritası", href: "/#yol-haritasi" },
+    { label: "SSS", href: "/#sss" },
   ],
   company: [
+    { label: "Demo Talep Et", href: "/demo" },
     { label: "İletişim", href: "#" },
   ],
   legal: [

@@ -2,25 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
-  { label: "Çözümler", href: "#cozumler" },
-  { label: "Özellikler", href: "#ozellikler" },
-  { label: "Fiyatlandırma", href: "#fiyatlandirma" },
-  { label: "SSS", href: "#sss" },
+  { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
+  { label: "Neden BakimX", href: "/#neden" },
+  { label: "Yol Haritası", href: "/#yol-haritasi" },
+  { label: "SSS", href: "/#sss" },
 ];
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  const pathname = usePathname();
 
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // On the landing page, smooth-scroll to top; elsewhere let the link navigate home.
+    if (pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
     setMobileOpen(false);
   }
 
@@ -32,14 +37,14 @@ export function Header() {
       className="sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a
-          href="#"
+        <Link
+          href="/"
           onClick={handleLogoClick}
           aria-label="BakimX ana sayfa"
           className="flex items-center mr-4 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
         >
           <BrandLogo variant="primary-light" size="lg" priority alt="BakimX" />
-        </a>
+        </Link>
 
         <nav className="hidden lg:flex items-center gap-8">
           {navItems.map((item) => (
@@ -60,12 +65,12 @@ export function Header() {
           >
             Giriş Yap
           </Link>
-          <a
-            href="#demo-talep"
+          <Link
+            href="/register"
             className={buttonVariants({ size: "default", className: "bg-primary text-primary-foreground hover:bg-primary/90" })}
           >
-            Demo Talep Et
-          </a>
+            Ücretsiz Dene
+          </Link>
         </div>
 
         <Button
@@ -100,13 +105,13 @@ export function Header() {
               >
                 Giriş Yap
               </Link>
-              <a
-                href="#demo-talep"
+              <Link
+                href="/register"
                 onClick={() => setMobileOpen(false)}
                 className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 w-full text-center" })}
               >
-                Demo Talep Et
-              </a>
+                Ücretsiz Dene
+              </Link>
             </div>
           </div>
         </div>

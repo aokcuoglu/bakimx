@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "Küçük oto tamircileri için uygun mu?",
     answer:
-      "Kesinlikle. BakimX, küçük ve orta ölçekli oto tamir atölyeleri için tasarlanmıştır. Başlangıç planı tek kullanıcı ile kullanıma uygun olacak şekilde fiyatlandırılacaktır. Kurulum için teknik bilgi gerektirmez.",
+      "Kesinlikle. BakimX, küçük ve orta ölçekli oto tamir atölyeleri için tasarlanmıştır. Tek kişilik kullanıma uygundur ve kurulum için teknik bilgi gerektirmez.",
   },
   {
     question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
@@ -26,14 +26,9 @@ const faqs = [
       "Evet. Araç kabul tutanağını profesyonel bir formatla WhatsApp üzerinden doğrudan müşteriye gönderebilirsiniz. Ayrıca PDF formatında da çıktı alabilirsiniz.",
   },
   {
-    question: "SMS onayı nasıl çalışacak?",
+    question: "Nasıl başlarım? Ücretsiz deneme var mı?",
     answer:
-      "SMS onay altyapısı şu anda geliştirme aşamasındadır. Yakında müşteriye otomatik SMS gönderimi ve dijital onay linki özelliği aktif olacaktır. Bu özellik Standart planında sunulacaktır.",
-  },
-  {
-    question: "Ruhsattan şase otomatik okunacak mı?",
-    answer:
-      "Evet. OCR_PROVIDER ortam değişkeni bir API anahtarı ile yapılandırıldığında (DeepSeek veya OpenAI), ruhsat fotoğrafınızı yüklediğinizde plaka, şase numarası, marka, model ve araç sahibi bilgileri otomatik okunur. Yapılandırılmadığında sistem demo verileriyle çalışır. Okunan bilgiler kaydedilmeden önce onayınıza sunulur.",
+      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturursunuz. Hesabınız onaylandığında 15 günlük ücretsiz deneme süreniz başlar ve tüm özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",

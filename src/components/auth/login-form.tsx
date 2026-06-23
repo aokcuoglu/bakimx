@@ -92,7 +92,6 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               placeholder="ornek@email.com"
-              defaultValue="demo@bakimx.com"
               required
               className="h-10 pl-9"
             />
@@ -111,7 +110,6 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="••••••"
-              defaultValue="demo123456"
               required
               className="h-10 pl-9 pr-9"
             />
@@ -129,9 +127,9 @@ export function LoginForm() {
 
         <Button
           type="submit"
-          size="lg"
+          size="xl"
           disabled={loading}
-          className="w-full h-10"
+          className="w-full"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -149,6 +147,13 @@ export function LoginForm() {
             className="text-sm text-primary hover:underline transition-colors"
           >
             Şifremi Unuttum
+          </Link>
+        </div>
+
+        <div className="text-center text-sm text-muted-foreground border-t pt-4">
+          Hesabınız yok mu?{" "}
+          <Link href="/register" className="text-primary hover:underline transition-colors font-medium">
+            Ücretsiz deneyin
           </Link>
         </div>
       </form>

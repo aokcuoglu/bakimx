@@ -12,7 +12,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Build:** `bun run build` (or `npm run build`)
 - **Lint:** `bun run lint` (or `npm run lint`)
 - **Typecheck:** `bun run typecheck` (or `npm run typecheck`)
-- **DB push:** `bun run db:push` — apply Prisma schema to database
+- **DB push:** `bun run db:push` — apply schema directly (LOCAL prototyping only; NEVER prod — use `bun run db:deploy` / `prisma migrate deploy`)
 - **DB seed:** `bun run db:seed` — seed demo data (demo@bakimx.com / demo123456)
 - **DB studio:** `bun run db:studio` — Prisma Studio on port 5555
 - **DB migrate:** `bun run db:migrate` — create migration (use `prisma migrate deploy` for production)
@@ -20,7 +20,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Local Infrastructure
 - **Start services:** `docker compose -f docker-compose.local.yml up -d`
 - **Stop services:** `docker compose -f docker-compose.local.yml down`
-- **Reset DB + Storage:** `docker compose -f docker-compose.local.yml down -v && docker compose -f docker-compose.local.yml up -d`
+- **Reset DB + Storage (LOCAL ONLY, destructive):** `./scripts/local-reset.sh` — guarded wrapper; never run `docker compose down -v` directly (the same muscle memory wipes prod's `pgdata`)
 - **MinIO Console:** http://localhost:9001 (bakimx / bakimx-dev-secret)
 - **PostgreSQL:** localhost:5432 (bakimx / bakimx)
 

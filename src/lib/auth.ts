@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { UserRole } from "@prisma/client"
 
 export interface AuthUser {
   id: string
@@ -6,6 +7,8 @@ export interface AuthUser {
   workshopId: string
   firstName: string | null
   lastName: string | null
+  role: UserRole
+  isActive: boolean
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -22,6 +25,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
         workshopId: true,
         firstName: true,
         lastName: true,
+        role: true,
+        isActive: true,
       },
     })
 
@@ -37,6 +42,11 @@ export async function requireAuth(): Promise<AuthUser> {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error("Unauthorized")
+  }
+  // A seat deactivated mid-session must lose access immediately (not just at the
+  // next login). Gating here covers every server action / page using requireAuth.
+  if (!user.isActive) {
+    throw new Error("Hesabınız devre dışı bırakılmıştır.")
   }
   return user
 }

@@ -7,6 +7,8 @@ import { prisma } from "@/lib/db"
 export async function getAppData() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
+  // Deactivated seats lose page access immediately (mirrors requireAuth).
+  if (!user.isActive) redirect("/login")
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: user.workshopId },

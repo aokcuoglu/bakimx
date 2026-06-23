@@ -1,18 +1,33 @@
 services:
   app:
-    image: ghcr.io/bakimx/app:latest
+    image: ghcr.io/aokcuoglu/app:latest
     restart: unless-stopped
     env_file: .env.production
+    # Cap memory so a bakimx spike can't OOM-starve the co-hosted getirbakim stack.
+    # Compose v2 enforces this on `docker compose up`. 2g leaves headroom for
+    # sharp/heic-convert image processing on photo uploads — load-test before lowering.
+    deploy:
+      resources:
+        limits:
+          memory: 2g
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - internal
-      - proxy
+      internal:
+      # Stable alias on the shared Caddy network so the reverse proxy can target
+      # `bakimx-app:3000` without colliding with other stacks' `app` services.
+      proxy:
+        aliases:
+          - bakimx-app
 
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-bakimx}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}

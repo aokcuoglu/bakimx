@@ -34,8 +34,8 @@ cp .env.example .env.local
 #   S3_BUCKET=bakimx-media
 #   S3_FORCE_PATH_STYLE=true
 
-# Veritabanını hazırlayın
-bun run db:push
+# Veritabanını hazırlayın (migration'ları uygula + demo veri)
+bun run db:deploy
 bun run db:seed
 
 # Geliştirme sunucusunu başlatın
@@ -56,10 +56,9 @@ docker compose -f docker-compose.local.yml up -d
 # Servisleri durdur
 docker compose -f docker-compose.local.yml down
 
-# Veritabanı + Storage'ı sıfırla (tüm veriler silinir)
-docker compose -f docker-compose.local.yml down -v
-docker compose -f docker-compose.local.yml up -d
-bun run db:push && bun run db:seed
+# Veritabanı + Storage'ı sıfırla (SADECE LOKAL, tüm veriler silinir)
+# Guard'lı wrapper — yanlışlıkla prod'u silmeyi engeller. Doğrudan `down -v` KULLANMAYIN.
+./scripts/local-reset.sh
 ```
 
 | Servis | Port | Erişim |
@@ -82,9 +81,10 @@ bun run db:push && bun run db:seed
 | `bun run lint` | ESLint |
 | `bun run typecheck` | TypeScript kontrolü |
 | `bun run db:generate` | Prisma client oluştur |
-| `bun run db:push` | Şemayı veritabanına uygula |
-| `bun run db:migrate` | Migration oluştur |
-| `bun run db:seed` | Demo veri ekle |
+| `bun run db:push` | Şemayı doğrudan uygula (yalnız hızlı prototip; migration üretmez) |
+| `bun run db:migrate` | Migration oluştur + lokale uygula (`prisma migrate dev`) |
+| `bun run db:deploy` | Migration'ları uygula (prod yöntemi, `prisma migrate deploy`) |
+| `bun run db:seed` | Demo veri ekle (prod'da bloklanır) |
 | `bun run db:studio` | Prisma Studio |
 | `bun run db:validate` | Prisma şema doğrulama |
 

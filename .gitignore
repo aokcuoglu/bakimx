@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# local tooling artifacts
+.playwright-mcp/
+
 # docker / infra
 .env.production
 pgdata/

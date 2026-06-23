@@ -4,8 +4,8 @@ import Link from "next/link"
 
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/app/status-badge"
 import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
+import { StatCard } from "@/components/shared/stat-card"
 import { formatTRY } from "@/lib/format"
-import { cn } from "@/lib/utils"
 
 type OrderRow = {
   id: string
@@ -85,23 +85,14 @@ export function OrderList({
             ? `/app/orders${paymentParam ? `?payment=${activePayment}` : ""}`
             : `/app/orders?status=${cfg.filterValue}${paymentParam}`
           return (
-            <Link
+            <StatCard
               key={cfg.key}
+              label={cfg.label}
+              value={cfg.count}
+              accent={cfg.accent}
               href={href}
-              prefetch={false}
-              className={cn(
-                "rounded-lg border bg-card p-3 sm:p-4 transition-all hover:shadow-sm touch-manipulation",
-                isActive ? "ring-2 ring-primary border-primary" : "border-border"
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground font-medium">{cfg.label}</span>
-                <span className={cn("h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold", cfg.accent)}>
-                  {cfg.count}
-                </span>
-              </div>
-              <p className="mt-1 text-2xl font-bold text-foreground">{cfg.count}</p>
-            </Link>
+              active={isActive}
+            />
           )
         })}
       </div>

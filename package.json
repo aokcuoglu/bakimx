@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.5.8",
+  "version": "0.5.10",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,8 +11,11 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:validate": "prisma validate",
     "db:seed": "bunx tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "workshop": "bun scripts/workshop-admin.ts"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"
@@ -68,5 +71,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "patchedDependencies": {
+    "next@16.2.6": "patches/next@16.2.6.patch"
+  }
 }

@@ -22,6 +22,22 @@ model Workshop {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // --- Billing / subscription / onboarding (SaaS) ---
+  // Defaults keep existing & admin-provisioned workshops fully active; only the
+  // self-serve registration flow overrides these (pending approval + trialing).
+  planTier           PlanTier               @default(pro)
+  subscriptionStatus SubscriptionStatus     @default(active)
+  approvalStatus     WorkshopApprovalStatus @default(approved)
+  trialStartedAt     DateTime?
+  trialEndsAt        DateTime?
+  // Self-serve upgrade request (manual activation until iyzico billing lands):
+  // the workshop picks a package, an admin then activates it via workshop-admin.
+  requestedPlanTier  PlanTier?
+  planRequestedAt    DateTime?
+  // Founder-granted extra login seats beyond the plan tier's included seats
+  // (paid overage / custom deals — charged offline until usage billing lands).
+  extraSeats         Int                    @default(0)
+
   settings     WorkshopSettings?
   users        User[]
   customers    Customer[]
@@ -53,6 +69,31 @@ model Workshop {
   communicationLogs  CommunicationLog[]
   calendarSyncLogs   CalendarSyncLog[]
   reminderExecutionLogs ReminderExecutionLog[]
+  invites            Invite[]
+}
+
+// Feature/pricing package a workshop is on. During the trial a workshop is
+// granted "pro" so it experiences the full value of the paid product.
+enum PlanTier {
+  starter
+  pro
+  premium
+}
+
+// Billing lifecycle of the workshop's subscription.
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+}
+
+// Early-access onboarding gate: self-serve sign-ups start as `pending` and must
+// be approved by an admin before they can sign in / start their trial.
+enum WorkshopApprovalStatus {
+  pending
+  approved
+  rejected
 }
 
 model WorkshopSettings {
@@ -108,10 +149,55 @@ model User {
   lastName    String?
   workshopId  String
   workshop    Workshop @relation(fields: [workshopId], references: [id])
+  // Team/RBAC: default `owner` is backfill-safe — existing/seed users become the
+  // workshop owner with no data fixup. Invited users get their role explicitly.
+  role        UserRole @default(owner)
+  // Soft-disable a seat (blocks sign-in) without deleting history.
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  auditLogs AuditLog[]
+  auditLogs   AuditLog[]
+  sentInvites Invite[] @relation("InviteCreatedBy")
+
+  @@index([workshopId])
+}
+
+// Workshop-scoped team roles. `staff` is the least-privileged operational role.
+enum UserRole {
+  owner   // full control incl. team management + (future) billing
+  manager // manage team (invite / change role of non-owners) + all operations
+  staff   // operational features only; no team management
+}
+
+// Token-based team invite. The raw token lives only in the e-mailed URL; we
+// store sha256(token) so a DB leak can't reproduce a usable invite link.
+model Invite {
+  id              String       @id @default(cuid())
+  workshopId      String
+  workshop        Workshop     @relation(fields: [workshopId], references: [id])
+  email           String
+  role            UserRole     @default(staff)
+  tokenHash       String       @unique
+  status          InviteStatus @default(pending)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdByUserId String?
+  createdBy       User?        @relation("InviteCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([workshopId, email])
+  @@index([workshopId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  revoked
+  expired
 }
 
 model Customer {

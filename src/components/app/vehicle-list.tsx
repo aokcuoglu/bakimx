@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Car, Search, X, Filter, Calendar, Gauge, Plus } from "lucide-react"
+import { Car, Search, X, Filter, Calendar, Gauge } from "lucide-react"
+import { EmptyState } from "@/components/shared/empty-state"
 import { PlateBadge } from "@/components/app/status-badge"
 import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
 import { Input } from "@/components/ui/input"
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { formatDate } from "@/lib/utils-client"
 import { VEHICLE_TYPES } from "@/lib/constants"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { StatCard } from "@/components/shared/stat-card"
+import { FilterSheet, type FilterField } from "@/components/shared/filter-sheet"
 
 export type VehicleRow = {
   id: string
@@ -86,51 +89,54 @@ export function VehicleList({
     setBrand("")
   }
 
+  const vehicleFilterFields: FilterField[] = [
+    {
+      name: "vehicleType",
+      label: "Araç Tipi",
+      options: [
+        { value: "", label: "Tüm Tipler" },
+        ...VEHICLE_TYPES.map((t) => ({ value: t.value, label: t.label })),
+      ],
+    },
+    ...(brands.length > 0
+      ? [
+          {
+            name: "brand",
+            label: "Marka",
+            options: [
+              { value: "", label: "Tüm Markalar" },
+              ...brands.map((b) => ({ value: b, label: b })),
+            ],
+          },
+        ]
+      : []),
+  ]
+
   return (
     <div className="space-y-4">
       {kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Toplam</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-muted text-muted-foreground border-border">
-                {kpis.total}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.total}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Aktif</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold                 bg-primary/10 text-primary border-primary/20">
-                {kpis.active}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.active}</p>
-          </div>
+          <StatCard label="Toplam" value={kpis.total} />
+          <StatCard
+            label="Aktif"
+            value={kpis.active}
+            accent="bg-primary/10 text-primary border-primary/20"
+          />
           {/* TODO: Enable when documents/muayene tracking is implemented */}
           {kpis.documentsExpiring > 0 && (
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Belge Bitiyor</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold                 bg-warning/10 text-warning border-warning/20">
-                {kpis.documentsExpiring}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.documentsExpiring}</p>
-          </div>
+            <StatCard
+              label="Belge Bitiyor"
+              value={kpis.documentsExpiring}
+              accent="bg-warning/10 text-warning border-warning/20"
+            />
           )}
           {/* TODO: Enable when maintenance reminders are linked to vehicles */}
           {kpis.serviceDue > 0 && (
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Bakım Gerekli</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold                 bg-destructive/10 text-destructive border-destructive/20">
-                {kpis.serviceDue}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.serviceDue}</p>
-          </div>
+            <StatCard
+              label="Bakım Gerekli"
+              value={kpis.serviceDue}
+              accent="bg-destructive/10 text-destructive border-destructive/20"
+            />
           )}
         </div>
       )}
@@ -138,7 +144,7 @@ export function VehicleList({
       <form
         action="/app/vehicles"
         method="get"
-        className="flex flex-col sm:flex-row sm:items-center gap-2"
+        className="flex items-center gap-2"
       >
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
@@ -150,7 +156,21 @@ export function VehicleList({
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="lg:hidden">
+          <FilterSheet
+            fields={vehicleFilterFields}
+            initialValues={{ vehicleType, brand }}
+            onApply={(v) => {
+              setVehicleType(v.vehicleType ?? "")
+              setBrand(v.brand ?? "")
+            }}
+            onClear={() => {
+              setVehicleType("")
+              setBrand("")
+            }}
+          />
+        </div>
+        <div className="hidden lg:flex gap-2 flex-wrap">
           <Select
             value={vehicleType}
             onValueChange={(v) => setVehicleType(v ?? "")}
@@ -205,7 +225,16 @@ export function VehicleList({
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState hasFilter={hasFilter} />
+        <EmptyState
+          icon={Car}
+          title={hasFilter ? "Aramanızla eşleşen araç bulunamadı" : "Henüz araç kaydı yok"}
+          description={
+            hasFilter
+              ? "Farklı bir arama veya filtre deneyin"
+              : "Yeni bir araç ekleyerek başlayabilirsiniz"
+          }
+          action={{ label: "+ Yeni Araç", href: "/app/vehicles/new" }}
+        />
       ) : (
         <>
           <DesktopTable
@@ -215,29 +244,6 @@ export function VehicleList({
           <MobileCards rows={filtered} />
         </>
       )}
-    </div>
-  )
-}
-
-function EmptyState({ hasFilter }: { hasFilter: boolean }) {
-  return (
-    <div className="text-center py-16 px-4 text-muted-foreground bg-card border border-dashed border-border rounded-lg">
-      <Car className="size-14 mx-auto mb-4 text-muted-foreground/50" />
-      <p className="text-base font-medium text-foreground">
-        {hasFilter ? "Aramanızla eşleşen araç bulunamadı" : "Henüz araç kaydı yok"}
-      </p>
-      <p className="text-sm mt-1">
-        {hasFilter
-          ? "Farklı bir arama veya filtre deneyin"
-          : "Yeni bir araç ekleyerek başlayabilirsiniz"}
-      </p>
-      <Link
-        href="/app/vehicles/new"
-        className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-      >
-        <Plus className="size-4" />
-        Yeni Araç
-      </Link>
     </div>
   )
 }

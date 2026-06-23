@@ -2,6 +2,9 @@ import { getAppData } from "@/app/app/data"
 import { getWorkshopSettings } from "./actions"
 import { AppShell } from "@/components/app/app-shell"
 import { SettingsTabs } from "./settings-tabs"
+import { prisma } from "@/lib/db"
+import { getSeatUsage } from "@/lib/rbac"
+import { getSeatLimit, type PlanTier } from "@/lib/plan"
 
 export const metadata = {
   title: "Ayarlar",
@@ -74,7 +77,32 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     workshopId: user.workshopId,
     firstName: user.firstName,
     lastName: user.lastName,
+    role: user.role,
   }
+
+  // Team data — scoped to this tenant.
+  const [members, invites] = await Promise.all([
+    prisma.user.findMany({
+      where: { workshopId: user.workshopId },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, isActive: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.invite.findMany({
+      where: { workshopId: user.workshopId, status: "pending" },
+      select: { id: true, email: true, role: true, expiresAt: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ])
+
+  const serializedInvites = invites.map((i) => ({
+    id: i.id,
+    email: i.email,
+    role: i.role,
+    expiresAt: i.expiresAt.toISOString(),
+  }))
+
+  const seatUsage = await getSeatUsage(user.workshopId)
+  const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
 
   return (
     <AppShell workshopName={workshop.name} pageTitle="Ayarlar">
@@ -88,6 +116,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           workshop={serializedWorkshop}
           settings={serializedSettings}
           user={serializedUser}
+          members={members}
+          invites={serializedInvites}
+          seatUsed={seatUsage.used}
+          seatLimit={seatLimit}
         />
       </div>
     </AppShell>

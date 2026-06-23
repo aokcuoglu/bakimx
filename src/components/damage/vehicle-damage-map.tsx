@@ -100,7 +100,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
         <svg
           viewBox="0 0 400 580"
           className="w-full max-w-sm mx-auto select-none"
-          style={{ minWidth: "260px" }}
+          style={{ minWidth: "260px", touchAction: "manipulation" }}
         >
           <defs>
             <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.12" /></filter>
@@ -265,7 +265,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
             <button
               key={g.label}
               onClick={() => firstFree && onZoneClick(firstFree)}
-              className={`text-left p-2.5 rounded-xl border transition-all ${
+              className={`text-left p-3 min-h-12 rounded-xl border transition-all touch-manipulation active:scale-[0.98] ${
                 count > 0 ? "bg-destructive/5 border-destructive/15" : "bg-card border-border hover:border-primary/30"
               }`}
             >
@@ -314,10 +314,11 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                 {onRemoveMark && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onRemoveMark(m.id) }}
-                    className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive p-0.5 rounded transition-all shrink-0 ml-1"
+                    aria-label="Hasarı kaldır"
+                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0 ml-1 opacity-100 touch-manipulation sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
                     title="Kaldır"
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 )}
               </div>

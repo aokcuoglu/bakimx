@@ -8,6 +8,15 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
+    console.error(
+      "⛔ Refusing to seed a production database (NODE_ENV=production).\n" +
+        "   Seeding injects a demo workshop with PUBLIC credentials (demo@bakimx.com / demo123456)\n" +
+        "   and a guessable public passport token. If you really mean it, re-run with ALLOW_PROD_SEED=true.",
+    )
+    process.exit(1)
+  }
+
   console.log("🌱 Seeding database...")
 
   const hashedPassword = await bcrypt.hash("demo123456", 12)
@@ -20,6 +29,10 @@ async function main() {
         phone: "0555 123 4567",
         city: "İstanbul",
         address: "Sanayi Mah. 123. Sk. No:5, Kadıköy",
+        // Demo account is a full-access, approved workshop.
+        approvalStatus: "approved",
+        subscriptionStatus: "active",
+        planTier: "premium",
       },
     })
     console.log(`✅ Workshop created: ${workshop.id}`)
@@ -36,6 +49,7 @@ async function main() {
         firstName: "Ahmet",
         lastName: "Yılmaz",
         workshopId: workshop.id,
+        role: "owner",
       },
     })
     console.log(`✅ User created: ${user.id}`)

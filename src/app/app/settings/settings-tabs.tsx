@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { BusinessProfileForm } from "@/components/app/settings/business-profile-form"
 import { BrandingForm } from "@/components/app/settings/branding-form"
@@ -10,6 +9,8 @@ import { WorkingHoursForm } from "@/components/app/settings/working-hours-form"
 import { AppointmentRulesForm } from "@/components/app/settings/appointment-rules-form"
 import { PdfTemplatesForm } from "@/components/app/settings/pdf-templates-form"
 import { SecurityInfo } from "@/components/app/settings/security-info"
+import { TeamManagement, type TeamMember, type PendingInvite } from "@/components/app/settings/team-management"
+import type { UserRole } from "@prisma/client"
 import {
   Building2,
   Palette,
@@ -18,9 +19,10 @@ import {
   CalendarClock,
   FileText,
   Shield,
+  Users,
 } from "lucide-react"
 
-type TabKey = "profile" | "branding" | "communication" | "working-hours" | "appointment-rules" | "pdf-templates" | "security"
+type TabKey = "profile" | "branding" | "communication" | "working-hours" | "appointment-rules" | "pdf-templates" | "team" | "security"
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "profile", label: "İş Yeri Profili", icon: Building2 },
@@ -29,6 +31,7 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
   { key: "working-hours", label: "Çalışma Saatleri", icon: Clock },
   { key: "appointment-rules", label: "Randevu Kuralları", icon: CalendarClock },
   { key: "pdf-templates", label: "PDF Şablonları", icon: FileText },
+  { key: "team", label: "Ekip", icon: Users },
   { key: "security", label: "Güvenlik", icon: Shield },
 ]
 
@@ -83,6 +86,7 @@ type UserData = {
   workshopId: string
   firstName: string | null
   lastName: string | null
+  role: UserRole
 }
 
 export function SettingsTabs({
@@ -90,18 +94,31 @@ export function SettingsTabs({
   workshop,
   settings,
   user,
+  members,
+  invites,
+  seatUsed,
+  seatLimit,
 }: {
   tab: string
   workshop: WorkshopData
   settings: SettingsData
   user: UserData
+  members: TeamMember[]
+  invites: PendingInvite[]
+  seatUsed: number
+  seatLimit: number
 }) {
+  const canManageTeam = user.role === "owner" || user.role === "manager"
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<TabKey>((initialTab as TabKey) || "profile")
+  const searchParams = useSearchParams()
+  // Aktif sekme tek doğru kaynak olarak URL'den türetilir. Böylece zaten
+  // /app/settings'teyken sidebar'dan aynı route'a (?tab=...) tıklandığında
+  // (bileşen remount olmadan, yalnızca re-render olurken) sekme güncellenir.
+  // `initialTab` yalnızca query parametresi yokken yedek varsayılan olarak kalır.
+  const activeTab = (searchParams.get("tab") as TabKey) || (initialTab as TabKey) || "profile"
 
   function handleTabChange(key: string | null) {
     if (!key) return
-    setActiveTab(key as TabKey)
     const params = new URLSearchParams()
     params.set("tab", key)
     router.replace(`/app/settings?${params.toString()}`, { scroll: false })
@@ -128,6 +145,17 @@ export function SettingsTabs({
         <TabsContent value="working-hours"><WorkingHoursForm settings={settings} /></TabsContent>
         <TabsContent value="appointment-rules"><AppointmentRulesForm settings={settings} /></TabsContent>
         <TabsContent value="pdf-templates"><PdfTemplatesForm settings={settings} /></TabsContent>
+        <TabsContent value="team">
+          <TeamManagement
+            members={members}
+            invites={invites}
+            currentUserId={user.id}
+            currentUserRole={user.role}
+            canManage={canManageTeam}
+            seatUsed={seatUsed}
+            seatLimit={seatLimit}
+          />
+        </TabsContent>
         <TabsContent value="security"><SecurityInfo workshop={workshop} user={user} /></TabsContent>
       </Tabs>
     </div>

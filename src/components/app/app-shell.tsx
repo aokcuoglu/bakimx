@@ -34,7 +34,7 @@ import {
   Calendar,
   Receipt,
 } from "lucide-react"
-import { useState, useSyncExternalStore } from "react"
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -101,6 +101,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Ayarlar",
     items: [
       { href: "/app/settings?tab=profile", label: "Ayarlar", icon: Settings },
+      { href: "/app/settings?tab=team", label: "Ekip", icon: Users },
       { href: "/app/settings/notifications", label: "Bildirim Ayarları", icon: Bell },
       { href: "/app/settings/calendar", label: "Takvim Ayarları", icon: Calendar },
     ],
@@ -144,9 +145,27 @@ function subscribeSidebarStore(listener: () => void): () => void {
   }
 }
 
+// Per-page başlık/aksiyon/arama bilgisi context üzerinden taşınır. Kalıcı kabuk
+// (AppShellChrome) artık layout'ta bir kez mount edildiği ve gezinti boyunca
+// mount kaldığı için; sayfa içindeki <AppShell> yalnızca bu bilgiyi günceller.
+// Böylece sidebar ve header gezinti sırasında yeniden mount olmaz (titreme/kayma
+// sorununun kök nedeni buydu).
+type PageHeaderState = {
+  pageTitle?: string
+  pageActions?: React.ReactNode
+  showGlobalSearch?: boolean
+}
+
+const SetPageHeaderContext = createContext<(state: PageHeaderState) => void>(() => {})
+
+/**
+ * Sayfaların render ettiği ince sarmalayıcı. Görsel kabuk çizmez; verilen
+ * başlık/aksiyon/arama bilgisini kalıcı kabuğa iletir ve içeriğini olduğu gibi
+ * döndürür. Çağrı API'si geriye dönük uyumludur (`workshopName` prop'u artık
+ * kullanılmıyor; mevcut sayfa çağrılarını bozmamak için kabul edilip yok sayılır).
+ */
 export function AppShell({
   children,
-  workshopName,
   pageTitle,
   pageActions,
   showGlobalSearch = true,
@@ -157,9 +176,28 @@ export function AppShell({
   pageActions?: React.ReactNode
   showGlobalSearch?: boolean
 }) {
+  const setPageHeader = useContext(SetPageHeaderContext)
+  useEffect(() => {
+    setPageHeader({ pageTitle, pageActions, showGlobalSearch })
+  }, [setPageHeader, pageTitle, pageActions, showGlobalSearch])
+  return <>{children}</>
+}
+
+/**
+ * Kalıcı uygulama kabuğu: sidebar, üst header ve mobil alt navigasyon. layout
+ * tarafından bir kez mount edilir ve sayfa gezintisi boyunca mount kalır; yalnız
+ * içerik alanı (children) Suspense/loading ile değişir.
+ */
+export function AppShellChrome({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
+  const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
   // Server snapshot is always "expanded" (false); the persisted value is applied
   // after hydration without a mismatch warning.
   const sidebarCollapsed = useSyncExternalStore(
@@ -184,35 +222,35 @@ export function AppShell({
   const desktopContentPadding = sidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
 
   return (
+    <SetPageHeaderContext.Provider value={setPageHeader}>
     <div className="min-h-screen bg-muted">
       <div className="flex">
         <aside
           className={cn(
-            "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-navy-light text-navy-foreground border-r border-navy-foreground/10 transition-[width] duration-200 ease-in-out",
+            "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-navy text-navy-foreground border-r border-navy-foreground/10 transition-[width] duration-200 ease-in-out",
             desktopSidebarWidth,
           )}
         >
           <SidebarContent
             pathname={pathname}
-            workshopName={workshopName}
             collapsed={sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
           />
         </aside>
 
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="w-72 bg-navy-light text-navy-foreground border-r border-navy-foreground/10 p-0 flex flex-col" showCloseButton={false}>
+          <SheetContent side="left" className="w-72 bg-navy text-navy-foreground border-r border-navy-foreground/10 p-0 flex flex-col" showCloseButton={false}>
             <div className="flex justify-end p-3">
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="text-muted-foreground/50 hover:text-navy-foreground p-1.5 rounded-md hover:bg-navy-foreground/10 touch-manipulation"
+                className="text-navy-foreground/60 hover:text-navy-foreground p-1.5 rounded-md hover:bg-navy-foreground/10 touch-manipulation"
                 aria-label="Menüyü kapat"
               >
                 <X className="size-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SidebarContent pathname={pathname} workshopName={workshopName} onClose={() => setSidebarOpen(false)} />
+              <SidebarContent pathname={pathname} onClose={() => setSidebarOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
@@ -338,6 +376,7 @@ export function AppShell({
         </div>
       </nav>
     </div>
+    </SetPageHeaderContext.Provider>
   )
 }
 
@@ -381,13 +420,11 @@ function UserMenu() {
 
 function SidebarContent({
   pathname,
-  workshopName,
   onClose,
   collapsed = false,
   onToggleCollapse,
 }: {
   pathname: string
-  workshopName?: string
   onClose?: () => void
   collapsed?: boolean
   onToggleCollapse?: () => void
@@ -422,9 +459,9 @@ function SidebarContent({
           <Tooltip>
             <TooltipTrigger render={<Link href="/app" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
               {collapsed ? (
-                <BrandLogo variant="icon-dark" size="md" alt="BakimX" />
+                <BrandLogo variant="icon-dark" size="sm" alt="BakimX" />
               ) : (
-                <BrandLogo variant="icon-dark" size="md" priority alt="BakimX" />
+                <BrandLogo variant="icon-dark" size="lg" priority alt="BakimX" />
               )}
               <span className="sr-only">BakimX</span>
             </Link>} />
@@ -439,16 +476,13 @@ function SidebarContent({
             </Tooltip>
           )}
         </div>
-        {workshopName && !collapsed && (
-          <p className="mt-2 text-[11px] text-muted-foreground/70 truncate">{workshopName}</p>
-        )}
       </div>
 
       <nav className={cn("flex-1 py-4 space-y-5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden", collapsed ? "px-2" : "px-3")}>
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
             {!collapsed && (
-              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-navy-foreground/55">
                 {group.label}
               </p>
             )}
@@ -475,10 +509,10 @@ function SidebarContent({
                           "flex items-center justify-center size-9 rounded-lg transition-all mx-auto",
                           isActive
                             ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
-                            : "text-muted-foreground/50 hover:bg-navy-foreground/5 hover:text-navy-foreground",
+                            : "text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground",
                           isSoon && !isActive && "opacity-60"
                         )}>
-                          <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-muted-foreground/70 group-hover/collapsed:text-navy-foreground/90")} />
+                          <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-navy-foreground/55 group-hover/collapsed:text-navy-foreground")} />
                         </Link>} />
                         <TooltipContent side="right">{item.label}</TooltipContent>
                       </Tooltip>
@@ -495,15 +529,15 @@ function SidebarContent({
                           "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all w-full text-left",
                           isActive
                             ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
-                            : "text-muted-foreground/50 hover:bg-navy-foreground/5 hover:text-navy-foreground",
+                            : "text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground",
                           isSoon && !isActive && "opacity-60"
                         )}
                       >
-                        <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-muted-foreground/70 group-hover:text-navy-foreground/90")} />
+                        <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-navy-foreground/55 group-hover:text-navy-foreground")} />
                         <span className="flex-1 truncate">{item.label}</span>
                         {isExpanded
-                          ? <ChevronDown className="size-3.5 text-muted-foreground/70" />
-                          : <ChevronRight className="size-3.5 text-muted-foreground/70" />}
+                          ? <ChevronDown className="size-3.5 text-navy-foreground/55" />
+                          : <ChevronRight className="size-3.5 text-navy-foreground/55" />}
                       </button>
                     ) : (
                       <Link
@@ -513,14 +547,14 @@ function SidebarContent({
                           "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
                           isActive
                             ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
-                            : "text-muted-foreground/50 hover:bg-navy-foreground/5 hover:text-navy-foreground",
+                            : "text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground",
                           isSoon && !isActive && "opacity-60"
                         )}
                       >
-                        <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-muted-foreground/70 group-hover:text-navy-foreground/90")} />
+                        <Icon className={cn("size-4 shrink-0", isActive ? "text-brand" : "text-navy-foreground/55 group-hover:text-navy-foreground")} />
                         <span className="flex-1 truncate">{item.label}</span>
                         {item.badge && (
-                          <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-navy-foreground/5 text-muted-foreground/70">
+                          <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-navy-foreground/5 text-navy-foreground/60">
                             {item.badge}
                           </span>
                         )}
@@ -537,10 +571,10 @@ function SidebarContent({
                             "group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
                             pathname === item.href
                               ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
-                              : "text-muted-foreground/70 hover:bg-navy-foreground/5 hover:text-navy-foreground"
+                              : "text-navy-foreground/55 hover:bg-navy-foreground/5 hover:text-navy-foreground"
                           )}
                         >
-                          <Icon className={cn("size-3.5 shrink-0", pathname === item.href ? "text-primary" : "text-muted-foreground group-hover:text-muted-foreground/50")} />
+                          <Icon className={cn("size-3.5 shrink-0", pathname === item.href ? "text-primary" : "text-navy-foreground/55 group-hover:text-navy-foreground")} />
                           <span className="flex-1 truncate">{item.label} Özeti</span>
                           {pathname === item.href && <ChevronRight className="size-3 text-primary" />}
                         </Link>
@@ -556,10 +590,10 @@ function SidebarContent({
                                 "group flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
                                 isChildActive
                                   ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
-                                  : "text-muted-foreground/70 hover:bg-navy-foreground/5 hover:text-navy-foreground"
+                                  : "text-navy-foreground/55 hover:bg-navy-foreground/5 hover:text-navy-foreground"
                               )}
                             >
-                              <ChildIcon className={cn("size-3.5 shrink-0", isChildActive ? "text-primary" : "text-muted-foreground group-hover:text-muted-foreground/50")} />
+                              <ChildIcon className={cn("size-3.5 shrink-0", isChildActive ? "text-primary" : "text-navy-foreground/55 group-hover:text-navy-foreground")} />
                               <span className="flex-1 truncate">{child.label}</span>
                               {isChildActive && <ChevronRight className="size-3 text-primary" />}
                             </Link>
@@ -589,7 +623,7 @@ function SidebarContent({
           <form action="/api/auth/logout" method="POST">
             <button
               type="submit"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground/50 hover:bg-navy-foreground/5 hover:text-navy-foreground transition-colors w-full touch-manipulation"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground transition-colors w-full touch-manipulation"
             >
               <LogOut className="size-4" />
               Çıkış Yap

@@ -15,6 +15,9 @@ import { Button } from "@/components/ui/button"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/app/customer-badges"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
+import { EmptyState } from "@/components/shared/empty-state"
+import { StatCard } from "@/components/shared/stat-card"
+import { FilterSheet, type FilterField } from "@/components/shared/filter-sheet"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 
@@ -48,6 +51,42 @@ type Filters = {
   tag: string
   source: string
 }
+
+const CUSTOMER_FILTER_FIELDS: FilterField[] = [
+  {
+    name: "type",
+    label: "Müşteri Tipi",
+    options: [
+      { value: "", label: "Tüm Tipler" },
+      { value: "individual", label: "Bireysel" },
+      { value: "corporate", label: "Kurumsal" },
+    ],
+  },
+  {
+    name: "tag",
+    label: "Etiket",
+    options: [
+      { value: "", label: "Tüm Etiketler" },
+      { value: "standard", label: "Standart" },
+      { value: "vip", label: "VIP" },
+      { value: "risky", label: "Riskli" },
+      { value: "fleet", label: "Filo" },
+    ],
+  },
+  {
+    name: "source",
+    label: "Kaynak",
+    options: [
+      { value: "", label: "Tüm Kaynaklar" },
+      { value: "referral", label: "Tavsiye" },
+      { value: "google", label: "Google" },
+      { value: "social_media", label: "Sosyal Medya" },
+      { value: "walk_in", label: "Yoldan Geldi" },
+      { value: "existing", label: "Mevcut Müşteri" },
+      { value: "other", label: "Diğer" },
+    ],
+  },
+]
 
 function nameFor(row: CustomerRow) {
   if (row.type === "corporate") return row.companyName || "—"
@@ -103,40 +142,24 @@ export function CustomerList({
     <div className="space-y-4">
       {kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Toplam</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-muted text-muted-foreground border-border">
-                {kpis.total}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.total}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Yeni</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-primary/10 text-primary border-primary/20">
-                {kpis.newThisMonth}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.newThisMonth}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Tekrar Eden</span>
-              <span className="h-6 px-2 inline-flex items-center justify-center rounded-md border text-xs font-semibold bg-success/10 text-success border-success/20">
-                {kpis.returning}
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{kpis.returning}</p>
-          </div>
+          <StatCard label="Toplam" value={kpis.total} />
+          <StatCard
+            label="Yeni"
+            value={kpis.newThisMonth}
+            accent="bg-primary/10 text-primary border-primary/20"
+          />
+          <StatCard
+            label="Tekrar Eden"
+            value={kpis.returning}
+            accent="bg-success/10 text-success border-success/20"
+          />
         </div>
       )}
 
       <form
         action="/app/customers"
         method="get"
-        className="flex flex-col sm:flex-row sm:items-center gap-2"
+        className="flex items-center gap-2"
       >
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
@@ -148,7 +171,23 @@ export function CustomerList({
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="lg:hidden">
+          <FilterSheet
+            fields={CUSTOMER_FILTER_FIELDS}
+            initialValues={{ type, tag, source }}
+            onApply={(v) => {
+              setType((v.type ?? "") as Filters["type"])
+              setTag(v.tag ?? "")
+              setSource(v.source ?? "")
+            }}
+            onClear={() => {
+              setType("")
+              setTag("")
+              setSource("")
+            }}
+          />
+        </div>
+        <div className="hidden lg:flex gap-2">
           <Select
             value={type}
             onValueChange={(v) => setType((v ?? "") as Filters["type"])}
@@ -219,7 +258,16 @@ export function CustomerList({
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState hasFilter={hasFilter} />
+        <EmptyState
+          icon={Users}
+          title={hasFilter ? "Aramanızla eşleşen müşteri bulunamadı" : "Henüz müşteri kaydı yok"}
+          description={
+            hasFilter
+              ? "Farklı bir arama veya filtre deneyin"
+              : "Yeni bir müşteri ekleyerek başlayabilirsiniz"
+          }
+          action={{ label: "+ Yeni Müşteri", href: "/app/customers/new" }}
+        />
       ) : (
         <>
           <DesktopTable
@@ -229,28 +277,6 @@ export function CustomerList({
           <MobileCards rows={filtered} />
         </>
       )}
-    </div>
-  )
-}
-
-function EmptyState({ hasFilter }: { hasFilter: boolean }) {
-  return (
-    <div className="text-center py-16 px-4 text-muted-foreground bg-card border border-dashed border-border rounded-lg">
-      <Users className="size-14 mx-auto mb-4 text-muted-foreground/50" />
-      <p className="text-base font-medium text-foreground">
-        {hasFilter ? "Aramanızla eşleşen müşteri bulunamadı" : "Henüz müşteri kaydı yok"}
-      </p>
-      <p className="text-sm mt-1">
-        {hasFilter
-          ? "Farklı bir arama veya filtre deneyin"
-          : "Yeni bir müşteri ekleyerek başlayabilirsiniz"}
-      </p>
-      <Link
-        href="/app/customers/new"
-        className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-      >
-        + Yeni Müşteri
-      </Link>
     </div>
   )
 }
