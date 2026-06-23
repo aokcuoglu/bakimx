@@ -101,8 +101,22 @@ describe("shouldAutoCapture", () => {
     expect(r).toEqual({ ready: true, reason: "ready" })
   })
 
+  test("computeExtractSize sıfır boyutlu girdi → longEdge×longEdge döndürür", () => {
+    expect(computeExtractSize(rect(0, 0, 0, 0), 1600)).toEqual({ width: 1600, height: 1600 })
+  })
+
+  test("isWithinBounds tam üst sınırda (<=) true döndürür", () => {
+    // frameWidth=400, frameHeight=200, margin=0.015
+    // minX=6, maxX=394, minY=3, maxY=197
+    // rect(6, 3, 388, 194) → sağ kenar=394, alt kenar=197 — tam sınırda.
+    expect(isWithinBounds(rect(6, 3, 388, 194), 400, 200, 0.015)).toBe(true)
+  })
+
   test("DEFAULT_AUTO_CAPTURE beklenen eşikleri taşır", () => {
     expect(DEFAULT_AUTO_CAPTURE.fillMin).toBe(0.55)
     expect(DEFAULT_AUTO_CAPTURE.stableFrames).toBe(6)
+    expect(DEFAULT_AUTO_CAPTURE.edgeMargin).toBe(0.015)
+    expect(DEFAULT_AUTO_CAPTURE.stabilityEps).toBe(6)
+    expect(DEFAULT_AUTO_CAPTURE.sharpMin).toBe(100)
   })
 })

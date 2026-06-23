@@ -506,12 +506,12 @@ export function SmartCaptureRegistration() {
             >
               <div className="flex flex-col items-center gap-3">
                 <div className="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                  <Camera className="size-7" />
+                  <Upload className="size-7" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Fotoğraf çekin veya yükleyin</p>
+                  <p className="text-sm font-medium text-foreground">Galeriden veya dosyadan yükleyin</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Araç ruhsatının ön yüzünü net bir şekilde çekin
+                    Ruhsatın ön yüzünü net seçin
                   </p>
                 </div>
               </div>

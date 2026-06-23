@@ -61,6 +61,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
 
   const [status, setStatus] = useState<ScannerStatus>("starting")
   const [errorMsg, setErrorMsg] = useState("")
+  const [cvFailed, setCvFailed] = useState(false)
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null)
   const [torchOn, setTorchOn] = useState(false)
   const [torchSupported, setTorchSupported] = useState(false)
@@ -383,7 +384,10 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         startDetectLoop()
       } catch {
         // CV yüklenemezse: akıllı çekim yok, manuel çekim çalışmaya devam eder.
-        if (!cancelled && mountedRef.current) setErrorMsg("Otomatik tespit yüklenemedi; manuel çekebilirsiniz.")
+        if (!cancelled && mountedRef.current) {
+          setErrorMsg("Otomatik tespit yüklenemedi; manuel çekebilirsiniz.")
+          setCvFailed(true)
+        }
       }
     }
 
@@ -425,6 +429,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
     lastCornersRef.current = null
     readySinceRef.current = null
     setAligned(false)
+    setCvFailed(false)
     if (cvRef.current && scannerRef.current) startDetectLoop()
     setStatus("ready")
   }, [startDetectLoop])
@@ -501,6 +506,12 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
             className={`absolute inset-x-0 top-4 text-center text-sm font-medium ${aligned ? "text-green-400" : "text-white/90"}`}
           >
             {aligned ? "Sabit tutun…" : "Ruhsatı açıp çerçeveye yerleştirin"}
+          </p>
+        )}
+
+        {status === "ready" && cvFailed && (
+          <p className="absolute inset-x-0 bottom-28 px-4 text-center text-xs text-white/60">
+            Otomatik algılama kullanılamıyor — deklanşöre basarak elle çekebilirsiniz.
           </p>
         )}
 
