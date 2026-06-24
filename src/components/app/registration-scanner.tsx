@@ -48,7 +48,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const scannerRef = useRef<import("jscanify/client").default | null>(null)
+  const scannerRef = useRef<import("@/lib/ocr/vendor/jscanify").default | null>(null)
   const cvRef = useRef<OpenCvModule | null>(null)
   const historyRef = useRef<CornerPoints[]>([])
   const lastCornersRef = useRef<CornerPoints | null>(null)
@@ -377,7 +377,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
       try {
         const cv = await loadOpenCv()
         if (cancelled) return
-        const { default: JScanify } = await import("jscanify/client")
+        const { default: JScanify } = await import("@/lib/ocr/vendor/jscanify")
         if (cancelled) return
         cvRef.current = cv
         scannerRef.current = new JScanify()

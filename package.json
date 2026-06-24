@@ -35,7 +35,6 @@
     "framer-motion": "^12.40.0",
     "heic-convert": "^2.1.0",
     "iron-session": "^8.0.4",
-    "jscanify": "1.4.2",
     "lucide-react": "^1.17.0",
     "nanoid": "^5.1.11",
     "next": "16.2.6",

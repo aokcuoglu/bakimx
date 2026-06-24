@@ -23,6 +23,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendor/third-party files in public/ must not be linted:
     "public/opencv/**",
+    // Vendored third-party UMD build (browser-only, no requires):
+    "src/lib/ocr/vendor/**",
   ]),
 ]);
 
