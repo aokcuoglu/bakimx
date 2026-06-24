@@ -66,8 +66,12 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd /opt/bakimx
             docker compose --env-file .env.production pull app
+            # Apply pending migrations BEFORE recreating the app. `set -e` aborts the
+            # whole script on failure, leaving the running app untouched (no downtime).
+            docker compose --env-file .env.production run --rm migrate
             docker compose --env-file .env.production up -d app --force-recreate
             # Dangling images only. NEVER run an unfiltered `docker system prune`
             # here — this VPS also hosts the getirbakim stack and a system prune
