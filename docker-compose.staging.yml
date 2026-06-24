@@ -23,7 +23,7 @@ services:
     profiles: ["tools"]
     restart: "no"
     env_file: .env.staging
-    command: ["npx", "prisma", "migrate", "deploy"]
+    command: ["prisma", "migrate", "deploy"]
     depends_on:
       db:
         condition: service_healthy

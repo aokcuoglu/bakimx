@@ -36,9 +36,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma CLI for the one-shot `migrate` service (`prisma migrate deploy` at deploy
 # time, before the app is recreated). The Next standalone build omits the CLI; the
-# `prisma/` dir (schema + migrations) is already copied above. openssl + libc6-compat
-# (installed in `base`) satisfy the Prisma engine on alpine. Pinned to the app's version.
-RUN npm install --no-save --no-package-lock prisma@7.8.0
+# `prisma/` dir (schema + migrations) is already copied above. Installed GLOBALLY so it
+# neither reconciles the standalone package.json nor overwrites the generated client.
+# openssl + libc6-compat (base) satisfy the Prisma engine on alpine. Pinned to the app's version.
+RUN npm install -g prisma@7.8.0
 
 USER nextjs
 
