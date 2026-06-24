@@ -16,6 +16,18 @@ test("displayCustomerName: null güvenli", () => {
   expect(displayCustomerName(null)).toBe("—")
 })
 
+test("displayCustomerName: bireysel fullName varsa first/last yerine onu kullanır", () => {
+  expect(
+    displayCustomerName({ id: "c3", firstName: "X", lastName: "Y", fullName: "Mehmet Demir", companyName: null, type: "individual", phone: "05000000000" })
+  ).toBe("Mehmet Demir")
+})
+
+test("displayCustomerName: bireysel tüm adlar boşsa 'İsimsiz müşteri' döner", () => {
+  expect(
+    displayCustomerName({ id: "c4", firstName: null, lastName: null, fullName: null, companyName: null, type: "individual", phone: "05000000000" })
+  ).toBe("İsimsiz müşteri")
+})
+
 test("buildUnifiedResults: önce araçlar (plaka etiketi + sahip alt-etiketi), sonra müşteriler", () => {
   const out = buildUnifiedResults({
     customers: [indiv],
