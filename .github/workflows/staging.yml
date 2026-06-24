@@ -1,15 +1,12 @@
-name: Deploy to Production
+name: Deploy to Staging
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [dev]
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  # GHCR namespace must equal the repo owner (aokcuoglu); this resolves to
-  # ghcr.io/aokcuoglu/app and must stay in sync with docker-compose.yml.
   IMAGE_NAME: ${{ github.repository_owner }}/app
 
 jobs:
@@ -38,10 +35,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=staging
             type=sha,format=long
-            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -54,12 +49,14 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             SESSION_SECRET=build_time_placeholder_at_least_32_chars_long__
+            SESSION_COOKIE_NAME=bakimx_session_staging
+            SESSION_COOKIE_DOMAIN=staging.app.bakimx.com
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VPS
+      - name: Deploy to VPS (staging)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -67,14 +64,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /opt/bakimx
-            docker compose --env-file .env.production pull app
-            # Apply pending migrations BEFORE recreating the app. `set -e` aborts the
-            # whole script on failure, leaving the running app untouched (no downtime).
-            docker compose --env-file .env.production run --rm migrate
-            docker compose --env-file .env.production up -d app --force-recreate
-            # Dangling images only. NEVER run an unfiltered `docker system prune`
-            # here — this VPS also hosts the getirbakim stack and a system prune
-            # would delete its images/cache/networks too.
+            cd /opt/bakimx-staging
+            docker compose --env-file .env.staging pull app
+            docker compose --env-file .env.staging run --rm migrate
+            docker compose --env-file .env.staging up -d app --force-recreate
+            # Dangling images only. NEVER an unfiltered `docker system prune` — this VPS
+            # also hosts the getirbakim stack and a system prune would wipe its images too.
             docker image prune -f
-            echo "Deployed at $(date)"
+            echo "Staging deployed at $(date)"

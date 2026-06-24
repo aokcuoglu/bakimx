@@ -21,6 +21,23 @@ services:
         aliases:
           - bakimx-app
 
+  # One-shot DB migration. Run BEFORE recreating `app` at deploy time:
+  #   docker compose run --rm migrate
+  # `tools` profile keeps it out of `docker compose up`. Idempotent (migrate deploy
+  # applies only pending migrations). Uses the same image:tag as `app`.
+  migrate:
+    image: ghcr.io/aokcuoglu/app:latest
+    profiles: ["tools"]
+    restart: "no"
+    env_file: .env.production
+    working_dir: /migrate
+    command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
   db:
     image: postgres:16-alpine
     restart: unless-stopped

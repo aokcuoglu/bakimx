@@ -1,0 +1,62 @@
+# Staging stack — lives at /opt/bakimx-staging on the same VPS as prod, fully isolated DB.
+# Deployed by .github/workflows/staging.yml on every push to `dev`.
+services:
+  app:
+    image: ghcr.io/aokcuoglu/app:staging
+    restart: unless-stopped
+    env_file: .env.staging
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      internal:
+      proxy:
+        aliases:
+          - bakimx-staging-app
+
+  migrate:
+    image: ghcr.io/aokcuoglu/app:staging
+    profiles: ["tools"]
+    restart: "no"
+    env_file: .env.staging
+    working_dir: /migrate
+    command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bakimx_staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-bakimx_staging}
+    volumes:
+      - pgdata-staging:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bakimx_staging}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+volumes:
+  pgdata-staging:
+
+networks:
+  internal:
+  proxy:
+    external: true
+    name: getirbakim_app-network
