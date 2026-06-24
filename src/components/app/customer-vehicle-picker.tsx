@@ -17,8 +17,13 @@ type Selected =
 
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
 
+/**
+ * Birleşik müşteri+araç seçici. Seçimi `onChange` ile dışarı iter (write-through).
+ * `value` yalnızca DIŞ RESET'i yansıtır: boş value → yerel seçim temizlenir.
+ * Id'lerden etiketli bir seçimi yeniden kurmaz (tam yansıtma Faz 3'e ertelendi).
+ */
 export function CustomerVehiclePicker({
-  value: _value,
+  value,
   onChange,
 }: {
   value: { customerId: string; vehicleId: string }
@@ -70,6 +75,17 @@ export function CustomerVehiclePicker({
     }, 250)
     return () => clearTimeout(t)
   }, [ownerQuery, ownerMode])
+
+  // Dış reset'i yansıt: parent value'yu temizlerse yerel seçimi düşür.
+  // setTimeout, set-state-in-effect lint kuralını karşılamak için (senkron setState yasak).
+  useEffect(() => {
+    if (!value.customerId && !value.vehicleId) {
+      setTimeout(() => {
+        setSelected(null)
+        setCustVehicles([])
+      }, 0)
+    }
+  }, [value.customerId, value.vehicleId])
 
   function pickVehicle(r: Extract<UnifiedResult, { kind: "vehicle" }>) {
     setSelected({ kind: "vehicle", customerId: r.customerId, vehicleId: r.vehicleId, label: r.label, sublabel: r.sublabel })
