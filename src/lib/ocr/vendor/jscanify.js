@@ -67,11 +67,16 @@
       let maxArea = 0;
       let maxContourIndex = -1;
       for (let i = 0; i < contours.size(); ++i) {
-        let contourArea = cv.contourArea(contours.get(i));
+        // OpenCV.js: contours.get(i) allocates a NEW Mat that must be freed, else the
+        // WASM heap leaks one Mat per contour per frame → renderer OOM crash on the
+        // ~10fps detect loop (worst with text-heavy documents like a ruhsat).
+        const cnt = contours.get(i);
+        const contourArea = cv.contourArea(cnt);
         if (contourArea > maxArea) {
           maxArea = contourArea;
           maxContourIndex = i;
         }
+        cnt.delete();
       }
 
       const maxContour =
@@ -197,8 +202,14 @@
 
       cv.imshow(canvas, warpedDst);
 
+      // Free every Mat allocated above, else each capture leaks the transform Mats
+      // (srcTri/dstTri/M) and, when corners were auto-detected, the contour too.
       img.delete()
       warpedDst.delete()
+      srcTri.delete()
+      dstTri.delete()
+      M.delete()
+      if (maxContour) maxContour.delete()
       return canvas;
     }
 
