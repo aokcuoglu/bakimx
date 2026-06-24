@@ -5,7 +5,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
-import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
+import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -26,25 +26,9 @@ export async function createServiceOrderAction(intakeFormId: string) {
   })
   if (existing) return { error: "Bu kabul için zaten bir servis emri var", id: existing.id }
 
-  const order = await prisma.$transaction(async (tx) => {
-    const workOrderNo = await generateUniqueWorkOrderNo((candidate) =>
-      tx.serviceOrder
-        .findFirst({
-          where: { workshopId: user.workshopId, workOrderNo: candidate },
-          select: { id: true },
-        })
-        .then((clash) => clash !== null)
-    )
-
-    return tx.serviceOrder.create({
-      data: {
-        workshopId: user.workshopId,
-        intakeFormId,
-        workOrderNo,
-        status: "draft",
-      },
-    })
-  })
+  const order = await prisma.$transaction((tx) =>
+    createServiceOrderForIntake(tx, user.workshopId, intakeFormId),
+  )
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")
 

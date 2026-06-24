@@ -194,3 +194,32 @@ export async function deleteVehicleAction(vehicleId: string) {
   revalidatePath("/vehicles")
   return { success: true }
 }
+
+export async function changeVehicleOwnerAction(vehicleId: string, newCustomerId: string) {
+  const user = await requireAuth()
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, workshopId: user.workshopId },
+  })
+  if (!vehicle) return { error: "Araç bulunamadı" }
+
+  const customer = await prisma.customer.findFirst({
+    where: { id: newCustomerId, workshopId: user.workshopId },
+  })
+  if (!customer) return { error: "Müşteri bulunamadı" }
+
+  if (vehicle.customerId === newCustomerId) {
+    return { success: true as const, id: vehicleId }
+  }
+
+  await prisma.vehicle.updateMany({
+    where: { id: vehicleId, workshopId: user.workshopId },
+    data: { customerId: newCustomerId },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_owner_changed")
+
+  revalidatePath("/vehicles")
+  revalidatePath(`/vehicles/${vehicleId}`)
+  return { success: true as const, id: vehicleId }
+}
