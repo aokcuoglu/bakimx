@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2 } from "lucide-react"
 
-export type InlineCreateResult = { customerId: string; vehicleId: string }
+export type InlineCreateResult = {
+  customerId: string
+  vehicleId: string
+  plate?: string
+  brand?: string
+  model?: string
+  customerName?: string
+}
 
 export function InlineCreateModal({
   open,
@@ -99,7 +106,8 @@ export function InlineCreateModal({
 
       setLoading(false)
       if (edit) { window.location.href = `/vehicles/${vehicleId}`; return }
-      onCreated({ customerId, vehicleId })
+      const customerName = type === "corporate" ? companyName.trim() : `${firstName} ${lastName}`.trim()
+      onCreated({ customerId, vehicleId, plate, brand, model, customerName })
       onOpenChange(false)
     } catch {
       setError("Bir hata oluştu")
@@ -109,7 +117,7 @@ export function InlineCreateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Yeni müşteri & araç</DialogTitle>
           <DialogDescription>Kaydı oluşturup seçili hale getirin.</DialogDescription>

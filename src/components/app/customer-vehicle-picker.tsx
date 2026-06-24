@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
 import { Loader2, Car, User, Plus, X, UserCog } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import type { UnifiedResult } from "@/lib/search/unified-results"
@@ -17,10 +26,16 @@ type Selected =
 
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
 
+function resultKey(r: UnifiedResult): string {
+  return r.kind === "vehicle" ? `v-${r.vehicleId}` : `c-${r.customerId}`
+}
+
 /**
  * Birleşik müşteri+araç seçici. Seçimi `onChange` ile dışarı iter (write-through).
  * `value` yalnızca DIŞ RESET'i yansıtır: boş value → yerel seçim temizlenir.
  * Id'lerden etiketli bir seçimi yeniden kurmaz (tam yansıtma Faz 3'e ertelendi).
+ * Arama UI'ı shadcn (base-ui) Combobox + Item ile; sonuçlar sunucu taraflı
+ * filtrelendiği için Combobox'ın içsel filtresi kapatılır (`filter={() => true}`).
  */
 export function CustomerVehiclePicker({
   value,
@@ -31,7 +46,6 @@ export function CustomerVehiclePicker({
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UnifiedResult[]>([])
-  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Selected>(null)
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
@@ -41,7 +55,7 @@ export function CustomerVehiclePicker({
   const [ownerResults, setOwnerResults] = useState<Extract<UnifiedResult, { kind: "customer" }>[]>([])
   const [ownerBusy, setOwnerBusy] = useState(false)
 
-  // Birincil arama (debounce 250ms)
+  // Birincil arama (debounce 250ms). Combobox `onInputValueChange` → query.
   useEffect(() => {
     if (selected || query.trim().length < 1) {
       const t = setTimeout(() => setResults([]), 0)
@@ -117,7 +131,13 @@ export function CustomerVehiclePicker({
   }
 
   function onModalCreated(r: InlineCreateResult) {
-    setSelected({ kind: "vehicle", customerId: r.customerId, vehicleId: r.vehicleId, label: "Yeni araç", sublabel: "Yeni müşteri" })
+    setSelected({
+      kind: "vehicle",
+      customerId: r.customerId,
+      vehicleId: r.vehicleId,
+      label: r.plate ? `${r.plate}${r.brand ? ` — ${r.brand} ${r.model ?? ""}`.trimEnd() : ""}` : "Yeni araç",
+      sublabel: r.customerName ? `Sahip: ${r.customerName}` : "Yeni müşteri",
+    })
     onChange({ customerId: r.customerId, vehicleId: r.vehicleId })
     setQuery(""); setResults([])
   }
@@ -145,7 +165,7 @@ export function CustomerVehiclePicker({
               <p className="text-xs text-muted-foreground">{selected.sublabel}</p>
             </div>
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={reset}><X className="size-4" /></Button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={reset} aria-label="Seçimi temizle"><X className="size-4" /></Button>
         </div>
         {ownerMode ? (
           <div className="space-y-2">
@@ -178,7 +198,7 @@ export function CustomerVehiclePicker({
       <div className="rounded-lg border border-border bg-card p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2"><User className="size-4 text-primary" /><p className="font-semibold text-foreground">{selected.label}</p></div>
-          <Button type="button" variant="ghost" size="sm" onClick={reset}><X className="size-4" /></Button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={reset} aria-label="Seçimi temizle"><X className="size-4" /></Button>
         </div>
         <p className="text-xs text-muted-foreground">Araç seçin:</p>
         <div className="space-y-1">
@@ -196,45 +216,61 @@ export function CustomerVehiclePicker({
     )
   }
 
-  // ——— Arama ———
+  // ——— Arama (shadcn Combobox) ———
   return (
-    <div className="relative">
-      <Input
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
-        onFocus={() => setOpen(true)}
-        placeholder="Plaka veya müşteri adı/telefon ile ara..."
-        autoComplete="off"
-      />
-      {open && query.trim().length >= 1 && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-64 overflow-y-auto rounded-lg border border-border bg-background shadow-lg">
-          {loading ? (
-            <div className="flex justify-center py-3"><Loader2 className="size-4 animate-spin text-muted-foreground" /></div>
-          ) : results.length === 0 ? (
-            <div className="p-3 space-y-2">
-              <p className="text-xs text-muted-foreground">«{query.trim()}» için kayıt bulunamadı.</p>
-              <div className="flex gap-2">
-                <Button type="button" size="sm" onClick={() => setModalOpen(true)}><Plus className="size-4 mr-1" /> Oluştur</Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => setModalOpen(true)}>Oluştur ve Düzenle</Button>
+    <div className="space-y-2">
+      <Combobox
+        items={results}
+        filter={() => true}
+        itemToStringValue={(r: UnifiedResult) => r.label}
+        onInputValueChange={(v: string) => setQuery(v)}
+        onValueChange={(r: UnifiedResult | null) => {
+          if (!r) return
+          if (r.kind === "vehicle") pickVehicle(r)
+          else pickCustomer(r)
+        }}
+      >
+        <ComboboxInput placeholder="Plaka veya müşteri adı/telefon ile ara..." />
+        <ComboboxContent>
+          <ComboboxEmpty className="p-0">
+            {loading ? (
+              <span className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Aranıyor…</span>
+            ) : query.trim().length >= 1 ? (
+              <div className="flex w-full flex-col items-start gap-2 p-2 text-left">
+                <span className="text-xs text-muted-foreground">«{query.trim()}» bulunamadı</span>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={() => setModalOpen(true)}>
+                    <Plus className="size-4 mr-1" /> Oluştur
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setModalOpen(true)}>
+                    Oluştur ve Düzenle
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            results.map((r) => (
-              r.kind === "vehicle" ? (
-                <Button key={`v-${r.vehicleId}`} type="button" variant="ghost" className="w-full justify-start rounded-none h-auto py-2" onClick={() => pickVehicle(r)}>
-                  <Car className="size-4 mr-2 shrink-0 text-primary" />
-                  <span className="text-left"><span className="font-medium text-foreground">{r.label}</span><br /><span className="text-xs text-muted-foreground">{r.sublabel}</span></span>
-                </Button>
-              ) : (
-                <Button key={`c-${r.customerId}`} type="button" variant="ghost" className="w-full justify-start rounded-none h-auto py-2" onClick={() => pickCustomer(r)}>
-                  <User className="size-4 mr-2 shrink-0 text-muted-foreground" />
-                  <span className="text-left"><span className="font-medium text-foreground">{r.label}</span><br /><span className="text-xs text-muted-foreground">{r.sublabel}</span></span>
-                </Button>
-              )
-            ))
-          )}
-        </div>
-      )}
+            ) : (
+              <span className="py-2 text-sm text-muted-foreground">Aramak için yazın</span>
+            )}
+          </ComboboxEmpty>
+          <ComboboxList>
+            {(r: UnifiedResult) => (
+              <ComboboxItem key={resultKey(r)} value={r}>
+                <Item size="sm" className="w-full p-0">
+                  <ItemMedia>
+                    {r.kind === "vehicle"
+                      ? <Car className="size-4 text-primary" />
+                      : <User className="size-4 text-muted-foreground" />}
+                  </ItemMedia>
+                  <ItemContent className="gap-0.5">
+                    <ItemTitle>{r.label}</ItemTitle>
+                    <ItemDescription>{r.sublabel}</ItemDescription>
+                  </ItemContent>
+                </Item>
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+
       <InlineCreateModal open={modalOpen} onOpenChange={setModalOpen} initialPlate={query.trim()} onCreated={onModalCreated} />
     </div>
   )
