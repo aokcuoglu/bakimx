@@ -41,15 +41,17 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma CLI + engine (WASM, bundled in `prisma`) + the `prisma.config.ts` that supplies
-# the datasource URL in Prisma 7 (schema.prisma has no `url`), for the one-shot `migrate`
-# service. Copied from `builder` (where `prisma generate` already ran) so the CLI,
-# `prisma/config`, the engines, and the GENERATED @prisma/client all resolve consistently
-# — without reconciling the standalone package.json. Run via:
+# Migration tooling for the one-shot `migrate` service. The Prisma 7 CLI's runtime
+# closure (CLI bundle + @prisma/* + top-level-hoisted effect/c12/jiti/typescript/iconv-lite/…)
+# is large and absent from the slim Next standalone trace, so stage the FULL builder
+# node_modules + the .ts config + schema under /migrate, used ONLY by `migrate`
+# (compose sets working_dir: /migrate). The app keeps running on its untouched slim
+# standalone tree. Verified locally: this tree loads prisma.config.ts + schema and reaches
+# the DB (engine is WASM, platform-independent). Run via:
 #   node node_modules/prisma/build/index.js migrate deploy
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules /migrate/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/prisma /migrate/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts /migrate/prisma.config.ts
 
 USER nextjs
 

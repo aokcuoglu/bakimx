@@ -30,6 +30,7 @@ services:
     profiles: ["tools"]
     restart: "no"
     env_file: .env.production
+    working_dir: /migrate
     command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
     depends_on:
       db:
