@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Camera, Upload, Loader2, CheckCircle2, AlertTriangle, ScanLine, ArrowRight, User, Car, ClipboardList, Info } from "lucide-react"
+import { RegistrationScanner } from "@/components/app/registration-scanner"
 import type { OcrFieldConfidence, OcrProviderName } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { prepareRegistrationImage } from "@/lib/ocr/prepare-registration-image"
@@ -83,6 +84,7 @@ export function SmartCaptureRegistration() {
   const [ocrProvider, setOcrProvider] = useState<OcrProviderName | null>(null)
   const [confirmedFields, setConfirmedFields] = useState<Record<string, string>>({})
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   async function handleFileSelected(file: File) {
     setError("")
@@ -463,6 +465,15 @@ export function SmartCaptureRegistration() {
 
   return (
     <div className="space-y-5">
+      {scannerOpen && (
+        <RegistrationScanner
+          onCapture={(file) => {
+            setScannerOpen(false)
+            handleFileSelected(file)
+          }}
+          onClose={() => setScannerOpen(false)}
+        />
+      )}
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm">{error}</div>
       )}
@@ -474,18 +485,33 @@ export function SmartCaptureRegistration() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
           >
+            <Button
+              type="button"
+              size="lg"
+              className="h-12 w-full max-w-md gap-2 text-base"
+              onClick={() => setScannerOpen(true)}
+            >
+              <Camera className="size-5" />
+              Kamera ile Tara
+            </Button>
+            <div className="flex items-center gap-3 w-full max-w-md">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground/70">veya dosyadan</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
             <div
               className="w-full max-w-md rounded-lg border-2 border-dashed border-border bg-muted/50 p-8 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">
                 <div className="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                  <Camera className="size-7" />
+                  <Upload className="size-7" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Fotoğraf çekin veya yükleyin</p>
+                  <p className="text-sm font-medium text-foreground">Galeriden veya dosyadan yükleyin</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Araç ruhsatının ön yüzünü net bir şekilde çekin
+                    Ruhsatın ön yüzünü net seçin
                   </p>
                 </div>
               </div>
@@ -501,12 +527,6 @@ export function SmartCaptureRegistration() {
                 if (file) handleFileSelected(file)
               }}
             />
-
-            <div className="flex items-center gap-3 w-full max-w-md">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground/70">veya</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
 
             <Button
               variant="outline"
@@ -527,7 +547,7 @@ export function SmartCaptureRegistration() {
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
             <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
-            <span>OCR ile ruhsat bilgileri otomatik okunur ve önerilir.</span>
+            <span>Kamera ile tarayın: ruhsat otomatik algılanıp çerçeveye oturunca çekilir. Dilerseniz dosyadan da yükleyebilirsiniz.</span>
           </div>
           <div className="flex items-start gap-2">
             <CheckCircle2 className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
