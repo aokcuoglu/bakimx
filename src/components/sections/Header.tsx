@@ -11,7 +11,6 @@ import { Menu, X } from "lucide-react";
 const navItems = [
   { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
   { label: "Neden BakimX", href: "/#neden" },
-  { label: "Yol Haritası", href: "/#yol-haritasi" },
   { label: "SSS", href: "/#sss" },
   { label: "Fiyatlar", href: "/fiyatlar" },
 ];

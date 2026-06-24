@@ -4,7 +4,6 @@ import { HeroSection } from "@/components/sections/HeroSection";
 import { TrustStrip } from "@/components/sections/TrustStrip";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { WhyBakimxSection } from "@/components/sections/WhyBakimxSection";
-import { RoadmapSection } from "@/components/sections/RoadmapSection";
 import { EarlyAccessCTASection } from "@/components/sections/EarlyAccessCTASection";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { Footer } from "@/components/sections/Footer";
@@ -19,7 +18,6 @@ export default function Home() {
         <TrustStrip />
         <HowItWorksSection />
         <WhyBakimxSection />
-        <RoadmapSection />
         <EarlyAccessCTASection />
         <FAQSection />
       </main>
