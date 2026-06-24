@@ -28,7 +28,8 @@ function getSessionSecret(): string {
 
 export const sessionOptions = {
   password: getSessionSecret(),
-  cookieName: process.env.SESSION_COOKIE_NAME ?? "bakimx_session",
+  // `||` (not `??`) so an empty build-arg/env falls back to the prod default.
+  cookieName: process.env.SESSION_COOKIE_NAME || "bakimx_session",
   cookieOptions: {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -37,10 +38,12 @@ export const sessionOptions = {
     path: "/",
     // Prod shares the session across bakimx.com (login) + app.bakimx.com via `.bakimx.com`.
     // Staging overrides SESSION_COOKIE_DOMAIN (its own host) + SESSION_COOKIE_NAME so its
-    // cookie never collides with / overwrites prod's. Host-only on localhost dev.
+    // cookie never collides with / overwrites prod's. These are read in the Edge middleware
+    // too, so the per-env value is baked at build time via Dockerfile build-args (the
+    // staging workflow passes them); runtime env keeps the Node routes consistent.
     domain:
       process.env.NODE_ENV === "production"
-        ? (process.env.SESSION_COOKIE_DOMAIN ?? ".bakimx.com")
+        ? (process.env.SESSION_COOKIE_DOMAIN || ".bakimx.com")
         : undefined,
   },
 }

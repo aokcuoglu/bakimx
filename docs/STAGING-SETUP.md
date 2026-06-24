@@ -14,7 +14,7 @@ done once, before the first `dev` push deploys staging.
    `header /* X-Robots-Tag noindex` (and optionally `basic_auth`) so staging isn't indexed/public.
 4. **GitHub secrets:** none new — `staging.yml` reuses `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY`.
 5. **First deploy:** push `dev` (or run the "Deploy to Staging" workflow). The migrate step
-   creates the schema in the empty staging DB; the app comes up. Optionally seed:
-   `docker compose --env-file .env.staging run --rm migrate sh -c "bunx tsx prisma/seed.ts"`
-   (or run your seed script against the staging DB).
+   creates the schema in the empty staging DB; the app comes up. To seed, point your LOCAL
+   `bun run db:seed` at the staging `DATABASE_URL` (the runner image has no bun/tsx/dev-deps),
+   or just create a test workshop via `/register` on staging.
 6. **RAM:** staging adds ~1.5GB (app 1g + db 512m). Confirm headroom on the shared VPS.

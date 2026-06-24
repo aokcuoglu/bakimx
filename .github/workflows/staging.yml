@@ -49,6 +49,8 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             SESSION_SECRET=build_time_placeholder_at_least_32_chars_long__
+            SESSION_COOKIE_NAME=bakimx_session_staging
+            SESSION_COOKIE_DOMAIN=staging.app.bakimx.com
 
   deploy:
     needs: build
@@ -66,5 +68,7 @@ jobs:
             docker compose --env-file .env.staging pull app
             docker compose --env-file .env.staging run --rm migrate
             docker compose --env-file .env.staging up -d app --force-recreate
+            # Dangling images only. NEVER an unfiltered `docker system prune` — this VPS
+            # also hosts the getirbakim stack and a system prune would wipe its images too.
             docker image prune -f
             echo "Staging deployed at $(date)"
