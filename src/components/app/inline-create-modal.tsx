@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
@@ -38,6 +38,30 @@ export function InlineCreateModal({
   const [modelYear, setModelYear] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Reset the form each time the modal opens so a reopen never shows stale data
+  // (the picker keeps this modal mounted and toggles `open`, passing the live query as initialPlate).
+  useEffect(() => {
+    if (!open) return
+    // Use a microtask to batch state updates and avoid cascading renders
+    queueMicrotask(() => {
+      setType("individual")
+      setFirstName("")
+      setLastName("")
+      setCompanyName("")
+      setPhone("")
+      setEmail("")
+      setIsVip(false)
+      setIdentityNumber("")
+      setTaxNumber("")
+      setPlate((initialPlate || "").toUpperCase())
+      setBrand("")
+      setModel("")
+      setModelYear("")
+      setError("")
+      setLoading(false)
+    })
+  }, [open, initialPlate])
 
   async function handleCreate(edit: boolean) {
     setError("")
@@ -127,7 +151,9 @@ export function InlineCreateModal({
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex items-center justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => handleCreate(true)} disabled={loading}>Oluştur ve Düzenle</Button>
+            <Button type="button" variant="outline" onClick={() => handleCreate(true)} disabled={loading}>
+              {loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur ve Düzenle"}
+            </Button>
             <Button type="button" onClick={() => handleCreate(false)} disabled={loading}>
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur"}
             </Button>
