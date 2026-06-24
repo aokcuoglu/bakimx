@@ -4,11 +4,12 @@ Repo side (compose, workflow, env template) is committed. These steps are yours,
 done once, before the first `dev` push deploys staging.
 
 1. **DNS:** add an A record `staging.app.bakimx.com` → the VPS IP.
-2. **VPS dir:** on the VPS, `mkdir -p /opt/bakimx-staging`; copy `docker-compose.staging.yml`
-   there as `docker-compose.yml` (or keep the name and `--file` it); create `.env.staging`
+2. **VPS dir:** on the VPS, `mkdir -p /opt/bakimx-staging`; create `.env.staging` there
    from `.env.staging.example` with a DISTINCT `SESSION_SECRET`, own DB creds, and
    `SESSION_COOKIE_DOMAIN=staging.app.bakimx.com`, `SESSION_COOKIE_NAME=bakimx_session_staging`.
-   Mirror any other prod vars (S3/MinIO etc.), staging-scoped.
+   Mirror any other prod vars (S3/MinIO etc.), staging-scoped. (The `staging.yml` workflow
+   syncs `docker-compose.staging.yml` into this dir automatically on each `dev` push — you
+   only create the dir + `.env.staging`.)
 3. **Reverse proxy (Caddy):** add a site block routing `staging.app.bakimx.com` →
    `bakimx-staging-app:3000` on the shared `getirbakim_app-network`. Add a
    `header /* X-Robots-Tag noindex` (and optionally `basic_auth`) so staging isn't indexed/public.

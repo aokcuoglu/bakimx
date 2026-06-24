@@ -56,6 +56,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Sync the staging compose to the VPS (it keeps its own .env.staging). The SSH
+      # script targets it with -f. /opt/bakimx-staging must exist (see docs/STAGING-SETUP.md).
+      - name: Sync staging compose to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: docker-compose.staging.yml
+          target: /opt/bakimx-staging/
       - name: Deploy to VPS (staging)
         uses: appleboy/ssh-action@v1
         with:
@@ -65,9 +77,9 @@ jobs:
           script: |
             set -e
             cd /opt/bakimx-staging
-            docker compose --env-file .env.staging pull app
-            docker compose --env-file .env.staging run --rm migrate
-            docker compose --env-file .env.staging up -d app --force-recreate
+            docker compose -f docker-compose.staging.yml --env-file .env.staging pull app
+            docker compose -f docker-compose.staging.yml --env-file .env.staging run --rm migrate
+            docker compose -f docker-compose.staging.yml --env-file .env.staging up -d app --force-recreate
             # Dangling images only. NEVER an unfiltered `docker system prune` — this VPS
             # also hosts the getirbakim stack and a system prune would wipe its images too.
             docker image prune -f
