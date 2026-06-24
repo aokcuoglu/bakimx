@@ -59,6 +59,19 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Sync the compose file to the VPS so it matches the repo (the VPS keeps its own
+      # .env.production). Without this, a compose change in the repo (e.g. adding the
+      # `migrate` service) never reaches the VPS and the deploy script breaks.
+      - name: Sync compose to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: docker-compose.yml
+          target: /opt/bakimx/
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
