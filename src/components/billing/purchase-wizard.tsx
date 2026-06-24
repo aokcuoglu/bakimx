@@ -110,7 +110,7 @@ export function PurchaseWizard({
           taxNumber: String(values.taxNumber ?? ""),
           taxOffice: String(values.taxOffice ?? ""),
         })
-        if (res.ok) setDone({ reference: res.reference, amountMinor })
+        if (res.ok) setDone({ reference: res.reference, amountMinor: res.amountMinor })
         else setError(res.error)
       }
     } catch {
@@ -272,6 +272,9 @@ export function PurchaseWizard({
               <p className="flex justify-between text-base"><span className="text-muted-foreground">Tutar (KDV dahil)</span><span className="font-bold text-foreground">{formatMinor(amountMinor)}</span></p>
             </div>
             <p className="text-xs text-muted-foreground">Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce teyit edilince {mode === "public" ? "hesabınız aktifleşir" : "paketiniz güncellenir"}.</p>
+            {mode === "inapp" && (
+              <p className="text-xs text-muted-foreground">Yükseltmede mevcut paketinizin kalan gün kredisi düşülür; kesin tutar onay ekranında görünür.</p>
+            )}
             <div className="pt-1 flex justify-between">
               <Button type="button" variant="outline" onClick={() => setStep(1)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
               <Button type="button" size="lg" disabled={loading} className="h-12 gap-2" onClick={submit}>

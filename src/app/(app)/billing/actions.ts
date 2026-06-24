@@ -7,6 +7,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { checkoutInAppSchema } from "@/lib/validations/billing"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
+import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import type { BillingCycle, BillingOrderType } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 
@@ -22,7 +23,7 @@ export async function createBillingOrder(input: {
   invoiceTitle: string
   taxNumber: string
   taxOffice?: string
-}): Promise<{ ok: true; reference: string } | { ok: false; error: string }> {
+}): Promise<{ ok: true; reference: string; amountMinor: number } | { ok: false; error: string }> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   const parsed = checkoutInAppSchema.safeParse(input)
@@ -32,7 +33,6 @@ export async function createBillingOrder(input: {
   const data = parsed.data
   const tier = data.tier as PlanTier
   const cycle = data.cycle as BillingCycle
-  const amountMinor = getPlanPriceMinor(tier, cycle)
 
   const type: BillingOrderType =
     workshop.currentPeriodEnd == null
@@ -40,6 +40,20 @@ export async function createBillingOrder(input: {
       : workshop.subscriptionStatus === "active" && workshop.planTier === tier
         ? "renewal"
         : "upgrade"
+
+  // Upgrades credit the unused portion of the current plan against the new
+  // plan's price (and get a fresh period on confirm); new_purchase/renewal pay full.
+  const amountMinor =
+    type === "upgrade"
+      ? computeUpgradeAmountMinor({
+          currentTier: workshop.planTier as PlanTier,
+          currentCycle: (workshop.billingCycle ?? "monthly") as BillingCycle,
+          currentPeriodEnd: workshop.currentPeriodEnd,
+          newTier: tier,
+          newCycle: cycle,
+          now: new Date(),
+        })
+      : getPlanPriceMinor(tier, cycle)
 
   const billingSnapshot = {
     invoiceTitle: data.invoiceTitle,
@@ -93,7 +107,7 @@ export async function createBillingOrder(input: {
       )
       revalidatePath("/billing")
       revalidatePath("/admin")
-      return { ok: true, reference }
+      return { ok: true, reference, amountMinor }
     } catch (err) {
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)

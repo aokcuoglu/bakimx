@@ -164,7 +164,10 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
     select: { currentPeriodEnd: true },
   })
   const now = new Date()
-  const periodStart = periodStartFrom(workshop?.currentPeriodEnd ?? null, now)
+  // Renewal extends from the current period end (no lost days); upgrade /
+  // new_purchase start a fresh period now (upgrades were proration-credited).
+  const periodStart =
+    order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
   const periodEnd = addPeriod(periodStart, order.billingCycle)
 
   try {
