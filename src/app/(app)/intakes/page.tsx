@@ -21,21 +21,21 @@ export default async function IntakesPage({ searchParams }: { searchParams: Prom
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Araç Kabulleri">
+    <AppShell workshopName={workshop?.name} pageTitle="İş Emri Kayıtları">
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <span className="text-foreground font-medium">Araç Kabulleri</span>
+          <span className="text-foreground font-medium">İş Emri Kayıtları</span>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Araç Kabulleri</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emri Kayıtları</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{intakes.length} kayıt</p>
           </div>
           <Button nativeButton={false} size="default" className="gap-2" render={<Link href="/intakes/new" />}>
             <Plus className="size-4" />
-            Yeni Kabul
+            Yeni İş Emri
           </Button>
         </div>
 

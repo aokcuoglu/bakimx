@@ -18,15 +18,15 @@ export default async function NewIntakePage({
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Araç Kabulü">
+    <AppShell workshopName={workshop?.name} pageTitle="Yeni İş Emri">
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
-          <Link href="/intakes" className="hover:text-foreground">Araç Kabulleri</Link>
+          <Link href="/orders" className="hover:text-foreground">İş Emirleri</Link>
           <span className="mx-2">/</span>
           <span className="text-foreground font-medium">Yeni</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Araç Kabulü</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni İş Emri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Adım adım araç kabul formu oluşturun</p>
         </div>
         <IntakeWizard

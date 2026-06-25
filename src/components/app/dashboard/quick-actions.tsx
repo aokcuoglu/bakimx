@@ -15,7 +15,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni İş Emri",
     icon: Plus,
-    href: "/orders/new",
+    href: "/intakes/new",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,

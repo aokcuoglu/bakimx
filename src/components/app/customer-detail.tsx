@@ -425,7 +425,7 @@ export function CustomerDetail({
           </SectionCard>
 
           {otherIntakes.length > 0 ? (
-            <SectionCard title="Araç Kabulleri (İş Emri Yok)" icon={ClipboardList} count={otherIntakes.length}>
+            <SectionCard title="İş Emri Oluşmamış Kayıtlar" icon={ClipboardList} count={otherIntakes.length}>
               <ul className="divide-y divide-border -mx-4 sm:-mx-5">
                 {otherIntakes.map((i) => {
                   const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
