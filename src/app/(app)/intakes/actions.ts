@@ -50,6 +50,14 @@ export async function createIntakeAction(formData: FormData) {
       },
     })
     const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id)
+    // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
+    const km = parsed.data.mileageAtIntake
+    if (km) {
+      const newMileage = Math.max(vehicle.mileage ?? 0, km)
+      if (newMileage !== vehicle.mileage) {
+        await tx.vehicle.update({ where: { id: vehicle.id }, data: { mileage: newMileage } })
+      }
+    }
     return { intake, order }
   })
 

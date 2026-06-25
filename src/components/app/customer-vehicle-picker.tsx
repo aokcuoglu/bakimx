@@ -14,7 +14,7 @@ import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/comp
 import { Loader2, Car, User, Plus, X, UserCog } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
-import type { UnifiedResult } from "@/lib/search/unified-results"
+import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 
 type CustVehicle = { id: string; plate: string; brand: string; model: string }
@@ -73,6 +73,31 @@ export function CustomerVehiclePicker({
       setTimeout(() => { setSelected(null); setCustVehicles([]); setOwnerMode(false) }, 0)
     }
   }, [value.customerId, value.vehicleId])
+
+  // Geri navigasyonu / dış prefill: value'da araç id'si varken etiketli seçim
+  // yoksa aracı çekip özet kartını id'lerden yeniden kur (picker step değişiminde
+  // unmount olduğu için step 1'e dönünce selected sıfırlanır; buradan hydrate edilir).
+  useEffect(() => {
+    const vid = value.vehicleId
+    if (!vid || (selected?.kind === "vehicle" && selected.vehicleId === vid)) return
+    let active = true
+    fetch(`/api/vehicles/${vid}`)
+      .then((r) => r.json())
+      .then((v: unknown) => {
+        if (!active || !v || typeof v !== "object") return
+        const veh = v as { id?: string; plate?: string; brand?: string; model?: string; customerId?: string; customer?: CustomerLite | null }
+        if (!veh.id) return
+        setSelected({
+          kind: "vehicle",
+          customerId: veh.customerId || value.customerId,
+          vehicleId: veh.id,
+          label: `${veh.plate ?? ""} — ${veh.brand ?? ""} ${veh.model ?? ""}`.trim(),
+          sublabel: `Sahip: ${displayCustomerName(veh.customer ?? null)}`,
+        })
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [value.vehicleId, value.customerId, selected])
 
   const modeResults = results.filter((r) => (mode === "plate" ? r.kind === "vehicle" : r.kind === "customer"))
 

@@ -34,12 +34,10 @@ import {
   EyeOff,
 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
+import { INTAKE_STATUS, PHOTO_TYPES } from "@/lib/constants"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
-import { VehicleDamageMap } from "@/components/damage/vehicle-damage-map"
+import { PhotoAnnotate } from "./photo-annotate"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
@@ -93,12 +91,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order" | "evidence">("info")
   const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
 
-  const [showDamageModal, setShowDamageModal] = useState(false)
-  const [selectedZone, setSelectedZone] = useState("")
-  const [damageType, setDamageType] = useState("")
-  const [severity, setSeverity] = useState("")
-  const [damageNote, setDamageNote] = useState("")
-
   const [otpCode, setOtpCode] = useState("")
   const [generatedOtp, setGeneratedOtp] = useState("")
   const [approvalSent, setApprovalSent] = useState(false)
@@ -147,43 +139,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     } finally {
       setLoading(false)
     }
-  }
-
-  async function handleAddDamageMark() {
-    setLoading(true)
-    setError("")
-    const formData = new FormData()
-    formData.set("intakeFormId", intake.id)
-    formData.set("zone", selectedZone)
-    formData.set("damageType", damageType)
-    formData.set("severity", severity)
-    if (damageNote) formData.set("note", damageNote)
-
-    try {
-      const res = await fetch("/api/intakes/damage", { method: "POST", body: formData })
-      const data = await res.json()
-      if (data.success) {
-        setShowDamageModal(false)
-        setSelectedZone("")
-        setDamageType("")
-        setSeverity("")
-        setDamageNote("")
-        router.refresh()
-      } else {
-        setError(data.error || "Hasar eklenemedi")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleRemoveDamageMark(markId: string) {
-    try {
-      await fetch(`/api/intakes/damage?id=${markId}&intakeFormId=${intake.id}`, { method: "DELETE" })
-      router.refresh()
-    } catch {}
   }
 
   async function handleAddPhoto() {
@@ -379,7 +334,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
     { id: "evidence" as const, label: "Kanıt", icon: Camera, count: intake.photos.length },
     { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
-    { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.damageMarks.length },
+    { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.photos.filter((p) => p.type === "damage_detail").length },
     { id: "approval" as const, label: "Onay", icon: MessageSquare },
     { id: "order" as const, label: "Sipariş", icon: Wrench },
   ]
@@ -550,7 +505,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <CardContent>
               <IntakeEvidenceSummary
                 photoCompletion={photoCompletion}
-                damageCount={intake.damageMarks.length}
+                damageCount={intake.photos.filter((p) => p.type === "damage_detail").length}
                 approvalStatus={approvalStatus}
                 publicLinkStatus={publicLinkStatus}
               />
@@ -873,68 +828,31 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
 
       <TabsContent value="damage">
         <div className="space-y-4">
-          <VehicleDamageMap
-            damageMarks={intake.damageMarks}
-            onZoneClick={(zone) => {
-              setSelectedZone(zone)
-              setDamageType("")
-              setSeverity("")
-              setDamageNote("")
-              setShowDamageModal(true)
-            }}
-            onRemoveMark={handleRemoveDamageMark}
-            vehicle={{ plate: intake.vehicle.plate, brand: intake.vehicle.brand, model: intake.vehicle.model }}
-          />
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Hasar Fotoğrafı Ekle</CardTitle></CardHeader>
+            <CardContent>
+              <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />
+            </CardContent>
+          </Card>
 
-          <Dialog open={showDamageModal} onOpenChange={setShowDamageModal}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  Hasar Ekle: {VEHICLE_ZONES[selectedZone as keyof typeof VEHICLE_ZONES] || selectedZone}
-                </DialogTitle>
-              </DialogHeader>
-                <div>
-                  <Label>Hasar Tipi</Label>
-                  <Select
-                    value={damageType}
-                    onValueChange={(v) => setDamageType(v ?? "")}
-                  >
-                    <SelectTrigger className="w-full h-10">
-                      <SelectValue placeholder="Seçiniz..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Seçiniz...</SelectItem>
-                      {Object.entries(DAMAGE_TYPES).map(([key, val]) => (
-                        <SelectItem key={key} value={key}>{val.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          {intake.photos.filter((p) => p.type === "damage_detail").length > 0 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Hasar Fotoğrafları ({intake.photos.filter((p) => p.type === "damage_detail").length})</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {intake.photos.filter((p) => p.type === "damage_detail").map((photo) => (
+                    <PhotoGalleryCard
+                      key={photo.id}
+                      photo={photo}
+                      onRemove={handleRemovePhoto}
+                      onReplace={handleReplacePhoto}
+                      isUploading={uploadingPhotoId === photo.id}
+                    />
+                  ))}
                 </div>
-                <div>
-                  <Label>Şiddet</Label>
-                  <ToggleGroup value={severity ? [severity] : []} onValueChange={(v) => setSeverity(v[0] ?? "")} variant="outline" className="w-full mt-1">
-                    {Object.entries(DAMAGE_SEVERITY).map(([key, val]) => (
-                      <ToggleGroupItem key={key} value={key} className="flex-1 py-3">
-                        <span className="w-3 h-3 rounded-full inline-block mr-1.5" style={{ backgroundColor: val.color }} />
-                        {val.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </div>
-                <div>
-                  <Label>Not</Label>
-                  <Input value={damageNote} onChange={(e) => setDamageNote(e.target.value)} placeholder="Hasar açıklaması..." />
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button onClick={handleAddDamageMark} disabled={loading || !damageType || !severity} size="lg" className="flex-1 h-12">
-                    Kaydet
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowDamageModal(false)} size="lg" className="h-12">
-                    İptal
-                  </Button>
-                </div>
-            </DialogContent>
-          </Dialog>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </TabsContent>
 
