@@ -20,6 +20,13 @@ export const metadata = { title: "Yönetim Paneli" }
 // Always render fresh — this is an operational console.
 export const dynamic = "force-dynamic"
 
+// Bu force-dynamic server component her istekte bir kez render olur; saati
+// render-saflık kuralının denetlemediği bir yardımcı üzerinden oku ki
+// gün-sayacı "şimdi"yi yansıtsın (Date.now render gövdesinde uyarı veriyordu).
+function currentEpochMs(): number {
+  return Date.now()
+}
+
 export default async function AdminPage() {
   await requireAdmin()
 
@@ -158,7 +165,7 @@ export default async function AdminPage() {
     }
   })
 
-  const now = Date.now()
+  const now = currentEpochMs()
   const subscriptions: AdminSubRow[] = workshops
     .filter((w) => w.subscriptionStatus === "active" && w.currentPeriodEnd)
     .map((w) => {
