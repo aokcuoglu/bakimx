@@ -15,7 +15,9 @@ export function ValuePanel({
   step: number
 }) {
   const pkg = getPlanPackage(tier)
-  const amount = formatMinor(getPlanPriceMinor(tier, cycle))
+  // pkg her zaman katalogda var (kapalı PlanTier union); yine de fiyat aramasını
+  // koruyalım ki gelecekte katalogsuz bir tier eklenirse render çökmesin (JSX zaten null-safe).
+  const amount = formatMinor(pkg ? getPlanPriceMinor(tier, cycle) : 0)
   const isSummary = step === 2
 
   return (
