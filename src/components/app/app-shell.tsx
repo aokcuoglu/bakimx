@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Car,
   Users,
-  ClipboardList,
   Wrench as WrenchIcon,
   Settings,
   LogOut,
@@ -62,7 +61,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Servis",
     items: [
       { href: "/orders", label: "İş Emirleri", icon: WrenchIcon },
-      { href: "/intakes", label: "Araç Kabulleri", icon: ClipboardList },
       { href: "/technician", label: "Teknisyen Paneli", icon: HardHat },
       { href: "/customers", label: "Müşteriler", icon: Users },
       { href: "/vehicles", label: "Araçlar", icon: Car },
@@ -291,7 +289,7 @@ export function AppShellChrome({
 
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
-                  href="/orders/new"
+                  href="/intakes/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Plus className="size-4" />
@@ -319,7 +317,7 @@ export function AppShellChrome({
                   <span>Yeni Hatırlatma</span>
                 </Link>
                 <Link
-                  href="/orders/new"
+                  href="/intakes/new"
                   className="sm:hidden inline-flex items-center justify-center size-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground touch-manipulation"
                   aria-label="Yeni iş emri"
                 >
@@ -347,7 +345,7 @@ export function AppShellChrome({
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border safe-area-bottom">
-        <div className="grid grid-cols-5 gap-1 px-2 py-1.5">
+        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
           <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
           <MobileNavLink
             href="/orders"
@@ -360,12 +358,6 @@ export function AppShellChrome({
             label="Teknisyen"
             icon={HardHat}
             active={pathname === "/technician" || pathname.startsWith("/technician/")}
-          />
-          <MobileNavLink
-            href="/intakes"
-            label="Kabuller"
-            icon={ClipboardList}
-            active={pathname === "/intakes" || pathname.startsWith("/intakes/")}
           />
           <MobileNavLink
             href="/customers"
