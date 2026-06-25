@@ -7,8 +7,45 @@ import { AuditLogAction } from "@/lib/audit"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
+import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
+import { sendSystemEmail } from "@/lib/emails/send-system-email"
 
 type Result = { ok: true } | { ok: false; error: string }
+
+/** İş yeri sahibine onay/red bildirimi gönderir. Best-effort — hata aksiyonu bozmaz.
+ *  Alıcı: owner User'ın e-postası (yoksa workshop.email fallback). Tenant izolasyonu:
+ *  sorgu workshopId ile sınırlı. */
+async function sendOwnerDecisionEmail(
+  workshopId: string,
+  workshopName: string,
+  fallbackEmail: string | null,
+  decision: "approved" | "rejected",
+): Promise<void> {
+  try {
+    const owner = await prisma.user.findFirst({
+      where: { workshopId, role: "owner" },
+      select: { email: true, firstName: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const to = owner?.email || fallbackEmail
+    if (!to) return
+
+    const built =
+      decision === "approved"
+        ? workshopApprovedEmail({ firstName: owner?.firstName || "", workshopName })
+        : workshopRejectedEmail({ firstName: owner?.firstName || "", workshopName })
+
+    await sendSystemEmail({
+      to,
+      subject: built.subject,
+      html: built.html,
+      workshopId,
+      templateKey: decision === "approved" ? "workshop_approved" : "workshop_rejected",
+    })
+  } catch (err) {
+    console.error("[admin] decision email failed:", err instanceof Error ? err.message : err)
+  }
+}
 
 const TIERS: PlanTier[] = ["starter", "pro", "premium"]
 const STATUSES = ["trialing", "active", "past_due", "canceled"] as const
@@ -23,7 +60,7 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
 
   const now = new Date()
-  await prisma.workshop.update({
+  const ws = await prisma.workshop.update({
     where: { id: workshopId },
     data: {
       approvalStatus: "approved",
@@ -33,6 +70,7 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
     },
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_approved")
+  await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
   revalidatePath("/admin")
   return { ok: true }
 }
@@ -42,11 +80,12 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
 
-  await prisma.workshop.update({
+  const ws = await prisma.workshop.update({
     where: { id: workshopId },
     data: { approvalStatus: "rejected" },
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_rejected")
+  await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "rejected")
   revalidatePath("/admin")
   return { ok: true }
 }
