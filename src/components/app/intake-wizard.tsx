@@ -110,6 +110,23 @@ export function IntakeWizard({
     }
   }, [prefillCustomerId, prefillVehicleId, source, customers, form])
 
+  // Seçili aracın güncel km'sini Kilometre alanına ön-doldur (kullanıcı girdisini ezme).
+  useEffect(() => {
+    if (!selectedVehicleId || form.getValues("mileageAtIntake")) return
+    let active = true
+    fetch(`/api/vehicles/${selectedVehicleId}`)
+      .then((r) => r.json())
+      .then((v: unknown) => {
+        if (!active || !v || typeof v !== "object") return
+        const km = (v as { mileage?: number | null }).mileage
+        if (km != null && !form.getValues("mileageAtIntake")) {
+          form.setValue("mileageAtIntake", String(km))
+        }
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [selectedVehicleId, form])
+
   async function handleCreateIntake() {
     const valid = await form.trigger(["customerComplaint"])
     if (!valid) return
