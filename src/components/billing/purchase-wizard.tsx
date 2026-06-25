@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy } from "lucide-react"
@@ -76,6 +77,7 @@ export function PurchaseWizard({
     mode: "onChange",
   })
   const { register, trigger, getValues, formState } = form
+  const reduce = useReducedMotion()
 
   async function next(fields: string[]) {
     setError("")
@@ -185,6 +187,14 @@ export function PurchaseWizard({
 
         {/* FORM — mobilde altta (order-2), masaüstünde solda */}
         <div className="order-2 md:order-1">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={reduce ? false : { opacity: 0, x: 14 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, x: -14 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
           {/* Step 0: plan + cycle */}
           {step === 0 && (
             <Card>
@@ -218,7 +228,7 @@ export function PurchaseWizard({
                   })}
                 </div>
                 <div className="flex justify-end pt-2">
-                  <Button type="button" size="lg" className="h-12 gap-2" onClick={() => next([])}>Devam <ChevronRight className="size-4" /></Button>
+                  <Button type="button" size="lg" className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100" onClick={() => next([])}>Devam <ChevronRight className="size-4" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -258,7 +268,7 @@ export function PurchaseWizard({
                 )}
                 <div className="flex justify-between pt-2">
                   <Button type="button" variant="outline" onClick={() => setStep(0)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
-                  <Button type="button" size="lg" className="h-12 gap-2"
+                  <Button type="button" size="lg" className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100"
                     onClick={() => next(mode === "public"
                       ? ["workshopName", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
                       : ["invoiceTitle", "taxNumber"])}>
@@ -280,13 +290,15 @@ export function PurchaseWizard({
                 )}
                 <div className="flex justify-between pt-1">
                   <Button type="button" variant="outline" onClick={() => setStep(1)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
-                  <Button type="button" size="lg" disabled={loading} className="h-12 gap-2" onClick={submit}>
+                  <Button type="button" size="lg" disabled={loading} className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100" onClick={submit}>
                     {loading ? <><Loader2 className="size-4 animate-spin" /> Gönderiliyor…</> : "Siparişi oluştur"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
