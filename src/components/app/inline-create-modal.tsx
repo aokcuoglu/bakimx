@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,8 +38,15 @@ export function InlineCreateModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Reset fields only on the OPEN transition (false→true), not on every
+  // initialPlate/fixedCustomer change. While the modal is open the picker's
+  // own combobox can clear its query (→ initialPlate becomes ""), and a reset
+  // keyed on those props would wipe the just-selected owner + typed plate.
+  const wasOpen = useRef(false)
   useEffect(() => {
-    if (!open) return
+    const justOpened = open && !wasOpen.current
+    wasOpen.current = open
+    if (!justOpened) return
     setTimeout(() => {
       setOwner(fixedCustomer ?? null)
       setPlate((initialPlate || "").toUpperCase())
