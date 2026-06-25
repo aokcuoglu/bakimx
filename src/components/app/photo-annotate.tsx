@@ -195,52 +195,55 @@ export function PhotoAnnotate({
         onChange={onFileChange}
       />
 
-      {!hasImage ? (
+      {!hasImage && (
         <Button type="button" variant="outline" className="w-full h-12" onClick={() => fileInputRef.current?.click()}>
           <Camera className="size-4 mr-2" /> Foto çek / seç
         </Button>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-label={`Renk ${c}`}
-                onClick={() => setColor(c)}
-                className={`size-7 rounded-full border-2 ${color === c ? "border-foreground" : "border-border"}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-            <div className="ml-auto flex gap-1">
-              <Button type="button" size="icon-sm" variant="ghost" aria-label="Geri al" onClick={undo}><Undo2 className="size-4" /></Button>
-              <Button type="button" size="icon-sm" variant="ghost" aria-label="Temizle" onClick={clearStrokes}><Trash2 className="size-4" /></Button>
-            </div>
-          </div>
+      )}
 
-          <div className="relative w-full overflow-auto rounded-lg border border-border bg-muted/30">
-            <div className="relative inline-block">
-              <canvas ref={baseCanvasRef} className="block max-w-full touch-none" />
-              <canvas
-                ref={overlayCanvasRef}
-                className="absolute left-0 top-0 max-w-full touch-none"
-                style={{ touchAction: "none" }}
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-              />
-            </div>
-          </div>
-
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Hasar notu (opsiyonel)…" />
-
-          <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => { strokesRef.current = []; setNote(""); setHasImage(false) }} disabled={busy}>Vazgeç</Button>
-            <Button type="button" onClick={save} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}</Button>
+      {/* Canvas'lar HER ZAMAN mount'lu kalır — onFileChange foto yüklenmeden ref'lere
+          eriştiği için koşullu render'da ref'ler null oluyordu ("Görsel yüklenemedi").
+          Foto gelene kadar paneli `hidden` ile gizliyoruz. */}
+      <div className={hasImage ? "space-y-2" : "hidden"}>
+        <div className="flex flex-wrap items-center gap-2">
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`Renk ${c}`}
+              onClick={() => setColor(c)}
+              className={`size-7 rounded-full border-2 ${color === c ? "border-foreground" : "border-border"}`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+          <div className="ml-auto flex gap-1">
+            <Button type="button" size="icon-sm" variant="ghost" aria-label="Geri al" onClick={undo}><Undo2 className="size-4" /></Button>
+            <Button type="button" size="icon-sm" variant="ghost" aria-label="Temizle" onClick={clearStrokes}><Trash2 className="size-4" /></Button>
           </div>
         </div>
-      )}
+
+        <div className="relative w-full overflow-auto rounded-lg border border-border bg-muted/30">
+          <div className="relative inline-block">
+            <canvas ref={baseCanvasRef} className="block max-w-full touch-none" />
+            <canvas
+              ref={overlayCanvasRef}
+              className="absolute left-0 top-0 max-w-full touch-none"
+              style={{ touchAction: "none" }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+            />
+          </div>
+        </div>
+
+        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Hasar notu (opsiyonel)…" />
+
+        <div className="flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => { strokesRef.current = []; setNote(""); setHasImage(false) }} disabled={busy}>Vazgeç</Button>
+          <Button type="button" onClick={save} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}</Button>
+        </div>
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
