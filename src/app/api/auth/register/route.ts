@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db"
 import { registerSchema } from "@/lib/validations/auth"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
+import { getAdminEmails } from "@/lib/admin"
+import { applicationReceivedEmail, newApplicationAdminEmail } from "@/lib/emails/system-emails"
+import { sendSystemEmail } from "@/lib/emails/send-system-email"
 
 /**
  * Self-serve workshop registration (early-access, approval-gated).
@@ -76,8 +79,8 @@ export async function POST(request: Request) {
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
 
-    await prisma.$transaction(async (tx) => {
-      const workshop = await tx.workshop.create({
+    const workshop = await prisma.$transaction(async (tx) => {
+      const ws = await tx.workshop.create({
         data: {
           name: data.workshopName,
           phone: data.phone,
@@ -98,12 +101,48 @@ export async function POST(request: Request) {
           password: passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
-          workshopId: workshop.id,
+          workshopId: ws.id,
           // The self-serve registrant is the workshop's first user → owner.
           role: "owner",
         },
       })
+      return ws
     })
+
+    // Best-effort bildirimler — hata kayıt sonucunu etkilemez.
+    try {
+      const applicant = applicationReceivedEmail({
+        firstName: data.firstName,
+        workshopName: data.workshopName,
+      })
+      const adminMail = newApplicationAdminEmail({
+        workshopName: data.workshopName,
+        ownerName: `${data.firstName} ${data.lastName}`.trim(),
+        email: data.email,
+        phone: data.phone,
+        city: data.city,
+      })
+      await Promise.allSettled([
+        sendSystemEmail({
+          to: data.email,
+          subject: applicant.subject,
+          html: applicant.html,
+          workshopId: workshop.id,
+          templateKey: "application_received",
+        }),
+        ...getAdminEmails().map((to) =>
+          sendSystemEmail({
+            to,
+            subject: adminMail.subject,
+            html: adminMail.html,
+            workshopId: workshop.id,
+            templateKey: "new_application_admin",
+          }),
+        ),
+      ])
+    } catch (mailErr) {
+      console.error("[register] notification failed:", mailErr instanceof Error ? mailErr.message : mailErr)
+    }
 
     return NextResponse.json({ success: true, message: PENDING_MESSAGE })
   } catch (err) {
