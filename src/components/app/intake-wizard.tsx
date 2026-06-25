@@ -15,11 +15,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { CustomerVehiclePicker } from "./customer-vehicle-picker"
+import { PhotoAnnotate } from "./photo-annotate"
 
 type Customer = {
   id: string
@@ -283,15 +284,9 @@ export function IntakeWizard({
         {/* Step 4: Photos */}
         {step === 4 && (
           <Card>
-            <CardHeader><CardTitle>Fotoğraf Kontrolü</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Alert className="border-primary/30 bg-primary/5 text-primary">
-                <Camera className="size-4" />
-                <AlertTitle>Fotoğraflar kabul detay sayfasından eklenir</AlertTitle>
-                <AlertDescription>
-                  Araç fotoğraflarını kabul detay sayfasından ekleyebilirsiniz.
-                </AlertDescription>
-              </Alert>
+              {intakeId && <PhotoAnnotate intakeFormId={intakeId} />}
               <div className="pt-4 flex justify-between">
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg" className="h-12">
                   Geri
