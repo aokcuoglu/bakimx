@@ -293,7 +293,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
+      <p className="min-h-[16px] text-xs text-destructive leading-4">{error ?? ""}</p>
     </div>
   )
 }
