@@ -80,13 +80,16 @@ export function CustomerSearchOrCreate({
     try {
       const cf = new FormData()
       cf.set("type", type)
-      if (type === "individual") { cf.set("firstName", firstName); cf.set("lastName", lastName) }
+      // Send fullName so the server's superRefine accepts an individual with no
+      // surname (Soyad is optional in this minimal form); firstName/lastName are
+      // still stored structurally server-side.
+      if (type === "individual") { cf.set("firstName", firstName); cf.set("lastName", lastName); cf.set("fullName", [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")) }
       else { cf.set("companyName", companyName) }
       cf.set("phone", phone)
       const res = await fetch("/api/customers", { method: "POST", body: cf })
       const data = await res.json() as { success?: boolean; id?: string; error?: string }
       if (!data?.success || !data.id) { setError(data?.error || "Müşteri oluşturulamadı"); setBusy(false); return }
-      const label = type === "corporate" ? companyName.trim() : `${firstName} ${lastName}`.trim()
+      const label = type === "corporate" ? companyName.trim() : [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
       setBusy(false)
       onSelected(data.id, label)
     } catch {
