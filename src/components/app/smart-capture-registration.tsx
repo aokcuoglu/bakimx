@@ -278,7 +278,7 @@ export function SmartCaptureRegistration() {
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground">Sıradaki adım: Araç kabulü</p>
+                  <p className="font-semibold text-foreground">Sıradaki adım: İş emri</p>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     Kilometre, müşteri şikayeti, fotoğraflar, hasar ve onay bilgilerini tamamlayın.
                   </p>
@@ -289,7 +289,7 @@ export function SmartCaptureRegistration() {
                 render={<Link href={saveResult.intakeUrl} />}
                 className="h-11 shrink-0 gap-2"
               >
-                Araç Kabulüne Devam Et
+                İş Emrine Devam Et
                 <ArrowRight className="size-4" />
               </Button>
             </div>

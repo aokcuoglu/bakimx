@@ -86,7 +86,7 @@ export default async function NewOrderPage() {
               <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
                 <Plus className="size-5" />
               </div>
-              <h3 className="font-semibold text-foreground">Yeni Araç Kabulü</h3>
+              <h3 className="font-semibold text-foreground">Yeni İş Emri</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Sıfırdan yeni bir araç kabul formu oluşturun. Onay sürecinden sonra iş emri oluşturabilirsiniz.
               </p>
