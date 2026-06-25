@@ -130,7 +130,7 @@ export function PhotoAnnotate({
     const octx = overlay.getContext("2d")!
     const dpr = dprRef.current
     octx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    octx.clearRect(0, 0, overlay.width, overlay.height)
+    octx.clearRect(0, 0, overlay.width / dpr, overlay.height / dpr) // transform aktif → mantıksal koordinatlarda temizle
     for (const s of strokesRef.current) {
       octx.strokeStyle = s.color
       octx.lineWidth = STROKE_WIDTH
