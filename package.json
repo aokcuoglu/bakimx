@@ -16,7 +16,8 @@
     "db:seed": "bunx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "workshop": "bun scripts/workshop-admin.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "release": "node scripts/release.mjs"
   },
   "prisma": {
     "seed": "bunx tsx prisma/seed.ts"
