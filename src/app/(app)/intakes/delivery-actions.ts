@@ -122,7 +122,10 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
     where: { intakeFormId, workshopId: user.workshopId },
   })
   if (order && order.status === "ready_for_delivery") {
-    await updateOrderStatusAction(order.id, "delivered")
+    const orderResult = await updateOrderStatusAction(order.id, "delivered")
+    if (orderResult && "error" in orderResult) {
+      console.error("[verifyDeliveryOtp] Order teslim senkronu başarısız:", orderResult.error)
+    }
   }
 
   await AuditLogAction(user.workshopId, user.id, "ApprovalRequest", approval.id, "delivery_otp_verified")
