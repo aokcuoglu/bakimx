@@ -83,7 +83,7 @@ type IntakeDetailProps = {
   approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
   timelineEvents: { eventType: string; description: string; createdAt: Date }[]
-  order: { id: string; status: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
+  order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
 export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailProps; hasAiAdvisor: boolean }) {
@@ -107,6 +107,10 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
+
+  const [deliveryOtpMode, setDeliveryOtpMode] = useState(false)
+  const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
+  const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
 
   const [showOrderItemForm, setShowOrderItemForm] = useState(false)
   const [itemType, setItemType] = useState("part")
@@ -133,6 +137,45 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
         router.refresh()
       } else {
         setError(data.error || "Durum güncellenemedi")
+      }
+    } catch {
+      setError("Bir hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleRequestDeliveryOtp() {
+    setLoading(true); setError(""); setDeliverySentCode(null)
+    try {
+      const res = await fetch(`/api/intakes/${intake.id}/delivery-otp`, { method: "POST" })
+      const data = await res.json() as { success?: boolean; otpCode?: string; error?: string }
+      if (data.success) {
+        setDeliveryOtpMode(true)
+        setDeliverySentCode(data.otpCode ?? null)
+      } else {
+        setError(data.error || "Kod gönderilemedi")
+      }
+    } catch {
+      setError("Bir hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleVerifyDeliveryOtp() {
+    setLoading(true); setError("")
+    try {
+      const res = await fetch(`/api/intakes/${intake.id}/delivery-otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: deliveryOtpCode }),
+      })
+      const data = await res.json() as { success?: boolean; error?: string }
+      if (data.success) {
+        router.refresh()
+      } else {
+        setError(data.error || "Doğrulama başarısız")
       }
     } catch {
       setError("Bir hata oluştu")
@@ -390,9 +433,9 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             Teslimata Hazır
           </Button>
         )}
-        {intake.status === "ready_for_delivery" && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("delivered")} disabled={loading}>
-            Teslim Edildi
+        {intake.status === "ready_for_delivery" && !deliveryOtpMode && (
+          <Button size="sm" onClick={handleRequestDeliveryOtp} disabled={loading}>
+            Teslim Et (OTP)
           </Button>
         )}
         {(intake.status === "draft" || intake.status === "waiting_approval") && (
@@ -401,6 +444,32 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
           </Button>
         )}
       </div>
+
+      {intake.status === "ready_for_delivery" && deliveryOtpMode && (
+        <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+          <p className="text-sm font-medium">Teslim Onayı (OTP)</p>
+          {intake.order && intake.order.paymentStatus !== "paid" && (
+            <p className="text-xs text-warning">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({intake.order.paymentStatus}).</p>
+          )}
+          {deliverySentCode && (
+            <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
+          )}
+          <Input
+            value={deliveryOtpCode}
+            onChange={(e) => setDeliveryOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="6 haneli teslim kodu"
+            inputMode="numeric"
+            className="h-12 text-center text-xl tracking-widest"
+          />
+          <div className="flex gap-2">
+            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} className="flex-1 h-11">
+              {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
+            </Button>
+            <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} className="h-11">Kodu Tekrar Gönder</Button>
+            <Button variant="ghost" onClick={() => { setDeliveryOtpMode(false); setDeliveryOtpCode(""); setDeliverySentCode(null) }} disabled={loading} className="h-11">Vazgeç</Button>
+          </div>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList variant="line" className="border-b gap-1 overflow-x-auto">
