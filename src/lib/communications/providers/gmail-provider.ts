@@ -28,7 +28,7 @@ export class GmailProvider implements EmailProvider {
       )
     }
 
-    this.from = `${fromName} <${user}>`
+    this.from = user ? `${fromName} <${user}>` : fromName
     this.transporter =
       transporter ??
       nodemailer.createTransport({
