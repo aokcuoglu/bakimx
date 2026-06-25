@@ -36,6 +36,12 @@ export class GmailProvider implements EmailProvider {
         port: 465,
         secure: true,
         auth: { user, pass },
+        // Bound the send so a blocked outbound SMTP port (465) fails fast instead
+        // of hanging the register/approve/reject request until the OS socket timeout.
+        // Sending is best-effort, so a fast failure is logged and the flow continues.
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 15_000,
       })
   }
 
