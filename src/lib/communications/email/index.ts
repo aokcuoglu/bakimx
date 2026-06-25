@@ -1,6 +1,7 @@
 import type { EmailProvider } from "../types"
 import { MockEmailProvider } from "../providers/mock-email-provider"
 import { ResendProvider } from "../providers/resend-provider"
+import { GmailProvider } from "../providers/gmail-provider"
 
 let _instance: EmailProvider | null = null
 
@@ -12,6 +13,9 @@ export function getEmailProvider(): EmailProvider {
   switch (provider) {
     case "resend":
       _instance = new ResendProvider()
+      break
+    case "gmail":
+      _instance = new GmailProvider()
       break
     default:
       _instance = new MockEmailProvider()
