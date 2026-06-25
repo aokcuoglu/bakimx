@@ -40,27 +40,33 @@ export function CustomerSearchOrCreate({
 
   useEffect(() => {
     if (creating || query.trim().length < 1) {
-      const t = setTimeout(() => setResults([]), 0)
+      const t = setTimeout(() => { setResults([]); setLoading(false) }, 0)
       return () => clearTimeout(t)
     }
+    let active = true
     const t = setTimeout(() => {
       setLoading(true)
       fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(query.trim())}`)
         .then((r) => r.json())
         .then((d) => {
+          if (!active) return
           const list: UnifiedResult[] = Array.isArray(d?.results) ? d.results : []
           setResults(list.filter((x): x is CustomerHit => x.kind === "customer"))
         })
-        .catch(() => setResults([]))
-        .finally(() => setLoading(false))
+        .catch(() => { if (active) setResults([]) })
+        .finally(() => { if (active) setLoading(false) })
     }, 250)
-    return () => clearTimeout(t)
+    return () => { active = false; clearTimeout(t) }
   }, [query, creating])
 
   function openCreate() {
     const parts = query.trim().split(/\s+/)
+    setType("individual")
     setFirstName(parts[0] || "")
     setLastName(parts.slice(1).join(" "))
+    setCompanyName("")
+    setPhone("")
+    setBusy(false)
     setError("")
     setCreating(true)
   }
