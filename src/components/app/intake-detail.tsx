@@ -462,7 +462,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             className="h-12 text-center text-xl tracking-widest"
           />
           <div className="flex gap-2">
-            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 4} className="flex-1 h-11">
+            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} className="flex-1 h-11">
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
             </Button>
             <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} className="h-11">Kodu Tekrar Gönder</Button>

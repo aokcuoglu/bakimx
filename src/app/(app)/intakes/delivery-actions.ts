@@ -54,14 +54,16 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
     },
   })
 
-  let smsSent = false
-  try {
-    await sendSMSDirect(intake.customer.phone, `BakimX teslim onay kodunuz: ${otpCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`)
-    smsSent = true
-  } catch (e) {
+  // sendSMSDirect kendi hatasını yakalayıp {success:false} döndürür (throw etmez);
+  // bu yüzden dönen .success'i kontrol et — sadece nadir throw için .catch.
+  const smsResult = await sendSMSDirect(
+    intake.customer.phone,
+    `BakimX teslim onay kodunuz: ${otpCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`,
+  ).catch((e) => {
     console.error("[requestDeliveryOtp] SMS gönderilemedi:", e)
-  }
-  if (!smsSent && !isDemoSms()) {
+    return { success: false as const }
+  })
+  if (!smsResult.success && !isDemoSms()) {
     return { error: "Onay SMS'i gönderilemedi, lütfen tekrar deneyin" }
   }
 
