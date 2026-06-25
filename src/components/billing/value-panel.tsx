@@ -26,7 +26,7 @@ export function ValuePanel({
           <div className="mt-3 space-y-2 text-sm">
             <Row label="Paket" value={pkg?.name ?? tier} />
             <Row label="Dönem" value={cycle === "monthly" ? "Aylık" : "Yıllık"} />
-            <Row label="Kullanıcı" value={String(pkg?.seats ?? "")} />
+            <Row label="Kullanıcı" value={String(pkg?.seats ?? "—")} />
           </div>
           <div className="mt-3 flex items-baseline justify-between border-t border-primary/15 pt-3">
             <span className="text-sm text-muted-foreground">Toplam (KDV dahil)</span>
@@ -38,19 +38,19 @@ export function ValuePanel({
           <div className="rounded-lg border border-primary/20 bg-card p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Seçilen paket</p>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-base font-extrabold text-foreground">{pkg?.name}</span>
+              <span className="text-base font-extrabold text-foreground">{pkg?.name ?? tier}</span>
               <span className="text-base font-extrabold text-foreground">
                 {amount}
                 <span className="text-[11px] font-medium text-muted-foreground">{cycle === "monthly" ? "/ay" : "/yıl"}</span>
               </span>
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{pkg?.seats} kullanıcı · KDV dahil</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{pkg?.seats ?? "—"} kullanıcı · KDV dahil</p>
           </div>
 
           {/* faydalar + illüstrasyon yalnız md+ (mobilde kompakt kalsın) */}
           <div className="hidden md:block">
             <div className="my-4 flex justify-center"><CarIllustration /></div>
-            <p className="mb-2 text-xs font-bold text-foreground">Bu pakette kazandıklar&apos;ın</p>
+            <p className="mb-2 text-xs font-bold text-foreground">Bu pakette kazandıkların</p>
             <ul className="space-y-2 text-xs text-foreground">
               {(pkg?.highlights ?? []).slice(0, 4).map((h) => (
                 <li key={h} className="flex gap-2">
