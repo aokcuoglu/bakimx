@@ -82,6 +82,7 @@ const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
  */
 export function canTransitionIntake(from: IntakeStatus, to: IntakeStatus): boolean {
   if (to === "approved") return false
+  if (to === "delivered") return false
   if (from === to) return true
   return INTAKE_TRANSITIONS[from]?.includes(to) ?? false
 }
