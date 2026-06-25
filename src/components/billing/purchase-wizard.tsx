@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy } from "lucide-react"
@@ -21,6 +22,7 @@ import { getPlanPriceMinor, formatMinor } from "@/lib/billing/pricing"
 import { createBillingOrder } from "@/app/(app)/billing/actions"
 import type { PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
+import { ValuePanel } from "@/components/billing/value-panel"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -75,7 +77,7 @@ export function PurchaseWizard({
     mode: "onChange",
   })
   const { register, trigger, getValues, formState } = form
-  const amountMinor = getPlanPriceMinor(tier, cycle)
+  const reduce = useReducedMotion()
 
   async function next(fields: string[]) {
     setError("")
@@ -161,129 +163,144 @@ export function PurchaseWizard({
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4">
-      {/* progress */}
-      <div className="bg-card border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
+    <div className="mx-auto max-w-4xl">
+      {/* progress (üstte, tam genişlik) */}
+      <div className="mb-4 rounded-lg border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-medium">Adım {step + 1} / {STEPS.length}</span>
           <span className="text-xs text-muted-foreground">{STEPS[step]}</span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {STEPS.map((s, i) => (
-            <div key={s} className={cn("flex-1 h-1.5 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-muted")} />
+            <div key={s} className={cn("h-1.5 flex-1 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-muted")} />
           ))}
         </div>
       </div>
 
-      {error && <div className="rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-      {/* Step 0: plan + cycle */}
-      {step === 0 && (
-        <Card>
-          <CardHeader><CardTitle>Paket seçin</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="inline-flex w-full rounded-lg border bg-card p-1 gap-1">
-              {(["monthly", "yearly"] as const).map((c) => (
-                <button key={c} type="button" onClick={() => setCycle(c)}
-                  className={cn("flex-1 px-4 py-1.5 rounded-md text-sm font-medium transition-colors", cycle === c ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
-                  {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
-                </button>
-              ))}
-            </div>
-            <div className="grid gap-3">
-              {PLAN_PACKAGES.map((pkg) => {
-                const selected = tier === pkg.tier
-                const minor = getPlanPriceMinor(pkg.tier, cycle)
-                return (
-                  <button key={pkg.tier} type="button" onClick={() => setTier(pkg.tier)}
-                    className={cn("flex items-center justify-between rounded-xl border p-4 text-left transition-colors", selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40")}>
-                    <div>
-                      <p className="font-semibold text-foreground">{pkg.name}</p>
-                      <p className="text-xs text-muted-foreground">{pkg.tagline} · {pkg.seats} kullanıcı</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-foreground">{formatMinor(minor)}</p>
-                      <p className="text-[11px] text-muted-foreground">{cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-            <div className="pt-2 flex justify-end">
-              <Button type="button" size="lg" className="h-12 gap-2" onClick={() => next([])}>Devam <ChevronRight className="size-4" /></Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid items-start gap-4 md:grid-cols-[1.5fr_1fr]">
+        {/* DEĞER PANELİ — mobilde formun ÜSTÜNDE (order-1), masaüstünde sağda + sticky */}
+        <div className="order-1 md:order-2 md:sticky md:top-4">
+          <ValuePanel tier={tier} cycle={cycle} step={step} />
+        </div>
 
-      {/* Step 1: account (public) + invoice info */}
-      {step === 1 && (
-        <Card>
-          <CardHeader><CardTitle>{mode === "public" ? "Hesap & fatura bilgisi" : "Fatura bilgisi"}</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {mode === "public" && (
-              <>
-                <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}><Input {...register("workshopName" as never)} /></Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ad" error={fieldError(formState, "firstName")}><Input {...register("firstName" as never)} /></Field>
-                  <Field label="Soyad" error={fieldError(formState, "lastName")}><Input {...register("lastName" as never)} /></Field>
+        {/* FORM — mobilde altta (order-2), masaüstünde solda */}
+        <div className="order-2 md:order-1">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={reduce ? false : { opacity: 0, x: 14 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, x: -14 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+          {/* Step 0: plan + cycle */}
+          {step === 0 && (
+            <Card>
+              <CardHeader><CardTitle>Paket seçin</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="inline-flex w-full gap-1 rounded-lg border bg-card p-1">
+                  {(["monthly", "yearly"] as const).map((c) => (
+                    <button key={c} type="button" onClick={() => setCycle(c)}
+                      className={cn("flex-1 rounded-md px-4 py-1.5 text-sm font-medium transition-colors", cycle === c ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+                      {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
+                    </button>
+                  ))}
                 </div>
-                <Field label="E-posta" error={fieldError(formState, "email")}><Input type="email" {...register("email" as never)} /></Field>
-                <Field label="Şifre" error={fieldError(formState, "password")}><Input type="password" {...register("password" as never)} /></Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Telefon" error={fieldError(formState, "phone")}><Input {...register("phone" as never)} /></Field>
-                  <Field label="Şehir" error={fieldError(formState, "city")}><Input {...register("city" as never)} /></Field>
+                <div className="grid gap-3">
+                  {PLAN_PACKAGES.map((pkg) => {
+                    const selected = tier === pkg.tier
+                    const minor = getPlanPriceMinor(pkg.tier, cycle)
+                    return (
+                      <button key={pkg.tier} type="button" onClick={() => setTier(pkg.tier)}
+                        className={cn("flex items-center justify-between rounded-xl border p-4 text-left transition-colors", selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40")}>
+                        <div>
+                          <p className="font-semibold text-foreground">{pkg.name}</p>
+                          <p className="text-xs text-muted-foreground">{pkg.tagline} · {pkg.seats} kullanıcı</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-foreground">{formatMinor(minor)}</p>
+                          <p className="text-[11px] text-muted-foreground">{cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil</p>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
-                <Field label="Adres" error={fieldError(formState, "address")}><Input {...register("address" as never)} /></Field>
-              </>
-            )}
-            <Field label="Fatura ünvanı" error={fieldError(formState, "invoiceTitle")}><Input {...register("invoiceTitle" as never)} /></Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Vergi / TC no" error={fieldError(formState, "taxNumber")}><Input {...register("taxNumber" as never)} /></Field>
-              <Field label="Vergi dairesi (ops.)" error={fieldError(formState, "taxOffice")}><Input {...register("taxOffice" as never)} /></Field>
-            </div>
-            {mode === "public" && (
-              <label className="flex items-start gap-2 text-xs text-muted-foreground pt-1">
-                <input type="checkbox" {...register("kvkkConsent" as never)} className="mt-0.5" />
-                <span><Link href="/privacy" className="text-primary hover:underline" target="_blank">Aydınlatma metnini</Link> okudum, onaylıyorum.</span>
-              </label>
-            )}
-            <div className="pt-2 flex justify-between">
-              <Button type="button" variant="outline" onClick={() => setStep(0)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
-              <Button type="button" size="lg" className="h-12 gap-2"
-                onClick={() => next(mode === "public"
-                  ? ["workshopName", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
-                  : ["invoiceTitle", "taxNumber"])}>
-                Devam <ChevronRight className="size-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <div className="flex justify-end pt-2">
+                  <Button type="button" size="lg" className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100" onClick={() => next([])}>Devam <ChevronRight className="size-4" /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Step 2: summary */}
-      {step === 2 && (
-        <Card>
-          <CardHeader><CardTitle>Özet</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-1.5">
-              <p className="flex justify-between"><span className="text-muted-foreground">Paket</span><span className="font-medium text-foreground">{PLAN_PACKAGES.find((p) => p.tier === tier)?.name}</span></p>
-              <p className="flex justify-between"><span className="text-muted-foreground">Dönem</span><span className="font-medium text-foreground">{cycle === "monthly" ? "Aylık" : "Yıllık"}</span></p>
-              <p className="flex justify-between text-base"><span className="text-muted-foreground">Tutar (KDV dahil)</span><span className="font-bold text-foreground">{formatMinor(amountMinor)}</span></p>
-            </div>
-            <p className="text-xs text-muted-foreground">Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce teyit edilince {mode === "public" ? "hesabınız aktifleşir" : "paketiniz güncellenir"}.</p>
-            {mode === "inapp" && (
-              <p className="text-xs text-muted-foreground">Yükseltmede mevcut paketinizin kalan gün kredisi düşülür; kesin tutar onay ekranında görünür.</p>
-            )}
-            <div className="pt-1 flex justify-between">
-              <Button type="button" variant="outline" onClick={() => setStep(1)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
-              <Button type="button" size="lg" disabled={loading} className="h-12 gap-2" onClick={submit}>
-                {loading ? <><Loader2 className="size-4 animate-spin" /> Gönderiliyor…</> : "Siparişi oluştur"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Step 1: account (public) + invoice info */}
+          {step === 1 && (
+            <Card>
+              <CardHeader><CardTitle>{mode === "public" ? "Hesap & fatura bilgisi" : "Fatura bilgisi"}</CardTitle></CardHeader>
+              <CardContent className="space-y-1">
+                {mode === "public" && (
+                  <>
+                    <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}><Input {...register("workshopName" as never)} /></Field>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Ad" error={fieldError(formState, "firstName")}><Input {...register("firstName" as never)} /></Field>
+                      <Field label="Soyad" error={fieldError(formState, "lastName")}><Input {...register("lastName" as never)} /></Field>
+                    </div>
+                    <Field label="E-posta" error={fieldError(formState, "email")}><Input type="email" {...register("email" as never)} /></Field>
+                    <Field label="Şifre" error={fieldError(formState, "password")}><Input type="password" {...register("password" as never)} /></Field>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Telefon" error={fieldError(formState, "phone")}><Input {...register("phone" as never)} /></Field>
+                      <Field label="Şehir" error={fieldError(formState, "city")}><Input {...register("city" as never)} /></Field>
+                    </div>
+                    <Field label="Adres" error={fieldError(formState, "address")}><Input {...register("address" as never)} /></Field>
+                  </>
+                )}
+                <Field label="Fatura ünvanı" error={fieldError(formState, "invoiceTitle")}><Input {...register("invoiceTitle" as never)} /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Vergi / TC no" error={fieldError(formState, "taxNumber")}><Input {...register("taxNumber" as never)} /></Field>
+                  <Field label="Vergi dairesi (ops.)" error={fieldError(formState, "taxOffice")}><Input {...register("taxOffice" as never)} /></Field>
+                </div>
+                {mode === "public" && (
+                  <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
+                    <input type="checkbox" {...register("kvkkConsent" as never)} className="mt-0.5" />
+                    <span><Link href="/privacy" className="text-primary hover:underline" target="_blank">Aydınlatma metnini</Link> okudum, onaylıyorum.</span>
+                  </label>
+                )}
+                <div className="flex justify-between pt-2">
+                  <Button type="button" variant="outline" onClick={() => setStep(0)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
+                  <Button type="button" size="lg" className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100"
+                    onClick={() => next(mode === "public"
+                      ? ["workshopName", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
+                      : ["invoiceTitle", "taxNumber"])}>
+                    Devam <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 2: summary */}
+          {step === 2 && (
+            <Card>
+              <CardHeader><CardTitle>Özet</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce teyit edilince {mode === "public" ? "hesabınız aktifleşir" : "paketiniz güncellenir"}.</p>
+                {mode === "inapp" && (
+                  <p className="text-xs text-muted-foreground">Yükseltmede mevcut paketinizin kalan gün kredisi düşülür; kesin tutar onay ekranında görünür.</p>
+                )}
+                <div className="flex justify-between pt-1">
+                  <Button type="button" variant="outline" onClick={() => setStep(1)} className="gap-1"><ChevronLeft className="size-4" /> Geri</Button>
+                  <Button type="button" size="lg" disabled={loading} className="h-12 gap-2 active:scale-[0.98] transition-transform motion-reduce:active:scale-100" onClick={submit}>
+                    {loading ? <><Loader2 className="size-4 animate-spin" /> Gönderiliyor…</> : "Siparişi oluştur"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }
@@ -293,7 +310,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
+      <p className="min-h-[16px] text-xs text-destructive leading-4">{error ?? ""}</p>
     </div>
   )
 }
