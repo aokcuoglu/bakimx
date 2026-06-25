@@ -2,8 +2,7 @@ name: Deploy to Production
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -37,11 +36,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Prod compose pulls `:latest`. `sha` keeps an immutable handle per deploy
+          # for rollback. Releases are now main-push driven (not v* tags), so the
+          # semver patterns are gone — tag the repo for version records if you like,
+          # but tags no longer trigger a deploy.
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=long
             type=raw,value=latest
+            type=sha,format=long
 
       - name: Build and push
         uses: docker/build-push-action@v6
