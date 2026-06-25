@@ -1,7 +1,18 @@
+import { existsSync } from "node:fs"
+import path from "node:path"
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import bcrypt from "bcryptjs"
+
+// Prisma 7 + tsx don't auto-load .env.local (mirrors prisma.config.ts). Load it before
+// reading DATABASE_URL; never overrides real env, so the prod NODE_ENV guard below is unaffected.
+if (typeof process.loadEnvFile === "function") {
+  for (const envFile of [".env.local", ".env"]) {
+    const envPath = path.join(__dirname, "..", envFile)
+    if (existsSync(envPath)) process.loadEnvFile(envPath)
+  }
+}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
