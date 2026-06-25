@@ -1,5 +1,3 @@
-import { Header } from "@/components/sections/Header"
-import { Footer } from "@/components/sections/Footer"
 import { PurchaseWizard } from "@/components/billing/purchase-wizard"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import type { PlanTier } from "@/lib/plan"
@@ -17,13 +15,11 @@ export default async function SatinAlPage({
   const tier = (["starter", "pro", "premium"].includes(sp.tier ?? "") ? sp.tier : "pro") as PlanTier
   const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
 
+  // Premium, odaklı checkout: landing Header/Footer yerine tam ekran markalı split.
+  // Marka + yasal linkler sol BrandRail içinde yaşar.
   return (
-    <>
-      <Header />
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
-        <PurchaseWizard mode="public" initialTier={tier} initialCycle={cycle} havale={HAVALE} />
-      </main>
-      <Footer />
-    </>
+    <main className="min-h-[100dvh] bg-background">
+      <PurchaseWizard mode="public" initialTier={tier} initialCycle={cycle} havale={HAVALE} />
+    </main>
   )
 }
