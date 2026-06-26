@@ -93,3 +93,21 @@ export function newApplicationAdminEmail(p: {
     }),
   }
 }
+
+/** Internal ops alert to the founders (ADMIN_EMAILS) — not tenant-scoped. Used
+ *  for system-health issues like a failed or stale cron run. */
+export function founderAlertEmail(p: { title: string; detail: string }): BuiltEmail {
+  const title = escapeHtml(p.title)
+  const detail = escapeHtml(p.detail)
+  return {
+    subject: `BakimX uyarı: ${p.title}`,
+    html: renderEmailLayout({
+      heading: "Sistem uyarısı",
+      bodyHtml:
+        `<p style="margin:0 0 12px;"><strong>${title}</strong></p>` +
+        `<p style="margin:0 0 12px;">${detail}</p>`,
+      cta: { label: "Sistem sağlığını gör", url: `${appUrl()}/admin/health` },
+      footerNote: "Bu, BakimX yönetici ekibine giden otomatik bir sistem uyarısıdır.",
+    }),
+  }
+}

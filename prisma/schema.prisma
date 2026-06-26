@@ -1238,6 +1238,26 @@ model CommunicationLog {
   @@index([sentAt])
 }
 
+// Persisted result of a background cron run (e.g. "reminders"). The cron route
+// returned JSON and forgot — this lets the ops health surface show last-run
+// freshness + failures and gate founder alerts. Global (not workshop-scoped).
+model CronRun {
+  id           String    @id @default(cuid())
+  job          String
+  status       String    @default("success") // "success" | "error"
+  startedAt    DateTime
+  finishedAt   DateTime?
+  processed    Int       @default(0)
+  sent         Int       @default(0)
+  failed       Int       @default(0)
+  errorMessage String?
+  // When a founder alert was sent for this run (debounce handle).
+  alertedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([job, startedAt])
+}
+
 model DemoRequest {
   id              String             @id @default(cuid())
   name            String

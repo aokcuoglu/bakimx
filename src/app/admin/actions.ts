@@ -71,7 +71,7 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_approved")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -86,7 +86,7 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_rejected")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "rejected")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -119,7 +119,7 @@ export async function activateWorkshopPlan(
     "admin_plan_activated",
     JSON.stringify({ tier, status })
   )
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -140,7 +140,7 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
     "admin_extra_seats_set",
     JSON.stringify({ extraSeats })
   )
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -162,7 +162,7 @@ export async function updateDemoRequestStatus(
     where: { id: requestId },
     data: { status: status as DemoRequestStatus },
   })
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -184,7 +184,7 @@ export async function updateSupportRequestStatus(
     where: { id: requestId },
     data: { status: status as SupportRequestStatus },
   })
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -248,7 +248,7 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
 
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
     JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -266,6 +266,6 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
   })
   if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", orderId, "billing_order_cancelled")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
