@@ -1,5 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { hasFeature, type PlanTier } from "@/lib/plan"
+import { type PlanTier } from "@/lib/plan"
+import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -12,7 +13,7 @@ import { getTechnicians } from "@/lib/technician/queries"
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { user, workshop } = await getAppData()
-  const hasAiAdvisor = !!workshop && hasFeature(workshop.planTier as PlanTier, "aiAdvisor")
+  const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id, workshopId: user.workshopId },

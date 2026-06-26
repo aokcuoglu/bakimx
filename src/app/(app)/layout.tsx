@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { getSession } from "@/lib/session"
+import { getActiveImpersonation } from "@/lib/session"
+import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getPlanState } from "@/lib/plan"
 import { PlanLocked } from "@/components/app/plan-locked"
 import { AppShellChrome } from "@/components/app/app-shell"
+import { ImpersonationBanner } from "@/components/app/impersonation-banner"
 
 export const metadata: Metadata = {
   title: "İş Yeri Paneli",
@@ -13,13 +15,15 @@ export const metadata: Metadata = {
 }
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession()
-  if (!session?.userId || !session?.workshopId) {
+  // Effective identity — under impersonation this resolves to the target tenant.
+  const user = await getCurrentUser()
+  if (!user) {
     redirect("/login")
   }
+  const impersonation = await getActiveImpersonation()
 
   const workshop = await prisma.workshop.findUnique({
-    where: { id: session.workshopId },
+    where: { id: user.workshopId },
     select: {
       name: true,
       planTier: true,
@@ -37,17 +41,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const plan = getPlanState(workshop)
 
   // Access gate: trial expired / subscription inactive → locked upgrade screen.
+  // Keep the impersonation banner so the founder can always exit.
   if (!plan.hasAccess && plan.lockReason) {
     return (
-      <PlanLocked
-        reason={plan.lockReason}
-        workshopName={workshop.name}
-      />
+      <>
+        {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
+        <PlanLocked reason={plan.lockReason} workshopName={workshop.name} />
+      </>
     )
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
       {plan.isTrialing && plan.trialDaysLeft != null && (
         <div className="bg-primary/10 text-primary text-xs sm:text-sm px-4 py-2 text-center">
           Deneme sürenizin bitmesine{" "}

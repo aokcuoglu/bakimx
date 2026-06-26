@@ -4,9 +4,12 @@ import { ArrowLeft } from "lucide-react"
 import { requireAdmin } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getEffectiveFeatures } from "@/lib/features"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
+import { WorkshopFlags } from "@/app/admin/workshop-flags"
+import { ImpersonateButton } from "@/app/admin/impersonate-button"
 
 export const dynamic = "force-dynamic"
 
@@ -63,7 +66,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
   })
   if (!workshop) notFound()
 
-  const [customerCount, vehicleCount, orderCount, appointmentCount, orders, auditLogs, commLogs, reminderLogs, syncLogs] =
+  const [customerCount, vehicleCount, orderCount, appointmentCount, orders, auditLogs, commLogs, reminderLogs, syncLogs, features] =
     await Promise.all([
       prisma.customer.count({ where: { workshopId: id } }),
       prisma.vehicle.count({ where: { workshopId: id } }),
@@ -79,7 +82,18 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
       prisma.communicationLog.findMany({ where: { workshopId: id }, orderBy: { sentAt: "desc" }, take: 10 }),
       prisma.reminderExecutionLog.findMany({ where: { workshopId: id }, orderBy: { executedAt: "desc" }, take: 5 }),
       prisma.calendarSyncLog.findMany({ where: { workshopId: id }, orderBy: { syncedAt: "desc" }, take: 5 }),
+      getEffectiveFeatures(id, workshop.planTier as PlanTier),
     ])
+
+  const flagRows = features.map((f) => ({
+    key: f.key,
+    label: f.label,
+    tierGrants: f.tierGrants,
+    effective: f.effective,
+    override: f.override
+      ? { enabled: f.override.enabled, expiresAt: f.override.expiresAt?.toISOString() ?? null, reason: f.override.reason }
+      : null,
+  }))
 
   const plan = getPlanState(workshop)
   const activeUsers = workshop.users.filter((u) => u.isActive).length
@@ -127,6 +141,9 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               </p>
             )}
           </div>
+          <div className="shrink-0">
+            <ImpersonateButton workshopId={workshop.id} />
+          </div>
         </div>
         <WorkshopActions
           w={{
@@ -170,6 +187,10 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               </div>
             ))}
           </div>
+        </Section>
+
+        <Section title="Özellik Bayrakları">
+          <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
         </Section>
 
         <Section title="Kullanım">

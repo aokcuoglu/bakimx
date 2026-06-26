@@ -9,25 +9,47 @@ export interface AuthUser {
   lastName: string | null
   role: UserRole
   isActive: boolean
+  /** Set when this is a founder impersonation context (the real admin's id). */
+  impersonatorAdminId?: string
+  /** True when the impersonation context forbids tenant-data writes. */
+  impersonationReadOnly?: boolean
 }
+
+const USER_SELECT = {
+  id: true,
+  email: true,
+  workshopId: true,
+  firstName: true,
+  lastName: true,
+  role: true,
+  isActive: true,
+} as const
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    const { getSession } = await import("@/lib/session")
+    const { getSession, getActiveImpersonation } = await import("@/lib/session")
+
+    // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
+    // whole app scopes to the target tenant via the returned workshopId — no
+    // per-query changes. The real admin identity stays on the overlay (audit).
+    const imp = await getActiveImpersonation()
+    if (imp) {
+      const target = await prisma.user.findUnique({
+        where: { id: imp.targetUserId },
+        select: USER_SELECT,
+      })
+      if (target) {
+        return { ...target, impersonatorAdminId: imp.adminUserId, impersonationReadOnly: imp.readOnly }
+      }
+      // Target vanished — fall through to the real session rather than 500.
+    }
+
     const session = await getSession()
     if (!session?.userId) return null
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: {
-        id: true,
-        email: true,
-        workshopId: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-      },
+      select: USER_SELECT,
     })
 
     if (!user) return null

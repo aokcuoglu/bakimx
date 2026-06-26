@@ -9,6 +9,7 @@ import {
   Inbox,
   ScrollText,
   Activity,
+  ToggleLeft,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ const ITEMS: NavItem[] = [
   { href: "/admin/workshops", label: "İş Yerleri", icon: Building2 },
   { href: "/admin/billing", label: "Faturalandırma", icon: Receipt },
   { href: "/admin/leads", label: "Talepler", icon: Inbox },
+  { href: "/admin/flags", label: "Özellik Bayrakları", icon: ToggleLeft },
   { href: "/admin/audit", label: "Denetim Kaydı", icon: ScrollText },
   { href: "/admin/health", label: "Sistem Sağlığı", icon: Activity },
 ]

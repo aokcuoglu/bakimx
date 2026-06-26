@@ -77,6 +77,7 @@ model Workshop {
   reminderExecutionLogs ReminderExecutionLog[]
   invites            Invite[]
   billingOrders      BillingOrder[]
+  featureOverrides   WorkshopFeatureOverride[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -1256,6 +1257,45 @@ model CronRun {
   createdAt    DateTime  @default(now())
 
   @@index([job, startedAt])
+}
+
+// Per-tenant feature override. Composes with hasFeature(): an override (not
+// expired) wins; otherwise the plan tier is the floor. Lets a founder grant a
+// beta/premium feature to one workshop without touching FEATURE_MIN_TIER.
+model WorkshopFeatureOverride {
+  id         String    @id @default(cuid())
+  workshopId String
+  workshop   Workshop  @relation(fields: [workshopId], references: [id])
+  featureKey String // GatedFeature ("aiAdvisor" | "eInvoice" | "multiBranch" | "rbac") or future "beta_*"
+  enabled    Boolean
+  reason     String?
+  expiresAt  DateTime? // auto-expire (e.g. time-boxed beta grants)
+  createdBy  String // founder userId
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([workshopId, featureKey])
+  @@index([workshopId])
+}
+
+// A founder "login as workshop owner" session. The real admin identity lives in
+// the session overlay (never overwritten); this row is the revocation handle +
+// audit anchor. Global (target refs are plain ids — no back-relations needed).
+model ImpersonationSession {
+  id               String    @id @default(cuid())
+  adminUserId      String // founder who started it
+  targetUserId     String // the (owner) user being impersonated
+  targetWorkshopId String
+  reason           String?
+  readOnly         Boolean   @default(true)
+  startedAt        DateTime  @default(now())
+  expiresAt        DateTime // hard cap (checked without a DB hit)
+  endedAt          DateTime?
+  revokedAt        DateTime?
+
+  @@index([adminUserId])
+  @@index([targetWorkshopId])
+  @@index([expiresAt])
 }
 
 model DemoRequest {
