@@ -158,7 +158,7 @@ export function AppointmentCreateForm({
                     <FormLabel>Müşteri *</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-                        <SelectTrigger className="w-full h-10">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Müşteri Seçin" />
                         </SelectTrigger>
                         <SelectContent>
@@ -197,7 +197,7 @@ export function AppointmentCreateForm({
                       onValueChange={(v) => field.onChange(v ?? "")}
                       disabled={!customerId}
                     >
-                      <SelectTrigger className="w-full h-10">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Araç Seçin (Opsiyonel)" />
                       </SelectTrigger>
                       <SelectContent>
@@ -271,7 +271,7 @@ export function AppointmentCreateForm({
                   <FormLabel>Tahmini Süre</FormLabel>
                   <FormControl>
                     <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-                      <SelectTrigger className="w-full h-10">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seçiniz" />
                       </SelectTrigger>
                       <SelectContent>
@@ -369,15 +369,15 @@ export function AppointmentCreateForm({
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-3 pb-24 lg:pb-0">
-          <Button type="submit" disabled={pending} className="flex-1 h-11">
+          <Button type="submit" disabled={pending} size="lg" className="flex-1">
             {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
             {pending ? "Kaydediliyor..." : "Randevu Kaydet"}
           </Button>
           <Button
             type="button"
             variant="outline"
+            size="lg"
             onClick={() => router.back()}
-            className="h-11"
           >
             İptal
           </Button>
@@ -385,15 +385,16 @@ export function AppointmentCreateForm({
       </form>
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-bottom flex gap-2">
-        <Button type="submit" disabled={pending} className="flex-1 h-11" onClick={() => form.handleSubmit(onSubmit)()}>
+        <Button type="submit" disabled={pending} size="lg" className="flex-1" onClick={() => form.handleSubmit(onSubmit)()}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
           {pending ? "Kaydediliyor..." : "Kaydet"}
         </Button>
         <Button
           type="button"
           variant="outline"
+          size="lg"
           onClick={() => router.back()}
-          className="flex-1 h-11"
+          className="flex-1"
         >
           İptal
         </Button>

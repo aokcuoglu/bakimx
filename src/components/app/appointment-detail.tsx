@@ -184,7 +184,7 @@ export function AppointmentDetail({
                   value={selectedStatus}
                   onValueChange={(v) => setSelectedStatus(v ?? "")}
                 >
-                  <SelectTrigger className="w-full h-9">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Durum seçin" />
                   </SelectTrigger>
                   <SelectContent>

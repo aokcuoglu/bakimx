@@ -543,7 +543,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormLabel>Müşteri Kaynağı</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-                          <SelectTrigger className="w-full h-9">
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Seçilmedi" />
                           </SelectTrigger>
                           <SelectContent>

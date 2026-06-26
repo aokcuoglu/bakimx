@@ -459,14 +459,14 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             onChange={(e) => setDeliveryOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="6 haneli teslim kodu"
             inputMode="numeric"
-            className="h-12 text-center text-xl tracking-widest"
+            className="text-center text-xl tracking-widest"
           />
           <div className="flex gap-2">
-            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} className="flex-1 h-11">
+            <Button onClick={handleVerifyDeliveryOtp} disabled={loading || deliveryOtpCode.length < 6} size="lg" className="flex-1">
               {loading ? <Loader2 className="size-4 animate-spin" /> : "Doğrula ve Teslim Et"}
             </Button>
-            <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} className="h-11">Kodu Tekrar Gönder</Button>
-            <Button variant="ghost" onClick={() => { setDeliveryOtpMode(false); setDeliveryOtpCode(""); setDeliverySentCode(null) }} disabled={loading} className="h-11">Vazgeç</Button>
+            <Button variant="outline" onClick={handleRequestDeliveryOtp} disabled={loading} size="lg">Kodu Tekrar Gönder</Button>
+            <Button variant="ghost" onClick={() => { setDeliveryOtpMode(false); setDeliveryOtpCode(""); setDeliverySentCode(null) }} disabled={loading} size="lg">Vazgeç</Button>
           </div>
         </div>
       )}
@@ -782,7 +782,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                     setPhotoPreview(null)
                   }}
                 >
-                  <SelectTrigger className="w-full h-10">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seçiniz..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -801,7 +801,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                   value={photoPhase}
                   onValueChange={(v) => setPhotoPhase(v ?? "intake")}
                 >
-                  <SelectTrigger className="w-full h-10">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Aşama seçin" />
                   </SelectTrigger>
                   <SelectContent>
@@ -866,7 +866,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                 <Label>Not</Label>
                 <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
               </div>
-              <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full h-12">
+              <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full">
                 {loading ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Upload className="size-4 mr-1" />}
                 {photoFile ? "Fotoğraf Yükle ve Kaydet" : "Fotoğraf Kaydı Ekle"}
               </Button>
@@ -991,7 +991,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                   </div>
                 </div>
 
-                <Button onClick={handleRequestApproval} disabled={loading || !termsAccepted || !privacyAccepted} size="lg" className="w-full h-12">
+                <Button onClick={handleRequestApproval} disabled={loading || !termsAccepted || !privacyAccepted} size="lg" className="w-full">
                   <MessageSquare className="size-4 mr-2" /> Onay Talebi Oluştur
                 </Button>
               </CardContent>
@@ -1019,7 +1019,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                     autoComplete="off"
                   />
                 </div>
-                <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length < 4} size="lg" className="w-full h-12">
+                <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length < 4} size="lg" className="w-full">
                   <CheckCircle2 className="size-4 mr-2" /> Onay Kodunu Doğrula
                 </Button>
               </CardContent>
@@ -1035,7 +1035,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                   <span>Müşteri onayı başarıyla doğrulandı.</span>
                 </div>
                 {!shareToken && (
-                  <Button onClick={handleGenerateShareLink} disabled={loading} size="lg" className="w-full h-12">
+                  <Button onClick={handleGenerateShareLink} disabled={loading} size="lg" className="w-full">
                     <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
                   </Button>
                 )}
@@ -1098,7 +1098,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
               <CardContent className="text-center py-6">
                 <Wrench className="size-12 mx-auto mb-3 opacity-20" />
                 <p className="text-sm text-muted-foreground mb-4">Henüz servis emri oluşturulmadı</p>
-                <Button onClick={handleCreateOrder} disabled={loading} size="lg" className="h-12">
+                <Button onClick={handleCreateOrder} disabled={loading} size="lg">
                   Servis Emri Oluştur
                 </Button>
               </CardContent>
@@ -1168,13 +1168,13 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                     </div>
                   )}
 
-                  <Button variant="outline" size="lg" onClick={() => { setShowOrderItemForm(true); setItemType("part"); setItemName(""); setItemQty("1"); setItemPrice("") }} className="w-full h-10">
+                  <Button variant="outline" size="lg" onClick={() => { setShowOrderItemForm(true); setItemType("part"); setItemName(""); setItemQty("1"); setItemPrice("") }} className="w-full">
                     <Plus className="size-4 mr-1" /> Kalem Ekle
                   </Button>
 
                   <div className="flex gap-2 pt-2">
                     {intake.order.status === "draft" && (
-                      <Button size="lg" className="flex-1 h-12" onClick={async () => {
+                      <Button size="lg" className="flex-1" onClick={async () => {
                         await fetch(`/api/orders/${intake.order!.id}/status`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -1184,7 +1184,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                       }}>İşleme Başla</Button>
                     )}
                     {intake.order.status === "in_progress" && (
-                      <Button size="lg" className="flex-1 h-12" onClick={async () => {
+                      <Button size="lg" className="flex-1" onClick={async () => {
                         await fetch(`/api/orders/${intake.order!.id}/status`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -1207,7 +1207,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         value={itemType}
                         onValueChange={(v) => setItemType(v ?? "part")}
                       >
-                        <SelectTrigger className="w-full h-10">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Tip seçin" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1231,8 +1231,8 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2">
-                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName} size="lg" className="flex-1 h-12">Ekle</Button>
-                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg" className="h-12">İptal</Button>
+                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName} size="lg" className="flex-1">Ekle</Button>
+                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg">İptal</Button>
                     </div>
                   </CardContent>
                 </Card>

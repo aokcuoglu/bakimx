@@ -196,7 +196,7 @@ export function PhotoAnnotate({
       />
 
       {!hasImage && (
-        <Button type="button" variant="outline" className="w-full h-12" onClick={() => fileInputRef.current?.click()}>
+        <Button type="button" variant="outline" size="lg" className="w-full" onClick={() => fileInputRef.current?.click()}>
           <Camera className="size-4 mr-2" /> Foto çek / seç
         </Button>
       )}

@@ -235,7 +235,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <FormLabel>Araç Tipi</FormLabel>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
-                            <SelectTrigger className="w-full h-10">
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Araç tipi seçin" />
                             </SelectTrigger>
                           </FormControl>
@@ -366,7 +366,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <FormLabel>Yakıt Tipi</FormLabel>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
-                            <SelectTrigger className="w-full h-10">
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Seçiniz" />
                             </SelectTrigger>
                           </FormControl>
@@ -391,7 +391,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormLabel>Şanzıman</FormLabel>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <FormControl>
-                          <SelectTrigger className="w-full h-10">
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>

@@ -79,7 +79,7 @@ export function SetPasswordForm({
           <Label className="text-sm font-medium text-muted-foreground">E-posta</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-            <Input value={email} disabled readOnly className="h-10 pl-9 bg-muted/50" />
+            <Input value={email} disabled readOnly className="pl-9 bg-muted/50" />
           </div>
         </div>
 
@@ -88,12 +88,12 @@ export function SetPasswordForm({
             <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">Ad</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="firstName" name="firstName" required placeholder="Adınız" className="h-10 pl-9" />
+              <Input id="firstName" name="firstName" required placeholder="Adınız" className="pl-9" />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="lastName" className="text-sm font-medium text-muted-foreground">Soyad</Label>
-            <Input id="lastName" name="lastName" required placeholder="Soyadınız" className="h-10" />
+            <Input id="lastName" name="lastName" required placeholder="Soyadınız" />
           </div>
         </div>
 
@@ -109,7 +109,7 @@ export function SetPasswordForm({
               required
               minLength={8}
               placeholder="En az 8 karakter"
-              className="h-10 pl-9 pr-9"
+              className="pl-9 pr-9"
             />
             <button
               type="button"
@@ -135,7 +135,7 @@ export function SetPasswordForm({
               required
               minLength={8}
               placeholder="Şifreyi tekrar girin"
-              className="h-10 pl-9"
+              className="pl-9"
             />
           </div>
         </div>

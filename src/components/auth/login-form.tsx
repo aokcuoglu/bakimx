@@ -116,7 +116,7 @@ export function LoginForm() {
               autoComplete="email"
               placeholder="ornek@email.com"
               required
-              className="h-10 pl-9"
+              className="pl-9"
             />
           </div>
         </div>
@@ -134,7 +134,7 @@ export function LoginForm() {
               autoComplete="current-password"
               placeholder="••••••"
               required
-              className="h-10 pl-9 pr-9"
+              className="pl-9 pr-9"
             />
             <button
               type="button"

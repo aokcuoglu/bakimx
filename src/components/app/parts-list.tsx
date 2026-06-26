@@ -142,7 +142,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
               value={currentFilters.status}
               onValueChange={(v) => applyFilter("status", v ?? "all")}
             >
-              <SelectTrigger className="h-8">
+              <SelectTrigger>
                 <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>
@@ -159,7 +159,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 value={currentFilters.category}
                 onValueChange={(v) => applyFilter("category", v ?? "")}
               >
-                <SelectTrigger className="h-8">
+                <SelectTrigger>
                   <SelectValue placeholder="Tüm Kategoriler" />
                 </SelectTrigger>
                 <SelectContent>
@@ -176,7 +176,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 value={currentFilters.brand}
                 onValueChange={(v) => applyFilter("brand", v ?? "")}
               >
-                <SelectTrigger className="h-8">
+                <SelectTrigger>
                   <SelectValue placeholder="Tüm Markalar" />
                 </SelectTrigger>
                 <SelectContent>

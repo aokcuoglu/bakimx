@@ -334,7 +334,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                       <FormLabel>Para Birimi</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "TRY")}>
-                          <SelectTrigger className="w-full h-8">
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Para Birimi" />
                           </SelectTrigger>
                           <SelectContent>
@@ -366,7 +366,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                       <FormLabel>Tedarikçi Seç</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-                          <SelectTrigger className="w-full h-8">
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Tedarikçi seçin (opsiyonel)" />
                           </SelectTrigger>
                           <SelectContent>

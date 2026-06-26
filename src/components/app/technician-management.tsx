@@ -7,6 +7,7 @@ import { TECHNICIAN_ROLES } from "@/lib/constants"
 import type { TechnicianRoleKey } from "@/lib/constants"
 import { createTechnicianAction, toggleTechnicianActiveAction } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 type TechnicianRow = {
   id: string
@@ -32,13 +33,14 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
             <p className="text-xs text-muted-foreground">İş emirlerine atama yapabileceğiniz personeli yönetin</p>
           </div>
         </div>
-        <button
+        <Button
+          size="lg"
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation"
+          className="touch-manipulation"
         >
           <Plus className="size-4" />
           Ekle
-        </button>
+        </Button>
       </div>
 
       {showForm && (
@@ -91,7 +93,10 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                     {t.phone}
                   </div>
                 </div>
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     startTransition(async () => {
                       await toggleTechnicianActiveAction(t.id)
@@ -100,14 +105,14 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                   }}
                   disabled={isPending}
                   className={cn(
-                    "text-xs font-medium px-3 py-1.5 rounded-lg transition-colors touch-manipulation disabled:opacity-50",
+                    "touch-manipulation",
                     t.isActive
-                      ? "text-destructive hover:bg-destructive/10 border border-destructive/20"
-                      : "text-success hover:bg-success/10 border border-success/20"
+                      ? "text-destructive hover:bg-destructive/10 border-destructive/20"
+                      : "text-success hover:bg-success/10 border-success/20"
                   )}
                 >
                   {t.isActive ? "Pasif Yap" : "Aktif Yap"}
-                </button>
+                </Button>
               </div>
             )
           })}
@@ -163,7 +168,6 @@ function AddTechnicianForm({
           onChange={(e) => setFullName(e.target.value)}
           placeholder="Ad Soyad *"
           required
-          className="h-11"
         />
         <Input
           type="tel"
@@ -171,7 +175,6 @@ function AddTechnicianForm({
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Telefon *"
           required
-          className="h-11"
         />
       </div>
       <div className="flex flex-wrap gap-2">
@@ -192,21 +195,24 @@ function AddTechnicianForm({
         ))}
       </div>
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={isPending || !fullName.trim() || !phone.trim()}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+          className="touch-manipulation"
         >
           <Plus className="size-4" />
           Ekle
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={onDone}
-          className="inline-flex items-center h-10 px-4 rounded-lg border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-colors touch-manipulation"
+          className="touch-manipulation"
         >
           İptal
-        </button>
+        </Button>
       </div>
     </form>
   )
