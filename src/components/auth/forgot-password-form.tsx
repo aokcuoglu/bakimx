@@ -174,7 +174,7 @@ export function ForgotPasswordForm() {
                 name="name"
                 placeholder="Adınız Soyadınız"
                 required
-                className="h-10 pl-9"
+                className="pl-9"
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? "name-error" : undefined}
               />
@@ -197,7 +197,7 @@ export function ForgotPasswordForm() {
                 name="businessName"
                 placeholder="İşletme Adı"
                 required
-                className="h-10 pl-9"
+                className="pl-9"
                 aria-invalid={!!errors.businessName}
                 aria-describedby={errors.businessName ? "businessName-error" : undefined}
               />
@@ -223,7 +223,7 @@ export function ForgotPasswordForm() {
                 type="email"
                 placeholder="ornek@email.com"
                 required
-                className="h-10 pl-9"
+                className="pl-9"
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
               />
@@ -247,7 +247,7 @@ export function ForgotPasswordForm() {
                 type="tel"
                 placeholder="0 (5XX) XXX XX XX"
                 required
-                className="h-10 pl-9"
+                className="pl-9"
                 aria-invalid={!!errors.phone}
                 aria-describedby={errors.phone ? "phone-error" : undefined}
               />
@@ -269,7 +269,7 @@ export function ForgotPasswordForm() {
             name="subject"
             value="Şifre Desteği"
             readOnly
-            className="h-10 bg-muted text-muted-foreground cursor-not-allowed"
+            className="bg-muted text-muted-foreground cursor-not-allowed"
           />
         </div>
 
@@ -301,7 +301,7 @@ export function ForgotPasswordForm() {
           type="submit"
           size="lg"
           disabled={loading}
-          className="w-full h-10"
+          className="w-full"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

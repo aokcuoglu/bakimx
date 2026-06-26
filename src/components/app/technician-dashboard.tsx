@@ -83,7 +83,7 @@ export function TechnicianDashboard({
           value={selectedId}
           onValueChange={(v) => setSelectedId(v ?? "")}
         >
-          <SelectTrigger className="h-11" aria-label="Teknisyen seç">
+          <SelectTrigger aria-label="Teknisyen seç">
             <SelectValue placeholder="Teknisyen seç">
               {(value: string | null) => {
                 if (!value) return null

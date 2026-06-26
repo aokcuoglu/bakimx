@@ -250,7 +250,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                         <FormLabel className="text-xs font-medium text-muted-foreground">İş Emri (opsiyonel)</FormLabel>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
-                            <SelectTrigger className="w-full h-10 mt-1.5">
+                            <SelectTrigger className="w-full mt-1.5">
                               <SelectValue placeholder="İş emri seçin (opsiyonel)" />
                             </SelectTrigger>
                           </FormControl>
@@ -455,14 +455,14 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
             </Card>
 
             <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-background border-t border-border px-4 py-3 safe-area-bottom">
-              <Button type="submit" disabled={loading} className="w-full h-11">
+              <Button type="submit" disabled={loading} size="lg" className="w-full">
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
                 Tahsilatı Kaydet
               </Button>
             </div>
 
             <div className="hidden lg:block">
-              <Button type="submit" disabled={loading} className="w-full h-11">
+              <Button type="submit" disabled={loading} size="lg" className="w-full">
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
                 Tahsilatı Kaydet
               </Button>

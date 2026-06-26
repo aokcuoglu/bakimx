@@ -279,7 +279,7 @@ export function AppShellChrome({
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
                       placeholder="Plaka, müşteri, iş emri ara"
-                      className="h-9 sm:h-10 pl-9"
+                      className="pl-9"
                     />
                   </div>
                 </form>

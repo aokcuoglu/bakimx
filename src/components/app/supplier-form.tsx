@@ -227,7 +227,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
                     <FormLabel>Durum</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "true")}>
-                        <SelectTrigger className="w-full h-8">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Durum" />
                         </SelectTrigger>
                         <SelectContent>

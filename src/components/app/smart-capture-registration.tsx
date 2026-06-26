@@ -286,8 +286,9 @@ export function SmartCaptureRegistration() {
               </div>
               <Button
                 nativeButton={false}
+                size="lg"
                 render={<Link href={saveResult.intakeUrl} />}
-                className="h-11 shrink-0 gap-2"
+                className="shrink-0 gap-2"
               >
                 İş Emrine Devam Et
                 <ArrowRight className="size-4" />
@@ -488,7 +489,7 @@ export function SmartCaptureRegistration() {
             <Button
               type="button"
               size="lg"
-              className="h-12 w-full max-w-md gap-2 text-base"
+              className="w-full max-w-md gap-2 text-base"
               onClick={() => setScannerOpen(true)}
             >
               <Camera className="size-5" />

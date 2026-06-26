@@ -53,18 +53,21 @@ export default async function CashboxPage() {
             <Button
               nativeButton={false}
               variant="outline"
+              size="lg"
               render={<Link href="/cashbox/aging" />}
             >
               <BarChart3 className="size-4" />
               Yaşlandırma
             </Button>
-            <Link
-              href="/cashbox/payments/new"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              size="lg"
+              className="touch-manipulation"
+              render={<Link href="/cashbox/payments/new" />}
             >
               <Plus className="size-4" />
               Yeni Tahsilat
-            </Link>
+            </Button>
           </div>
         </div>
 

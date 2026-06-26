@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Check, CircleCheck, MessageCircle, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import type { PlanTier } from "@/lib/plan"
 
@@ -103,20 +103,19 @@ export function PlanPackages({
               </ul>
 
               {isOwned ? (
-                <div className="inline-flex items-center justify-center gap-1.5 h-10 rounded-lg bg-muted text-sm font-medium text-muted-foreground">
+                <Button type="button" disabled variant="secondary" size="lg" className="w-full">
                   <Check className="size-4" /> Mevcut paketiniz
-                </div>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant={pkg.popular ? "default" : "outline"}
+                  size="lg"
+                  className="w-full"
                   onClick={() => handleSelect(pkg.tier)}
-                  className={cn(
-                    buttonVariants({ variant: pkg.popular ? "default" : "outline", size: "default" }),
-                    "w-full h-10"
-                  )}
                 >
                   Bu paketi seç
-                </button>
+                </Button>
               )}
             </div>
           )

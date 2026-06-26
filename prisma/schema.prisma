@@ -1346,3 +1346,83 @@ enum SupportRequestStatus {
   resolved
   archived
 }
+
+/// Global vehicle catalog (NOT tenant-scoped). Read-only reference data shared
+/// by all workshops, imported from the getirbakim database. Source integer IDs
+/// are preserved so foreign keys transfer. See scripts/migrate-vehicle-catalog.ts.
+model VehicleBrand {
+  id     Int            @id
+  name   String         @unique
+  models VehicleModel[]
+
+  @@map("vehicle_brands")
+}
+
+model VehicleModel {
+  id       Int           @id
+  name     String
+  dateFrom String?       @map("date_from")
+  dateTo   String?       @map("date_to")
+  brandId  Int           @map("brand_id")
+  brand    VehicleBrand  @relation(fields: [brandId], references: [id])
+  types    VehicleType[]
+
+  @@index([brandId])
+  @@index([brandId, name])
+  @@map("vehicle_models")
+}
+
+model VehicleType {
+  id       Int                 @id
+  name     String
+  cc       Int?
+  fuelType String?             @map("fuel_type")
+  hp       Int?
+  kwt      Int?
+  yearFrom String?             @map("year_of_constr_from")
+  yearTo   String?             @map("year_of_constr_to")
+  modelId  Int                 @map("model_id")
+  model    VehicleModel        @relation(fields: [modelId], references: [id])
+  details  VehicleTypeDetail[]
+
+  @@index([modelId])
+  @@map("vehicle_types")
+}
+
+model VehicleTypeDetail {
+  id                    BigInt   @id
+  vehicleTypeId         Int      @map("vehicle_type_id")
+  brakeSystem           String?  @map("brake_system")
+  carId                 Int?     @map("car_id")
+  ccmTech               Int?     @map("ccm_tech")
+  constructionType      String?  @map("construction_type")
+  cylinder              Int?
+  cylinderCapacityCcm   Int?     @map("cylinder_capacity_ccm")
+  cylinderCapacityLiter Int?     @map("cylinder_capacity_liter")
+  fuelType              String?  @map("fuel_type")
+  fuelTypeProcess       String?  @map("fuel_type_process")
+  impulsionType         String?  @map("impulsion_type")
+  manuId                Int?     @map("manu_id")
+  manuName              String?  @map("manu_name")
+  modId                 Int?     @map("mod_id")
+  modelName             String?  @map("model_name")
+  motorType             String?  @map("motor_type")
+  powerHpFrom           Int?     @map("power_hp_from")
+  powerHpTo             Int?     @map("power_hp_to")
+  powerKwFrom           Int?     @map("power_kw_from")
+  powerKwTo             Int?     @map("power_kw_to")
+  typeName              String?  @map("type_name")
+  typeNumber            Int?     @map("type_number")
+  valves                Int?
+  yearOfConstrFrom      String?  @map("year_of_constr_from")
+  yearOfConstrTo        String?  @map("year_of_constr_to")
+  rmiTypeId             Int?     @map("rmi_type_id")
+  motorCodes            Json?    @map("motor_codes")
+  rawPayload            Json?    @map("raw_payload")
+  createdAt             DateTime @map("created_at")
+  updatedAt             DateTime @map("updated_at")
+  type                  VehicleType @relation(fields: [vehicleTypeId], references: [id])
+
+  @@index([vehicleTypeId])
+  @@map("vehicle_type_details")
+}

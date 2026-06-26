@@ -128,7 +128,7 @@ export function OrdersReport({
               value={technician}
               onValueChange={(v) => setTechnician(v ?? "")}
             >
-              <SelectTrigger className="w-full h-9">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>
@@ -145,7 +145,7 @@ export function OrdersReport({
               value={status}
               onValueChange={(v) => setStatus(v ?? "")}
             >
-              <SelectTrigger className="w-full h-9">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>

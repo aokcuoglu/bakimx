@@ -66,14 +66,14 @@ export function HeroSection() {
             >
               <Link
                 href="/register"
-                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base h-10 px-8 gap-2 shadow-lg shadow-primary/25" })}
+                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 gap-2 shadow-lg shadow-primary/25" })}
               >
                 15 Gün Ücretsiz Dene
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <a
                 href="#nasil-calisir"
-                className={buttonVariants({ variant: "outline", size: "lg", className: "text-base h-10 px-8 border-primary/30" })}
+                className={buttonVariants({ variant: "outline", size: "lg", className: "text-base px-8 border-primary/30" })}
               >
                 Nasıl Çalıştığını Gör
               </a>

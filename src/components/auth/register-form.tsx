@@ -93,7 +93,7 @@ export function RegisterForm() {
           </Label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-            <Input id="workshopName" name="workshopName" required placeholder="Örnek Oto Servis" className="h-10 pl-9" />
+            <Input id="workshopName" name="workshopName" required placeholder="Örnek Oto Servis" className="pl-9" />
           </div>
         </div>
 
@@ -102,12 +102,12 @@ export function RegisterForm() {
             <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">Ad</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="firstName" name="firstName" required placeholder="Adınız" className="h-10 pl-9" />
+              <Input id="firstName" name="firstName" required placeholder="Adınız" className="pl-9" />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="lastName" className="text-sm font-medium text-muted-foreground">Soyad</Label>
-            <Input id="lastName" name="lastName" required placeholder="Soyadınız" className="h-10" />
+            <Input id="lastName" name="lastName" required placeholder="Soyadınız" />
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export function RegisterForm() {
           <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">E-posta</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-            <Input id="email" name="email" type="email" autoComplete="email" required placeholder="ornek@email.com" className="h-10 pl-9" />
+            <Input id="email" name="email" type="email" autoComplete="email" required placeholder="ornek@email.com" className="pl-9" />
           </div>
         </div>
 
@@ -124,21 +124,21 @@ export function RegisterForm() {
             <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Telefon</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="phone" name="phone" type="tel" required placeholder="0555 123 4567" className="h-10 pl-9" />
+              <Input id="phone" name="phone" type="tel" required placeholder="0555 123 4567" className="pl-9" />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="city" className="text-sm font-medium text-muted-foreground">Şehir</Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="city" name="city" required placeholder="İstanbul" className="h-10 pl-9" />
+              <Input id="city" name="city" required placeholder="İstanbul" className="pl-9" />
             </div>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="address" className="text-sm font-medium text-muted-foreground">Adres</Label>
-          <Input id="address" name="address" required placeholder="Sanayi Mah. 1. Cad. No:5" className="h-10" />
+          <Input id="address" name="address" required placeholder="Sanayi Mah. 1. Cad. No:5" />
         </div>
 
         <div className="space-y-2">
@@ -153,7 +153,7 @@ export function RegisterForm() {
               required
               minLength={8}
               placeholder="En az 8 karakter"
-              className="h-10 pl-9 pr-9"
+              className="pl-9 pr-9"
             />
             <button
               type="button"
