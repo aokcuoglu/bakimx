@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
+import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 
 export type InlineCreateResult = {
   customerId: string
@@ -108,8 +109,13 @@ export function InlineCreateModal({
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
             <div className="space-y-1"><Label>Plaka *</Label><Input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} /></div>
             <div className="space-y-1"><Label>Yıl</Label><Input value={modelYear} onChange={(e) => setModelYear(e.target.value)} inputMode="numeric" /></div>
-            <div className="space-y-1"><Label>Marka *</Label><Input value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
-            <div className="space-y-1"><Label>Model *</Label><Input value={model} onChange={(e) => setModel(e.target.value)} /></div>
+            <VehicleBrandModelPicker
+              brand={brand}
+              model={model}
+              onBrandChange={setBrand}
+              onModelChange={setModel}
+              required
+            />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
