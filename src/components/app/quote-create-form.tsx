@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useActionState } from "react"
+import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -256,7 +256,7 @@ export function QuoteCreateForm() {
         note: i.note || undefined,
       }))
     formData.set("items", JSON.stringify(cleanItems))
-    formAction(formData)
+    startTransition(() => formAction(formData))
   }
 
   return (

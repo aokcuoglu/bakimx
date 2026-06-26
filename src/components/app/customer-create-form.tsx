@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   Building2,
@@ -150,7 +150,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
         formData.set(key, String(value))
       }
     }
-    formAction(formData)
+    startTransition(() => formAction(formData))
   }
 
   return (

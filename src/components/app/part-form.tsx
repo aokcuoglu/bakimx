@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -107,7 +107,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
     for (const [key, value] of Object.entries(values)) {
       formData.set(key, String(value))
     }
-    formAction(formData)
+    startTransition(() => formAction(formData))
   }
 
   return (
