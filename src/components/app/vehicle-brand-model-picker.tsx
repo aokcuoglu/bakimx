@@ -86,6 +86,7 @@ export function VehicleBrandModelPicker({
           items={brands}
           filter={(item: Brand, query: string) =>
             item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+          itemToStringLabel={(b: Brand) => b.name}
           itemToStringValue={(b: Brand) => b.name}
           inputValue={brand}
           onInputValueChange={(v: string) => { onBrandChange(v); selectBrandId(v) }}
@@ -117,6 +118,7 @@ export function VehicleBrandModelPicker({
           items={models}
           filter={(item: Model, query: string) =>
             item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+          itemToStringLabel={(m: Model) => m.name}
           itemToStringValue={(m: Model) => m.name}
           inputValue={model}
           onInputValueChange={(v: string) => onModelChange(v)}
