@@ -26,9 +26,6 @@ import { BrandRail } from "@/components/billing/brand-rail"
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
 
-// Adım navigasyon butonları: web standardı lg (h-9), mobilde dokunma hedefi için h-12.
-const NAV_BTN = "h-12 md:h-9"
-
 export function PurchaseWizard({
   mode,
   initialTier = "pro",
@@ -240,9 +237,7 @@ export function PurchaseWizard({
                       <div className="flex justify-end pt-2">
                         <Button
                           type="button"
-                          size="lg"
-                          className={NAV_BTN}
-                          onClick={() => next([])}
+                          size="lg"                          onClick={() => next([])}
                         >
                           Devam <ChevronRight className="size-4" />
                         </Button>
@@ -311,14 +306,12 @@ export function PurchaseWizard({
                         </label>
                       )}
                       <div className="flex justify-between pt-3">
-                        <Button type="button" variant="outline" size="lg" className={NAV_BTN} onClick={() => setStep(0)}>
+                        <Button type="button" variant="outline" size="lg" onClick={() => setStep(0)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
                         <Button
                           type="button"
-                          size="lg"
-                          className={NAV_BTN}
-                          onClick={() =>
+                          size="lg"                          onClick={() =>
                             next(
                               isPublic
                                 ? ["workshopName", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
@@ -347,15 +340,13 @@ export function PurchaseWizard({
                         </p>
                       )}
                       <div className="flex justify-between pt-1">
-                        <Button type="button" variant="outline" size="lg" className={NAV_BTN} onClick={() => setStep(1)}>
+                        <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
                           <ChevronLeft className="size-4" /> Geri
                         </Button>
                         <Button
                           type="button"
                           size="lg"
-                          disabled={loading}
-                          className={NAV_BTN}
-                          onClick={submit}
+                          disabled={loading}                          onClick={submit}
                         >
                           {loading ? (
                             <>

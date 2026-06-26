@@ -83,7 +83,7 @@ export function NewOrderSelector({ intakes }: { intakes: IntakeRow[] }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Plaka, müşteri veya telefon ile ara..."
-          className="h-10 pl-10"
+          className="pl-10"
         />
       </div>
 

@@ -23,6 +23,7 @@ import {
   startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 type OrderData = {
@@ -216,24 +217,28 @@ export function TechnicianOrderDetail({
             <span className="text-xs text-muted-foreground">
               Başlangıç: {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
             </span>
-            <button
+            <Button
+              variant="destructive"
+              size="lg"
               onClick={handleStopLabor}
               disabled={isPending}
-              className="ml-auto inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+              className="ml-auto touch-manipulation"
             >
               <Pause className="size-4" />
               Durdur
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
+            variant="success"
+            size="lg"
             onClick={handleStartLabor}
             disabled={isPending || !canStart && !canHold}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-success hover:bg-success/90 text-success-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+            className="touch-manipulation"
           >
             <Play className="size-4" />
             İşçilik Başlat
-          </button>
+          </Button>
         )}
 
         {order.laborSessions.filter((l) => l.endTime).length > 0 && (
@@ -358,34 +363,39 @@ export function TechnicianOrderDetail({
 
       <div className="sticky bottom-0 z-20 bg-white border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex gap-2 sm:justify-center">
         {canStart && (
-          <button
+          <Button
+            size="lg"
             onClick={handleStartWork}
             disabled={isPending}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 h-12 sm:h-11 px-6 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation disabled:opacity-50"
+            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
           >
             <Play className="size-5" />
             İşe Başla
-          </button>
+          </Button>
         )}
         {canHold && (
-          <button
+          <Button
+            variant="warning"
+            size="lg"
             onClick={handleHoldWork}
             disabled={isPending}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 h-12 sm:h-11 px-6 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground text-sm font-semibold transition-colors touch-manipulation disabled:opacity-50"
+            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
           >
             <Pause className="size-5" />
             Beklemeye Al
-          </button>
+          </Button>
         )}
         {canComplete && (
-          <button
+          <Button
+            variant="success"
+            size="lg"
             onClick={handleCompleteWork}
             disabled={isPending}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 h-12 sm:h-11 px-6 rounded-lg bg-success hover:bg-success/90 text-success-foreground text-sm font-semibold transition-colors touch-manipulation disabled:opacity-50"
+            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
           >
             <CheckCircle2 className="size-5" />
             Tamamla
-          </button>
+          </Button>
         )}
         {!canStart && !canHold && !canComplete && (
           <div className="flex-1 text-center text-sm text-muted-foreground py-2">
@@ -564,23 +574,25 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Kontrol maddesi açıklaması..."
         required
-        className="h-10"
       />
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={isPending || !description.trim()}
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+          className="touch-manipulation"
         >
           Ekle
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={() => { setShow(false); setDescription("") }}
-          className="inline-flex items-center h-9 px-4 rounded-lg border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-colors touch-manipulation"
+          className="touch-manipulation"
         >
           İptal
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -653,18 +665,20 @@ function PartsRequestSection({
                 {statusInfo?.label || req.status}
               </span>
               {nextStatusMap[req.status] && (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     startTransition(async () => {
                       await updatePartsRequestStatusAction(req.id, nextStatusMap[req.status])
                     })
                   }}
                   disabled={isPending}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors touch-manipulation disabled:opacity-50"
+                  className="touch-manipulation"
                 >
                   <CheckCircle2 className="size-3" />
                   {nextLabelMap[req.status]}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -720,7 +734,6 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
         onChange={(e) => setPartName(e.target.value)}
         placeholder="Parça adı *"
         required
-        className="h-10"
       />
       <div className="flex gap-2">
         <Input
@@ -728,14 +741,13 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
           value={partSku}
           onChange={(e) => setPartSku(e.target.value)}
           placeholder="SKU / OEM No"
-          className="h-10"
         />
         <Input
           type="number"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           min="1"
-          className="w-20 h-10"
+          className="w-20"
         />
       </div>
       <Input
@@ -743,24 +755,26 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Not (opsiyonel)"
-        className="h-10"
       />
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={isPending || !partName.trim()}
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+          className="touch-manipulation"
         >
           <Send className="size-3.5" />
           Talep Et
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={() => { setShow(false); setPartName("") }}
-          className="inline-flex items-center h-9 px-4 rounded-lg border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-colors touch-manipulation"
+          className="touch-manipulation"
         >
           İptal
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -827,16 +841,17 @@ function AddInternalNoteForm({ orderId }: { orderId: string }) {
         onChange={(e) => setContent(e.target.value)}
         placeholder="İç not ekle..."
         required
-        className="h-10"
       />
-      <button
+      <Button
         type="submit"
+        variant="warning"
+        size="lg"
         disabled={isPending || !content.trim()}
-        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+        className="touch-manipulation"
       >
         <Plus className="size-4" />
         Ekle
-      </button>
+      </Button>
     </form>
   )
 }

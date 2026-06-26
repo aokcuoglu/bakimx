@@ -206,7 +206,7 @@ export function IntakeWizard({
                   onClick={() => setStep(3)}
                   disabled={!selectedCustomerId || !selectedVehicleId}
                   size="lg"
-                  className="h-12 gap-2"
+                  className="gap-2"
                 >
                   Devam <ChevronRight className="size-4" />
                 </Button>
@@ -227,7 +227,7 @@ export function IntakeWizard({
                   <FormItem>
                     <FormLabel>Kilometre</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="50000" className="h-12" />
+                      <Input {...field} type="number" placeholder="50000" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -264,7 +264,7 @@ export function IntakeWizard({
                 )}
               />
               <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg" className="h-12">
+                <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
                   Geri
                 </Button>
                 <Button
@@ -272,7 +272,7 @@ export function IntakeWizard({
                   onClick={handleCreateIntake}
                   disabled={loading || !customerComplaint.trim()}
                   size="lg"
-                  className="h-12 gap-2"
+                  className="gap-2"
                 >
                   {loading ? "Oluşturuluyor..." : "Kabul Oluştur ve Devam Et"}
                 </Button>
@@ -288,10 +288,10 @@ export function IntakeWizard({
             <CardContent className="space-y-4">
               {intakeId && <PhotoAnnotate intakeFormId={intakeId} />}
               <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg" className="h-12">
+                <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
                   Geri
                 </Button>
-                <Button nativeButton={false} size="lg" className="h-12 gap-2" render={<Link href={`/intakes/${intakeId}`} />}>
+                <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={`/intakes/${intakeId}`} />}>
                   İş Emrine Git
                 </Button>
               </div>

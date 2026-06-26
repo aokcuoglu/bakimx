@@ -267,11 +267,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Yeni Tarih</label>
-                  <Input type="date" value={postponeDate} onChange={(e) => setPostponeDate(e.target.value)} className="mt-1 h-9" />
+                  <Input type="date" value={postponeDate} onChange={(e) => setPostponeDate(e.target.value)} className="mt-1" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Yeni KM</label>
-                  <Input type="number" min="1" value={postponeMileage} onChange={(e) => setPostponeMileage(e.target.value)} placeholder="Örn: 20000" className="mt-1 h-9" />
+                  <Input type="number" min="1" value={postponeMileage} onChange={(e) => setPostponeMileage(e.target.value)} placeholder="Örn: 20000" className="mt-1" />
                 </div>
               </div>
               <div className="flex items-center gap-2">

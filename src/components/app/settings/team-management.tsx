@@ -17,6 +17,14 @@ import {
 import type { UserRole } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { ROLE_LABELS, ROLE_RANK, rolesUpTo } from "@/lib/roles"
 import {
   inviteMemberAction,
@@ -125,13 +133,14 @@ export function TeamManagement({
           </div>
         </div>
         {canManage && (
-          <button
+          <Button
+            size="lg"
             onClick={() => setShowInvite((s) => !s)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation shrink-0"
+            className="shrink-0 touch-manipulation"
           >
             <UserPlus className="size-4" />
             Davet Et
-          </button>
+          </Button>
         )}
       </div>
 
@@ -159,13 +168,16 @@ export function TeamManagement({
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate text-xs bg-white border rounded px-2 py-1.5">{lastInviteUrl}</code>
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => copy(lastInviteUrl)}
-              className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors shrink-0"
+              className="shrink-0"
             >
               {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
               {copied ? "Kopyalandı" : "Kopyala"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -197,34 +209,37 @@ export function TeamManagement({
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="E-posta *"
               required
-              className="h-11"
             />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as UserRole)}
-              className="h-11 rounded-lg border border-border bg-white px-3 text-sm"
-            >
-              {assignable.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-              ))}
-            </select>
+            <Select value={inviteRole} onValueChange={(v) => v && setInviteRole(v as UserRole)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {assignable.map((r) => (
+                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
+              size="lg"
               disabled={isPending || !inviteEmail.trim()}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation disabled:opacity-50"
+              className="touch-manipulation"
             >
               {isPending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
               Davet Gönder
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               onClick={() => setShowInvite(false)}
-              className="inline-flex items-center h-10 px-4 rounded-lg border border-border text-muted-foreground text-sm font-medium hover:bg-muted transition-colors touch-manipulation"
+              className="touch-manipulation"
             >
               İptal
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -265,28 +280,35 @@ export function TeamManagement({
 
               {manageable && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <select
+                  <Select
                     value={m.role}
                     disabled={isPending}
-                    onChange={(e) => run(() => updateMemberRoleAction(m.id, e.target.value))}
-                    className="h-9 rounded-lg border border-border bg-white px-2 text-xs"
+                    onValueChange={(v) => v && run(() => updateMemberRoleAction(m.id, v))}
                   >
-                    {assignable.map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                    ))}
-                  </select>
-                  <button
+                    <SelectTrigger size="sm" className="text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignable.map((r) => (
+                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => run(() => setMemberActiveAction(m.id, !m.isActive))}
                     disabled={isPending}
                     className={cn(
-                      "text-xs font-medium px-3 py-1.5 rounded-lg transition-colors touch-manipulation disabled:opacity-50 border",
+                      "touch-manipulation",
                       m.isActive
                         ? "text-destructive hover:bg-destructive/10 border-destructive/20"
                         : "text-success hover:bg-success/10 border-success/20"
                     )}
                   >
                     {m.isActive ? "Pasif Yap" : "Aktif Yap"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -310,20 +332,24 @@ export function TeamManagement({
                 </div>
                 {canManage && (
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => run(() => resendInviteAction(inv.id), (r) => setLastInviteUrl(r.inviteUrl || ""))}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       <RotateCw className="size-3.5" /> Yeniden gönder
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => run(() => revokeInviteAction(inv.id))}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                     >
                       <X className="size-3.5" /> İptal
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>

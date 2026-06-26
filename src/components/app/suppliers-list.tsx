@@ -133,7 +133,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               value={currentFilters.status}
               onValueChange={(v) => applyFilter("status", v ?? "all")}
             >
-              <SelectTrigger className="h-8">
+              <SelectTrigger>
                 <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>

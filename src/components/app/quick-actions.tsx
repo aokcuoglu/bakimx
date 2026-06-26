@@ -10,6 +10,8 @@ import {
   FileText,
 } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+
 type QuickAction = {
   key: string
   label: string
@@ -27,25 +29,30 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
         const Icon = action.icon
         if (action.variant === "primary") {
           return (
-            <Link
+            <Button
               key={action.key}
-              href={action.href}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation"
+              nativeButton={false}
+              size="lg"
+              className="touch-manipulation"
+              render={<Link href={action.href} />}
             >
               <Plus className="size-4" />
               {action.label}
-            </Link>
+            </Button>
           )
         }
         return (
-          <Link
+          <Button
             key={action.key}
-            href={action.href}
-            className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
+            nativeButton={false}
+            variant="outline"
+            size="lg"
+            className="touch-manipulation"
+            render={<Link href={action.href} />}
           >
             <Icon className="size-4" />
             <span className="hidden sm:inline">{action.label}</span>
-          </Link>
+          </Button>
         )
       })}
     </div>
