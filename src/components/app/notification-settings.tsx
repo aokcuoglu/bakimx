@@ -37,7 +37,16 @@ const PROVIDER_LABELS: Record<string, string> = {
   netgsm: "Netgsm",
   business: "WhatsApp Business API",
   resend: "Resend",
+  gmail: "Gmail",
 }
+
+const TEST_RECIPIENT_PLACEHOLDER: Record<TemplateChannel, string> = {
+  sms: "5xx xxx xx xx",
+  whatsapp: "5xx xxx xx xx",
+  email: "ornek@eposta.com",
+}
+
+type TestResult = { type: "success" | "error"; text: string }
 
 export function NotificationSettings({
   templates,
@@ -51,6 +60,38 @@ export function NotificationSettings({
   const [editContent, setEditContent] = useState("")
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [testRecipient, setTestRecipient] = useState<Record<TemplateChannel, string>>({ sms: "", whatsapp: "", email: "" })
+  const [testResult, setTestResult] = useState<Partial<Record<TemplateChannel, TestResult>>>({})
+  const [testingChannel, setTestingChannel] = useState<TemplateChannel | null>(null)
+
+  async function handleTestSend(channel: TemplateChannel) {
+    const recipient = testRecipient[channel].trim()
+    if (!recipient) {
+      setTestResult((prev) => ({ ...prev, [channel]: { type: "error", text: "Alıcı bilgisi girin" } }))
+      return
+    }
+    setTestingChannel(channel)
+    setTestResult((prev) => ({ ...prev, [channel]: undefined }))
+    try {
+      const formData = new FormData()
+      formData.set("channel", channel)
+      formData.set("recipient", recipient)
+      const res = await fetch("/api/communications/test", { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        const providerLabel = PROVIDER_LABELS[data.provider] || data.provider
+        const text = data.provider === "mock"
+          ? `Test modu (${providerLabel}) — gerçek gönderim yapılmadı.`
+          : `Gönderildi — ${providerLabel}.`
+        setTestResult((prev) => ({ ...prev, [channel]: { type: "success", text } }))
+      } else {
+        setTestResult((prev) => ({ ...prev, [channel]: { type: "error", text: data.error || "Gönderilemedi" } }))
+      }
+    } catch {
+      setTestResult((prev) => ({ ...prev, [channel]: { type: "error", text: "Bağlantı hatası" } }))
+    }
+    setTestingChannel(null)
+  }
 
   async function handleSave(templateKey: string, channel: TemplateChannel) {
     setSaving(true)
@@ -107,19 +148,49 @@ export function NotificationSettings({
       <div className="bg-white rounded-lg border border-border p-5">
         <h3 className="text-sm font-semibold text-foreground mb-3">Aktif Sağlayıcılar</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {(["sms", "whatsapp", "email"] as const).map((ch) => (
-            <div key={ch} className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[ch as TemplateChannel]}`}>
-                {CHANNEL_LABELS[ch as TemplateChannel]}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {PROVIDER_LABELS[providers[ch]] || providers[ch]}
-              </span>
-            </div>
-          ))}
+          {(["sms", "whatsapp", "email"] as const).map((ch) => {
+            const result = testResult[ch]
+            const isTesting = testingChannel === ch
+            return (
+              <div key={ch} className="flex flex-col gap-2 p-3 rounded-lg bg-muted border border-border">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CHANNEL_COLORS[ch]}`}>
+                    {CHANNEL_LABELS[ch]}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {PROVIDER_LABELS[providers[ch]] || providers[ch]}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type={ch === "email" ? "email" : "tel"}
+                    inputMode={ch === "email" ? "email" : "tel"}
+                    value={testRecipient[ch]}
+                    onChange={(e) => setTestRecipient((prev) => ({ ...prev, [ch]: e.target.value }))}
+                    placeholder={TEST_RECIPIENT_PLACEHOLDER[ch]}
+                    className="min-w-0 flex-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTestSend(ch)}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? "..." : "Test"}
+                  </Button>
+                </div>
+                {result && (
+                  <p className={`text-xs ${result.type === "success" ? "text-success" : "text-destructive"}`}>
+                    {result.text}
+                  </p>
+                )}
+              </div>
+            )
+          })}
         </div>
         <p className="text-xs text-muted-foreground/70 mt-2">
-          Sağlayıcılar ortam değişkenleri ile yapılandırılır. Varsayılan: mock (test modu)
+          Sağlayıcılar ortam değişkenleri ile yapılandırılır. Varsayılan: mock (test modu). Test butonu, ayarlı sağlayıcı üzerinden örnek mesaj gönderir.
         </p>
       </div>
 
