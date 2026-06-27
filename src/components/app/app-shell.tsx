@@ -238,15 +238,13 @@ export function AppShellChrome({
 
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="w-72 bg-navy text-navy-foreground border-r border-navy-foreground/10 p-0 flex flex-col" showCloseButton={false}>
-            <div className="flex justify-end p-3">
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="text-navy-foreground/60 hover:text-navy-foreground p-1.5 rounded-md hover:bg-navy-foreground/10 touch-manipulation"
-                aria-label="Menüyü kapat"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute top-3 right-3 z-10 text-navy-foreground/60 hover:text-navy-foreground p-1.5 rounded-md hover:bg-navy-foreground/10 touch-manipulation"
+              aria-label="Menüyü kapat"
+            >
+              <X className="size-5" />
+            </button>
             <div className="flex-1 overflow-y-auto">
               <SidebarContent pathname={pathname} onClose={() => setSidebarOpen(false)} />
             </div>
