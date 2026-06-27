@@ -210,7 +210,7 @@ export function TeamManagement({
               placeholder="E-posta *"
               required
             />
-            <Select value={inviteRole} onValueChange={(v) => v && setInviteRole(v as UserRole)}>
+            <Select items={ROLE_LABELS} value={inviteRole} onValueChange={(v) => v && setInviteRole(v as UserRole)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -281,6 +281,7 @@ export function TeamManagement({
               {manageable && (
                 <div className="flex items-center gap-2 shrink-0">
                   <Select
+                    items={ROLE_LABELS}
                     value={m.role}
                     disabled={isPending}
                     onValueChange={(v) => v && run(() => updateMemberRoleAction(m.id, v))}
