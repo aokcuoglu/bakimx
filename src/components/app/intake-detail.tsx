@@ -482,11 +482,11 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
       )}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList variant="line" className="border-b gap-1 overflow-x-auto">
+        <TabsList variant="line" className="w-full max-w-full flex-nowrap border-b gap-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const Icon = tab.icon
             return (
-              <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2.5">
+              <TabsTrigger key={tab.id} value={tab.id} className="shrink-0 px-3 py-2.5">
                 <Icon className="size-4" />
                 {tab.label}
                 {tab.count != null && tab.count > 0 && (
