@@ -49,3 +49,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local-only staging SSH target for sync-dev-to-staging.sh
+scripts/.staging-vps
