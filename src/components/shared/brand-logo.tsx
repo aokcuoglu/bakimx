@@ -131,6 +131,10 @@ export function BrandLogo({
         width={intrinsicWidth}
         height={intrinsicHeight}
         priority={priority}
+        // Logolar vektör SVG; optimize edilmeye gerek yok ve Next optimizer'ı SVG'yi
+        // reddeder (/_next/image 400). unoptimized ile ham /public dosyası doğrudan
+        // servis edilir (middleware kök .svg'leri muaf tuttuğu için 200 döner).
+        unoptimized
         className={`object-contain ${imgClassName ?? ""}`}
         style={{ width: "auto", height: targetHeight }}
       />

@@ -1,9 +1,29 @@
 import { getIronSession } from "iron-session"
 import { cookies } from "next/headers"
 
+/**
+ * Founder impersonation overlay. Layered ON TOP of the real session — the real
+ * admin identity (userId/workshopId) is never overwritten, so impersonation is
+ * a separate, revocable fact. When present and unexpired, getCurrentUser()
+ * resolves the EFFECTIVE user as `targetUserId`, scoping the whole app to the
+ * target tenant with zero per-query changes.
+ */
+export interface ImpersonationOverlay {
+  adminUserId: string
+  targetUserId: string
+  targetWorkshopId: string
+  /** FK to the ImpersonationSession row (revocation handle). */
+  sessionId: string
+  /** Hard expiry as epoch ms — checked without a DB hit. */
+  expiresAt: number
+  /** P2: always true. A read-only context blocks tenant-data writes. */
+  readOnly: boolean
+}
+
 export interface SessionData {
   userId?: string
   workshopId?: string
+  impersonation?: ImpersonationOverlay
 }
 
 function getSessionSecret(): string {
@@ -52,4 +72,20 @@ export async function getSession() {
   const cookieStore = await cookies()
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
   return session
+}
+
+/**
+ * The active (present + unexpired) impersonation overlay, or null. Safe to call
+ * outside a request scope (cron, scripts): cookies() throws there → returns null.
+ * Used by getCurrentUser() (effective identity) and the Prisma write-guard.
+ */
+export async function getActiveImpersonation(): Promise<ImpersonationOverlay | null> {
+  try {
+    const session = await getSession()
+    const imp = session.impersonation
+    if (imp && Date.now() < imp.expiresAt) return imp
+    return null
+  } catch {
+    return null
+  }
 }

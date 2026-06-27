@@ -34,6 +34,11 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Loopback-only publish so DBeaver (or psql) can reach staging Postgres over an
+    # SSH tunnel to the VPS. 127.0.0.1 keeps it off the public internet — access is
+    # only via SSH. 5433 on the host avoids clashing with prod's 5432 on the same VPS.
+    ports:
+      - "127.0.0.1:5433:5432"
     deploy:
       resources:
         limits:

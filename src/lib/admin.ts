@@ -33,3 +33,49 @@ export async function requireAdmin(): Promise<AuthUser> {
   if (!isAdminEmail(user.email)) notFound()
   return user
 }
+
+/**
+ * RBAC-ready seam. Today the only admin role is `founder` (everyone in
+ * ADMIN_EMAILS). When a limited "support agent" role is introduced later, only
+ * `adminRole` resolution + the `can()` table change — the call sites that
+ * already declare a capability keep working unchanged.
+ */
+export type AdminRole = "founder"
+
+export type AdminCapability =
+  | "viewConsole"
+  | "manageWorkshops"
+  | "confirmBilling"
+  | "viewAudit"
+  | "viewHealth"
+  | "impersonate"
+  | "manageFlags"
+  | "exportData"
+
+export interface AdminContext {
+  user: AuthUser
+  adminRole: AdminRole
+}
+
+export async function getAdminContext(): Promise<AdminContext> {
+  const user = await requireAdmin()
+  return { user, adminRole: "founder" }
+}
+
+/**
+ * Capability check. P1: founders can do everything. Restricting a future
+ * `support_agent` is a single edit to this table — not a call-site sweep.
+ */
+export function can(ctx: AdminContext, _capability: AdminCapability): boolean {
+  return ctx.adminRole === "founder"
+}
+
+/**
+ * Gate an admin page/action on a specific capability. 404s (like requireAdmin)
+ * when the capability is denied, so the console's surface isn't revealed.
+ */
+export async function requireAdminCapability(capability: AdminCapability): Promise<AdminContext> {
+  const ctx = await getAdminContext()
+  if (!can(ctx, capability)) notFound()
+  return ctx
+}

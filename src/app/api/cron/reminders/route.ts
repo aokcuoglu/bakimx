@@ -29,12 +29,25 @@ async function handle(request: Request) {
     return NextResponse.json({ error: "Yetkisiz" }, { status: 401 })
   }
 
+  const startedAt = new Date()
+  const { recordCronRun } = await import("@/lib/ops/cron-run")
+
   try {
     const { processAppointmentReminders, processMaintenanceReminders } = await import(
       "@/lib/communications/scheduler"
     )
     const appointmentResult = await processAppointmentReminders()
     const maintenanceResult = await processMaintenanceReminders()
+
+    // Record the run for the ops health surface (best-effort; alerts on failures).
+    await recordCronRun({
+      job: "reminders",
+      startedAt,
+      status: "success",
+      processed: appointmentResult.processed + maintenanceResult.processed,
+      sent: appointmentResult.sent + maintenanceResult.sent,
+      failed: appointmentResult.failed + maintenanceResult.failed,
+    })
 
     return NextResponse.json({
       success: true,
@@ -43,6 +56,7 @@ async function handle(request: Request) {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Bilinmeyen hata"
+    await recordCronRun({ job: "reminders", startedAt, status: "error", errorMessage: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

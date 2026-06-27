@@ -77,6 +77,7 @@ model Workshop {
   reminderExecutionLogs ReminderExecutionLog[]
   invites            Invite[]
   billingOrders      BillingOrder[]
+  featureOverrides   WorkshopFeatureOverride[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -1238,6 +1239,65 @@ model CommunicationLog {
   @@index([sentAt])
 }
 
+// Persisted result of a background cron run (e.g. "reminders"). The cron route
+// returned JSON and forgot — this lets the ops health surface show last-run
+// freshness + failures and gate founder alerts. Global (not workshop-scoped).
+model CronRun {
+  id           String    @id @default(cuid())
+  job          String
+  status       String    @default("success") // "success" | "error"
+  startedAt    DateTime
+  finishedAt   DateTime?
+  processed    Int       @default(0)
+  sent         Int       @default(0)
+  failed       Int       @default(0)
+  errorMessage String?
+  // When a founder alert was sent for this run (debounce handle).
+  alertedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([job, startedAt])
+}
+
+// Per-tenant feature override. Composes with hasFeature(): an override (not
+// expired) wins; otherwise the plan tier is the floor. Lets a founder grant a
+// beta/premium feature to one workshop without touching FEATURE_MIN_TIER.
+model WorkshopFeatureOverride {
+  id         String    @id @default(cuid())
+  workshopId String
+  workshop   Workshop  @relation(fields: [workshopId], references: [id])
+  featureKey String // GatedFeature ("aiAdvisor" | "eInvoice" | "multiBranch" | "rbac") or future "beta_*"
+  enabled    Boolean
+  reason     String?
+  expiresAt  DateTime? // auto-expire (e.g. time-boxed beta grants)
+  createdBy  String // founder userId
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([workshopId, featureKey])
+  @@index([workshopId])
+}
+
+// A founder "login as workshop owner" session. The real admin identity lives in
+// the session overlay (never overwritten); this row is the revocation handle +
+// audit anchor. Global (target refs are plain ids — no back-relations needed).
+model ImpersonationSession {
+  id               String    @id @default(cuid())
+  adminUserId      String // founder who started it
+  targetUserId     String // the (owner) user being impersonated
+  targetWorkshopId String
+  reason           String?
+  readOnly         Boolean   @default(true)
+  startedAt        DateTime  @default(now())
+  expiresAt        DateTime // hard cap (checked without a DB hit)
+  endedAt          DateTime?
+  revokedAt        DateTime?
+
+  @@index([adminUserId])
+  @@index([targetWorkshopId])
+  @@index([expiresAt])
+}
+
 model DemoRequest {
   id              String             @id @default(cuid())
   name            String
@@ -1285,4 +1345,84 @@ enum SupportRequestStatus {
   in_progress
   resolved
   archived
+}
+
+/// Global vehicle catalog (NOT tenant-scoped). Read-only reference data shared
+/// by all workshops, imported from the getirbakim database. Source integer IDs
+/// are preserved so foreign keys transfer. See scripts/migrate-vehicle-catalog.ts.
+model VehicleBrand {
+  id     Int            @id
+  name   String         @unique
+  models VehicleModel[]
+
+  @@map("vehicle_brands")
+}
+
+model VehicleModel {
+  id       Int           @id
+  name     String
+  dateFrom String?       @map("date_from")
+  dateTo   String?       @map("date_to")
+  brandId  Int           @map("brand_id")
+  brand    VehicleBrand  @relation(fields: [brandId], references: [id])
+  types    VehicleType[]
+
+  @@index([brandId])
+  @@index([brandId, name])
+  @@map("vehicle_models")
+}
+
+model VehicleType {
+  id       Int                 @id
+  name     String
+  cc       Int?
+  fuelType String?             @map("fuel_type")
+  hp       Int?
+  kwt      Int?
+  yearFrom String?             @map("year_of_constr_from")
+  yearTo   String?             @map("year_of_constr_to")
+  modelId  Int                 @map("model_id")
+  model    VehicleModel        @relation(fields: [modelId], references: [id])
+  details  VehicleTypeDetail[]
+
+  @@index([modelId])
+  @@map("vehicle_types")
+}
+
+model VehicleTypeDetail {
+  id                    BigInt   @id
+  vehicleTypeId         Int      @map("vehicle_type_id")
+  brakeSystem           String?  @map("brake_system")
+  carId                 Int?     @map("car_id")
+  ccmTech               Int?     @map("ccm_tech")
+  constructionType      String?  @map("construction_type")
+  cylinder              Int?
+  cylinderCapacityCcm   Int?     @map("cylinder_capacity_ccm")
+  cylinderCapacityLiter Int?     @map("cylinder_capacity_liter")
+  fuelType              String?  @map("fuel_type")
+  fuelTypeProcess       String?  @map("fuel_type_process")
+  impulsionType         String?  @map("impulsion_type")
+  manuId                Int?     @map("manu_id")
+  manuName              String?  @map("manu_name")
+  modId                 Int?     @map("mod_id")
+  modelName             String?  @map("model_name")
+  motorType             String?  @map("motor_type")
+  powerHpFrom           Int?     @map("power_hp_from")
+  powerHpTo             Int?     @map("power_hp_to")
+  powerKwFrom           Int?     @map("power_kw_from")
+  powerKwTo             Int?     @map("power_kw_to")
+  typeName              String?  @map("type_name")
+  typeNumber            Int?     @map("type_number")
+  valves                Int?
+  yearOfConstrFrom      String?  @map("year_of_constr_from")
+  yearOfConstrTo        String?  @map("year_of_constr_to")
+  rmiTypeId             Int?     @map("rmi_type_id")
+  motorCodes            Json?    @map("motor_codes")
+  rawPayload            Json?    @map("raw_payload")
+  createdAt             DateTime @map("created_at")
+  updatedAt             DateTime @map("updated_at")
+  type                  VehicleType @relation(fields: [vehicleTypeId], references: [id])
+
+  @@index([vehicleTypeId])
+  @@map("vehicle_type_details")
 }

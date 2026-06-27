@@ -23,6 +23,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
+import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 
 type Customer = {
   id: string
@@ -198,32 +199,18 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                 />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="brand"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marka *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Toyota" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                  <VehicleBrandModelPicker
+                    brand={form.watch("brand")}
+                    model={form.watch("model")}
+                    onBrandChange={(v) => form.setValue("brand", v, { shouldValidate: true })}
+                    onModelChange={(v) => form.setValue("model", v, { shouldValidate: true })}
+                    required
                   />
-                  <FormField
-                    control={form.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Corolla" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {(form.formState.errors.brand || form.formState.errors.model) && (
+                    <p className="col-span-2 text-sm text-destructive">
+                      {form.formState.errors.brand?.message ?? form.formState.errors.model?.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

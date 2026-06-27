@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useActionState, useEffect } from "react"
+import { useState, useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -117,7 +117,7 @@ export function AppointmentCreateForm({
     formData.set("customerRequest", values.customerRequest || "")
     formData.set("internalNote", values.internalNote || "")
     formData.set("reminderEnabled", values.reminderEnabled ? "true" : "")
-    formAction(formData)
+    startTransition(() => formAction(formData))
   }
 
   return (

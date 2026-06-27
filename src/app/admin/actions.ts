@@ -1,9 +1,10 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireAdmin } from "@/lib/admin"
+import { requireAdmin, requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
@@ -71,7 +72,7 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_approved")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -86,7 +87,7 @@ export async function rejectWorkshop(workshopId: string): Promise<Result> {
   })
   await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_rejected")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "rejected")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -119,7 +120,7 @@ export async function activateWorkshopPlan(
     "admin_plan_activated",
     JSON.stringify({ tier, status })
   )
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -140,7 +141,7 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
     "admin_extra_seats_set",
     JSON.stringify({ extraSeats })
   )
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -162,7 +163,7 @@ export async function updateDemoRequestStatus(
     where: { id: requestId },
     data: { status: status as DemoRequestStatus },
   })
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -184,7 +185,7 @@ export async function updateSupportRequestStatus(
     where: { id: requestId },
     data: { status: status as SupportRequestStatus },
   })
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -248,7 +249,7 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
 
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
     JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 
@@ -266,6 +267,65 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
   })
   if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
   await AuditLogAction(order.workshopId, admin.id, "BillingOrder", orderId, "billing_order_cancelled")
-  revalidatePath("/admin")
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Set (upsert) a per-tenant feature override. `enabled` forces the feature on/off
+ *  for this workshop regardless of plan tier (resolveFeature composes with this).
+ *  Optional ISO `expiresAt` auto-expires the grant (e.g. time-boxed beta). */
+export async function setWorkshopFeatureOverride(
+  workshopId: string,
+  featureKey: string,
+  enabled: boolean,
+  expiresAtIso?: string | null,
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageFlags")
+  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
+  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
+
+  let expiresAt: Date | null = null
+  if (expiresAtIso) {
+    const d = new Date(expiresAtIso)
+    if (Number.isNaN(d.getTime())) return { ok: false, error: "Geçersiz bitiş tarihi." }
+    expiresAt = d
+  }
+
+  await prisma.workshopFeatureOverride.upsert({
+    where: { workshopId_featureKey: { workshopId, featureKey } },
+    create: { workshopId, featureKey, enabled, expiresAt, createdBy: ctx.user.id },
+    update: { enabled, expiresAt, createdBy: ctx.user.id },
+  })
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "WorkshopFeatureOverride",
+    featureKey,
+    "feature_override_set",
+    JSON.stringify({ featureKey, enabled, expiresAt: expiresAt?.toISOString() ?? null }),
+  )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Remove a per-tenant override → the feature falls back to the plan tier. */
+export async function clearWorkshopFeatureOverride(
+  workshopId: string,
+  featureKey: string,
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageFlags")
+  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
+  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
+
+  await prisma.workshopFeatureOverride.deleteMany({ where: { workshopId, featureKey } })
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "WorkshopFeatureOverride",
+    featureKey,
+    "feature_override_cleared",
+    JSON.stringify({ featureKey }),
+  )
+  revalidatePath("/admin", "layout")
   return { ok: true }
 }

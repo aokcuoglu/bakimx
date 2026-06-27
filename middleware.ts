@@ -31,6 +31,9 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
   const isLocal =
     host === "" || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
+  // Staging serves the whole app on a single host (like local dev) — no bakimx.com /
+  // app.bakimx.com split, so app routes don't bounce to prod. Add staging hosts here.
+  const isSingleHost = isLocal || host === "staging.app.bakimx.com"
 
   // ---- API: host-agnostic ----
   if (pathname.startsWith("/api/")) {
@@ -42,8 +45,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ---- LOCAL DEV: single host, path-based auth (clean URLs, no host split) ----
-  if (isLocal) {
+  // ---- SINGLE-HOST (local dev + staging): path-based auth, clean URLs, no host split ----
+  if (isSingleHost) {
     if (isPublicPage(pathname)) {
       if (pathname === "/login") {
         const session = await getSession()
@@ -100,5 +103,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.svg|manifest.json).*)"],
+  // Statik public asset'leri (özellikle BrandLogo'nun 01..04-bakimx-*.svg
+  // variant'ları) middleware'den muaf tut. Aksi halde kök SVG istekleri auth-gate
+  // edilip /login'e 307'lenir; bu yüzden staging/prod'da (next start/standalone,
+  // dev'in aksine, middleware'i public static'lerde de çalıştırır) logolar
+  // kayboluyordu — hem doğrudan erişimde hem next/image'in kaynak fetch'inde.
+  // Kökteki tüm `.svg` dosyaları (logo.svg dahil) hariç bırakılır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|[^/]+\\.svg$).*)"],
 }
