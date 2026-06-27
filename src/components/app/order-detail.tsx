@@ -1150,7 +1150,7 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
         </CardHeader>
         <CardContent>
           <div className="p-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/intakes" className="text-primary font-medium">İş Emri Kayıtları</Link> üzerinden oluşturulabilir.
+            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/intakes" className="text-primary font-medium">Araç Kabul</Link> ekranından oluşturulabilir.
           </div>
         </CardContent>
       </Card>

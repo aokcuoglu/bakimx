@@ -21,18 +21,11 @@ export function AuthVisualPanel() {
       variants={panelVariants}
       initial="hidden"
       animate="visible"
-      className="relative flex flex-col justify-between h-full min-h-[280px] lg:min-h-full overflow-hidden bg-gradient-to-br from-navy to-navy-light"
+      className="relative flex flex-col justify-between h-full min-h-[280px] lg:min-h-full overflow-hidden bg-navy text-navy-foreground"
     >
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-40"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=900&q=80')",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-navy/90 via-navy/70 to-navy-light/60" />
-      <div className="absolute inset-0 bg-gradient-to-t from-navy via-transparent to-transparent" />
-      <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-brand/5 blur-3xl pointer-events-none" />
+      {/* satın-al BrandRail ile aynı: yumuşak navy gradient + ışık (foto yok) */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-navy via-navy to-navy-light" />
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/25 blur-3xl" />
       <Image
         src="/04-bakimx-icon-dark.svg"
         alt=""

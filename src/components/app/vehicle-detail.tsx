@@ -158,7 +158,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
               render={<Link href={`/intakes/new?vehicleId=${v.id}`} />}
             >
               <ClipboardList className="size-4" />
-              <span className="hidden sm:inline">Yeni İş Emri</span>
+              <span className="hidden sm:inline">Yeni Kabul</span>
             </Button>
             <Button
               nativeButton={false}
@@ -326,7 +326,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
-                Yeni İş Emri
+                Yeni Kabul
               </Link>
             }
           >
@@ -587,7 +587,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             <Link href={`/intakes/new?vehicleId=${v.id}`}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
-                Yeni İş Emri
+                Yeni Kabul
               </Button>
             </Link>
           </div>

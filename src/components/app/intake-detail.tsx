@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,11 +22,11 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
+  Pencil,
   MessageSquare,
   Info,
   Wrench,
   Upload,
-  RefreshCw,
   ImageOff,
   Loader2,
   BarChart3,
@@ -106,8 +107,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
-  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
-
   const [deliveryOtpMode, setDeliveryOtpMode] = useState(false)
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
@@ -122,6 +121,47 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [serviceInfoAccepted, setServiceInfoAccepted] = useState(false)
   const [promoAccepted, setPromoAccepted] = useState(false)
+
+  const [editingInfo, setEditingInfo] = useState(false)
+  const [savingInfo, setSavingInfo] = useState(false)
+  const [editComplaint, setEditComplaint] = useState("")
+  const [editNote, setEditNote] = useState("")
+  const [editMileage, setEditMileage] = useState("")
+
+  function startEditInfo() {
+    setEditComplaint(intake.customerComplaint)
+    setEditNote(intake.internalNote ?? "")
+    setEditMileage(intake.mileageAtIntake != null ? String(intake.mileageAtIntake) : "")
+    setError("")
+    setEditingInfo(true)
+  }
+
+  async function handleSaveInfo() {
+    setSavingInfo(true)
+    setError("")
+    try {
+      const res = await fetch(`/api/intakes/${intake.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerComplaint: editComplaint,
+          internalNote: editNote,
+          mileageAtIntake: editMileage,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setEditingInfo(false)
+        router.refresh()
+      } else {
+        setError(data.error || "Bilgiler güncellenemedi")
+      }
+    } catch {
+      setError("Bir hata oluştu")
+    } finally {
+      setSavingInfo(false)
+    }
+  }
 
   async function handleStatusChange(newStatus: string) {
     setLoading(true)
@@ -214,36 +254,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
       setError("Bir hata oluştu")
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function handleRemovePhoto(id: string) {
-    try {
-      await fetch(`/api/intakes/photos?id=${id}&intakeFormId=${intake.id}`, { method: "DELETE" })
-      router.refresh()
-    } catch {}
-  }
-
-  async function handleReplacePhoto(photoId: string, file: File) {
-    setUploadingPhotoId(photoId)
-    setError("")
-    const formData = new FormData()
-    formData.set("photoId", photoId)
-    formData.set("intakeFormId", intake.id)
-    formData.set("file", file)
-
-    try {
-      const res = await fetch("/api/intakes/photos", { method: "PUT", body: formData })
-      const data = await res.json()
-      if (data.success) {
-        router.refresh()
-      } else {
-        setError(data.error || "Fotoğraf değiştirilemedi")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setUploadingPhotoId(null)
     }
   }
 
@@ -524,24 +534,81 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
           </Card>
 
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><ClipboardList className="size-4" /> Kabul Bilgileri</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="font-medium">Müşteri Şikayeti:</span>
-                  <p className="mt-1 text-muted-foreground">{intake.customerComplaint}</p>
-                </div>
-                {intake.internalNote && (
-                  <div>
-                    <span className="font-medium">İç Not:</span>
-                    <p className="mt-1 text-muted-foreground">{intake.internalNote}</p>
-                  </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Kabul Bilgileri</span>
+                {!editingInfo && (
+                  <button
+                    onClick={startEditInfo}
+                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 px-2 py-1 rounded-lg touch-manipulation"
+                  >
+                    <Pencil className="size-3.5" /> Düzenle
+                  </button>
                 )}
-                <div className="text-xs text-muted-foreground pt-2 border-t">
-                  Oluşturulma: {new Date(intake.createdAt).toLocaleDateString("tr-TR")}
-                  {intake.approvedAt && <> • Onay: {new Date(intake.approvedAt).toLocaleDateString("tr-TR")}</>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {editingInfo ? (
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <Label>Müşteri Şikayeti</Label>
+                    <Textarea
+                      value={editComplaint}
+                      onChange={(e) => setEditComplaint(e.target.value)}
+                      placeholder="Müşterinin bildirdiği arıza/şikayet..."
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div>
+                    <Label>İç Not</Label>
+                    <Textarea
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      placeholder="Servis içi notlar (opsiyonel)..."
+                      className="min-h-[60px]"
+                    />
+                  </div>
+                  <div>
+                    <Label>Kilometre (kabul anı)</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      value={editMileage}
+                      onChange={(e) => setEditMileage(e.target.value)}
+                      placeholder="Örn. 125000"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.
+                  </p>
+                  <div className="flex gap-2 pt-1">
+                    <Button onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
+                      {savingInfo ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditingInfo(false)} disabled={savingInfo} size="sm">
+                      İptal
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="font-medium">Müşteri Şikayeti:</span>
+                    <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{intake.customerComplaint}</p>
+                  </div>
+                  {intake.internalNote && (
+                    <div>
+                      <span className="font-medium">İç Not:</span>
+                      <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{intake.internalNote}</p>
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground pt-2 border-t">
+                    Oluşturulma: {new Date(intake.createdAt).toLocaleDateString("tr-TR")}
+                    {intake.approvedAt && <> • Onay: {new Date(intake.approvedAt).toLocaleDateString("tr-TR")}</>}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -605,13 +672,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                       {groupPhotos.length > 0 ? (
                         <div className="grid grid-cols-3 gap-2">
                           {groupPhotos.map((photo) => (
-                            <PhotoGalleryCard
-                              key={photo.id}
-                              photo={photo}
-                              onRemove={handleRemovePhoto}
-                              onReplace={handleReplacePhoto}
-                              isUploading={uploadingPhotoId === photo.id}
-                            />
+                            <PhotoGalleryCard key={photo.id} photo={photo} />
                           ))}
                         </div>
                       ) : (
@@ -736,11 +797,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                       label={val.label}
                       taken={taken}
                       required={true}
-                      onRemove={handleRemovePhoto}
-                      onReplace={handleReplacePhoto}
-                      photos={intake.photos}
                       intakeId={intake.id}
-                      uploadingPhotoId={uploadingPhotoId}
                     />
                   )
                 })}
@@ -756,11 +813,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         label={val.label}
                         taken={taken}
                         required={false}
-                        onRemove={handleRemovePhoto}
-                        onReplace={handleReplacePhoto}
-                        photos={intake.photos}
                         intakeId={intake.id}
-                        uploadingPhotoId={uploadingPhotoId}
                       />
                     )
                   })}
@@ -880,13 +933,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
                   {intake.photos.map((photo) => (
-                    <PhotoGalleryCard
-                      key={photo.id}
-                      photo={photo}
-                      onRemove={handleRemovePhoto}
-                      onReplace={handleReplacePhoto}
-                      isUploading={uploadingPhotoId === photo.id}
-                    />
+                    <PhotoGalleryCard key={photo.id} photo={photo} />
                   ))}
                 </div>
               </CardContent>
@@ -910,13 +957,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
                   {intake.photos.filter((p) => p.type === "damage_detail").map((photo) => (
-                    <PhotoGalleryCard
-                      key={photo.id}
-                      photo={photo}
-                      onRemove={handleRemovePhoto}
-                      onReplace={handleReplacePhoto}
-                      isUploading={uploadingPhotoId === photo.id}
-                    />
+                    <PhotoGalleryCard key={photo.id} photo={photo} />
                   ))}
                 </div>
               </CardContent>
@@ -1246,18 +1287,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   )
 }
 
-function PhotoGalleryCard({
-  photo,
-  onRemove,
-  onReplace,
-  isUploading,
-}: {
-  photo: VehiclePhoto
-  onRemove: (id: string) => void
-  onReplace: (photoId: string, file: File) => void
-  isUploading: boolean
-}) {
-  const replaceInputRef = useRef<HTMLInputElement>(null)
+function PhotoGalleryCard({ photo }: { photo: VehiclePhoto }) {
   const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
@@ -1276,21 +1306,10 @@ function PhotoGalleryCard({
             <span className="text-xs text-muted-foreground">Dosya yok</span>
           </div>
         )}
-        {isUploading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <Loader2 className="size-8 text-white animate-spin" />
-          </div>
-        )}
       </div>
       <div className="p-2.5 space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium truncate">{typeLabel}</span>
-          <button
-            onClick={() => onRemove(photo.id)}
-            className="text-destructive hover:bg-destructive/10 p-1 rounded touch-manipulation"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
         </div>
         {photo.fileName && (
           <p className="text-xs text-muted-foreground truncate">{photo.fileName}</p>
@@ -1301,24 +1320,6 @@ function PhotoGalleryCard({
             <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
           )}
         </div>
-        <input
-          ref={replaceInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) onReplace(photo.id, file)
-          }}
-        />
-        <button
-          onClick={() => replaceInputRef.current?.click()}
-          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-primary hover:bg-primary/5 rounded-lg touch-manipulation"
-          disabled={isUploading}
-        >
-          <RefreshCw className="size-3" />
-          Tekrar çek / değiştir
-        </button>
       </div>
     </div>
   )
@@ -1388,31 +1389,19 @@ function PhotoChecklistItem({
   label,
   taken,
   required,
-  onRemove,
-  onReplace,
-  photos,
   intakeId,
-  uploadingPhotoId,
 }: {
   photoKey: string
   label: string
   taken: boolean
   required: boolean
-  onRemove: (id: string) => void
-  onReplace: (photoId: string, file: File) => void
-  photos: { id: string; type: string; label: string; fileUrl: string | null; fileName: string | null; mimeType: string | null; sizeBytes: number | null }[]
   intakeId: string
-  uploadingPhotoId: string | null
 }) {
   const [preview, setPreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const replaceInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-
-  const existingPhoto = photos.find((p) => p.type === photoKey)
-  const isUploading = uploadingPhotoId === existingPhoto?.id
 
   async function handleCaptureAdd() {
     if (!selectedFile) {
@@ -1480,36 +1469,7 @@ function PhotoChecklistItem({
             </button>
           )}
           {taken && (
-            <>
-              <span className="text-xs font-medium text-success">✓ Tamam</span>
-              <input
-                ref={replaceInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file && existingPhoto) onReplace(existingPhoto.id, file)
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => replaceInputRef.current?.click()}
-                className="text-xs text-primary hover:underline"
-                disabled={isUploading}
-              >
-                {isUploading ? <Loader2 className="size-3 animate-spin" /> : "Değiştir"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (existingPhoto) onRemove(existingPhoto.id)
-                }}
-                className="text-xs text-destructive hover:underline"
-              >
-                Kaldır
-              </button>
-            </>
+            <span className="text-xs font-medium text-success">✓ Tamam</span>
           )}
         </div>
       </div>

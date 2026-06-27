@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Clock, ClipboardList, Camera, AlertTriangle, MessageSquare, Wrench, Package } from "lucide-react"
+import { CheckCircle2, Clock, ClipboardList, Camera, AlertTriangle, MessageSquare, Wrench, Package, Pencil } from "lucide-react"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 
 type TimelineEntry = {
@@ -23,6 +23,7 @@ const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   approval_requested: MessageSquare,
   approval_verified: CheckCircle2,
   work_order_created: Wrench,
+  intake_details_edited: Pencil,
   delivery_output_generated: Package,
 }
 
