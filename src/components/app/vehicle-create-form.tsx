@@ -206,6 +206,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     onModelChange={(v) => form.setValue("model", v, { shouldValidate: true })}
                     required
                   />
+                  {(form.formState.errors.brand || form.formState.errors.model) && (
+                    <p className="col-span-2 text-sm text-destructive">
+                      {form.formState.errors.brand?.message ?? form.formState.errors.model?.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

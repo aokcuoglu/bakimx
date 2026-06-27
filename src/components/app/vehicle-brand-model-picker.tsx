@@ -33,6 +33,7 @@ export function VehicleBrandModelPicker({
   const [models, setModels] = useState<Model[]>([])
   const [brandId, setBrandId] = useState<number | null>(null)
   const [loadingModels, setLoadingModels] = useState(false)
+  const [modelQuery, setModelQuery] = useState("")
   const didPrefill = useRef(false)
 
   // Load brands once.
@@ -62,19 +63,24 @@ export function VehicleBrandModelPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brands])
 
-  // Fetch models whenever the resolved brandId changes (debounced re-fetch on model typing below).
+  // Fetch the brand's models, debounced and filtered by the typed query so that
+  // high-volume brands (>100 models) are reachable via search, not just the first
+  // alphabetical page the server returns.
   useEffect(() => {
     if (brandId == null) return
     let active = true
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingModels(true)
-    fetch(`/api/vehicle-catalog/models?brandId=${brandId}`)
-      .then((r) => r.json())
-      .then((d) => { if (active) setModels(Array.isArray(d?.models) ? d.models : []) })
-      .catch(() => { if (active) setModels([]) })
-      .finally(() => { if (active) setLoadingModels(false) })
-    return () => { active = false }
-  }, [brandId])
+    const q = modelQuery.trim()
+    const t = setTimeout(() => {
+      fetch(`/api/vehicle-catalog/models?brandId=${brandId}${q ? `&q=${encodeURIComponent(q)}` : ""}`)
+        .then((r) => r.json())
+        .then((d) => { if (active) setModels(Array.isArray(d?.models) ? d.models : []) })
+        .catch(() => { if (active) setModels([]) })
+        .finally(() => { if (active) setLoadingModels(false) })
+    }, 250)
+    return () => { active = false; clearTimeout(t) }
+  }, [brandId, modelQuery])
 
   const modelDisabled = disabled || brand.trim().length === 0
 
@@ -94,6 +100,8 @@ export function VehicleBrandModelPicker({
             if (!b) return
             onBrandChange(b.name)
             setBrandId(b.id)
+            setModels([])
+            setModelQuery("")
             onModelChange("")
           }}
           disabled={disabled}
@@ -121,7 +129,7 @@ export function VehicleBrandModelPicker({
           itemToStringLabel={(m: Model) => m.name}
           itemToStringValue={(m: Model) => m.name}
           inputValue={model}
-          onInputValueChange={(v: string) => onModelChange(v)}
+          onInputValueChange={(v: string) => { onModelChange(v); setModelQuery(v) }}
           onValueChange={(m: Model | null) => { if (m) onModelChange(m.name) }}
           disabled={modelDisabled}
         >
