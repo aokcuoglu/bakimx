@@ -1,0 +1,63 @@
+%%{init: {"theme":"base","themeVariables":{"fontSize":"15px","fontFamily":"Inter, Segoe UI, sans-serif","primaryColor":"#dbeafe","primaryTextColor":"#0f172a","primaryBorderColor":"#1e40af","lineColor":"#475569","clusterBkg":"#f8fafc","clusterBorder":"#cbd5e1"}, "flowchart":{"curve":"basis","nodeSpacing":50,"rankSpacing":65}}}%%
+flowchart TB
+    subgraph next["Next.js 16 App Router — single standalone container (Node 22)"]
+        direction TB
+        mw["middleware.ts<br/>host-aware routing + session gate<br/>bakimx.com (landing/auth/public) ⇄ app.bakimx.com (app)"]
+
+        subgraph routes["Route surfaces"]
+            direction LR
+            landing["(landing)<br/>/, /fiyatlar, /satin-al, /demo, /privacy, /terms"]
+            authr["(auth)<br/>/login · /register (approval-gated) · /forgot-password · /invite"]
+            pub["public token pages<br/>/s/:token intake summary<br/>/p/:token vehicle passport"]
+            appui["(app) authenticated SaaS UI"]
+            api["/api/* route handlers + Server Actions"]
+        end
+
+        subgraph modules["Main business modules — (app) UI"]
+            direction LR
+            m1["dashboard · intakes · orders<br/>quotes · appointments"]
+            m2["customers · vehicles<br/>parts/inventory · suppliers"]
+            m3["technician · cashbox · billing<br/>reports · analytics"]
+            m4["communications · calendar<br/>reminders · settings · smart-capture"]
+        end
+
+        subgraph lib["lib/ — domain logic + provider abstractions"]
+            direction TB
+            sec["session (iron-session cookie)<br/>auth · rbac (owner/manager/staff) · rate-limit"]
+            dom["orders · intake · billing · parts<br/>reminders · reports · cashbox · passport · totals/money"]
+
+            subgraph prov["Pluggable provider interfaces (mock ⇄ real, env-selected)"]
+                direction LR
+                storeP["storage<br/>mock | S3"]
+                ocrP["ocr<br/>mock | openai | deepseek | tesseract"]
+                aiP["advisor<br/>mock | openai | deepseek"]
+                commP["comms<br/>mock | netgsm | whatsapp | resend"]
+                calP["calendar<br/>mock | google"]
+            end
+            pdfP["PDF — @react-pdf/renderer<br/>public output document"]
+            cvP["client-side OCR assist<br/>OpenCV.js + jscanify (vendored)<br/>heic-convert for iOS HEIC"]
+        end
+
+        mw --> routes
+        appui --> modules
+        routes --> lib
+    end
+
+    db[("PostgreSQL<br/>33 tables · 30 enums · 68 FKs<br/>multi-tenant: workshopId on every row")]
+    r2["Cloudflare R2 / S3"]
+    aiapi["OpenAI / DeepSeek<br/>/v1/chat/completions"]
+    commsvc["Netgsm · Meta Graph · Resend"]
+    gcalapi["Google Calendar API"]
+
+    dom -->|"Prisma Client"| db
+    sec -->|"Prisma Client"| db
+    storeP --> r2
+    ocrP --> aiapi
+    aiP --> aiapi
+    commP --> commsvc
+    calP --> gcalapi
+
+    classDef libBox fill:#eff6ff,stroke:#1e40af,color:#0f172a;
+    classDef extBox fill:#fef9c3,stroke:#ca8a04,color:#0f172a;
+    class sec,dom,storeP,ocrP,aiP,commP,calP,pdfP,cvP libBox;
+    class db,r2,aiapi,commsvc,gcalapi extBox;

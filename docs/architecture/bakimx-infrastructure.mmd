@@ -1,0 +1,70 @@
+%%{init: {"theme":"base","themeVariables":{"fontSize":"15px","fontFamily":"Inter, Segoe UI, sans-serif","primaryColor":"#dbeafe","primaryTextColor":"#0f172a","primaryBorderColor":"#1e40af","lineColor":"#475569","clusterBkg":"#f8fafc","clusterBorder":"#cbd5e1"}, "flowchart":{"curve":"basis","nodeSpacing":55,"rankSpacing":70}}}%%
+flowchart TB
+    %% ===================== CLIENTS =====================
+    subgraph clients["End Users — mobile-first"]
+        direction LR
+        staff["Workshop Staff (SaaS UI)<br/>app.bakimx.com — authenticated"]
+        owner["Vehicle Owners (no login)<br/>public token pages /s/:token, /p/:token"]
+        founder["Founder Admin<br/>/admin (email allowlist)"]
+    end
+
+    dns["DNS — Hostinger hPanel<br/>bakimx.com &amp; app.bakimx.com → VPS public IP"]
+    clients --> dns
+
+    %% ===================== CI/CD =====================
+    subgraph cicd["CI / CD"]
+        direction TB
+        gha["GitHub Actions<br/>trigger: git tag v*"]
+        ghcr["GHCR registry<br/>ghcr.io/aokcuoglu/app"]
+        gha -->|"docker buildx build + push"| ghcr
+    end
+
+    %% ===================== VPS =====================
+    subgraph vps["Single VPS — Ubuntu, co-hosted with getirbakim stack (UFW + fail2ban)"]
+        direction TB
+        nginx["getirbakim-nginx<br/>reverse proxy + TLS (Let's Encrypt)<br/>:80 / :443 · client_max_body_size 10M"]
+
+        subgraph dnet["Docker networks: getirbakim_app-network (external) + internal"]
+            direction TB
+            app["bakimx-app container<br/>Next.js 16 standalone · Node 22-alpine<br/>:3000 · mem limit 2g · alias bakimx-app"]
+            db[("bakimx db container<br/>PostgreSQL 16-alpine<br/>:5432 · mem limit 1g · volume pgdata")]
+        end
+
+        backup["pg_dump cron 03:15 · 7-day retention<br/>(optional rclone offsite to R2/B2)"]
+        sysCron["system cron */15<br/>curl Bearer CRON_SECRET → /api/cron/reminders"]
+
+        nginx -->|"proxy_pass http://bakimx-app:3000"| app
+        app -->|"Prisma 7 + @prisma/adapter-pg (pg Pool)"| db
+        db -.->|"nightly dump"| backup
+        sysCron --> app
+    end
+
+    dns -->|"HTTPS"| nginx
+    gha -->|"SSH appleboy: compose pull + up -d app"| app
+    ghcr -.->|"image pull"| app
+
+    %% ===================== EXTERNAL SERVICES =====================
+    subgraph ext["External / Managed Services — provider-abstracted, 'mock' by default"]
+        direction LR
+        r2["Cloudflare R2<br/>S3-compatible media bucket<br/>bakimx-media"]
+        ai["OpenAI API / DeepSeek API<br/>AI advisor + registration OCR"]
+        sms["Netgsm<br/>SMS gateway"]
+        wa["WhatsApp Business<br/>Meta Graph API v18"]
+        mail["Resend<br/>transactional email"]
+        gcal["Google Calendar API"]
+    end
+
+    app -->|"@aws-sdk/client-s3 · PutObject / presigned GET"| r2
+    app -->|"HTTPS /v1/chat/completions"| ai
+    app -->|"HTTPS"| sms
+    app -->|"HTTPS"| wa
+    app -->|"HTTPS"| mail
+    app -->|"HTTPS"| gcal
+    owner -.->|"public photos (R2 public domain / presigned)"| r2
+
+    classDef vpsBox fill:#eff6ff,stroke:#1e40af,stroke-width:1px,color:#0f172a;
+    classDef extBox fill:#fef9c3,stroke:#ca8a04,color:#0f172a;
+    classDef cli fill:#ecfeff,stroke:#0891b2,color:#0f172a;
+    class app,db,nginx,backup,sysCron vpsBox;
+    class r2,ai,sms,wa,mail,gcal extBox;
+    class staff,owner,founder cli;
