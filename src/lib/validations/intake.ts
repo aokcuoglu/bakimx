@@ -39,6 +39,12 @@ export const intakeCreateSchema = z.object({
   internalNote: z.string().optional(),
 })
 
+export const intakeUpdateSchema = z.object({
+  customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
+  internalNote: z.string().optional(),
+  mileageAtIntake: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
+})
+
 export const damageMarkSchema = z.object({
   zone: z.string().min(1, "Bölge seçimi zorunludur"),
   damageType: z.enum(["scratch", "dent", "broken", "cracked", "paint_damage", "missing_part", "other"], {

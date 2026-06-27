@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
-import { intakeCreateSchema, damageMarkSchema } from "@/lib/validations/intake"
+import { intakeCreateSchema, intakeUpdateSchema, damageMarkSchema } from "@/lib/validations/intake"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -126,6 +126,86 @@ export async function getIntakesAction() {
   return intakes
 }
 
+export async function updateIntakeDetailsAction(
+  intakeFormId: string,
+  input: { customerComplaint: string; internalNote?: string; mileageAtIntake?: string },
+) {
+  const user = await requireAuth()
+
+  const parsed = intakeUpdateSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  const intake = await prisma.vehicleIntakeForm.findFirst({
+    where: { id: intakeFormId, workshopId: user.workshopId },
+    include: { vehicle: true },
+  })
+  if (!intake) return { error: "Kabul formu bulunamadı" }
+
+  const newComplaint = parsed.data.customerComplaint
+  const newNote = parsed.data.internalNote?.trim() || null
+  const newMileage = parsed.data.mileageAtIntake || null
+
+  // Sadece gerçekten değişen alanları kaydet/loglayalım (gürültüsüz denetim izi).
+  const changes: string[] = []
+  if (intake.customerComplaint !== newComplaint) changes.push("müşteri şikayeti")
+  if ((intake.internalNote ?? null) !== newNote) changes.push("iç not")
+  if ((intake.mileageAtIntake ?? null) !== newMileage) changes.push("kilometre")
+
+  if (changes.length === 0) return { success: true }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.vehicleIntakeForm.updateMany({
+      where: { id: intakeFormId, workshopId: user.workshopId },
+      data: {
+        customerComplaint: newComplaint,
+        internalNote: newNote,
+        mileageAtIntake: newMileage,
+      },
+    })
+    // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
+    if (newMileage) {
+      const liveMileage = Math.max(intake.vehicle.mileage ?? 0, newMileage)
+      if (liveMileage !== intake.vehicle.mileage) {
+        await tx.vehicle.update({ where: { id: intake.vehicleId }, data: { mileage: liveMileage } })
+      }
+    }
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "VehicleIntakeForm",
+    intakeFormId,
+    "intake_details_edited",
+    JSON.stringify({
+      fields: changes,
+      before: {
+        customerComplaint: intake.customerComplaint,
+        internalNote: intake.internalNote,
+        mileageAtIntake: intake.mileageAtIntake,
+      },
+      after: {
+        customerComplaint: newComplaint,
+        internalNote: newNote,
+        mileageAtIntake: newMileage,
+      },
+    }),
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId,
+    eventType: "intake_details_edited",
+    description: `İş emri bilgileri düzenlendi (${changes.join(", ")})`,
+  })
+
+  revalidatePath(`/intakes/${intakeFormId}`)
+  revalidatePath("/intakes")
+  return { success: true }
+}
+
 export async function addDamageMarkAction(formData: FormData) {
   const user = await requireAuth()
 
@@ -177,21 +257,11 @@ export async function addDamageMarkAction(formData: FormData) {
   return { success: true, id: mark.id }
 }
 
-export async function removeDamageMarkAction(markId: string, intakeFormId: string) {
-  const user = await requireAuth()
-
-  const mark = await prisma.damageMark.findFirst({
-    where: { id: markId, workshopId: user.workshopId },
-  })
-  if (!mark) return { error: "Hasar işareti bulunamadı" }
-
-  const deleteResult = await prisma.damageMark.deleteMany({
-    where: { id: markId, workshopId: user.workshopId },
-  })
-  if (deleteResult.count === 0) return { error: "Hasar işareti bulunamadı" }
-
-  revalidatePath(`/intakes/${intakeFormId}`)
-  return { success: true }
+export async function removeDamageMarkAction(_markId: string, _intakeFormId: string) {
+  // Delil bütünlüğü: kabul sırasında kaydedilen hasar işaretleri silinemez.
+  // İş emri metni düzenlenebilir (updateIntakeDetailsAction) ama kanıt kalıcıdır.
+  await requireAuth()
+  return { error: "Hasar kaydı silinemez. Kabul kanıtları kalıcıdır." }
 }
 
 export async function addPhotoAction(formData: FormData) {
@@ -277,98 +347,18 @@ export async function addPhotoAction(formData: FormData) {
   return { success: true, id: photo.id }
 }
 
-export async function replacePhotoAction(formData: FormData) {
-  const user = await requireAuth()
-
-  const photoId = formData.get("photoId") as string
-  const intakeFormId = formData.get("intakeFormId") as string
-  const file = formData.get("file") as File | null
-
-  if (!file || file.size === 0) {
-    return { error: "Fotoğraf dosyası gerekli" }
-  }
-
-  const validation = validateUploadFile(file)
-  if (!validation.valid) {
-    return { error: validation.error }
-  }
-
-  const existingPhoto = await prisma.vehiclePhoto.findFirst({
-    where: { id: photoId, workshopId: user.workshopId },
-  })
-  if (!existingPhoto) return { error: "Fotoğraf bulunamadı" }
-
-  if (existingPhoto.storageKey) {
-    try {
-      const provider = await getStorageProvider()
-      await provider.delete(existingPhoto.storageKey)
-    } catch {}
-  }
-
-  const storagePath = buildStoragePath(user.workshopId, intakeFormId, existingPhoto.type, photoId, file.name)
-  let fileUrl: string | null = null
-  let storageKey: string | null = null
-
-  try {
-    const provider = await getStorageProvider()
-    const result = await provider.upload(file, storagePath)
-    fileUrl = result.url
-    storageKey = result.key
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Dosya yükleme hatası"
-    await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_replace_error", JSON.stringify({ error: message }))
-    return { error: `Fotoğraf değiştirilemedi: ${message}` }
-  }
-
-  await prisma.vehiclePhoto.update({
-    where: { id: photoId },
-    data: {
-      fileUrl,
-      fileName: file.name,
-      mimeType: file.type,
-      sizeBytes: file.size,
-      storageProvider: process.env.STORAGE_PROVIDER || "mock",
-      storageKey,
-    },
-  })
-
-  await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_replaced", JSON.stringify({
-    type: existingPhoto.type,
-    storageProvider: process.env.STORAGE_PROVIDER || "mock",
-    sizeBytes: file.size,
-  }))
-
-  revalidatePath(`/intakes/${intakeFormId}`)
-  return { success: true, id: photoId }
+export async function replacePhotoAction(_formData: FormData) {
+  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) değiştirilemez de silinemez de.
+  // Eksikse yeni kare eklenir (addPhotoAction); eklenen kanıt kalıcıdır.
+  await requireAuth()
+  return { error: "Fotoğraf değiştirilemez. Kabul kanıtları kalıcıdır." }
 }
 
-export async function removePhotoAction(photoId: string, intakeFormId: string) {
-  const user = await requireAuth()
-
-  const photo = await prisma.vehiclePhoto.findFirst({
-    where: { id: photoId, workshopId: user.workshopId },
-  })
-  if (!photo) return { error: "Fotoğraf bulunamadı" }
-
-  if (photo.storageKey) {
-    try {
-      const provider = await getStorageProvider()
-      await provider.delete(photo.storageKey)
-    } catch {}
-  }
-
-  const deleteResult = await prisma.vehiclePhoto.deleteMany({
-    where: { id: photoId, workshopId: user.workshopId },
-  })
-  if (deleteResult.count === 0) return { error: "Fotoğraf bulunamadı" }
-
-  await AuditLogAction(user.workshopId, user.id, "VehiclePhoto", photoId, "photo_deleted", JSON.stringify({
-    type: photo.type,
-    hadStorageKey: !!photo.storageKey,
-  }))
-
-  revalidatePath(`/intakes/${intakeFormId}`)
-  return { success: true }
+export async function removePhotoAction(_photoId: string, _intakeFormId: string) {
+  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) silinemez. Hatalı/bulanık
+  // bir kare yeniden çekilmek istenirse replacePhotoAction (Değiştir) kullanılır.
+  await requireAuth()
+  return { error: "Fotoğraf silinemez. Kabul kanıtları kalıcıdır." }
 }
 
 export async function updateIntakeStatusAction(intakeFormId: string, status: string) {

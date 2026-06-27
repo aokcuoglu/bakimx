@@ -21,7 +21,7 @@ export async function PUT(request: Request) {
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
-    return NextResponse.json({ success: true, id: result.id })
+    return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
   }

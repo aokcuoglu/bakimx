@@ -25,6 +25,7 @@ export type TimelineEventType =
   | "approval_requested"
   | "approval_verified"
   | "work_order_created"
+  | "intake_details_edited"
   | "delivery_output_generated"
   | "technician_assigned"
   | "technician_unassigned"
