@@ -31,6 +31,9 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
   const isLocal =
     host === "" || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
+  // Staging serves the whole app on a single host (like local dev) — no bakimx.com /
+  // app.bakimx.com split, so app routes don't bounce to prod. Add staging hosts here.
+  const isSingleHost = isLocal || host === "staging.app.bakimx.com"
 
   // ---- API: host-agnostic ----
   if (pathname.startsWith("/api/")) {
@@ -42,8 +45,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ---- LOCAL DEV: single host, path-based auth (clean URLs, no host split) ----
-  if (isLocal) {
+  // ---- SINGLE-HOST (local dev + staging): path-based auth, clean URLs, no host split ----
+  if (isSingleHost) {
     if (isPublicPage(pathname)) {
       if (pathname === "/login") {
         const session = await getSession()
