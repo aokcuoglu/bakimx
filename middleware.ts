@@ -103,5 +103,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.svg|manifest.json).*)"],
+  // Statik public asset'leri (özellikle BrandLogo'nun 01..04-bakimx-*.svg
+  // variant'ları) middleware'den muaf tut. Aksi halde kök SVG istekleri auth-gate
+  // edilip /login'e 307'lenir; bu yüzden staging/prod'da (next start/standalone,
+  // dev'in aksine, middleware'i public static'lerde de çalıştırır) logolar
+  // kayboluyordu — hem doğrudan erişimde hem next/image'in kaynak fetch'inde.
+  // Kökteki tüm `.svg` dosyaları (logo.svg dahil) hariç bırakılır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|[^/]+\\.svg$).*)"],
 }
