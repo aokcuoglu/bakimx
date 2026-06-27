@@ -3,7 +3,11 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 FROM base AS deps
+# Copy the Prisma schema alongside the manifest: package.json's `postinstall` runs
+# `prisma generate`, which needs prisma/schema.prisma present at install time. Without
+# this the install aborts with "Could not find Prisma Schema" and the build fails.
 COPY package.json bun.lock ./
+COPY prisma ./prisma
 RUN \
   if [ -f bun.lock ]; then \
     npm install --frozen-lockfile; \
