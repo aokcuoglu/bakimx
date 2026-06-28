@@ -205,8 +205,7 @@ export function IntakeWizard({
                   type="button"
                   onClick={() => setStep(3)}
                   disabled={!selectedCustomerId || !selectedVehicleId}
-                  size="lg"
-                  className="gap-2"
+                  className="h-11 gap-2 px-5 md:h-9"
                 >
                   Devam <ChevronRight className="size-4" />
                 </Button>

@@ -1,9 +1,15 @@
-import { mkdir } from "node:fs/promises"
-import { tmpdir } from "node:os"
+import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { createWorker, OEM, PSM, type Worker } from "tesseract.js"
 
-const TESSERACT_CACHE_PATH = join(tmpdir(), "bakimx-tesseract-cache")
+// Committed, pre-seeded traineddata (tur + eng, uncompressed) so the worker
+// NEVER downloads at runtime. The prod image is Alpine and OCR_PROVIDER=mock,
+// so before the plate scanner this Tesseract path had never actually run in a
+// deployed container — and the runtime CDN download for traineddata hangs there,
+// surfacing as a "Bağlantı hatası" after a long spin. Reading from this baked-in
+// cache (cacheMethod: "readOnly") removes the network dependency entirely.
+// See Dockerfile (COPY ocr-assets + tesseract.js-core into the runner image).
+const TESSERACT_CACHE_PATH = join(process.cwd(), "ocr-assets", "tessdata")
 
 // Türk ruhsat belgesi için geçerli karakterler
 const CHAR_WHITELIST =
@@ -34,9 +40,24 @@ let recognitionQueue: Promise<void> = Promise.resolve()
 
 async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
-    await mkdir(TESSERACT_CACHE_PATH, { recursive: true })
+    // Tek seferlik teşhis: gömülü cache container içinde gerçekten bulunuyor mu?
+    // readOnly ile cache ıskası CDN'e düşer (yavaş/asılır); bu log onu netleştirir.
+    console.log(
+      `[TESSERACT] cache=${TESSERACT_CACHE_PATH} tur=${existsSync(
+        join(TESSERACT_CACHE_PATH, "tur.traineddata")
+      )} eng=${existsSync(join(TESSERACT_CACHE_PATH, "eng.traineddata"))}`
+    )
+    let lastStatus = ""
     workerPromise = createWorker(["tur", "eng"], OEM.LSTM_ONLY, {
       cachePath: TESSERACT_CACHE_PATH,
+      cacheMethod: "readOnly", // baked-in cache; never fetch from the CDN at runtime
+      logger: (m: { status?: string }) => {
+        // Yalnızca durum değişimini logla (her ilerleme tikini değil).
+        if (m.status && m.status !== lastStatus) {
+          lastStatus = m.status
+          console.log(`[TESSERACT] ${m.status}`)
+        }
+      },
     })
       .then(async (worker) => {
         await worker.setParameters({
@@ -57,7 +78,10 @@ async function getWorker(): Promise<Worker> {
 
 export async function extractRegistrationText(
   imageBuffer: Buffer,
-  psm: PSM = PSM.SINGLE_BLOCK
+  psm: PSM = PSM.SINGLE_BLOCK,
+  // rotateAuto görüntüyü döndürüp YENİDEN tanır → her çağrıyı ~2 kat yavaşlatır.
+  // Ruhsat (serbest açı) için açık; plaka için kapalı (sabit yatay rehber var).
+  rotateAuto = true
 ): Promise<string> {
   let resolveQueue: () => void = () => {}
   const previousJob = recognitionQueue
@@ -69,7 +93,7 @@ export async function extractRegistrationText(
   try {
     const worker = await getWorker()
     await worker.setParameters({ tessedit_pageseg_mode: psm })
-    const result = await worker.recognize(imageBuffer, { rotateAuto: true })
+    const result = await worker.recognize(imageBuffer, { rotateAuto })
     const text = result.data.text.trim()
 
     if (!text) {
