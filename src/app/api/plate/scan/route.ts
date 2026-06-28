@@ -6,6 +6,10 @@ import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
 import { parsePlateFromText } from "@/lib/ocr/plate"
 import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "@/lib/ocr/types"
 
+// OCR yavaş paylaşımlı VPS CPU'sunda birkaç saniye sürebilir; Next'in varsayılan
+// fonksiyon süresini gevşet (proxy timeout ~60s'in altında kalır).
+export const maxDuration = 60
+
 /**
  * Plaka fotoğrafından plaka metnini okur (sadece plaka — ruhsat değil).
  * OCR_PROVIDER'dan bağımsız olarak her zaman yerel Tesseract + plaka regex
@@ -52,14 +56,18 @@ export async function POST(request: Request) {
     const normalized = await normalizeRegistrationImage(imageBuffer, mimeType)
 
     // Plaka tek satır → önce SINGLE_LINE; bulamazsak SINGLE_BLOCK ile yeniden dene.
+    // rotateAuto KAPALI: plaka sabit yatay rehberde hizalanır, döndürme geçişi
+    // gereksiz ve OCR'ı ~2 kat yavaşlatıp zaman aşımına sokuyordu.
     let plate: string | null = null
     for (const psm of [PSM.SINGLE_LINE, PSM.SINGLE_BLOCK]) {
+      const t0 = Date.now()
       try {
-        const text = await extractRegistrationText(normalized.buffer, psm)
+        const text = await extractRegistrationText(normalized.buffer, psm, false)
         plate = parsePlateFromText(text)
+        console.log(`[PLATE SCAN] psm=${psm} ${Date.now() - t0}ms plate=${plate ?? "—"}`)
         if (plate) break
-      } catch {
-        // okunabilir metin çıkmadı — sonraki PSM'i dene
+      } catch (e) {
+        console.log(`[PLATE SCAN] psm=${psm} ${Date.now() - t0}ms err=${e instanceof Error ? e.message : e}`)
       }
     }
 

@@ -118,7 +118,7 @@ export function PlateScanner({ onDetected, onClose }: Props) {
       setStatus("scanning")
       // OCR sunucuda birkaç saniye sürebilir; süresiz dönmesin diye zaman aşımı.
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000)
+      const timeout = setTimeout(() => controller.abort(), 45000)
       try {
         const res = await fetch("/api/plate/scan", {
           method: "POST",
