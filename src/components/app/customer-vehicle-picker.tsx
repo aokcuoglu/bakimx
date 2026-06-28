@@ -11,11 +11,13 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Car, User, Plus, X, UserCog } from "lucide-react"
+import { Loader2, Car, User, Plus, X, UserCog, ScanLine } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
+import { PlateScanner } from "./plate-scanner"
 import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
+import { normalizePlate } from "@/lib/format"
 
 type CustVehicle = { id: string; plate: string; brand: string; model: string }
 type Mode = "plate" | "customer"
@@ -46,6 +48,8 @@ export function CustomerVehiclePicker({
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
   const [modalOpen, setModalOpen] = useState(false)
   const [ownerMode, setOwnerMode] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [comboOpen, setComboOpen] = useState(false)
 
   const fixedCustomer = useMemo(
     () => (selected?.kind === "customer" ? { id: selected.customerId, label: selected.label } : undefined),
@@ -102,6 +106,16 @@ export function CustomerVehiclePicker({
   const modeResults = results.filter((r) => (mode === "plate" ? r.kind === "vehicle" : r.kind === "customer"))
 
   function switchMode(m: Mode) { setMode(m); setQuery(""); setResults([]) }
+
+  // Kameradan okunan plaka: arama kutusuna yaz (mevcut debounce'lu arama tetiklenir)
+  // ve açılır listeyi aç — eşleşen araç seçilebilir, yoksa "Oluştur" yolu görünür.
+  function onPlateScanned(plate: string) {
+    setScannerOpen(false)
+    setMode("plate")
+    setSelected(null)
+    setQuery(normalizePlate(plate))
+    setComboOpen(true)
+  }
 
   function pickVehicle(r: Extract<UnifiedResult, { kind: "vehicle" }>) {
     setSelected({ kind: "vehicle", customerId: r.customerId, vehicleId: r.vehicleId, label: r.label, sublabel: r.sublabel })
@@ -215,7 +229,10 @@ export function CustomerVehiclePicker({
               items={modeResults}
               filter={() => true}
               itemToStringValue={(r: UnifiedResult) => r.label}
+              inputValue={query}
               onInputValueChange={(v: string) => setQuery(v)}
+              open={comboOpen}
+              onOpenChange={setComboOpen}
               onValueChange={(r: UnifiedResult | null) => { if (r && r.kind === "vehicle") pickVehicle(r) }}
             >
               <ComboboxInput showTrigger={false} placeholder="Plaka ile ara…" />
@@ -249,6 +266,18 @@ export function CustomerVehiclePicker({
             <CustomerSearchOrCreate onSelected={enterCustomer} />
           )}
         </div>
+        {/* Plakayı kamerayla tara — yalnızca plaka modunda */}
+        {mode === "plate" && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Plakayı kamerayla tara"
+            onClick={() => setScannerOpen(true)}
+          >
+            <ScanLine className="size-4" />
+          </Button>
+        )}
         {/* Mod toggle: kişi ikonu — aktifse müşteri modu */}
         <Button
           type="button"
@@ -263,6 +292,7 @@ export function CustomerVehiclePicker({
       </div>
 
       <InlineCreateModal open={modalOpen} onOpenChange={setModalOpen} initialPlate={query.trim()} onCreated={onModalCreated} />
+      {scannerOpen && <PlateScanner onDetected={onPlateScanned} onClose={() => setScannerOpen(false)} />}
     </div>
   )
 }
