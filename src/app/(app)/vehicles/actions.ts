@@ -24,6 +24,11 @@ export async function createVehicleAction(formData: FormData) {
     engineNo: (formData.get("engineNo") as string || "").trim(),
     fuelType: (formData.get("fuelType") as string || "").trim(),
     transmission: (formData.get("transmission") as string || "").trim(),
+    commercialName: (formData.get("commercialName") as string || "").trim(),
+    firstRegistrationDate: (formData.get("firstRegistrationDate") as string || "").trim(),
+    engineDisplacement: (formData.get("engineDisplacement") as string || "").trim(),
+    enginePower: (formData.get("enginePower") as string || "").trim(),
+    inspectionValidUntil: (formData.get("inspectionValidUntil") as string || "").trim(),
     notes: (formData.get("notes") as string || "").trim(),
   }
 
@@ -56,6 +61,11 @@ export async function createVehicleAction(formData: FormData) {
         engineNo: parsed.data.engineNo || null,
         fuelType: parsed.data.fuelType || null,
         transmission: parsed.data.transmission || null,
+        commercialName: parsed.data.commercialName || null,
+        firstRegistrationDate: parsed.data.firstRegistrationDate || null,
+        engineDisplacement: parsed.data.engineDisplacement || null,
+        enginePower: parsed.data.enginePower || null,
+        inspectionValidUntil: parsed.data.inspectionValidUntil || null,
         notes: parsed.data.notes || null,
       },
     })
@@ -133,6 +143,11 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     engineNo: (formData.get("engineNo") as string || "").trim(),
     fuelType: (formData.get("fuelType") as string || "").trim(),
     transmission: (formData.get("transmission") as string || "").trim(),
+    commercialName: (formData.get("commercialName") as string || "").trim(),
+    firstRegistrationDate: (formData.get("firstRegistrationDate") as string || "").trim(),
+    engineDisplacement: (formData.get("engineDisplacement") as string || "").trim(),
+    enginePower: (formData.get("enginePower") as string || "").trim(),
+    inspectionValidUntil: (formData.get("inspectionValidUntil") as string || "").trim(),
     notes: (formData.get("notes") as string || "").trim(),
   }
 
@@ -164,6 +179,11 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       engineNo: parsed.data.engineNo || null,
       fuelType: parsed.data.fuelType || null,
       transmission: parsed.data.transmission || null,
+      commercialName: parsed.data.commercialName || null,
+      firstRegistrationDate: parsed.data.firstRegistrationDate || null,
+      engineDisplacement: parsed.data.engineDisplacement || null,
+      enginePower: parsed.data.enginePower || null,
+      inspectionValidUntil: parsed.data.inspectionValidUntil || null,
       notes: parsed.data.notes || null,
     },
   })

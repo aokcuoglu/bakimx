@@ -23,6 +23,11 @@ export const vehicleSchema = z.object({
   engineNo: z.string().optional().default(""),
   fuelType: z.string().optional().default(""),
   transmission: z.string().optional().default(""),
+  commercialName: z.string().optional().default(""),
+  firstRegistrationDate: z.string().optional().default(""),
+  engineDisplacement: z.string().optional().default(""),
+  enginePower: z.string().optional().default(""),
+  inspectionValidUntil: z.string().optional().default(""),
   notes: z.string().optional().default(""),
 })
 
@@ -44,6 +49,11 @@ export const vehicleCreateSchema = z.object({
   engineNo: z.string().optional(),
   fuelType: z.string().optional(),
   transmission: z.string().optional(),
+  commercialName: z.string().optional(),
+  firstRegistrationDate: z.string().optional(),
+  engineDisplacement: z.string().optional(),
+  enginePower: z.string().optional(),
+  inspectionValidUntil: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -61,5 +71,10 @@ export const vehicleUpdateSchema = z.object({
   engineNo: z.string().optional(),
   fuelType: z.string().optional(),
   transmission: z.string().optional(),
+  commercialName: z.string().optional(),
+  firstRegistrationDate: z.string().optional(),
+  engineDisplacement: z.string().optional(),
+  enginePower: z.string().optional(),
+  inspectionValidUntil: z.string().optional(),
   notes: z.string().optional(),
 })
