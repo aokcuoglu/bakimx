@@ -28,6 +28,7 @@ type TorchConstraints = MediaTrackConstraints & { advanced?: Array<{ torch?: boo
 export function PlateScanner({ onDetected, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const mountedRef = useRef(true)
@@ -139,17 +140,63 @@ export function PlateScanner({ onDetected, onClose }: Props) {
     [onDetected, stopStream]
   )
 
-  // Canlı kareyi yakala → JPEG'e indir → OCR.
+  // Canlı kareyi yakala → SADECE plaka penceresine kırp → OCR.
+  // Rehber penceresi yalnızca görsel değil; OCR'a tüm sahne değil, yalnızca
+  // çerçeve içindeki bölge gider. Bu hem arka planı dışlar hem okuma isabetini
+  // ciddi artırır.
   const capture = useCallback(() => {
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas || !video.videoWidth) return
-    const scale = Math.min(1, CAPTURE_LONG_EDGE / Math.max(video.videoWidth, video.videoHeight))
-    canvas.width = Math.round(video.videoWidth * scale)
-    canvas.height = Math.round(video.videoHeight * scale)
+
+    const srcW = video.videoWidth
+    const srcH = video.videoHeight
+
+    // Varsayılan: tüm kare (kırpma hesaplanamazsa güvenli yedek).
+    let sx = 0
+    let sy = 0
+    let sWidth = srcW
+    let sHeight = srcH
+
+    const frame = frameRef.current
+    const vrect = video.getBoundingClientRect()
+    if (frame && vrect.width > 0 && vrect.height > 0) {
+      const frect = frame.getBoundingClientRect()
+      // Video object-cover: kaynağı kutuyu kaplayacak şekilde ölçekle, ortala,
+      // taşan kenarları kırp. Ekran (CSS) koordinatını kaynak piksele çevir.
+      const coverScale = Math.max(vrect.width / srcW, vrect.height / srcH)
+      const offX = (vrect.width - srcW * coverScale) / 2
+      const offY = (vrect.height - srcH * coverScale) / 2
+      sx = (frect.left - vrect.left - offX) / coverScale
+      sy = (frect.top - vrect.top - offY) / coverScale
+      sWidth = frect.width / coverScale
+      sHeight = frect.height / coverScale
+      // Küçük hizalama payı: plaka çerçeveyi tam doldurmazsa kenarları kırpma.
+      const padX = sWidth * 0.06
+      const padY = sHeight * 0.12
+      sx -= padX
+      sy -= padY
+      sWidth += padX * 2
+      sHeight += padY * 2
+      // Kaynak sınırlarına kıstır.
+      sx = Math.max(0, Math.min(sx, srcW))
+      sy = Math.max(0, Math.min(sy, srcH))
+      sWidth = Math.max(1, Math.min(sWidth, srcW - sx))
+      sHeight = Math.max(1, Math.min(sHeight, srcH - sy))
+    }
+
+    // Çıkış boyutu: OCR için uzun kenarı normalize et (küçük kırpıları büyüt,
+    // çok büyükleri küçült). Net glyph'ler Tesseract'a yardımcı olur.
+    const longEdge = Math.max(sWidth, sHeight)
+    const targetLong = Math.min(CAPTURE_LONG_EDGE, Math.max(longEdge, 1200))
+    const outScale = targetLong / longEdge
+    canvas.width = Math.round(sWidth * outScale)
+    canvas.height = Math.round(sHeight * outScale)
+
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    ctx.imageSmoothingQuality = "high"
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height)
     const dataUrl = canvas.toDataURL("image/jpeg", CAPTURE_JPEG_QUALITY)
     void runOcr(dataUrl, "image/jpeg")
   }, [runOcr])
@@ -211,11 +258,24 @@ export function PlateScanner({ onDetected, onClose }: Props) {
         />
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Plaka rehber çerçevesi (yaklaşık plaka oranı) */}
+        {/* Plaka rehber çerçevesi + odak dışını bulanıklaştıran maske */}
         {status === "ready" && (
           <>
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-              <div className="aspect-[4.6/1] w-full max-w-md rounded-lg border-2 border-white/80" />
+            {/* Çerçeve dışını karartıp bulanıklaştır; yalnızca plaka penceresi net kalır */}
+            <div className="pointer-events-none absolute inset-0 flex flex-col">
+              <div className="flex-1 bg-black/40 backdrop-blur-md" />
+              <div className="flex items-stretch">
+                <div className="flex-1 bg-black/40 backdrop-blur-md" />
+                {/* Net plaka penceresi (kamera buradan görünür; yakalama bu bölgeye kırpılır) */}
+                <div ref={frameRef} className="relative aspect-[4.6/1] w-[86%] max-w-md shrink-0 overflow-hidden rounded-md border-2 border-white/90">
+                  {/* TR mavi şeridi — Türkiye plakası göstergesi */}
+                  <div className="absolute inset-y-0 left-0 flex w-[13%] min-w-7 items-center justify-center bg-[#0b4ea2]">
+                    <span className="text-[0.7rem] font-bold leading-none tracking-wider text-white">TR</span>
+                  </div>
+                </div>
+                <div className="flex-1 bg-black/40 backdrop-blur-md" />
+              </div>
+              <div className="flex-1 bg-black/40 backdrop-blur-md" />
             </div>
             <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white/90">
               Plakayı çerçeveye yerleştirip çekin

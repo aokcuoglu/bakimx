@@ -222,7 +222,7 @@ export function CustomerVehiclePicker({
   // Sağdaki kişi ikonu modu değiştirir. Mevcut effect/`results`/`loading` yalnızca plaka modunda kullanılır.
   return (
     <div className="space-y-2">
-      <div className="flex items-start gap-2">
+      <div className="flex items-stretch gap-2">
         <div className="flex-1">
           {mode === "plate" ? (
             <Combobox
@@ -272,6 +272,7 @@ export function CustomerVehiclePicker({
             type="button"
             variant="outline"
             size="icon"
+            className="size-11 md:size-9"
             aria-label="Plakayı kamerayla tara"
             onClick={() => setScannerOpen(true)}
           >
@@ -283,6 +284,7 @@ export function CustomerVehiclePicker({
           type="button"
           variant={mode === "customer" ? "default" : "outline"}
           size="icon"
+          className="size-11 md:size-9"
           aria-label={mode === "customer" ? "Plaka aramaya dön" : "Müşteri ara"}
           aria-pressed={mode === "customer"}
           onClick={() => switchMode(mode === "customer" ? "plate" : "customer")}
