@@ -116,13 +116,24 @@ export function PlateScanner({ onDetected, onClose }: Props) {
       setCapturedUrl(dataUrl)
       setErrorMsg("")
       setStatus("scanning")
+      // OCR sunucuda birkaç saniye sürebilir; süresiz dönmesin diye zaman aşımı.
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30000)
       try {
         const res = await fetch("/api/plate/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageDataUrl: dataUrl, mimeType }),
+          signal: controller.signal,
         })
-        const data = await res.json()
+        // Yanıt JSON olmayabilir (örn. proxy 502/504 HTML'i); güvenli çözümle.
+        const raw = await res.text()
+        let data: { plate?: string; error?: string } = {}
+        try {
+          data = raw ? JSON.parse(raw) : {}
+        } catch {
+          data = { error: res.ok ? undefined : "Sunucu beklenmedik bir yanıt döndü." }
+        }
         if (!mountedRef.current) return
         if (!res.ok || !data.plate) {
           setErrorMsg(data.error || "Plaka okunamadı.")
@@ -131,10 +142,17 @@ export function PlateScanner({ onDetected, onClose }: Props) {
         }
         stopStream()
         onDetected(data.plate)
-      } catch {
+      } catch (err) {
         if (!mountedRef.current) return
-        setErrorMsg("Bağlantı hatası. Lütfen tekrar deneyin.")
+        const aborted = err instanceof DOMException && err.name === "AbortError"
+        setErrorMsg(
+          aborted
+            ? "Okuma zaman aşımına uğradı. Lütfen tekrar deneyin."
+            : "Bağlantı hatası. Lütfen tekrar deneyin."
+        )
         setStatus("error")
+      } finally {
+        clearTimeout(timeout)
       }
     },
     [onDetected, stopStream]

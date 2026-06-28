@@ -1,9 +1,14 @@
-import { mkdir } from "node:fs/promises"
-import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createWorker, OEM, PSM, type Worker } from "tesseract.js"
 
-const TESSERACT_CACHE_PATH = join(tmpdir(), "bakimx-tesseract-cache")
+// Committed, pre-seeded traineddata (tur + eng, uncompressed) so the worker
+// NEVER downloads at runtime. The prod image is Alpine and OCR_PROVIDER=mock,
+// so before the plate scanner this Tesseract path had never actually run in a
+// deployed container — and the runtime CDN download for traineddata hangs there,
+// surfacing as a "Bağlantı hatası" after a long spin. Reading from this baked-in
+// cache (cacheMethod: "readOnly") removes the network dependency entirely.
+// See Dockerfile (COPY ocr-assets + tesseract.js-core into the runner image).
+const TESSERACT_CACHE_PATH = join(process.cwd(), "ocr-assets", "tessdata")
 
 // Türk ruhsat belgesi için geçerli karakterler
 const CHAR_WHITELIST =
@@ -34,9 +39,9 @@ let recognitionQueue: Promise<void> = Promise.resolve()
 
 async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
-    await mkdir(TESSERACT_CACHE_PATH, { recursive: true })
     workerPromise = createWorker(["tur", "eng"], OEM.LSTM_ONLY, {
       cachePath: TESSERACT_CACHE_PATH,
+      cacheMethod: "readOnly", // baked-in cache; never fetch from the CDN at runtime
     })
       .then(async (worker) => {
         await worker.setParameters({
