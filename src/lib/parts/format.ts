@@ -1,7 +1,10 @@
+import { kurusToLira } from "@/lib/money"
+
 export function formatStockQty(qty: number): string {
   return qty.toLocaleString("tr-TR")
 }
 
+/** Format a price stored in minor units (kuruş/cents) for the given currency. */
 export function formatPrice(value: number | null | undefined, currency = "TRY"): string {
   if (value == null) return "—"
   return new Intl.NumberFormat("tr-TR", {
@@ -9,7 +12,7 @@ export function formatPrice(value: number | null | undefined, currency = "TRY"):
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value)
+  }).format(kurusToLira(value))
 }
 
 export function partDisplayName(name: string, sku?: string | null): string {

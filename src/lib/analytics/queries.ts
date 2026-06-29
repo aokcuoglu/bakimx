@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { calculateMinimalTotal } from "@/lib/totals"
+import { applyTaxBps, addKurus } from "@/lib/money"
 import { customerDisplayName } from "@/lib/format"
 
 type OStat = import("@prisma/client").OrderStatus
@@ -86,7 +87,7 @@ export async function getOperationsHealth(workshopId: string): Promise<Operation
     const discount = order.discountAmount ?? 0
     const subtotal = Math.max(0, total - discount)
     const taxRate = order.taxRate ?? 0
-    const grandTotal = subtotal + (subtotal * taxRate) / 100
+    const grandTotal = addKurus(subtotal, applyTaxBps(subtotal, taxRate)) // taxRate is bps
     const paid = order.paidAmount || 0
     const remaining = Math.max(0, grandTotal - paid)
     if (remaining > 0) {
@@ -170,7 +171,7 @@ export async function getDelayedJobs(
     const discount = o.discountAmount ?? 0
     const subtotal = Math.max(0, total - discount)
     const taxRate = o.taxRate ?? 0
-    const grandTotal = subtotal + (subtotal * taxRate) / 100
+    const grandTotal = addKurus(subtotal, applyTaxBps(subtotal, taxRate)) // taxRate is bps
 
     const cust = o.intakeForm.customer
 
@@ -333,7 +334,7 @@ export async function getCustomerAnalytics(workshopId: string): Promise<Customer
       const discount = order.discountAmount ?? 0
       const subtotal = Math.max(0, lineTotal - discount)
       const taxRate = order.taxRate ?? 0
-      totalSpent += subtotal + (subtotal * taxRate) / 100
+      totalSpent += addKurus(subtotal, applyTaxBps(subtotal, taxRate)) // taxRate is bps
     }
 
     if (orders.length > 0) {
@@ -536,7 +537,7 @@ export async function getRevenueAnalytics(workshopId: string): Promise<RevenueAn
     const discount = order.discountAmount ?? 0
     const subtotal = Math.max(0, lineTotal - discount)
     const taxRate = order.taxRate ?? 0
-    const grandTotal = subtotal + (subtotal * taxRate) / 100
+    const grandTotal = addKurus(subtotal, applyTaxBps(subtotal, taxRate)) // taxRate is bps
     const paid = order.paidAmount || 0
     totalReceivable += Math.max(0, grandTotal - paid)
   }
@@ -548,7 +549,7 @@ export async function getRevenueAnalytics(workshopId: string): Promise<RevenueAn
     const discount = order.discountAmount ?? 0
     const subtotal = Math.max(0, lineTotal - discount)
     const taxRate = order.taxRate ?? 0
-    const grandTotal = subtotal + (subtotal * taxRate) / 100
+    const grandTotal = addKurus(subtotal, applyTaxBps(subtotal, taxRate)) // taxRate is bps
     if (grandTotal > 0) {
       totalRevenue += grandTotal
       orderCount++

@@ -21,7 +21,7 @@ export const customerSchema = z.object({
   tag: z.string().default("standard"),
   source: z.string().optional().default(""),
   priceGroup: z.string().default("standard"),
-  discountRate: z.coerce.number().int().min(0).max(10000).optional().default(0), // bps (2000 = %20)
+  discountRate: z.coerce.number().min(0).max(100).optional().default(0), // percent in the form; converted to bps on submit
   whatsappConsent: z.boolean().default(false),
   smsConsent: z.boolean().default(false),
   emailConsent: z.boolean().default(false),

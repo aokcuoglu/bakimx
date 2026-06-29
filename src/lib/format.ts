@@ -1,22 +1,19 @@
 /**
  * Currency and number formatting utilities.
- * All monetary values use TRY (Turkish Lira).
+ * Monetary values are integer KURUŞ (minor units); 1 TRY = 100 kuruş.
  */
 
-const TRY_FORMATTER = new Intl.NumberFormat("tr-TR", {
-  style: "currency",
-  currency: "TRY",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
+import { formatKurus } from "@/lib/money"
 
 const NUMBER_FORMATTER = new Intl.NumberFormat("tr-TR")
 
 /**
- * Format a number as TRY currency string (e.g. "₺1.250,50").
+ * Format an integer KURUŞ amount as a TRY currency string
+ * (e.g. 125050 -> "₺1.250,50"). Delegates to the money module so there is a
+ * single formatter/contract across the app.
  */
-export function formatTRY(amount: number): string {
-  return TRY_FORMATTER.format(amount)
+export function formatTRY(kurus: number): string {
+  return formatKurus(kurus)
 }
 
 /**

@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { customerDisplayName } from "@/lib/format"
 import { formatTRY } from "@/lib/format"
+import { liraToKurus, kurusToLira, percentToBps } from "@/lib/money"
+import { calculateOrderTotals } from "@/lib/totals"
 import { useForm, useFieldArray } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -198,11 +200,13 @@ export function QuoteCreateForm() {
   }
 
   function selectCatalogPart(part: CatalogPart) {
+    // Catalog prices are stored in kuruş; the form inputs hold TRY (lira).
+    const priceLira = part.salePrice != null ? kurusToLira(part.salePrice) : null
     append({
       ...defaultItem,
       name: part.name,
-      unitPrice: part.salePrice,
-      totalPrice: part.salePrice ? part.salePrice * 1 : null,
+      unitPrice: priceLira,
+      totalPrice: priceLira,
       note: part.sku ? `SKU: ${part.sku}` : "",
     })
     setCatalogSearch("")
@@ -218,17 +222,28 @@ export function QuoteCreateForm() {
     }
   }
 
-  const partsTotal = itemsWatch
-    .filter((i) => i.type === "part")
-    .reduce((sum, i) => sum + (i.totalPrice ?? 0), 0)
-  const laborTotal = itemsWatch
-    .filter((i) => i.type === "labor")
-    .reduce((sum, i) => sum + (i.totalPrice ?? 0), 0)
-  const subtotal = partsTotal + laborTotal
-  const discount = Math.max(0, Number(discountAmount) || 0)
-  const afterDiscount = Math.max(0, subtotal - discount)
-  const tax = (afterDiscount * (Number(taxRate) || 0)) / 100
-  const grandTotal = afterDiscount + tax
+  // PREVIEW ONLY — the server recomputes the authoritative totals from the line
+  // items. Form values are TRY (lira); convert to kuruş/bps and run the same
+  // money module the server uses, so the preview matches the saved result.
+  const preview = calculateOrderTotals(
+    itemsWatch.map((i) => ({
+      type: i.type,
+      name: i.name,
+      quantity: Number(i.quantity) || 0,
+      unitPrice: i.unitPrice != null ? liraToKurus(Number(i.unitPrice)) : null,
+      totalPrice: i.totalPrice != null ? liraToKurus(Number(i.totalPrice)) : null,
+    })),
+    {
+      discountAmount: liraToKurus(Math.max(0, Number(discountAmount) || 0)),
+      taxRate: percentToBps(Number(taxRate) || 0),
+    }
+  )
+  const partsTotal = preview.partsTotal
+  const laborTotal = preview.laborTotal
+  const subtotal = preview.subtotal
+  const discount = preview.discountAmount
+  const tax = preview.taxAmount
+  const grandTotal = preview.grandTotal
 
   function onSubmit(values: QuoteFormValues) {
     if (!values.customerId) return
@@ -239,22 +254,25 @@ export function QuoteCreateForm() {
     formData.set("customerRequest", values.customerRequest || "")
     formData.set("internalNote", values.internalNote || "")
     formData.set("validUntil", values.validUntil || "")
-    formData.set("discountAmount", values.discountAmount || "0")
-    formData.set("taxRate", values.taxRate || "0")
-    formData.set("estimatedPartsTotal", String(partsTotal))
-    formData.set("estimatedLaborTotal", String(laborTotal))
-    formData.set("grandTotal", String(grandTotal))
+    // Convert TRY (lira) inputs to integer kuruş and the percent rate to bps;
+    // the server is authoritative for totals, so estimated*/grandTotal are not sent.
+    formData.set("discountAmount", String(liraToKurus(Math.max(0, Number(values.discountAmount) || 0))))
+    formData.set("taxRate", String(percentToBps(Number(values.taxRate) || 0)))
     formData.set("status", submitStatus)
     const cleanItems = values.items
       .filter((i) => i.name.trim())
-      .map((i) => ({
-        type: i.type,
-        name: i.name,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice != null && i.unitPrice > 0 ? i.unitPrice : undefined,
-        totalPrice: i.totalPrice != null && i.totalPrice > 0 ? i.totalPrice : undefined,
-        note: i.note || undefined,
-      }))
+      .map((i) => {
+        const unitPrice = i.unitPrice != null && i.unitPrice > 0 ? liraToKurus(Number(i.unitPrice)) : undefined
+        const totalPrice = i.totalPrice != null && i.totalPrice > 0 ? liraToKurus(Number(i.totalPrice)) : undefined
+        return {
+          type: i.type,
+          name: i.name,
+          quantity: i.quantity,
+          unitPrice,
+          totalPrice,
+          note: i.note || undefined,
+        }
+      })
     formData.set("items", JSON.stringify(cleanItems))
     startTransition(() => formAction(formData))
   }

@@ -1,9 +1,11 @@
+import { formatKurus } from "@/lib/money"
+
 export function generateWhatsAppShareText(options: {
   publicLink: string
   workshopName?: string
   plate?: string
   statusLabel?: string
-  totalAmount?: number | null
+  totalAmount?: number | null // kuruş
 }): string {
   const { publicLink, workshopName, plate, statusLabel, totalAmount } = options
 
@@ -33,7 +35,7 @@ export function generateWhatsAppShareText(options: {
 
   if (totalAmount != null && totalAmount > 0) {
     lines.push("")
-    lines.push(`💰 Toplam tutar: ₺${new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalAmount)}`)
+    lines.push(`💰 Toplam tutar: ${formatKurus(totalAmount)}`)
   }
 
   lines.push("")

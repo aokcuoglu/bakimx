@@ -10,8 +10,8 @@ export const partSchema = z.object({
   unit: z.string().min(1, "Birim zorunludur").default("adet"),
   stockQty: z.coerce.number().min(0).default(0),
   criticalStockQty: z.coerce.number().min(0).default(0),
-  purchasePrice: z.coerce.number().int().min(0).optional().default(0), // kuruş
-  salePrice: z.coerce.number().int().min(0).optional().default(0), // kuruş
+  purchasePrice: z.coerce.number().min(0).optional().default(0), // TRY in the form; converted to kuruş on submit
+  salePrice: z.coerce.number().min(0).optional().default(0), // TRY in the form; converted to kuruş on submit
   currency: z.enum(["TRY", "USD", "EUR"]).default("TRY"),
   supplierName: z.string().optional().default(""),
   supplierPhone: z.string().optional().default(""),

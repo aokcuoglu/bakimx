@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/app/status-badge"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
+import { liraToKurus, kurusToLira, percentToBps, bpsToPercent, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
@@ -184,8 +185,9 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
     estimatedDeliveryAt: order.estimatedDeliveryAt
       ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16)
       : "",
-    discountAmount: order.discountAmount?.toString() || "",
-    taxRate: order.taxRate?.toString() || "",
+    // Inputs show TRY/percent; stored values are kuruş/bps.
+    discountAmount: order.discountAmount != null ? String(kurusToLira(order.discountAmount)) : "",
+    taxRate: order.taxRate != null ? String(bpsToPercent(order.taxRate)) : "",
     notes: order.notes || "",
   })
 
@@ -218,8 +220,9 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
       const formData = new FormData()
       formData.set("technicianName", metaDraft.technicianName)
       formData.set("estimatedDeliveryAt", metaDraft.estimatedDeliveryAt)
-      formData.set("discountAmount", metaDraft.discountAmount)
-      formData.set("taxRate", metaDraft.taxRate)
+      // Convert TRY -> kuruş and percent -> bps for the server.
+      formData.set("discountAmount", String(liraToKurus(Math.max(0, Number(metaDraft.discountAmount) || 0))))
+      formData.set("taxRate", String(percentToBps(Number(metaDraft.taxRate) || 0)))
       formData.set("notes", metaDraft.notes)
 
       const res = await fetch(`/api/orders/${order.id}/meta`, {
@@ -580,7 +583,8 @@ function PartsLaborCard({
     setName(part.name)
     setSku(part.sku || "")
     setUnit(part.unit)
-    setPrice(part.salePrice?.toString() || "")
+    // Catalog prices are kuruş; the input holds TRY (lira).
+    setPrice(part.salePrice != null ? String(kurusToLira(part.salePrice)) : "")
     setQty("1")
     setShowCatalog(false)
     setCatalogSearch("")
@@ -611,7 +615,8 @@ function PartsLaborCard({
     if (sku) formData.set("sku", sku)
     if (unit) formData.set("unit", unit)
     formData.set("quantity", qty || "1")
-    if (price) formData.set("unitPrice", price)
+    // Price input is TRY (lira); the server stores kuruş.
+    if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
 
     try {
@@ -923,7 +928,7 @@ function PricingSummaryCard({
                 placeholder="0"
               />
             </div>
-            <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && (metaDraft.taxRate ? Number(metaDraft.taxRate) : 0) > 0 ? formatTRY((Math.max(0, totals.subtotal - (Number(metaDraft.discountAmount) || 0)) * (Number(metaDraft.taxRate) || 0)) / 100) : "—"} muted />
+            <SummaryRow label="KDV Tutarı" value={totals.hasAnyPrice && (Number(metaDraft.taxRate) || 0) > 0 ? formatTRY(applyTaxBps(applyDiscountKurus(totals.subtotal, liraToKurus(Number(metaDraft.discountAmount) || 0)), percentToBps(Number(metaDraft.taxRate) || 0))) : "—"} muted />
             <div className="border-t pt-2 mt-2">
               <SummaryRow
                 label="Genel Toplam"
@@ -974,11 +979,11 @@ function PricingSummaryCard({
   )
 }
 
+// subtotal is kuruş; draft fields are TRY (lira) / percent. Preview only.
 function calculatePreviewTotal(subtotal: number, draft: { discountAmount: string; taxRate: string }) {
-  const discount = Math.max(0, Number(draft.discountAmount) || 0)
-  const after = Math.max(0, subtotal - discount)
-  const tax = (after * (Number(draft.taxRate) || 0)) / 100
-  return after + tax
+  const afterDiscount = applyDiscountKurus(subtotal, liraToKurus(Number(draft.discountAmount) || 0))
+  const tax = applyTaxBps(afterDiscount, percentToBps(Number(draft.taxRate) || 0))
+  return addKurus(afterDiscount, tax)
 }
 
 function orderTaxRateDisplay(totals: Totals): string {
