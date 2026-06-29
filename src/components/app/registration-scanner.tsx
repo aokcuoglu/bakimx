@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
@@ -455,8 +456,15 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
 
   const isFallback = status === "denied" || status === "unsupported" || status === "error"
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
+  // Yalnızca istemcide (scannerOpen tetikli) render olur; SSR'da body yok.
+  if (typeof document === "undefined") return null
+
+  // document.body'ye portal: Base UI Dialog'un transform'lu/overflow'lu kutusu fixed
+  // alt öğeyi hapsediyordu (kontroller kırpılıp tıklanamaz hale geliyordu) ve
+  // modal body'ye pointer-events:none koyuyor. Portal + pointer-events-auto + z-[60]
+  // ile tam-ekran tarayıcı modalın üstünde gerçekten tıklanabilir olur.
+  return createPortal(
+    <div className="pointer-events-auto fixed inset-0 z-[60] flex flex-col bg-black text-white">
       {/* Üst bar */}
       <div className="flex items-center justify-between p-4 shrink-0">
         <button onClick={handleClose} className="flex size-11 items-center justify-center rounded-full bg-white/10" aria-label="Kapat">
@@ -562,6 +570,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

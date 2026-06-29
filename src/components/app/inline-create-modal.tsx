@@ -206,7 +206,18 @@ export function InlineCreateModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next, details) => {
+        // Tarayıcı açıkken: body'ye portal'lı tam-ekran tarayıcıya dokunmak "dışarı"
+        // sayılır; dış-tıklama/Esc modalı kapatmasın (tarayıcı kendi X'iyle kapanır).
+        if (!next && scannerOpen && (details.reason === "outside-press" || details.reason === "escape-key")) {
+          details.cancel()
+          return
+        }
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Yeni araç</DialogTitle>
