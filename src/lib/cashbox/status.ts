@@ -1,5 +1,5 @@
 import { PAYMENT_STATUS } from "@/lib/constants"
-import { moneyEquals, moneyGte, roundMoney } from "@/lib/money"
+import { subKurus } from "@/lib/money"
 
 export type PaymentMethodKey = "cash" | "credit_card" | "bank_transfer" | "other"
 export type PaymentStatusKey = "unpaid" | "partial" | "paid" | "overpaid" | "cancelled"
@@ -39,14 +39,19 @@ export const EXTENDED_PAYMENT_STATUS: Record<PaymentStatusKey, { label: string; 
   cancelled: PAYMENT_STATUS.cancelled,
 }
 
-export function computePaymentStatus(grandTotal: number, paidAmount: number): PaymentStatusKey {
-  if (paidAmount <= 0) return "unpaid"
-  if (moneyGte(paidAmount, grandTotal) && grandTotal > 0) {
-    return moneyEquals(paidAmount, grandTotal) ? "paid" : "overpaid"
+/**
+ * Payment status from authoritative kuruş integers. Integers compare exactly,
+ * so the float epsilon from the lira era is no longer needed.
+ */
+export function computePaymentStatus(grandTotalKurus: number, paidKurus: number): PaymentStatusKey {
+  if (paidKurus <= 0) return "unpaid"
+  if (paidKurus >= grandTotalKurus && grandTotalKurus > 0) {
+    return paidKurus === grandTotalKurus ? "paid" : "overpaid"
   }
   return "partial"
 }
 
-export function computeRemainingAmount(grandTotal: number, paidAmount: number): number {
-  return Math.max(0, roundMoney(grandTotal - paidAmount))
+/** Remaining balance in kuruş, clamped at zero. */
+export function computeRemainingAmount(grandTotalKurus: number, paidKurus: number): number {
+  return Math.max(0, subKurus(grandTotalKurus, paidKurus))
 }

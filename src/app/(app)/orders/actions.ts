@@ -6,6 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
+import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -84,19 +85,26 @@ export async function addOrderItemAction(formData: FormData) {
   })
   if (!order) return { error: "Servis emri bulunamadı" }
 
-  const item = await prisma.serviceOrderItem.create({
-    data: {
-      workshopId: user.workshopId,
-      serviceOrderId: raw.serviceOrderId,
-      type: parsed.data.type,
-      name: parsed.data.name,
-      sku: parsed.data.sku || null,
-      unit: parsed.data.unit || null,
-      quantity: parsed.data.quantity,
-      unitPrice: parsed.data.unitPrice || null,
-      totalPrice: parsed.data.totalPrice || null,
-      note: parsed.data.note || null,
-    },
+  // Item prices are integer kuruş. Adding an item changes the order's
+  // grandTotal, so re-derive paidAmount/remainingAmount/paymentStatus in the
+  // same transaction (server authority).
+  const item = await prisma.$transaction(async (tx) => {
+    const created = await tx.serviceOrderItem.create({
+      data: {
+        workshopId: user.workshopId,
+        serviceOrderId: raw.serviceOrderId,
+        type: parsed.data.type,
+        name: parsed.data.name,
+        sku: parsed.data.sku || null,
+        unit: parsed.data.unit || null,
+        quantity: parsed.data.quantity,
+        unitPrice: parsed.data.unitPrice ?? null,
+        totalPrice: parsed.data.totalPrice ?? null,
+        note: parsed.data.note || null,
+      },
+    })
+    await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
+    return created
   })
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", item.id, "order_item_added")
@@ -114,8 +122,14 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   })
   if (!item) return { error: "Kalem bulunamadı" }
 
-  const deleteResult = await prisma.serviceOrderItem.deleteMany({
-    where: { id: itemId, workshopId: user.workshopId },
+  const deleteResult = await prisma.$transaction(async (tx) => {
+    const result = await tx.serviceOrderItem.deleteMany({
+      where: { id: itemId, workshopId: user.workshopId },
+    })
+    if (result.count > 0) {
+      await recalcOrderPayment(tx, orderId, user.workshopId)
+    }
+    return result
   })
   if (deleteResult.count === 0) return { error: "Kalem bulunamadı" }
 
@@ -224,8 +238,8 @@ export async function updateOrderPaymentStatusAction(orderId: string, paymentSta
 const orderMetaSchema = z.object({
   technicianName: z.string().max(120).optional().or(z.literal("")),
   estimatedDeliveryAt: z.string().optional().or(z.literal("")),
-  discountAmount: z.coerce.number().min(0).optional(),
-  taxRate: z.coerce.number().min(0).max(100).optional(),
+  discountAmount: z.coerce.number().int("İndirim tutarı kuruş (tam sayı) olmalıdır").min(0).optional(), // kuruş
+  taxRate: z.coerce.number().int("KDV oranı bps (tam sayı) olmalıdır").min(0).max(10000).optional(), // bps (2000 = %20)
   notes: z.string().max(2000).optional().or(z.literal("")),
 })
 
@@ -261,15 +275,20 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     ? new Date(parsed.data.estimatedDeliveryAt)
     : null
 
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: {
-      technicianName: parsed.data.technicianName || null,
-      estimatedDeliveryAt,
-      discountAmount: parsed.data.discountAmount ?? null,
-      taxRate: parsed.data.taxRate ?? null,
-      notes: parsed.data.notes || null,
-    },
+  // Discount (kuruş) and taxRate (bps) move the order's grandTotal, so re-derive
+  // payment fields in the same transaction (server authority).
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId },
+      data: {
+        technicianName: parsed.data.technicianName || null,
+        estimatedDeliveryAt,
+        discountAmount: parsed.data.discountAmount ?? null,
+        taxRate: parsed.data.taxRate ?? null,
+        notes: parsed.data.notes || null,
+      },
+    })
+    await recalcOrderPayment(tx, orderId, user.workshopId)
   })
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated")

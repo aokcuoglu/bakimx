@@ -1,6 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { formatTRY } from "@/lib/format"
+import { bpsToPercent } from "@/lib/money"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -314,7 +316,7 @@ export function TechnicianOrderDetail({
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-sm font-medium text-foreground">
-                    {item.totalPrice != null ? `₺${item.totalPrice.toLocaleString("tr-TR")}` : item.unitPrice ? `₺${(item.unitPrice * item.quantity).toLocaleString("tr-TR")}` : "—"}
+                    {item.totalPrice != null ? formatTRY(item.totalPrice) : item.unitPrice ? formatTRY(item.unitPrice * item.quantity) : "—"}
                   </span>
                   <span className="text-xs text-muted-foreground ml-1">×{item.quantity}</span>
                 </div>
@@ -326,18 +328,18 @@ export function TechnicianOrderDetail({
               {order.totals.discountAmount > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>İndirim</span>
-                  <span>-₺{order.totals.discountAmount.toLocaleString("tr-TR")}</span>
+                  <span>-{formatTRY(order.totals.discountAmount)}</span>
                 </div>
               )}
               {order.totals.taxAmount > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>KDV (%{order.taxRate})</span>
-                  <span>₺{order.totals.taxAmount.toLocaleString("tr-TR")}</span>
+                  <span>KDV (%{bpsToPercent(order.taxRate)})</span>
+                  <span>{formatTRY(order.totals.taxAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-semibold text-foreground">
                 <span>Toplam</span>
-                <span>₺{order.totals.grandTotal.toLocaleString("tr-TR")}</span>
+                <span>{formatTRY(order.totals.grandTotal)}</span>
               </div>
             </div>
           )}

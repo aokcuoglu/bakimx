@@ -4,16 +4,15 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 import { z } from "zod/v4"
-import { computePaymentStatus, computeRemainingAmount } from "@/lib/cashbox/status"
+import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
-import { roundMoney, sumMoney } from "@/lib/money"
-import type { Prisma } from "@prisma/client"
+import { subKurus, sumKurus } from "@/lib/money"
 
 const collectionCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
   serviceOrderId: z.string().optional().or(z.literal("")),
   quoteId: z.string().optional().or(z.literal("")),
-  amount: z.coerce.number().min(0.01, "Tutar sıfırdan büyük olmalıdır"),
+  amount: z.coerce.number().int("Tutar kuruş (tam sayı) olmalıdır").min(1, "Tutar sıfırdan büyük olmalıdır"), // kuruş
   method: z.enum(["cash", "credit_card", "bank_transfer", "other"], {
     error: "Geçerli bir ödeme yöntemi seçiniz",
   }),
@@ -176,47 +175,6 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
   return { success: true }
 }
 
-async function recalcOrderPayment(
-  tx: Prisma.TransactionClient,
-  serviceOrderId: string,
-  workshopId: string
-): Promise<{ statusChanged: boolean; newStatus: string } | null> {
-  const order = await tx.serviceOrder.findFirst({
-    where: { id: serviceOrderId, workshopId },
-    include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
-  })
-  if (!order) return null
-
-  const totals = calculateOrderTotalsFromMinimal(order.items, {
-    discountAmount: order.discountAmount,
-    taxRate: order.taxRate,
-  })
-
-  const collections = await tx.collectionPayment.findMany({
-    where: { serviceOrderId, workshopId, status: "completed" },
-  })
-
-  const paidAmount = sumMoney(collections.map((c) => c.amount))
-  const newPaymentStatus = computePaymentStatus(totals.grandTotal, paidAmount)
-  const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
-  const lastPaymentAt =
-    collections.length > 0
-      ? collections.sort((a, b) => b.paymentDate.getTime() - a.paymentDate.getTime())[0].paymentDate
-      : null
-
-  await tx.serviceOrder.updateMany({
-    where: { id: serviceOrderId, workshopId },
-    data: {
-      paymentStatus: newPaymentStatus as import("@prisma/client").PaymentStatus,
-      paidAmount,
-      remainingAmount,
-      lastPaymentAt,
-    },
-  })
-
-  return { statusChanged: order.paymentStatus !== newPaymentStatus, newStatus: newPaymentStatus }
-}
-
 export async function getCustomerOrdersForPayment(customerId: string) {
   const { requireAuth } = await import("@/lib/auth")
   const { workshopId } = await requireAuth()
@@ -256,8 +214,8 @@ export async function getCustomerOrdersForPayment(customerId: string) {
         discountAmount: order.discountAmount,
         taxRate: order.taxRate,
       })
-      const paid = roundMoney(paidByOrder.get(order.id) || order.paidAmount || 0)
-      const remaining = Math.max(0, roundMoney(totals.grandTotal - paid))
+      const paid = sumKurus([paidByOrder.get(order.id) ?? order.paidAmount ?? 0])
+      const remaining = Math.max(0, subKurus(totals.grandTotal, paid))
       return {
         id: order.id,
         workOrderNo: order.workOrderNo,

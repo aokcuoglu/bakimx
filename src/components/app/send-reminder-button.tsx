@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Send, Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { formatTRY } from "@/lib/format"
 
 type ReminderResult = {
   sms?: { success: boolean; error?: string }
@@ -88,7 +89,7 @@ export function SendReminderButton({
               </span>
             </DialogTitle>
             <DialogDescription>
-              {customerName} müşterisine{vehiclePlate ? ` (${vehiclePlate})` : ""} {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(remainingAmount)} tutarındaki alacak için hatırlatma gönderilecek.
+              {customerName} müşterisine{vehiclePlate ? ` (${vehiclePlate})` : ""} {formatTRY(remainingAmount)} tutarındaki alacak için hatırlatma gönderilecek.
             </DialogDescription>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">Müşterinin iletişim izinlerine göre SMS, WhatsApp veya e-posta gönderilir.</p>

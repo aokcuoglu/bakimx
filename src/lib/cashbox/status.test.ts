@@ -1,25 +1,27 @@
 import { expect, test } from "bun:test"
 import { computePaymentStatus, computeRemainingAmount } from "@/lib/cashbox/status"
 
-test("exact payment reads as paid despite float drift", () => {
-  expect(computePaymentStatus(0.3, 0.1 + 0.2)).toBe("paid")
-  expect(computePaymentStatus(100, 100)).toBe("paid")
+// All amounts are integer kuruş.
+
+test("exact payment reads as paid", () => {
+  expect(computePaymentStatus(30, 30)).toBe("paid") // ₺0,30
+  expect(computePaymentStatus(10000, 10000)).toBe("paid") // ₺100,00
 })
 
 test("underpayment is partial", () => {
-  expect(computePaymentStatus(100, 40)).toBe("partial")
+  expect(computePaymentStatus(10000, 4000)).toBe("partial")
 })
 
 test("no payment is unpaid", () => {
-  expect(computePaymentStatus(100, 0)).toBe("unpaid")
+  expect(computePaymentStatus(10000, 0)).toBe("unpaid")
 })
 
-test("over a cent is overpaid", () => {
-  expect(computePaymentStatus(100, 100.5)).toBe("overpaid")
+test("over the total is overpaid", () => {
+  expect(computePaymentStatus(10000, 10050)).toBe("overpaid")
 })
 
-test("remaining clamps and rounds", () => {
-  expect(computeRemainingAmount(0.3, 0.1 + 0.2)).toBe(0)
-  expect(computeRemainingAmount(100, 40)).toBe(60)
-  expect(computeRemainingAmount(100, 150)).toBe(0)
+test("remaining clamps and is exact", () => {
+  expect(computeRemainingAmount(30, 30)).toBe(0)
+  expect(computeRemainingAmount(10000, 4000)).toBe(6000)
+  expect(computeRemainingAmount(10000, 15000)).toBe(0)
 })

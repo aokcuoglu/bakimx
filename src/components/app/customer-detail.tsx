@@ -35,6 +35,7 @@ import { CustomerTypeBadge, CustomerTagBadge, PriceGroupBadge } from "@/componen
 import { CustomerCreateForm, type CustomerFormInitial } from "@/components/app/customer-create-form"
 import { DeleteCustomerButton } from "@/components/app/delete-customer-button"
 import { formatTRY } from "@/lib/format"
+import { bpsToPercent } from "@/lib/money"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { INTAKE_STATUS, CUSTOMER_SOURCES } from "@/lib/constants"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
@@ -489,7 +490,7 @@ export function CustomerDetail({
                     <span className="inline-flex items-center gap-2">
                       <PriceGroupBadge group={customer.priceGroup} />
                       {customer.discountRate ? (
-                        <span className="text-xs text-muted-foreground">%{customer.discountRate} iskonto</span>
+                        <span className="text-xs text-muted-foreground">%{bpsToPercent(customer.discountRate)} iskonto</span>
                       ) : null}
                     </span>
                   }

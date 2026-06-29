@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { applyTaxBps, addKurus } from "@/lib/money"
 
 type OStat = import("@prisma/client").OrderStatus
 type IStat = import("@prisma/client").IntakeStatus
@@ -134,8 +135,8 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
     const discount = order.discountAmount ?? 0
     const taxRate = order.taxRate ?? 0
     const subtotal = Math.max(0, t - discount)
-    const tax = (subtotal * taxRate) / 100
-    const grandTotal = subtotal + tax
+    const tax = applyTaxBps(subtotal, taxRate) // taxRate is bps
+    const grandTotal = addKurus(subtotal, tax)
     const paid = order.paidAmount || 0
     const remaining = Math.max(0, grandTotal - paid)
     if (remaining > 0) {

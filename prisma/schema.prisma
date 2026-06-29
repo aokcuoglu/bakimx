@@ -278,7 +278,7 @@ model Customer {
   tag           CustomerTag? @default(standard)
   source        CustomerSource?
   priceGroup    CustomerPriceGroup? @default(standard)
-  discountRate  Float?     @default(0)
+  discountRate  Int?       @default(0) // bps (2000 = %20)
   riskNote      String?
   whatsappConsent Boolean  @default(false)
   smsConsent      Boolean  @default(false)
@@ -598,8 +598,8 @@ model ServiceOrder {
   assignedAt           DateTime?
   completedAt          DateTime?
   estimatedDeliveryAt  DateTime?
-  discountAmount       Float?
-  taxRate              Float?
+  discountAmount       Int?              // kuruş
+  taxRate              Int?              // bps (2000 = %20)
   notes                String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
@@ -614,8 +614,8 @@ model ServiceOrder {
   laborSessions           LaborSession[]
   photos                  VehiclePhoto[]
 
-  paidAmount     Float?
-  remainingAmount Float?
+  paidAmount     Int?       // kuruş
+  remainingAmount Int?      // kuruş
   lastPaymentAt  DateTime?
 
   @@index([workshopId])
@@ -667,7 +667,7 @@ model CollectionPayment {
   serviceOrderId    String?
   serviceOrder      ServiceOrder?   @relation(fields: [serviceOrderId], references: [id])
   quoteId           String?
-  amount            Float
+  amount            Int             // kuruş
   currency          String          @default("TRY")
   method            PaymentMethod   @default(cash)
   status            CollectionStatus @default(completed)
@@ -697,8 +697,8 @@ model ServiceOrderItem {
   sku            String?
   unit           String?
   quantity       Int          @default(1)
-  unitPrice      Float?
-  totalPrice     Float?
+  unitPrice      Int?         // kuruş
+  totalPrice     Int?         // kuruş
   partId         String?
   part           PartStockItem? @relation(fields: [partId], references: [id])
   note           String?
@@ -729,11 +729,11 @@ model Quote {
   customerRequest       String?
   internalNote          String?
   validUntil            DateTime?
-  estimatedLaborTotal   Float?
-  estimatedPartsTotal   Float?
-  discountAmount        Float?
-  taxRate               Float?
-  grandTotal            Float?
+  estimatedLaborTotal   Int?              // kuruş
+  estimatedPartsTotal   Int?              // kuruş
+  discountAmount        Int?              // kuruş
+  taxRate               Int?              // bps (2000 = %20)
+  grandTotal            Int?              // kuruş
   convertedServiceOrderId String? @unique
   convertedServiceOrder ServiceOrder? @relation("QuoteToServiceOrder", fields: [convertedServiceOrderId], references: [id])
   createdAt             DateTime  @default(now())
@@ -768,8 +768,8 @@ model QuoteItem {
   sku       String?
   unit      String?
   quantity  Int               @default(1)
-  unitPrice Float?
-  totalPrice Float?
+  unitPrice Int?              // kuruş
+  totalPrice Int?             // kuruş
   partId    String?
   part      PartStockItem?    @relation(fields: [partId], references: [id])
   note      String?
@@ -910,8 +910,8 @@ model PartStockItem {
   unit             String   @default("adet")
   stockQty         Int      @default(0)
   criticalStockQty Int      @default(0)
-  purchasePrice    Float?
-  salePrice        Float?
+  purchasePrice    Int?     // kuruş
+  salePrice        Int?     // kuruş
   currency         String   @default("TRY")
   supplierName     String?
   supplierPhone    String?
