@@ -1,14 +1,23 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { ShieldCheck, Smartphone, Users, Sparkles } from "lucide-react";
+
+const tags = [
+  "Oto Tamirciler",
+  "Özel Servisler",
+  "Kaporta/Boya Atölyeleri",
+  "Mekanik Servisler",
+];
+
+const assurances = [
+  { icon: ShieldCheck, label: "KVKK uyumlu" },
+  { icon: Smartphone, label: "Mobil öncelikli" },
+  { icon: Users, label: "Çok kullanıcılı & yetki" },
+  { icon: Sparkles, label: "Kurulum gerektirmez" },
+];
 
 export function TrustStrip() {
-  const tags = [
-    "Oto Tamirciler",
-    "Özel Servisler",
-    "Kaporta/Boya Atölyeleri",
-    "Mekanik Servisler",
-  ];
   const prefersReducedMotion = useReducedMotion();
 
   return (
@@ -21,7 +30,7 @@ export function TrustStrip() {
           transition={{ duration: 0.5 }}
           className="text-sm sm:text-base text-muted-foreground mb-4"
         >
-          BakimX; oto tamirciler, özel servisler ve küçük servis işletmeleri için tasarlanıyor.
+          Türkiye&apos;deki oto servisler için geliştiriliyor.
         </motion.p>
         <div className="flex flex-wrap justify-center gap-2">
           {tags.map((tag, i) => (
@@ -37,6 +46,20 @@ export function TrustStrip() {
             </motion.span>
           ))}
         </div>
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2"
+        >
+          {assurances.map(({ icon: Icon, label }) => (
+            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Icon className="h-3.5 w-3.5 text-primary" />
+              {label}
+            </span>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
