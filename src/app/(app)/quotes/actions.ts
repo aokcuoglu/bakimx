@@ -9,13 +9,17 @@ import { generateQuoteNo, formatQuoteNo } from "@/lib/work-order-number"
 import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyQuoteReady } from "@/lib/communications/triggers"
+import { calculateOrderTotals } from "@/lib/totals"
 
 export async function createQuoteAction(formData: FormData) {
   const user = await requireAuth()
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}
-  const fields = ["customerId", "vehicleId", "title", "customerRequest", "internalNote", "validUntil", "status", "discountAmount", "taxRate", "estimatedLaborTotal", "estimatedPartsTotal", "grandTotal"]
+  // NOTE: estimatedLaborTotal/estimatedPartsTotal/grandTotal are intentionally
+  // NOT read from the client — they are derived from the line items on the
+  // server. discountAmount is kuruş, taxRate is bps.
+  const fields = ["customerId", "vehicleId", "title", "customerRequest", "internalNote", "validUntil", "status", "discountAmount", "taxRate"]
   for (const f of fields) {
     const v = formData.get(f)
     if (v && typeof v === "string" && v.trim()) raw[f] = v
@@ -34,25 +38,9 @@ export async function createQuoteAction(formData: FormData) {
     if (!vehicle) return { error: "Araç bulunamadı veya müşteriyle eşleşmiyor" }
   }
 
-  const quote = await prisma.quote.create({
-    data: {
-      workshopId,
-      customerId,
-      vehicleId: data.vehicleId || null,
-      quoteNo: generateQuoteNo(),
-      title: data.title || null,
-      customerRequest: data.customerRequest || null,
-      internalNote: data.internalNote || null,
-      validUntil: validUntil ? new Date(validUntil) : null,
-      status: data.status || "draft",
-      discountAmount: data.discountAmount ? Number(data.discountAmount) : null,
-      taxRate: data.taxRate ? Number(data.taxRate) : null,
-      estimatedLaborTotal: data.estimatedLaborTotal ? Number(data.estimatedLaborTotal) : null,
-      estimatedPartsTotal: data.estimatedPartsTotal ? Number(data.estimatedPartsTotal) : null,
-      grandTotal: data.grandTotal ? Number(data.grandTotal) : null,
-    },
-  })
-
+  // Parse + validate the line items first; the server is the single authority
+  // over totals, so we never trust a client-sent grandTotal.
+  const lineItems: Array<{ type: "part" | "labor"; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }> = []
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
     let items: Array<Record<string, unknown>>
@@ -64,20 +52,59 @@ export async function createQuoteAction(formData: FormData) {
     for (const item of items) {
       const parsedItem = quoteItemActionSchema.safeParse(item)
       if (parsedItem.success) {
-        await prisma.quoteItem.create({
-          data: {
-            workshopId,
-            quoteId: quote.id,
-            type: parsedItem.data.type,
-            name: parsedItem.data.name,
-            quantity: parsedItem.data.quantity,
-            unitPrice: parsedItem.data.unitPrice ? Number(parsedItem.data.unitPrice) : null,
-            totalPrice: parsedItem.data.totalPrice ? Number(parsedItem.data.totalPrice) : null,
-            note: parsedItem.data.note || null,
-          },
+        lineItems.push({
+          type: parsedItem.data.type,
+          name: parsedItem.data.name,
+          quantity: parsedItem.data.quantity,
+          unitPrice: parsedItem.data.unitPrice ?? null,
+          totalPrice: parsedItem.data.totalPrice ?? null,
+          note: parsedItem.data.note || null,
         })
       }
     }
+  }
+
+  const discountAmount = data.discountAmount ?? null // kuruş
+  const taxRate = data.taxRate ?? null // bps
+
+  // Authoritative totals computed from the line items (kuruş; taxRate in bps).
+  const totals = calculateOrderTotals(lineItems, {
+    discountAmount: discountAmount ?? 0,
+    taxRate: taxRate ?? 0,
+  })
+
+  const quote = await prisma.quote.create({
+    data: {
+      workshopId,
+      customerId,
+      vehicleId: data.vehicleId || null,
+      quoteNo: generateQuoteNo(),
+      title: data.title || null,
+      customerRequest: data.customerRequest || null,
+      internalNote: data.internalNote || null,
+      validUntil: validUntil ? new Date(validUntil) : null,
+      status: data.status || "draft",
+      discountAmount,
+      taxRate,
+      estimatedLaborTotal: totals.hasAnyPrice ? totals.laborTotal : null,
+      estimatedPartsTotal: totals.hasAnyPrice ? totals.partsTotal : null,
+      grandTotal: totals.hasAnyPrice ? totals.grandTotal : null,
+    },
+  })
+
+  for (const item of lineItems) {
+    await prisma.quoteItem.create({
+      data: {
+        workshopId,
+        quoteId: quote.id,
+        type: item.type,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        note: item.note,
+      },
+    })
   }
 
   await AuditLogAction(workshopId, user.id, "Quote", quote.id, "quote_created")
@@ -115,14 +142,14 @@ export async function updateQuoteStatusAction(formData: FormData) {
       include: { customer: true, vehicle: true },
     })
     if (quoteWithDetails) {
-      const { formatTRY } = await import("@/lib/format")
+      const { formatKurus } = await import("@/lib/money")
       try {
         await notifyQuoteReady(
           workshopId,
           quote.customerId,
           quoteWithDetails.vehicle?.plate || null,
           quote.quoteNo || formatQuoteNo(quote),
-          quote.grandTotal != null ? formatTRY(quote.grandTotal) : null,
+          quote.grandTotal != null ? formatKurus(quote.grandTotal) : null,
           undefined,
           quoteId,
         )

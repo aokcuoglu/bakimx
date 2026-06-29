@@ -10,8 +10,8 @@ export const partSchema = z.object({
   unit: z.string().min(1, "Birim zorunludur").default("adet"),
   stockQty: z.coerce.number().min(0).default(0),
   criticalStockQty: z.coerce.number().min(0).default(0),
-  purchasePrice: z.coerce.number().min(0).optional().default(0),
-  salePrice: z.coerce.number().min(0).optional().default(0),
+  purchasePrice: z.coerce.number().int().min(0).optional().default(0), // kuruş
+  salePrice: z.coerce.number().int().min(0).optional().default(0), // kuruş
   currency: z.enum(["TRY", "USD", "EUR"]).default("TRY"),
   supplierName: z.string().optional().default(""),
   supplierPhone: z.string().optional().default(""),
@@ -32,8 +32,8 @@ export const partCreateSchema = z.object({
   unit: z.string().default("adet"),
   stockQty: z.coerce.number().int("Stok miktarı tam sayı olmalıdır").min(0, "Stok miktarı negatif olamaz").default(0),
   criticalStockQty: z.coerce.number().int("Kritik stok miktarı tam sayı olmalıdır").min(0, "Kritik stok miktarı negatif olamaz").default(0),
-  purchasePrice: z.coerce.number().min(0, "Alış fiyatı negatif olamaz").optional(),
-  salePrice: z.coerce.number().min(0, "Satış fiyatı negatif olamaz").optional(),
+  purchasePrice: z.coerce.number().int("Alış fiyatı kuruş (tam sayı) olmalıdır").min(0, "Alış fiyatı negatif olamaz").optional(), // kuruş
+  salePrice: z.coerce.number().int("Satış fiyatı kuruş (tam sayı) olmalıdır").min(0, "Satış fiyatı negatif olamaz").optional(), // kuruş
   currency: z.string().default("TRY"),
   supplierName: z.string().optional().or(z.literal("")),
   supplierPhone: z.string().optional().or(z.literal("")),

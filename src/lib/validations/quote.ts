@@ -4,8 +4,9 @@ export const quoteItemSchema = z.object({
   type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
   name: z.string().min(1, "Kalem adı zorunludur"),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır"),
-  unitPrice: z.coerce.number().min(0, "Birim fiyat negatif olamaz").nullable(),
-  totalPrice: z.coerce.number().min(0, "Toplam fiyat negatif olamaz").nullable(),
+  // Money is integer kuruş (client converts TRY -> kuruş before submit).
+  unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").nullable(),
+  totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").nullable(),
   note: z.string().optional().default(""),
 })
 
@@ -19,8 +20,8 @@ export const quoteSchema = z.object({
   internalNote: z.string().optional().default(""),
   validUntil: z.string().optional().default(""),
   status: z.enum(["draft", "sent"]).default("draft"),
-  discountAmount: z.string().optional().default("0"),
-  taxRate: z.string().optional().default("20"),
+  discountAmount: z.string().optional().default("0"), // kuruş (string in the form)
+  taxRate: z.string().optional().default("2000"), // bps (2000 = %20)
   items: z.array(quoteItemSchema).default([]),
 })
 
@@ -33,8 +34,9 @@ export const quoteItemActionSchema = z.object({
   type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
   name: z.string().min(1, "Kalem adı zorunludur"),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
-  unitPrice: z.coerce.number().min(0, "Birim fiyat negatif olamaz").optional(),
-  totalPrice: z.coerce.number().min(0, "Toplam fiyat negatif olamaz").optional(),
+  // Money is integer kuruş (client converts TRY -> kuruş before submit).
+  unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
+  totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").optional(),
   note: z.string().optional(),
 })
 
@@ -45,11 +47,14 @@ export const quoteCreateSchema = z.object({
   customerRequest: z.string().optional(),
   internalNote: z.string().optional(),
   validUntil: z.string().optional(),
-  estimatedLaborTotal: z.coerce.number().min(0, "İşçilik toplamı negatif olamaz").optional(),
-  estimatedPartsTotal: z.coerce.number().min(0, "Parça toplamı negatif olamaz").optional(),
-  discountAmount: z.coerce.number().min(0, "İndirim tutarı negatif olamaz").optional(),
-  taxRate: z.coerce.number().min(0, "KDV oranı negatif olamaz").max(100, "KDV oranı en fazla %100 olabilir").optional(),
-  grandTotal: z.coerce.number().min(0, "Genel toplam negatif olamaz").optional(),
+  // Money is integer kuruş; taxRate is integer bps (2000 = %20). The totals
+  // (estimatedLaborTotal/estimatedPartsTotal/grandTotal) are RECOMPUTED on the
+  // server from the line items — any client-sent value here is ignored.
+  estimatedLaborTotal: z.coerce.number().int().min(0, "İşçilik toplamı negatif olamaz").optional(),
+  estimatedPartsTotal: z.coerce.number().int().min(0, "Parça toplamı negatif olamaz").optional(),
+  discountAmount: z.coerce.number().int("İndirim tutarı kuruş (tam sayı) olmalıdır").min(0, "İndirim tutarı negatif olamaz").optional(),
+  taxRate: z.coerce.number().int("KDV oranı bps (tam sayı) olmalıdır").min(0, "KDV oranı negatif olamaz").max(10000, "KDV oranı en fazla %100 olabilir").optional(),
+  grandTotal: z.coerce.number().int().min(0, "Genel toplam negatif olamaz").optional(),
   status: z.enum(["draft", "sent", "accepted", "rejected", "expired", "converted", "cancelled"]).optional(),
 })
 

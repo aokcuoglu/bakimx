@@ -21,7 +21,7 @@ export const customerSchema = z.object({
   tag: z.string().default("standard"),
   source: z.string().optional().default(""),
   priceGroup: z.string().default("standard"),
-  discountRate: z.coerce.number().min(0).max(100).optional().default(0),
+  discountRate: z.coerce.number().int().min(0).max(10000).optional().default(0), // bps (2000 = %20)
   whatsappConsent: z.boolean().default(false),
   smsConsent: z.boolean().default(false),
   emailConsent: z.boolean().default(false),
@@ -59,8 +59,9 @@ export const customerCreateSchema = z
     priceGroup: z.enum(["standard", "discounted", "fleet"]).optional(),
     discountRate: z.coerce
       .number()
+      .int("İndirim oranı bps (tam sayı) olmalıdır")
       .min(0, "İndirim oranı 0'dan küçük olamaz")
-      .max(100, "İndirim oranı 100'den büyük olamaz")
+      .max(10000, "İndirim oranı %100'den büyük olamaz") // bps (2000 = %20)
       .optional(),
     riskNote: z.string().optional(),
     whatsappConsent: z.boolean().optional().default(false),

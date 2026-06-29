@@ -14,13 +14,6 @@ import {
   applyRateBps,
   percentToBps,
   bpsToPercent,
-  // deprecated float helpers (kept until callers migrate)
-  roundMoney,
-  sumMoney,
-  addMoney,
-  subMoney,
-  moneyEquals,
-  moneyGte,
 } from "@/lib/money"
 
 // ---------------------------------------------------------------------------
@@ -179,18 +172,4 @@ test("percentToBps / bpsToPercent round-trip", () => {
   expect(percentToBps(100)).toBe(10000)
   expect(bpsToPercent(2000)).toBe(20)
   expect(bpsToPercent(550)).toBe(5.5)
-})
-
-// ---------------------------------------------------------------------------
-// Deprecated float helpers — preserved behaviour until callers migrate
-// ---------------------------------------------------------------------------
-
-test("deprecated float helpers still behave as before", () => {
-  expect(roundMoney(0.1 + 0.2)).toBe(0.3)
-  expect(roundMoney(10.006)).toBe(10.01)
-  expect(sumMoney([100.1, 200.2, 300.3])).toBe(600.6)
-  expect(addMoney(0.1, 0.2)).toBe(0.3)
-  expect(subMoney(0.3, 0.1)).toBe(0.2)
-  expect(moneyEquals(0.1 + 0.2, 0.3)).toBe(true)
-  expect(moneyGte(99.999, 100)).toBe(true)
 })
