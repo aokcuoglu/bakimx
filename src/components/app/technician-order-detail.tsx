@@ -333,7 +333,7 @@ export function TechnicianOrderDetail({
               )}
               {order.totals.taxAmount > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>KDV (%{bpsToPercent(order.taxRate)})</span>
+                  <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
                   <span>{formatTRY(order.totals.taxAmount)}</span>
                 </div>
               )}
