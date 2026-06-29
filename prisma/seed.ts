@@ -116,7 +116,7 @@ async function main() {
         tag: "fleet",
         source: "referral",
         priceGroup: "fleet",
-        discountRate: 10,
+        discountRate: 1000, // bps = %10
         whatsappConsent: true,
         smsConsent: false,
         emailConsent: true,
