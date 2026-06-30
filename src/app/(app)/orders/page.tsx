@@ -1,4 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
+import { type PlanTier } from "@/lib/plan"
+import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -7,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OrderList } from "@/components/app/order-list"
 import { FilterSelect } from "@/components/app/filter-select"
+import { StandaloneServiceAdvisor } from "@/components/app/standalone-service-advisor"
+import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 
@@ -21,6 +25,7 @@ export default async function OrdersPage({
   const payment = (params.payment || "").trim()
 
   const { user, workshop } = await getAppData()
+  const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
 
   const [orders, statusGroups] = await Promise.all([
     prisma.serviceOrder.findMany({
@@ -105,7 +110,7 @@ export default async function OrdersPage({
       workshopName={workshop?.name}
       pageTitle="İş Emirleri"
       pageActions={
-        <Button nativeButton={false} size="icon" render={<Link href="/orders/new" />} aria-label="Yeni iş emri">
+        <Button nativeButton={false} size="icon" render={<Link href="/intakes/new" />} aria-label="Yeni iş emri">
           <Plus className="size-5" />
         </Button>
       }
@@ -122,7 +127,7 @@ export default async function OrdersPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emirleri</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
           </div>
-          <Button nativeButton={false} size="default" className="hidden sm:inline-flex" render={<Link href="/orders/new" />}>
+          <Button nativeButton={false} size="default" className="hidden sm:inline-flex" render={<Link href="/intakes/new" />}>
             <Plus className="size-4" />
             Yeni İş Emri
           </Button>
@@ -193,12 +198,15 @@ export default async function OrdersPage({
                 ? "Farklı bir filtre deneyin"
                 : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
             </p>
-            <Button nativeButton={false} variant="link" size="sm" className="mt-4" render={<Link href="/orders/new" />}>
+            <Button nativeButton={false} variant="link" size="sm" className="mt-4" render={<Link href="/intakes/new" />}>
               <Plus className="size-4" />
               Yeni İş Emri
             </Button>
           </div>
         )}
+
+        {/* AI Servis Danışmanı — şikayetten önerilen iş kalemleri (Premium). */}
+        {hasAiAdvisor ? <StandaloneServiceAdvisor /> : <AdvisorPremiumLock />}
       </div>
     </AppShell>
   )

@@ -210,7 +210,7 @@ export function CustomerDetail({
                nativeButton={false}
                variant="outline"
                size="sm"
-               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
+               render={<Link href={`/intakes/new?customerId=${customer.id}`} />}
              >
                <Wrench className="size-4" />
                Yeni İş Emri
@@ -315,7 +315,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz iş emri yok</p>
                 <Link
-                  href={`/orders/new?customerId=${customer.id}`}
+                  href={`/intakes/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
