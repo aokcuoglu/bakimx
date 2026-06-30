@@ -49,6 +49,18 @@ export function getWhatsAppShareUrl(text: string): string {
   return `https://wa.me/?text=${encoded}`
 }
 
+/**
+ * wa.me deep link that targets a specific customer number. The workshop's own
+ * WhatsApp opens with the recipient + prefilled text (no Business API needed).
+ * Phone is normalised to international TR format (90XXXXXXXXXX).
+ */
+export function getWhatsAppSendUrl(phone: string, text: string): string {
+  const digits = phone.replace(/\D/g, "").replace(/^0/, "")
+  const intl = digits.startsWith("90") ? digits : `90${digits}`
+  const encoded = encodeURIComponent(text)
+  return `https://wa.me/${intl}?text=${encoded}`
+}
+
 export function buildPublicLink(token: string): string {
   return `/s/${token}`
 }
