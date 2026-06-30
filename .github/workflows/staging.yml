@@ -55,6 +55,14 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Serialize VPS deploys across BOTH workflows (prod + staging share this group).
+    # Prod and staging run on the same VPS and pull the same `app` image layers;
+    # two concurrent `docker compose pull` race the containerd snapshotter and one
+    # fails with "lchown ... no such file or directory". cancel-in-progress:false
+    # queues the second deploy instead of cancelling it.
+    concurrency:
+      group: vps-deploy
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
