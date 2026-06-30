@@ -195,6 +195,28 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   return { success: true }
 }
 
+export async function confirmVehicleVinAction(vehicleId: string) {
+  const user = await requireAuth()
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, workshopId: user.workshopId },
+  })
+  if (!vehicle) return { error: "Araç bulunamadı" }
+  if (!vehicle.vin) return { error: "Önce şase numarası girilmeli" }
+  if (vehicle.vinConfirmed) return { success: true as const }
+
+  await prisma.vehicle.update({
+    where: { id: vehicleId },
+    data: { vinConfirmed: true },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_vin_confirmed")
+
+  revalidatePath("/vehicles")
+  revalidatePath(`/vehicles/${vehicleId}`)
+  return { success: true as const }
+}
+
 export async function deleteVehicleAction(vehicleId: string) {
   const user = await requireAuth()
 

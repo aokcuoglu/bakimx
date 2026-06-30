@@ -31,6 +31,8 @@ export function AuthVisualPanel() {
         alt=""
         width={303}
         height={190}
+        priority
+        unoptimized
         className="absolute bottom-0 right-0 w-48 lg:w-64 h-auto opacity-[0.08] pointer-events-none select-none"
         aria-hidden
       />
