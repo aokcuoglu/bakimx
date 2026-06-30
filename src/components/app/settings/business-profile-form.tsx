@@ -21,6 +21,7 @@ import {
   businessProfileFormSchema,
   type BusinessProfileFormValues,
 } from "@/lib/validations/settings"
+import { formatPhoneTR } from "@/lib/format"
 
 type WorkshopData = {
   id: string
@@ -40,7 +41,7 @@ type WorkshopData = {
 function toDefaults(workshop: WorkshopData): BusinessProfileFormValues {
   return {
     name: workshop.name || "",
-    phone: workshop.phone || "",
+    phone: formatPhoneTR(workshop.phone || ""),
     city: workshop.city || "",
     district: workshop.district || "",
     address: workshop.address || "",
@@ -122,7 +123,7 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
                   <FormItem>
                     <FormLabel>Telefon *</FormLabel>
                     <FormControl>
-                      <Input {...field} type="tel" placeholder="Telefon" />
+                      <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

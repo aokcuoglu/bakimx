@@ -6,6 +6,7 @@ import { HardHat, Plus, UserCircle, Phone } from "lucide-react"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
 import type { TechnicianRoleKey } from "@/lib/constants"
 import { createTechnicianAction, toggleTechnicianActiveAction } from "@/app/(app)/technician/actions"
+import { formatPhoneTR } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -171,9 +172,11 @@ function AddTechnicianForm({
         />
         <Input
           type="tel"
+          inputMode="tel"
+          maxLength={14}
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Telefon *"
+          onChange={(e) => setPhone(formatPhoneTR(e.target.value))}
+          placeholder="0544 515 74 08"
           required
         />
       </div>

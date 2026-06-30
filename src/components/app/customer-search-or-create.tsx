@@ -15,6 +15,7 @@ import {
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
 import { Loader2, Plus, User } from "lucide-react"
 import type { UnifiedResult } from "@/lib/search/unified-results"
+import { formatPhoneTR, toTrUpper } from "@/lib/format"
 
 type CustomerHit = Extract<UnifiedResult, { kind: "customer" }>
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
@@ -66,8 +67,8 @@ export function CustomerSearchOrCreate({
     const seed = (query.trim() || initialName || "").trim()
     const parts = seed.split(/\s+/)
     setType("individual")
-    setFirstName(parts[0] || "")
-    setLastName(parts.slice(1).join(" "))
+    setFirstName(toTrUpper(parts[0] || ""))
+    setLastName(toTrUpper(parts.slice(1).join(" ")))
     setCompanyName("")
     setPhone("")
     setBusy(false)
@@ -110,13 +111,13 @@ export function CustomerSearchOrCreate({
         </div>
         {type === "individual" ? (
           <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1"><Label>Ad *</Label><Input autoFocus value={firstName} onChange={(e) => setFirstName(e.target.value)} /></div>
-            <div className="space-y-1"><Label>Soyad</Label><Input value={lastName} onChange={(e) => setLastName(e.target.value)} /></div>
+            <div className="space-y-1"><Label>Ad *</Label><Input autoFocus value={firstName} onChange={(e) => setFirstName(toTrUpper(e.target.value))} /></div>
+            <div className="space-y-1"><Label>Soyad</Label><Input value={lastName} onChange={(e) => setLastName(toTrUpper(e.target.value))} /></div>
           </div>
         ) : (
           <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
         )}
-        <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="05xx…" /></div>
+        <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => setPhone(formatPhoneTR(e.target.value))} inputMode="tel" maxLength={14} placeholder="0544 515 74 08" /></div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError("") }}>Vazgeç</Button>

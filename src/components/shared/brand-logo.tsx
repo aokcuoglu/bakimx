@@ -54,10 +54,10 @@ export const BRAND_LOGOS: Record<
 }
 
 const HEIGHT_BY_SIZE: Record<BrandLogoSize, number> = {
-  xs: 20,
-  sm: 24,
-  md: 32,
-  lg: 40,
+  xs: 16,
+  sm: 20,
+  md: 26,
+  lg: 32,
 }
 
 /**
@@ -74,8 +74,10 @@ const ICON_FOR_VARIANT: Record<
   "icon-dark": "icon-dark",
 }
 
-/** Primary variant'ların 40px altında icon'a düşürülüp düşürülmeyeceği. */
-const PRIMARY_THRESHOLD = 40
+/** Primary variant'ların bu px altında icon'a düşürülüp düşürülmeyeceği.
+ *  (Rehber 40px referansından, genel logo küçültmesiyle birlikte 32px'e
+ *  çekildi; `lg` primary wordmark'ı bu eşikte korunur.) */
+const PRIMARY_THRESHOLD = 32
 
 type BrandLogoProps = {
   /** Logo variant'ı. Default `primary-light`. 40px altı boyutlarda otomatik

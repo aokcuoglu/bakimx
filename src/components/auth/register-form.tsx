@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { formatPhoneTR } from "@/lib/format"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -124,7 +125,7 @@ export function RegisterForm() {
             <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Telefon</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="phone" name="phone" type="tel" required placeholder="0555 123 4567" className="pl-9" />
+              <Input id="phone" name="phone" type="tel" inputMode="tel" maxLength={14} required placeholder="0544 515 74 08" className="pl-9" onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
             </div>
           </div>
           <div className="space-y-2">

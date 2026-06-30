@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { formatPhoneTR } from "@/lib/format"
 
 type Workshop = {
   id: string
@@ -65,7 +66,7 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefon *</Label>
-              <Input id="phone" name="phone" type="tel" defaultValue={workshop.phone} required />
+              <Input id="phone" name="phone" type="tel" inputMode="tel" maxLength={14} defaultValue={formatPhoneTR(workshop.phone)} required onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
             </div>
 
             <div className="space-y-2">
