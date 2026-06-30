@@ -173,7 +173,6 @@ function AddTechnicianForm({
         <Input
           type="tel"
           inputMode="tel"
-          maxLength={14}
           value={phone}
           onChange={(e) => setPhone(formatPhoneTR(e.target.value))}
           placeholder="0544 515 74 08"

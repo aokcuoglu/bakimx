@@ -66,7 +66,7 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefon *</Label>
-              <Input id="phone" name="phone" type="tel" inputMode="tel" maxLength={14} defaultValue={formatPhoneTR(workshop.phone)} required onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
+              <Input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={formatPhoneTR(workshop.phone)} required onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
             </div>
 
             <div className="space-y-2">

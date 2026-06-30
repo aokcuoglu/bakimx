@@ -125,7 +125,7 @@ export function RegisterForm() {
             <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Telefon</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="phone" name="phone" type="tel" inputMode="tel" maxLength={14} required placeholder="0544 515 74 08" className="pl-9" onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
+              <Input id="phone" name="phone" type="tel" inputMode="tel" required placeholder="0544 515 74 08" className="pl-9" onChange={(e) => { e.target.value = formatPhoneTR(e.target.value) }} />
             </div>
           </div>
           <div className="space-y-2">

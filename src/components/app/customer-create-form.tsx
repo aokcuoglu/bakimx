@@ -254,7 +254,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon *</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
+                          <Input {...field} type="tel" inputMode="tel" placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -267,7 +267,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon 2</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
+                          <Input {...field} type="tel" inputMode="tel" placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -361,7 +361,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon *</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0212 555 0000" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
+                          <Input {...field} type="tel" inputMode="tel" placeholder="0212 555 0000" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -374,7 +374,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon 2</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
+                          <Input {...field} type="tel" inputMode="tel" placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
