@@ -45,6 +45,17 @@ import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/compl
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
 import { ApprovalTimeline } from "@/components/app/approval-timeline"
 
+const PHOTO_PHASE_LABELS: Record<string, string> = {
+  intake: "Kabul (Intake)",
+  repair_progress: "Onarım Aşaması",
+  delivery: "Teslim",
+}
+
+const ORDER_ITEM_TYPE_LABELS: Record<string, string> = {
+  part: "Parça",
+  labor: "İşçilik",
+}
+
 type VehiclePhoto = {
   id: string
   type: string
@@ -836,7 +847,14 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seçiniz..." />
+                    <SelectValue placeholder="Seçiniz...">
+                      {(value: string | null) => {
+                        if (!value) return null
+                        const val = PHOTO_TYPES[value as keyof typeof PHOTO_TYPES]
+                        if (!val) return value
+                        return `${val.label} ${val.required ? "(Zorunlu)" : "(Opsiyonel)"}`
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Seçiniz...</SelectItem>
@@ -855,7 +873,9 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                   onValueChange={(v) => setPhotoPhase(v ?? "intake")}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Aşama seçin" />
+                    <SelectValue placeholder="Aşama seçin">
+                      {(value: string | null) => (value ? PHOTO_PHASE_LABELS[value] ?? value : null)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="intake">Kabul (Intake)</SelectItem>
@@ -1249,7 +1269,9 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         onValueChange={(v) => setItemType(v ?? "part")}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Tip seçin" />
+                          <SelectValue placeholder="Tip seçin">
+                            {(value: string | null) => (value ? ORDER_ITEM_TYPE_LABELS[value] ?? value : null)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="part">Parça</SelectItem>

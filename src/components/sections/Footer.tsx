@@ -28,9 +28,12 @@ const socialLinks = [
 
 const footerLinks = {
   product: [
+    { label: "Modüller", href: "/#moduller" },
+    { label: "Özellikler", href: "/#ozellikler" },
     { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
     { label: "Neden BakimX", href: "/#neden" },
     { label: "SSS", href: "/#sss" },
+    { label: "Fiyatlar", href: "/fiyatlar" },
   ],
   company: [
     { label: "Demo Talep Et", href: "/demo" },
@@ -65,7 +68,7 @@ export function Footer() {
               <BrandLogo variant="primary-dark" size="lg" alt="BakimX" />
             </Link>
             <p className="text-sm text-white/70 leading-relaxed max-w-xs">
-              Oto servisler için dijital araç kabul ve müşteri onay platformu.
+              Oto servisler için eksiksiz servis yönetim platformu.
             </p>
             <p className="mt-3 text-xs text-white/50">
               Türkiye&apos;deki oto servisler için geliştiriliyor.

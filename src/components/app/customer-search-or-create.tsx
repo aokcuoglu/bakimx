@@ -22,9 +22,12 @@ const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
 export function CustomerSearchOrCreate({
   onSelected,
   autoFocus,
+  initialName,
 }: {
   onSelected: (customerId: string, label: string) => void
   autoFocus?: boolean
+  /** Pre-fills the "new customer" name (e.g. owner read from a ruhsat scan). */
+  initialName?: string
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<CustomerHit[]>([])
@@ -60,7 +63,8 @@ export function CustomerSearchOrCreate({
   }, [query, creating])
 
   function openCreate() {
-    const parts = query.trim().split(/\s+/)
+    const seed = (query.trim() || initialName || "").trim()
+    const parts = seed.split(/\s+/)
     setType("individual")
     setFirstName(parts[0] || "")
     setLastName(parts.slice(1).join(" "))

@@ -159,7 +159,13 @@ export function AppointmentCreateForm({
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Müşteri Seçin" />
+                          <SelectValue placeholder="Müşteri Seçin">
+                            {(value: string | null) => {
+                              if (!value) return null
+                              const c = customers.find((c) => c.id === value)
+                              return c ? `${customerDisplayName(c)} - ${c.phone}` : value
+                            }}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {filteredCustomers.map((c) => (
@@ -198,7 +204,13 @@ export function AppointmentCreateForm({
                       disabled={!customerId}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Araç Seçin (Opsiyonel)" />
+                        <SelectValue placeholder="Araç Seçin (Opsiyonel)">
+                          {(value: string | null) => {
+                            if (!value) return null
+                            const v = vehicles.find((v) => v.id === value)
+                            return v ? `${v.plate} - ${v.brand} ${v.model}` : value
+                          }}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Araç Seçin (Opsiyonel)</SelectItem>
@@ -272,7 +284,13 @@ export function AppointmentCreateForm({
                   <FormControl>
                     <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seçiniz" />
+                        <SelectValue placeholder="Seçiniz">
+                          {(value: string | null) => {
+                            if (!value) return null
+                            const map: Record<string, string> = { "15": "15 dk", "30": "30 dk", "45": "45 dk", "60": "1 saat", "90": "1.5 saat", "120": "2 saat" }
+                            return map[value] ?? value
+                          }}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Seçiniz</SelectItem>

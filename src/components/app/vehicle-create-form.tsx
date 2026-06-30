@@ -35,6 +35,14 @@ type Customer = {
   phone: string
 }
 
+function customerLabel(c: Customer): string {
+  const name =
+    c.type === "corporate"
+      ? c.companyName || "Kurumsal Müşteri"
+      : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
+  return `${name} — ${c.phone}`
+}
+
 type VehicleFormProps = {
   customers: Customer[]
   initial?: {
@@ -52,6 +60,11 @@ type VehicleFormProps = {
     engineNo: string | null
     fuelType: string | null
     transmission: string | null
+    commercialName: string | null
+    firstRegistrationDate: string | null
+    engineDisplacement: string | null
+    enginePower: string | null
+    inspectionValidUntil: string | null
     notes: string | null
   }
   mode?: "create" | "edit"
@@ -73,6 +86,11 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
     engineNo: initial?.engineNo || "",
     fuelType: initial?.fuelType || "",
     transmission: initial?.transmission || "",
+    commercialName: initial?.commercialName || "",
+    firstRegistrationDate: initial?.firstRegistrationDate || "",
+    engineDisplacement: initial?.engineDisplacement || "",
+    enginePower: initial?.enginePower || "",
+    inspectionValidUntil: initial?.inspectionValidUntil || "",
     notes: initial?.notes || "",
   }
 }
@@ -154,15 +172,18 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin" />
+                            <SelectValue placeholder="Müşteri seçin">
+                              {(value) => {
+                                const c = customers.find((x) => x.id === value)
+                                return c ? customerLabel(c) : "Müşteri seçin"
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {customers.map((c) => (
                             <SelectItem key={c.id} value={c.id}>
-                              {c.type === "corporate"
-                                ? c.companyName || "Kurumsal Müşteri"
-                                : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"} — {c.phone}
+                              {customerLabel(c)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -406,6 +427,85 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun
                   </p>
                 </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="mt-5">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">Ruhsat Bilgileri</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="commercialName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ticari Adı</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ruhsattaki ticari ad" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="engineDisplacement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Silindir Hacmi</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="1598" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="enginePower"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Motor Gücü</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="85 kW" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="firstRegistrationDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İlk Tescil Tarihi</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="GG.AA.YYYY" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="inspectionValidUntil"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Muayene Geçerlilik Tarihi</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="GG.AA.YYYY" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 

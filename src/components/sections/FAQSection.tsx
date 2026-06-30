@@ -13,7 +13,32 @@ const faqs = [
   {
     question: "BakimX mobilde çalışır mı?",
     answer:
-      "Evet, BakimX tamamen mobil öncelikli tasarlanmıştır. Telefonunuzdan kolayca araç kabul formu doldurabilir, fotoğraf çekebilir ve hasar işaretleyebilirsiniz. Masaüstü cihazlardan da erişim mümkündür.",
+      "Evet, BakimX tamamen mobil öncelikli tasarlanmıştır. Telefonunuzdan araç kabul edebilir, fotoğraf çekebilir, iş emri ve teklif oluşturabilirsiniz. Masaüstü cihazlardan da erişim mümkündür.",
+  },
+  {
+    question: "Hangi modüller bugün hazır?",
+    answer:
+      "İş emri, teklif, randevu, takvim, stok/parça, tedarikçi, kasa (tahsilat ve yaşlandırma), müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim modülleri bugün kullanıma hazırdır. AI servis danışmanı Premium pakette yer alır.",
+  },
+  {
+    question: "Stok, tedarikçi ve tahsilat takibi var mı?",
+    answer:
+      "Evet. Parça stoğunuzu kritik eşiklerle takip eder, tedarikçilerinizi yönetir, tahsilatları kasada toplar ve yaşlandırma (alacak) raporu alırsınız.",
+  },
+  {
+    question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
+    answer:
+      "Evet. Teklif ve iş emri özetini WhatsApp veya link ile doğrudan müşteriye gönderebilir, tarayıcıdan yazdırabilirsiniz. Markalı PDF dışa aktarma yakında ekleniyor.",
+  },
+  {
+    question: "Birden fazla kullanıcı ekleyebilir miyim?",
+    answer:
+      "Evet. Ekibinizi davet edip rol verebilirsiniz; teknisyen, servis danışmanı ve yönetici farklı yetkilerle çalışır.",
+  },
+  {
+    question: "Verilerim güvende mi?",
+    answer:
+      "Her servis yalnızca kendi verisini görür ve erişim rol bazlıdır (sahip / yönetici / personel). Platform KVKK uyumlu olacak şekilde geliştiriliyor.",
   },
   {
     question: "Küçük oto tamircileri için uygun mu?",
@@ -21,14 +46,9 @@ const faqs = [
       "Kesinlikle. BakimX, küçük ve orta ölçekli oto tamir atölyeleri için tasarlanmıştır. Tek kişilik kullanıma uygundur ve kurulum için teknik bilgi gerektirmez.",
   },
   {
-    question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
-    answer:
-      "Evet. Araç kabul tutanağını profesyonel bir formatla WhatsApp üzerinden doğrudan müşteriye gönderebilirsiniz. Ayrıca PDF formatında da çıktı alabilirsiniz.",
-  },
-  {
     question: "Nasıl başlarım? Ücretsiz deneme var mı?",
     answer:
-      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturursunuz. Hesabınız onaylandığında 15 günlük ücretsiz deneme süreniz başlar ve tüm özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
+      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle başvurunuzu oluşturursunuz. Başvurunuz onaylandığında 15 günlük ücretsiz deneme süreniz başlar ve özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",

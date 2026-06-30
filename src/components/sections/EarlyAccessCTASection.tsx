@@ -46,18 +46,27 @@ export function EarlyAccessCTASection() {
             href="/register"
             className={buttonVariants({
               size: "lg",
-              className: "bg-white !text-navy hover:!bg-white/90 text-base h-11 px-8 gap-2",
+              className: "bg-white !text-navy hover:!bg-white/90 text-base px-8 gap-2",
             })}
           >
             15 Gün Ücretsiz Dene
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link
-            href="/demo"
-            className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-4"
-          >
-            Önce demo görmek ister misiniz? Demo talep edin
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+            <Link
+              href="/demo"
+              className="text-white/60 hover:text-white transition-colors underline underline-offset-4"
+            >
+              Demo talep edin
+            </Link>
+            <span className="text-white/30" aria-hidden="true">·</span>
+            <Link
+              href="/fiyatlar"
+              className="text-white/60 hover:text-white transition-colors underline underline-offset-4"
+            >
+              Fiyatları gör
+            </Link>
+          </div>
         </motion.div>
       </div>
     </section>

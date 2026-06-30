@@ -31,7 +31,7 @@ export function FilterSelect({
   return (
     <>
       <input type="hidden" name={name} value={value} />
-      <Select value={value} onValueChange={(v) => setValue(v ?? "")}>
+      <Select items={options} value={value} onValueChange={(v) => setValue(v ?? "")}>
         <SelectTrigger className={className}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

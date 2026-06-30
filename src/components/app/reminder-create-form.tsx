@@ -152,7 +152,13 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                           }}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin..." />
+                            <SelectValue placeholder="Müşteri seçin...">
+                              {(value: string | null) => {
+                                if (!value) return null
+                                const c = customers.find((c) => c.id === value)
+                                return c ? `${customerLabel(c)} (${c.phone})` : value
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Müşteri seçin...</SelectItem>
@@ -185,7 +191,13 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                           onValueChange={(v) => field.onChange(v ?? "")}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder={customerId ? "Araç seçin..." : "Önce müşteri seçin"} />
+                            <SelectValue placeholder={customerId ? "Araç seçin..." : "Önce müşteri seçin"}>
+                              {(value: string | null) => {
+                                if (!value) return null
+                                const v = customerVehicles.find((v) => v.id === value)
+                                return v ? `${v.plate} - ${v.brand} ${v.model}` : value
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">{customerId ? "Araç seçin..." : "Önce müşteri seçin"}</SelectItem>
@@ -248,7 +260,9 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => v && field.onChange(v)}>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue>
+                              {(value: string | null) => (value ? typeLabel(value) : null)}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="periodic_maintenance">Periyodik Bakım</SelectItem>
@@ -413,7 +427,9 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => { if (v) field.onChange(v) }}>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue>
+                              {(value: string | null) => (value ? channelLabel(value) : null)}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Yok</SelectItem>

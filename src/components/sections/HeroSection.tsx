@@ -4,20 +4,22 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import {
-  Car,
-  Camera,
   CheckCircle2,
   MessageSquare,
   ArrowRight,
   Smartphone,
-  ClipboardCheck,
+  LayoutDashboard,
+  Wrench,
+  CalendarClock,
+  FileText,
+  Boxes,
+  AlertTriangle,
 } from "lucide-react";
-import { CarDamageIllustration } from "@/components/sections/car-damage-illustration";
 
 const trustItems = [
-  "15 gün ücretsiz deneme",
+  "Kurulum gerektirmez",
+  "15 gün ücretsiz",
   "Kredi kartı gerekmez",
-  "Mobil uyumlu, kolay kullanım",
 ];
 
 export function HeroSection() {
@@ -46,8 +48,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
             >
-              Aracı teslim alın, hasarı işaretleyin,{" "}
-              <span className="text-primary">onayı anında alın.</span>
+              Servisinizin tüm operasyonu{" "}
+              <span className="text-primary">tek ekranda.</span>
             </motion.h1>
             <motion.p
               initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
@@ -55,28 +57,33 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.35 }}
               className="text-base sm:text-lg text-muted-foreground leading-relaxed"
             >
-              Oto servisiniz için mobil araç kabul: hasar haritası, fotoğraf
-              checklist&apos;i ve WhatsApp ile müşteri onayı — tek akışta.
+              İş emri, teklif, randevu, stok, kasa ve müşteri iletişimi — kâğıt ve
+              WhatsApp dağınıklığı olmadan, mobil öncelikli tek platformda.
             </motion.p>
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.55 }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2"
+              className="flex flex-col gap-2 pt-2"
             >
-              <Link
-                href="/register"
-                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 gap-2 shadow-lg shadow-primary/25" })}
-              >
-                15 Gün Ücretsiz Dene
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <a
-                href="#nasil-calisir"
-                className={buttonVariants({ variant: "outline", size: "lg", className: "text-base px-8 border-primary/30" })}
-              >
-                Nasıl Çalıştığını Gör
-              </a>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link
+                  href="/register"
+                  className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 gap-2 shadow-lg shadow-primary/25" })}
+                >
+                  15 Gün Ücretsiz Dene
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/demo"
+                  className={buttonVariants({ variant: "outline", size: "lg", className: "text-base px-8 border-primary/30" })}
+                >
+                  Demo İste
+                </Link>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Başvurunuz onaylandığında 15 günlük deneme başlar.
+              </p>
             </motion.div>
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0 }}
@@ -99,7 +106,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex justify-center lg:justify-end"
           >
-            <HeroComposition />
+            <HeroDashboardMock />
           </motion.div>
         </div>
       </div>
@@ -107,69 +114,100 @@ export function HeroSection() {
   );
 }
 
-function HeroComposition() {
+function HeroDashboardMock() {
   return (
     <div className="relative w-full max-w-md">
       <div className="rounded-lg border bg-card shadow-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-brand to-brand/80 px-5 py-3">
           <div className="flex items-center gap-2 text-primary-foreground">
-            <Car className="h-5 w-5" />
-            <h3 className="font-semibold text-sm">Araç Kabul Formu</h3>
+            <LayoutDashboard className="h-5 w-5" />
+            <h3 className="font-semibold text-sm">Genel Bakış</h3>
           </div>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Plaka</p>
-              <div className="rounded-lg border bg-muted/50 px-3 py-2 text-sm font-mono font-medium">34 ABC 123</div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kilometre</p>
-              <div className="rounded-lg border bg-muted/50 px-3 py-2 text-sm font-medium">87.500 km</div>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Müşteri</p>
-            <div className="rounded-lg border bg-muted/50 px-3 py-2 text-sm font-medium">Ahmet Yılmaz</div>
+            <KpiTile icon={<Wrench className="size-3" />} label="Açık iş emri" value="8" />
+            <KpiTile icon={<CalendarClock className="size-3" />} label="Bugünkü randevu" value="3" />
+            <KpiTile icon={<FileText className="size-3" />} label="Bekleyen teklif" value="5" />
+            <KpiTile icon={<Boxes className="size-3" />} label="Kritik stok" value="2" valueClassName="text-warning" />
           </div>
           <div className="space-y-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Hasar İşaretleme</p>
-            <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
-              <CarDamageIllustration className="h-28 w-auto" />
-              <p className="text-xs text-muted-foreground mt-2 text-center">3 hasar işaretli</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Aktif iş emirleri</p>
+            <div className="space-y-1.5">
+              <OrderRow plate="34 ABC 123" status="Devam ediyor" statusClassName="text-primary bg-primary/10" />
+              <OrderRow plate="06 XY 4567" status="Onay bekliyor" statusClassName="text-warning bg-warning/10" />
             </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2">
-            <MessageSquare className="size-3.5 text-primary shrink-0" />
-            <span className="text-xs font-medium text-foreground">Onay bekleniyor — SMS gönderildi</span>
           </div>
         </div>
       </div>
 
       <FloatingCard
         className="absolute -top-3 -right-3"
-        icon={<Camera className="h-4 w-4 text-primary" />}
-        title="Fotoğraf Checklist"
-        subtitle="6/6 tamamlandı"
+        icon={<CheckCircle2 className="h-4 w-4 text-success" />}
+        iconBg="bg-success/10"
+        title="Teklif onaylandı"
+        subtitle="Müşteri onayladı"
         delay={0.6}
       />
 
       <FloatingCard
         className="absolute -bottom-2 -left-3"
-        icon={<CheckCircle2 className="h-4 w-4 text-success" />}
-        title="WhatsApp Çıktı"
-        subtitle="Müşteriye gönderildi"
+        icon={<MessageSquare className="h-4 w-4 text-whatsapp" />}
+        iconBg="bg-whatsapp/10"
+        title="WhatsApp'a gönderildi"
+        subtitle="Teklif #1042"
         delay={0.75}
       />
 
       <FloatingCard
         className="absolute top-1/2 -right-6 hidden lg:block"
-        icon={<ClipboardCheck className="h-4 w-4 text-primary-foreground" />}
-        iconBg="bg-primary"
-        title="İşçilik Ekle"
-        subtitle="Parça + işçilik"
+        icon={<AlertTriangle className="h-4 w-4 text-warning" />}
+        iconBg="bg-warning/10"
+        title="Kritik stok uyarısı"
+        subtitle="2 parça"
         delay={0.9}
       />
+    </div>
+  );
+}
+
+function KpiTile({
+  icon,
+  label,
+  value,
+  valueClassName = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/50 px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className={`mt-1 text-xl font-bold ${valueClassName}`}>{value}</p>
+    </div>
+  );
+}
+
+function OrderRow({
+  plate,
+  status,
+  statusClassName,
+}: {
+  plate: string;
+  status: string;
+  statusClassName: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
+      <span className="text-sm font-mono font-medium">{plate}</span>
+      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClassName}`}>
+        {status}
+      </span>
     </div>
   );
 }

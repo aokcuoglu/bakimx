@@ -38,6 +38,15 @@ import { useForm } from "react-hook-form"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
 import { typedResolver } from "@/lib/validations/resolver"
 
+const SOURCE_LABELS: Record<string, string> = {
+  referral: "Tavsiye",
+  google: "Google",
+  social_media: "Sosyal Medya",
+  walk_in: "Yoldan Geldi",
+  existing: "Mevcut Müşteri",
+  other: "Diğer",
+}
+
 export type CustomerFormInitial = {
   id?: string
   type?: "individual" | "corporate"
@@ -544,7 +553,9 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçilmedi" />
+                            <SelectValue placeholder="Seçilmedi">
+                              {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : null)}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Seçilmedi</SelectItem>

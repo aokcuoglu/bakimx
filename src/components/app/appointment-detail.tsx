@@ -185,7 +185,13 @@ export function AppointmentDetail({
                   onValueChange={(v) => setSelectedStatus(v ?? "")}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Durum seçin" />
+                    <SelectValue placeholder="Durum seçin">
+                      {(value: string | null) => {
+                        if (!value) return null
+                        const info = APPOINTMENT_STATUS[value as AppointmentStatusKey]
+                        return info?.label || value
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {transitions.map((key) => {

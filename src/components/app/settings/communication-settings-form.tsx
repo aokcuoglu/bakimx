@@ -26,6 +26,21 @@ import {
   type CommunicationSettingsFormValues,
 } from "@/lib/validations/settings"
 
+const SMS_PROVIDER_LABELS: Record<string, string> = {
+  mock: "Mock (Test)",
+  netgsm: "Netgsm",
+}
+
+const WHATSAPP_PROVIDER_LABELS: Record<string, string> = {
+  mock: "Mock (Test)",
+  business_api: "WhatsApp Business API",
+}
+
+const EMAIL_PROVIDER_LABELS: Record<string, string> = {
+  mock: "Mock (Test)",
+  resend: "Resend",
+}
+
 type SettingsData = {
   smsProvider: string
   smsSenderName: string | null
@@ -119,7 +134,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue>
+                            {(value: string | null) => (value ? SMS_PROVIDER_LABELS[value] ?? value : null)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>
@@ -187,7 +204,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue>
+                            {(value: string | null) => (value ? WHATSAPP_PROVIDER_LABELS[value] ?? value : null)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>
@@ -255,7 +274,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue>
+                            {(value: string | null) => (value ? EMAIL_PROVIDER_LABELS[value] ?? value : null)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">Mock (Test)</SelectItem>

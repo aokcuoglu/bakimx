@@ -88,6 +88,27 @@ const CUSTOMER_FILTER_FIELDS: FilterField[] = [
   },
 ]
 
+const TYPE_LABELS: Record<string, string> = {
+  individual: "Bireysel",
+  corporate: "Kurumsal",
+}
+
+const TAG_LABELS: Record<string, string> = {
+  standard: "Standart",
+  vip: "VIP",
+  risky: "Riskli",
+  fleet: "Filo",
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  referral: "Tavsiye",
+  google: "Google",
+  social_media: "Sosyal Medya",
+  walk_in: "Yoldan Geldi",
+  existing: "Mevcut Müşteri",
+  other: "Diğer",
+}
+
 function nameFor(row: CustomerRow) {
   if (row.type === "corporate") return row.companyName || "—"
   return row.fullName || [row.firstName, row.lastName].filter(Boolean).join(" ") || "—"
@@ -193,7 +214,9 @@ export function CustomerList({
             onValueChange={(v) => setType((v ?? "") as Filters["type"])}
           >
             <SelectTrigger aria-label="Müşteri tipi filtresi">
-              <SelectValue placeholder="Tüm Tipler" />
+              <SelectValue placeholder="Tüm Tipler">
+                {(value: string | null) => (value ? TYPE_LABELS[value] ?? value : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Tipler</SelectItem>
@@ -206,7 +229,9 @@ export function CustomerList({
             onValueChange={(v) => setTag(v ?? "")}
           >
             <SelectTrigger aria-label="Etiket filtresi">
-              <SelectValue placeholder="Tüm Etiketler" />
+              <SelectValue placeholder="Tüm Etiketler">
+                {(value: string | null) => (value ? TAG_LABELS[value] ?? value : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Etiketler</SelectItem>
@@ -221,7 +246,9 @@ export function CustomerList({
             onValueChange={(v) => setSource(v ?? "")}
           >
             <SelectTrigger aria-label="Müşteri kaynağı filtresi">
-              <SelectValue placeholder="Tüm Kaynaklar" />
+              <SelectValue placeholder="Tüm Kaynaklar">
+                {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Kaynaklar</SelectItem>

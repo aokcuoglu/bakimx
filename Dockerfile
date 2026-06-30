@@ -45,15 +45,6 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# OCR (plate scanner) assets. The plate /api route forces real Tesseract regardless
-# of OCR_PROVIDER, so these must exist offline in the image:
-#  - ocr-assets/tessdata: pre-seeded tur+eng traineddata read via cacheMethod "readOnly"
-#    (src/lib/ocr/tesseract-text-extractor.ts) so the worker never downloads at runtime.
-#  - tesseract.js-core: the wasm core is loaded dynamically by tesseract.js, so Next's
-#    slim standalone trace can omit it; copy it explicitly into the app node_modules.
-COPY --from=builder --chown=nextjs:nodejs /app/ocr-assets ./ocr-assets
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tesseract.js-core ./node_modules/tesseract.js-core
-
 # Migration tooling for the one-shot `migrate` service. The Prisma 7 CLI's runtime
 # closure (CLI bundle + @prisma/* + top-level-hoisted effect/c12/jiti/typescript/iconv-lite/…)
 # is large and absent from the slim Next standalone trace, so stage the FULL builder

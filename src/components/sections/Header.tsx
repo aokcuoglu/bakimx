@@ -9,8 +9,9 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
+  { label: "Modüller", href: "/#moduller" },
   { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
-  { label: "Neden BakimX", href: "/#neden" },
+  { label: "Özellikler", href: "/#ozellikler" },
   { label: "SSS", href: "/#sss" },
   { label: "Fiyatlar", href: "/fiyatlar" },
 ];
@@ -46,7 +47,7 @@ export function Header() {
           <BrandLogo variant="primary-light" size="lg" priority alt="BakimX" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-6">
           {navItems.map((item) => (
             <a
               key={item.href}

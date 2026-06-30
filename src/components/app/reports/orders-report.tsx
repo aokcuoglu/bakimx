@@ -129,7 +129,13 @@ export function OrdersReport({
               onValueChange={(v) => setTechnician(v ?? "")}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tümü" />
+                <SelectValue placeholder="Tümü">
+                  {(value: string | null) => {
+                    if (!value) return null
+                    const t = technicians.find((t) => t.id === value)
+                    return t ? t.fullName : value
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tümü</SelectItem>
@@ -146,7 +152,13 @@ export function OrdersReport({
               onValueChange={(v) => setStatus(v ?? "")}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tümü" />
+                <SelectValue placeholder="Tümü">
+                  {(value: string | null) => {
+                    if (!value) return null
+                    const s = statusOptions.find((s) => s.value === value)
+                    return s ? s.label : value
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tümü</SelectItem>

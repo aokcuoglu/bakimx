@@ -345,6 +345,14 @@ model Vehicle {
   engineNo     String?
   fuelType     String?
   transmission String?
+  // Ruhsat (vehicle registration) detail fields. Stored as raw strings to
+  // preserve the exact ruhsat text (dates as DD.MM.YYYY, displacement/power
+  // with units) and avoid OCR/manual parse fragility.
+  commercialName        String? // Ticari Adı (ruhsat D.3)
+  firstRegistrationDate String? // İlk tescil tarihi
+  engineDisplacement    String? // Silindir Hacmi
+  enginePower           String? // Motor Gücü
+  inspectionValidUntil  String? // Muayene geçerlilik tarihi
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
