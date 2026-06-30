@@ -8,6 +8,8 @@ import { PlateBadge } from "@/components/app/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatTRY, customerDisplayName } from "@/lib/format"
+import { bpsToPercent } from "@/lib/money"
+import { calculateOrderTotals } from "@/lib/totals"
 import { formatDate } from "@/lib/utils-client"
 import { cn } from "@/lib/utils"
 import { updateQuoteStatusAction, convertQuoteToWorkOrderAction } from "@/app/(app)/quotes/actions"
@@ -65,18 +67,18 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
   const [convertLoading, setConvertLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const partsTotal = quote.items
-    .filter((i) => i.type === "part")
-    .reduce((sum, i) => sum + (i.totalPrice ?? 0), 0)
-  const laborTotal = quote.items
-    .filter((i) => i.type === "labor")
-    .reduce((sum, i) => sum + (i.totalPrice ?? 0), 0)
-  const subtotal = partsTotal + laborTotal
-  const discount = quote.discountAmount ?? 0
-  const effectiveTaxRate = quote.taxRate ?? 0
-  const afterDiscount = Math.max(0, subtotal - discount)
-  const taxAmount = (afterDiscount * effectiveTaxRate) / 100
-  const grandTotal = quote.grandTotal ?? (afterDiscount + taxAmount)
+  // All amounts kuruş; quote.taxRate is bps. money.ts is the single authority.
+  const totals = calculateOrderTotals(quote.items, {
+    discountAmount: quote.discountAmount,
+    taxRate: quote.taxRate,
+  })
+  const partsTotal = totals.partsTotal
+  const laborTotal = totals.laborTotal
+  const subtotal = totals.subtotal
+  const discount = totals.discountAmount
+  const effectiveTaxRate = quote.taxRate ?? 0 // bps
+  const taxAmount = totals.taxAmount
+  const grandTotal = quote.grandTotal ?? totals.grandTotal
 
   const validStatusTransitions: Record<string, string[]> = {
     draft: ["sent", "cancelled"],
@@ -367,7 +369,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               </div>
               <SummaryRow label="İndirim" value={discount > 0 ? `-${formatTRY(discount)}` : "—"} muted={discount === 0} />
               <SummaryRow
-                label={`KDV (%${effectiveTaxRate})`}
+                label={`KDV (%${bpsToPercent(effectiveTaxRate)})`}
                 value={taxAmount > 0 ? formatTRY(taxAmount) : "—"}
                 muted={taxAmount === 0}
               />

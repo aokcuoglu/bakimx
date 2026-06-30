@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
+import { RuhsattanOku } from "./ruhsattan-oku"
 
 type Customer = {
   id: string
@@ -415,18 +416,28 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   )}
                 />
 
-                <Link
-                  href="/smart-capture/registration"
-                  className="rounded-lg border border-primary/20 bg-primary/5 p-4 hover:bg-primary/10 transition-colors block"
-                >
-                  <div className="flex items-center gap-2 text-sm text-primary mb-1">
-                    <ScanLine className="size-4" />
-                    <span className="font-medium">Ruhsattan Oku</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun
-                  </p>
-                </Link>
+                <RuhsattanOku
+                  title="Ruhsattan Oku"
+                  description="Araç ruhsat fotoğrafını yükleyerek alanları otomatik doldurun."
+                  onResult={({ values }) => {
+                    const setStr = (name: keyof VehicleFormValues, val: string) => {
+                      if (val) form.setValue(name, val, { shouldValidate: true, shouldDirty: true })
+                    }
+                    setStr("plate", values.plate)
+                    setStr("brand", values.brand)
+                    setStr("model", values.model)
+                    setStr("vin", values.vin)
+                    setStr("engineNo", values.engineNo)
+                    setStr("firstRegistrationDate", values.registrationDate)
+                    const year = Number(values.modelYear)
+                    if (values.modelYear && !Number.isNaN(year)) {
+                      form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
+                    }
+                    // vehicleType is a fixed Select (binek/hafif_ticari…) — OCR returns free text
+                    // like "OTOMOBİL", so we leave it for the user to pick rather than set an
+                    // invalid value.
+                  }}
+                />
               </CardContent>
             </Card>
 

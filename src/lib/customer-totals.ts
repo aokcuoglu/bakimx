@@ -1,4 +1,7 @@
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
+import { sumKurus } from "@/lib/money"
+
+// All money values are integer kuruş.
 
 export type CustomerOrderLike = {
   status: OrderStatus | string
@@ -37,13 +40,13 @@ const empty: CustomerBalanceRow = {
 }
 
 export function calculateLineTotal(item: { totalPrice: number | null; unitPrice: number | null; quantity: number }): number {
-  if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
-  if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
+  if (item.totalPrice != null && item.totalPrice > 0) return Math.trunc(item.totalPrice)
+  if (item.unitPrice != null && item.unitPrice > 0) return Math.trunc(item.unitPrice) * item.quantity
   return 0
 }
 
 export function calculateOrderGrandTotal(items: CustomerOrderLike["items"]): number {
-  return items.reduce((sum, item) => sum + calculateLineTotal(item), 0)
+  return sumKurus(items.map(calculateLineTotal))
 }
 
 export function summarizeCustomerOrders(

@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Car,
@@ -23,7 +22,6 @@ import {
   Plus,
   Trash2,
   Pencil,
-  MessageSquare,
   Info,
   Wrench,
   Upload,
@@ -40,7 +38,7 @@ import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { PhotoAnnotate } from "./photo-annotate"
 import { formatTRY } from "@/lib/format"
-import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
+import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
 import { ApprovalTimeline } from "@/components/app/approval-timeline"
@@ -100,13 +98,9 @@ type IntakeDetailProps = {
 
 export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailProps; hasAiAdvisor: boolean }) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "approval" | "order" | "evidence">("info")
+  const [activeTab, setActiveTab] = useState<"info" | "photos" | "damage" | "share" | "order" | "evidence">("info")
   const statusInfo = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]
 
-  const [otpCode, setOtpCode] = useState("")
-  const [generatedOtp, setGeneratedOtp] = useState("")
-  const [approvalSent, setApprovalSent] = useState(false)
-  const [approvalVerified, setApprovalVerified] = useState(intake.status === "approved" || intake.status === "in_progress" || intake.status === "ready_for_delivery" || intake.status === "delivered")
   const [shareToken, setShareToken] = useState(intake.shareLinks[0]?.token || "")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -127,11 +121,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   const [itemName, setItemName] = useState("")
   const [itemQty, setItemQty] = useState("1")
   const [itemPrice, setItemPrice] = useState("")
-
-  const [termsAccepted, setTermsAccepted] = useState(false)
-  const [privacyAccepted, setPrivacyAccepted] = useState(false)
-  const [serviceInfoAccepted, setServiceInfoAccepted] = useState(false)
-  const [promoAccepted, setPromoAccepted] = useState(false)
 
   const [editingInfo, setEditingInfo] = useState(false)
   const [savingInfo, setSavingInfo] = useState(false)
@@ -268,48 +257,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     }
   }
 
-  async function handleRequestApproval() {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await fetch(`/api/intakes/${intake.id}/approval`, { method: "POST" })
-      const data = await res.json()
-      if (data.success) {
-        setGeneratedOtp(data.otpCode)
-        setApprovalSent(true)
-      } else {
-        setError(data.error || "Onay talebi oluşturulamadı")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleVerifyOtp() {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await fetch(`/api/intakes/${intake.id}/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otpCode }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setApprovalVerified(true)
-        router.refresh()
-      } else {
-        setError(data.error || "Doğrulama başarısız")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   async function handleGenerateShareLink() {
     setLoading(true)
     setError("")
@@ -399,7 +346,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     { id: "evidence" as const, label: "Kanıt", icon: Camera, count: intake.photos.length },
     { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
     { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.photos.filter((p) => p.type === "damage_detail").length },
-    { id: "approval" as const, label: "Onay", icon: MessageSquare },
+    { id: "share" as const, label: "Paylaşım", icon: Share2 },
     { id: "order" as const, label: "Sipariş", icon: Wrench },
   ]
 
@@ -435,8 +382,8 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
       {/* Status actions */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {intake.status === "draft" && (
-          <Button size="sm" onClick={() => handleStatusChange("waiting_approval")} disabled={loading}>
-            Onay İste
+          <Button size="sm" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
+            İşleme Başla
           </Button>
         )}
         {intake.status === "approved" && !intake.order && (
@@ -459,7 +406,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             Teslim Et (OTP)
           </Button>
         )}
-        {(intake.status === "draft" || intake.status === "waiting_approval") && (
+        {(intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval") && (
           <Button size="sm" variant="outline" onClick={() => handleStatusChange("cancelled")} disabled={loading} className="text-destructive">
             İptal Et
           </Button>
@@ -473,7 +420,19 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <p className="text-xs text-warning">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({intake.order.paymentStatus}).</p>
           )}
           {deliverySentCode && (
-            <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `BakimX teslim onay kodunuz: ${deliverySentCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`
+                  window.open(getWhatsAppSendUrl(intake.customer.phone, text), "_blank")
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
+              >
+                WhatsApp ile Gönder
+              </button>
+            </div>
           )}
           <Input
             value={deliveryOtpCode}
@@ -986,168 +945,66 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
         </div>
       </TabsContent>
 
-      <TabsContent value="approval">
+      <TabsContent value="share">
         <div className="space-y-4">
-          {!approvalSent && !approvalVerified && (
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="size-4" /> Müşteri Onayı</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Müşteri onayı için SMS ile doğrulama kodu gönderilir.
-                </p>
-                <div className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-foreground text-sm">
-                  <p className="font-medium mb-1">Demo Modu</p>
-                  <p>Demo modunda SMS gönderilmez. Test kodu ekranda gösterilir. Gerçek SMS entegrasyonu sonraki sürümlerde eklenecektir.</p>
-                </div>
-
-                <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
-                  <p className="text-sm font-medium">Onay Gereksinimleri</p>
-
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="detail-terms"
-                      checked={termsAccepted}
-                      onCheckedChange={(c) => setTermsAccepted(c)}
-                      className="mt-0.5"
-                    />
-                    <label htmlFor="detail-terms" className="text-sm">
-                      Araç kabul formunu onaylıyorum. <span className="text-destructive">*</span>
-                    </label>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="detail-privacy"
-                      checked={privacyAccepted}
-                      onCheckedChange={(c) => setPrivacyAccepted(c)}
-                      className="mt-0.5"
-                    />
-                    <label htmlFor="detail-privacy" className="text-sm">
-                      Aydınlatma metnini okudum. <span className="text-destructive">*</span>
-                    </label>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="detail-serviceInfo"
-                      checked={serviceInfoAccepted}
-                      onCheckedChange={(c) => setServiceInfoAccepted(c)}
-                      className="mt-0.5"
-                    />
-                    <label htmlFor="detail-serviceInfo" className="text-sm text-muted-foreground">
-                      Servis süreciyle ilgili bilgilendirme almak istiyorum.
-                    </label>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="detail-promo"
-                      checked={promoAccepted}
-                      onCheckedChange={(c) => setPromoAccepted(c)}
-                      className="mt-0.5"
-                    />
-                    <label htmlFor="detail-promo" className="text-sm text-muted-foreground">
-                      Kampanya ve ticari ileti almak istiyorum.
-                    </label>
-                  </div>
-                </div>
-
-                <Button onClick={handleRequestApproval} disabled={loading || !termsAccepted || !privacyAccepted} size="lg" className="w-full">
-                  <MessageSquare className="size-4 mr-2" /> Onay Talebi Oluştur
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Share2 className="size-4" /> Müşteri Çıktısı</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun. Müşteri bu sayfadan araç kabul ve işlem detaylarını görüntüleyebilir.
+              </p>
+              {!shareToken && (
+                <Button onClick={handleGenerateShareLink} disabled={loading} size="lg" className="w-full">
+                  <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
                 </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {approvalSent && generatedOtp && !approvalVerified && (
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-base">Onay Kodu Doğrulama</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-5 rounded-lg bg-success/10 border-2 border-success/20 text-foreground text-center">
-                  <p className="text-sm font-medium mb-2">Demo Test Kodu</p>
-                  <p className="text-4xl font-bold tracking-[0.3em]">{generatedOtp}</p>
-                  <p className="text-xs mt-2 text-success">Bu kodu müşteriye göstererek onay alabilirsiniz</p>
-                </div>
-                <div>
-                  <Label>Onay Kodu</Label>
-                  <Input
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="6 haneli kodu giriniz"
-                    className="h-14 text-center text-2xl tracking-widest"
-                    inputMode="numeric"
-                    maxLength={6}
-                    autoComplete="off"
-                  />
-                </div>
-                <Button onClick={handleVerifyOtp} disabled={loading || otpCode.length < 4} size="lg" className="w-full">
-                  <CheckCircle2 className="size-4 mr-2" /> Onay Kodunu Doğrula
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {approvalVerified && (
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-base">Onaylanmış</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-lg bg-success/10 border border-success/20 text-foreground text-sm flex items-center gap-2">
-                  <CheckCircle2 className="size-5 shrink-0" />
-                  <span>Müşteri onayı başarıyla doğrulandı.</span>
-                </div>
-                {!shareToken && (
-                  <Button onClick={handleGenerateShareLink} disabled={loading} size="lg" className="w-full">
-                    <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
-                  </Button>
-                )}
-                {shareToken && (
-                  <div className="p-4 bg-muted rounded-lg border">
-                    <p className="text-sm font-medium mb-2">Müşteri Çıktı Linki:</p>
-                    <div className="break-all text-sm bg-background p-3 rounded-lg">
-                      <a
-                        href={`/s/${shareToken}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`}
-                      </a>
-                    </div>
-                    <div className="flex gap-2 mt-3">
+              )}
+              {shareToken && (
+                <div className="p-4 bg-muted rounded-lg border">
+                  <p className="text-sm font-medium mb-2">Müşteri Çıktı Linki:</p>
+                  <div className="break-all text-sm bg-background p-3 rounded-lg">
+                    <a
+                      href={`/s/${shareToken}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`}
+                    </a>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`
+                        const orderItems = intake.order?.items ?? []
+                        const totalAmount = orderItems.reduce((sum, item) => {
+                          if (item.totalPrice) return sum + item.totalPrice
+                          if (item.unitPrice) return sum + item.unitPrice * item.quantity
+                          return sum
+                        }, 0)
+                        const text = generateWhatsAppShareText({ publicLink, totalAmount: totalAmount > 0 ? totalAmount : null })
+                        window.open(getWhatsAppSendUrl(intake.customer.phone, text), "_blank")
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
+                    >
+                        WhatsApp ile Gönder
+                      </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`
-                          const orderItems = intake.order?.items ?? []
-                          const totalAmount = orderItems.reduce((sum, item) => {
-                            if (item.totalPrice) return sum + item.totalPrice
-                            if (item.unitPrice) return sum + item.unitPrice * item.quantity
-                            return sum
-                          }, 0)
-                          const text = generateWhatsAppShareText({ publicLink, totalAmount: totalAmount > 0 ? totalAmount : null })
-                          window.open(getWhatsAppShareUrl(text), "_blank")
+                          try { await navigator.clipboard.writeText(publicLink) } catch {}
                         }}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border bg-background text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
                       >
-                          WhatsApp ile Paylaş
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`
-                            try { await navigator.clipboard.writeText(publicLink) } catch {}
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-border bg-background text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-                        >
-                          Linki Kopyala
-                        </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Bu linki müşterinizle paylaşabilirsiniz. Müşteri bu sayfadan araç kabul detaylarını görüntüleyebilir.
-                    </p>
+                        Linki Kopyala
+                      </button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Bu linki müşterinizle paylaşabilirsiniz. Müşteri bu sayfadan araç kabul detaylarını görüntüleyebilir.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </TabsContent>
 

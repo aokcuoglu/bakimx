@@ -35,6 +35,7 @@ import { CustomerTypeBadge, CustomerTagBadge, PriceGroupBadge } from "@/componen
 import { CustomerCreateForm, type CustomerFormInitial } from "@/components/app/customer-create-form"
 import { DeleteCustomerButton } from "@/components/app/delete-customer-button"
 import { formatTRY } from "@/lib/format"
+import { bpsToPercent } from "@/lib/money"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { INTAKE_STATUS, CUSTOMER_SOURCES } from "@/lib/constants"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
@@ -209,7 +210,7 @@ export function CustomerDetail({
                nativeButton={false}
                variant="outline"
                size="sm"
-               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
+               render={<Link href={`/intakes/new?customerId=${customer.id}`} />}
              >
                <Wrench className="size-4" />
                Yeni İş Emri
@@ -314,7 +315,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz iş emri yok</p>
                 <Link
-                  href={`/orders/new?customerId=${customer.id}`}
+                  href={`/intakes/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -489,7 +490,7 @@ export function CustomerDetail({
                     <span className="inline-flex items-center gap-2">
                       <PriceGroupBadge group={customer.priceGroup} />
                       {customer.discountRate ? (
-                        <span className="text-xs text-muted-foreground">%{customer.discountRate} iskonto</span>
+                        <span className="text-xs text-muted-foreground">%{bpsToPercent(customer.discountRate)} iskonto</span>
                       ) : null}
                     </span>
                   }

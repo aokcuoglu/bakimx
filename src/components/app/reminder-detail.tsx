@@ -244,7 +244,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               </button>
             ) : null}
             <Link
-              href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
+              href={`/intakes/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-muted text-foreground hover:bg-border text-xs font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-3.5" />
@@ -453,7 +453,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
 
           <div className="flex flex-col gap-2">
             {isActive ? (
-              <Link href={`/orders/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
+              <Link href={`/intakes/new?customerId=${reminder.customer.id}&vehicleId=${reminder.vehicle.id}`}>
                 <Button variant="outline" className="w-full gap-2">
                   <Wrench className="size-4" />
                   İş Emri Oluştur

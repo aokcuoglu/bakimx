@@ -1,9 +1,11 @@
+import { formatKurus } from "@/lib/money"
+
 export function generateWhatsAppShareText(options: {
   publicLink: string
   workshopName?: string
   plate?: string
   statusLabel?: string
-  totalAmount?: number | null
+  totalAmount?: number | null // kuruş
 }): string {
   const { publicLink, workshopName, plate, statusLabel, totalAmount } = options
 
@@ -33,7 +35,7 @@ export function generateWhatsAppShareText(options: {
 
   if (totalAmount != null && totalAmount > 0) {
     lines.push("")
-    lines.push(`💰 Toplam tutar: ₺${new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalAmount)}`)
+    lines.push(`💰 Toplam tutar: ${formatKurus(totalAmount)}`)
   }
 
   lines.push("")
@@ -45,6 +47,18 @@ export function generateWhatsAppShareText(options: {
 export function getWhatsAppShareUrl(text: string): string {
   const encoded = encodeURIComponent(text)
   return `https://wa.me/?text=${encoded}`
+}
+
+/**
+ * wa.me deep link that targets a specific customer number. The workshop's own
+ * WhatsApp opens with the recipient + prefilled text (no Business API needed).
+ * Phone is normalised to international TR format (90XXXXXXXXXX).
+ */
+export function getWhatsAppSendUrl(phone: string, text: string): string {
+  const digits = phone.replace(/\D/g, "").replace(/^0/, "")
+  const intl = digits.startsWith("90") ? digits : `90${digits}`
+  const encoded = encodeURIComponent(text)
+  return `https://wa.me/${intl}?text=${encoded}`
 }
 
 export function buildPublicLink(token: string): string {

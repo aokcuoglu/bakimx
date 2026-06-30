@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
+import { percentToBps, bpsToPercent } from "@/lib/money"
 import {
   Building2,
   User as UserIcon,
@@ -104,7 +105,7 @@ function toDefaults(initial?: CustomerFormInitial | CustomerFormInitialStrict): 
     tag: initial?.tag || "standard",
     source: initial?.source || "",
     priceGroup: initial?.priceGroup || "standard",
-    discountRate: initial?.discountRate ?? 0,
+    discountRate: initial?.discountRate != null ? bpsToPercent(initial.discountRate) : 0, // bps -> percent for the input
     whatsappConsent: !!initial?.whatsappConsent,
     smsConsent: !!initial?.smsConsent,
     emailConsent: !!initial?.emailConsent,
@@ -159,6 +160,8 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
         formData.set(key, String(value))
       }
     }
+    // discountRate is entered as a percent but stored as bps.
+    formData.set("discountRate", String(percentToBps(Number(values.discountRate) || 0)))
     startTransition(() => formAction(formData))
   }
 

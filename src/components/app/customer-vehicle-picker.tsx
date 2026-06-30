@@ -222,6 +222,25 @@ export function CustomerVehiclePicker({
   // Sağdaki kişi ikonu modu değiştirir. Mevcut effect/`results`/`loading` yalnızca plaka modunda kullanılır.
   return (
     <div className="space-y-2">
+      {/* Belirgin başlangıç: ruhsattan yeni müşteri & araç oluştur (OCR ile ön-doldur). */}
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left transition-colors hover:border-primary hover:bg-primary/10"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <ScanLine className="size-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-foreground">Ruhsat tara — yeni müşteri & araç</span>
+          <span className="block text-xs text-muted-foreground">Ruhsatı okutun, alanlar otomatik dolsun.</span>
+        </span>
+      </button>
+
+      <div className="relative flex items-center gap-2 py-0.5 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" /> veya plaka/müşteri ile ara <span className="h-px flex-1 bg-border" />
+      </div>
+
       <div className="flex items-stretch gap-2">
         <div className="flex-1">
           {mode === "plate" ? (

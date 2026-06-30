@@ -132,8 +132,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                         viewHref={`/quotes/${quote.id}`}
                         editHref={`/quotes/${quote.id}?edit=1`}
                         workOrderHref={quote.vehicle
-                          ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                          : `/orders/new?customerId=${quote.customer.id}`
+                          ? `/intakes/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                          : `/intakes/new?customerId=${quote.customer.id}`
                         }
                       />
                     </div>
@@ -182,8 +182,8 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 viewHref={`/quotes/${quote.id}`}
                 editHref={`/quotes/${quote.id}?edit=1`}
                 workOrderHref={quote.vehicle
-                  ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
-                  : `/orders/new?customerId=${quote.customer.id}`
+                  ? `/intakes/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
+                  : `/intakes/new?customerId=${quote.customer.id}`
                 }
               />
             </div>

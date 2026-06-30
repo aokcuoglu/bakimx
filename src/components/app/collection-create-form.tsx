@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PaymentBadge } from "@/components/app/status-badge"
 import { computePaymentStatus } from "@/lib/cashbox/status"
 import { formatTRY } from "@/lib/format"
+import { liraToKurus } from "@/lib/money"
 import {
   ArrowLeft,
   Loader2,
@@ -118,13 +119,15 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
     return orders.find((o) => o.id === serviceOrderId) || null
   }, [orders, serviceOrderId])
 
+  // Amount input is TRY; order figures are kuruş. Convert before any math.
   const amountNum = typeof amount === "number" ? amount : parseFloat(String(amount)) || 0
+  const amountKurus = liraToKurus(amountNum)
   const orderTotal = selectedOrder?.grandTotal || 0
   const previousPaid = selectedOrder?.paidAmount || 0
   const remaining = selectedOrder ? Math.max(0, orderTotal - previousPaid) : 0
-  const newRemaining = selectedOrder ? Math.max(0, orderTotal - previousPaid - amountNum) : 0
-  const projectedStatus = selectedOrder ? computePaymentStatus(orderTotal, previousPaid + amountNum) : null
-  const isOverpayment = selectedOrder && amountNum > remaining && remaining > 0
+  const newRemaining = selectedOrder ? Math.max(0, orderTotal - previousPaid - amountKurus) : 0
+  const projectedStatus = selectedOrder ? computePaymentStatus(orderTotal, previousPaid + amountKurus) : null
+  const isOverpayment = selectedOrder && amountKurus > remaining && remaining > 0
 
   async function onSubmit(values: CollectionFormValues) {
     setLoading(true)
@@ -133,7 +136,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
     const formData = new FormData()
     formData.set("customerId", values.customerId)
     formData.set("serviceOrderId", values.serviceOrderId || "")
-    formData.set("amount", String(values.amount))
+    formData.set("amount", String(liraToKurus(values.amount)))
     formData.set("method", values.method)
     formData.set("paymentDate", new Date(values.paymentDate).toISOString())
     formData.set("referenceNo", values.referenceNo || "")
@@ -423,7 +426,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                   <>
                     <SummaryRow label="İş Emri Toplamı" value={formatTRY(orderTotal)} />
                     <SummaryRow label="Daha Önce Tahsil Edilen" value={formatTRY(previousPaid)} tone="emerald" />
-                    <SummaryRow label="Yeni Tahsilat" value={amountNum > 0 ? formatTRY(amountNum) : "—"} bold tone="primary" />
+                    <SummaryRow label="Yeni Tahsilat" value={amountKurus > 0 ? formatTRY(amountKurus) : "—"} bold tone="primary" />
                     <div className="border-t pt-2">
                       <SummaryRow
                         label="Kalan Bakiye (tahsilat sonrası)"
@@ -443,7 +446,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                     {isOverpayment && (
                       <div className="p-2.5 rounded-lg bg-muted border border-border text-muted-foreground text-xs flex items-start gap-2">
                         <Info className="size-3.5 mt-0.5 shrink-0" />
-                        <span>Fazla ödeme: kalan bakiyeyi aşıyor ({formatTRY(amountNum - remaining)} fazla)</span>
+                        <span>Fazla ödeme: kalan bakiyeyi aşıyor ({formatTRY(amountKurus - remaining)} fazla)</span>
                       </div>
                     )}
                   </>
@@ -454,9 +457,9 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                   </div>
                 )}
 
-                {amountNum > 0 && !selectedOrder && (
+                {amountKurus > 0 && !selectedOrder && (
                   <div className="border-t pt-2">
-                    <SummaryRow label="Tahsilat Tutarı" value={formatTRY(amountNum)} bold tone="primary" />
+                    <SummaryRow label="Tahsilat Tutarı" value={formatTRY(amountKurus)} bold tone="primary" />
                   </div>
                 )}
               </CardContent>

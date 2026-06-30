@@ -331,7 +331,7 @@ function DesktopTable({
                     <ActionsMenu
                       viewHref={`/vehicles/${row.id}`}
                       editHref={`/vehicles/${row.id}/edit`}
-                      workOrderHref={`/orders/new?vehicleId=${row.id}`}
+                      workOrderHref={`/intakes/new?vehicleId=${row.id}`}
                       appointmentHref={`/appointments/new?vehicleId=${row.id}`}
                       passportHref={`/vehicles/${row.id}/passport`}
                     />
@@ -379,7 +379,7 @@ function MobileCards({
             <MobileActionsMenu
               viewHref={`/vehicles/${row.id}`}
               editHref={`/vehicles/${row.id}/edit`}
-              workOrderHref={`/orders/new?vehicleId=${row.id}`}
+              workOrderHref={`/intakes/new?vehicleId=${row.id}`}
               appointmentHref={`/appointments/new?vehicleId=${row.id}`}
               passportHref={`/vehicles/${row.id}/passport`}
             />

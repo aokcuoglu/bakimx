@@ -3,6 +3,7 @@
 import { useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { liraToKurus, kurusToLira } from "@/lib/money"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -73,8 +74,9 @@ function toDefaults(part?: PartData): PartFormValues {
     unit: part?.unit || "adet",
     stockQty: part?.stockQty ?? 0,
     criticalStockQty: part?.criticalStockQty ?? 0,
-    purchasePrice: part?.purchasePrice ?? 0,
-    salePrice: part?.salePrice ?? 0,
+    // Stored in kuruş; the form inputs hold TRY.
+    purchasePrice: part?.purchasePrice != null ? kurusToLira(part.purchasePrice) : 0,
+    salePrice: part?.salePrice != null ? kurusToLira(part.salePrice) : 0,
     currency: (part?.currency as "TRY" | "USD" | "EUR") || "TRY",
     supplierName: part?.supplierName || "",
     supplierPhone: part?.supplierPhone || "",
@@ -113,6 +115,9 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
     for (const [key, value] of Object.entries(values)) {
       formData.set(key, String(value))
     }
+    // Prices are entered in TRY but stored as kuruş.
+    formData.set("purchasePrice", String(liraToKurus(Number(values.purchasePrice) || 0)))
+    formData.set("salePrice", String(liraToKurus(Number(values.salePrice) || 0)))
     startTransition(() => formAction(formData))
   }
 

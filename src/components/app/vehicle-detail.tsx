@@ -145,7 +145,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/orders/new?vehicleId=${v.id}`}
+              href={`/intakes/new?vehicleId=${v.id}`}
               className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors touch-manipulation"
             >
               <Wrench className="size-4" />
@@ -267,7 +267,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             count={workOrders.length}
             action={
               <Link
-                href={`/orders/new?vehicleId=${v.id}`}
+                href={`/intakes/new?vehicleId=${v.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />

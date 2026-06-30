@@ -387,7 +387,7 @@ function DesktopTable({
                     <ActionsMenu
                       viewHref={`/customers/${row.id}`}
                       editHref={`/customers/${row.id}?edit=1`}
-                      workOrderHref={`/orders/new?customerId=${row.id}`}
+                      workOrderHref={`/intakes/new?customerId=${row.id}`}
                       appointmentHref={`/appointments/new?customerId=${row.id}`}
                       onArchive={onDelete ? () => onDelete(row.id, nameFor(row)) : undefined}
                       archiveLabel="Sil"
@@ -448,7 +448,7 @@ function MobileCards({ rows }: { rows: CustomerRow[]; onDelete?: (id: string, la
             <MobileActionsMenu
               viewHref={`/customers/${row.id}`}
               editHref={`/customers/${row.id}?edit=1`}
-              workOrderHref={`/orders/new?customerId=${row.id}`}
+              workOrderHref={`/intakes/new?customerId=${row.id}`}
               appointmentHref={`/appointments/new?customerId=${row.id}`}
             />
           </div>

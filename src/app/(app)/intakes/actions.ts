@@ -371,13 +371,13 @@ export async function updateIntakeStatusAction(intakeFormId: string, status: str
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
 
-  // `approved` is reachable only through the customer OTP flow (verifyOtpAction);
-  // block any attempt to set it (or make an illegal jump) via the generic action.
+  // `approved` is a legacy status no longer produced by any flow; block any attempt
+  // to set it (or make an illegal jump) via the generic action.
   if (!canTransitionIntake(intake.status as IntakeStatus, status)) {
     return {
       error:
         status === "approved"
-          ? "Onay yalnızca müşteri doğrulaması (OTP) ile verilebilir"
+          ? "Bu durum artık kullanılmıyor"
           : "Bu durum geçişine izin verilmiyor",
     }
   }
