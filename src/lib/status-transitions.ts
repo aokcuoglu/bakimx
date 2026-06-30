@@ -55,8 +55,11 @@ export function isPaymentStatus(value: string): value is PaymentStatus {
 }
 
 // `approved` is intentionally absent from every target list — it is owned by the OTP flow.
+// Customer approval now happens at DELIVERY (delivery OTP), not at intake, so a draft
+// work order starts directly: draft → in_progress. The legacy `waiting_approval`/`approved`
+// rows are kept so older records in those states can still progress.
 const INTAKE_TRANSITIONS: Record<IntakeStatus, IntakeStatus[]> = {
-  draft: ["waiting_approval", "cancelled"],
+  draft: ["in_progress", "cancelled"],
   waiting_approval: ["draft", "cancelled"],
   approved: ["in_progress", "cancelled"],
   in_progress: ["ready_for_delivery", "cancelled"],
