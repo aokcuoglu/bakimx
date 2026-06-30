@@ -9,6 +9,22 @@ export interface EmailLayoutOptions {
 const NAVY = "#0b1f3a"
 const CTA_BLUE = "#2563eb"
 
+/** Absolute origin for links + the e-mail logo. Must be a PUBLIC host: e-mail
+ *  clients (and Gmail's image proxy) fetch the logo anonymously, so the asset
+ *  must not be auth-gated. See middleware.ts matcher (root images are exempt). */
+function baseUrl(): string {
+  return process.env.APP_URL || "http://localhost:3000"
+}
+
+/** Primary-dark wordmark (white on navy) — the brand "Primary Dark" variant is
+ *  the one specified for lacivert/koyu backgrounds. PNG (not SVG): most e-mail
+ *  clients, including Gmail, strip SVG. */
+function logoImgHtml(): string {
+  const src = `${baseUrl()}/02-bakimx-primary-dark.png`
+  // 1800x351 source → 5.13:1; rendered at 28px tall keeps it crisp on retina.
+  return `<img src="${src}" alt="BakimX" width="144" height="28" style="display:block;border:0;outline:none;text-decoration:none;height:28px;width:144px;max-width:144px;" />`
+}
+
 export function renderEmailLayout(opts: EmailLayoutOptions): string {
   const { heading, bodyHtml, cta, footerNote } = opts
 
@@ -28,8 +44,8 @@ export function renderEmailLayout(opts: EmailLayoutOptions): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 0;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
-        <tr><td style="background:${NAVY};padding:20px 28px;">
-          <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.3px;">&#9881; BakimX</span>
+        <tr><td style="background:${NAVY};padding:22px 28px;">
+          ${logoImgHtml()}
         </td></tr>
         <tr><td style="padding:28px;">
           <h1 style="margin:0 0 16px;color:${NAVY};font-size:20px;font-weight:700;">${heading}</h1>
