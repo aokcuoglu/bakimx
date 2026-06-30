@@ -12,6 +12,7 @@ import { RegistrationScanner } from "@/components/app/registration-scanner"
 import type { OcrFieldConfidence, OcrProviderName } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { prepareRegistrationImage } from "@/lib/ocr/prepare-registration-image"
+import { formatPhoneTR } from "@/lib/format"
 
 type Step = "upload" | "processing" | "confirm" | "saving"
 
@@ -404,8 +405,9 @@ export function SmartCaptureRegistration() {
                       id={field.key}
                       type={field.key === "phone" ? "tel" : "text"}
                       inputMode={field.key === "phone" ? "tel" : undefined}
+                      maxLength={field.key === "phone" ? 14 : undefined}
                       value={confirmedFields[field.key] || ""}
-                      onChange={(e) => handleInputChange(field.key, field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
+                      onChange={(e) => handleInputChange(field.key, field.key === "phone" ? formatPhoneTR(e.target.value) : field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
                       placeholder={field.placeholder}
                       required={field.required}
                       className={lowConf ? "border-warning/30 bg-warning/10 focus:border-warning" : ""}

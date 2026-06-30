@@ -46,6 +46,43 @@ export function normalizePhone(input: string): string {
 }
 
 /**
+ * Format a phone number for display as the user types, to the standard Turkish
+ * format "0544 515 74 08" (national leading 0 + 4-3-2-2 grouping).
+ *
+ * - Strips non-digits and any pasted +90 / 90 country code.
+ * - Enforces the leading "0" so every screen shows the same standard.
+ * - Caps at 11 digits (0 + 10), so input can't grow unbounded.
+ *
+ * The returned value (digits + spaces) is still accepted by {@link normalizePhone},
+ * which the server uses to store the canonical 10-digit form.
+ */
+export function formatPhoneTR(input: string): string {
+  let digits = input.replace(/\D/g, "")
+  if (digits.startsWith("90") && digits.length > 10) {
+    digits = digits.slice(2)
+  }
+  if (digits.length > 0 && !digits.startsWith("0")) {
+    digits = "0" + digits
+  }
+  digits = digits.slice(0, 11)
+  if (digits.length === 0) return ""
+  const groups = [digits.slice(0, 4)]
+  if (digits.length > 4) groups.push(digits.slice(4, 7))
+  if (digits.length > 7) groups.push(digits.slice(7, 9))
+  if (digits.length > 9) groups.push(digits.slice(9, 11))
+  return groups.join(" ")
+}
+
+/**
+ * Uppercase using the Turkish locale so i→İ and ı→I map correctly (a plain
+ * toUpperCase / CSS text-transform would produce i→I). Used for name fields so
+ * the stored value — not just the rendered text — is uppercased.
+ */
+export function toTrUpper(input: string): string {
+  return input.toLocaleUpperCase("tr-TR")
+}
+
+/**
  * Normalize a Turkish plate number: strip non-alphanumeric, uppercase, compact form (e.g. "34ABC123").
  */
 export function normalizePlate(input: string): string {
