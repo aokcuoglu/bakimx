@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
+import { trDateToInput, inputDateToTr } from "@/lib/format"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
@@ -497,7 +498,14 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>İlk Tescil Tarihi</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="GG.AA.YYYY" />
+                          <Input
+                            type="date"
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={trDateToInput(field.value)}
+                            onChange={(e) => field.onChange(inputDateToTr(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -510,7 +518,14 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>Muayene Geçerlilik Tarihi</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="GG.AA.YYYY" />
+                          <Input
+                            type="date"
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            value={trDateToInput(field.value)}
+                            onChange={(e) => field.onChange(inputDateToTr(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

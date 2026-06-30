@@ -11,7 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true, id: result.id })
-  } catch {
+  } catch (err) {
+    console.error("[POST /api/vehicles] failed:", err)
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
   }
 }

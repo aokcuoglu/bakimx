@@ -10,6 +10,7 @@ import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import { trDateToInput, inputDateToTr } from "@/lib/format"
 
 export type InlineCreateResult = {
   customerId: string
@@ -279,11 +280,11 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.firstRegistrationDate} onChange={(e) => setField("firstRegistrationDate", e.target.value)} placeholder="GG.AA.YYYY" className={fieldClass("firstRegistrationDate")} />
+                <Input type="date" value={trDateToInput(fields.firstRegistrationDate)} onChange={(e) => setField("firstRegistrationDate", inputDateToTr(e.target.value))} className={fieldClass("firstRegistrationDate")} />
               </div>
               <div className="space-y-1 col-span-2">
                 <Label>Muayene Geçerlilik Tarihi</Label>
-                <Input value={fields.inspectionValidUntil} onChange={(e) => setField("inspectionValidUntil", e.target.value)} placeholder="GG.AA.YYYY" />
+                <Input type="date" value={trDateToInput(fields.inspectionValidUntil)} onChange={(e) => setField("inspectionValidUntil", inputDateToTr(e.target.value))} />
               </div>
             </div>
           )}
