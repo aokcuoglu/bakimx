@@ -13,6 +13,11 @@ import { Plus, Search, X, Truck, Users, Eye, Edit3, Archive, Trash2, RotateCcw, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
+const STATUS_LABELS: Record<string, string> = {
+  active: "Aktif",
+  passive: "Pasif",
+}
+
 type SupplierRow = {
   id: string
   name: string
@@ -134,7 +139,9 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               onValueChange={(v) => applyFilter("status", v ?? "all")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Tümü" />
+                <SelectValue placeholder="Tümü">
+                  {(value: string | null) => (value && value !== "all" ? STATUS_LABELS[value] ?? value : null)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>

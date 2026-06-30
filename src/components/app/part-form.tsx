@@ -23,6 +23,12 @@ import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { partSchema, type PartFormValues } from "@/lib/validations/part"
 
+const CURRENCY_LABELS: Record<string, string> = {
+  TRY: "₺ TRY",
+  USD: "$ USD",
+  EUR: "€ EUR",
+}
+
 type PartData = {
   id: string
   name: string
@@ -335,7 +341,9 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "TRY")}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Para Birimi" />
+                            <SelectValue placeholder="Para Birimi">
+                              {(value: string | null) => (value ? CURRENCY_LABELS[value] ?? value : null)}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="TRY">₺ TRY</SelectItem>
@@ -367,7 +375,13 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Tedarikçi seçin (opsiyonel)" />
+                            <SelectValue placeholder="Tedarikçi seçin (opsiyonel)">
+                              {(value: string | null) => {
+                                if (!value) return null
+                                const s = suppliers?.find((s) => s.id === value)
+                                return s ? `${s.name}${s.phone ? ` — ${s.phone}` : ""}` : value
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Tedarikçi seçin (opsiyonel)</SelectItem>

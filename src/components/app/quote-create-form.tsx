@@ -71,6 +71,11 @@ type CatalogPart = {
   isActive: boolean
 }
 
+const ITEM_TYPE_LABELS: Record<string, string> = {
+  part: "Parça",
+  labor: "İşçilik",
+}
+
 const defaultItem = {
   type: "part" as const,
   name: "",
@@ -336,7 +341,13 @@ export function QuoteCreateForm() {
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder={vehicleLoading ? "Yükleniyor..." : "Araç seçin (isteğe bağlı)"} />
+                            <SelectValue placeholder={vehicleLoading ? "Yükleniyor..." : "Araç seçin (isteğe bağlı)"}>
+                              {(value: string | null) => {
+                                if (!value) return null
+                                const v = vehicles.find((v) => v.id === value)
+                                return v ? `${v.plate} — ${v.brand} ${v.model}` : value
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {vehicles.map((v) => (
@@ -511,7 +522,9 @@ export function QuoteCreateForm() {
                               <FormControl>
                                 <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "part")}>
                                   <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Tip" />
+                                    <SelectValue placeholder="Tip">
+                                      {(value: string | null) => (value ? ITEM_TYPE_LABELS[value] ?? value : null)}
+                                    </SelectValue>
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="part">Parça</SelectItem>

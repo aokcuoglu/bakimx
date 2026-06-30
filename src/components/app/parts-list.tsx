@@ -15,6 +15,13 @@ import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
+const STATUS_LABELS: Record<string, string> = {
+  in_stock: "Stokta",
+  critical: "Kritik Stokta",
+  out_of_stock: "Stokta Yok",
+  inactive: "Pasif",
+}
+
 type PartWithDates = {
   id: string
   name: string
@@ -143,7 +150,9 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
               onValueChange={(v) => applyFilter("status", v ?? "all")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Tümü" />
+                <SelectValue placeholder="Tümü">
+                  {(value: string | null) => (value && value !== "all" ? STATUS_LABELS[value] ?? value : null)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>

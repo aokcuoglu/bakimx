@@ -251,7 +251,15 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
                             <SelectTrigger className="w-full mt-1.5">
-                              <SelectValue placeholder="İş emri seçin (opsiyonel)" />
+                              <SelectValue placeholder="İş emri seçin (opsiyonel)">
+                                {(value: string | null) => {
+                                  if (!value) return null
+                                  const o = filteredOrders.find((o) => o.id === value)
+                                  return o ? (
+                                    <>{o.workOrderNo || "—"} &bull; {o.vehicle.plate} &bull; Kalan: {formatTRY(o.remainingAmount)}</>
+                                  ) : value
+                                }}
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

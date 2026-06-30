@@ -35,6 +35,14 @@ type Customer = {
   phone: string
 }
 
+function customerLabel(c: Customer): string {
+  const name =
+    c.type === "corporate"
+      ? c.companyName || "Kurumsal Müşteri"
+      : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
+  return `${name} — ${c.phone}`
+}
+
 type VehicleFormProps = {
   customers: Customer[]
   initial?: {
@@ -164,15 +172,18 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin" />
+                            <SelectValue placeholder="Müşteri seçin">
+                              {(value) => {
+                                const c = customers.find((x) => x.id === value)
+                                return c ? customerLabel(c) : "Müşteri seçin"
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {customers.map((c) => (
                             <SelectItem key={c.id} value={c.id}>
-                              {c.type === "corporate"
-                                ? c.companyName || "Kurumsal Müşteri"
-                                : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"} — {c.phone}
+                              {customerLabel(c)}
                             </SelectItem>
                           ))}
                         </SelectContent>

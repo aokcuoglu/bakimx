@@ -153,6 +153,7 @@ export function FilterSheet({
               {f.label}
             </label>
             <Select
+              items={f.options}
               value={draft[f.name] ?? ""}
               onValueChange={(v) =>
                 setDraft((s) => ({ ...s, [f.name]: v ?? "" }))
