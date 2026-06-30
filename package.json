@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.5.16",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
     "postinstall": "prisma generate",
