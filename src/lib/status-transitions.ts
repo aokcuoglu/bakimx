@@ -7,10 +7,10 @@ import type { IntakeStatus, OrderStatus, PaymentStatus } from "@prisma/client"
  * written through the generic status actions / API routes. The maps mirror the
  * transitions the UI actually offers (see intake-detail.tsx / order-detail.tsx).
  *
- * SECURITY: an intake reaches `approved` ONLY through the customer OTP approval
- * flow (`verifyOtpAction`), never through the generic status action — this
- * prevents bypassing customer approval. `canTransitionIntake` therefore always
- * rejects a manual transition to `approved`.
+ * LEGACY: `approved` is no longer produced by any flow — customer approval moved
+ * to the delivery stage (delivery OTP). The generic action still refuses to set
+ * `approved` so the status can't be reintroduced by hand; older records already in
+ * `approved` keep their onward transitions.
  */
 
 export const INTAKE_STATUSES = [
@@ -54,9 +54,9 @@ export function isPaymentStatus(value: string): value is PaymentStatus {
   return (PAYMENT_STATUSES as readonly string[]).includes(value)
 }
 
-// `approved` is intentionally absent from every target list — it is owned by the OTP flow.
-// Customer approval now happens at DELIVERY (delivery OTP), not at intake, so a draft
-// work order starts directly: draft → in_progress. The legacy `waiting_approval`/`approved`
+// `approved` is intentionally absent from every target list — it is a legacy status
+// no longer produced. Customer approval now happens at DELIVERY (delivery OTP), not at
+// intake, so a draft work order starts directly: draft → in_progress. The legacy `waiting_approval`/`approved`
 // rows are kept so older records in those states can still progress.
 const INTAKE_TRANSITIONS: Record<IntakeStatus, IntakeStatus[]> = {
   draft: ["in_progress", "cancelled"],
