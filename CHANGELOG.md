@@ -3,8 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [RELEASE.md](./RELEASE.md)).
 
 ## Yayınlanmamış (Unreleased)
-v0.5.16 sonrası, henüz tag'lenmemiş geliştirmeler. Kapsam bir **özellik sürümü** seviyesinde — `v0.6.0` olarak tag'lenmesi önerilir. Ayrıntı: [docs/releases/UNRELEASED.md](./docs/releases/UNRELEASED.md).
-Öne çıkanlar: teslim OTP devri, görsel-üzeri hasar işaretleme (PhotoAnnotate), DB tabanlı marka/model kataloğu, admin impersonation + işletme bazlı feature flag, transactional onay e-postaları, iş emri adımında plaka OCR.
+Henüz yok — v0.6.0 yayınlandı, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.6.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.6.0 | Onay→teslim & birleşik iş emri, para kuruş modeli, katalog/admin/e-posta | [v0.6.0](./docs/releases/v0.6.0.md) |
+
+Öne çıkanlar: müşteri onayı kabulden **teslime** taşındı (iş emri direkt başlar) + WhatsApp (wa.me) gönder; birleşik iş emri akışı + teslim OTP; para modeli **Int kuruş/bps** + sunucu-otoriter toplamlar; DB tabanlı marka/model kataloğu; admin impersonation + işletme bazlı feature flag; transactional onay e-postaları; iş emri adımında plaka OCR; ruhsat tarayıcı sadeleştirme; landing redesign. 5 migration.
 
 ## 0.5.x
 
