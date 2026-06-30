@@ -405,7 +405,6 @@ export function SmartCaptureRegistration() {
                       id={field.key}
                       type={field.key === "phone" ? "tel" : "text"}
                       inputMode={field.key === "phone" ? "tel" : undefined}
-                      maxLength={field.key === "phone" ? 14 : undefined}
                       value={confirmedFields[field.key] || ""}
                       onChange={(e) => handleInputChange(field.key, field.key === "phone" ? formatPhoneTR(e.target.value) : field.uppercase ? e.target.value.toUpperCase() : e.target.value)}
                       placeholder={field.placeholder}

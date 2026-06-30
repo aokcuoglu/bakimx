@@ -123,7 +123,7 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
                   <FormItem>
                     <FormLabel>Telefon *</FormLabel>
                     <FormControl>
-                      <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
+                      <Input {...field} type="tel" inputMode="tel" placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
