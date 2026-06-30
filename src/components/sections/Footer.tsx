@@ -51,8 +51,8 @@ export function Footer() {
 
   return (
     <footer className="border-t bg-navy text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
+        <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -101,8 +101,8 @@ export function Footer() {
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, delay: (i + 1) * 0.08 }}
             >
-              <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider text-white/90">{group.title}</h3>
-              <ul className="space-y-2">
+              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-white/90">{group.title}</h3>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
                 {group.links.map((link) => (
                   <li key={link.label}>
                     <a href={link.href} className="text-sm text-white/60 hover:text-white transition-colors">
@@ -115,9 +115,9 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 pt-8 border-t border-white/10">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-white/50">
+        <div className="mt-6 pt-4 sm:mt-8 sm:pt-5 border-t border-white/10">
+          <div className="flex flex-row flex-wrap justify-between items-center gap-x-4 gap-y-1">
+            <p className="text-xs sm:text-sm text-white/50">
               &copy; {currentYear} BakimX. Tüm hakları saklıdır.
             </p>
             <span className="text-xs text-white/30">

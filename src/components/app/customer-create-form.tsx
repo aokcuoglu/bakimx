@@ -38,6 +38,7 @@ import { formatDate } from "@/lib/utils-client"
 import { useForm } from "react-hook-form"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
 import { typedResolver } from "@/lib/validations/resolver"
+import { formatPhoneTR, toTrUpper } from "@/lib/format"
 
 const SOURCE_LABELS: Record<string, string> = {
   referral: "Tavsiye",
@@ -91,8 +92,8 @@ function toDefaults(initial?: CustomerFormInitial | CustomerFormInitialStrict): 
     fullName: initial?.fullName || "",
     companyName: initial?.companyName || "",
     contactName: initial?.contactName || "",
-    phone: initial?.phone || "",
-    phone2: initial?.phone2 || "",
+    phone: formatPhoneTR(initial?.phone || ""),
+    phone2: formatPhoneTR(initial?.phone2 || ""),
     email: initial?.email || "",
     city: initial?.city || "",
     district: initial?.district || "",
@@ -227,7 +228,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Ad *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Ahmet" />
+                          <Input {...field} placeholder="AHMET" onChange={(e) => field.onChange(toTrUpper(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,7 +241,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Soyad *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Yılmaz" />
+                          <Input {...field} placeholder="YILMAZ" onChange={(e) => field.onChange(toTrUpper(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -253,7 +254,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon *</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" placeholder="0555 123 4567" />
+                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -266,7 +267,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon 2</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" placeholder="0555 987 6543" />
+                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -360,7 +361,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon *</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" placeholder="0212 555 0000" />
+                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0212 555 0000" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -373,7 +374,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>Telefon 2</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" placeholder="0555 987 6543" />
+                          <Input {...field} type="tel" inputMode="tel" maxLength={14} placeholder="0544 515 74 08" onChange={(e) => field.onChange(formatPhoneTR(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
