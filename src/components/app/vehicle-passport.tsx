@@ -31,6 +31,16 @@ import { PlateBadge } from "@/components/app/plate-badge"
 import { PassportQRCode } from "@/components/app/passport-qr-code"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { ORDER_STATUS, PAYMENT_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES, MAINTENANCE_REMINDER_TYPES, MAINTENANCE_REMINDER_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage, customerDisplayName } from "@/lib/format"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
@@ -153,6 +163,8 @@ export function VehiclePassport({ data }: { data: PassportData }) {
 
   const [creating, setCreating] = useState(false)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [deleteToken, setDeleteToken] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newLabel, setNewLabel] = useState("")
@@ -202,14 +214,17 @@ export function VehiclePassport({ data }: { data: PassportData }) {
     }
   }
 
-  async function handleDelete(tokenId: string) {
-    if (!confirm("Bu pasaport token'ını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) return
+  async function handleDelete() {
+    if (!deleteToken) return
+    setDeleting(true)
     try {
-      await fetch(`/api/vehicles/${vehicle.id}/passport/${tokenId}`, {
+      await fetch(`/api/vehicles/${vehicle.id}/passport/${deleteToken}`, {
         method: "DELETE",
       })
       window.location.reload()
-    } catch {}
+    } catch {
+      setDeleting(false)
+    }
   }
 
   async function handleCopy(token: string) {
@@ -508,7 +523,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDelete(t.id)}
+                                onClick={() => setDeleteToken(t.id)}
                               />
                             }>
                               <Trash2 className="size-4" />
@@ -564,13 +579,14 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               )}
 
               {!showCreateForm ? (
-                <button
+                <Button
+                  variant="navy"
+                  className="w-full"
                   onClick={() => setShowCreateForm(true)}
-                  className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-navy text-white text-sm font-medium hover:bg-navy/90 transition-colors"
                 >
                   <Plus className="size-4" />
                   Yeni Pasaport Linki Oluştur
-                </button>
+                </Button>
               ) : (
                 <div className="border border-border rounded-lg p-3 space-y-3">
                   <div>
@@ -602,19 +618,20 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="navy"
+                      className="flex-1"
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex-1 h-9 rounded-lg bg-navy text-white text-sm font-medium hover:bg-navy/90 transition-colors disabled:opacity-50"
                     >
                       {creating ? "Oluşturuluyor..." : "Oluştur"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => { setShowCreateForm(false); setNewLabel(""); setNewExpiry(""); }}
-                      className="h-9 px-4 rounded-lg border border-border bg-white text-foreground text-sm font-medium hover:bg-muted transition-colors"
                     >
                       İptal
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -622,6 +639,35 @@ export function VehiclePassport({ data }: { data: PassportData }) {
           </Card>
         </aside>
       </div>
+
+      <AlertDialog
+        open={deleteToken !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteToken(null)
+            setDeleting(false)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pasaport linkini sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu pasaport token&apos;ını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Siliniyor…" : "Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

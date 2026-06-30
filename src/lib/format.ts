@@ -90,6 +90,22 @@ export function normalizePlate(input: string): string {
 }
 
 /**
+ * Ruhsat tarih alanları (ilk tescil, muayene geçerlilik) DB'de GG.AA.YYYY
+ * (dd.MM.yyyy) string olarak tutulur; native <input type="date"> ise yyyy-MM-dd
+ * ister. Bu iki yardımcı, depolama formatını bozmadan tarih seçici gösterebilmek
+ * için iki yön arasında çevirir. Tanınmayan/eksik girdi boş döner.
+ */
+export function trDateToInput(v: string | null | undefined): string {
+  const m = (v ?? "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ""
+}
+
+export function inputDateToTr(v: string): string {
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : ""
+}
+
+/**
  * Build a displayable name for a customer. Handles corporate/individual and null fields.
  */
 export function customerDisplayName(customer: {

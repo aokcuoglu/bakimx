@@ -7,8 +7,8 @@ import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
-import type { IntakeStatus } from "@prisma/client"
+import { isIntakeStatus, canTransitionIntake, isOrderStatus, canTransitionOrder } from "@/lib/status-transitions"
+import type { IntakeStatus, OrderStatus } from "@prisma/client"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 
@@ -388,9 +388,25 @@ export async function updateIntakeStatusAction(intakeFormId: string, status: str
   })
   if (updateResult.count === 0) return { error: "Kabul formu bulunamadı" }
 
+  // Intake + work order are presented as one unified flow (see /orders list);
+  // keep the linked ServiceOrder's status mirrored so it doesn't show stale on the orders page.
+  if (isOrderStatus(status)) {
+    const order = await prisma.serviceOrder.findFirst({
+      where: { intakeFormId, workshopId: user.workshopId },
+    })
+    if (order && canTransitionOrder(order.status as OrderStatus, status)) {
+      await prisma.serviceOrder.updateMany({
+        where: { id: order.id, workshopId: user.workshopId },
+        data: { status },
+      })
+      revalidatePath(`/orders/${order.id}`)
+    }
+  }
+
   await AuditLogAction(user.workshopId, user.id, "VehicleIntakeForm", intakeFormId, `status_changed_to_${status}`)
 
   revalidatePath(`/intakes/${intakeFormId}`)
   revalidatePath("/intakes")
+  revalidatePath("/orders")
   return { success: true }
 }

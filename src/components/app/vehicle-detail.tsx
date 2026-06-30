@@ -1,5 +1,8 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -22,14 +25,24 @@ import {
   Gauge,
   ScrollText,
 } from "lucide-react"
-import { PlateBadge } from "@/components/app/plate-badge"
+import { VehicleIdentity } from "@/components/app/vehicle-identity"
 import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/app/reminder-status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { formatTRY } from "@/lib/format"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
-import { INTAKE_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES } from "@/lib/constants"
+import { DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
 
@@ -102,6 +115,25 @@ function customerDisplayName(c: VehicleData["customer"]) {
 }
 
 export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
+  const router = useRouter()
+  const [confirmVinOpen, setConfirmVinOpen] = useState(false)
+  const [confirmingVin, setConfirmingVin] = useState(false)
+
+  async function handleConfirmVin() {
+    setConfirmingVin(true)
+    const { confirmVehicleVinAction } = await import("@/app/(app)/vehicles/actions")
+    const res = await confirmVehicleVinAction(v.id)
+    if (res?.error) {
+      toast.error(res.error)
+      setConfirmingVin(false)
+      return
+    }
+    toast.success("Şase numarası teyit edildi")
+    setConfirmVinOpen(false)
+    setConfirmingVin(false)
+    router.refresh()
+  }
+
   const workOrders = v.intakes.filter((i) => i.order)
   const allDamageMarks = v.intakes.flatMap((i) =>
     i.damageMarks.map((dm) => ({ ...dm, intakeId: i.id, intakeDate: i.createdAt }))
@@ -123,59 +155,31 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
-              <Car className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <PlateBadge plate={v.plate} className="h-8 min-w-[6rem] text-sm" />
-                <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                  {v.brand} {v.model}
-                </h2>
-              </div>
-              <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
-                {v.vehicleType ? <span>{v.vehicleType}</span> : null}
-                {v.modelYear ? <span>{v.modelYear}</span> : null}
-                {v.color ? <span>{v.color}</span> : null}
-                {v.fuelType ? <span>{v.fuelType}</span> : null}
-                {v.transmission ? <span>{v.transmission}</span> : null}
-              </div>
-            </div>
-          </div>
+          <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/intakes/new?vehicleId=${v.id}`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              render={<Link href={`/intakes/new?vehicleId=${v.id}`} />}
             >
               <Wrench className="size-4" />
               <span className="hidden sm:inline">Yeni İş Emri</span>
-            </Link>
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/intakes/new?vehicleId=${v.id}`} />}
-            >
-              <ClipboardList className="size-4" />
-              <span className="hidden sm:inline">Yeni Kabul</span>
             </Button>
             <Button
               nativeButton={false}
               variant="outline"
-              size="sm"
               render={<Link href={`/vehicles/${v.id}/edit`} />}
             >
               <Pencil className="size-4" />
               <span className="hidden sm:inline">Düzenle</span>
             </Button>
-            <Link
-              href={`/vehicles/${v.id}/passport`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-navy bg-navy text-white hover:bg-navy/90 text-sm font-medium transition-colors touch-manipulation"
+            <Button
+              nativeButton={false}
+              variant="navy"
+              render={<Link href={`/vehicles/${v.id}/passport`} />}
             >
               <ScrollText className="size-4" />
               <span className="hidden sm:inline">Pasaport</span>
-            </Link>
+            </Button>
           </div>
         </div>
       </header>
@@ -218,7 +222,17 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                         Teyit Edildi
                       </span>
                     ) : v.vin ? (
-                      <span className="text-warning">Teyit Bekliyor</span>
+                      <span className="inline-flex items-center gap-2 flex-wrap">
+                        <span className="text-warning">Teyit Bekliyor</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setConfirmVinOpen(true)}
+                        >
+                          <ShieldCheck className="size-3" />
+                          Teyit Et
+                        </Button>
+                      </span>
                     ) : (
                       "—"
                     )
@@ -312,61 +326,6 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                     </Link>
                   ) : null
                 )}
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard
-            title="İş Emri Geçmişi"
-            icon={ClipboardList}
-            count={v.intakes.length}
-            action={
-              <Link
-                href={`/intakes/new?vehicleId=${v.id}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
-              >
-                <Plus className="size-3.5" />
-                Yeni Kabul
-              </Link>
-            }
-          >
-            {v.intakes.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <ClipboardList className="size-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">Bu araç için kabul kaydı bulunmuyor</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border -mx-4 sm:-mx-5">
-                {v.intakes.map((i) => {
-                  const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
-                  return (
-                    <Link
-                      key={i.id}
-                      href={`/intakes/${i.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span
-                            className={cn(
-                              "inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border",
-                              intakeStatus?.color || "bg-muted text-foreground border-border"
-                            )}
-                          >
-                            {intakeStatus?.label || i.status}
-                          </span>
-                          {i.approvedAt ? (
-                            <span className="text-[11px] text-foreground font-medium">Onaylandı</span>
-                          ) : i.status === "waiting_approval" ? (
-                            <span className="text-[11px] text-foreground font-medium">Onay Bekliyor</span>
-                          ) : null}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground/70 shrink-0">{formatDate(i.createdAt)}</span>
-                    </Link>
-                  )
-                })}
               </div>
             )}
           </SectionCard>
@@ -573,7 +532,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
           <div className="flex flex-col gap-2">
             <Link href={`/vehicles/${v.id}/passport`}>
-              <Button className="w-full gap-2 bg-navy hover:bg-navy/90">
+              <Button variant="navy" className="w-full gap-2">
                 <ScrollText className="size-4" />
                 Servis Pasaportu
               </Button>
@@ -587,12 +546,35 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             <Link href={`/intakes/new?vehicleId=${v.id}`}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
-                Yeni Kabul
+                Yeni İş Emri
               </Button>
             </Link>
           </div>
         </aside>
       </div>
+
+      <AlertDialog
+        open={confirmVinOpen}
+        onOpenChange={(open) => {
+          if (!open && !confirmingVin) setConfirmVinOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Şase numarasını teyit et</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-mono text-foreground">{v.vin}</span> numaralı
+              şasenin ruhsatla teyit edildiğini onaylıyor musunuz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={confirmingVin}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmVin} disabled={confirmingVin}>
+              {confirmingVin ? "Teyit ediliyor…" : "Teyit Et"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

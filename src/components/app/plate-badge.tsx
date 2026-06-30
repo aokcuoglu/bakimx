@@ -13,29 +13,20 @@ function formatTurkishPlate(plate: string): string {
 
 export function PlateBadge({ plate, className }: { plate: string; className?: string }) {
   const formatted = formatTurkishPlate(plate)
-  const parts = formatted.split(/\s+/)
-  const cityCode = parts[0] || ""
-  const letters = parts[1] || ""
-  const numbers = parts.slice(2).join("")
 
   return (
     <span
       className={cn(
-        "inline-flex items-stretch rounded-md overflow-hidden border-2 border-primary bg-card shadow-sm h-8",
+        "inline-flex items-stretch rounded-md overflow-hidden border border-black/15 bg-white shadow-sm h-8 select-none",
         className
       )}
     >
-      <span className="flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
-        {cityCode}
+      <span className="flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-bold leading-none px-1 tracking-tight">
+        TR
       </span>
-      <span className="flex items-center justify-center bg-card text-card-foreground font-mono text-[11px] font-extrabold px-1.5 tracking-wider">
-        {letters}
+      <span className="flex items-center justify-center bg-white text-black font-mono text-[13px] font-extrabold px-2 tracking-wider whitespace-nowrap">
+        {formatted}
       </span>
-      {numbers && (
-        <span className="flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold px-1.5 min-w-[1.5rem] tracking-tight">
-          {numbers}
-        </span>
-      )}
     </span>
   )
 }
