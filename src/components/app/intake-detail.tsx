@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,18 +26,24 @@ import {
   Info,
   Wrench,
   Upload,
-  ImageOff,
   Loader2,
   BarChart3,
   Link as LinkIcon,
   Eye,
   EyeOff,
+  Play,
+  PackageCheck,
+  KeyRound,
+  XCircle,
+  RotateCcw,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { INTAKE_STATUS, PHOTO_TYPES } from "@/lib/constants"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { PhotoAnnotate } from "./photo-annotate"
+import { PhotoGalleryGrid } from "./photo-gallery-grid"
 import { formatTRY } from "@/lib/format"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
@@ -342,6 +348,69 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     ? intake.shareLinks[0].isActive ? "active" as const : "expired" as const
     : "none" as const
 
+  // Forward (positive) status actions — one primary + optional secondary, driven by status.
+  type ForwardAction = {
+    key: string
+    label: string
+    icon: typeof Play
+    onClick: () => void
+    tone: "primary" | "secondary"
+  }
+  const forwardActions: ForwardAction[] = []
+  if (intake.status === "draft") {
+    forwardActions.push({ key: "start", label: "İşleme Başla", icon: Play, onClick: () => handleStatusChange("in_progress"), tone: "primary" })
+  }
+  if (intake.status === "approved" && !intake.order) {
+    forwardActions.push({ key: "create-order", label: "Servis Emri Oluştur", icon: Wrench, onClick: handleCreateOrder, tone: "primary" })
+  }
+  if (intake.status === "approved") {
+    forwardActions.push({ key: "start", label: "İşleme Başla", icon: Play, onClick: () => handleStatusChange("in_progress"), tone: intake.order ? "primary" : "secondary" })
+  }
+  if (intake.status === "in_progress") {
+    forwardActions.push({ key: "ready", label: "Teslimata Hazır", icon: PackageCheck, onClick: () => handleStatusChange("ready_for_delivery"), tone: "primary" })
+  }
+  if (intake.status === "ready_for_delivery" && !deliveryOtpMode) {
+    forwardActions.push({ key: "deliver", label: "Teslim Et (OTP)", icon: KeyRound, onClick: handleRequestDeliveryOtp, tone: "primary" })
+  }
+  if (intake.status === "cancelled") {
+    forwardActions.push({ key: "reactivate", label: "Yeniden Aktif Et", icon: RotateCcw, onClick: () => handleStatusChange("draft"), tone: "primary" })
+  }
+  const canCancel = intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval"
+  const hasActions = forwardActions.length > 0 || canCancel
+
+  // Shared renderers so the desktop (header) and mobile (sticky bar) share one source of truth.
+  const renderForwardButtons = (opts: { size: "default" | "lg"; stretch?: boolean }) =>
+    forwardActions.map((a) => {
+      const Icon = a.icon
+      return (
+        <Button
+          key={a.key}
+          size={opts.size}
+          variant={a.tone === "primary" ? "default" : "outline"}
+          onClick={a.onClick}
+          disabled={loading}
+          className={opts.stretch ? "flex-1" : undefined}
+        >
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Icon className="size-4" />}
+          {a.label}
+        </Button>
+      )
+    })
+
+  const renderCancelButton = (opts: { size: "default" | "lg" }) =>
+    canCancel ? (
+      <Button
+        size={opts.size}
+        variant="ghost"
+        onClick={() => handleStatusChange("cancelled")}
+        disabled={loading}
+        className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+      >
+        <XCircle className="size-4" />
+        İptal Et
+      </Button>
+    ) : null
+
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
     { id: "evidence" as const, label: "Özet", icon: BarChart3 },
@@ -352,14 +421,14 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   ]
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", hasActions && "pb-24 lg:pb-0")}>
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
+      <div className="flex items-start gap-3 sm:items-center">
+        <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation shrink-0">
           <ArrowLeft className="size-5" />
         </button>
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-wrap sm:gap-2">
+        <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="flex flex-col items-start gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-wrap sm:gap-2">
             <PlateBadge plate={intake.vehicle.plate} />
             <span className="hidden sm:inline text-muted-foreground/40">•</span>
             <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
@@ -376,9 +445,18 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
               </span>
             </span>
           </div>
-          <Badge variant="outline" className={statusInfo?.color || "bg-muted text-foreground"}>
-            {statusInfo?.label || intake.status}
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="outline" className={cn("h-8 px-3 text-sm", statusInfo?.color || "bg-muted text-foreground")}>
+              {statusInfo?.label || intake.status}
+            </Badge>
+            {/* Desktop actions live in the header; mobile uses the sticky bar below */}
+            {hasActions && (
+              <div className="hidden lg:flex items-center gap-2">
+                {renderCancelButton({ size: "default" })}
+                {renderForwardButtons({ size: "default" })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -389,39 +467,15 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
         </div>
       )}
 
-      {/* Status actions */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {intake.status === "draft" && (
-          <Button size="sm" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
-            İşleme Başla
-          </Button>
-        )}
-        {intake.status === "approved" && !intake.order && (
-          <Button size="sm" onClick={handleCreateOrder} disabled={loading}>
-            Servis Emri Oluştur
-          </Button>
-        )}
-        {intake.status === "approved" && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
-            İşleme Başla
-          </Button>
-        )}
-        {intake.status === "in_progress" && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("ready_for_delivery")} disabled={loading}>
-            Teslimata Hazır
-          </Button>
-        )}
-        {intake.status === "ready_for_delivery" && !deliveryOtpMode && (
-          <Button size="sm" onClick={handleRequestDeliveryOtp} disabled={loading}>
-            Teslim Et (OTP)
-          </Button>
-        )}
-        {(intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval") && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("cancelled")} disabled={loading} className="text-destructive">
-            İptal Et
-          </Button>
-        )}
-      </div>
+      {/* Mobile sticky action bar — sits above the bottom nav (bottom-16) */}
+      {hasActions && (
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border px-4 py-3 safe-area-bottom flex items-center gap-2">
+          {renderCancelButton({ size: "lg" })}
+          {forwardActions.length > 0
+            ? renderForwardButtons({ size: "lg", stretch: true })
+            : <span className="flex-1" />}
+        </div>
+      )}
 
       {intake.status === "ready_for_delivery" && deliveryOtpMode && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
@@ -654,11 +708,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         </span>
                       </div>
                       {groupPhotos.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-2">
-                          {groupPhotos.map((photo) => (
-                            <PhotoGalleryCard key={photo.id} photo={photo} />
-                          ))}
-                        </div>
+                        <PhotoGalleryGrid photos={groupPhotos} gridClassName="grid grid-cols-3 gap-2" />
                       ) : (
                         <p className="text-xs text-muted-foreground py-2">Bu aşamada fotoğraf yok</p>
                       )}
@@ -924,11 +974,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Kaydedilmiş Fotoğraflar ({intake.photos.length})</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {intake.photos.map((photo) => (
-                    <PhotoGalleryCard key={photo.id} photo={photo} />
-                  ))}
-                </div>
+                <PhotoGalleryGrid photos={intake.photos} />
               </CardContent>
             </Card>
           )}
@@ -948,11 +994,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Hasar Fotoğrafları ({intake.photos.filter((p) => p.type === "damage_detail").length})</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {intake.photos.filter((p) => p.type === "damage_detail").map((photo) => (
-                    <PhotoGalleryCard key={photo.id} photo={photo} />
-                  ))}
-                </div>
+                <PhotoGalleryGrid photos={intake.photos.filter((p) => p.type === "damage_detail")} />
               </CardContent>
             </Card>
           )}
@@ -1177,103 +1219,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
       </TabsContent>
       </Tabs>
     </div>
-  )
-}
-
-function PhotoGalleryCard({ photo }: { photo: VehiclePhoto }) {
-  const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-
-  return (
-    <div className="rounded-lg border overflow-hidden bg-white">
-      <div className="relative aspect-square bg-muted flex items-center justify-center">
-        {photo.fileUrl ? (
-          <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
-        ) : (
-          <div className="text-center p-3">
-            <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-            <span className="text-xs text-muted-foreground">Dosya yok</span>
-          </div>
-        )}
-      </div>
-      <div className="p-2.5 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium truncate">{typeLabel}</span>
-        </div>
-        {photo.fileName && (
-          <p className="text-xs text-muted-foreground truncate">{photo.fileName}</p>
-        )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {photo.sizeBytes != null && <span>{formatSize(photo.sizeBytes)}</span>}
-          {photo.mimeType && (
-            <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string }) {
-  const [src, setSrc] = useState<string | null>(() =>
-    fileUrl.startsWith("data:") ? fileUrl : null
-  )
-  const [loading, setLoading] = useState(() => !fileUrl.startsWith("data:"))
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    if (fileUrl.startsWith("data:")) return
-
-    let cancelled = false
-    fetch(`/api/photos?id=${photoId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load")
-        return res.blob()
-      })
-      .then((blob) => {
-        if (!cancelled) {
-          setSrc(URL.createObjectURL(blob))
-          setLoading(false)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFailed(true)
-          setLoading(false)
-        }
-      })
-
-    return () => { cancelled = true }
-  }, [photoId, fileUrl])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center w-full h-full">
-        <Loader2 className="size-6 text-muted-foreground/40 animate-spin" />
-      </div>
-    )
-  }
-
-  if (failed || !src) {
-    return (
-      <div className="text-center p-3">
-        <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-        <span className="text-xs text-muted-foreground">Yüklenemedi</span>
-      </div>
-    )
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt="Fotoğraf"
-      className="w-full h-full object-cover"
-    />
   )
 }
 

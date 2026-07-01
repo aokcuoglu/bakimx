@@ -65,7 +65,7 @@ const INTAKE_TRANSITIONS: Record<IntakeStatus, IntakeStatus[]> = {
   in_progress: ["ready_for_delivery", "cancelled"],
   ready_for_delivery: ["delivered", "in_progress", "cancelled"],
   delivered: [],
-  cancelled: [],
+  cancelled: ["draft"],
 }
 
 const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -76,7 +76,7 @@ const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   waiting_parts: ["in_progress", "ready_for_delivery", "cancelled"],
   ready_for_delivery: ["delivered", "in_progress", "cancelled"],
   delivered: [],
-  cancelled: [],
+  cancelled: ["draft"],
 }
 
 /**
