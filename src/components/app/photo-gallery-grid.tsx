@@ -29,7 +29,7 @@ function toSrc(photo: Pick<GalleryPhoto, "id" | "fileUrl">): string | null {
  */
 export function PhotoGalleryGrid({
   photos,
-  gridClassName = "grid grid-cols-2 gap-3",
+  gridClassName = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5",
 }: {
   photos: GalleryPhoto[]
   gridClassName?: string
@@ -107,27 +107,25 @@ function PhotoGalleryCard({ photo, onOpen }: { photo: GalleryPhoto; onOpen?: () 
           : undefined
       }
     >
-      <div className="relative aspect-square bg-muted flex items-center justify-center">
+      <div className="relative aspect-[4/3] bg-muted flex items-center justify-center">
         {photo.fileUrl ? (
           <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
         ) : (
-          <div className="text-center p-3">
-            <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-            <span className="text-xs text-muted-foreground">Dosya yok</span>
+          <div className="text-center p-2">
+            <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
+            <span className="text-[11px] text-muted-foreground">Dosya yok</span>
           </div>
         )}
       </div>
-      <div className="p-2.5 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium truncate">{typeLabel}</span>
-        </div>
+      <div className="p-2 space-y-1">
+        <span className="block text-xs font-medium truncate">{typeLabel}</span>
         {photo.note && (
-          <p className="text-sm text-foreground whitespace-pre-wrap break-words">{photo.note}</p>
+          <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words line-clamp-2">{photo.note}</p>
         )}
         {photo.fileName && (
-          <p className="text-xs text-muted-foreground truncate">{photo.fileName}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{photo.fileName}</p>
         )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           {photo.sizeBytes != null && <span>{formatSize(photo.sizeBytes)}</span>}
           {photo.mimeType && (
             <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
@@ -180,9 +178,9 @@ function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string
 
   if (failed || !src) {
     return (
-      <div className="text-center p-3">
-        <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-        <span className="text-xs text-muted-foreground">Yüklenemedi</span>
+      <div className="text-center p-2">
+        <ImageOff className="size-6 text-muted-foreground/30 mx-auto mb-1" />
+        <span className="text-[11px] text-muted-foreground">Yüklenemedi</span>
       </div>
     )
   }
