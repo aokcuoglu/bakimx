@@ -343,7 +343,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
 
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
-    { id: "evidence" as const, label: "Kanıt", icon: Camera, count: intake.photos.length },
+    { id: "evidence" as const, label: "Özet", icon: BarChart3 },
     { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
     { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.photos.filter((p) => p.type === "damage_detail").length },
     { id: "share" as const, label: "Paylaşım", icon: Share2 },
@@ -605,7 +605,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="size-4" />
-                Kabul Kanıt Paneli
+                Kabul Durum Paneli
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -614,6 +614,10 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                 damageCount={intake.photos.filter((p) => p.type === "damage_detail").length}
                 approvalStatus={approvalStatus}
                 publicLinkStatus={publicLinkStatus}
+                onMissingPhotoClick={(key) => {
+                  setPhotoType(key)
+                  setActiveTab("photos")
+                }}
               />
             </CardContent>
           </Card>
