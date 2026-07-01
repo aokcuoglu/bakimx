@@ -15,6 +15,7 @@ import { Loader2, Car, User, Plus, X, UserCog, ScanLine } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { PlateScanner } from "./plate-scanner"
+import { VehicleQuickDetailsSheet } from "./vehicle-quick-details-sheet"
 import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { normalizePlate } from "@/lib/format"
@@ -185,9 +186,12 @@ export function CustomerVehiclePicker({
             <Button type="button" variant="ghost" size="sm" onClick={() => setOwnerMode(false)}>Vazgeç</Button>
           </div>
         ) : (
-          <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOwnerMode(true)}>
-            <UserCog className="size-4 mr-1" /> Sahip Değiştir
-          </Button>
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOwnerMode(true)}>
+              <UserCog className="size-4 mr-1" /> Sahip Değiştir
+            </Button>
+            <VehicleQuickDetailsSheet vehicleId={selected.vehicleId} />
+          </div>
         )}
       </div>
     )
