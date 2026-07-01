@@ -1,0 +1,10 @@
+# BakımX ruhsat OCR sidecar bağımlılıkları.
+# NOT: paddlepaddle + paddleocr ağır paketlerdir (~model + torch yok, kendi runtime'ı).
+# Bu servis KASITLI olarak Next.js Alpine imajından ayrıdır; prod'da ayrı container olur.
+paddlepaddle==3.3.1
+paddleocr==3.7.0
+fastapi>=0.115
+uvicorn[standard]>=0.30
+opencv-python-headless>=4.10
+numpy>=1.26
+python-multipart>=0.0.9

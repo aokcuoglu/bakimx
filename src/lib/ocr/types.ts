@@ -11,7 +11,7 @@ export const SUPPORTED_IMAGE_MIME_TYPES = new Set([
 export const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024
 export const MAX_BODY_SIZE_BYTES = 12 * 1024 * 1024
 
-export type OcrProviderName = "mock" | "openai" | "anthropic"
+export type OcrProviderName = "mock" | "openai" | "anthropic" | "paddle"
 
 export interface OcrFieldConfidence {
   value: string
