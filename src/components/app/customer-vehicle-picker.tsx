@@ -75,7 +75,7 @@ export function CustomerVehiclePicker({
 
   useEffect(() => {
     if (!value.customerId && !value.vehicleId) {
-      setTimeout(() => { setSelected(null); setCustVehicles([]); setOwnerMode(false) }, 0)
+      setTimeout(() => { setSelected(null); setCustVehicles([]); setOwnerMode(false); setQuery(""); setResults([]) }, 0)
     }
   }, [value.customerId, value.vehicleId])
 
@@ -143,7 +143,7 @@ export function CustomerVehiclePicker({
     onChange({ customerId: selected.customerId, vehicleId: v.id })
   }
 
-  function reset() { setSelected(null); setCustVehicles([]); setOwnerMode(false); onChange({ customerId: "", vehicleId: "" }) }
+  function reset() { setSelected(null); setCustVehicles([]); setOwnerMode(false); setQuery(""); setResults([]); onChange({ customerId: "", vehicleId: "" }) }
 
   function onModalCreated(r: InlineCreateResult) {
     setSelected({

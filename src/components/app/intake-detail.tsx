@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PlateBadge } from "@/components/app/plate-badge"
 import {
   Car,
   User,
@@ -357,18 +358,27 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
         <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
           <ArrowLeft className="size-5" />
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold truncate">{intake.vehicle.plate}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-muted text-muted-foreground"}`}>
-              {statusInfo?.label || intake.status}
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-wrap sm:gap-2">
+            <PlateBadge plate={intake.vehicle.plate} />
+            <span className="hidden sm:inline text-muted-foreground/40">•</span>
+            <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
+              <Car className="size-3.5 shrink-0" />
+              <span className="truncate">{intake.vehicle.brand} {intake.vehicle.model}</span>
+            </span>
+            <span className="hidden sm:inline text-muted-foreground/40">•</span>
+            <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
+              <User className="size-3.5 shrink-0" />
+              <span className="truncate">
+                {intake.customer.type === "corporate"
+                  ? intake.customer.companyName || "Kurumsal Müşteri"
+                  : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
+              </span>
             </span>
           </div>
-          <p className="text-sm text-muted-foreground truncate">
-            {intake.vehicle.brand} {intake.vehicle.model} - {intake.customer.type === "corporate"
-              ? intake.customer.companyName || "Kurumsal Müşteri"
-              : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
-          </p>
+          <Badge variant="outline" className={statusInfo?.color || "bg-muted text-foreground"}>
+            {statusInfo?.label || intake.status}
+          </Badge>
         </div>
       </div>
 

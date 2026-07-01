@@ -102,22 +102,23 @@ export function OrderList({
           <table className="w-full text-sm">
             <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold">İş No</th>
-                <th className="px-4 py-3 text-left font-semibold">Plaka / Araç</th>
-                <th className="px-4 py-3 text-left font-semibold">Müşteri</th>
-                <th className="px-4 py-3 text-left font-semibold">Teknisyen</th>
-                <th className="px-4 py-3 text-left font-semibold">Durum</th>
-                <th className="px-4 py-3 text-left font-semibold">Ödeme</th>
-                <th className="px-4 py-3 text-right font-semibold">Toplam</th>
-                <th className="px-4 py-3 text-left font-semibold">Giriş</th>
-                <th className="px-4 py-3 text-left font-semibold">Tahmini Teslim</th>
-                <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
+                <th className="px-4 py-2 text-left font-semibold">İş No</th>
+                <th className="px-4 py-2 text-left font-semibold">Plaka</th>
+                <th className="px-4 py-2 text-left font-semibold">Araç</th>
+                <th className="px-4 py-2 text-left font-semibold">Müşteri</th>
+                <th className="px-4 py-2 text-left font-semibold">Teknisyen</th>
+                <th className="px-4 py-2 text-left font-semibold">Durum</th>
+                <th className="px-4 py-2 text-left font-semibold">Ödeme</th>
+                <th className="px-4 py-2 text-right font-semibold">Toplam</th>
+                <th className="px-4 py-2 text-left font-semibold">Giriş</th>
+                <th className="px-4 py-2 text-left font-semibold">Tahmini Teslim</th>
+                <th className="px-4 py-2 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-muted/60 transition-colors group">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2">
                     <Link
                       href={`/orders/${order.id}`}
                       className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
@@ -125,52 +126,50 @@ export function OrderList({
                       {order.workOrderNo}
                     </Link>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col gap-1.5">
-                      {order.vehicle.id ? (
-                        <Link href={`/vehicles/${order.vehicle.id}`}>
-                          <PlateBadge plate={order.vehicle.plate} />
-                        </Link>
-                      ) : (
-                        <PlateBadge plate={order.vehicle.plate} />
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {order.vehicle.brand} {order.vehicle.model}
-                      </span>
-                    </div>
+                  <td className="px-4 py-2">
+                    {order.vehicle.id ? (
+                      <Link href={`/vehicles/${order.vehicle.id}`}>
+                        <PlateBadge plate={order.vehicle.plate} size="sm" />
+                      </Link>
+                    ) : (
+                      <PlateBadge plate={order.vehicle.plate} size="sm" />
+                    )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {order.vehicle.brand} {order.vehicle.model}
+                  </td>
+                  <td className="px-4 py-2 min-w-[13rem]">
                     {order.customer.id ? (
                       <Link
                         href={`/customers/${order.customer.id}`}
-                        className="text-foreground font-medium hover:text-primary transition-colors block"
+                        className="text-foreground font-medium hover:text-primary transition-colors block whitespace-nowrap"
                       >
                         {customerName(order.customer)}
                       </Link>
                     ) : (
-                      <div className="text-foreground font-medium">{customerName(order.customer)}</div>
+                      <div className="text-foreground font-medium whitespace-nowrap">{customerName(order.customer)}</div>
                     )}
-                    <div className="text-xs text-muted-foreground">{order.customer.phone}</div>
+                    <div className="text-[11px] leading-tight text-muted-foreground">{order.customer.phone}</div>
                   </td>
-                  <td className="px-4 py-3 text-foreground">
+                  <td className="px-4 py-2 text-foreground">
                     {order.technicianName || <span className="text-muted-foreground/70">—</span>}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2">
                     <PaymentBadge status={order.paymentStatus} />
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">
+                  <td className="px-4 py-2 text-right font-semibold text-foreground">
                     {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
                     {formatDate(order.createdAt)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
                     {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground/70">—</span>}
                   </td>
-                  <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
+                  <td className="px-4 py-2 sticky right-0 bg-card group-hover:bg-muted/60">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/orders/${order.id}`}
@@ -202,10 +201,10 @@ export function OrderList({
                   </Link>
                   {order.vehicle.id ? (
                     <Link href={`/vehicles/${order.vehicle.id}`}>
-                      <PlateBadge plate={order.vehicle.plate} />
+                      <PlateBadge plate={order.vehicle.plate} size="sm" />
                     </Link>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} />
+                    <PlateBadge plate={order.vehicle.plate} size="sm" />
                   )}
                 </div>
                 <Link
