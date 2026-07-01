@@ -45,6 +45,7 @@ import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { PhotoAnnotate } from "./photo-annotate"
 import { PhotoGalleryGrid } from "./photo-gallery-grid"
 import { formatTRY } from "@/lib/format"
+import { liraToKurus } from "@/lib/money"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
@@ -314,7 +315,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     formData.set("type", itemType)
     formData.set("name", itemName)
     formData.set("quantity", itemQty)
-    if (itemPrice) formData.set("unitPrice", itemPrice)
+    if (itemPrice) formData.set("unitPrice", String(liraToKurus(Number(itemPrice))))
 
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: formData })
