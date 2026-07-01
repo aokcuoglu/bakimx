@@ -265,7 +265,7 @@ export function AppShellChrome({
 
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
-                  href="/intakes/new"
+                  href="/orders/new"
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Plus className="size-4" />
@@ -293,7 +293,7 @@ export function AppShellChrome({
                   <span>Yeni Hatırlatma</span>
                 </Link>
                 <Link
-                  href="/intakes/new"
+                  href="/orders/new"
                   className="sm:hidden inline-flex items-center justify-center size-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground touch-manipulation"
                   aria-label="Yeni iş emri"
                 >
@@ -427,7 +427,7 @@ function SidebarContent({
           <Tooltip>
             <TooltipTrigger render={<Link href="/dashboard" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
               {collapsed ? (
-                <BrandLogo variant="icon-dark" size="sm" alt="BakimX" />
+                <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
               ) : (
                 <BrandLogo variant="icon-dark" size="lg" priority alt="BakimX" />
               )}

@@ -61,7 +61,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         label="Eksik Fotoğraf"
         value={stats.missingPhotoIntakes}
         icon={Camera}
-        href="/intakes"
+        href="/orders"
         accent="text-destructive"
         accentBg="bg-destructive/10"
       />

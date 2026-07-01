@@ -40,7 +40,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
     description: "İş emri oluşturuldu",
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
+  revalidatePath(`/orders/${order.id}`)
   revalidatePath("/orders")
   return { success: true, id: order.id }
 }
@@ -162,7 +162,7 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
 
-  // Intake + work order are presented as one unified flow (see intake-detail.tsx's
+  // Intake + work order are presented as one unified flow (see work-order-detail.tsx's
   // "Sipariş" tab, which drives this action directly); keep the linked intake's
   // status mirrored so it doesn't show stale next to the order status.
   if (isIntakeStatus(status)) {
@@ -174,8 +174,8 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
         where: { id: order.intakeFormId, workshopId: user.workshopId },
         data: { status },
       })
-      revalidatePath(`/intakes/${order.intakeFormId}`)
-      revalidatePath("/intakes")
+      revalidatePath(`/orders/${orderId}`)
+      revalidatePath("/orders")
     }
   }
 

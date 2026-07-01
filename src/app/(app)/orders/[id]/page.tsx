@@ -4,7 +4,7 @@ import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/app/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { OrderDetail } from "@/components/app/order-detail"
+import { WorkOrderDetail } from "@/components/app/work-order-detail"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
@@ -28,15 +28,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             select: {
               id: true,
               type: true,
+              phase: true,
               label: true,
               required: true,
               fileUrl: true,
               fileName: true,
               mimeType: true,
               sizeBytes: true,
+              storageProvider: true,
+              note: true,
             },
           },
+          approvals: { orderBy: { createdAt: "desc" }, take: 1 },
           shareLinks: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" } },
+          timelineEvents: { orderBy: { createdAt: "asc" } },
         },
       },
       items: { orderBy: { createdAt: "asc" } },
@@ -60,6 +65,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const paidAmount = order.paidAmount || totalPaid
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
 
+  const intakeForm = order.intakeForm
+
+  // "Sipariş" sekmesindeki iş emri yönetim kartlarının beklediği düz veri.
   const safeOrder = {
     id: order.id,
     workOrderNo: formatWorkOrderNo(order),
@@ -98,42 +106,34 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       note: i.note,
     })),
     customer: {
-      id: order.intakeForm.customer.id,
-      firstName: order.intakeForm.customer.firstName,
-      lastName: order.intakeForm.customer.lastName,
-      fullName: order.intakeForm.customer.fullName,
-      companyName: order.intakeForm.customer.companyName,
-      contactName: order.intakeForm.customer.contactName,
-      type: order.intakeForm.customer.type,
-      phone: order.intakeForm.customer.phone,
-      email: order.intakeForm.customer.email,
+      id: intakeForm.customer.id,
+      firstName: intakeForm.customer.firstName,
+      lastName: intakeForm.customer.lastName,
+      fullName: intakeForm.customer.fullName,
+      companyName: intakeForm.customer.companyName,
+      contactName: intakeForm.customer.contactName,
+      type: intakeForm.customer.type,
+      phone: intakeForm.customer.phone,
+      email: intakeForm.customer.email,
     },
     vehicle: {
-      plate: order.intakeForm.vehicle.plate,
-      brand: order.intakeForm.vehicle.brand,
-      model: order.intakeForm.vehicle.model,
-      modelYear: order.intakeForm.vehicle.modelYear,
-      mileage: order.intakeForm.vehicle.mileage,
-      vin: order.intakeForm.vehicle.vin,
+      plate: intakeForm.vehicle.plate,
+      brand: intakeForm.vehicle.brand,
+      model: intakeForm.vehicle.model,
+      modelYear: intakeForm.vehicle.modelYear,
+      mileage: intakeForm.vehicle.mileage,
+      vin: intakeForm.vehicle.vin,
     },
     intake: {
-      id: order.intakeForm.id,
-      status: order.intakeForm.status,
-      mileageAtIntake: order.intakeForm.mileageAtIntake,
-      customerComplaint: order.intakeForm.customerComplaint,
-      internalNote: order.intakeForm.internalNote,
-      createdAt: order.intakeForm.createdAt.toISOString(),
-      approvedAt: order.intakeForm.approvedAt ? order.intakeForm.approvedAt.toISOString() : null,
-      shareToken: order.intakeForm.shareLinks[0]?.token || null,
+      id: intakeForm.id,
+      status: intakeForm.status,
+      mileageAtIntake: intakeForm.mileageAtIntake,
+      customerComplaint: intakeForm.customerComplaint,
+      internalNote: intakeForm.internalNote,
+      createdAt: intakeForm.createdAt.toISOString(),
+      approvedAt: intakeForm.approvedAt ? intakeForm.approvedAt.toISOString() : null,
+      shareToken: intakeForm.shareLinks[0]?.token || null,
     },
-    damageMarks: order.intakeForm.damageMarks.map((d) => ({
-      id: d.id,
-      zone: d.zone,
-      damageType: d.damageType,
-      severity: d.severity,
-      note: d.note,
-    })),
-    photos: order.intakeForm.photos,
     paidAmount,
     remainingAmount,
     collectionHistory: collections.map((c) => ({
@@ -148,6 +148,72 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     })),
   }
 
+  // Intake tabanlı sekmelerin (Bilgiler/Özet/Fotoğraflar/Hasar/Paylaşım)
+  // beklediği iç içe kabul verisi.
+  const intakeProp = {
+    id: intakeForm.id,
+    status: intakeForm.status,
+    mileageAtIntake: intakeForm.mileageAtIntake,
+    customerComplaint: intakeForm.customerComplaint,
+    internalNote: intakeForm.internalNote,
+    approvedAt: intakeForm.approvedAt,
+    createdAt: intakeForm.createdAt,
+    customer: {
+      id: intakeForm.customer.id,
+      firstName: intakeForm.customer.firstName,
+      lastName: intakeForm.customer.lastName,
+      fullName: intakeForm.customer.fullName,
+      companyName: intakeForm.customer.companyName,
+      contactName: intakeForm.customer.contactName,
+      type: intakeForm.customer.type,
+      phone: intakeForm.customer.phone,
+      email: intakeForm.customer.email,
+    },
+    vehicle: {
+      id: intakeForm.vehicle.id,
+      plate: intakeForm.vehicle.plate,
+      brand: intakeForm.vehicle.brand,
+      model: intakeForm.vehicle.model,
+      modelYear: intakeForm.vehicle.modelYear,
+      mileage: intakeForm.vehicle.mileage,
+      vin: intakeForm.vehicle.vin,
+    },
+    photos: intakeForm.photos,
+    damageMarks: intakeForm.damageMarks.map((d) => ({
+      id: d.id,
+      zone: d.zone,
+      damageType: d.damageType,
+      severity: d.severity,
+      note: d.note,
+    })),
+    approvals: intakeForm.approvals.map((a) => ({
+      id: a.id,
+      status: a.status,
+      otpCode: a.otpCode,
+      createdAt: a.createdAt,
+    })),
+    shareLinks: intakeForm.shareLinks.map((s) => ({ id: s.id, token: s.token, isActive: s.isActive })),
+    timelineEvents: intakeForm.timelineEvents.map((t) => ({
+      eventType: t.eventType,
+      description: t.description,
+      createdAt: t.createdAt,
+    })),
+    order: {
+      id: order.id,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      items: order.items.map((i) => ({
+        id: i.id,
+        type: i.type,
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        totalPrice: i.totalPrice,
+        note: i.note,
+      })),
+    },
+  }
+
   const technicians = await getTechnicians(user.workshopId)
 
   return (
@@ -155,7 +221,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       workshopName={workshop?.name}
       pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
     >
-      <OrderDetail order={safeOrder} technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))} hasAiAdvisor={hasAiAdvisor} />
+      <WorkOrderDetail
+        intake={intakeProp}
+        order={safeOrder}
+        technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
+        hasAiAdvisor={hasAiAdvisor}
+      />
     </AppShell>
   )
 }
