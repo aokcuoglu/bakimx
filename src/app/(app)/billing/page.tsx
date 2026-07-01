@@ -6,13 +6,19 @@ import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
 import { getSeatUsage } from "@/lib/rbac"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { PlanPackages } from "@/components/app/plan-packages"
+import { PendingOrderAlert } from "@/components/billing/pending-order-alert"
 import { prisma } from "@/lib/db"
 import { formatMinor } from "@/lib/billing/pricing"
 
 export const metadata = { title: "Paket & Abonelik" }
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pendingBlocked?: string }>
+}) {
   const { workshop } = await getAppData()
+  const sp = await searchParams
 
   if (!workshop) {
     return (
@@ -42,6 +48,9 @@ export default async function BillingPage() {
 
   return (
     <AppShell workshopName={workshop.name} pageTitle="Paket & Abonelik">
+      {sp.pendingBlocked === "1" && pendingOrder && (
+        <PendingOrderAlert reference={pendingOrder.reference} />
+      )}
       <div className="space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
@@ -127,6 +136,7 @@ export default async function BillingPage() {
         <PlanPackages
           ownedTier={ownedTier}
           workshopName={workshop.name}
+          hasPendingOrder={!!pendingOrder}
         />
       </div>
     </AppShell>

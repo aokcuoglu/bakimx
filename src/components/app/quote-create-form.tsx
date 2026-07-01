@@ -23,12 +23,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Plus, Trash2, Loader2, Calculator } from "lucide-react"
+import { Plus, Trash2, Loader2, Calculator, User, X } from "lucide-react"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
+import { CustomerSearchOrCreate } from "@/components/app/customer-search-or-create"
 import { formatPrice } from "@/lib/parts/format"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
-import { customerDisplayName } from "@/lib/format"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira, percentToBps } from "@/lib/money"
 import { calculateOrderTotals } from "@/lib/totals"
@@ -38,16 +38,6 @@ import {
   quoteSchema,
   type QuoteFormValues,
 } from "@/lib/validations/quote"
-
-type Customer = {
-  id: string
-  firstName: string | null
-  lastName: string | null
-  fullName: string | null
-  companyName: string | null
-  type: string
-  phone: string
-}
 
 type Vehicle = {
   id: string
@@ -96,11 +86,8 @@ export function QuoteCreateForm() {
     return createQuoteAction(formData) as unknown as Promise<ActionState | null>
   }
   const [state, formAction, pending] = useActionState(wrappedAction, null as ActionState | null)
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [customerSearch, setCustomerSearch] = useState("")
-  const [customerSearchOpen, setCustomerSearchOpen] = useState(false)
+  const [customerLabel, setCustomerLabel] = useState("")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [customerLoading, setCustomerLoading] = useState(false)
   const [vehicleLoading, setVehicleLoading] = useState(false)
   const [catalogSearch, setCatalogSearch] = useState("")
   const [catalogResults, setCatalogResults] = useState<CatalogPart[]>([])
@@ -139,19 +126,6 @@ export function QuoteCreateForm() {
     }
   }, [state, router])
 
-  const fetchCustomers = useCallback(async (search: string) => {
-    setCustomerLoading(true)
-    try {
-      const res = await fetch(`/api/customers?q=${encodeURIComponent(search)}&limit=20`)
-      const data = await res.json()
-      if (data.customers) setCustomers(data.customers)
-    } catch {
-      // ignore
-    } finally {
-      setCustomerLoading(false)
-    }
-  }, [])
-
   const fetchVehicles = useCallback(async (custId: string) => {
     setVehicleLoading(true)
     form.setValue("vehicleId", "")
@@ -167,20 +141,17 @@ export function QuoteCreateForm() {
     }
   }, [form])
 
-  function handleCustomerSelect(id: string) {
+  function handleCustomerSelect(id: string, label: string) {
     form.setValue("customerId", id)
-    setCustomerSearch("")
-    setCustomerSearchOpen(false)
-    const c = customers.find((c) => c.id === id)
-    if (c) setCustomerSearch(customerDisplayName(c))
+    setCustomerLabel(label)
     fetchVehicles(id)
   }
 
-  function handleCustomerSearchChange(value: string) {
-    setCustomerSearch(value)
-    setCustomerSearchOpen(true)
-    if (value.length >= 1) fetchCustomers(value)
-    else setCustomers([])
+  function clearCustomer() {
+    form.setValue("customerId", "")
+    form.setValue("vehicleId", "")
+    setCustomerLabel("")
+    setVehicles([])
   }
 
   function addItem() {
@@ -303,45 +274,21 @@ export function QuoteCreateForm() {
                   name="customerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Müşteri *</FormLabel>
+                      <FormLabel>Müşteri (sahip) *</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Input
-                            value={customerSearch}
-                            onChange={(e) => handleCustomerSearchChange(e.target.value)}
-                            onFocus={() => {
-                              if (customers.length === 0 && customerSearch.length < 1) {
-                                fetchCustomers("")
-                              }
-                              setCustomerSearchOpen(true)
-                            }}
-                            placeholder="Müşteri adı, telefon veya plaka ile ara..."
-                            autoComplete="off"
-                          />
+                        <div>
                           <input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
-                          {customerSearchOpen && (
-                            <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-48 overflow-y-auto rounded-lg border border-border bg-background shadow-lg">
-                              {customerLoading ? (
-                                <div className="flex items-center justify-center py-3">
-                                  <Loader2 className="size-4 animate-spin text-muted-foreground/70" />
-                                </div>
-                              ) : customers.length === 0 ? (
-                                <div className="px-3 py-2 text-xs text-muted-foreground">Müşteri bulunamadı</div>
-                              ) : (
-                                customers.map((c) => (
-                                  <Button
-                                    key={c.id}
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => handleCustomerSelect(c.id)}
-                                    className="w-full justify-start rounded-none px-3 py-2 h-auto font-medium"
-                                  >
-                                    <span className="font-medium text-foreground">{customerDisplayName(c)}</span>
-                                    <span className="text-muted-foreground ml-2">{c.phone}</span>
-                                  </Button>
-                                ))
-                              )}
+                          {field.value && customerLabel ? (
+                            <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
+                              <span className="flex items-center gap-2 text-sm font-medium">
+                                <User className="size-4 text-primary" /> {customerLabel}
+                              </span>
+                              <Button type="button" size="icon-sm" variant="ghost" onClick={clearCustomer} aria-label="Müşteriyi değiştir">
+                                <X className="size-4" />
+                              </Button>
                             </div>
+                          ) : (
+                            <CustomerSearchOrCreate onSelected={handleCustomerSelect} />
                           )}
                         </div>
                       </FormControl>
@@ -381,17 +328,8 @@ export function QuoteCreateForm() {
                   )}
                 />
 
-                <div className="flex items-center gap-3 text-xs">
-                  <Button
-                    nativeButton={false}
-                    variant="link"
-                    size="xs"
-                    className="h-auto p-0"
-                    render={<Link href="/customers/new" />}
-                  >
-                    + Yeni Müşteri
-                  </Button>
-                  {customerId && (
+                {customerId && (
+                  <div className="flex items-center gap-3 text-xs">
                     <Button
                       nativeButton={false}
                       variant="link"
@@ -401,8 +339,8 @@ export function QuoteCreateForm() {
                     >
                       + Yeni Araç
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

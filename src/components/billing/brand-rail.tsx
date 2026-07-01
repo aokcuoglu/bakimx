@@ -38,7 +38,7 @@ export function BrandRail({
 
       <div className="relative flex h-full flex-col p-5 md:p-8">
         <Link
-          href="/"
+          href={mode === "public" ? "/" : "/dashboard"}
           aria-label="BakimX ana sayfa"
           className="inline-flex w-fit rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
         >
@@ -47,10 +47,21 @@ export function BrandRail({
 
         {/* başlık — yalnız md+ */}
         <div className="mt-8 hidden md:block">
-          <h2 className="text-xl font-bold leading-snug">Birkaç adımda BakimX&apos;e geçin</h2>
-          <p className="mt-1.5 text-sm text-white/60">
-            Oto servisiniz için dijital araç kabul ve müşteri onay platformu.
-          </p>
+          {mode === "public" ? (
+            <>
+              <h2 className="text-xl font-bold leading-snug">Birkaç adımda BakimX&apos;e geçin</h2>
+              <p className="mt-1.5 text-sm text-white/60">
+                Oto servisiniz için dijital araç kabul ve müşteri onay platformu.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold leading-snug">Paketini yükselt</h2>
+              <p className="mt-1.5 text-sm text-white/60">
+                İhtiyacınıza uygun paketi seçin, istediğiniz zaman değiştirin.
+              </p>
+            </>
+          )}
         </div>
 
         {/* seçili paket / sipariş özeti kartı — her zaman görünür */}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Combobox,
@@ -11,11 +12,10 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Car, User, Plus, X, UserCog, ScanLine } from "lucide-react"
+import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { PlateScanner } from "./plate-scanner"
-import { VehicleQuickDetailsSheet } from "./vehicle-quick-details-sheet"
 import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { normalizePlate } from "@/lib/format"
@@ -92,17 +92,21 @@ export function CustomerVehiclePicker({
         if (!active || !v || typeof v !== "object") return
         const veh = v as { id?: string; plate?: string; brand?: string; model?: string; customerId?: string; customer?: CustomerLite | null }
         if (!veh.id) return
+        const customerId = veh.customerId || value.customerId
         setSelected({
           kind: "vehicle",
-          customerId: veh.customerId || value.customerId,
+          customerId,
           vehicleId: veh.id,
           label: `${veh.plate ?? ""} — ${veh.brand ?? ""} ${veh.model ?? ""}`.trim(),
           sublabel: `Sahip: ${displayCustomerName(veh.customer ?? null)}`,
         })
+        // Sadece vehicleId ile gelen prefill'de (örn. araç detayından "Yeni İş Emri")
+        // customerId dışarıda hâlâ boş kalır — sahibi burada öğrenince forma yansıt.
+        if (!value.customerId && customerId) onChange({ customerId, vehicleId: veh.id })
       })
       .catch(() => {})
     return () => { active = false }
-  }, [value.vehicleId, value.customerId, selected])
+  }, [value.vehicleId, value.customerId, selected, onChange])
 
   const modeResults = results.filter((r) => (mode === "plate" ? r.kind === "vehicle" : r.kind === "customer"))
 
@@ -190,7 +194,15 @@ export function CustomerVehiclePicker({
             <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOwnerMode(true)}>
               <UserCog className="size-4 mr-1" /> Sahip Değiştir
             </Button>
-            <VehicleQuickDetailsSheet vehicleId={selected.vehicleId} />
+            <Button
+              nativeButton={false}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              render={<Link href={`/vehicles/${selected.vehicleId}`} target="_blank" />}
+            >
+              <Info className="size-4 mr-1" /> Detay
+            </Button>
           </div>
         )}
       </div>
@@ -267,7 +279,6 @@ export function CustomerVehiclePicker({
                     <div className="flex w-full flex-wrap items-center gap-2 p-2">
                       <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
                       <Button type="button" size="sm" onClick={() => setModalOpen(true)}><Plus className="size-4 mr-1" /> Oluştur</Button>
-                      <Button type="button" size="sm" variant="outline" onClick={() => setModalOpen(true)}>Oluştur ve Düzenle</Button>
                     </div>
                   ) : (
                     <span className="py-2 text-sm text-muted-foreground">Plaka yazın</span>

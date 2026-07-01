@@ -60,6 +60,7 @@ export async function createCollectionAction(formData: FormData) {
       where: { id: data.serviceOrderId, workshopId: user.workshopId },
     })
     if (!order) return { error: "İş emri bulunamadı" }
+    if (order.status === "cancelled") return { error: "İptal edilmiş iş emrine tahsilat eklenemez" }
   }
 
   const paymentDate = new Date(data.paymentDate)

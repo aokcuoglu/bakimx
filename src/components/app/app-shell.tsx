@@ -33,7 +33,7 @@ import {
   Calendar,
   Receipt,
 } from "lucide-react"
-import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -112,35 +112,15 @@ function isComingSoon(pathname: string): boolean {
   return COMING_SOON_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
-// Persisted sidebar collapse state backed by localStorage, exposed as an
-// external store so it can be read with useSyncExternalStore. This restores the
-// saved state without a setState-in-effect and without an SSR hydration
-// mismatch (the server snapshot is always "expanded").
-const SIDEBAR_STORAGE_KEY = "sidebar-state"
-const sidebarStoreListeners = new Set<() => void>()
+// Sidebar daraltma tercihi cookie'de tutulur (localStorage değil): layout.tsx bunu
+// sunucuda okuyup ilk render'a `initialSidebarCollapsed` olarak geçirir. Böylece
+// sunucu ve istemcinin ilk render'ı hep aynı genişlikle başlar — hydration sonrası
+// düzeltme yapılmadığı için sidebar'ın bir an açılıp kapanması (flash) da olmaz.
+const SIDEBAR_COOKIE_KEY = "sidebar-state"
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
-function readSidebarCollapsed(): boolean {
-  try {
-    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === "collapsed"
-  } catch {
-    return false
-  }
-}
-
-function writeSidebarCollapsed(collapsed: boolean): void {
-  try {
-    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "collapsed" : "expanded")
-  } catch {
-    // localStorage erişilemezse sessizce geç
-  }
-  sidebarStoreListeners.forEach((listener) => listener())
-}
-
-function subscribeSidebarStore(listener: () => void): () => void {
-  sidebarStoreListeners.add(listener)
-  return () => {
-    sidebarStoreListeners.delete(listener)
-  }
+function writeSidebarCollapsedCookie(collapsed: boolean): void {
+  document.cookie = `${SIDEBAR_COOKIE_KEY}=${collapsed ? "collapsed" : "expanded"}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; SameSite=Lax`
 }
 
 // Per-page başlık/aksiyon/arama bilgisi context üzerinden taşınır. Kalıcı kabuk
@@ -188,25 +168,23 @@ export function AppShell({
  */
 export function AppShellChrome({
   children,
+  initialSidebarCollapsed = false,
 }: {
   children: React.ReactNode
+  initialSidebarCollapsed?: boolean
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
-  // Server snapshot is always "expanded" (false); the persisted value is applied
-  // after hydration without a mismatch warning.
-  const sidebarCollapsed = useSyncExternalStore(
-    subscribeSidebarStore,
-    readSidebarCollapsed,
-    () => false
-  )
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(initialSidebarCollapsed)
   const [searchValue, setSearchValue] = useState("")
 
   function toggleSidebar() {
-    writeSidebarCollapsed(!sidebarCollapsed)
+    const next = !sidebarCollapsed
+    setSidebarCollapsed(next)
+    writeSidebarCollapsedCookie(next)
   }
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {

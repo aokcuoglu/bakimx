@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlateBadge } from "@/components/app/plate-badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DetailHeader, type DetailHeaderAction } from "@/components/app/detail-header"
+import { StatusPill } from "@/components/app/status-badge"
 import {
   Car,
   User,
@@ -19,7 +21,6 @@ import {
   AlertTriangle,
   Share2,
   CheckCircle2,
-  ArrowLeft,
   Plus,
   Trash2,
   Pencil,
@@ -377,40 +378,20 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     forwardActions.push({ key: "reactivate", label: "Yeniden Aktif Et", icon: RotateCcw, onClick: () => handleStatusChange("draft"), tone: "primary" })
   }
   const canCancel = intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval"
-  const hasActions = forwardActions.length > 0 || canCancel
-
-  // Shared renderers so the desktop (header) and mobile (sticky bar) share one source of truth.
-  const renderForwardButtons = (opts: { size: "default" | "lg"; stretch?: boolean }) =>
-    forwardActions.map((a) => {
-      const Icon = a.icon
-      return (
-        <Button
-          key={a.key}
-          size={opts.size}
-          variant={a.tone === "primary" ? "default" : "outline"}
-          onClick={a.onClick}
-          disabled={loading}
-          className={opts.stretch ? "flex-1" : undefined}
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Icon className="size-4" />}
-          {a.label}
-        </Button>
-      )
-    })
-
-  const renderCancelButton = (opts: { size: "default" | "lg" }) =>
-    canCancel ? (
-      <Button
-        size={opts.size}
-        variant="ghost"
-        onClick={() => handleStatusChange("cancelled")}
-        disabled={loading}
-        className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-      >
-        <XCircle className="size-4" />
-        İptal Et
-      </Button>
-    ) : null
+  const customerName =
+    intake.customer.type === "corporate"
+      ? intake.customer.companyName || "Kurumsal Müşteri"
+      : intake.customer.fullName ||
+        `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() ||
+        "Müşteri"
+  // Cancel first (left), then forward actions — one shared list for header + sticky bar.
+  const headerActions: DetailHeaderAction[] = [
+    ...(canCancel
+      ? [{ key: "cancel", label: "İptal Et", icon: XCircle, onClick: () => handleStatusChange("cancelled"), tone: "danger" as const }]
+      : []),
+    ...forwardActions.map((a) => ({ key: a.key, label: a.label, icon: a.icon, onClick: a.onClick, tone: a.tone })),
+  ]
+  const hasActions = headerActions.length > 0
 
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
@@ -423,58 +404,20 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
 
   return (
     <div className={cn("space-y-6", hasActions && "pb-24 lg:pb-0")}>
-      {/* Header */}
-      <div className="flex items-start gap-3 sm:items-center">
-        <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation shrink-0">
-          <ArrowLeft className="size-5" />
-        </button>
-        <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="flex flex-col items-start gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-wrap sm:gap-2">
-            <PlateBadge plate={intake.vehicle.plate} />
-            <span className="hidden sm:inline text-muted-foreground/40">•</span>
-            <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
-              <Car className="size-3.5 shrink-0" />
-              <span className="truncate">{intake.vehicle.brand} {intake.vehicle.model}</span>
-            </span>
-            <span className="hidden sm:inline text-muted-foreground/40">•</span>
-            <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
-              <User className="size-3.5 shrink-0" />
-              <span className="truncate">
-                {intake.customer.type === "corporate"
-                  ? intake.customer.companyName || "Kurumsal Müşteri"
-                  : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
-              </span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Badge variant="outline" className={cn("h-8 px-3 text-sm", statusInfo?.color || "bg-muted text-foreground")}>
-              {statusInfo?.label || intake.status}
-            </Badge>
-            {/* Desktop actions live in the header; mobile uses the sticky bar below */}
-            {hasActions && (
-              <div className="hidden lg:flex items-center gap-2">
-                {renderCancelButton({ size: "default" })}
-                {renderForwardButtons({ size: "default" })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <DetailHeader
+        plate={intake.vehicle.plate}
+        vehicleLabel={`${intake.vehicle.brand} ${intake.vehicle.model}${intake.vehicle.modelYear ? ` (${intake.vehicle.modelYear})` : ""}`}
+        customerLabel={customerName}
+        badges={<StatusPill label={statusInfo?.label || intake.status} color={statusInfo?.color} size="lg" />}
+        actions={headerActions}
+        loading={loading}
+        onBack={() => router.push("/intakes")}
+      />
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-foreground text-sm flex items-start gap-2">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>{error}</span>
-        </div>
-      )}
-
-      {/* Mobile sticky action bar — sits above the bottom nav (bottom-16) */}
-      {hasActions && (
-        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border px-4 py-3 safe-area-bottom flex items-center gap-2">
-          {renderCancelButton({ size: "lg" })}
-          {forwardActions.length > 0
-            ? renderForwardButtons({ size: "lg", stretch: true })
-            : <span className="flex-1" />}
         </div>
       )}
 
@@ -1172,11 +1115,23 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                 </CardContent>
               </Card>
 
-              {showOrderItemForm && (
-                <Card>
-                  <CardHeader className="pb-3"><CardTitle className="text-base">Yeni Kalem Ekle</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
+              <Dialog open={showOrderItemForm} onOpenChange={setShowOrderItemForm}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Wrench className="size-4 text-primary" />
+                      Yeni Kalem Ekle
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleAddOrderItem() }}
+                    className="space-y-3"
+                  >
+                    {error && (
+                      <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">{error}</div>
+                    )}
+                    <div className="space-y-1.5">
                       <Label>Tip</Label>
                       <Select
                         value={itemType}
@@ -1193,27 +1148,27 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
+                    <div className="space-y-1.5">
                       <Label>Kalem Adı</Label>
-                      <Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
+                      <Input autoFocus value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
+                      <div className="space-y-1.5">
                         <Label>Miktar</Label>
                         <Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} min="1" />
                       </div>
-                      <div>
+                      <div className="space-y-1.5">
                         <Label>Birim Fiyat (TL)</Label>
                         <Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2">
-                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName} size="lg" className="flex-1">Ekle</Button>
-                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg">İptal</Button>
+                      <Button type="submit" disabled={loading || !itemName} size="lg" className="flex-1">Ekle</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg">İptal</Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </form>
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </div>

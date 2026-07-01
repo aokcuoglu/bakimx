@@ -22,7 +22,7 @@ async function main() {
   if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
     console.error(
       "⛔ Refusing to seed a production database (NODE_ENV=production).\n" +
-        "   Seeding injects a demo workshop with PUBLIC credentials (demo@bakimx.com / demo123456)\n" +
+        "   Seeding injects a demo workshop with PUBLIC credentials (admin@bakimx.com / admin123456)\n" +
         "   and a guessable public passport token. If you really mean it, re-run with ALLOW_PROD_SEED=true.",
     )
     process.exit(1)
@@ -30,7 +30,7 @@ async function main() {
 
   console.log("🌱 Seeding database...")
 
-  const hashedPassword = await bcrypt.hash("demo123456", 12)
+  const hashedPassword = await bcrypt.hash("admin123456", 12)
 
   let workshop = await prisma.workshop.findFirst({ where: { name: "Demo Oto Servis" } })
   if (!workshop) {
@@ -51,11 +51,11 @@ async function main() {
     console.log(`ℹ️  Workshop exists: ${workshop.id}`)
   }
 
-  let user = await prisma.user.findUnique({ where: { email: "demo@bakimx.com" } })
+  let user = await prisma.user.findUnique({ where: { email: "admin@bakimx.com" } })
   if (!user) {
     user = await prisma.user.create({
       data: {
-        email: "demo@bakimx.com",
+        email: "admin@bakimx.com",
         password: hashedPassword,
         firstName: "Ahmet",
         lastName: "Yılmaz",
@@ -209,8 +209,8 @@ async function main() {
   }
 
   console.log("\n📋 Demo Login Credentials:")
-  console.log("   Email: demo@bakimx.com")
-  console.log("   Password: demo123456")
+  console.log("   Email: admin@bakimx.com")
+  console.log("   Password: admin123456")
   console.log("\n✅ Seed completed!")
 }
 

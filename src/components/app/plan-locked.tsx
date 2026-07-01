@@ -45,9 +45,11 @@ const COPY: Record<
 export function PlanLocked({
   reason,
   workshopName,
+  hasPendingOrder = false,
 }: {
   reason: Exclude<LockReason, null>
   workshopName?: string
+  hasPendingOrder?: boolean
 }) {
   const { title, description, icon: Icon, showPackages } = COPY[reason]
 
@@ -65,7 +67,7 @@ export function PlanLocked({
         </div>
 
         {showPackages && (
-          <PlanPackages ownedTier={null} workshopName={workshopName} />
+          <PlanPackages ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />
         )}
 
         <form action={logoutAction} className="mt-8 text-center">

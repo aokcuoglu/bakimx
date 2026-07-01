@@ -30,12 +30,17 @@ export function PurchaseWizard({
   mode,
   initialTier = "pro",
   initialCycle = "monthly",
+  initialStep = 0,
+  ownedTier = null,
   havale,
   defaultInvoiceTitle = "",
 }: {
   mode: Mode
   initialTier?: PlanTier
   initialCycle?: Cycle
+  initialStep?: number
+  /** Workshop's currently active tier (inapp only) — can't be re-purchased. */
+  ownedTier?: PlanTier | null
   havale: HavaleInfo
   defaultInvoiceTitle?: string
 }) {
@@ -43,7 +48,7 @@ export function PurchaseWizard({
   const STEPS = isPublic
     ? ["Paket", "Hesap & Fatura", "Özet"]
     : ["Paket", "Fatura Bilgisi", "Özet"]
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(initialStep)
   const [tier, setTier] = useState<PlanTier>(initialTier)
   const [cycle, setCycle] = useState<Cycle>(initialCycle)
   const [loading, setLoading] = useState(false)
@@ -121,11 +126,11 @@ export function PurchaseWizard({
     }
   }
 
-  // Çerçeve: public = tam ekran iki sütun; inapp = AppShell içinde kapsüllenmiş kart.
+  // Her iki mod da tam ekran iki sütun; inapp yalnızca marka rayında daha dar bir kolon kullanır.
   const frameClass = isPublic
     ? "grid min-h-[100dvh] md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]"
-    : "grid overflow-hidden rounded-2xl border bg-card shadow-sm md:min-h-[560px] md:grid-cols-[300px_minmax(0,1fr)]"
-  const formColClass = isPublic ? "px-5 py-8 sm:px-8 md:px-12 md:py-14" : "p-5 md:p-8"
+    : "grid min-h-[100dvh] md:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
+  const formColClass = "px-5 py-8 sm:px-8 md:px-12 md:py-14"
 
   return (
     <div className={frameClass}>
@@ -196,29 +201,37 @@ export function PurchaseWizard({
                       </div>
                       <div className="grid gap-3">
                         {PLAN_PACKAGES.map((pkg) => {
-                          const selected = tier === pkg.tier
+                          const isOwned = ownedTier === pkg.tier
+                          const selected = !isOwned && tier === pkg.tier
                           const minor = getPlanPriceMinor(pkg.tier, cycle)
                           return (
                             <button
                               key={pkg.tier}
                               type="button"
+                              disabled={isOwned}
                               onClick={() => setTier(pkg.tier)}
                               aria-pressed={selected}
                               className={cn(
                                 "relative flex items-center justify-between rounded-xl border p-4 text-left transition-all",
-                                selected
-                                  ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                                  : "border-border hover:border-primary/40 hover:bg-muted/30",
+                                isOwned
+                                  ? "cursor-not-allowed border-border bg-muted/30 opacity-60"
+                                  : selected
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                                    : "border-border hover:border-primary/40 hover:bg-muted/30",
                               )}
                             >
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold text-foreground">{pkg.name}</p>
-                                  {pkg.popular && (
+                                  {isOwned ? (
+                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                      Mevcut paketiniz
+                                    </span>
+                                  ) : pkg.popular ? (
                                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                                       Popüler
                                     </span>
-                                  )}
+                                  ) : null}
                                 </div>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
                                   {pkg.tagline} · {pkg.seats} kullanıcı
@@ -237,7 +250,9 @@ export function PurchaseWizard({
                       <div className="flex justify-end pt-2">
                         <Button
                           type="button"
-                          size="lg"                          onClick={() => next([])}
+                          size="lg"
+                          disabled={tier === ownedTier}
+                          onClick={() => next([])}
                         >
                           Devam <ChevronRight className="size-4" />
                         </Button>
