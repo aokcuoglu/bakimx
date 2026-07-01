@@ -8,6 +8,7 @@ import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 export type LightboxPhoto = {
   id: string
   label?: string
+  note?: string | null
   fileUrl: string | null
 }
 
@@ -151,13 +152,16 @@ export function PhotoLightbox({
         )}
       </div>
 
-      {/* Başlık */}
-      {current.label && (
+      {/* Başlık + not */}
+      {(current.label || current.note) && (
         <div
-          className="shrink-0 px-4 py-3 text-center text-sm text-white/80 safe-area-bottom"
+          className="shrink-0 space-y-1 px-4 py-3 text-center safe-area-bottom"
           onClick={(e) => e.stopPropagation()}
         >
-          {current.label}
+          {current.label && <div className="text-sm text-white/80">{current.label}</div>}
+          {current.note && (
+            <div className="text-sm text-white whitespace-pre-wrap break-words">{current.note}</div>
+          )}
         </div>
       )}
     </div>,

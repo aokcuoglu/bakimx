@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, startTransition } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { percentToBps, bpsToPercent } from "@/lib/money"
 import {
   Building2,
@@ -128,7 +129,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
   const priceGroup = form.watch("priceGroup")
   const kvkkApprovedAt = form.watch("kvkkApprovedAt")
 
-  type ActionState = { error?: string; success?: boolean; id?: string }
+  type ActionState = { error?: string; success?: boolean; id?: string; existingCustomer?: { id: string; label: string } }
 
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && initial?.id) {
@@ -171,7 +172,17 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         {state?.error && (
           <Alert variant="destructive">
-            <AlertDescription>{state.error}</AlertDescription>
+            <AlertDescription>
+              {state.error}
+              {state.existingCustomer && (
+                <>
+                  {" "}
+                  <Link href={`/customers/${state.existingCustomer.id}`} className="font-medium underline underline-offset-2">
+                    {state.existingCustomer.label} kaydını aç
+                  </Link>
+                </>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 

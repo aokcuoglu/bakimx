@@ -20,11 +20,14 @@ function whatsappHref(message: string) {
 export function PlanPackages({
   ownedTier = null,
   workshopName,
-  checkoutBasePath = "/billing/checkout",
+  checkoutBasePath = "/checkout",
+  hasPendingOrder = false,
 }: {
   ownedTier?: PlanTier | null
   workshopName?: string
   checkoutBasePath?: string
+  /** A pending-payment order already exists — block new requests until it's confirmed/cancelled. */
+  hasPendingOrder?: boolean
 }) {
   const [billing, setBilling] = useState<BillingCycle>("monthly")
   const router = useRouter()
@@ -105,6 +108,10 @@ export function PlanPackages({
               {isOwned ? (
                 <Button type="button" disabled variant="secondary" size="lg" className="w-full">
                   <Check className="size-4" /> Mevcut paketiniz
+                </Button>
+              ) : hasPendingOrder ? (
+                <Button type="button" disabled variant="outline" size="lg" className="w-full">
+                  Bekleyen talebiniz var
                 </Button>
               ) : (
                 <Button

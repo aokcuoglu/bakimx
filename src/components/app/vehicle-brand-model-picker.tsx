@@ -63,9 +63,11 @@ export function VehicleBrandModelPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brands])
 
-  // Fetch the brand's models, debounced and filtered by the typed query so that
+  // Fetch the brand's models, filtered server-side by the typed query so that
   // high-volume brands (>100 models) are reachable via search, not just the first
-  // alphabetical page the server returns.
+  // alphabetical page the server returns. The brand-triggered load (empty query)
+  // fires immediately so the list is ready the moment the field is opened; typed
+  // searches stay debounced.
   useEffect(() => {
     if (brandId == null) return
     let active = true
@@ -78,7 +80,7 @@ export function VehicleBrandModelPicker({
         .then((d) => { if (active) setModels(Array.isArray(d?.models) ? d.models : []) })
         .catch(() => { if (active) setModels([]) })
         .finally(() => { if (active) setLoadingModels(false) })
-    }, 250)
+    }, q ? 250 : 0)
     return () => { active = false; clearTimeout(t) }
   }, [brandId, modelQuery])
 
@@ -124,8 +126,12 @@ export function VehicleBrandModelPicker({
         <Label>Model {required && "*"}</Label>
         <Combobox
           items={models}
-          filter={(item: Model, query: string) =>
-            item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+          // Filtering is done server-side (see the fetch effect). Internal
+          // filtering is disabled with filter={null} so the list reflects the
+          // async `models` as-is and reactively — otherwise Base UI memoizes the
+          // filtered result on the query string and never re-shows options when
+          // `models` arrive after the popup opened (forcing the user to type).
+          filter={null}
           itemToStringLabel={(m: Model) => m.name}
           itemToStringValue={(m: Model) => m.name}
           inputValue={model}

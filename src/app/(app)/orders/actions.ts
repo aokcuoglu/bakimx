@@ -7,8 +7,8 @@ import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
-import { isOrderStatus, isPaymentStatus, canTransitionOrder } from "@/lib/status-transitions"
-import type { OrderStatus } from "@prisma/client"
+import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
+import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
@@ -161,6 +161,23 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
+
+  // Intake + work order are presented as one unified flow (see intake-detail.tsx's
+  // "Sipariş" tab, which drives this action directly); keep the linked intake's
+  // status mirrored so it doesn't show stale next to the order status.
+  if (isIntakeStatus(status)) {
+    const intake = await prisma.vehicleIntakeForm.findFirst({
+      where: { id: order.intakeFormId, workshopId: user.workshopId },
+    })
+    if (intake && canTransitionIntake(intake.status as IntakeStatus, status)) {
+      await prisma.vehicleIntakeForm.updateMany({
+        where: { id: order.intakeFormId, workshopId: user.workshopId },
+        data: { status },
+      })
+      revalidatePath(`/intakes/${order.intakeFormId}`)
+      revalidatePath("/intakes")
+    }
+  }
 
   if (status === "ready_for_delivery") {
     try {

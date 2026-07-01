@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/app/status-badge"
+import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
+import { DetailHeader, type DetailHeaderAction } from "@/components/app/detail-header"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira, percentToBps, bpsToPercent, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
@@ -15,8 +16,8 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { generateWhatsAppShareText, getWhatsAppShareUrl, buildPublicLink } from "@/lib/share/whatsapp"
+import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import {
-  ArrowLeft,
   Plus,
   Trash2,
   Wrench,
@@ -39,6 +40,13 @@ import {
   Info,
   Wallet,
   ChevronRight,
+  Play,
+  Send,
+  CheckCircle2,
+  Package,
+  PackageCheck,
+  KeyRound,
+  XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
@@ -154,25 +162,38 @@ type PricingMetaDraft = {
   notes: string
 }
 
-const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string }[]> = {
-  draft: [{ key: "in_progress", label: "İşleme Al" }, { key: "waiting_approval", label: "Onaya Gönder" }],
+// `primary: true` marks the happy-path forward action (rendered as the single
+// blue CTA); other forwards become secondary, `cancelled` becomes destructive.
+const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primary?: boolean }[]> = {
+  draft: [{ key: "in_progress", label: "İşleme Al", primary: true }, { key: "waiting_approval", label: "Onaya Gönder" }],
   waiting_approval: [
-    { key: "approved", label: "Onayla" },
+    { key: "approved", label: "Onayla", primary: true },
     { key: "in_progress", label: "Onaysız Devam" },
     { key: "cancelled", label: "İptal" },
   ],
-  approved: [{ key: "in_progress", label: "İşleme Başla" }, { key: "waiting_parts", label: "Parça Bekliyor" }],
+  approved: [{ key: "in_progress", label: "İşleme Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
   in_progress: [
     { key: "waiting_parts", label: "Parça Bekliyor" },
-    { key: "ready_for_delivery", label: "Teslime Hazır" },
+    { key: "ready_for_delivery", label: "Teslime Hazır", primary: true },
   ],
   waiting_parts: [
-    { key: "in_progress", label: "Devam Et" },
+    { key: "in_progress", label: "Devam Et", primary: true },
     { key: "ready_for_delivery", label: "Teslime Hazır" },
   ],
-  ready_for_delivery: [{ key: "delivered", label: "Teslim Edildi" }, { key: "cancelled", label: "İptal" }],
+  ready_for_delivery: [{ key: "delivered", label: "Teslim Edildi", primary: true }, { key: "cancelled", label: "İptal" }],
   delivered: [],
   cancelled: [],
+}
+
+// Icon per target status, so header actions match the intake header's look.
+const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
+  waiting_approval: Send,
+  approved: CheckCircle2,
+  in_progress: Play,
+  waiting_parts: Package,
+  ready_for_delivery: PackageCheck,
+  delivered: KeyRound,
+  cancelled: XCircle,
 }
 
 export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: OrderDetailData; technicians?: { id: string; fullName: string; role: string }[]; hasAiAdvisor: boolean }) {
@@ -180,6 +201,7 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [editingMeta, setEditingMeta] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [metaDraft, setMetaDraft] = useState({
     technicianName: order.technicianName || "",
     estimatedDeliveryAt: order.estimatedDeliveryAt
@@ -244,6 +266,20 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
   }
 
   const nextActions = NEXT_STATUSES[order.status] || []
+  const customerName =
+    order.customer.type === "corporate"
+      ? order.customer.companyName || "Kurumsal Müşteri"
+      : order.customer.fullName ||
+        `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() ||
+        "Müşteri"
+  // DetailHeader orders buttons (danger → secondary → primary); we only assign tones.
+  const headerActions: DetailHeaderAction[] = nextActions.map((a) => ({
+    key: a.key,
+    label: a.label,
+    onClick: () => changeStatus(a.key),
+    tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
+    icon: ORDER_ACTION_ICONS[a.key],
+  }))
   const shareLink = order.intake.shareToken ? buildPublicLink(order.intake.shareToken) : null
 
   function handleWhatsApp() {
@@ -282,62 +318,26 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <button onClick={() => router.push("/orders")} className="hover:text-foreground inline-flex items-center gap-1 touch-manipulation">
-          <ArrowLeft className="size-3.5" />
-          İş Emirleri
-        </button>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">{order.workOrderNo}</span>
-      </div>
+      <DetailHeader
+        plate={order.vehicle.plate}
+        vehicleLabel={`${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`}
+        customerLabel={customerName}
+        badges={
+          <>
+            <StatusBadge status={order.status} size="lg" />
+            <PaymentBadge status={order.paymentStatus} size="lg" />
+          </>
+        }
+        actions={headerActions}
+        loading={loading}
+        onBack={() => router.push("/orders")}
+      />
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
           <Info className="size-4 text-destructive shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <PlateBadge plate={order.vehicle.plate} />
-          <StatusBadge status={order.status} size="md" />
-          <PaymentBadge status={order.paymentStatus} size="md" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-          {order.customer.type === "corporate"
-            ? order.customer.companyName || "Kurumsal Müşteri"
-            : order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {order.vehicle.brand} {order.vehicle.model}
-          {order.vehicle.modelYear ? ` • ${order.vehicle.modelYear}` : ""}
-        </p>
-      </div>
-
-      {nextActions.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium mr-1">Durumu Güncelle:</span>
-              {nextActions.map((a) => (
-                <Button
-                  key={a.key}
-                  size="sm"
-                  variant={a.key === "cancelled" ? "outline" : "default"}
-                  onClick={() => changeStatus(a.key)}
-                  disabled={loading}
-                  className={cn(
-                    a.key === "cancelled" && "text-foreground border-destructive/20 hover:bg-destructive/10"
-                  )}
-                >
-                  {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : null}
-                  {a.label}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -421,8 +421,8 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {order.photos.slice(0, 8).map((p) => (
-                    <PhotoThumb key={p.id} photo={p} />
+                  {order.photos.slice(0, 8).map((p, i) => (
+                    <PhotoThumb key={p.id} photo={p} onOpen={() => setLightboxIndex(i)} />
                   ))}
                 </div>
                 {order.photos.length > 8 && (
@@ -436,6 +436,20 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
               </CardContent>
             </Card>
           )}
+
+          <PhotoLightbox
+            photos={order.photos.slice(0, 8).map((p): LightboxPhoto => ({
+              id: p.id,
+              label: PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]?.label || p.type,
+              fileUrl: `/api/photos?id=${p.id}`,
+            }))}
+            index={lightboxIndex ?? 0}
+            onIndexChange={setLightboxIndex}
+            open={lightboxIndex !== null}
+            onOpenChange={(o) => {
+              if (!o) setLightboxIndex(null)
+            }}
+          />
         </div>
 
         <div className="lg:col-span-1 space-y-5">
@@ -455,6 +469,7 @@ export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: Order
 
           <PaymentHistoryCard
             orderId={order.id}
+            isCancelled={order.status === "cancelled"}
             totals={order.totals}
             paidAmount={order.paidAmount}
             remainingAmount={order.remainingAmount}
@@ -1210,6 +1225,7 @@ function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhat
 
 function PaymentHistoryCard({
   orderId,
+  isCancelled,
   totals,
   paidAmount,
   remainingAmount,
@@ -1218,6 +1234,7 @@ function PaymentHistoryCard({
   customerName,
 }: {
   orderId: string
+  isCancelled: boolean
   totals: Totals
   paidAmount: number
   remainingAmount: number
@@ -1235,13 +1252,15 @@ function PaymentHistoryCard({
             <Wallet className="size-4 text-muted-foreground" />
             Tahsilat Geçmişi
           </CardTitle>
-          <Link
-            href={`/cashbox/payments/new?orderId=${orderId}`}
-            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
-          >
-            <Plus className="size-3" />
-            Tahsilat Ekle
-          </Link>
+          {!isCancelled && (
+            <Link
+              href={`/cashbox/payments/new?orderId=${orderId}`}
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
+            >
+              <Plus className="size-3" />
+              Tahsilat Ekle
+            </Link>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -1249,12 +1268,14 @@ function PaymentHistoryCard({
           <div className="text-center py-4">
             <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
-            <Link
-              href={`/cashbox/payments/new?orderId=${orderId}`}
-              className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
-            >
-              <Plus className="size-3.5" /> İlk tahsilatı ekle
-            </Link>
+            {!isCancelled && (
+              <Link
+                href={`/cashbox/payments/new?orderId=${orderId}`}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
+              >
+                <Plus className="size-3.5" /> İlk tahsilatı ekle
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -1325,18 +1346,17 @@ function PaymentHistoryCard({
   )
 }
 
-function PhotoThumb({ photo }: { photo: Photo }) {
+function PhotoThumb({ photo, onOpen }: { photo: Photo; onOpen: () => void }) {
   const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
   return (
-    <Link
-      href={`/api/photos?id=${photo.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
+      onClick={onOpen}
       className="block aspect-square rounded-lg bg-muted border border-border overflow-hidden hover:border-primary/40 transition-colors"
       title={typeLabel}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`/api/photos?id=${photo.id}`} alt={typeLabel} className="w-full h-full object-cover" />
-    </Link>
+    </button>
   )
 }

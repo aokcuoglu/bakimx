@@ -34,6 +34,33 @@ export async function createBillingOrder(input: {
   const tier = data.tier as PlanTier
   const cycle = data.cycle as BillingCycle
 
+  // Tekrar mükerrer talebi engelle: aynı workshop'un zaten bekleyen bir siparişi
+  // varsa (hesap üzerinden) VEYA aynı vergi/TC no ile başka bir workshop'un
+  // bekleyen siparişi varsa (kimlik üzerinden) yeni talep oluşturulamaz.
+  const duplicatePending = await prisma.billingOrder.findFirst({
+    where: {
+      status: "pending_payment",
+      OR: [{ workshopId: workshop.id }, { workshop: { taxNumber: data.taxNumber } }],
+    },
+    select: { workshopId: true },
+  })
+  if (duplicatePending) {
+    return {
+      ok: false,
+      error:
+        duplicatePending.workshopId === workshop.id
+          ? "Zaten bekleyen bir paket talebiniz var. Ödemeniz onaylanana kadar yeni bir talep oluşturamazsınız."
+          : "Bu vergi/TC kimlik numarasına ait bekleyen bir paket talebi zaten var.",
+    }
+  }
+
+  // Aktif olarak sahip olunan paket tekrar "satın alınamaz" — UI (wizard + /billing)
+  // bunu zaten "Mevcut paketiniz" olarak kilitler; burası doğrudan action çağrısına
+  // karşı savunma katmanı.
+  if (workshop.subscriptionStatus === "active" && workshop.planTier === tier) {
+    return { ok: false, error: "Zaten bu pakete sahipsiniz." }
+  }
+
   const type: BillingOrderType =
     workshop.currentPeriodEnd == null
       ? "new_purchase"

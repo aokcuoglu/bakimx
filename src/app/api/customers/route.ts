@@ -43,7 +43,10 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const result = await createCustomerAction(formData)
     if (result?.error) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json(
+        { error: result.error, existingCustomer: result.existingCustomer },
+        { status: 400 },
+      )
     }
     return NextResponse.json({ success: true, id: result.id })
   } catch {

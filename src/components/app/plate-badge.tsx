@@ -11,20 +11,39 @@ function formatTurkishPlate(plate: string): string {
   return `${cityCode[1]} ${letters[1]} ${numbers}`
 }
 
-export function PlateBadge({ plate, className }: { plate: string; className?: string }) {
+export function PlateBadge({
+  plate,
+  className,
+  size = "md",
+}: {
+  plate: string
+  className?: string
+  size?: "sm" | "md"
+}) {
   const formatted = formatTurkishPlate(plate)
 
   return (
     <span
       className={cn(
-        "inline-flex items-stretch rounded-md overflow-hidden border border-black/15 bg-white shadow-sm h-8 select-none",
+        "inline-flex items-stretch rounded-md overflow-hidden border border-black/15 bg-white shadow-sm select-none",
+        size === "sm" ? "h-6" : "h-8",
         className
       )}
     >
-      <span className="flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-bold leading-none px-1 tracking-tight">
+      <span
+        className={cn(
+          "flex items-center justify-center bg-primary text-primary-foreground font-bold leading-none tracking-tight",
+          size === "sm" ? "text-[8px] px-0.5" : "text-[9px] px-1"
+        )}
+      >
         TR
       </span>
-      <span className="flex items-center justify-center bg-white text-black font-mono text-[13px] font-extrabold px-2 tracking-wider whitespace-nowrap">
+      <span
+        className={cn(
+          "flex items-center justify-center bg-white text-black font-mono font-extrabold tracking-wider whitespace-nowrap",
+          size === "sm" ? "text-[11px] px-1.5" : "text-[13px] px-2"
+        )}
+      >
         {formatted}
       </span>
     </span>

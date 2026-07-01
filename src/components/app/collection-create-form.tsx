@@ -165,6 +165,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
           <Button
             type="button"
             variant="link"
+            nativeButton={false}
             className="p-0 h-auto text-muted-foreground hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
             render={<Link href="/cashbox/payments" />}
           >

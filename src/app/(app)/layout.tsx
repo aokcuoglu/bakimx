@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
@@ -39,14 +40,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const plan = getPlanState(workshop)
+  const cookieStore = await cookies()
+  const initialSidebarCollapsed = cookieStore.get("sidebar-state")?.value === "collapsed"
 
   // Access gate: trial expired / subscription inactive → locked upgrade screen.
   // Keep the impersonation banner so the founder can always exit.
   if (!plan.hasAccess && plan.lockReason) {
+    const pendingOrder = await prisma.billingOrder.findFirst({
+      where: { workshopId: user.workshopId, status: "pending_payment" },
+      select: { id: true },
+    })
     return (
       <>
         {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
-        <PlanLocked reason={plan.lockReason} workshopName={workshop.name} />
+        <PlanLocked reason={plan.lockReason} workshopName={workshop.name} hasPendingOrder={!!pendingOrder} />
       </>
     )
   }
@@ -71,7 +78,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       <div className="flex-1">
-        <AppShellChrome>{children}</AppShellChrome>
+        <AppShellChrome initialSidebarCollapsed={initialSidebarCollapsed}>{children}</AppShellChrome>
       </div>
       <div className="border-t py-3 px-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} BakimX · Tüm hakları saklıdır · v{process.env.NEXT_PUBLIC_APP_VERSION}

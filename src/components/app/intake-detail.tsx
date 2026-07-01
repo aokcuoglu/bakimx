@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DetailHeader, type DetailHeaderAction } from "@/components/app/detail-header"
+import { StatusPill } from "@/components/app/status-badge"
 import {
   Car,
   User,
@@ -18,26 +21,32 @@ import {
   AlertTriangle,
   Share2,
   CheckCircle2,
-  ArrowLeft,
   Plus,
   Trash2,
   Pencil,
   Info,
   Wrench,
   Upload,
-  ImageOff,
   Loader2,
   BarChart3,
   Link as LinkIcon,
   Eye,
   EyeOff,
+  Play,
+  PackageCheck,
+  KeyRound,
+  XCircle,
+  RotateCcw,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { INTAKE_STATUS, PHOTO_TYPES } from "@/lib/constants"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { PhotoAnnotate } from "./photo-annotate"
+import { PhotoGalleryGrid } from "./photo-gallery-grid"
 import { formatTRY } from "@/lib/format"
+import { liraToKurus } from "@/lib/money"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
@@ -307,7 +316,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     formData.set("type", itemType)
     formData.set("name", itemName)
     formData.set("quantity", itemQty)
-    if (itemPrice) formData.set("unitPrice", itemPrice)
+    if (itemPrice) formData.set("unitPrice", String(liraToKurus(Number(itemPrice))))
 
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: formData })
@@ -341,9 +350,52 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
     ? intake.shareLinks[0].isActive ? "active" as const : "expired" as const
     : "none" as const
 
+  // Forward (positive) status actions — one primary + optional secondary, driven by status.
+  type ForwardAction = {
+    key: string
+    label: string
+    icon: typeof Play
+    onClick: () => void
+    tone: "primary" | "secondary"
+  }
+  const forwardActions: ForwardAction[] = []
+  if (intake.status === "draft") {
+    forwardActions.push({ key: "start", label: "İşleme Başla", icon: Play, onClick: () => handleStatusChange("in_progress"), tone: "primary" })
+  }
+  if (intake.status === "approved" && !intake.order) {
+    forwardActions.push({ key: "create-order", label: "Servis Emri Oluştur", icon: Wrench, onClick: handleCreateOrder, tone: "primary" })
+  }
+  if (intake.status === "approved") {
+    forwardActions.push({ key: "start", label: "İşleme Başla", icon: Play, onClick: () => handleStatusChange("in_progress"), tone: intake.order ? "primary" : "secondary" })
+  }
+  if (intake.status === "in_progress") {
+    forwardActions.push({ key: "ready", label: "Teslimata Hazır", icon: PackageCheck, onClick: () => handleStatusChange("ready_for_delivery"), tone: "primary" })
+  }
+  if (intake.status === "ready_for_delivery" && !deliveryOtpMode) {
+    forwardActions.push({ key: "deliver", label: "Teslim Et (OTP)", icon: KeyRound, onClick: handleRequestDeliveryOtp, tone: "primary" })
+  }
+  if (intake.status === "cancelled") {
+    forwardActions.push({ key: "reactivate", label: "Yeniden Aktif Et", icon: RotateCcw, onClick: () => handleStatusChange("draft"), tone: "primary" })
+  }
+  const canCancel = intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval"
+  const customerName =
+    intake.customer.type === "corporate"
+      ? intake.customer.companyName || "Kurumsal Müşteri"
+      : intake.customer.fullName ||
+        `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() ||
+        "Müşteri"
+  // Cancel first (left), then forward actions — one shared list for header + sticky bar.
+  const headerActions: DetailHeaderAction[] = [
+    ...(canCancel
+      ? [{ key: "cancel", label: "İptal Et", icon: XCircle, onClick: () => handleStatusChange("cancelled"), tone: "danger" as const }]
+      : []),
+    ...forwardActions.map((a) => ({ key: a.key, label: a.label, icon: a.icon, onClick: a.onClick, tone: a.tone })),
+  ]
+  const hasActions = headerActions.length > 0
+
   const tabs = [
     { id: "info" as const, label: "Bilgiler", icon: ClipboardList },
-    { id: "evidence" as const, label: "Kanıt", icon: Camera, count: intake.photos.length },
+    { id: "evidence" as const, label: "Özet", icon: BarChart3 },
     { id: "photos" as const, label: "Fotoğraflar", icon: Camera },
     { id: "damage" as const, label: "Hasar", icon: AlertTriangle, count: intake.photos.filter((p) => p.type === "damage_detail").length },
     { id: "share" as const, label: "Paylaşım", icon: Share2 },
@@ -351,26 +403,16 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/intakes")} className="p-2.5 hover:bg-muted rounded-lg touch-manipulation">
-          <ArrowLeft className="size-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold truncate">{intake.vehicle.plate}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${statusInfo?.color || "bg-muted text-muted-foreground"}`}>
-              {statusInfo?.label || intake.status}
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground truncate">
-            {intake.vehicle.brand} {intake.vehicle.model} - {intake.customer.type === "corporate"
-              ? intake.customer.companyName || "Kurumsal Müşteri"
-              : intake.customer.fullName || `${intake.customer.firstName ?? ""} ${intake.customer.lastName ?? ""}`.trim() || "Müşteri"}
-          </p>
-        </div>
-      </div>
+    <div className={cn("space-y-6", hasActions && "pb-24 lg:pb-0")}>
+      <DetailHeader
+        plate={intake.vehicle.plate}
+        vehicleLabel={`${intake.vehicle.brand} ${intake.vehicle.model}${intake.vehicle.modelYear ? ` (${intake.vehicle.modelYear})` : ""}`}
+        customerLabel={customerName}
+        badges={<StatusPill label={statusInfo?.label || intake.status} color={statusInfo?.color} size="lg" />}
+        actions={headerActions}
+        loading={loading}
+        onBack={() => router.push("/intakes")}
+      />
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 text-foreground text-sm flex items-start gap-2">
@@ -378,40 +420,6 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
           <span>{error}</span>
         </div>
       )}
-
-      {/* Status actions */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {intake.status === "draft" && (
-          <Button size="sm" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
-            İşleme Başla
-          </Button>
-        )}
-        {intake.status === "approved" && !intake.order && (
-          <Button size="sm" onClick={handleCreateOrder} disabled={loading}>
-            Servis Emri Oluştur
-          </Button>
-        )}
-        {intake.status === "approved" && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("in_progress")} disabled={loading}>
-            İşleme Başla
-          </Button>
-        )}
-        {intake.status === "in_progress" && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("ready_for_delivery")} disabled={loading}>
-            Teslimata Hazır
-          </Button>
-        )}
-        {intake.status === "ready_for_delivery" && !deliveryOtpMode && (
-          <Button size="sm" onClick={handleRequestDeliveryOtp} disabled={loading}>
-            Teslim Et (OTP)
-          </Button>
-        )}
-        {(intake.status === "draft" || intake.status === "in_progress" || intake.status === "waiting_approval") && (
-          <Button size="sm" variant="outline" onClick={() => handleStatusChange("cancelled")} disabled={loading} className="text-destructive">
-            İptal Et
-          </Button>
-        )}
-      </div>
 
       {intake.status === "ready_for_delivery" && deliveryOtpMode && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
@@ -605,7 +613,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="size-4" />
-                Kabul Kanıt Paneli
+                Kabul Durum Paneli
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -614,6 +622,10 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                 damageCount={intake.photos.filter((p) => p.type === "damage_detail").length}
                 approvalStatus={approvalStatus}
                 publicLinkStatus={publicLinkStatus}
+                onMissingPhotoClick={(key) => {
+                  setPhotoType(key)
+                  setActiveTab("photos")
+                }}
               />
             </CardContent>
           </Card>
@@ -640,11 +652,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         </span>
                       </div>
                       {groupPhotos.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-2">
-                          {groupPhotos.map((photo) => (
-                            <PhotoGalleryCard key={photo.id} photo={photo} />
-                          ))}
-                        </div>
+                        <PhotoGalleryGrid photos={groupPhotos} gridClassName="grid grid-cols-3 gap-2" />
                       ) : (
                         <p className="text-xs text-muted-foreground py-2">Bu aşamada fotoğraf yok</p>
                       )}
@@ -910,11 +918,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Kaydedilmiş Fotoğraflar ({intake.photos.length})</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {intake.photos.map((photo) => (
-                    <PhotoGalleryCard key={photo.id} photo={photo} />
-                  ))}
-                </div>
+                <PhotoGalleryGrid photos={intake.photos} />
               </CardContent>
             </Card>
           )}
@@ -934,11 +938,7 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base">Hasar Fotoğrafları ({intake.photos.filter((p) => p.type === "damage_detail").length})</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {intake.photos.filter((p) => p.type === "damage_detail").map((photo) => (
-                    <PhotoGalleryCard key={photo.id} photo={photo} />
-                  ))}
-                </div>
+                <PhotoGalleryGrid photos={intake.photos.filter((p) => p.type === "damage_detail")} />
               </CardContent>
             </Card>
           )}
@@ -1115,11 +1115,23 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                 </CardContent>
               </Card>
 
-              {showOrderItemForm && (
-                <Card>
-                  <CardHeader className="pb-3"><CardTitle className="text-base">Yeni Kalem Ekle</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
+              <Dialog open={showOrderItemForm} onOpenChange={setShowOrderItemForm}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Wrench className="size-4 text-primary" />
+                      Yeni Kalem Ekle
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleAddOrderItem() }}
+                    className="space-y-3"
+                  >
+                    {error && (
+                      <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">{error}</div>
+                    )}
+                    <div className="space-y-1.5">
                       <Label>Tip</Label>
                       <Select
                         value={itemType}
@@ -1136,130 +1148,33 @@ export function IntakeDetail({ intake, hasAiAdvisor }: { intake: IntakeDetailPro
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
+                    <div className="space-y-1.5">
                       <Label>Kalem Adı</Label>
-                      <Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
+                      <Input autoFocus value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Fren balatası, Yağ değişimi..." />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
+                      <div className="space-y-1.5">
                         <Label>Miktar</Label>
                         <Input type="number" value={itemQty} onChange={(e) => setItemQty(e.target.value)} min="1" />
                       </div>
-                      <div>
+                      <div className="space-y-1.5">
                         <Label>Birim Fiyat (TL)</Label>
                         <Input type="number" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} placeholder="0" min="0" step="0.01" />
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2">
-                      <Button onClick={handleAddOrderItem} disabled={loading || !itemName} size="lg" className="flex-1">Ekle</Button>
-                      <Button variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg">İptal</Button>
+                      <Button type="submit" disabled={loading || !itemName} size="lg" className="flex-1">Ekle</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowOrderItemForm(false)} size="lg">İptal</Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </form>
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </div>
       </TabsContent>
       </Tabs>
     </div>
-  )
-}
-
-function PhotoGalleryCard({ photo }: { photo: VehiclePhoto }) {
-  const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-
-  return (
-    <div className="rounded-lg border overflow-hidden bg-white">
-      <div className="relative aspect-square bg-muted flex items-center justify-center">
-        {photo.fileUrl ? (
-          <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
-        ) : (
-          <div className="text-center p-3">
-            <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-            <span className="text-xs text-muted-foreground">Dosya yok</span>
-          </div>
-        )}
-      </div>
-      <div className="p-2.5 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium truncate">{typeLabel}</span>
-        </div>
-        {photo.fileName && (
-          <p className="text-xs text-muted-foreground truncate">{photo.fileName}</p>
-        )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {photo.sizeBytes != null && <span>{formatSize(photo.sizeBytes)}</span>}
-          {photo.mimeType && (
-            <span className="uppercase">{photo.mimeType.split("/")[1]}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string }) {
-  const [src, setSrc] = useState<string | null>(() =>
-    fileUrl.startsWith("data:") ? fileUrl : null
-  )
-  const [loading, setLoading] = useState(() => !fileUrl.startsWith("data:"))
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    if (fileUrl.startsWith("data:")) return
-
-    let cancelled = false
-    fetch(`/api/photos?id=${photoId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load")
-        return res.blob()
-      })
-      .then((blob) => {
-        if (!cancelled) {
-          setSrc(URL.createObjectURL(blob))
-          setLoading(false)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFailed(true)
-          setLoading(false)
-        }
-      })
-
-    return () => { cancelled = true }
-  }, [photoId, fileUrl])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center w-full h-full">
-        <Loader2 className="size-6 text-muted-foreground/40 animate-spin" />
-      </div>
-    )
-  }
-
-  if (failed || !src) {
-    return (
-      <div className="text-center p-3">
-        <ImageOff className="size-8 text-muted-foreground/30 mx-auto mb-1" />
-        <span className="text-xs text-muted-foreground">Yüklenemedi</span>
-      </div>
-    )
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt="Fotoğraf"
-      className="w-full h-full object-cover"
-    />
   )
 }
 

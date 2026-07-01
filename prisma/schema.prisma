@@ -294,9 +294,9 @@ model Customer {
   reminders    MaintenanceReminder[]
   collections  CollectionPayment[]
 
+  @@unique([workshopId, phone]) // a phone belongs to a single customer per workshop
   @@index([workshopId])
   @@index([workshopId, type])
-  @@index([workshopId, phone])
 }
 
 enum CustomerType {

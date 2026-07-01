@@ -30,6 +30,30 @@ function buildCustomerName(data: {
   return [first, last].filter(Boolean).join(" ")
 }
 
+/**
+ * A phone number belongs to a single customer within a workshop. Given a
+ * normalized phone, return the existing owner (id + display label) if one is
+ * already using it, else null. `excludeId` skips the customer being edited so
+ * saving their own record doesn't collide with itself.
+ */
+async function findCustomerByPhone(
+  workshopId: string,
+  phone: string,
+  excludeId?: string,
+) {
+  if (!phone) return null
+  const match = await prisma.customer.findFirst({
+    where: {
+      workshopId,
+      phone,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true },
+  })
+  if (!match) return null
+  return { id: match.id, label: buildCustomerName(match) || match.id }
+}
+
 export async function createCustomerAction(formData: FormData) {
   const user = await requireAuth()
 
@@ -68,6 +92,15 @@ export async function createCustomerAction(formData: FormData) {
   }
 
   const data = parsed.data
+
+  const duplicate = await findCustomerByPhone(user.workshopId, data.phone)
+  if (duplicate) {
+    return {
+      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
+      existingCustomer: duplicate,
+    }
+  }
+
   const customerType: CustomerType = data.type === "corporate" ? "corporate" : "individual"
   const firstName = customerType === "individual" ? (data.firstName || data.fullName || "").trim() || null : (data.contactName || "").trim() || null
   const lastName = customerType === "individual" ? (data.lastName || "").trim() || null : null
@@ -163,6 +196,15 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
   }
 
   const data = parsed.data
+
+  const duplicate = await findCustomerByPhone(user.workshopId, data.phone, customerId)
+  if (duplicate) {
+    return {
+      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
+      existingCustomer: duplicate,
+    }
+  }
+
   const customerType: CustomerType = data.type === "corporate" ? "corporate" : "individual"
   const firstName = customerType === "individual" ? (data.firstName || data.fullName || "").trim() || null : (data.contactName || "").trim() || null
   const lastName = customerType === "individual" ? (data.lastName || "").trim() || null : null

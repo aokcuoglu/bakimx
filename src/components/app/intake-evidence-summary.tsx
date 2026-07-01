@@ -8,7 +8,9 @@ type PhotoCompletionBarProps = {
   required: number
   total: number
   completed: number
+  missing: string[]
   missingLabels: string[]
+  onMissingClick?: (key: string) => void
 }
 
 export function PhotoCompletionBar({
@@ -17,7 +19,9 @@ export function PhotoCompletionBar({
   required,
   total,
   completed,
+  missing,
   missingLabels,
+  onMissingClick,
 }: PhotoCompletionBarProps) {
   const isComplete = percentage === 100
   const colorClass = isComplete
@@ -52,17 +56,19 @@ export function PhotoCompletionBar({
         <div className="space-y-1 pt-1">
           <p className="text-xs font-medium text-destructive flex items-center gap-1">
             <AlertTriangle className="size-3" />
-            Eksik zorunlu fotoğraflar
+            Eksik zorunlu fotoğraflar — çekmek için dokunun
           </p>
           <div className="flex flex-wrap gap-1">
-            {missingLabels.map((label) => (
-              <span
+            {missingLabels.map((label, i) => (
+              <button
                 key={label}
-                className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-foreground px-2 py-0.5 rounded-full border border-destructive/20"
+                type="button"
+                onClick={() => onMissingClick?.(missing[i])}
+                className="inline-flex items-center gap-1 text-xs bg-destructive/10 text-foreground px-2 py-0.5 rounded-full border border-destructive/20 hover:bg-destructive/20 transition-colors"
               >
                 <XCircle className="size-3" />
                 {label}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -84,11 +90,13 @@ type IntakeEvidenceSummaryProps = {
     required: number
     total: number
     completed: number
+    missing: string[]
     missingLabels: string[]
   }
   damageCount: number
   approvalStatus: "none" | "pending" | "verified"
   publicLinkStatus: "none" | "active" | "expired"
+  onMissingPhotoClick?: (key: string) => void
 }
 
 export function IntakeEvidenceSummary({
@@ -96,12 +104,13 @@ export function IntakeEvidenceSummary({
   damageCount,
   approvalStatus,
   publicLinkStatus,
+  onMissingPhotoClick,
 }: IntakeEvidenceSummaryProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm font-semibold">
         <BarChart3 className="size-4" />
-        Kabul Kanıt Özeti
+        Kabul Durum Özeti
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -137,7 +146,9 @@ export function IntakeEvidenceSummary({
         required={photoCompletion.required}
         total={photoCompletion.total}
         completed={photoCompletion.completed}
+        missing={photoCompletion.missing}
         missingLabels={photoCompletion.missingLabels}
+        onMissingClick={onMissingPhotoClick}
       />
     </div>
   )
