@@ -21,8 +21,7 @@ const LOADING_STEPS: Step[] = ["saving"]
 const PROVIDER_LABELS: Record<OcrProviderName, string> = {
   mock: "Demo (Mock)",
   openai: "OpenAI Vision",
-  deepseek: "Tesseract + DeepSeek",
-  tesseract: "Tesseract (Yerel)",
+  anthropic: "Claude Vision",
 }
 
 type SaveResult = {

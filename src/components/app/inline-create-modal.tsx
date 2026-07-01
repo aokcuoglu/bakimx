@@ -10,7 +10,6 @@ import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
-import { trDateToInput, inputDateToTr } from "@/lib/format"
 
 export type InlineCreateResult = {
   customerId: string
@@ -76,7 +75,13 @@ export function InlineCreateModal({
   // Ruhsat scan state. `scannerActive` only tracks whether the full-screen scanner
   // (portal'd to <body>) is up, so the dialog can skip its outside-press/Esc dismissal.
   const [scannerActive, setScannerActive] = useState(false)
-  const [ownerHint, setOwnerHint] = useState("")
+  const [ownerSeed, setOwnerSeed] = useState<{
+    isCorporate: boolean
+    firstName: string
+    lastName: string
+    companyName: string
+    label: string
+  } | null>(null)
   const [confidence, setConfidence] = useState<Record<string, number | undefined>>({})
   const [showDetails, setShowDetails] = useState(false)
 
@@ -96,13 +101,13 @@ export function InlineCreateModal({
       setFields({ ...EMPTY_FIELDS, plate: (initialPlate || "").toUpperCase() })
       setError("")
       setLoading(false)
-      setOwnerHint("")
+      setOwnerSeed(null)
       setConfidence({})
       setShowDetails(false)
     }, 0)
   }, [open, initialPlate, fixedCustomer])
 
-  function applyOcr({ values, confidence: conf, ownerName }: RuhsattanOkuResult) {
+  function applyOcr({ values, confidence: conf, owner }: RuhsattanOkuResult) {
     setFields((prev) => ({
       ...prev,
       plate: values.plate || prev.plate,
@@ -113,6 +118,11 @@ export function InlineCreateModal({
       vin: values.vin || prev.vin,
       engineNo: values.engineNo || prev.engineNo,
       firstRegistrationDate: values.registrationDate || prev.firstRegistrationDate,
+      commercialName: values.commercialName || prev.commercialName,
+      fuelType: values.fuelType || prev.fuelType,
+      engineDisplacement: values.engineDisplacement || prev.engineDisplacement,
+      enginePower: values.enginePower || prev.enginePower,
+      inspectionValidUntil: values.inspectionValidUntil || prev.inspectionValidUntil,
     }))
     setConfidence({
       plate: conf.plate,
@@ -123,8 +133,13 @@ export function InlineCreateModal({
       vin: conf.vin,
       engineNo: conf.engineNo,
       firstRegistrationDate: conf.registrationDate,
+      commercialName: conf.commercialName,
+      fuelType: conf.fuelType,
+      engineDisplacement: conf.engineDisplacement,
+      enginePower: conf.enginePower,
+      inspectionValidUntil: conf.inspectionValidUntil,
     })
-    if (ownerName) setOwnerHint(ownerName)
+    if (owner.label) setOwnerSeed(owner)
     setShowDetails(true)
   }
 
@@ -211,10 +226,15 @@ export function InlineCreateModal({
               </div>
             ) : (
               <>
-                {ownerHint && (
-                  <p className="text-xs text-muted-foreground">Ruhsat sahibi: <span className="font-medium text-foreground">{ownerHint}</span> — bu kişiyi arayın veya yeni müşteri olarak ekleyin.</p>
-                )}
-                <CustomerSearchOrCreate onSelected={(id, label) => setOwner({ id, label })} initialName={ownerHint} />
+                <CustomerSearchOrCreate
+                  onSelected={(id, label) => setOwner({ id, label })}
+                  initialName={ownerSeed?.label}
+                  initialType={ownerSeed?.isCorporate ? "corporate" : "individual"}
+                  initialCompanyName={ownerSeed?.companyName}
+                  initialFirstName={ownerSeed?.firstName}
+                  initialLastName={ownerSeed?.lastName}
+                  autoCreate={!!ownerSeed}
+                />
               </>
             )}
           </div>
@@ -280,11 +300,11 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input type="date" value={trDateToInput(fields.firstRegistrationDate)} onChange={(e) => setField("firstRegistrationDate", inputDateToTr(e.target.value))} className={fieldClass("firstRegistrationDate")} />
+                <Input value={fields.firstRegistrationDate} onChange={(e) => setField("firstRegistrationDate", e.target.value)} placeholder="GG.AA.YYYY" className={fieldClass("firstRegistrationDate")} />
               </div>
               <div className="space-y-1 col-span-2">
                 <Label>Muayene Geçerlilik Tarihi</Label>
-                <Input type="date" value={trDateToInput(fields.inspectionValidUntil)} onChange={(e) => setField("inspectionValidUntil", inputDateToTr(e.target.value))} />
+                <Input value={fields.inspectionValidUntil} onChange={(e) => setField("inspectionValidUntil", e.target.value)} placeholder="GG.AA.YYYY" />
               </div>
             </div>
           )}

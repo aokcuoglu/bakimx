@@ -1,4 +1,4 @@
-export type AiProviderName = "mock" | "openai" | "deepseek"
+export type AiProviderName = "mock" | "openai" | "anthropic"
 
 export interface ServiceAdvisorInput {
   customerComplaint: string

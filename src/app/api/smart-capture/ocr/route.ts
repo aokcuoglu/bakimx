@@ -86,7 +86,8 @@ export async function POST(request: Request) {
       }
     }
 
-    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType)
+    // Vision OCR için rengi koru (gri tonlama yalnız Tesseract/plaka içindir).
+    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType, { grayscale: false })
     const provider = await getOcrProvider()
     const result = await provider.extractRegistration(
       normalizedImage.buffer,
@@ -104,6 +105,11 @@ export async function POST(request: Request) {
       modelYear: result.modelYear,
       engineNo: result.engineNo,
       registrationDate: result.registrationDate,
+      commercialName: result.commercialName,
+      fuelType: result.fuelType,
+      engineDisplacement: result.engineDisplacement,
+      enginePower: result.enginePower,
+      inspectionValidUntil: result.inspectionValidUntil,
     })
 
     const ocrLog = await prisma.ocrLog.create({

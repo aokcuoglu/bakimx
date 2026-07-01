@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,11 +24,25 @@ export function CustomerSearchOrCreate({
   onSelected,
   autoFocus,
   initialName,
+  initialType,
+  initialCompanyName,
+  initialFirstName,
+  initialLastName,
+  autoCreate,
 }: {
   onSelected: (customerId: string, label: string) => void
   autoFocus?: boolean
   /** Pre-fills the "new customer" name (e.g. owner read from a ruhsat scan). */
   initialName?: string
+  /** Pre-selects individual vs corporate in the create form (e.g. ruhsat corporate owner). */
+  initialType?: "individual" | "corporate"
+  /** Pre-fills the corporate company name. */
+  initialCompanyName?: string
+  /** Pre-fills the individual first/last name (overrides splitting initialName). */
+  initialFirstName?: string
+  initialLastName?: string
+  /** When true and a seed name arrives, open the create form directly (skip search). */
+  autoCreate?: boolean
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<CustomerHit[]>([])
@@ -67,18 +81,40 @@ export function CustomerSearchOrCreate({
   }, [query, creating])
 
   function openCreate() {
-    const seed = (query.trim() || initialName || "").trim()
-    const parts = seed.split(/\s+/)
-    setType("individual")
-    setFirstName(toTrUpper(parts[0] || ""))
-    setLastName(toTrUpper(parts.slice(1).join(" ")))
-    setCompanyName("")
+    const t = initialType ?? "individual"
+    setType(t)
+    if (t === "corporate") {
+      setCompanyName(initialCompanyName || query.trim() || initialName || "")
+      setFirstName("")
+      setLastName("")
+    } else if (initialFirstName || initialLastName) {
+      setFirstName(toTrUpper(initialFirstName || ""))
+      setLastName(toTrUpper(initialLastName || ""))
+      setCompanyName("")
+    } else {
+      const parts = (query.trim() || initialName || "").trim().split(/\s+/)
+      setFirstName(toTrUpper(parts[0] || ""))
+      setLastName(toTrUpper(parts.slice(1).join(" ")))
+      setCompanyName("")
+    }
     setPhone("")
     setBusy(false)
     setError("")
     setDuplicate(null)
     setCreating(true)
   }
+
+  // OCR sahip tespit edince (autoCreate) oluşturma formunu doğru tip+isimle doğrudan aç.
+  // Her yeni seed için bir kez; kullanıcı Vazgeç derse aynı seed'e tekrar açılmaz.
+  const autoSeededRef = useRef("")
+  useEffect(() => {
+    const seed = (initialCompanyName || initialName || "").trim()
+    if (autoCreate && seed && autoSeededRef.current !== seed) {
+      autoSeededRef.current = seed
+      openCreate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCreate, initialName, initialCompanyName])
 
   async function handleCreate() {
     setError("")

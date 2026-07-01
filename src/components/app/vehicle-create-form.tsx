@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
-import { trDateToInput, inputDateToTr } from "@/lib/format"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
@@ -430,6 +429,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     setStr("vin", values.vin)
                     setStr("engineNo", values.engineNo)
                     setStr("firstRegistrationDate", values.registrationDate)
+                    setStr("commercialName", values.commercialName)
+                    setStr("fuelType", values.fuelType)
+                    setStr("engineDisplacement", values.engineDisplacement)
+                    setStr("enginePower", values.enginePower)
+                    setStr("inspectionValidUntil", values.inspectionValidUntil)
                     const year = Number(values.modelYear)
                     if (values.modelYear && !Number.isNaN(year)) {
                       form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
@@ -499,12 +503,9 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <FormLabel>İlk Tescil Tarihi</FormLabel>
                         <FormControl>
                           <Input
-                            type="date"
-                            name={field.name}
-                            ref={field.ref}
-                            onBlur={field.onBlur}
-                            value={trDateToInput(field.value)}
-                            onChange={(e) => field.onChange(inputDateToTr(e.target.value))}
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="GG.AA.YYYY"
                           />
                         </FormControl>
                         <FormMessage />
@@ -519,12 +520,9 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <FormLabel>Muayene Geçerlilik Tarihi</FormLabel>
                         <FormControl>
                           <Input
-                            type="date"
-                            name={field.name}
-                            ref={field.ref}
-                            onBlur={field.onBlur}
-                            value={trDateToInput(field.value)}
-                            onChange={(e) => field.onChange(inputDateToTr(e.target.value))}
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="GG.AA.YYYY"
                           />
                         </FormControl>
                         <FormMessage />

@@ -15,6 +15,11 @@ const MOCK_REGISTRATION_DATA: Omit<RegistrationOcrResult, "provider"> = {
   modelYear: field("2021", 0.91),
   engineNo: field("2ZRFAE187174", 0.78),
   registrationDate: field("15.03.2021", 0.75),
+  commercialName: field("Corolla Hybrid", 0.80),
+  fuelType: field("Benzin", 0.84),
+  engineDisplacement: field("1798", 0.79),
+  enginePower: field("72 kW", 0.77),
+  inspectionValidUntil: field("15.03.2027", 0.73),
   rawText: `T.C. ULAŞTIRMA VE ALTYAPI BAKANLIĞI
 ARAÇ TESCİL BELGESİ
 Plaka: 34 ABC 123

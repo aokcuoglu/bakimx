@@ -12,6 +12,13 @@ export const RegistrationFieldsSchema = z.object({
   modelYear: z.string(),
   engineNo: z.string(),
   registrationDate: z.string(),
+  // Yeni ruhsat teknik alanları — vision OCR okur. Bu şemayı paylaşan diğer
+  // sağlayıcılar (ör. openai) bu alanları döndürmeyebilir; o yüzden default "".
+  commercialName: z.string().default(""),
+  fuelType: z.string().default(""),
+  engineDisplacement: z.string().default(""),
+  enginePower: z.string().default(""),
+  inspectionValidUntil: z.string().default(""),
 })
 
 export type RegistrationFields = z.infer<typeof RegistrationFieldsSchema>
@@ -35,6 +42,11 @@ export function toRegistrationResult(
     modelYear: field(data.modelYear),
     engineNo: field(data.engineNo.toUpperCase()),
     registrationDate: field(data.registrationDate),
+    commercialName: field(data.commercialName),
+    fuelType: field(data.fuelType),
+    engineDisplacement: field(data.engineDisplacement),
+    enginePower: field(data.enginePower),
+    inspectionValidUntil: field(data.inspectionValidUntil),
     rawText: rawText.trim(),
   }
 }
