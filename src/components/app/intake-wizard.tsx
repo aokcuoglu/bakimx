@@ -120,6 +120,9 @@ export function IntakeWizard({
   async function handleCreateIntake() {
     const valid = await form.trigger(["customerComplaint"])
     if (!valid) return
+    // Kabul zaten oluşturulduysa (Adım 3'e geri dönüp tekrar ilerleme) yeniden
+    // POST'lama — çift kabul kaydı oluşmasın; sadece foto adımına geç.
+    if (intakeId) { setStep(4); return }
     const values = form.getValues()
     setLoading(true)
     setError("")
@@ -280,12 +283,14 @@ export function IntakeWizard({
           </Card>
         )}
 
-        {/* Step 4: Photos */}
-        {step === 4 && (
-          <Card>
+        {/* Step 4: Photos — kabul oluşturulduktan sonra mount'lu kalır; Adım 3'e
+            geri dönünce `hidden` ile gizlenir (unmount edilmez) ki PhotoAnnotate'in
+            yerel önizleme state'i + blob URL'leri kaybolmasın. */}
+        {intakeId && (
+          <Card className={step === 4 ? undefined : "hidden"}>
             <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {intakeId && <PhotoAnnotate intakeFormId={intakeId} />}
+              <PhotoAnnotate intakeFormId={intakeId} />
               <div className="pt-4 flex justify-between">
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
                   Geri
