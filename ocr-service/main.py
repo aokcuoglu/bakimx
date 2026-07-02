@@ -15,6 +15,9 @@ import os
 
 # PaddleX model-hoster bağlantı kontrolünü atla → daha hızlı/çevrimdışı başlangıç.
 os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+# oneDNN'i kapat: native x86_64'te paddle 3.x + PIR executor oneDNN yolunda çöküyor
+# (onednn_instruction.cc). Docker ENV zaten ayarlıyor; bu bare-uvicorn/linux dev yolu için.
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
 
 from contextlib import asynccontextmanager  # noqa: E402
 
