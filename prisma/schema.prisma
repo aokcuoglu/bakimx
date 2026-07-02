@@ -353,6 +353,13 @@ model Vehicle {
   engineDisplacement    String? // Silindir Hacmi
   enginePower           String? // Motor Gücü
   inspectionValidUntil  String? // Muayene geçerlilik tarihi
+  // TecDoc catalog linkage (resolved from VIN or picked manually). Plain Int
+  // columns — intentionally NO foreign keys to the catalog tables, because the
+  // catalog is re-importable reference data (scripts/migrate-vehicle-catalog.ts)
+  // and hard FKs would block re-seeding. Consistency is validated at write time.
+  catalogBrandId       Int?
+  catalogModelId       Int?
+  catalogVehicleTypeId Int?
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -1353,6 +1360,27 @@ enum SupportRequestStatus {
   in_progress
   resolved
   archived
+}
+
+enum VinLookupStatus {
+  found
+  not_found
+}
+
+/// Global VIN decode cache (NOT tenant-scoped — VIN decoding is universal data).
+/// One row == exactly one billed RapidAPI request (transport errors are never
+/// cached), so monthly quota usage == count(createdAt >= start of month).
+model VinLookup {
+  vin         String          @id // normalized: uppercase, 17 chars
+  status      VinLookupStatus
+  provider    String // "rapidapi" | "mock"
+  rawResponse Json? // raw provider payload, null for not_found
+  hitCount    Int             @default(1) // cache hits, for observability
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([createdAt])
+  @@map("vin_lookups")
 }
 
 /// Global vehicle catalog (NOT tenant-scoped). Read-only reference data shared
