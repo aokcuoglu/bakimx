@@ -199,7 +199,7 @@ export function CustomerVehiclePicker({
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
-              render={<Link href={`/vehicles/${selected.vehicleId}`} target="_blank" />}
+              render={<Link href={`/vehicles/${selected.vehicleId}`} />}
             >
               <Info className="size-4 mr-1" /> Detay
             </Button>

@@ -9,6 +9,7 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getTechnicians } from "@/lib/technician/queries"
+import { getOrderActivity } from "@/lib/orders/activity"
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -216,6 +217,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const technicians = await getTechnicians(user.workshopId)
 
+  const activity = await getOrderActivity({
+    workshopId: user.workshopId,
+    orderId: order.id,
+    intakeFormId: intakeForm.id,
+  })
+
   return (
     <AppShell
       workshopName={workshop?.name}
@@ -226,6 +233,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         order={safeOrder}
         technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
         hasAiAdvisor={hasAiAdvisor}
+        activity={activity}
       />
     </AppShell>
   )

@@ -27,6 +27,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 
 type OrderData = {
   id: string
@@ -105,6 +107,7 @@ export function TechnicianOrderDetail({
   const canStart = ["approved", "waiting_approval"].includes(order.status)
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
+  const locked = isOrderLocked(order.status as OrderStatus)
 
   function handleStartWork() {
     startTransition(async () => {
@@ -183,20 +186,27 @@ export function TechnicianOrderDetail({
           category="inspection"
           items={inspectionItems}
           orderId={order.id}
+          locked={locked}
         />
         <ChecklistSection
           title="Onarım"
           category="repair"
           items={repairItems}
           orderId={order.id}
+          locked={locked}
         />
         <ChecklistSection
           title="Teslim"
           category="delivery"
           items={deliveryItems}
           orderId={order.id}
+          locked={locked}
         />
-        <AddChecklistItemForm orderId={order.id} />
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
+        ) : (
+          <AddChecklistItemForm orderId={order.id} />
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
@@ -279,8 +289,12 @@ export function TechnicianOrderDetail({
             Parça Talepleri
           </h3>
         </div>
-        <PartsRequestSection requests={order.partsRequests} orderId={order.id} />
-        <AddPartsRequestForm orderId={order.id} />
+        <PartsRequestSection requests={order.partsRequests} orderId={order.id} locked={locked} />
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
+        ) : (
+          <AddPartsRequestForm orderId={order.id} />
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
@@ -289,8 +303,12 @@ export function TechnicianOrderDetail({
           İç Notlar
           <span className="text-[10px] font-normal text-muted-foreground/70 ml-1">(Müşteriye görünmez)</span>
         </h3>
-        <InternalNotesSection notes={order.internalNotes} orderId={order.id} />
-        <AddInternalNoteForm orderId={order.id} />
+        <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine iç not eklenemez</p>
+        ) : (
+          <AddInternalNoteForm orderId={order.id} />
+        )}
       </div>
 
       {order.items.length > 0 && (
@@ -459,12 +477,13 @@ function ComplaintCard({ complaint }: { complaint: string }) {
 }
 
 function ChecklistSection({
-  title, category, items, orderId: _orderId,
+  title, category, items, orderId: _orderId, locked,
 }: {
   title: string
   category: ChecklistCategoryKey
   items: OrderData["checklistItems"]
   orderId: string
+  locked: boolean
 }) {
   const categoryInfo = (CHECKLIST_CATEGORIES as Record<string, { label: string; color: string }>)[category]
   const [isPending, startTransition] = useTransition()
@@ -494,7 +513,7 @@ function ChecklistSection({
           >
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || locked}
               className="mt-0.5 touch-manipulation"
             >
               {item.isCompleted
@@ -508,17 +527,19 @@ function ChecklistSection({
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                startTransition(async () => {
-                  await deleteChecklistItemAction(item.id)
-                })
-              }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive transition-opacity"
-            >
-              <Trash2 className="size-3.5" />
-            </button>
+            {!locked && (
+              <button
+                type="button"
+                onClick={() => {
+                  startTransition(async () => {
+                    await deleteChecklistItemAction(item.id)
+                  })
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive transition-opacity"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            )}
           </form>
         ))}
       </div>
@@ -630,9 +651,11 @@ function PhotoSection({ label, photos }: { label: string; photos: { id: string; 
 function PartsRequestSection({
   requests,
   orderId: _orderId,
+  locked,
 }: {
   requests: OrderData["partsRequests"]
   orderId: string
+  locked: boolean
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -666,7 +689,7 @@ function PartsRequestSection({
               <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", statusInfo?.color)}>
                 {statusInfo?.label || req.status}
               </span>
-              {nextStatusMap[req.status] && (
+              {!locked && nextStatusMap[req.status] && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -785,9 +808,11 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
 function InternalNotesSection({
   notes,
   orderId: _orderId,
+  locked,
 }: {
   notes: OrderData["internalNotes"]
   orderId: string
+  locked: boolean
 }) {
   const [_isPending, startTransition] = useTransition()
 
@@ -804,16 +829,18 @@ function InternalNotesSection({
               {new Date(note.createdAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
-          <button
-            onClick={() => {
-              startTransition(async () => {
-                await deleteInternalNoteAction(note.id)
-              })
-            }}
-            className="opacity-0 group-hover:opacity-100 p-1 text-warning/60 hover:text-destructive transition-opacity"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
+          {!locked && (
+            <button
+              onClick={() => {
+                startTransition(async () => {
+                  await deleteInternalNoteAction(note.id)
+                })
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 text-warning/60 hover:text-destructive transition-opacity"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
         </div>
       ))}
     </div>

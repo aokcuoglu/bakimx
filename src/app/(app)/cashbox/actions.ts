@@ -96,11 +96,21 @@ export async function createCollectionAction(formData: FormData) {
       undefined,
       "ServiceOrder",
       data.serviceOrderId,
-      `payment_status_changed_to_${recalc.newStatus}`
+      `payment_status_changed_to_${recalc.newStatus}`,
+      undefined,
+      data.serviceOrderId,
     )
   }
 
-  await AuditLogAction(user.workshopId, user.id, "CollectionPayment", collection.id, "collection_created")
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "CollectionPayment",
+    collection.id,
+    "collection_created",
+    JSON.stringify({ amount: collection.amount, method: collection.method }),
+    data.serviceOrderId || undefined,
+  )
 
   revalidatePath("/cashbox")
   revalidatePath("/cashbox/payments")
@@ -149,7 +159,9 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
       undefined,
       "ServiceOrder",
       collection.serviceOrderId,
-      `payment_status_changed_to_${recalc.newStatus}`
+      `payment_status_changed_to_${recalc.newStatus}`,
+      undefined,
+      collection.serviceOrderId,
     )
   }
 
@@ -159,7 +171,8 @@ export async function cancelCollectionAction(collectionId: string, reason?: stri
     "CollectionPayment",
     collectionId,
     "collection_cancelled",
-    JSON.stringify({ reason: cancellationReason, amount: collection.amount, method: collection.method })
+    JSON.stringify({ reason: cancellationReason, amount: collection.amount, method: collection.method }),
+    collection.serviceOrderId || undefined,
   )
 
   revalidatePath("/cashbox")

@@ -7,7 +7,7 @@ import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
-import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
+import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
@@ -31,7 +31,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
     createServiceOrderForIntake(tx, user.workshopId, intakeFormId),
   )
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created", undefined, order.id)
 
   await addTimelineEvent({
     workshopId: user.workshopId,
@@ -84,6 +84,7 @@ export async function addOrderItemAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrine kalem eklenemez" }
 
   // Item prices are integer kuruş. Adding an item changes the order's
   // grandTotal, so re-derive paidAmount/remainingAmount/paymentStatus in the
@@ -107,7 +108,20 @@ export async function addOrderItemAction(formData: FormData) {
     return created
   })
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", item.id, "order_item_added")
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    item.id,
+    "order_item_added",
+    JSON.stringify({
+      name: item.name,
+      type: item.type,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    }),
+    raw.serviceOrderId,
+  )
 
   revalidatePath(`/orders/${raw.serviceOrderId}`)
   return { success: true }
@@ -122,6 +136,12 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   })
   if (!item) return { error: "Kalem bulunamadı" }
 
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+
   const deleteResult = await prisma.$transaction(async (tx) => {
     const result = await tx.serviceOrderItem.deleteMany({
       where: { id: itemId, workshopId: user.workshopId },
@@ -133,7 +153,15 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   })
   if (deleteResult.count === 0) return { error: "Kalem bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", itemId, "order_item_removed")
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    "order_item_removed",
+    JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity }),
+    orderId,
+  )
 
   revalidatePath(`/orders/${orderId}`)
   return { success: true }
@@ -160,7 +188,7 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`, undefined, orderId)
 
   // Intake + work order are presented as one unified flow (see work-order-detail.tsx's
   // "Sipariş" tab, which drives this action directly); keep the linked intake's
@@ -245,7 +273,7 @@ export async function updateOrderPaymentStatusAction(orderId: string, paymentSta
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`)
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`, undefined, orderId)
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath("/orders")
@@ -287,6 +315,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
 
   const estimatedDeliveryAt = parsed.data.estimatedDeliveryAt
     ? new Date(parsed.data.estimatedDeliveryAt)
@@ -308,7 +337,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     await recalcOrderPayment(tx, orderId, user.workshopId)
   })
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated")
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated", undefined, orderId)
 
   if (estimatedDeliveryAt) {
     try {

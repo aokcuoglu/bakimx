@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -53,6 +54,9 @@ export function IntakeWizard({
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [customers] = useState(initialCustomers)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const [intakeId, setIntakeId] = useState("")
   const [orderId, setOrderId] = useState("")
@@ -117,6 +121,22 @@ export function IntakeWizard({
       .catch(() => {})
     return () => { active = false }
   }, [selectedVehicleId, form])
+
+  // Seçimi URL'e yansıt. Next router'ın kendi replace()'i kullanılıyor (ham
+  // history.replaceState değil) — aksi halde Next'in istemci router cache'i URL
+  // değişikliğinden habersiz kalıyor ve "Detay" linkiyle çıkıp geri dönüldüğünde
+  // eski (param'sız) önbelleklenmiş render'ı geri getiriyor. router.replace ile
+  // sunucu bileşeni bu param'ları prefillCustomerId/prefillVehicleId olarak okuyup
+  // CustomerVehiclePicker'ın zaten var olan rehydrate mekanizmasını besler.
+  function syncSelectionToUrl(customerId: string, vehicleId: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (customerId) params.set("customerId", customerId)
+    else params.delete("customerId")
+    if (vehicleId) params.set("vehicleId", vehicleId)
+    else params.delete("vehicleId")
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
 
   async function handleCreateIntake() {
     const valid = await form.trigger(["customerComplaint"])
@@ -203,6 +223,7 @@ export function IntakeWizard({
                 onChange={(v) => {
                   form.setValue("selectedCustomerId", v.customerId, { shouldValidate: true })
                   form.setValue("selectedVehicleId", v.vehicleId, { shouldValidate: true })
+                  syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
               />
               <div className="pt-4 flex justify-end">

@@ -253,6 +253,15 @@ export async function addDamageMarkAction(formData: FormData) {
     description: `Hasar kaydı: ${parsed.data.zone} - ${parsed.data.damageType}`,
   })
 
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "DamageMark",
+    mark.id,
+    "damage_mark_added",
+    JSON.stringify({ zone: parsed.data.zone, damageType: parsed.data.damageType, severity: parsed.data.severity }),
+  )
+
   revalidatePath(`/intakes/${raw.intakeFormId}`)
   return { success: true, id: mark.id }
 }
