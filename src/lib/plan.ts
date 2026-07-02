@@ -55,13 +55,14 @@ const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 // During the trial a workshop is on the `pro` tier, so premium features remain
 // locked behind an upgrade. `starter` min tier = enabled for every plan (the
 // gate then only serves as a per-tenant kill switch via feature overrides).
-export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup"
+export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup" | "partsCatalog"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
   vinLookup: "starter",
+  partsCatalog: "starter",
 }
 
 type WorkshopPlanFields = Pick<
