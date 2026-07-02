@@ -23,16 +23,13 @@ RUN pip install --no-cache-dir --retries 5 --timeout 180 -r requirements.txt
 # Uygulama kodu.
 COPY extractor.py main.py ./
 
-# oneDNN (MKL-DNN) KAPALI: paddle 3.x'te native x86_64 CPU'da oneDNN + PIR executor
-# "ConvertPirAttribute2RuntimeAttribute not support" ile çöküyor (onednn_instruction.cc).
-# Hem build warmup'ı hem runtime'ı kapsaması için ENV; VPS de native x86_64, orada da şart.
-ENV FLAGS_use_mkldnn=0
-
 # Modelleri İMAJA GÖM: warmup ile det+rec+textline modelleri /root/.paddlex altına iner
 # ve bu layer'a yazılır → runtime'da indirme yok, çevrimdışı, hızlı cold start.
+# enable_mkldnn=False: native x86_64'te paddle 3.x + PIR oneDNN yolunda çöküyor
+# (onednn_instruction.cc) → run_mode="paddle" ile oneDNN kapatılır. main.py ile aynı ayar.
 ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 RUN python -c "import numpy as np; from paddleocr import PaddleOCR; \
-ocr = PaddleOCR(lang='tr', use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True); \
+ocr = PaddleOCR(lang='tr', use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True, enable_mkldnn=False); \
 ocr.predict(np.full((64, 240, 3), 255, np.uint8))"
 
 EXPOSE 8000

@@ -15,9 +15,6 @@ import os
 
 # PaddleX model-hoster bağlantı kontrolünü atla → daha hızlı/çevrimdışı başlangıç.
 os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
-# oneDNN'i kapat: native x86_64'te paddle 3.x + PIR executor oneDNN yolunda çöküyor
-# (onednn_instruction.cc). Docker ENV zaten ayarlıyor; bu bare-uvicorn/linux dev yolu için.
-os.environ.setdefault("FLAGS_use_mkldnn", "0")
 
 from contextlib import asynccontextmanager  # noqa: E402
 
@@ -34,11 +31,15 @@ def _load_ocr():
     from paddleocr import PaddleOCR
 
     # lang="tr": Türkçe latin tanıma modeli. Yön sınıflandırma açık (hafif eğik satırlar için).
+    # enable_mkldnn=False: native x86_64'te paddle 3.x + PIR executor oneDNN yolunda çöküyor
+    # ("ConvertPirAttribute2RuntimeAttribute not support", onednn_instruction.cc). Bu param
+    # run_mode="paddle" yapar → config.disable_mkldnn(). oneDNN'siz biraz daha yavaş ama çalışır.
     return PaddleOCR(
         lang="tr",
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=True,
+        enable_mkldnn=False,
     )
 
 
