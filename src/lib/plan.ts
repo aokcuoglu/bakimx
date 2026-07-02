@@ -51,15 +51,17 @@ export type LockReason =
 
 const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 
-// Premium-only capabilities. Used by assertFeature() as these features come
-// online. During the trial a workshop is on the `pro` tier, so premium features
-// remain locked behind an upgrade.
-export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac"
+// Gated capabilities. Used by assertFeature() as these features come online.
+// During the trial a workshop is on the `pro` tier, so premium features remain
+// locked behind an upgrade. `starter` min tier = enabled for every plan (the
+// gate then only serves as a per-tenant kill switch via feature overrides).
+export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
+  vinLookup: "starter",
 }
 
 type WorkshopPlanFields = Pick<
