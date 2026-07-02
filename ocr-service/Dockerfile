@@ -29,7 +29,7 @@ COPY extractor.py main.py ./
 # (onednn_instruction.cc) → run_mode="paddle" ile oneDNN kapatılır. main.py ile aynı ayar.
 ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 RUN python -c "import numpy as np; from paddleocr import PaddleOCR; \
-ocr = PaddleOCR(lang='tr', use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True, enable_mkldnn=False); \
+ocr = PaddleOCR(lang='tr', use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False, enable_mkldnn=False); \
 ocr.predict(np.full((64, 240, 3), 255, np.uint8))"
 
 EXPOSE 8000

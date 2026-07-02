@@ -30,16 +30,21 @@ _STATE: dict = {}
 def _load_ocr():
     from paddleocr import PaddleOCR
 
-    # lang="tr": Türkçe latin tanıma modeli. Yön sınıflandırma açık (hafif eğik satırlar için).
+    # lang="tr": Türkçe latin tanıma modeli.
     # enable_mkldnn=False: native x86_64'te paddle 3.x + PIR executor oneDNN yolunda çöküyor
     # ("ConvertPirAttribute2RuntimeAttribute not support", onednn_instruction.cc). Bu param
-    # run_mode="paddle" yapar → config.disable_mkldnn(). oneDNN'siz biraz daha yavaş ama çalışır.
+    # run_mode="paddle" yapar → config.disable_mkldnn(). oneDNN'siz CPU inference yavaş; aşağıdaki
+    # ikisi bunu telafi eder (KALİTEYİ BOZMADAN):
+    #   use_textline_orientation=False → ruhsat dik bir belge; per-satır 0/180° sınıflandırma
+    #     modelini tamamen atlar (belirgin hız + daha az bellek; dik belgede doğruluk kaybı yok).
+    #   cpu_threads=tüm çekirdekler → her model çıkarımı paralel (saf hız, kalite etkisi yok).
     return PaddleOCR(
         lang="tr",
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
-        use_textline_orientation=True,
+        use_textline_orientation=False,
         enable_mkldnn=False,
+        cpu_threads=os.cpu_count() or 4,
     )
 
 
