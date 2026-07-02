@@ -27,6 +27,7 @@ import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
 import { VinResolveButton, VinCandidateList } from "./vin-resolve"
 import { isValidVin, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { DatePicker } from "@/components/ui/date-picker"
 
 type Customer = {
   id: string
@@ -672,10 +673,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>İlk Tescil Tarihi</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="GG.AA.YYYY"
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Tarih seçin"
                           />
                         </FormControl>
                         <FormMessage />
@@ -689,10 +690,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>Muayene Geçerlilik Tarihi</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="GG.AA.YYYY"
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Tarih seçin"
                           />
                         </FormControl>
                         <FormMessage />
