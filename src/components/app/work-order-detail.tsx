@@ -645,7 +645,7 @@ export function WorkOrderDetail({
                     <DialogTitle className="flex items-center gap-2"><Camera className="size-4 text-primary" /> Fotoğraf Ekle</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-3">
-                <div>
+                <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
                   <Select value={photoType} onValueChange={(v) => { setPhotoType(v ?? ""); setPhotoFile(null); setPhotoPreview(null) }}>
                     <SelectTrigger className="w-full">
@@ -666,7 +666,7 @@ export function WorkOrderDetail({
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Aşama</Label>
                   <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v ?? "intake")}>
                     <SelectTrigger className="w-full">
@@ -681,7 +681,7 @@ export function WorkOrderDetail({
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Fotoğraf Çek / Yükle</Label>
                   <input
                     ref={photoInputRef}
@@ -718,7 +718,7 @@ export function WorkOrderDetail({
                     </div>
                   )}
                 </div>
-                <div>
+                <div className="space-y-1.5">
                   <Label>Not</Label>
                   <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
                 </div>
