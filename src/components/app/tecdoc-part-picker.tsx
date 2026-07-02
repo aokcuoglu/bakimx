@@ -25,6 +25,15 @@ export type TecdocPartSelection = {
 /** Render cap for huge categories (the API has no pagination). */
 const MAX_VISIBLE_ARTICLES = 100
 
+/** Case-insensitive contains that survives the Turkish dotted/dotless I:
+ *  "aisin" must match "AISIN" (tr-lower → "aısın") and "İ" must match "i". */
+function trIncludes(haystack: string, needle: string): boolean {
+  return (
+    haystack.toLocaleLowerCase("tr").includes(needle.toLocaleLowerCase("tr")) ||
+    haystack.toLowerCase().includes(needle.toLowerCase())
+  )
+}
+
 /**
  * TecDoc vehicle-parts picker: category drill-down → article list → onSelect.
  * Depends only on the normalized CategoryNode/ArticleSummary shapes served by
@@ -105,13 +114,10 @@ export function TecdocPartPicker({
   const currentNodes = stack.length === 0 ? tree ?? [] : stack[stack.length - 1].children
   const filteredArticles = useMemo(() => {
     if (!articles) return null
-    const q = filter.trim().toLocaleLowerCase("tr")
+    const q = filter.trim()
     const list = q
       ? articles.filter(
-          (a) =>
-            a.productName.toLocaleLowerCase("tr").includes(q) ||
-            a.articleNo.toLocaleLowerCase("tr").includes(q) ||
-            a.supplierName.toLocaleLowerCase("tr").includes(q)
+          (a) => trIncludes(a.productName, q) || trIncludes(a.articleNo, q) || trIncludes(a.supplierName, q)
         )
       : articles
     return list

@@ -10,7 +10,16 @@ import { TecdocError, TYPE_ID, LANG_ID, type ArticleSummary, type CategoryNode }
  * payload is cached and normalized on read (schema fixes never invalidate the
  * cache). Transport/shape errors are NOT cached so they stay retryable.
  */
-async function cachedFetch(key: string, endpoint: string, fetcher: () => Promise<unknown>): Promise<unknown> {
+async function cachedFetch(
+  key: string,
+  endpoint: string,
+  providerName: string,
+  fetcher: () => Promise<unknown>
+): Promise<unknown> {
+  // Mock responses are free and deterministic — never persist them, otherwise
+  // they shadow real data for the same key after switching to rapidapi.
+  if (providerName === "mock") return fetcher()
+
   const cached = await prisma.tecdocCache.findUnique({ where: { key } })
   if (cached) {
     prisma.tecdocCache
@@ -40,6 +49,7 @@ export async function getVehicleCategories(vehicleId: number): Promise<CategoryN
   const raw = await cachedFetch(
     `categories:v2:${TYPE_ID}:${vehicleId}:${LANG_ID}`,
     "categories",
+    provider.name,
     () => provider.getCategories(vehicleId)
   )
   return normalizeCategories(raw)
@@ -53,6 +63,7 @@ export async function getArticlesByCategory(vehicleId: number, categoryId: numbe
   const raw = await cachedFetch(
     `articles:${TYPE_ID}:${vehicleId}:${categoryId}:${LANG_ID}`,
     "articles",
+    provider.name,
     () => provider.getArticles(vehicleId, categoryId)
   )
   return normalizeArticles(raw)
