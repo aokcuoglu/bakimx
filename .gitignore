@@ -55,3 +55,6 @@ scripts/.staging-vps
 
 # Local git worktrees for isolated feature work
 .worktrees/
+
+# Postman collections may embed live API keys (e.g. RapidAPI) — keep out of git
+docs/*.postman_collection.json
