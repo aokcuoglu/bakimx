@@ -37,6 +37,9 @@ export async function POST(request: Request) {
     }
 
     const plate = normalizePlate(clean(confirmedFields.plate))
+    // brand/model stay raw OCR strings here (no catalog linkage). Vehicles
+    // created via this flow can be enriched later from the edit form's
+    // "VIN'den getir" button — see src/lib/vin/resolve.ts.
     const brand = clean(confirmedFields.brand)
     const model = clean(confirmedFields.model)
     const vin = clean(confirmedFields.vin).toUpperCase()

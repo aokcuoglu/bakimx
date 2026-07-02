@@ -28,6 +28,11 @@ export const vehicleSchema = z.object({
   engineDisplacement: z.string().optional().default(""),
   enginePower: z.string().optional().default(""),
   inspectionValidUntil: z.string().optional().default(""),
+  // TecDoc catalog linkage — set by the VIN resolver or the brand/model picker;
+  // cleared when the user manually overrides brand/model.
+  catalogBrandId: z.number().int().positive().optional(),
+  catalogModelId: z.number().int().positive().optional(),
+  catalogVehicleTypeId: z.number().int().positive().optional(),
   notes: z.string().optional().default(""),
 })
 
@@ -54,6 +59,9 @@ export const vehicleCreateSchema = z.object({
   engineDisplacement: z.string().optional(),
   enginePower: z.string().optional(),
   inspectionValidUntil: z.string().optional(),
+  catalogBrandId: z.coerce.number().int().positive().optional(),
+  catalogModelId: z.coerce.number().int().positive().optional(),
+  catalogVehicleTypeId: z.coerce.number().int().positive().optional(),
   notes: z.string().optional(),
 })
 
@@ -76,5 +84,8 @@ export const vehicleUpdateSchema = z.object({
   engineDisplacement: z.string().optional(),
   enginePower: z.string().optional(),
   inspectionValidUntil: z.string().optional(),
+  catalogBrandId: z.coerce.number().int().positive().optional(),
+  catalogModelId: z.coerce.number().int().positive().optional(),
+  catalogVehicleTypeId: z.coerce.number().int().positive().optional(),
   notes: z.string().optional(),
 })
