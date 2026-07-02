@@ -25,8 +25,10 @@ services:
     restart: unless-stopped
     deploy:
       resources:
+        # PaddleOCR bir ~2000px ruhsat fotoğrafını işlerken tepe bellek ~2-2.5g;
+        # 2g'de cgroup OOM-kill oluyordu (uvicorn SIGKILL → restart → "fetch failed").
         limits:
-          memory: 2g
+          memory: 4g
     healthcheck:
       test:
         - CMD-SHELL
