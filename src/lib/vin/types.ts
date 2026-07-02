@@ -96,6 +96,9 @@ export interface VinCandidate {
   vehicleTypeId: number
   modelId: number
   brandId: number
+  /** Canonical catalog names — lets the client fill brand/model on candidate pick. */
+  brandName: string
+  modelName: string
   /** Server-built display label, e.g. "1.5 EcoBlue • 85 kW / 116 HP • 2024-05–…" */
   label: string
   name: string

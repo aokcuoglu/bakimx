@@ -110,6 +110,8 @@ export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints): V
         vehicleTypeId: row.id,
         modelId: row.modelId,
         brandId: row.brandId,
+        brandName: row.brandName,
+        modelName: row.modelName,
         label: buildLabel(row),
         name: row.name,
         cc: row.cc,
