@@ -21,6 +21,7 @@ const LOADING_STEPS: Step[] = ["saving"]
 const PROVIDER_LABELS: Record<OcrProviderName, string> = {
   mock: "Demo (Mock)",
   paddle: "PaddleOCR",
+  hybrid: "PaddleOCR + Claude",
   openai: "OpenAI Vision",
   anthropic: "Claude Vision",
 }

@@ -4,7 +4,8 @@ export { getOcrProvider, resetOcrProvider } from "./provider"
 export { MockOcrProvider, getMockOcrProvider } from "./mock-ocr-provider"
 export { OpenAiOcrProvider } from "./openai-ocr-provider"
 export { PaddleOcrProvider } from "./paddle-ocr-provider"
-// Claude Vision (Anthropic) OCR — DEVRE DIŞI ama silinmedi; class geri açılış için hazır durur.
+export { HybridOcrProvider } from "./hybrid-ocr-provider"
+// Claude Vision (Anthropic) OCR — hibrit fallback olarak kullanılıyor + standalone da hazır.
 export { AnthropicOcrProvider } from "./anthropic-ocr-provider"
 // Plaka OCR (tesseract-text-extractor) tarafından kullanılan worker temizliği.
 export { terminateTesseractWorker } from "./tesseract-text-extractor"
