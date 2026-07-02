@@ -118,12 +118,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       email: intakeForm.customer.email,
     },
     vehicle: {
+      id: intakeForm.vehicle.id,
       plate: intakeForm.vehicle.plate,
       brand: intakeForm.vehicle.brand,
       model: intakeForm.vehicle.model,
       modelYear: intakeForm.vehicle.modelYear,
       mileage: intakeForm.vehicle.mileage,
       vin: intakeForm.vehicle.vin,
+      catalogVehicleTypeId: intakeForm.vehicle.catalogVehicleTypeId,
     },
     intake: {
       id: intakeForm.id,

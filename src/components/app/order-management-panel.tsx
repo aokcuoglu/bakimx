@@ -31,6 +31,7 @@ import {
 import { cn } from "@/lib/utils"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { SendReminderButton } from "@/components/app/send-reminder-button"
+import { TecdocPartPicker } from "@/components/app/tecdoc-part-picker"
 import { formatPrice } from "@/lib/parts/format"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -87,7 +88,7 @@ export type OrderDetailData = {
     phone: string
     email: string | null
   }
-  vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; catalogVehicleTypeId: number | null }
   intake: {
     id: string
     status: string
@@ -149,6 +150,7 @@ export function PartsLaborCard({
   orderId,
   status,
   items,
+  vehicle,
   onError,
   onLoading,
   loading,
@@ -156,6 +158,7 @@ export function PartsLaborCard({
   orderId: string
   status: string
   items: OrderItem[]
+  vehicle?: { id: string; catalogVehicleTypeId: number | null }
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
@@ -172,6 +175,9 @@ export function PartsLaborCard({
   const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
+  // Set when the part was picked from the TecDoc vehicle catalog; cleared on
+  // reset and when a local stock part is selected instead.
+  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
 
   const parts = items.filter((i) => i.type === "part")
   const labor = items.filter((i) => i.type === "labor")
@@ -199,6 +205,7 @@ export function PartsLaborCard({
     setShowCatalog(false)
     setCatalogSearch("")
     setCatalogResults([])
+    setTecdocArticleId(null)
   }
 
   function resetForm() {
@@ -212,6 +219,7 @@ export function PartsLaborCard({
     setShowCatalog(false)
     setCatalogSearch("")
     setCatalogResults([])
+    setTecdocArticleId(null)
   }
 
   async function handleAdd() {
@@ -228,6 +236,7 @@ export function PartsLaborCard({
     // Price input is TRY (lira); the server stores kuruş.
     if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
+    if (addingType === "part" && tecdocArticleId != null) formData.set("tecdocArticleId", String(tecdocArticleId))
 
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: formData })
@@ -368,6 +377,16 @@ export function PartsLaborCard({
                     ))}
                   </div>
                 )}
+                <TecdocPartPicker
+                  vehicle={vehicle}
+                  onSelect={(sel) => {
+                    setName(sel.name)
+                    setSku(sel.articleNo)
+                    setUnit("adet")
+                    setTecdocArticleId(sel.tecdocArticleId)
+                    if (!note && sel.supplierName) setNote(sel.supplierName)
+                  }}
+                />
               </div>
             )}
 

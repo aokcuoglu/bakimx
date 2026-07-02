@@ -733,7 +733,7 @@ export function WorkOrderDetail({
 
         {/* PARÇA & İŞÇİLİK */}
         <TabsContent value="parca" className="space-y-5">
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} onError={setError} onLoading={setLoading} loading={loading} />
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
 
           <PricingSummaryCard
             totals={order.totals}

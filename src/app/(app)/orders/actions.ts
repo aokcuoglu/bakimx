@@ -64,6 +64,7 @@ export async function addOrderItemAction(formData: FormData) {
     unitPrice: formData.get("unitPrice") as string,
     totalPrice: formData.get("totalPrice") as string,
     note: formData.get("note") as string,
+    tecdocArticleId: formData.get("tecdocArticleId") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -75,6 +76,7 @@ export async function addOrderItemAction(formData: FormData) {
     unitPrice: raw.unitPrice ? Number(raw.unitPrice) : undefined,
     totalPrice: raw.totalPrice ? Number(raw.totalPrice) : undefined,
     note: raw.note || undefined,
+    tecdocArticleId: raw.tecdocArticleId ? Number(raw.tecdocArticleId) : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -102,6 +104,7 @@ export async function addOrderItemAction(formData: FormData) {
         unitPrice: parsed.data.unitPrice ?? null,
         totalPrice: parsed.data.totalPrice ?? null,
         note: parsed.data.note || null,
+        tecdocArticleId: parsed.data.tecdocArticleId ?? null,
       },
     })
     await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)

@@ -10,4 +10,6 @@ export const serviceOrderItemSchema = z.object({
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").optional(),
   note: z.string().optional(),
+  // TecDoc katalog bağı — parça araç kataloğundan seçildiyse dolu
+  tecdocArticleId: z.coerce.number().int("TecDoc parça no tam sayı olmalıdır").positive().optional(),
 })
