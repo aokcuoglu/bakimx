@@ -18,6 +18,28 @@ services:
         aliases:
           - bakimx-staging-app
 
+  # Ruhsat OCR sidecar (PaddleOCR). Yalnız `internal` ağda — public değil; app ona
+  # http://ocr:8000 ile ulaşır. Modeller imaja gömülü (runtime indirme yok).
+  ocr:
+    image: ghcr.io/aokcuoglu/ocr-service:staging
+    restart: unless-stopped
+    deploy:
+      resources:
+        # PaddleOCR bir ~2000px ruhsat fotoğrafını işlerken tepe bellek ~2-2.5g;
+        # 2g'de cgroup OOM-kill oluyordu (uvicorn SIGKILL → restart → "fetch failed").
+        limits:
+          memory: 4g
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - internal
+
   migrate:
     image: ghcr.io/aokcuoglu/app:staging
     profiles: ["tools"]

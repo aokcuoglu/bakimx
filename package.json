@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "scripts": {
     "postinstall": "prisma generate",
@@ -27,6 +27,7 @@
     "seed": "bunx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.109.0",
     "@aws-sdk/client-s3": "^3.1068.0",
     "@aws-sdk/s3-request-presigner": "^3.1068.0",
     "@base-ui/react": "^1.6.0",

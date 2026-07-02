@@ -11,7 +11,7 @@ export const SUPPORTED_IMAGE_MIME_TYPES = new Set([
 export const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024
 export const MAX_BODY_SIZE_BYTES = 12 * 1024 * 1024
 
-export type OcrProviderName = "mock" | "openai" | "deepseek" | "tesseract"
+export type OcrProviderName = "mock" | "openai" | "anthropic" | "paddle"
 
 export interface OcrFieldConfidence {
   value: string
@@ -29,6 +29,12 @@ export interface RegistrationOcrResult {
   modelYear: OcrFieldConfidence
   engineNo: OcrFieldConfidence
   registrationDate: OcrFieldConfidence
+  // Ruhsat teknik alanları (D.3 / P.3 / P.1 / P.2 / Z.2). Vision OCR bunları da okur.
+  commercialName: OcrFieldConfidence
+  fuelType: OcrFieldConfidence
+  engineDisplacement: OcrFieldConfidence
+  enginePower: OcrFieldConfidence
+  inspectionValidUntil: OcrFieldConfidence
   rawText: string
   provider: OcrProviderName
 }

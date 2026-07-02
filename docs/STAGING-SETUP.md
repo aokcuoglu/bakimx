@@ -20,4 +20,17 @@ done once, before the first `dev` push deploys staging.
    creates the schema in the empty staging DB; the app comes up. To seed, point your LOCAL
    `bun run db:seed` at the staging `DATABASE_URL` (the runner image has no bun/tsx/dev-deps),
    or just create a test workshop via `/register` on staging.
-6. **RAM:** staging adds ~1.5GB (app 1g + db 512m). Confirm headroom on the shared VPS.
+6. **Ruhsat OCR sidecar (PaddleOCR):** the `staging.yml` workflow also builds/pushes
+   `ghcr.io/aokcuoglu/ocr-service:staging` and the compose runs it as the `ocr` service on
+   the `internal` network (not public). To actually route ruhsat OCR through it, add to
+   `.env.staging`:
+   ```
+   OCR_PROVIDER=paddle
+   OCR_SERVICE_URL=http://ocr:8000
+   ```
+   Models are baked into the image (no runtime download). Without these vars the `ocr`
+   container still runs but the app keeps using whatever `OCR_PROVIDER` is set (mock/…).
+   First `dev` push after this change: `build-ocr` must succeed before `deploy` runs (deploy
+   `needs: [build, build-ocr]`), so the image exists before compose references it.
+7. **RAM:** staging adds ~1.5GB (app 1g + db 512m) **+ ~2g for the `ocr` sidecar** during
+   inference. Confirm headroom on the shared VPS.

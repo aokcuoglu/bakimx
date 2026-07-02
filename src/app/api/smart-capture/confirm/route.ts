@@ -254,7 +254,7 @@ export async function POST(request: Request) {
       vehicleCustomerChanged,
       customerName,
       vehicleLabel: `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}`,
-      intakeUrl: `/intakes/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
+      intakeUrl: `/orders/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
       ...(warnings.length > 0 ? { warnings } : {}),
     })
   } catch (err) {

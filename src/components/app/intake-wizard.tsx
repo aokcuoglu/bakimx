@@ -55,6 +55,7 @@ export function IntakeWizard({
   const [customers] = useState(initialCustomers)
 
   const [intakeId, setIntakeId] = useState("")
+  const [orderId, setOrderId] = useState("")
 
   const form = useForm<IntakeFormValues, unknown, IntakeFormValues>({
     resolver: typedResolver(intakeSchema),
@@ -138,6 +139,7 @@ export function IntakeWizard({
       const data = await res.json()
       if (data.success && data.id) {
         setIntakeId(data.id)
+        if (data.orderId) setOrderId(data.orderId)
         setStep(4)
       } else {
         setError(data.error || "Kabul oluşturulamadı")
@@ -295,7 +297,7 @@ export function IntakeWizard({
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
                   Geri
                 </Button>
-                <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={`/intakes/${intakeId}`} />}>
+                <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={orderId ? `/orders/${orderId}` : "/orders"} />}>
                   İş Emrine Git
                 </Button>
               </div>

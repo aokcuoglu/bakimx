@@ -52,8 +52,49 @@ jobs:
             SESSION_COOKIE_NAME=bakimx_session_staging
             SESSION_COOKIE_DOMAIN=staging.app.bakimx.com
 
+  # PaddleOCR sidecar imajı. Ayrı image (ghcr.io/<owner>/ocr-service) — ağır
+  # paddle bağımlılıkları app imajına girmez. gha cache ayrı scope'ta; ocr-service
+  # değişmedikçe layer'lar cache'ten gelir, push no-op olur.
+  build-ocr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (ocr)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/ocr-service
+          tags: |
+            type=raw,value=staging
+            type=sha,format=long
+
+      - name: Build and push (ocr)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ocr-service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=ocr
+          cache-to: type=gha,mode=max,scope=ocr
+
   deploy:
-    needs: build
+    needs: [build, build-ocr]
     runs-on: ubuntu-latest
     # Serialize VPS deploys across BOTH workflows (prod + staging share this group).
     # Prod and staging run on the same VPS and pull the same `app` image layers;
@@ -85,8 +126,10 @@ jobs:
           script: |
             set -e
             cd /opt/bakimx-staging
-            docker compose -f docker-compose.staging.yml --env-file .env.staging pull app
+            docker compose -f docker-compose.staging.yml --env-file .env.staging pull app ocr
             docker compose -f docker-compose.staging.yml --env-file .env.staging run --rm migrate
+            # ocr: yalnız imajı değiştiyse yeniden yaratılır (gereksiz OCR kesintisi olmasın).
+            docker compose -f docker-compose.staging.yml --env-file .env.staging up -d ocr
             docker compose -f docker-compose.staging.yml --env-file .env.staging up -d app --force-recreate
             # Dangling images only. NEVER an unfiltered `docker system prune` — this VPS
             # also hosts the getirbakim stack and a system prune would wipe its images too.

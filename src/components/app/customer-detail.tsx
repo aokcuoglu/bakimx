@@ -210,7 +210,7 @@ export function CustomerDetail({
                nativeButton={false}
                variant="outline"
                size="sm"
-               render={<Link href={`/intakes/new?customerId=${customer.id}`} />}
+               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
              >
                <Wrench className="size-4" />
                Yeni İş Emri
@@ -315,7 +315,7 @@ export function CustomerDetail({
                 <Wrench className="size-10 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Henüz iş emri yok</p>
                 <Link
-                  href={`/intakes/new?customerId=${customer.id}`}
+                  href={`/orders/new?customerId=${customer.id}`}
                   className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary font-medium"
                 >
                   <Plus className="size-3.5" />
@@ -432,9 +432,8 @@ export function CustomerDetail({
                   const intakeStatus = INTAKE_STATUS[i.status as keyof typeof INTAKE_STATUS]
                   return (
                     <li key={i.id}>
-                      <Link
-                        href={`/intakes/${i.id}`}
-                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
+                      <div
+                        className="flex items-center gap-3 px-4 sm:px-5 py-3"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -451,7 +450,7 @@ export function CustomerDetail({
                           <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                         </div>
                         <span className="text-xs text-muted-foreground/70">{formatDate(i.createdAt)}</span>
-                      </Link>
+                      </div>
                     </li>
                   )
                 })}

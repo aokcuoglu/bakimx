@@ -15,7 +15,7 @@ const actions: QuickAction[] = [
   {
     label: "Yeni İş Emri",
     icon: Plus,
-    href: "/intakes/new",
+    href: "/orders/new",
     color: "text-primary",
     bgColor: "bg-primary/10",
     enabled: true,
@@ -63,7 +63,7 @@ const actions: QuickAction[] = [
   {
     label: "Eksik Fotoğraflar",
     icon: Camera,
-    href: "/intakes",
+    href: "/orders",
     color: "text-destructive",
     bgColor: "bg-destructive/10",
     enabled: true,

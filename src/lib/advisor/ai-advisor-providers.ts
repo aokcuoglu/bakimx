@@ -1,4 +1,7 @@
+import Anthropic from "@anthropic-ai/sdk"
 import type { AiProvider, ServiceAdvisorInput, ServiceAdvisorResult } from "./types"
+
+const ADVISOR_SYSTEM = "Sen bir oto servis danışmanısın. Sadece JSON formatında yanıt ver."
 
 function buildPrompt(input: ServiceAdvisorInput): string {
   const prevOrders = input.previousWorkOrders.length > 0
@@ -85,46 +88,33 @@ export class OpenAiAdvisorProvider implements AiProvider {
   }
 }
 
-export class DeepSeekAdvisorProvider implements AiProvider {
-  readonly name = "deepseek" as const
+export class AnthropicAdvisorProvider implements AiProvider {
+  readonly name = "anthropic" as const
+  private readonly client: Anthropic
 
   constructor(
-    private apiKey: string,
+    apiKey: string,
     private model: string
-  ) {}
+  ) {
+    this.client = new Anthropic({ apiKey })
+  }
 
   async suggest(input: ServiceAdvisorInput): Promise<ServiceAdvisorResult> {
     const prompt = buildPrompt(input)
 
-    const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [
-          { role: "system", content: "Sen bir oto servis danışmanısın. Sadece JSON formatında yanıt ver." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 1500,
-      }),
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 1500,
+      system: ADVISOR_SYSTEM,
+      messages: [{ role: "user", content: prompt }],
     })
 
-    if (!res.ok) {
-      const body = await res.text()
-      throw new Error(`DeepSeek API hatası (${res.status}): ${body}`)
-    }
-
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content || ""
+    const content = response.content.find((b) => b.type === "text")?.text ?? ""
     const parsed = parseAiResponse(content)
 
     return {
       ...parsed,
-      provider: "deepseek",
+      provider: "anthropic",
       rawResponse: content,
     }
   }

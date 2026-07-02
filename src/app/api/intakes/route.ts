@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     if (result?.id) {
-      return NextResponse.json({ success: true, id: result.id })
+      return NextResponse.json({ success: true, id: result.id, orderId: result.orderId })
     }
     return NextResponse.json({ error: "Beklenmeyen hata" }, { status: 400 })
   } catch {

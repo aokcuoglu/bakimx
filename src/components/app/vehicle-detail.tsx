@@ -136,10 +136,10 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
 
   const workOrders = v.intakes.filter((i) => i.order)
   const allDamageMarks = v.intakes.flatMap((i) =>
-    i.damageMarks.map((dm) => ({ ...dm, intakeId: i.id, intakeDate: i.createdAt }))
+    i.damageMarks.map((dm) => ({ ...dm, orderId: i.order?.id ?? null, intakeDate: i.createdAt }))
   )
   const allPhotos = v.intakes.flatMap((i) =>
-    i.photos.map((p) => ({ ...p, intakeId: i.id }))
+    i.photos.map((p) => ({ ...p, orderId: i.order?.id ?? null }))
   )
 
   return (
@@ -159,7 +159,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               nativeButton={false}
-              render={<Link href={`/intakes/new?vehicleId=${v.id}`} />}
+              render={<Link href={`/orders/new?vehicleId=${v.id}`} />}
             >
               <Wrench className="size-4" />
               <span className="hidden sm:inline">Yeni İş Emri</span>
@@ -281,7 +281,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
             count={workOrders.length}
             action={
               <Link
-                href={`/intakes/new?vehicleId=${v.id}`}
+                href={`/orders/new?vehicleId=${v.id}`}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary"
               >
                 <Plus className="size-3.5" />
@@ -426,10 +426,10 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                       </div>
                       <div className="mt-1">
                         <Link
-                          href={`/intakes/${dm.intakeId}`}
+                          href={`/orders/${dm.orderId}`}
                           className="text-[11px] text-primary hover:text-primary"
                         >
-                          Kabul detayı →
+                          İş emri →
                         </Link>
                       </div>
                     </div>
@@ -452,7 +452,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   return (
                     <Link
                       key={p.id}
-                      href={`/intakes/${p.intakeId}`}
+                      href={`/orders/${p.orderId}`}
                       className="block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
                     >
                       <div className="aspect-[4/3] bg-muted flex items-center justify-center">
@@ -543,7 +543,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                 Aracı Düzenle
               </Button>
             </Link>
-            <Link href={`/intakes/new?vehicleId=${v.id}`}>
+            <Link href={`/orders/new?vehicleId=${v.id}`}>
               <Button variant="outline" className="w-full gap-2">
                 <ClipboardList className="size-4" />
                 Yeni İş Emri

@@ -61,7 +61,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
 
 export function orderQuickActions(): QuickAction[] {
   return [
-    { key: "new-order", label: "Yeni İş Emri", href: "/intakes/new", icon: Wrench, variant: "primary" },
+    { key: "new-order", label: "Yeni İş Emri", href: "/orders/new", icon: Wrench, variant: "primary" },
     { key: "new-appointment", label: "Randevu", href: "/appointments/new", icon: CalendarClock, variant: "secondary" },
   ]
 }
@@ -69,7 +69,7 @@ export function orderQuickActions(): QuickAction[] {
 export function vehicleQuickActions(): QuickAction[] {
   return [
     { key: "new-vehicle", label: "Yeni Araç", href: "/vehicles/new", icon: Car, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/intakes/new", icon: Wrench, variant: "secondary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }
 
@@ -83,13 +83,13 @@ export function customerQuickActions(): QuickAction[] {
 export function appointmentQuickActions(): QuickAction[] {
   return [
     { key: "new-appointment", label: "Yeni Randevu", href: "/appointments/new", icon: CalendarClock, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/intakes/new", icon: Wrench, variant: "secondary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }
 
 export function quoteQuickActions(): QuickAction[] {
   return [
     { key: "new-quote", label: "Yeni Teklif", href: "/quotes/new", icon: FileText, variant: "primary" },
-    { key: "new-order", label: "İş Emri", href: "/intakes/new", icon: Wrench, variant: "secondary" },
+    { key: "new-order", label: "İş Emri", href: "/orders/new", icon: Wrench, variant: "secondary" },
   ]
 }

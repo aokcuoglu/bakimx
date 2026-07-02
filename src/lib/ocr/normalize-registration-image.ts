@@ -10,7 +10,20 @@ export type NormalizedRegistrationImage = {
   previewDataUrl?: string
 }
 
-async function preprocessImage(buffer: Buffer, mimeType: string): Promise<{ buffer: Buffer; mimeType: string }> {
+export type NormalizeOptions = {
+  /**
+   * true (varsayılan): gri tonlama + kontrast + keskinleştirme — Tesseract (plaka) için.
+   * false: rengi korur, hafif işler — Claude Vision ruhsat okuması için (mavi zemin,
+   * renkli alanlar ve damgalar bilgi taşır).
+   */
+  grayscale?: boolean
+}
+
+async function preprocessImage(
+  buffer: Buffer,
+  mimeType: string,
+  grayscale: boolean
+): Promise<{ buffer: Buffer; mimeType: string }> {
   if (HEIC_MIME_TYPES.has(mimeType)) {
     try {
       const converted = await convertHeic({
@@ -31,14 +44,12 @@ async function preprocessImage(buffer: Buffer, mimeType: string): Promise<{ buff
     }
   }
 
-  // Tesseract optimizasyonu için sharp pipeline:
+  // Sharp pipeline:
   // rotate   → EXIF orientation düzeltme
   // resize   → maksimum 2000px en uzun kenar (küçük fotolar içinse minimum garantisi)
-  // grayscale → gri tonlama (Tesseract tek kanalda daha iyi)
-  // normalize → kontrast germe
-  // sharpen  → keskinleştirme
+  // grayscale/normalize/sharpen → yalnız Tesseract (plaka) modunda; vision modunda renk korunur.
   try {
-    const processed = await sharp(buffer)
+    let pipeline = sharp(buffer)
       .rotate()
       .resize({
         width: 2000,
@@ -46,11 +57,10 @@ async function preprocessImage(buffer: Buffer, mimeType: string): Promise<{ buff
         fit: "inside",
         withoutEnlargement: false,
       })
-      .grayscale()
-      .normalize()
-      .sharpen()
-      .jpeg({ quality: 95 })
-      .toBuffer()
+    if (grayscale) {
+      pipeline = pipeline.grayscale().normalize().sharpen()
+    }
+    const processed = await pipeline.jpeg({ quality: 95 }).toBuffer()
 
     if (processed.byteLength > MAX_IMAGE_SIZE_BYTES) {
       throw new Error(
@@ -71,9 +81,11 @@ async function preprocessImage(buffer: Buffer, mimeType: string): Promise<{ buff
 
 export async function normalizeRegistrationImage(
   imageBuffer: Buffer,
-  mimeType: string
+  mimeType: string,
+  options: NormalizeOptions = {}
 ): Promise<NormalizedRegistrationImage> {
-  const { buffer, mimeType: outMime } = await preprocessImage(imageBuffer, mimeType)
+  const { grayscale = true } = options
+  const { buffer, mimeType: outMime } = await preprocessImage(imageBuffer, mimeType, grayscale)
 
   return {
     buffer,

@@ -27,7 +27,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     alerts.push({
       count: stats.missingPhotoIntakes,
       message: `${stats.missingPhotoIntakes} araç kabulünde zorunlu fotoğraflar eksik.`,
-      href: "/intakes",
+      href: "/orders",
       icon: Camera,
       color: "rose",
     })

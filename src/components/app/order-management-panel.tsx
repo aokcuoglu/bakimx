@@ -1,62 +1,39 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
-import { DetailHeader, type DetailHeaderAction } from "@/components/app/detail-header"
+import { PaymentBadge } from "@/components/app/status-badge"
 import type { OrderStatusKey } from "@/lib/constants"
 import { formatTRY } from "@/lib/format"
-import { liraToKurus, kurusToLira, percentToBps, bpsToPercent, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
+import { liraToKurus, kurusToLira, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
-import { generateWhatsAppShareText, getWhatsAppShareUrl, buildPublicLink } from "@/lib/share/whatsapp"
-import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import {
   Plus,
   Trash2,
   Wrench,
   User,
-  Car,
-  Phone,
-  Mail,
   Calendar,
-  AlertTriangle,
-  Camera,
   Loader2,
-  Share2,
-  Printer,
-  FileText,
   Pencil,
   X,
   Save,
   Receipt,
   Calculator,
-  Info,
   Wallet,
   ChevronRight,
-  Play,
-  Send,
-  CheckCircle2,
-  Package,
-  PackageCheck,
-  KeyRound,
-  XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES } from "@/lib/constants"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { SendReminderButton } from "@/components/app/send-reminder-button"
 import { formatPrice } from "@/lib/parts/format"
-import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
-import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 
-type OrderItem = {
+export type OrderItem = {
   id: string
   type: string
   name: string
@@ -68,7 +45,7 @@ type OrderItem = {
   note: string | null
 }
 
-type Totals = {
+export type Totals = {
   partsTotal: number
   laborTotal: number
   subtotal: number
@@ -80,26 +57,7 @@ type Totals = {
   laborCount: number
 }
 
-type DamageMark = {
-  id: string
-  zone: string
-  damageType: string
-  severity: string
-  note: string | null
-}
-
-type Photo = {
-  id: string
-  type: string
-  label: string
-  required: boolean
-  fileUrl: string | null
-  fileName: string | null
-  mimeType: string | null
-  sizeBytes: number | null
-}
-
-type OrderDetailData = {
+export type OrderDetailData = {
   id: string
   workOrderNo: string
   status: string
@@ -138,8 +96,6 @@ type OrderDetailData = {
     approvedAt: string | null
     shareToken: string | null
   }
-  damageMarks: DamageMark[]
-  photos: Photo[]
   paidAmount: number
   remainingAmount: number
   collectionHistory: Array<{
@@ -154,7 +110,7 @@ type OrderDetailData = {
   }>
 }
 
-type PricingMetaDraft = {
+export type PricingMetaDraft = {
   technicianName: string
   estimatedDeliveryAt: string
   discountAmount: string
@@ -162,9 +118,9 @@ type PricingMetaDraft = {
   notes: string
 }
 
-// `primary: true` marks the happy-path forward action (rendered as the single
-// blue CTA); other forwards become secondary, `cancelled` becomes destructive.
-const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primary?: boolean }[]> = {
+// `primary: true` marks the happy-path forward action; other forwards are
+// secondary, `cancelled` is destructive. Consumed by the merged detail header.
+export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primary?: boolean }[]> = {
   draft: [{ key: "in_progress", label: "İşleme Al", primary: true }, { key: "waiting_approval", label: "Onaya Gönder" }],
   waiting_approval: [
     { key: "approved", label: "Onayla", primary: true },
@@ -185,375 +141,7 @@ const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primar
   cancelled: [],
 }
 
-// Icon per target status, so header actions match the intake header's look.
-const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
-  waiting_approval: Send,
-  approved: CheckCircle2,
-  in_progress: Play,
-  waiting_parts: Package,
-  ready_for_delivery: PackageCheck,
-  delivered: KeyRound,
-  cancelled: XCircle,
-}
-
-export function OrderDetail({ order, technicians, hasAiAdvisor }: { order: OrderDetailData; technicians?: { id: string; fullName: string; role: string }[]; hasAiAdvisor: boolean }) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [editingMeta, setEditingMeta] = useState(false)
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  const [metaDraft, setMetaDraft] = useState({
-    technicianName: order.technicianName || "",
-    estimatedDeliveryAt: order.estimatedDeliveryAt
-      ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16)
-      : "",
-    // Inputs show TRY/percent; stored values are kuruş/bps.
-    discountAmount: order.discountAmount != null ? String(kurusToLira(order.discountAmount)) : "",
-    taxRate: order.taxRate != null ? String(bpsToPercent(order.taxRate)) : "",
-    notes: order.notes || "",
-  })
-
-  async function changeStatus(newStatus: string) {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await fetch(`/api/orders/${order.id}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        router.refresh()
-      } else {
-        setError(data.error || "Durum güncellenemedi")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function saveMeta() {
-    setLoading(true)
-    setError("")
-    try {
-      const formData = new FormData()
-      formData.set("technicianName", metaDraft.technicianName)
-      formData.set("estimatedDeliveryAt", metaDraft.estimatedDeliveryAt)
-      // Convert TRY -> kuruş and percent -> bps for the server.
-      formData.set("discountAmount", String(liraToKurus(Math.max(0, Number(metaDraft.discountAmount) || 0))))
-      formData.set("taxRate", String(percentToBps(Number(metaDraft.taxRate) || 0)))
-      formData.set("notes", metaDraft.notes)
-
-      const res = await fetch(`/api/orders/${order.id}/meta`, {
-        method: "POST",
-        body: formData,
-      })
-      const data = await res.json()
-      if (data.success) {
-        setEditingMeta(false)
-        router.refresh()
-      } else {
-        setError(data.error || "Bilgiler güncellenemedi")
-      }
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const nextActions = NEXT_STATUSES[order.status] || []
-  const customerName =
-    order.customer.type === "corporate"
-      ? order.customer.companyName || "Kurumsal Müşteri"
-      : order.customer.fullName ||
-        `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() ||
-        "Müşteri"
-  // DetailHeader orders buttons (danger → secondary → primary); we only assign tones.
-  const headerActions: DetailHeaderAction[] = nextActions.map((a) => ({
-    key: a.key,
-    label: a.label,
-    onClick: () => changeStatus(a.key),
-    tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
-    icon: ORDER_ACTION_ICONS[a.key],
-  }))
-  const shareLink = order.intake.shareToken ? buildPublicLink(order.intake.shareToken) : null
-
-  function handleWhatsApp() {
-    if (!shareLink) return
-    const text = generateWhatsAppShareText({
-      publicLink: typeof window !== "undefined" ? `${window.location.origin}${shareLink}` : shareLink,
-      totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null,
-    })
-    window.open(getWhatsAppShareUrl(text), "_blank")
-  }
-
-  async function addAiItems(items: Array<{ type: "labor" | "part"; name: string }>, _customerDescription: string, _internalNote: string) {
-    setLoading(true)
-    setError("")
-    try {
-      for (const item of items) {
-        const formData = new FormData()
-        formData.set("serviceOrderId", order.id)
-        formData.set("type", item.type)
-        formData.set("name", item.name)
-        formData.set("quantity", "1")
-        const res = await fetch("/api/orders/items", { method: "POST", body: formData })
-        const data = await res.json()
-        if (!data.success) {
-          setError(data.error || "Kalem eklenemedi")
-          break
-        }
-      }
-      window.location.reload()
-    } catch {
-      setError("AI önerileri eklenirken hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
-      <DetailHeader
-        plate={order.vehicle.plate}
-        vehicleLabel={`${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`}
-        customerLabel={customerName}
-        badges={
-          <>
-            <StatusBadge status={order.status} size="lg" />
-            <PaymentBadge status={order.paymentStatus} size="lg" />
-          </>
-        }
-        actions={headerActions}
-        loading={loading}
-        onBack={() => router.push("/orders")}
-      />
-
-      {error && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 text-destructive shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
-          <CustomerVehicleCard
-            customer={order.customer}
-            vehicle={order.vehicle}
-            intake={order.intake}
-          />
-
-          <PartsLaborCard
-            orderId={order.id}
-            items={order.items}
-            onError={setError}
-            onLoading={setLoading}
-            loading={loading}
-          />
-
-          <ComplaintNotesCard intake={order.intake} />
-
-          {hasAiAdvisor ? (
-            <ServiceAdvisorPanel
-              intakeFormId={order.intake.id}
-              customerComplaint={order.intake.customerComplaint}
-              vehicleBrand={order.vehicle.brand}
-              vehicleModel={order.vehicle.model}
-              mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-              onAddItems={addAiItems}
-            />
-          ) : (
-            <AdvisorPremiumLock />
-          )}
-
-          {order.damageMarks.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-warning" />
-                  Araç Hasar Haritası ({order.damageMarks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {order.damageMarks.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: (DAMAGE_SEVERITY as Record<string, { color: string }>)[d.severity]?.color || "#9CA3AF" }}
-                        />
-                        <span className="font-medium truncate">
-                          {VEHICLE_ZONES[d.zone as keyof typeof VEHICLE_ZONES] || d.zone}
-                        </span>
-                        <span className="text-muted-foreground text-xs shrink-0">
-                          {DAMAGE_TYPES[d.damageType as keyof typeof DAMAGE_TYPES]?.label || d.damageType}
-                        </span>
-                      </div>
-                      {d.note && <span className="text-xs text-muted-foreground truncate max-w-[40%]">- {d.note}</span>}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 pt-3 border-t">
-                  <Link
-                    href={`/intakes/${order.intake.id}`}
-                    className="text-sm text-primary hover:text-primary/80 font-medium"
-                  >
-                    Hasar haritasını tam ekranda görüntüle →
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {order.photos.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="size-4 text-muted-foreground" />
-                  Fotoğraflar ({order.photos.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {order.photos.slice(0, 8).map((p, i) => (
-                    <PhotoThumb key={p.id} photo={p} onOpen={() => setLightboxIndex(i)} />
-                  ))}
-                </div>
-                {order.photos.length > 8 && (
-                  <Link
-                    href={`/intakes/${order.intake.id}`}
-                    className="mt-3 block text-sm text-primary hover:text-primary/80 font-medium"
-                  >
-                    Tüm fotoğrafları gör ({order.photos.length}) →
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <PhotoLightbox
-            photos={order.photos.slice(0, 8).map((p): LightboxPhoto => ({
-              id: p.id,
-              label: PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]?.label || p.type,
-              fileUrl: `/api/photos?id=${p.id}`,
-            }))}
-            index={lightboxIndex ?? 0}
-            onIndexChange={setLightboxIndex}
-            open={lightboxIndex !== null}
-            onOpenChange={(o) => {
-              if (!o) setLightboxIndex(null)
-            }}
-          />
-        </div>
-
-        <div className="lg:col-span-1 space-y-5">
-          <PricingSummaryCard
-            orderId={order.id}
-            totals={order.totals}
-            paymentStatus={order.paymentStatus}
-            paidAmount={order.paidAmount}
-            remainingAmount={order.remainingAmount}
-            editingMeta={editingMeta}
-            setEditingMeta={setEditingMeta}
-            metaDraft={metaDraft}
-            setMetaDraft={setMetaDraft}
-            saveMeta={saveMeta}
-            loading={loading}
-          />
-
-          <PaymentHistoryCard
-            orderId={order.id}
-            isCancelled={order.status === "cancelled"}
-            totals={order.totals}
-            paidAmount={order.paidAmount}
-            remainingAmount={order.remainingAmount}
-            collections={order.collectionHistory}
-            customerId={order.customer.id}
-            customerName={order.customer.type === "corporate" ? (order.customer.companyName || "Kurumsal Müşteri") : (order.customer.fullName || `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() || "Müşteri")}
-          />
-
-          <OrderInfoCard order={order} onChangeStatus={changeStatus} loading={loading} technicians={technicians} />
-
-          <ShareCard shareLink={shareLink} onWhatsApp={handleWhatsApp} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CustomerVehicleCard({
-  customer,
-  vehicle,
-  intake,
-}: {
-  customer: OrderDetailData["customer"]
-  vehicle: OrderDetailData["vehicle"]
-  intake: OrderDetailData["intake"]
-}) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Müşteri & Araç</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <User className="size-3" /> Müşteri
-            </div>
-            <p className="text-sm font-semibold text-foreground">
-              {customer.type === "corporate"
-                ? customer.companyName || "Kurumsal Müşteri"
-                : customer.fullName || `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "Müşteri"}
-            </p>
-            {customer.type === "corporate" && customer.contactName ? (
-              <p className="text-xs text-muted-foreground">Yetkili: {customer.contactName}</p>
-            ) : null}
-            <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
-              <Phone className="size-3.5" />
-              {customer.phone}
-            </a>
-            {customer.email && (
-              <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
-                <Mail className="size-3.5" />
-                {customer.email}
-              </a>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <Car className="size-3" /> Araç
-            </div>
-            <p className="text-sm font-semibold text-foreground">
-              {vehicle.brand} {vehicle.model}
-              {vehicle.modelYear ? ` (${vehicle.modelYear})` : ""}
-            </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              {intake.mileageAtIntake != null && <span>Giriş KM: {intake.mileageAtIntake.toLocaleString("tr-TR")}</span>}
-              {vehicle.mileage != null && <span>Kayıtlı: {vehicle.mileage.toLocaleString("tr-TR")} km</span>}
-              {vehicle.vin && <span className="font-mono">VIN: {vehicle.vin}</span>}
-            </div>
-          </div>
-        </div>
-        <div className="pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>Kabul: {formatDate(intake.createdAt)}</span>
-          {intake.approvedAt && <span>Onay: {formatDate(intake.approvedAt)}</span>}
-          <Link href={`/intakes/${intake.id}`} className="text-primary hover:text-primary/80 font-medium">
-            Kabul Detayı →
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PartsLaborCard({
+export function PartsLaborCard({
   orderId,
   items,
   onError,
@@ -592,7 +180,7 @@ function PartsLaborCard({
     finally { setCatalogLoading(false) }
   }
 
-  async function selectCatalogPart(partId: string) {
+  function selectCatalogPart(partId: string) {
     const part = catalogResults.find((p) => p.id === partId)
     if (!part) return
     setName(part.name)
@@ -848,30 +436,7 @@ function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: nu
   )
 }
 
-function ComplaintNotesCard({ intake }: { intake: OrderDetailData["intake"] }) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Şikayet & Notlar</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Müşteri Şikayeti</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{intake.customerComplaint}</p>
-        </div>
-        {intake.internalNote && (
-          <div className="pt-3 border-t">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Teknisyen İç Notu</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{intake.internalNote}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function PricingSummaryCard({
+export function PricingSummaryCard({
   totals,
   paymentStatus,
   paidAmount,
@@ -883,7 +448,6 @@ function PricingSummaryCard({
   saveMeta,
   loading,
 }: {
-  orderId: string
   totals: Totals
   paymentStatus: string
   paidAmount: number
@@ -1032,13 +596,11 @@ function SummaryRow({
   )
 }
 
-function OrderInfoCard({
+export function OrderInfoCard({
   order,
   technicians,
 }: {
   order: OrderDetailData
-  onChangeStatus: (s: string) => void
-  loading: boolean
   technicians?: { id: string; fullName: string; role: string }[]
 }) {
   const [isPending, startTransition] = useTransition()
@@ -1158,72 +720,7 @@ function InfoRow({
   )
 }
 
-function ShareCard({ shareLink, onWhatsApp }: { shareLink: string | null; onWhatsApp: () => void }) {
-  if (!shareLink) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Share2 className="size-4 text-muted-foreground" />
-            Müşteri Çıktısı
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="p-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-            Müşteri çıktı linki henüz oluşturulmadı. Link, kabul onayından sonra <Link href="/intakes" className="text-primary font-medium">Araç Kabul</Link> ekranından oluşturulabilir.
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const pdfLink = `${shareLink}/pdf`
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Share2 className="size-4 text-muted-foreground" />
-          Müşteri Çıktısı
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <Link
-          href={shareLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation"
-        >
-          <FileText className="size-4 text-muted-foreground" />
-          Müşteri Çıktısını Aç
-        </Link>
-        <Link
-          href={pdfLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation"
-        >
-          <Printer className="size-4 text-muted-foreground" />
-          Yazdır / PDF
-        </Link>
-        <button
-          type="button"
-          onClick={onWhatsApp}
-          className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
-        >
-          <Share2 className="size-4" />
-          WhatsApp ile Paylaş
-        </button>
-        <div className="pt-2">
-          <p className="text-[11px] text-muted-foreground break-all">{shareLink}</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-0.5">Paylaşım için WhatsApp butonunu kullanın</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PaymentHistoryCard({
+export function PaymentHistoryCard({
   orderId,
   isCancelled,
   totals,
@@ -1281,25 +778,25 @@ function PaymentHistoryCard({
           <div className="space-y-1.5">
             {collections.map((c) => {
               const methodLabel = PAYMENT_METHOD_LABELS[c.method as PaymentMethodKey] || c.method
-              const isCancelled = c.status === "cancelled"
+              const isRowCancelled = c.status === "cancelled"
               return (
                 <Link
                   key={c.id}
                   href={`/cashbox/payments/${c.id}`}
-                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isCancelled ? "bg-destructive/10 hover:bg-destructive/10 border border-destructive/20" : "bg-muted hover:bg-muted"}`}
+                  className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${isRowCancelled ? "bg-destructive/10 hover:bg-destructive/10 border border-destructive/20" : "bg-muted hover:bg-muted"}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className={`text-sm font-semibold ${isCancelled ? "text-destructive line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
-                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isCancelled ? "bg-destructive/10 text-foreground border-destructive/20" : "bg-success/10 text-foreground border-success/20"}`}>
-                        {isCancelled ? "İptal" : methodLabel}
+                      <p className={`text-sm font-semibold ${isRowCancelled ? "text-destructive line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
+                      <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isRowCancelled ? "bg-destructive/10 text-foreground border-destructive/20" : "bg-success/10 text-foreground border-success/20"}`}>
+                        {isRowCancelled ? "İptal" : methodLabel}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}</p>
-                    {isCancelled && c.cancellationReason && (
+                    {isRowCancelled && c.cancellationReason && (
                       <p className="text-xs text-destructive mt-0.5 truncate">{c.cancellationReason}</p>
                     )}
-                    {!isCancelled && c.referenceNo && (
+                    {!isRowCancelled && c.referenceNo && (
                       <p className="text-xs text-muted-foreground/70 mt-0.5">Ref: {c.referenceNo}</p>
                     )}
                   </div>
@@ -1343,20 +840,5 @@ function PaymentHistoryCard({
         )}
       </CardContent>
     </Card>
-  )
-}
-
-function PhotoThumb({ photo, onOpen }: { photo: Photo; onOpen: () => void }) {
-  const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="block aspect-square rounded-lg bg-muted border border-border overflow-hidden hover:border-primary/40 transition-colors"
-      title={typeLabel}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/api/photos?id=${photo.id}`} alt={typeLabel} className="w-full h-full object-cover" />
-    </button>
   )
 }
