@@ -76,12 +76,37 @@ def _passthru(s: str) -> str:
     return s.strip()
 
 
+# Ruhsatın KENDİ basılı alan etiketleri (araç sahibinin adı DEĞİL). OCR, çok satırlı
+# "(C.1.1) SOYADI / TİCARİ ÜNVANI" ve "(C.1.2) ADI" etiketlerinin kodsuz devam satırını
+# değer kutusuna katabiliyor (ör. "TİCARİ ÜNVANI AKYILDIZ"). Bu statik kelimeler sahip
+# ad/soyad/ünvan değerlerinin BAŞINDAN ayıklanır. TR diakritik + boşluk/nokta normalize edilir.
+_RUHSAT_LABEL_TOKENS = {
+    "SOYADI", "SOYAD", "ADI", "TICARI", "UNVANI", "UNVAN",
+    "TICARIUNVANI", "TICARIUNVAN", "SOYADITICARIUNVANI",
+}
+
+
+def _tr_norm(s: str) -> str:
+    s = s.upper()
+    for a, b in [("İ", "I"), ("Ş", "S"), ("Ç", "C"), ("Ö", "O"), ("Ü", "U"), ("Ğ", "G"), ("Â", "A")]:
+        s = s.replace(a, b)
+    return re.sub(r"[^A-Z0-9]", "", s)
+
+
+def _clean_owner(s: str) -> str:
+    """Sahip ad/soyad/ünvan: baştaki ruhsat etiket kelimelerini ayıkla."""
+    tokens = s.split()
+    while tokens and _tr_norm(tokens[0]) in _RUHSAT_LABEL_TOKENS:
+        tokens.pop(0)
+    return " ".join(tokens).strip()
+
+
 # schema_key -> (aday kodlar öncelik sırasıyla, temizleyici)
 _FIELDS = [
     ("plate", ["A"], _clean_plate),
     ("registrationDate", ["1", "B"], _clean_date),  # (I) TESCİL TARİHİ, yoksa (B) İLK TESCİL
-    ("ownerSurname", ["C.1.1"], _passthru),
-    ("ownerName", ["C.1.2"], _passthru),
+    ("ownerSurname", ["C.1.1"], _clean_owner),
+    ("ownerName", ["C.1.2"], _clean_owner),
     ("brand", ["D.1"], _passthru),
     ("commercialName", ["D.3"], _passthru),
     ("model", ["D.3"], _passthru),
