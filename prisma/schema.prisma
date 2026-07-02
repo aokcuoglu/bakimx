@@ -709,6 +709,9 @@ model ServiceOrderItem {
   partId         String?
   part           PartStockItem? @relation(fields: [partId], references: [id])
   note           String?
+  // TecDoc article linkage when the part was picked from the vehicle catalog
+  // (no FK — external id). Enables future reorder/OEM cross-reference.
+  tecdocArticleId Int?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -1362,6 +1365,22 @@ enum SupportRequestStatus {
   in_progress
   resolved
   archived
+}
+
+/// Global TecDoc catalog cache (NOT tenant-scoped), sibling of VinLookup.
+/// Rows created this month == billed RapidAPI catalog calls; the monthly cap
+/// is shared with vin_lookups (see src/lib/rapidapi-quota.ts).
+model TecdocCache {
+  key         String   @id // "categories:v2:1:{vehicleId}:23" | "articles:1:{vehicleId}:{categoryId}:23"
+  endpoint    String // "categories" | "articles" — observability/quota breakdown
+  rawResponse Json
+  hitCount    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([endpoint])
+  @@map("tecdoc_cache")
 }
 
 enum VinLookupStatus {
