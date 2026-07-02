@@ -1,0 +1,3537 @@
+{
+ "categories": {
+  "Aks bağlantısı/Tekerlek kılavuzu/Tekerlekler": {
+   "categoryId": 100013,
+   "categoryName": "Aks bağlantısı/Tekerlek kılavuzu/Tekerlekler",
+   "level": 1,
+   "children": {
+    "Aks mafsal tamir seti": {
+     "categoryId": 100207,
+     "categoryName": "Aks mafsal tamir seti",
+     "level": 2,
+     "children": {
+      "Aks başı": {
+       "categoryId": 100587,
+       "categoryName": "Aks başı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Aks taşıyıcısı/Aks gövdesi/Aks yataklaması": {
+     "categoryId": 100212,
+     "categoryName": "Aks taşıyıcısı/Aks gövdesi/Aks yataklaması",
+     "level": 2,
+     "children": {
+      "Aks taşıyıcısı/Alt şasi": {
+       "categoryId": 100761,
+       "categoryName": "Aks taşıyıcısı/Alt şasi",
+       "level": 3,
+       "children": []
+      },
+      "Yataklama": {
+       "categoryId": 100586,
+       "categoryName": "Yataklama",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Aletler": {
+     "categoryId": 103159,
+     "categoryName": "Aletler",
+     "level": 2,
+     "children": []
+    },
+    "Amortisör yayı tespiti/ yataklaması": {
+     "categoryId": 100735,
+     "categoryName": "Amortisör yayı tespiti/ yataklaması",
+     "level": 2,
+     "children": []
+    },
+    "Direksiyon/direksiyon yataklaması": {
+     "categoryId": 100208,
+     "categoryName": "Direksiyon/direksiyon yataklaması",
+     "level": 2,
+     "children": {
+      "Bugi kolu (enine, boyuna, çapraz)": {
+       "categoryId": 100571,
+       "categoryName": "Bugi kolu (enine, boyuna, çapraz)",
+       "level": 3,
+       "children": []
+      },
+      "Yataklama/sabitleme": {
+       "categoryId": 100572,
+       "categoryName": "Yataklama/sabitleme",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "İz genişliği": {
+     "categoryId": 102733,
+     "categoryName": "İz genişliği",
+     "level": 2,
+     "children": []
+    },
+    "Lastik basıncı kontrol sistemi": {
+     "categoryId": 100834,
+     "categoryName": "Lastik basıncı kontrol sistemi",
+     "level": 2,
+     "children": []
+    },
+    "Mafsallar": {
+     "categoryId": 100211,
+     "categoryName": "Mafsallar",
+     "level": 2,
+     "children": {
+      "Taşıyıcı/kılavuz mafsalı": {
+       "categoryId": 100581,
+       "categoryName": "Taşıyıcı/kılavuz mafsalı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Poyra/bağlantısı": {
+     "categoryId": 100206,
+     "categoryName": "Poyra/bağlantısı",
+     "level": 2,
+     "children": {
+      "Poyra": {
+       "categoryId": 100578,
+       "categoryName": "Poyra",
+       "level": 3,
+       "children": []
+      },
+      "Tekerlek yatağı": {
+       "categoryId": 100579,
+       "categoryName": "Tekerlek yatağı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Stabilizatör/bağlantı parçaları": {
+     "categoryId": 100210,
+     "categoryName": "Stabilizatör/bağlantı parçaları",
+     "level": 2,
+     "children": {
+      "Bağlantı kolu": {
+       "categoryId": 100577,
+       "categoryName": "Bağlantı kolu",
+       "level": 3,
+       "children": []
+      },
+      "Sarkaç desteği": {
+       "categoryId": 100590,
+       "categoryName": "Sarkaç desteği",
+       "level": 3,
+       "children": []
+      },
+      "Tespit parçaları": {
+       "categoryId": 100596,
+       "categoryName": "Tespit parçaları",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Tekerlek/tekerlek bağlantısı": {
+     "categoryId": 100213,
+     "categoryName": "Tekerlek/tekerlek bağlantısı",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Aks tahriği": {
+   "categoryId": 100400,
+   "categoryName": "Aks tahriği",
+   "level": 1,
+   "children": {
+    "Diferansiyel": {
+     "categoryId": 100415,
+     "categoryName": "Diferansiyel",
+     "level": 2,
+     "children": []
+    },
+    "Kardan mili": {
+     "categoryId": 100703,
+     "categoryName": "Kardan mili",
+     "level": 2,
+     "children": {
+      "Kardan mili": {
+       "categoryId": 100805,
+       "categoryName": "Kardan mili",
+       "level": 3,
+       "children": []
+      },
+      "Mafsal/pulu": {
+       "categoryId": 100707,
+       "categoryName": "Mafsal/pulu",
+       "level": 3,
+       "children": []
+      },
+      "Yatak/Yataklama": {
+       "categoryId": 100839,
+       "categoryName": "Yatak/Yataklama",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Aksesuar": {
+   "categoryId": 100733,
+   "categoryName": "Aksesuar",
+   "level": 1,
+   "children": {
+    "Bagaj/Yükleme bölümü/Yükleme alanı": {
+     "categoryId": 100862,
+     "categoryName": "Bagaj/Yükleme bölümü/Yükleme alanı",
+     "level": 2,
+     "children": []
+    },
+    "Kar zinciri": {
+     "categoryId": 103485,
+     "categoryName": "Kar zinciri",
+     "level": 2,
+     "children": []
+    },
+    "Paspaslar": {
+     "categoryId": 100857,
+     "categoryName": "Paspaslar",
+     "level": 2,
+     "children": []
+    },
+    "Pedal balata seti": {
+     "categoryId": 104631,
+     "categoryName": "Pedal balata seti",
+     "level": 2,
+     "children": []
+    },
+    "Rüzgarlık": {
+     "categoryId": 103443,
+     "categoryName": "Rüzgarlık",
+     "level": 2,
+     "children": []
+    },
+    "Sansar koruma sistemi": {
+     "categoryId": 104736,
+     "categoryName": "Sansar koruma sistemi",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Ateşleme /Isıtma sistemi": {
+   "categoryId": 100008,
+   "categoryName": "Ateşleme /Isıtma sistemi",
+   "level": 1,
+   "children": {
+    "Impuls vericisi": {
+     "categoryId": 100249,
+     "categoryName": "Impuls vericisi",
+     "level": 2,
+     "children": []
+    },
+    "Kızdırma bujisi": {
+     "categoryId": 100152,
+     "categoryName": "Kızdırma bujisi",
+     "level": 2,
+     "children": []
+    },
+    "Kumanda cihazı/Röleler": {
+     "categoryId": 100247,
+     "categoryName": "Kumanda cihazı/Röleler",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Bilgi/iletişim sistemleri": {
+   "categoryId": 100339,
+   "categoryName": "Bilgi/iletişim sistemleri",
+   "level": 1,
+   "children": {
+    "Anten": {
+     "categoryId": 100695,
+     "categoryName": "Anten",
+     "level": 2,
+     "children": []
+    },
+    "Audio sistemi": {
+     "categoryId": 100694,
+     "categoryName": "Audio sistemi",
+     "level": 2,
+     "children": []
+    },
+    "Göstergeler": {
+     "categoryId": 100693,
+     "categoryName": "Göstergeler",
+     "level": 2,
+     "children": []
+    },
+    "İletişim": {
+     "categoryId": 100696,
+     "categoryName": "İletişim",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Cam temizleme tertibatı": {
+   "categoryId": 100018,
+   "categoryName": "Cam temizleme tertibatı",
+   "level": 1,
+   "children": {
+    "Cam suyu pompası": {
+     "categoryId": 100135,
+     "categoryName": "Cam suyu pompası",
+     "level": 2,
+     "children": []
+    },
+    "Silecek süpürgesi": {
+     "categoryId": 100133,
+     "categoryName": "Silecek süpürgesi",
+     "level": 2,
+     "children": []
+    },
+    "Yıkama suyu kabı bağlantısı": {
+     "categoryId": 100610,
+     "categoryName": "Yıkama suyu kabı bağlantısı",
+     "level": 2,
+     "children": []
+    },
+    "Yıkama suyu memesi": {
+     "categoryId": 100611,
+     "categoryName": "Yıkama suyu memesi",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Debriyaj/montaj parçaları": {
+   "categoryId": 100050,
+   "categoryName": "Debriyaj/montaj parçaları",
+   "level": 1,
+   "children": {
+    "Debriyaj diski": {
+     "categoryId": 100053,
+     "categoryName": "Debriyaj diski",
+     "level": 2,
+     "children": []
+    },
+    "Debriyaj kumandası": {
+     "categoryId": 100079,
+     "categoryName": "Debriyaj kumandası",
+     "level": 2,
+     "children": {
+      "Kumanda silindiri": {
+       "categoryId": 100060,
+       "categoryName": "Kumanda silindiri",
+       "level": 3,
+       "children": []
+      },
+      "Merkez silindir": {
+       "categoryId": 100061,
+       "categoryName": "Merkez silindir",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Debriyaj seti": {
+     "categoryId": 100051,
+     "categoryName": "Debriyaj seti",
+     "level": 2,
+     "children": []
+    },
+    "Geri çekme yatağı/Merkezi ayırıcı": {
+     "categoryId": 100054,
+     "categoryName": "Geri çekme yatağı/Merkezi ayırıcı",
+     "level": 2,
+     "children": {
+      "Merkezi ayırıcı": {
+       "categoryId": 100237,
+       "categoryName": "Merkezi ayırıcı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Hidrolik sıvısı": {
+     "categoryId": 104813,
+     "categoryName": "Hidrolik sıvısı",
+     "level": 2,
+     "children": []
+    },
+    "Volan": {
+     "categoryId": 100057,
+     "categoryName": "Volan",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Direksiyon": {
+   "categoryId": 100012,
+   "categoryName": "Direksiyon",
+   "level": 1,
+   "children": {
+    "Direksiyon aktarma parçaları": {
+     "categoryId": 100594,
+     "categoryName": "Direksiyon aktarma parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Direksiyon dişli kutusu/ pompası": {
+     "categoryId": 100199,
+     "categoryName": "Direksiyon dişli kutusu/ pompası",
+     "level": 2,
+     "children": []
+    },
+    "Direksiyon sütunu/mili": {
+     "categoryId": 100202,
+     "categoryName": "Direksiyon sütunu/mili",
+     "level": 2,
+     "children": []
+    },
+    "Direksiyon/yapı parçaları": {
+     "categoryId": 104391,
+     "categoryName": "Direksiyon/yapı parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Körük/Conta": {
+     "categoryId": 100201,
+     "categoryName": "Körük/Conta",
+     "level": 2,
+     "children": []
+    },
+    "Mafsallar": {
+     "categoryId": 100198,
+     "categoryName": "Mafsallar",
+     "level": 2,
+     "children": []
+    },
+    "Rot çubukları/ parçaları": {
+     "categoryId": 100601,
+     "categoryName": "Rot çubukları/ parçaları",
+     "level": 2,
+     "children": {
+      "Rot çubukları parçaları": {
+       "categoryId": 100603,
+       "categoryName": "Rot çubukları parçaları",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Egzoz sistemi": {
+   "categoryId": 100004,
+   "categoryName": "Egzoz sistemi",
+   "level": 1,
+   "children": {
+    "Kurum filtresi/ partikül filtresi": {
+     "categoryId": 100318,
+     "categoryName": "Kurum filtresi/ partikül filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Lambda sensörü": {
+     "categoryId": 100048,
+     "categoryName": "Lambda sensörü",
+     "level": 2,
+     "children": []
+    },
+    "Montaj parçaları": {
+     "categoryId": 100222,
+     "categoryName": "Montaj parçaları",
+     "level": 2,
+     "children": {
+      "Montaj parçaları": {
+       "categoryId": 100317,
+       "categoryName": "Montaj parçaları",
+       "level": 3,
+       "children": {
+        "Kaynak kovanı": {
+         "categoryId": 100716,
+         "categoryName": "Kaynak kovanı",
+         "level": 4,
+         "children": []
+        },
+        "Kelepçe": {
+         "categoryId": 100323,
+         "categoryName": "Kelepçe",
+         "level": 4,
+         "children": []
+        },
+        "Lastik tampon": {
+         "categoryId": 100325,
+         "categoryName": "Lastik tampon",
+         "level": 4,
+         "children": []
+        },
+        "Sıkıştırma parçası": {
+         "categoryId": 100329,
+         "categoryName": "Sıkıştırma parçası",
+         "level": 4,
+         "children": []
+        },
+        "Tutucu": {
+         "categoryId": 100327,
+         "categoryName": "Tutucu",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Sensör/Sonda": {
+     "categoryId": 103414,
+     "categoryName": "Sensör/Sonda",
+     "level": 2,
+     "children": []
+    },
+    "Susturucu tertibatı komple": {
+     "categoryId": 100046,
+     "categoryName": "Susturucu tertibatı komple",
+     "level": 2,
+     "children": []
+    },
+    "Turboşarj": {
+     "categoryId": 100872,
+     "categoryName": "Turboşarj",
+     "level": 2,
+     "children": []
+    },
+    "Üre enjeksiyonu": {
+     "categoryId": 103019,
+     "categoryName": "Üre enjeksiyonu",
+     "level": 2,
+     "children": {
+      "Sensör": {
+       "categoryId": 103062,
+       "categoryName": "Sensör",
+       "level": 3,
+       "children": []
+      },
+      "Üre filtresi (AdBlue)": {
+       "categoryId": 706472,
+       "categoryName": "Üre filtresi (AdBlue)",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Elektrik": {
+   "categoryId": 100010,
+   "categoryName": "Elektrik",
+   "level": 1,
+   "children": {
+    "Akü": {
+     "categoryId": 100042,
+     "categoryName": "Akü",
+     "level": 2,
+     "children": []
+    },
+    "Aletler": {
+     "categoryId": 103136,
+     "categoryName": "Aletler",
+     "level": 2,
+     "children": []
+    },
+    "Alternatör/parçaları": {
+     "categoryId": 100041,
+     "categoryName": "Alternatör/parçaları",
+     "level": 2,
+     "children": {
+      "Alternatör": {
+       "categoryId": 100350,
+       "categoryName": "Alternatör",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar": {
+       "categoryId": 100352,
+       "categoryName": "Parçalar",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Ana far/ parçaları": {
+     "categoryId": 100143,
+     "categoryName": "Ana far/ parçaları",
+     "level": 2,
+     "children": {
+      "Ana far ampulü": {
+       "categoryId": 100427,
+       "categoryName": "Ana far ampulü",
+       "level": 3,
+       "children": []
+      },
+      "Ana far parçaları": {
+       "categoryId": 100430,
+       "categoryName": "Ana far parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Ana far/ elemanı": {
+       "categoryId": 100433,
+       "categoryName": "Ana far/ elemanı",
+       "level": 3,
+       "children": []
+      },
+      "Uzun huzme far ampulü": {
+       "categoryId": 706742,
+       "categoryName": "Uzun huzme far ampulü",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Aydınlatma şalteri/rölesi/kumanda cihazları": {
+     "categoryId": 100307,
+     "categoryName": "Aydınlatma şalteri/rölesi/kumanda cihazları",
+     "level": 2,
+     "children": {
+      "Şalter/Regülatör": {
+       "categoryId": 100509,
+       "categoryName": "Şalter/Regülatör",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Göstergeler": {
+     "categoryId": 100322,
+     "categoryName": "Göstergeler",
+     "level": 2,
+     "children": {
+      "Gösterge enstrümanları": {
+       "categoryId": 100555,
+       "categoryName": "Gösterge enstrümanları",
+       "level": 3,
+       "children": []
+      },
+      "Sensörler/şalterler(Verici)": {
+       "categoryId": 100553,
+       "categoryName": "Sensörler/şalterler(Verici)",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "İlave far/parçaları": {
+     "categoryId": 100787,
+     "categoryName": "İlave far/parçaları",
+     "level": 2,
+     "children": {
+      "Dönüş farları/dönüş farları elemanları": {
+       "categoryId": 102671,
+       "categoryName": "Dönüş farları/dönüş farları elemanları",
+       "level": 3,
+       "children": []
+      },
+      "Sis farı/parçaları": {
+       "categoryId": 100277,
+       "categoryName": "Sis farı/parçaları",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 100447,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        },
+        "Sis farı parçaları": {
+         "categoryId": 100444,
+         "categoryName": "Sis farı parçaları",
+         "level": 4,
+         "children": []
+        },
+        "Sis farı/ elemanı": {
+         "categoryId": 100440,
+         "categoryName": "Sis farı/ elemanı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Uzun huzme far/parçaları": {
+       "categoryId": 100276,
+       "categoryName": "Uzun huzme far/parçaları",
+       "level": 3,
+       "children": {
+        "Uzun huzme far ampulü": {
+         "categoryId": 100442,
+         "categoryName": "Uzun huzme far ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Kablo seti/münferit parçalar": {
+     "categoryId": 103066,
+     "categoryName": "Kablo seti/münferit parçalar",
+     "level": 2,
+     "children": []
+    },
+    "Korna": {
+     "categoryId": 100320,
+     "categoryName": "Korna",
+     "level": 2,
+     "children": []
+    },
+    "Kumanda cihazları": {
+     "categoryId": 100727,
+     "categoryName": "Kumanda cihazları",
+     "level": 2,
+     "children": []
+    },
+    "Lambalar": {
+     "categoryId": 100043,
+     "categoryName": "Lambalar",
+     "level": 2,
+     "children": {
+      "Arka far/parçaları": {
+       "categoryId": 100275,
+       "categoryName": "Arka far/parçaları",
+       "level": 3,
+       "children": {
+        "Arka far": {
+         "categoryId": 100454,
+         "categoryName": "Arka far",
+         "level": 4,
+         "children": []
+        },
+        "Arka far ampulü": {
+         "categoryId": 101495,
+         "categoryName": "Arka far ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Fren lambası/ parçaları": {
+       "categoryId": 100284,
+       "categoryName": "Fren lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Fren lambası ampulü": {
+         "categoryId": 100496,
+         "categoryName": "Fren lambası ampulü",
+         "level": 4,
+         "children": []
+        },
+        "İlave fren lambası": {
+         "categoryId": 100867,
+         "categoryName": "İlave fren lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Geri vites lambası/ parçaları": {
+       "categoryId": 100287,
+       "categoryName": "Geri vites lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Geri vites lambası ampulü": {
+         "categoryId": 100501,
+         "categoryName": "Geri vites lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Gündüz seyir ışığı": {
+       "categoryId": 100870,
+       "categoryName": "Gündüz seyir ışığı",
+       "level": 3,
+       "children": []
+      },
+      "İç aydınlatma": {
+       "categoryId": 100292,
+       "categoryName": "İç aydınlatma",
+       "level": 3,
+       "children": {
+        "Araç içi aydınlatması": {
+         "categoryId": 100505,
+         "categoryName": "Araç içi aydınlatması",
+         "level": 4,
+         "children": []
+        },
+        "Bagaj /Yükleme bölümü aydınlatması": {
+         "categoryId": 100507,
+         "categoryName": "Bagaj /Yükleme bölümü aydınlatması",
+         "level": 4,
+         "children": []
+        },
+        "Motor bölümü aydınlatması": {
+         "categoryId": 100506,
+         "categoryName": "Motor bölümü aydınlatması",
+         "level": 4,
+         "children": []
+        },
+        "Okuma lambası": {
+         "categoryId": 101803,
+         "categoryName": "Okuma lambası",
+         "level": 4,
+         "children": []
+        },
+        "Torpido gözü aydınlatması": {
+         "categoryId": 101794,
+         "categoryName": "Torpido gözü aydınlatması",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Kapı lambası": {
+       "categoryId": 100291,
+       "categoryName": "Kapı lambası",
+       "level": 3,
+       "children": []
+      },
+      "Plaka aydınlatması/parçaları": {
+       "categoryId": 100147,
+       "categoryName": "Plaka aydınlatması/parçaları",
+       "level": 3,
+       "children": {
+        "Plaka aydınlatması ampulü": {
+         "categoryId": 100499,
+         "categoryName": "Plaka aydınlatması ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sinyal lambası/parçaları": {
+       "categoryId": 100145,
+       "categoryName": "Sinyal lambası/parçaları",
+       "level": 3,
+       "children": {
+        "Sinyal lambası": {
+         "categoryId": 100463,
+         "categoryName": "Sinyal lambası",
+         "level": 4,
+         "children": []
+        },
+        "Sinyal lambası ampulü": {
+         "categoryId": 100498,
+         "categoryName": "Sinyal lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sis farı/münferit parçalar": {
+       "categoryId": 100285,
+       "categoryName": "Sis farı/münferit parçalar",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 100500,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yan /Konum lambası/ parçaları": {
+       "categoryId": 100290,
+       "categoryName": "Yan /Konum lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Ampul": {
+         "categoryId": 100503,
+         "categoryName": "Ampul",
+         "level": 4,
+         "children": []
+        },
+        "Konum lambası": {
+         "categoryId": 100469,
+         "categoryName": "Konum lambası",
+         "level": 4,
+         "children": []
+        },
+        "Park/pozisyon lambası": {
+         "categoryId": 100468,
+         "categoryName": "Park/pozisyon lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Marş sistemi": {
+     "categoryId": 100353,
+     "categoryName": "Marş sistemi",
+     "level": 2,
+     "children": {
+      "Marş motoru": {
+       "categoryId": 100359,
+       "categoryName": "Marş motoru",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar": {
+       "categoryId": 100040,
+       "categoryName": "Parçalar",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Röle": {
+     "categoryId": 100785,
+     "categoryName": "Röle",
+     "level": 2,
+     "children": []
+    },
+    "Sensörler": {
+     "categoryId": 102747,
+     "categoryName": "Sensörler",
+     "level": 2,
+     "children": []
+    },
+    "Sigortalar": {
+     "categoryId": 706659,
+     "categoryName": "Sigortalar",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Emniyet sistemleri": {
+   "categoryId": 100417,
+   "categoryName": "Emniyet sistemleri",
+   "level": 1,
+   "children": {
+    "Hava yastığı sistemi": {
+     "categoryId": 100762,
+     "categoryName": "Hava yastığı sistemi",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Far temizleme tertibatı": {
+   "categoryId": 100342,
+   "categoryName": "Far temizleme tertibatı",
+   "level": 1,
+   "children": []
+  },
+  "Filtre": {
+   "categoryId": 100005,
+   "categoryName": "Filtre",
+   "level": 1,
+   "children": {
+    "Araç içi hava filtresi": {
+     "categoryId": 100263,
+     "categoryName": "Araç içi hava filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Filtre takımı": {
+     "categoryId": 102901,
+     "categoryName": "Filtre takımı",
+     "level": 2,
+     "children": []
+    },
+    "Hava filtresi": {
+     "categoryId": 100260,
+     "categoryName": "Hava filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Hidrolik filtresi": {
+     "categoryId": 706725,
+     "categoryName": "Hidrolik filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Yağ filtresi": {
+     "categoryId": 100259,
+     "categoryName": "Yağ filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Yakıt filtresi": {
+     "categoryId": 100261,
+     "categoryName": "Yakıt filtresi",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Fren tertibatı": {
+   "categoryId": 100006,
+   "categoryName": "Fren tertibatı",
+   "level": 1,
+   "children": {
+    "Ana fren silindiri": {
+     "categoryId": 100026,
+     "categoryName": "Ana fren silindiri",
+     "level": 2,
+     "children": []
+    },
+    "Diskli fren": {
+     "categoryId": 100626,
+     "categoryName": "Diskli fren",
+     "level": 2,
+     "children": {
+      "Aksesuar/Parçalar": {
+       "categoryId": 100630,
+       "categoryName": "Aksesuar/Parçalar",
+       "level": 3,
+       "children": []
+      },
+      "Fren balatası": {
+       "categoryId": 100030,
+       "categoryName": "Fren balatası",
+       "level": 3,
+       "children": []
+      },
+      "Fren diski": {
+       "categoryId": 100032,
+       "categoryName": "Fren diski",
+       "level": 3,
+       "children": []
+      },
+      "Fren takımı": {
+       "categoryId": 102244,
+       "categoryName": "Fren takımı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "El freni": {
+     "categoryId": 100034,
+     "categoryName": "El freni",
+     "level": 2,
+     "children": []
+    },
+    "Fren hidroliği": {
+     "categoryId": 102208,
+     "categoryName": "Fren hidroliği",
+     "level": 2,
+     "children": []
+    },
+    "Fren hortumları": {
+     "categoryId": 100035,
+     "categoryName": "Fren hortumları",
+     "level": 2,
+     "children": []
+    },
+    "Fren kaliperi": {
+     "categoryId": 100027,
+     "categoryName": "Fren kaliperi",
+     "level": 2,
+     "children": {
+      "Fren kaliperi/ tutucusu(taşıyıcısı)": {
+       "categoryId": 100807,
+       "categoryName": "Fren kaliperi/ tutucusu(taşıyıcısı)",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar": {
+       "categoryId": 100806,
+       "categoryName": "Parçalar",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Fren lambası şalteri": {
+     "categoryId": 102248,
+     "categoryName": "Fren lambası şalteri",
+     "level": 2,
+     "children": []
+    },
+    "Fren servosu": {
+     "categoryId": 100025,
+     "categoryName": "Fren servosu",
+     "level": 2,
+     "children": []
+    },
+    "Kampanalı fren": {
+     "categoryId": 100627,
+     "categoryName": "Kampanalı fren",
+     "level": 2,
+     "children": {
+      "Fren balatası/pabucu": {
+       "categoryId": 100031,
+       "categoryName": "Fren balatası/pabucu",
+       "level": 3,
+       "children": []
+      },
+      "Tekerlek silindiri": {
+       "categoryId": 102965,
+       "categoryName": "Tekerlek silindiri",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Kollar/halatlar/çekiler": {
+     "categoryId": 100635,
+     "categoryName": "Kollar/halatlar/çekiler",
+     "level": 2,
+     "children": []
+    },
+    "Sürüş dinamiği ayarlaması": {
+     "categoryId": 100038,
+     "categoryName": "Sürüş dinamiği ayarlaması",
+     "level": 2,
+     "children": []
+    },
+    "Tekerlek silindiri": {
+     "categoryId": 100028,
+     "categoryName": "Tekerlek silindiri",
+     "level": 2,
+     "children": []
+    },
+    "Vakum pompası": {
+     "categoryId": 100039,
+     "categoryName": "Vakum pompası",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Hibrid-/Elektro tahrik": {
+   "categoryId": 706209,
+   "categoryName": "Hibrid-/Elektro tahrik",
+   "level": 1,
+   "children": {
+    "Soğutma sistemi": {
+     "categoryId": 706210,
+     "categoryName": "Soğutma sistemi",
+     "level": 2,
+     "children": {
+      "Elektrikli tahrikli su pompası": {
+       "categoryId": 706706,
+       "categoryName": "Elektrikli tahrikli su pompası",
+       "level": 3,
+       "children": []
+      },
+      "Elektro motor soğutucu": {
+       "categoryId": 706215,
+       "categoryName": "Elektro motor soğutucu",
+       "level": 3,
+       "children": []
+      },
+      "Hortumlar/bağlantılar/flanşlar": {
+       "categoryId": 706747,
+       "categoryName": "Hortumlar/bağlantılar/flanşlar",
+       "level": 3,
+       "children": []
+      },
+      "Sensörler": {
+       "categoryId": 706816,
+       "categoryName": "Sensörler",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "İç donanım": {
+   "categoryId": 100341,
+   "categoryName": "İç donanım",
+   "level": 1,
+   "children": {
+    "Bagaj/Yükleme bölümü": {
+     "categoryId": 102697,
+     "categoryName": "Bagaj/Yükleme bölümü",
+     "level": 2,
+     "children": []
+    },
+    "Cam krikosu": {
+     "categoryId": 102691,
+     "categoryName": "Cam krikosu",
+     "level": 2,
+     "children": []
+    },
+    "Koltuklar": {
+     "categoryId": 100673,
+     "categoryName": "Koltuklar",
+     "level": 2,
+     "children": []
+    },
+    "Paspaslar": {
+     "categoryId": 102692,
+     "categoryName": "Paspaslar",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Isıtma/Havalandırma": {
+   "categoryId": 100241,
+   "categoryName": "Isıtma/Havalandırma",
+   "level": 1,
+   "children": {
+    "Araç içi hava filtresi": {
+     "categoryId": 100346,
+     "categoryName": "Araç içi hava filtresi",
+     "level": 2,
+     "children": []
+    },
+    "Fan parçaları": {
+     "categoryId": 100349,
+     "categoryName": "Fan parçaları",
+     "level": 2,
+     "children": []
+    },
+    "İç mekan ısı değiştiricisi": {
+     "categoryId": 100347,
+     "categoryName": "İç mekan ısı değiştiricisi",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Karoseri": {
+   "categoryId": 100001,
+   "categoryName": "Karoseri",
+   "level": 1,
+   "children": {
+    "Ana far/ parçaları": {
+     "categoryId": 101465,
+     "categoryName": "Ana far/ parçaları",
+     "level": 2,
+     "children": {
+      "Ana far ampulü": {
+       "categoryId": 101467,
+       "categoryName": "Ana far ampulü",
+       "level": 3,
+       "children": []
+      },
+      "Ana far parçaları": {
+       "categoryId": 101468,
+       "categoryName": "Ana far parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Ana far/ elemanı": {
+       "categoryId": 101466,
+       "categoryName": "Ana far/ elemanı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Araç arkası": {
+     "categoryId": 101705,
+     "categoryName": "Araç arkası",
+     "level": 2,
+     "children": {
+      "Arka cam": {
+       "categoryId": 101784,
+       "categoryName": "Arka cam",
+       "level": 3,
+       "children": []
+      },
+      "Arka far/parçaları": {
+       "categoryId": 101715,
+       "categoryName": "Arka far/parçaları",
+       "level": 3,
+       "children": {
+        "Arka far": {
+         "categoryId": 101716,
+         "categoryName": "Arka far",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Çamurluk": {
+       "categoryId": 101710,
+       "categoryName": "Çamurluk",
+       "level": 3,
+       "children": []
+      },
+      "Fren lambası/ parçaları": {
+       "categoryId": 101722,
+       "categoryName": "Fren lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Fren lambası ampulü": {
+         "categoryId": 101726,
+         "categoryName": "Fren lambası ampulü",
+         "level": 4,
+         "children": []
+        },
+        "İlave fren lambası": {
+         "categoryId": 101723,
+         "categoryName": "İlave fren lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Geri vites lambası/ parçaları": {
+       "categoryId": 101739,
+       "categoryName": "Geri vites lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Geri vites lambası ampulü": {
+         "categoryId": 101742,
+         "categoryName": "Geri vites lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Motor kapağı": {
+       "categoryId": 103036,
+       "categoryName": "Motor kapağı",
+       "level": 3,
+       "children": []
+      },
+      "Motor kaputu/parçaları/izolasyonu": {
+       "categoryId": 101783,
+       "categoryName": "Motor kaputu/parçaları/izolasyonu",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar/Montaj parçalari": {
+       "categoryId": 101745,
+       "categoryName": "Parçalar/Montaj parçalari",
+       "level": 3,
+       "children": {
+        "Gaz yayları": {
+         "categoryId": 101752,
+         "categoryName": "Gaz yayları",
+         "level": 4,
+         "children": []
+        },
+        "Muhafazalar/Kapaklar": {
+         "categoryId": 101746,
+         "categoryName": "Muhafazalar/Kapaklar",
+         "level": 4,
+         "children": []
+        },
+        "Rüzgarlık": {
+         "categoryId": 101747,
+         "categoryName": "Rüzgarlık",
+         "level": 4,
+         "children": []
+        },
+        "Süs/Koruma çıtası": {
+         "categoryId": 101750,
+         "categoryName": "Süs/Koruma çıtası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Plaka aydınlatması/parçaları": {
+       "categoryId": 101731,
+       "categoryName": "Plaka aydınlatması/parçaları",
+       "level": 3,
+       "children": {
+        "Plaka aydınlatması ampulü": {
+         "categoryId": 101734,
+         "categoryName": "Plaka aydınlatması ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Rüzgarlık/parçaları": {
+       "categoryId": 101779,
+       "categoryName": "Rüzgarlık/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Sinyal lambası/parçaları": {
+       "categoryId": 101727,
+       "categoryName": "Sinyal lambası/parçaları",
+       "level": 3,
+       "children": {
+        "Sinyal lambası": {
+         "categoryId": 101728,
+         "categoryName": "Sinyal lambası",
+         "level": 4,
+         "children": []
+        },
+        "Sinyal lambası ampulü": {
+         "categoryId": 101730,
+         "categoryName": "Sinyal lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sis farı/münferit parçalar": {
+       "categoryId": 101735,
+       "categoryName": "Sis farı/münferit parçalar",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 101738,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Stop lambası/münferit parçaları": {
+       "categoryId": 101718,
+       "categoryName": "Stop lambası/münferit parçaları",
+       "level": 3,
+       "children": {
+        "Stop lambası münferit parçaları": {
+         "categoryId": 101721,
+         "categoryName": "Stop lambası münferit parçaları",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Tampon/Parçaları": {
+       "categoryId": 101706,
+       "categoryName": "Tampon/Parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Yakıt deposu/parçaları": {
+       "categoryId": 101763,
+       "categoryName": "Yakıt deposu/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Yan /Konum lambası/ parçaları": {
+       "categoryId": 101785,
+       "categoryName": "Yan /Konum lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Ampul": {
+         "categoryId": 101789,
+         "categoryName": "Ampul",
+         "level": 4,
+         "children": []
+        },
+        "Konum lambası": {
+         "categoryId": 101787,
+         "categoryName": "Konum lambası",
+         "level": 4,
+         "children": []
+        },
+        "Park/pozisyon lambası": {
+         "categoryId": 101786,
+         "categoryName": "Park/pozisyon lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yan duvar": {
+       "categoryId": 101780,
+       "categoryName": "Yan duvar",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Araç önü": {
+     "categoryId": 101648,
+     "categoryName": "Araç önü",
+     "level": 2,
+     "children": {
+      "Ana far/ parçaları": {
+       "categoryId": 101656,
+       "categoryName": "Ana far/ parçaları",
+       "level": 3,
+       "children": {
+        "Ana far ampulü": {
+         "categoryId": 101658,
+         "categoryName": "Ana far ampulü",
+         "level": 4,
+         "children": []
+        },
+        "Ana far parçaları": {
+         "categoryId": 101659,
+         "categoryName": "Ana far parçaları",
+         "level": 4,
+         "children": []
+        },
+        "Ana far/ elemanı": {
+         "categoryId": 101657,
+         "categoryName": "Ana far/ elemanı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Çamurluk": {
+       "categoryId": 101652,
+       "categoryName": "Çamurluk",
+       "level": 3,
+       "children": []
+      },
+      "Motor kapağı": {
+       "categoryId": 103035,
+       "categoryName": "Motor kapağı",
+       "level": 3,
+       "children": []
+      },
+      "Motor kaputu/parçaları/izolasyonu": {
+       "categoryId": 101654,
+       "categoryName": "Motor kaputu/parçaları/izolasyonu",
+       "level": 3,
+       "children": []
+      },
+      "Ön cam": {
+       "categoryId": 101655,
+       "categoryName": "Ön cam",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar/Montaj parçalari": {
+       "categoryId": 101673,
+       "categoryName": "Parçalar/Montaj parçalari",
+       "level": 3,
+       "children": {
+        "Kaplama/Izgara": {
+         "categoryId": 101675,
+         "categoryName": "Kaplama/Izgara",
+         "level": 4,
+         "children": []
+        },
+        "Muhafazalar/Kapaklar": {
+         "categoryId": 101674,
+         "categoryName": "Muhafazalar/Kapaklar",
+         "level": 4,
+         "children": []
+        },
+        "Rüzgarlık": {
+         "categoryId": 101778,
+         "categoryName": "Rüzgarlık",
+         "level": 4,
+         "children": []
+        },
+        "Süs/Koruma çıtası": {
+         "categoryId": 101679,
+         "categoryName": "Süs/Koruma çıtası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Rüzgarlık/parçaları": {
+       "categoryId": 101650,
+       "categoryName": "Rüzgarlık/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Sinyal lambası/parçaları": {
+       "categoryId": 101669,
+       "categoryName": "Sinyal lambası/parçaları",
+       "level": 3,
+       "children": {
+        "Sinyal lambası": {
+         "categoryId": 101670,
+         "categoryName": "Sinyal lambası",
+         "level": 4,
+         "children": []
+        },
+        "Sinyal lambası ampulü": {
+         "categoryId": 101672,
+         "categoryName": "Sinyal lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sis farı/parçaları": {
+       "categoryId": 101661,
+       "categoryName": "Sis farı/parçaları",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 101663,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        },
+        "Sis farı/ elemanı": {
+         "categoryId": 101662,
+         "categoryName": "Sis farı/ elemanı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Tampon/Parçaları": {
+       "categoryId": 101649,
+       "categoryName": "Tampon/Parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Uzun huzme far/parçaları": {
+       "categoryId": 101665,
+       "categoryName": "Uzun huzme far/parçaları",
+       "level": 3,
+       "children": {
+        "Uzun huzme far ampulü": {
+         "categoryId": 101667,
+         "categoryName": "Uzun huzme far ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yan /Konum lambası/ parçaları": {
+       "categoryId": 101766,
+       "categoryName": "Yan /Konum lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Ampul": {
+         "categoryId": 101770,
+         "categoryName": "Ampul",
+         "level": 4,
+         "children": []
+        },
+        "Konum lambası": {
+         "categoryId": 101768,
+         "categoryName": "Konum lambası",
+         "level": 4,
+         "children": []
+        },
+        "Park/pozisyon lambası": {
+         "categoryId": 101767,
+         "categoryName": "Park/pozisyon lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Cam donanımı/ayna": {
+     "categoryId": 100744,
+     "categoryName": "Cam donanımı/ayna",
+     "level": 2,
+     "children": {
+      "Ayna": {
+       "categoryId": 100566,
+       "categoryName": "Ayna",
+       "level": 3,
+       "children": []
+      },
+      "Cam donanımı": {
+       "categoryId": 100745,
+       "categoryName": "Cam donanımı",
+       "level": 3,
+       "children": {
+        "Pencere camları": {
+         "categoryId": 100567,
+         "categoryName": "Pencere camları",
+         "level": 4,
+         "children": []
+        },
+        "Yapıştırmalı camlar": {
+         "categoryId": 102346,
+         "categoryName": "Yapıştırmalı camlar",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Gaz yayları": {
+     "categoryId": 100826,
+     "categoryName": "Gaz yayları",
+     "level": 2,
+     "children": []
+    },
+    "İlave far/parçaları": {
+     "categoryId": 101340,
+     "categoryName": "İlave far/parçaları",
+     "level": 2,
+     "children": {
+      "Sis farı/parçaları": {
+       "categoryId": 101341,
+       "categoryName": "Sis farı/parçaları",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 101343,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        },
+        "Sis farı/ elemanı": {
+         "categoryId": 101342,
+         "categoryName": "Sis farı/ elemanı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Uzun huzme far/parçaları": {
+       "categoryId": 101345,
+       "categoryName": "Uzun huzme far/parçaları",
+       "level": 3,
+       "children": {
+        "Uzun huzme far ampulü": {
+         "categoryId": 101347,
+         "categoryName": "Uzun huzme far ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Kanatlar/kapaklar/kapılar/sürgülü/pan.tavan/katl.tavan": {
+     "categoryId": 100746,
+     "categoryName": "Kanatlar/kapaklar/kapılar/sürgülü/pan.tavan/katl.tavan",
+     "level": 2,
+     "children": {
+      "Kapılar/parçalar": {
+       "categoryId": 100189,
+       "categoryName": "Kapılar/parçalar",
+       "level": 3,
+       "children": []
+      },
+      "Motor kaputu/parçaları/izolasyonu": {
+       "categoryId": 100184,
+       "categoryName": "Motor kaputu/parçaları/izolasyonu",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Karoseri parçaları/Çamurluk/Tampon": {
+     "categoryId": 100743,
+     "categoryName": "Karoseri parçaları/Çamurluk/Tampon",
+     "level": 2,
+     "children": {
+      "Arka kaplama": {
+       "categoryId": 100739,
+       "categoryName": "Arka kaplama",
+       "level": 3,
+       "children": []
+      },
+      "Çamurluk": {
+       "categoryId": 100165,
+       "categoryName": "Çamurluk",
+       "level": 3,
+       "children": []
+      },
+      "Muhafazalar/Kapaklar": {
+       "categoryId": 100699,
+       "categoryName": "Muhafazalar/Kapaklar",
+       "level": 3,
+       "children": []
+      },
+      "Ön kaplama/Ön ızgara": {
+       "categoryId": 100191,
+       "categoryName": "Ön kaplama/Ön ızgara",
+       "level": 3,
+       "children": []
+      },
+      "Rüzgarlık": {
+       "categoryId": 100537,
+       "categoryName": "Rüzgarlık",
+       "level": 3,
+       "children": []
+      },
+      "Rüzgarlık/parçaları": {
+       "categoryId": 100185,
+       "categoryName": "Rüzgarlık/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Sabitleme klipsi": {
+       "categoryId": 104959,
+       "categoryName": "Sabitleme klipsi",
+       "level": 3,
+       "children": []
+      },
+      "Taban paneli": {
+       "categoryId": 100168,
+       "categoryName": "Taban paneli",
+       "level": 3,
+       "children": []
+      },
+      "Tampon/Parçaları": {
+       "categoryId": 100187,
+       "categoryName": "Tampon/Parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Yan duvar": {
+       "categoryId": 100181,
+       "categoryName": "Yan duvar",
+       "level": 3,
+       "children": []
+      },
+      "Yardımcı şasi/agrega tutucusu": {
+       "categoryId": 101504,
+       "categoryName": "Yardımcı şasi/agrega tutucusu",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Karoseri parçalarının toplam grafiği": {
+     "categoryId": 101765,
+     "categoryName": "Karoseri parçalarının toplam grafiği",
+     "level": 2,
+     "children": []
+    },
+    "Lambalar": {
+     "categoryId": 101407,
+     "categoryName": "Lambalar",
+     "level": 2,
+     "children": {
+      "Arka far/parçaları": {
+       "categoryId": 101408,
+       "categoryName": "Arka far/parçaları",
+       "level": 3,
+       "children": {
+        "Arka far": {
+         "categoryId": 101409,
+         "categoryName": "Arka far",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Fren lambası/ parçaları": {
+       "categoryId": 101415,
+       "categoryName": "Fren lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Fren lambası ampulü": {
+         "categoryId": 101419,
+         "categoryName": "Fren lambası ampulü",
+         "level": 4,
+         "children": []
+        },
+        "İlave fren lambası": {
+         "categoryId": 101416,
+         "categoryName": "İlave fren lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Geri vites lambası/ parçaları": {
+       "categoryId": 101432,
+       "categoryName": "Geri vites lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Geri vites lambası ampulü": {
+         "categoryId": 101435,
+         "categoryName": "Geri vites lambası ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Kapı lambası": {
+       "categoryId": 101452,
+       "categoryName": "Kapı lambası",
+       "level": 3,
+       "children": []
+      },
+      "Plaka aydınlatması/parçaları": {
+       "categoryId": 101424,
+       "categoryName": "Plaka aydınlatması/parçaları",
+       "level": 3,
+       "children": {
+        "Plaka aydınlatması ampulü": {
+         "categoryId": 101427,
+         "categoryName": "Plaka aydınlatması ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sinyal lambası/parçaları": {
+       "categoryId": 101420,
+       "categoryName": "Sinyal lambası/parçaları",
+       "level": 3,
+       "children": {
+        "Sinyal lambası": {
+         "categoryId": 101421,
+         "categoryName": "Sinyal lambası",
+         "level": 4,
+         "children": []
+        },
+        "Sinyal lambası ampulü": {
+         "categoryId": 101423,
+         "categoryName": "Sinyal lambası ampulü",
+         "level": 4,
+         "children": []
+        },
+        "Yan sinyal lambası": {
+         "categoryId": 102406,
+         "categoryName": "Yan sinyal lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Sis farı/münferit parçalar": {
+       "categoryId": 101428,
+       "categoryName": "Sis farı/münferit parçalar",
+       "level": 3,
+       "children": {
+        "Sis farı ampulü": {
+         "categoryId": 101431,
+         "categoryName": "Sis farı ampulü",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Stop lambası/münferit parçaları": {
+       "categoryId": 101411,
+       "categoryName": "Stop lambası/münferit parçaları",
+       "level": 3,
+       "children": {
+        "Stop lambası münferit parçaları": {
+         "categoryId": 101414,
+         "categoryName": "Stop lambası münferit parçaları",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yan /Konum lambası/ parçaları": {
+       "categoryId": 101441,
+       "categoryName": "Yan /Konum lambası/ parçaları",
+       "level": 3,
+       "children": {
+        "Ampul": {
+         "categoryId": 101445,
+         "categoryName": "Ampul",
+         "level": 4,
+         "children": []
+        },
+        "Konum lambası": {
+         "categoryId": 101443,
+         "categoryName": "Konum lambası",
+         "level": 4,
+         "children": []
+        },
+        "Park/pozisyon lambası": {
+         "categoryId": 101442,
+         "categoryName": "Park/pozisyon lambası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Süs/koruma/dekor çıtası, amblem": {
+     "categoryId": 100219,
+     "categoryName": "Süs/koruma/dekor çıtası, amblem",
+     "level": 2,
+     "children": {
+      "Süs/Koruma çıtası": {
+       "categoryId": 100740,
+       "categoryName": "Süs/Koruma çıtası",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Yakıt deposu/parçaları": {
+     "categoryId": 100216,
+     "categoryName": "Yakıt deposu/parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Yolcu bölümü": {
+     "categoryId": 101690,
+     "categoryName": "Yolcu bölümü",
+     "level": 2,
+     "children": {
+      "Ayna": {
+       "categoryId": 101698,
+       "categoryName": "Ayna",
+       "level": 3,
+       "children": []
+      },
+      "İlave fren lambası": {
+       "categoryId": 101699,
+       "categoryName": "İlave fren lambası",
+       "level": 3,
+       "children": []
+      },
+      "Kapı camı/Yan cam": {
+       "categoryId": 101697,
+       "categoryName": "Kapı camı/Yan cam",
+       "level": 3,
+       "children": []
+      },
+      "Kapılar/parçalar": {
+       "categoryId": 101694,
+       "categoryName": "Kapılar/parçalar",
+       "level": 3,
+       "children": []
+      },
+      "Parçalar/Montaj parçalari": {
+       "categoryId": 101700,
+       "categoryName": "Parçalar/Montaj parçalari",
+       "level": 3,
+       "children": {
+        "Gaz yayları": {
+         "categoryId": 101703,
+         "categoryName": "Gaz yayları",
+         "level": 4,
+         "children": []
+        },
+        "Rüzgarlık": {
+         "categoryId": 101701,
+         "categoryName": "Rüzgarlık",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Taban paneli": {
+       "categoryId": 101693,
+       "categoryName": "Taban paneli",
+       "level": 3,
+       "children": []
+      },
+      "Yakıt deposu/parçaları": {
+       "categoryId": 101760,
+       "categoryName": "Yakıt deposu/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Yan duvar": {
+       "categoryId": 101696,
+       "categoryName": "Yan duvar",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Kayış tahriki": {
+   "categoryId": 100016,
+   "categoryName": "Kayış tahriki",
+   "level": 1,
+   "children": {
+    "Aletler": {
+     "categoryId": 103130,
+     "categoryName": "Aletler",
+     "level": 2,
+     "children": []
+    },
+    "Alternatör serbest hareketi": {
+     "categoryId": 102239,
+     "categoryName": "Alternatör serbest hareketi",
+     "level": 2,
+     "children": []
+    },
+    "Kanallı V kayışı/ seti": {
+     "categoryId": 100082,
+     "categoryName": "Kanallı V kayışı/ seti",
+     "level": 2,
+     "children": {
+      "Germe kolu": {
+       "categoryId": 100438,
+       "categoryName": "Germe kolu",
+       "level": 3,
+       "children": []
+      },
+      "Germe makarası": {
+       "categoryId": 100434,
+       "categoryName": "Germe makarası",
+       "level": 3,
+       "children": []
+      },
+      "Kanallı V kayışı": {
+       "categoryId": 100431,
+       "categoryName": "Kanallı V kayışı",
+       "level": 3,
+       "children": []
+      },
+      "Kanallı V kayışı seti": {
+       "categoryId": 100432,
+       "categoryName": "Kanallı V kayışı seti",
+       "level": 3,
+       "children": []
+      },
+      "Kayış gerici (Germe ünitesi)": {
+       "categoryId": 100441,
+       "categoryName": "Kayış gerici (Germe ünitesi)",
+       "level": 3,
+       "children": []
+      },
+      "Titreşim amortisörü": {
+       "categoryId": 100876,
+       "categoryName": "Titreşim amortisörü",
+       "level": 3,
+       "children": []
+      },
+      "Yönlendirme makarası, kılavuz makarası": {
+       "categoryId": 100435,
+       "categoryName": "Yönlendirme makarası, kılavuz makarası",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Kayış kasnağı": {
+     "categoryId": 101971,
+     "categoryName": "Kayış kasnağı",
+     "level": 2,
+     "children": []
+    },
+    "Triger kayışı/ seti": {
+     "categoryId": 100085,
+     "categoryName": "Triger kayışı/ seti",
+     "level": 2,
+     "children": {
+      "Germe makarası": {
+       "categoryId": 100455,
+       "categoryName": "Germe makarası",
+       "level": 3,
+       "children": []
+      },
+      "Triger kayışı": {
+       "categoryId": 100452,
+       "categoryName": "Triger kayışı",
+       "level": 3,
+       "children": []
+      },
+      "Triger kayışı seti": {
+       "categoryId": 100453,
+       "categoryName": "Triger kayışı seti",
+       "level": 3,
+       "children": []
+      },
+      "Yönlendirme makarası, kılavuz makarası": {
+       "categoryId": 100457,
+       "categoryName": "Yönlendirme makarası, kılavuz makarası",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Kilitleme tertibatı": {
+   "categoryId": 100685,
+   "categoryName": "Kilitleme tertibatı",
+   "level": 1,
+   "children": {
+    "Araç içindeki kilitler": {
+     "categoryId": 100688,
+     "categoryName": "Araç içindeki kilitler",
+     "level": 2,
+     "children": []
+    },
+    "Dış kilitler": {
+     "categoryId": 100687,
+     "categoryName": "Dış kilitler",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Klima sistemi": {
+   "categoryId": 100243,
+   "categoryName": "Klima sistemi",
+   "level": 1,
+   "children": {
+    "Kompresör/parçaları": {
+     "categoryId": 100354,
+     "categoryName": "Kompresör/parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Kondansatör": {
+     "categoryId": 100355,
+     "categoryName": "Kondansatör",
+     "level": 2,
+     "children": []
+    },
+    "Kurutucu": {
+     "categoryId": 100357,
+     "categoryName": "Kurutucu",
+     "level": 2,
+     "children": []
+    },
+    "Şalter": {
+     "categoryId": 100366,
+     "categoryName": "Şalter",
+     "level": 2,
+     "children": []
+    },
+    "Sensörler": {
+     "categoryId": 100794,
+     "categoryName": "Sensörler",
+     "level": 2,
+     "children": []
+    },
+    "Supaplar": {
+     "categoryId": 100358,
+     "categoryName": "Supaplar",
+     "level": 2,
+     "children": []
+    },
+    "Tamir seti": {
+     "categoryId": 102922,
+     "categoryName": "Tamir seti",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Konfor sistemleri": {
+   "categoryId": 100335,
+   "categoryName": "Konfor sistemleri",
+   "level": 1,
+   "children": {
+    "Cam krikosu": {
+     "categoryId": 100751,
+     "categoryName": "Cam krikosu",
+     "level": 2,
+     "children": []
+    },
+    "Hız ayar sistemi": {
+     "categoryId": 100615,
+     "categoryName": "Hız ayar sistemi",
+     "level": 2,
+     "children": []
+    },
+    "Motor ön ısıtma sistemi": {
+     "categoryId": 102736,
+     "categoryName": "Motor ön ısıtma sistemi",
+     "level": 2,
+     "children": []
+    },
+    "Motor/röle/şalter": {
+     "categoryId": 104156,
+     "categoryName": "Motor/röle/şalter",
+     "level": 2,
+     "children": {
+      "Cam krikosu": {
+       "categoryId": 104157,
+       "categoryName": "Cam krikosu",
+       "level": 3,
+       "children": []
+      },
+      "Hız ayar sistemi": {
+       "categoryId": 104163,
+       "categoryName": "Hız ayar sistemi",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Park yardımı/Geri sürüş uyarıcısı": {
+     "categoryId": 100618,
+     "categoryName": "Park yardımı/Geri sürüş uyarıcısı",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Motor": {
+   "categoryId": 100002,
+   "categoryName": "Motor",
+   "level": 1,
+   "children": {
+    "Aletler": {
+     "categoryId": 103129,
+     "categoryName": "Aletler",
+     "level": 2,
+     "children": []
+    },
+    "Contalar": {
+     "categoryId": 100223,
+     "categoryName": "Contalar",
+     "level": 2,
+     "children": {
+      "Egzoz manifoldu contası/keçesi": {
+       "categoryId": 100231,
+       "categoryName": "Egzoz manifoldu contası/keçesi",
+       "level": 3,
+       "children": []
+      },
+      "Emme manifoldu contası": {
+       "categoryId": 100229,
+       "categoryName": "Emme manifoldu contası",
+       "level": 3,
+       "children": []
+      },
+      "Karter contası": {
+       "categoryId": 100233,
+       "categoryName": "Karter contası",
+       "level": 3,
+       "children": []
+      },
+      "Karter hazne contası": {
+       "categoryId": 100234,
+       "categoryName": "Karter hazne contası",
+       "level": 3,
+       "children": []
+      },
+      "Komple conta seti": {
+       "categoryId": 100224,
+       "categoryName": "Komple conta seti",
+       "level": 3,
+       "children": []
+      },
+      "Mil keçesi/takımı": {
+       "categoryId": 100789,
+       "categoryName": "Mil keçesi/takımı",
+       "level": 3,
+       "children": []
+      },
+      "Motor ön kapak contası": {
+       "categoryId": 100235,
+       "categoryName": "Motor ön kapak contası",
+       "level": 3,
+       "children": []
+      },
+      "Silindir kafası contası": {
+       "categoryId": 100225,
+       "categoryName": "Silindir kafası contası",
+       "level": 3,
+       "children": []
+      },
+      "Soğutma suyu contası": {
+       "categoryId": 100683,
+       "categoryName": "Soğutma suyu contası",
+       "level": 3,
+       "children": []
+      },
+      "Supap kapağı contası": {
+       "categoryId": 100227,
+       "categoryName": "Supap kapağı contası",
+       "level": 3,
+       "children": []
+      },
+      "Supap şaftı contası": {
+       "categoryId": 100228,
+       "categoryName": "Supap şaftı contası",
+       "level": 3,
+       "children": []
+      },
+      "Turbokompresör contası": {
+       "categoryId": 100244,
+       "categoryName": "Turbokompresör contası",
+       "level": 3,
+       "children": []
+      },
+      "Yağ devresi yalıtımı": {
+       "categoryId": 100684,
+       "categoryName": "Yağ devresi yalıtımı",
+       "level": 3,
+       "children": []
+      },
+      "Yakıt yalıtımı": {
+       "categoryId": 100682,
+       "categoryName": "Yakıt yalıtımı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Egzoz temizleme": {
+     "categoryId": 100541,
+     "categoryName": "Egzoz temizleme",
+     "level": 2,
+     "children": {
+      "Egzoz geri iletimi": {
+       "categoryId": 100542,
+       "categoryName": "Egzoz geri iletimi",
+       "level": 3,
+       "children": {
+        "AGR valfi/Emme borusu": {
+         "categoryId": 100551,
+         "categoryName": "AGR valfi/Emme borusu",
+         "level": 4,
+         "children": []
+        },
+        "Contalar": {
+         "categoryId": 103235,
+         "categoryName": "Contalar",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Lambda ayarlaması": {
+       "categoryId": 100729,
+       "categoryName": "Lambda ayarlaması",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Hava beslemesi": {
+     "categoryId": 100383,
+     "categoryName": "Hava beslemesi",
+     "level": 2,
+     "children": {
+      "Emme manifoldu/Emme borusu": {
+       "categoryId": 100386,
+       "categoryName": "Emme manifoldu/Emme borusu",
+       "level": 3,
+       "children": []
+      },
+      "Hava filtresi/Hava filtresi kutusu": {
+       "categoryId": 100384,
+       "categoryName": "Hava filtresi/Hava filtresi kutusu",
+       "level": 3,
+       "children": []
+      },
+      "Şarj": {
+       "categoryId": 100390,
+       "categoryName": "Şarj",
+       "level": 3,
+       "children": {
+        "Şarj havası hortumu": {
+         "categoryId": 102076,
+         "categoryName": "Şarj havası hortumu",
+         "level": 4,
+         "children": []
+        },
+        "Turbo şarj/turbo şarj tekli parçalar": {
+         "categoryId": 100391,
+         "categoryName": "Turbo şarj/turbo şarj tekli parçalar",
+         "level": 4,
+         "children": []
+        },
+        "Turboşarj contası": {
+         "categoryId": 100392,
+         "categoryName": "Turboşarj contası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Kayış tahriki": {
+     "categoryId": 104302,
+     "categoryName": "Kayış tahriki",
+     "level": 2,
+     "children": {
+      "Aletler": {
+       "categoryId": 104332,
+       "categoryName": "Aletler",
+       "level": 3,
+       "children": []
+      },
+      "Alternatör serbest hareketi": {
+       "categoryId": 104330,
+       "categoryName": "Alternatör serbest hareketi",
+       "level": 3,
+       "children": []
+      },
+      "Kanallı V kayışı/ seti": {
+       "categoryId": 104308,
+       "categoryName": "Kanallı V kayışı/ seti",
+       "level": 3,
+       "children": {
+        "Germe kolu": {
+         "categoryId": 104313,
+         "categoryName": "Germe kolu",
+         "level": 4,
+         "children": []
+        },
+        "Germe makarası": {
+         "categoryId": 104311,
+         "categoryName": "Germe makarası",
+         "level": 4,
+         "children": []
+        },
+        "Kanallı V kayışı": {
+         "categoryId": 104309,
+         "categoryName": "Kanallı V kayışı",
+         "level": 4,
+         "children": []
+        },
+        "Kanallı V kayışı seti": {
+         "categoryId": 104310,
+         "categoryName": "Kanallı V kayışı seti",
+         "level": 4,
+         "children": []
+        },
+        "Kayış gerici (Germe ünitesi)": {
+         "categoryId": 104314,
+         "categoryName": "Kayış gerici (Germe ünitesi)",
+         "level": 4,
+         "children": []
+        },
+        "Titreşim amortisörü": {
+         "categoryId": 104315,
+         "categoryName": "Titreşim amortisörü",
+         "level": 4,
+         "children": []
+        },
+        "Yönlendirme makarası, kılavuz makarası": {
+         "categoryId": 104312,
+         "categoryName": "Yönlendirme makarası, kılavuz makarası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Kayış kasnağı": {
+       "categoryId": 104329,
+       "categoryName": "Kayış kasnağı",
+       "level": 3,
+       "children": []
+      },
+      "Triger kayışı/ seti": {
+       "categoryId": 104317,
+       "categoryName": "Triger kayışı/ seti",
+       "level": 3,
+       "children": {
+        "Germe makarası": {
+         "categoryId": 104320,
+         "categoryName": "Germe makarası",
+         "level": 4,
+         "children": []
+        },
+        "Triger kayışı": {
+         "categoryId": 104318,
+         "categoryName": "Triger kayışı",
+         "level": 4,
+         "children": []
+        },
+        "Triger kayışı seti": {
+         "categoryId": 104319,
+         "categoryName": "Triger kayışı seti",
+         "level": 4,
+         "children": []
+        },
+        "Yönlendirme makarası, kılavuz makarası": {
+         "categoryId": 104321,
+         "categoryName": "Yönlendirme makarası, kılavuz makarası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Komple motor / kısmi motor": {
+     "categoryId": 100700,
+     "categoryName": "Komple motor / kısmi motor",
+     "level": 2,
+     "children": {
+      "Kısmi motor": {
+       "categoryId": 100702,
+       "categoryName": "Kısmi motor",
+       "level": 3,
+       "children": []
+      },
+      "Komple motor": {
+       "categoryId": 100701,
+       "categoryName": "Komple motor",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Krank muhafazası": {
+     "categoryId": 100514,
+     "categoryName": "Krank muhafazası",
+     "level": 2,
+     "children": {
+      "Krank muhafazası": {
+       "categoryId": 100533,
+       "categoryName": "Krank muhafazası",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Krank tahriği": {
+     "categoryId": 100515,
+     "categoryName": "Krank tahriği",
+     "level": 2,
+     "children": {
+      "Aletler": {
+       "categoryId": 706358,
+       "categoryName": "Aletler",
+       "level": 3,
+       "children": []
+      },
+      "Biyel": {
+       "categoryId": 100519,
+       "categoryName": "Biyel",
+       "level": 3,
+       "children": {
+        "Biyel": {
+         "categoryId": 100524,
+         "categoryName": "Biyel",
+         "level": 4,
+         "children": []
+        },
+        "Biyel yatağı": {
+         "categoryId": 100525,
+         "categoryName": "Biyel yatağı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Krank mili": {
+       "categoryId": 100517,
+       "categoryName": "Krank mili",
+       "level": 3,
+       "children": {
+        "Krank mili pulları": {
+         "categoryId": 100759,
+         "categoryName": "Krank mili pulları",
+         "level": 4,
+         "children": []
+        },
+        "Krank mili yatağı": {
+         "categoryId": 100522,
+         "categoryName": "Krank mili yatağı",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Piston": {
+       "categoryId": 100520,
+       "categoryName": "Piston",
+       "level": 3,
+       "children": {
+        "Piston": {
+         "categoryId": 100529,
+         "categoryName": "Piston",
+         "level": 4,
+         "children": []
+        },
+        "Piston komple": {
+         "categoryId": 100530,
+         "categoryName": "Piston komple",
+         "level": 4,
+         "children": []
+        },
+        "Segman seti": {
+         "categoryId": 100531,
+         "categoryName": "Segman seti",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Radyal mil contası/takımı": {
+       "categoryId": 100521,
+       "categoryName": "Radyal mil contası/takımı",
+       "level": 3,
+       "children": []
+      },
+      "Volan": {
+       "categoryId": 100518,
+       "categoryName": "Volan",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Motor bağlantısı": {
+     "categoryId": 100535,
+     "categoryName": "Motor bağlantısı",
+     "level": 2,
+     "children": {
+      "Motor tutucusu": {
+       "categoryId": 100536,
+       "categoryName": "Motor tutucusu",
+       "level": 3,
+       "children": []
+      },
+      "Motor yataklaması": {
+       "categoryId": 100538,
+       "categoryName": "Motor yataklaması",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Motor elektriği": {
+     "categoryId": 100754,
+     "categoryName": "Motor elektriği",
+     "level": 2,
+     "children": []
+    },
+    "Motor kapağı": {
+     "categoryId": 103037,
+     "categoryName": "Motor kapağı",
+     "level": 2,
+     "children": []
+    },
+    "Motor kontrolü": {
+     "categoryId": 100003,
+     "categoryName": "Motor kontrolü",
+     "level": 2,
+     "children": {
+      "Alın dişlisi": {
+       "categoryId": 100425,
+       "categoryName": "Alın dişlisi",
+       "level": 3,
+       "children": []
+      },
+      "Devirme/Çekme kolu": {
+       "categoryId": 100398,
+       "categoryName": "Devirme/Çekme kolu",
+       "level": 3,
+       "children": []
+      },
+      "Dişliler": {
+       "categoryId": 101833,
+       "categoryName": "Dişliler",
+       "level": 3,
+       "children": []
+      },
+      "Eksantrik mili": {
+       "categoryId": 100397,
+       "categoryName": "Eksantrik mili",
+       "level": 3,
+       "children": []
+      },
+      "İtici/ çubuk/ emniyet borusu": {
+       "categoryId": 100399,
+       "categoryName": "İtici/ çubuk/ emniyet borusu",
+       "level": 3,
+       "children": []
+      },
+      "Kayış kasnağı": {
+       "categoryId": 104695,
+       "categoryName": "Kayış kasnağı",
+       "level": 3,
+       "children": []
+      },
+      "Kumanda gövdesi/contası": {
+       "categoryId": 100401,
+       "categoryName": "Kumanda gövdesi/contası",
+       "level": 3,
+       "children": []
+      },
+      "Kumanda zinciri/gerilimi/kılavuzu": {
+       "categoryId": 100403,
+       "categoryName": "Kumanda zinciri/gerilimi/kılavuzu",
+       "level": 3,
+       "children": {
+        "Kumanda zinciri": {
+         "categoryId": 100411,
+         "categoryName": "Kumanda zinciri",
+         "level": 4,
+         "children": []
+        },
+        "Kumanda zinciri seti": {
+         "categoryId": 103278,
+         "categoryName": "Kumanda zinciri seti",
+         "level": 4,
+         "children": []
+        },
+        "Zincir gerdirici": {
+         "categoryId": 100414,
+         "categoryName": "Zincir gerdirici",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Supap/ ayarlaması": {
+       "categoryId": 100422,
+       "categoryName": "Supap/ ayarlaması",
+       "level": 3,
+       "children": {
+        "Supap kumandası": {
+         "categoryId": 100424,
+         "categoryName": "Supap kumandası",
+         "level": 4,
+         "children": []
+        },
+        "Supaplar/Aksesuar": {
+         "categoryId": 100423,
+         "categoryName": "Supaplar/Aksesuar",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Triger kayışı/ gerilimi/ kılavuzu": {
+       "categoryId": 100396,
+       "categoryName": "Triger kayışı/ gerilimi/ kılavuzu",
+       "level": 3,
+       "children": {
+        "Germe makarası": {
+         "categoryId": 100406,
+         "categoryName": "Germe makarası",
+         "level": 4,
+         "children": []
+        },
+        "Triger kayışı": {
+         "categoryId": 100404,
+         "categoryName": "Triger kayışı",
+         "level": 4,
+         "children": []
+        },
+        "Triger kayışı seti": {
+         "categoryId": 100405,
+         "categoryName": "Triger kayışı seti",
+         "level": 4,
+         "children": []
+        },
+        "Yönlendirme makarası, kılavuz makarası": {
+         "categoryId": 100407,
+         "categoryName": "Yönlendirme makarası, kılavuz makarası",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Silindir kafası/ montaj parçaları": {
+     "categoryId": 100373,
+     "categoryName": "Silindir kafası/ montaj parçaları",
+     "level": 2,
+     "children": {
+      "Düşük basınç pompası": {
+       "categoryId": 102450,
+       "categoryName": "Düşük basınç pompası",
+       "level": 3,
+       "children": []
+      },
+      "Emme/egzoz manifoldu contası/keçesi": {
+       "categoryId": 100376,
+       "categoryName": "Emme/egzoz manifoldu contası/keçesi",
+       "level": 3,
+       "children": []
+      },
+      "Külbütör kapağı": {
+       "categoryId": 100380,
+       "categoryName": "Külbütör kapağı",
+       "level": 3,
+       "children": []
+      },
+      "Külbütör kapağı /contası": {
+       "categoryId": 100375,
+       "categoryName": "Külbütör kapağı /contası",
+       "level": 3,
+       "children": []
+      },
+      "Silindir kafası civataları": {
+       "categoryId": 100378,
+       "categoryName": "Silindir kafası civataları",
+       "level": 3,
+       "children": []
+      },
+      "Silindir kafası contası": {
+       "categoryId": 100374,
+       "categoryName": "Silindir kafası contası",
+       "level": 3,
+       "children": []
+      },
+      "Supap kılavuzu/ contası/ ayarlaması": {
+       "categoryId": 100377,
+       "categoryName": "Supap kılavuzu/ contası/ ayarlaması",
+       "level": 3,
+       "children": []
+      },
+      "Yağ keçeleri": {
+       "categoryId": 102778,
+       "categoryName": "Yağ keçeleri",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Silindir/piston": {
+     "categoryId": 104377,
+     "categoryName": "Silindir/piston",
+     "level": 2,
+     "children": []
+    },
+    "Yağlama": {
+     "categoryId": 100245,
+     "categoryName": "Yağlama",
+     "level": 2,
+     "children": {
+      "Yağ basınç şalteri/ sensörü/ valfi": {
+       "categoryId": 100478,
+       "categoryName": "Yağ basınç şalteri/ sensörü/ valfi",
+       "level": 3,
+       "children": []
+      },
+      "Yağ filtre gövdesi/ contası": {
+       "categoryId": 100472,
+       "categoryName": "Yağ filtre gövdesi/ contası",
+       "level": 3,
+       "children": []
+      },
+      "Yağ filtresi": {
+       "categoryId": 100470,
+       "categoryName": "Yağ filtresi",
+       "level": 3,
+       "children": []
+      },
+      "Yağ karteri/ montaj parçaları": {
+       "categoryId": 100475,
+       "categoryName": "Yağ karteri/ montaj parçaları",
+       "level": 3,
+       "children": {
+        "Boşaltma tapası": {
+         "categoryId": 100491,
+         "categoryName": "Boşaltma tapası",
+         "level": 4,
+         "children": []
+        },
+        "Conta": {
+         "categoryId": 100490,
+         "categoryName": "Conta",
+         "level": 4,
+         "children": []
+        },
+        "Yağ karteri": {
+         "categoryId": 100489,
+         "categoryName": "Yağ karteri",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yağ ölçme çubuğu": {
+       "categoryId": 100479,
+       "categoryName": "Yağ ölçme çubuğu",
+       "level": 3,
+       "children": []
+      },
+      "Yağ pompası/ montaj parçaları": {
+       "categoryId": 100476,
+       "categoryName": "Yağ pompası/ montaj parçaları",
+       "level": 3,
+       "children": {
+        "Conta": {
+         "categoryId": 100493,
+         "categoryName": "Conta",
+         "level": 4,
+         "children": []
+        },
+        "Yağ pompası": {
+         "categoryId": 100492,
+         "categoryName": "Yağ pompası",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yağ soğutucusu/ montaj parçaları": {
+       "categoryId": 100474,
+       "categoryName": "Yağ soğutucusu/ montaj parçaları",
+       "level": 3,
+       "children": {
+        "Conta": {
+         "categoryId": 100488,
+         "categoryName": "Conta",
+         "level": 4,
+         "children": []
+        },
+        "Yağ soğutucusu": {
+         "categoryId": 100483,
+         "categoryName": "Yağ soğutucusu",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Yağlar": {
+       "categoryId": 101994,
+       "categoryName": "Yağlar",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Özel aletler": {
+   "categoryId": 706365,
+   "categoryName": "Özel aletler",
+   "level": 1,
+   "children": {
+    "Aks bağlantısı/Tekerlek kılavuzu/Tekerlekler özel aletleri": {
+     "categoryId": 706380,
+     "categoryName": "Aks bağlantısı/Tekerlek kılavuzu/Tekerlekler özel aletleri",
+     "level": 2,
+     "children": {
+      "Kamber açısı/rot ayarı": {
+       "categoryId": 706388,
+       "categoryName": "Kamber açısı/rot ayarı",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Römork bağlantı tertibatı/ montaj parçaları": {
+   "categoryId": 100015,
+   "categoryName": "Römork bağlantı tertibatı/ montaj parçaları",
+   "level": 1,
+   "children": {
+    "Elektrik parçaları": {
+     "categoryId": 100608,
+     "categoryName": "Elektrik parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Parçalar/Montaj parçaları": {
+     "categoryId": 100609,
+     "categoryName": "Parçalar/Montaj parçaları",
+     "level": 2,
+     "children": []
+    },
+    "Römork bağlantı tertibatı": {
+     "categoryId": 100607,
+     "categoryName": "Römork bağlantı tertibatı",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Şanzıman": {
+   "categoryId": 100238,
+   "categoryName": "Şanzıman",
+   "level": 1,
+   "children": {
+    "Mekanik şanzıman": {
+     "categoryId": 100239,
+     "categoryName": "Mekanik şanzıman",
+     "level": 2,
+     "children": {
+      "Contalar": {
+       "categoryId": 100769,
+       "categoryName": "Contalar",
+       "level": 3,
+       "children": []
+      },
+      "Fan/parçaları": {
+       "categoryId": 100774,
+       "categoryName": "Fan/parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Şanzıman": {
+       "categoryId": 103065,
+       "categoryName": "Şanzıman",
+       "level": 3,
+       "children": []
+      },
+      "Şanzıman kullanımı": {
+       "categoryId": 101808,
+       "categoryName": "Şanzıman kullanımı",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Otomatik şanzıman": {
+     "categoryId": 100240,
+     "categoryName": "Otomatik şanzıman",
+     "level": 2,
+     "children": {
+      "Contalar": {
+       "categoryId": 100770,
+       "categoryName": "Contalar",
+       "level": 3,
+       "children": []
+      },
+      "Kumanda/Hidrolik": {
+       "categoryId": 100776,
+       "categoryName": "Kumanda/Hidrolik",
+       "level": 3,
+       "children": []
+      },
+      "Yağ değişimi parça seti": {
+       "categoryId": 103475,
+       "categoryName": "Yağ değişimi parça seti",
+       "level": 3,
+       "children": []
+      },
+      "Yağ karteri/ montaj parçaları": {
+       "categoryId": 101853,
+       "categoryName": "Yağ karteri/ montaj parçaları",
+       "level": 3,
+       "children": {
+        "Conta": {
+         "categoryId": 101855,
+         "categoryName": "Conta",
+         "level": 4,
+         "children": []
+        }
+       }
+      }
+     }
+    },
+    "Yağlar": {
+     "categoryId": 706233,
+     "categoryName": "Yağlar",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Servis/Onarım/Bakım parçaları": {
+   "categoryId": 100019,
+   "categoryName": "Servis/Onarım/Bakım parçaları",
+   "level": 1,
+   "children": {
+    "Ayar aralığı": {
+     "categoryId": 100597,
+     "categoryName": "Ayar aralığı",
+     "level": 2,
+     "children": []
+    },
+    "İlave çalışmalar": {
+     "categoryId": 100598,
+     "categoryName": "İlave çalışmalar",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Soğutma sistemi": {
+   "categoryId": 100007,
+   "categoryName": "Soğutma sistemi",
+   "level": 1,
+   "children": {
+    "Antifriz": {
+     "categoryId": 102205,
+     "categoryName": "Antifriz",
+     "level": 2,
+     "children": []
+    },
+    "Fan": {
+     "categoryId": 100337,
+     "categoryName": "Fan",
+     "level": 2,
+     "children": []
+    },
+    "Hava soğutması": {
+     "categoryId": 100338,
+     "categoryName": "Hava soğutması",
+     "level": 2,
+     "children": []
+    },
+    "Hortumlar/bağlantılar/flanşlar": {
+     "categoryId": 100099,
+     "categoryName": "Hortumlar/bağlantılar/flanşlar",
+     "level": 2,
+     "children": {
+      "Flanşlar": {
+       "categoryId": 100840,
+       "categoryName": "Flanşlar",
+       "level": 3,
+       "children": []
+      },
+      "Soğutma suyu hortumları/bağlantıları": {
+       "categoryId": 100100,
+       "categoryName": "Soğutma suyu hortumları/bağlantıları",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Kontrol ünitesi": {
+     "categoryId": 102447,
+     "categoryName": "Kontrol ünitesi",
+     "level": 2,
+     "children": []
+    },
+    "Şalter/Sensör": {
+     "categoryId": 100334,
+     "categoryName": "Şalter/Sensör",
+     "level": 2,
+     "children": []
+    },
+    "Su pompaları/contası": {
+     "categoryId": 100088,
+     "categoryName": "Su pompaları/contası",
+     "level": 2,
+     "children": {
+      "Conta": {
+       "categoryId": 100089,
+       "categoryName": "Conta",
+       "level": 3,
+       "children": []
+      },
+      "Su pompası": {
+       "categoryId": 100091,
+       "categoryName": "Su pompası",
+       "level": 3,
+       "children": []
+      },
+      "Termik yönetim modülü": {
+       "categoryId": 104956,
+       "categoryName": "Termik yönetim modülü",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Su/yağ soğutucusu": {
+     "categoryId": 100102,
+     "categoryName": "Su/yağ soğutucusu",
+     "level": 2,
+     "children": {
+      "Dengeleme kabı": {
+       "categoryId": 100112,
+       "categoryName": "Dengeleme kabı",
+       "level": 3,
+       "children": []
+      },
+      "İç mekan ısı değiştiricisi": {
+       "categoryId": 100104,
+       "categoryName": "İç mekan ısı değiştiricisi",
+       "level": 3,
+       "children": []
+      },
+      "Su soğutucusu/parçalar": {
+       "categoryId": 100103,
+       "categoryName": "Su soğutucusu/parçalar",
+       "level": 3,
+       "children": []
+      },
+      "Yağ soğutucusu": {
+       "categoryId": 100108,
+       "categoryName": "Yağ soğutucusu",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Termostat/contası": {
+     "categoryId": 100094,
+     "categoryName": "Termostat/contası",
+     "level": 2,
+     "children": {
+      "Conta": {
+       "categoryId": 100096,
+       "categoryName": "Conta",
+       "level": 3,
+       "children": []
+      },
+      "Termostat": {
+       "categoryId": 100095,
+       "categoryName": "Termostat",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Süspansiyon": {
+   "categoryId": 100011,
+   "categoryName": "Süspansiyon",
+   "level": 1,
+   "children": {
+    "Amortisör": {
+     "categoryId": 100121,
+     "categoryName": "Amortisör",
+     "level": 2,
+     "children": []
+    },
+    "Amortisör yayı/amortisör yataklaması": {
+     "categoryId": 100371,
+     "categoryName": "Amortisör yayı/amortisör yataklaması",
+     "level": 2,
+     "children": []
+    },
+    "Amortisör yayı/amortisör/montaj parçaları": {
+     "categoryId": 100381,
+     "categoryName": "Amortisör yayı/amortisör/montaj parçaları",
+     "level": 2,
+     "children": {
+      "Montaj parçaları": {
+       "categoryId": 100372,
+       "categoryName": "Montaj parçaları",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Cıvata şasi seti": {
+     "categoryId": 101830,
+     "categoryName": "Cıvata şasi seti",
+     "level": 2,
+     "children": []
+    },
+    "Komple şasi seti": {
+     "categoryId": 100370,
+     "categoryName": "Komple şasi seti",
+     "level": 2,
+     "children": []
+    },
+    "Seviye ayarlaması/Şasi hidroliği": {
+     "categoryId": 100340,
+     "categoryName": "Seviye ayarlaması/Şasi hidroliği",
+     "level": 2,
+     "children": []
+    },
+    "Süspansiyon": {
+     "categoryId": 100113,
+     "categoryName": "Süspansiyon",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Tekerlek tahriği": {
+   "categoryId": 100014,
+   "categoryName": "Tekerlek tahriği",
+   "level": 1,
+   "children": {
+    "Körük": {
+     "categoryId": 100074,
+     "categoryName": "Körük",
+     "level": 2,
+     "children": []
+    },
+    "Mafsal/seti": {
+     "categoryId": 100071,
+     "categoryName": "Mafsal/seti",
+     "level": 2,
+     "children": []
+    },
+    "Tahrik mili": {
+     "categoryId": 100062,
+     "categoryName": "Tahrik mili",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Tekerlekler/lastikler": {
+   "categoryId": 103099,
+   "categoryName": "Tekerlekler/lastikler",
+   "level": 1,
+   "children": {
+    "Aksesuar": {
+     "categoryId": 103102,
+     "categoryName": "Aksesuar",
+     "level": 2,
+     "children": []
+    },
+    "Jantlar": {
+     "categoryId": 103101,
+     "categoryName": "Jantlar",
+     "level": 2,
+     "children": []
+    },
+    "Lastik basıncı kontrol sistemi": {
+     "categoryId": 103479,
+     "categoryName": "Lastik basıncı kontrol sistemi",
+     "level": 2,
+     "children": []
+    },
+    "Tekerlekler": {
+     "categoryId": 103100,
+     "categoryName": "Tekerlekler",
+     "level": 2,
+     "children": []
+    }
+   }
+  },
+  "Yakıt hava karışımı": {
+   "categoryId": 100254,
+   "categoryName": "Yakıt hava karışımı",
+   "level": 1,
+   "children": {
+    "Egzoz temizleme": {
+     "categoryId": 100790,
+     "categoryName": "Egzoz temizleme",
+     "level": 2,
+     "children": {
+      "Egzoz geri iletimi": {
+       "categoryId": 100791,
+       "categoryName": "Egzoz geri iletimi",
+       "level": 3,
+       "children": {
+        "AGR valfi/Emme borusu": {
+         "categoryId": 100811,
+         "categoryName": "AGR valfi/Emme borusu",
+         "level": 4,
+         "children": []
+        },
+        "Contalar": {
+         "categoryId": 103239,
+         "categoryName": "Contalar",
+         "level": 4,
+         "children": []
+        }
+       }
+      },
+      "Lambda ayarlaması": {
+       "categoryId": 100793,
+       "categoryName": "Lambda ayarlaması",
+       "level": 3,
+       "children": []
+      },
+      "Sensör/Sonda": {
+       "categoryId": 103047,
+       "categoryName": "Sensör/Sonda",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Karışım hazırlama": {
+     "categoryId": 102793,
+     "categoryName": "Karışım hazırlama",
+     "level": 2,
+     "children": {
+      "Aletler": {
+       "categoryId": 103150,
+       "categoryName": "Aletler",
+       "level": 3,
+       "children": []
+      },
+      "Conta": {
+       "categoryId": 102795,
+       "categoryName": "Conta",
+       "level": 3,
+       "children": []
+      },
+      "Enjeksiyon ventili/enjektör/enjektör çubuğu/PDE": {
+       "categoryId": 102799,
+       "categoryName": "Enjeksiyon ventili/enjektör/enjektör çubuğu/PDE",
+       "level": 3,
+       "children": []
+      },
+      "Hava kütle ölçer/Hava miktarı ölçer": {
+       "categoryId": 102806,
+       "categoryName": "Hava kütle ölçer/Hava miktarı ölçer",
+       "level": 3,
+       "children": []
+      },
+      "Kelebek/Yakıt hattı/Vakum borusu": {
+       "categoryId": 102796,
+       "categoryName": "Kelebek/Yakıt hattı/Vakum borusu",
+       "level": 3,
+       "children": []
+      },
+      "Kontrol ünitesi": {
+       "categoryId": 102810,
+       "categoryName": "Kontrol ünitesi",
+       "level": 3,
+       "children": []
+      },
+      "Meme gövdesi/Meme parçaları": {
+       "categoryId": 102800,
+       "categoryName": "Meme gövdesi/Meme parçaları",
+       "level": 3,
+       "children": []
+      },
+      "Sensör/Sonda": {
+       "categoryId": 102809,
+       "categoryName": "Sensör/Sonda",
+       "level": 3,
+       "children": []
+      },
+      "Yakıt enjeksiyon pompası/yüksek basınç pompası": {
+       "categoryId": 102803,
+       "categoryName": "Yakıt enjeksiyon pompası/yüksek basınç pompası",
+       "level": 3,
+       "children": []
+      },
+      "Yakıt hattı/dağıtımı/besleme hattı": {
+       "categoryId": 102804,
+       "categoryName": "Yakıt hattı/dağıtımı/besleme hattı",
+       "level": 3,
+       "children": []
+      }
+     }
+    }
+   }
+  },
+  "Yakıt pompalama sistemleri": {
+   "categoryId": 100214,
+   "categoryName": "Yakıt pompalama sistemleri",
+   "level": 1,
+   "children": {
+    "Besleme ünitesi komple": {
+     "categoryId": 100267,
+     "categoryName": "Besleme ünitesi komple",
+     "level": 2,
+     "children": []
+    },
+    "Hortumlar/Bağlantılar": {
+     "categoryId": 100258,
+     "categoryName": "Hortumlar/Bağlantılar",
+     "level": 2,
+     "children": []
+    },
+    "Pompa/ aksesuarı": {
+     "categoryId": 100251,
+     "categoryName": "Pompa/ aksesuarı",
+     "level": 2,
+     "children": {
+      "Yakıt pompası": {
+       "categoryId": 100717,
+       "categoryName": "Yakıt pompası",
+       "level": 3,
+       "children": []
+      }
+     }
+    },
+    "Tank seviye sensörü": {
+     "categoryId": 100268,
+     "categoryName": "Tank seviye sensörü",
+     "level": 2,
+     "children": []
+    },
+    "Yakıt deposu/ aksesuarı": {
+     "categoryId": 100250,
+     "categoryName": "Yakıt deposu/ aksesuarı",
+     "level": 2,
+     "children": []
+    },
+    "Yakıt filtresi/gövdesi": {
+     "categoryId": 100253,
+     "categoryName": "Yakıt filtresi/gövdesi",
+     "level": 2,
+     "children": []
+    }
+   }
+  }
+ }
+}

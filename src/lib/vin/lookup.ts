@@ -1,13 +1,7 @@
 import { prisma } from "@/lib/db"
+import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getVinProvider } from "./provider"
 import { VinLookupError, isValidVin, normalizeVin } from "./types"
-
-const DEFAULT_MONTHLY_CAP = 18_000 // headroom under the 20k RapidAPI plan
-
-function monthlyCap(): number {
-  const raw = Number(process.env.VIN_LOOKUP_MONTHLY_CAP)
-  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MONTHLY_CAP
-}
 
 export interface VinLookupResult {
   vin: string
@@ -37,11 +31,8 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     return { vin, status: cachedRow.status, raw: cachedRow.rawResponse, cached: true, provider: cachedRow.provider }
   }
 
-  const monthStart = new Date()
-  monthStart.setUTCDate(1)
-  monthStart.setUTCHours(0, 0, 0, 0)
-  const usedThisMonth = await prisma.vinLookup.count({ where: { createdAt: { gte: monthStart } } })
-  if (usedThisMonth >= monthlyCap()) {
+  // Shared cap across the whole RapidAPI subscription (VIN + TecDoc catalog).
+  if ((await countRapidApiCallsThisMonth()) >= rapidApiMonthlyCap()) {
     throw new VinLookupError("quota_exceeded", "Aylık VIN sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
