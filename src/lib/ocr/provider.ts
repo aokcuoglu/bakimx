@@ -16,11 +16,10 @@ function parseProviderName(value: string | undefined): OcrProviderName {
   if (normalized === "paddle") return "paddle"
   if (normalized === "hybrid") return "hybrid"
   if (normalized === "openai") return "openai"
-  // Claude Vision standalone — DEVRE DIŞI (hibritte fallback olarak kullanılıyor). Tek başına
-  // Claude için bu satırı ve aşağıdaki dalı yorumdan çıkar.
-  // if (normalized === "anthropic") return "anthropic"
+  // Claude Vision standalone (sidecar'sız, doğrudan görüntüden). Hibritte de fallback olarak kullanılır.
+  if (normalized === "anthropic") return "anthropic"
   throw new Error(
-    `Bilinmeyen OCR sağlayıcısı: "${value}". Desteklenen değerler: mock (varsayılan), paddle, hybrid, openai. ` +
+    `Bilinmeyen OCR sağlayıcısı: "${value}". Desteklenen değerler: mock (varsayılan), paddle, hybrid, openai, anthropic. ` +
       "OCR_PROVIDER ortam değişkenini kontrol ediniz."
   )
 }
@@ -83,24 +82,23 @@ export async function getOcrProvider(): Promise<OcrProvider> {
     return _provider
   }
 
-  // Claude Vision (Anthropic) — DEVRE DIŞI. PaddleOCR'dan vazgeçilirse bu bloğu ve
-  // yukarıdaki import + parseProviderName satırını geri açman yeterli.
-  // if (providerName === "anthropic") {
-  //   const apiKey = process.env.ANTHROPIC_API_KEY
-  //   if (!apiKey) {
-  //     throw new Error(
-  //       "Claude ile ruhsat okuma için ANTHROPIC_API_KEY tanımlanmalıdır. " +
-  //         "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
-  //     )
-  //   }
-  //   // Vision destekli bir Claude modeli. Varsayılan: hızlı/ucuz Haiku 4.5.
-  //   const model = process.env.OCR_MODEL || "claude-haiku-4-5"
-  //   _provider = new AnthropicOcrProvider(apiKey, model)
-  //   return _provider
-  // }
+  // Claude Vision (Anthropic) standalone — sidecar'sız, doğrudan görüntüden yapılandırılmış çıkarım.
+  if (providerName === "anthropic") {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      throw new Error(
+        "Claude ile ruhsat okuma için ANTHROPIC_API_KEY tanımlanmalıdır. " +
+          "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
+      )
+    }
+    // Vision destekli bir Claude modeli. Varsayılan: hızlı/ucuz Haiku 4.5.
+    const model = process.env.OCR_MODEL || "claude-haiku-4-5"
+    _provider = new AnthropicOcrProvider(apiKey, model)
+    return _provider
+  }
 
   throw new Error(
-    `Bilinmeyen OCR sağlayıcısı: "${providerName}". Desteklenen değerler: mock (varsayılan), paddle, hybrid, openai.`
+    `Bilinmeyen OCR sağlayıcısı: "${providerName}". Desteklenen değerler: mock (varsayılan), paddle, hybrid, openai, anthropic.`
   )
 }
 
