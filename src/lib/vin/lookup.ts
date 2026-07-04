@@ -23,6 +23,17 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     throw new VinLookupError("invalid_vin", "Geçersiz şase numarası (VIN 17 karakter olmalı, I/O/Q harfleri içeremez).")
   }
 
+  const provider = getVinProvider()
+
+  // Mock responses are free and deterministic — never read or persist them, and
+  // don't count them against the quota. A cached mock not_found would otherwise
+  // shadow real data for the same VIN after switching to rapidapi (mirrors the
+  // mock guard in TecDoc's cachedFetch).
+  if (provider.name === "mock") {
+    const result = await provider.lookup(vin)
+    return { vin, status: result.status, raw: result.raw, cached: false, provider: provider.name }
+  }
+
   const cachedRow = await prisma.vinLookup.findUnique({ where: { vin } })
   if (cachedRow) {
     prisma.vinLookup
@@ -36,7 +47,6 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     throw new VinLookupError("quota_exceeded", "Aylık VIN sorgu limiti doldu. Lütfen daha sonra tekrar deneyin.")
   }
 
-  const provider = getVinProvider()
   const result = await provider.lookup(vin)
 
   const row = await prisma.vinLookup.upsert({
