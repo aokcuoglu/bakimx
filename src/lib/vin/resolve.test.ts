@@ -6,6 +6,7 @@ import {
   parseRegYear,
   yearInRange,
   scoreCandidates,
+  filterByHints,
   decideResolution,
   type CandidateTypeRow,
 } from "./resolve"
@@ -112,6 +113,60 @@ test("decideResolution: tie at top stays ambiguous even above threshold", () => 
   })
   expect(ranked[0].score).toBe(ranked[1].score)
   expect(decideResolution(ranked).status).toBe("ambiguous")
+})
+
+// The real TRANSIT V363 case: ruhsat says 1995cc / 125 kW / DİZEL / reg 2019.
+// The catalog carries the same 125 kW engine in several drivetrains the ruhsat
+// can't tell apart (FWD / RWD / 4x4) plus mild-hybrid ("Diesel/Electro") twins,
+// and lower-power 96/77 kW variants that must be filtered out entirely.
+const TRANSIT_ROWS: CandidateTypeRow[] = [
+  { id: 119470, name: "2.0 EcoBlue", cc: 1995, fuelType: "Diesel", hp: 170, kwt: 125, yearFrom: "2016-03", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 119473, name: "2.0 EcoBlue RWD", cc: 1995, fuelType: "Diesel", hp: 170, kwt: 125, yearFrom: "2016-03", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 123044, name: "2.0 EcoBlue 4x4", cc: 1995, fuelType: "Diesel", hp: 170, kwt: 125, yearFrom: "2017-01", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 137563, name: "2.0 EcoBlue mHEV", cc: 1995, fuelType: "Diesel/Electro", hp: 170, kwt: 125, yearFrom: "2019-05", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 137564, name: "2.0 EcoBlue mHEV RWD", cc: 1995, fuelType: "Diesel/Electro", hp: 170, kwt: 125, yearFrom: "2019-05", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 119467, name: "2.0 EcoBlue", cc: 1995, fuelType: "Diesel", hp: 130, kwt: 96, yearFrom: "2016-03", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+  { id: 119468, name: "2.0 EcoBlue", cc: 1995, fuelType: "Diesel", hp: 105, kwt: 77, yearFrom: "2016-03", yearTo: "2024-06", modelId: 11953, modelName: "TRANSIT V363 Van (FCD, FDD)", brandId: 36, brandName: "FORD" },
+]
+
+const TRANSIT_HINTS = { engineDisplacement: "1995", enginePower: "125 kW", fuelType: "DİZEL", firstRegistrationDate: "16.09.2019" }
+
+test("filterByHints: TRANSIT cc+kW+fuel narrows 7→5, drops 96/77 kW variants", () => {
+  const filtered = filterByHints(scoreCandidates(TRANSIT_ROWS, TRANSIT_HINTS), TRANSIT_HINTS)
+  const ids = filtered.map((c) => c.vehicleTypeId).sort((a, b) => a - b)
+  expect(ids).toEqual([119470, 119473, 123044, 137563, 137564])
+})
+
+test("scoreCandidates: pure Diesel outranks Diesel/Electro mHEV at equal cc/kW", () => {
+  const ranked = scoreCandidates(TRANSIT_ROWS, TRANSIT_HINTS)
+  // pure Diesel: cc(3)+kW(3)+fuel exact(2)+2019 in range(2) = 10
+  const pure = ranked.find((c) => c.vehicleTypeId === 119470)!
+  // mHEV: fuel only partial (1) → 9, so it ranks below every pure-Diesel twin
+  const mhev = ranked.find((c) => c.vehicleTypeId === 137563)!
+  expect(pure.score).toBe(10)
+  expect(mhev.score).toBe(9)
+  expect(ranked[0].score).toBe(10)
+  expect(ranked[0].fuelType).toBe("Diesel")
+})
+
+test("filterByHints: empty match falls back to full list (never strands the user)", () => {
+  const scored = scoreCandidates(TRANSIT_ROWS, TRANSIT_HINTS)
+  // 999 kW matches nothing → fall back to the full scored list rather than []
+  const filtered = filterByHints(scored, { enginePower: "999 kW" })
+  expect(filtered).toHaveLength(scored.length)
+})
+
+test("filterByHints: no hints present returns the list unchanged", () => {
+  const scored = scoreCandidates(TRANSIT_ROWS, {})
+  expect(filterByHints(scored, {})).toBe(scored)
+})
+
+test("filterByHints: FOCUS ruhsat narrows to the single 158634 → resolved", () => {
+  const hints = { engineDisplacement: "1499", enginePower: "84 kW", fuelType: "DİZEL", modelYear: 2024 }
+  const filtered = filterByHints(scoreCandidates(FOCUS_ROWS, hints), hints)
+  expect(filtered).toHaveLength(1)
+  expect(filtered[0].vehicleTypeId).toBe(158634)
+  expect(decideResolution(filtered)).toEqual({ status: "resolved", autoSelected: 158634 })
 })
 
 test("extractMatchSections unwraps {array:[...]} and nested envelopes", () => {

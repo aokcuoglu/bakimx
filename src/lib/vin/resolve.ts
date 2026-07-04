@@ -101,7 +101,12 @@ export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints): V
       }
       if (hintFuel != null && row.fuelType != null) {
         const rowFuel = row.fuelType.toLowerCase()
-        if (rowFuel.includes(hintFuel.toLowerCase())) score += 2
+        const hint = hintFuel.toLowerCase()
+        // Exact fuel ("Diesel") scores full; a mixed listing ("Diesel/Electro"
+        // mHEV) that merely contains the hint scores less, so pure-fuel variants
+        // rank above the mild-hybrids the ruhsat's "DİZEL" can't distinguish.
+        if (rowFuel === hint) score += 2
+        else if (rowFuel.includes(hint)) score += 1
       }
       if (hintYear != null && yearInRange(hintYear, row.yearFrom, row.yearTo)) {
         score += 2
@@ -124,6 +129,28 @@ export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints): V
       }
     })
     .sort((a, b) => b.score - a.score || a.vehicleTypeId - b.vehicleTypeId)
+}
+
+/**
+ * Narrow the scored candidates to those satisfying every ruhsat hint that is
+ * present: cc/kW within tolerance and fuel-compatible (a "Diesel/Electro" mHEV
+ * still contains "diesel", so it survives a DİZEL hint). Absent hints don't
+ * filter. Falls back to the full list when no hint applies or nothing survives,
+ * so an over-strict filter or a slightly-off reading never empties the picker.
+ */
+export function filterByHints(candidates: VinCandidate[], hints: RuhsatHints): VinCandidate[] {
+  const hintCc = parseCc(hints.engineDisplacement)
+  const hintKw = parseKw(hints.enginePower)
+  const hintFuel = mapRuhsatFuel(hints.fuelType)
+  if (hintCc == null && hintKw == null && hintFuel == null) return candidates
+
+  const strong = candidates.filter((c) => {
+    if (hintCc != null && c.cc != null && Math.abs(c.cc - hintCc) > CC_TOLERANCE) return false
+    if (hintKw != null && c.kwt != null && Math.abs(c.kwt - hintKw) > KW_TOLERANCE) return false
+    if (hintFuel != null && c.fuelType != null && !c.fuelType.toLowerCase().includes(hintFuel.toLowerCase())) return false
+    return true
+  })
+  return strong.length > 0 ? strong : candidates
 }
 
 /** Auto-select only on a single candidate or a confident, strict winner. */
@@ -213,7 +240,10 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
     brandName: t.model.brand.name,
   }))
 
-  const candidates = scoreCandidates(rows, hints).slice(0, MAX_CANDIDATES)
+  // Score every catalog variant, then hard-filter to those matching the ruhsat
+  // hints so the picker shows genuine matches (not all 10 engine variants).
+  const scored = scoreCandidates(rows, hints)
+  const candidates = filterByHints(scored, hints).slice(0, MAX_CANDIDATES)
   const { status, autoSelected } = decideResolution(candidates)
 
   // Brand/model are safe to fill even when the engine variant is ambiguous,
