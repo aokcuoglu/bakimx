@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
   Combobox,
@@ -13,7 +14,7 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Plus, User } from "lucide-react"
+import { ChevronDown, Loader2, Plus, User } from "lucide-react"
 import type { UnifiedResult } from "@/lib/search/unified-results"
 import { formatPhoneTR, toTrUpper } from "@/lib/format"
 
@@ -55,6 +56,14 @@ export function CustomerSearchOrCreate({
   const [phone, setPhone] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  // Optional TC / tax / address fields, hidden behind a collapsible section.
+  const [showExtra, setShowExtra] = useState(false)
+  const [identityNumber, setIdentityNumber] = useState("")
+  const [taxNumber, setTaxNumber] = useState("")
+  const [taxOffice, setTaxOffice] = useState("")
+  const [city, setCity] = useState("")
+  const [district, setDistrict] = useState("")
+  const [address, setAddress] = useState("")
   // When the entered phone already belongs to a customer, offer to select them
   // instead of creating a duplicate (a phone belongs to a single customer).
   const [duplicate, setDuplicate] = useState<{ id: string; label: string } | null>(null)
@@ -184,7 +193,26 @@ export function CustomerSearchOrCreate({
       onInputValueChange={(v: string) => setQuery(v)}
       onValueChange={(r: CustomerHit | null) => { if (r) onSelected(r.customerId, r.label) }}
     >
-      <ComboboxInput autoFocus={autoFocus} placeholder="Müşteri adı veya telefon ile ara…" />
+      <ComboboxInput
+        autoFocus={autoFocus}
+        placeholder="Müşteri adı veya telefon ile ara…"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return
+          // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
+          // Base UI onu normal şekilde seçsin.
+          if (e.currentTarget.getAttribute("aria-activedescendant")) return
+          // Doğrudan input'ta Enter: Base UI'nın Enter'da popup'ı kapatıp
+          // input'u (boş) seçili değere geri döndürme davranışını durdur ve
+          // kararı biz verelim — eşleşen ilk müşteri varsa onu seç, yoksa
+          // "Yeni müşteri" oluşturma formunu (yazılan adla) aç.
+          e.preventBaseUIHandler()
+          e.preventDefault()
+          if (loading || query.trim().length < 1) return
+          const first = results[0]
+          if (first) onSelected(first.customerId, first.label)
+          else openCreate()
+        }}
+      />
       <ComboboxContent>
         <ComboboxEmpty className="p-0">
           {loading ? (
