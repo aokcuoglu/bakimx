@@ -43,6 +43,7 @@ import {
   Plus,
   Wallet,
   History,
+  ArrowRight,
 } from "lucide-react"
 import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
@@ -59,6 +60,7 @@ import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
 import { ApprovalTimeline } from "@/components/app/approval-timeline"
 import { OrderActivityLog } from "@/components/app/order-activity-log"
+import { useOrderSync } from "@/hooks/use-order-sync"
 import type { OrderActivityEntry } from "@/lib/orders/activity"
 import {
   NEXT_STATUSES,
@@ -158,6 +160,8 @@ export function WorkOrderDetail({
   const router = useRouter()
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as TabKey) || "ozet"
+
+  useOrderSync()
 
   function handleTabChange(key: string | null) {
     if (!key) return
@@ -552,8 +556,17 @@ export function WorkOrderDetail({
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <Car className="size-3" /> Araç
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <Car className="size-3" /> Araç
+                    </div>
+                    <Link
+                      href={`/vehicles/${order.vehicle.id}`}
+                      className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1 shrink-0 touch-manipulation"
+                    >
+                      Araç Detayı
+                      <ArrowRight className="size-3" />
+                    </Link>
                   </div>
                   <p className="text-sm font-semibold text-foreground">
                     {order.vehicle.plate} · {order.vehicle.brand} {order.vehicle.model}
@@ -661,7 +674,7 @@ export function WorkOrderDetail({
               {!shareToken ? (
                 <>
                   <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
-                  <Button onClick={handleGenerateShareLink} disabled={loading} size="sm" className="w-full">
+                  <Button onClick={handleGenerateShareLink} disabled={loading} className="w-full">
                     <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
                   </Button>
                 </>
@@ -722,7 +735,7 @@ export function WorkOrderDetail({
 
               {order.status === "ready_for_delivery" && !deliveryOtpMode && (
                 <div className="pt-3 border-t">
-                  <Button onClick={handleRequestDeliveryOtp} disabled={loading} size="sm" variant="outline" className="w-full">
+                  <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
                     <KeyRound className="size-4 mr-2" /> Teslim Onayı (OTP) Gönder
                   </Button>
                 </div>
@@ -844,7 +857,7 @@ export function WorkOrderDetail({
               )}
 
               {/* Add photo trigger + dialog */}
-              <Button variant="outline" size="sm" onClick={() => setAddingPhoto(true)} className="w-full">
+              <Button variant="outline" onClick={() => setAddingPhoto(true)} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
               </Button>
 

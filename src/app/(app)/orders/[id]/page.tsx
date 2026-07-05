@@ -126,6 +126,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       mileage: intakeForm.vehicle.mileage,
       vin: intakeForm.vehicle.vin,
       catalogVehicleTypeId: intakeForm.vehicle.catalogVehicleTypeId,
+      // Ruhsat ipuçları — "VIN'den bağla" resolver'ının doğru motor varyantını
+      // otomatik seçmesi için gönderilir (yoksa kullanıcı listeden seçer).
+      engineDisplacement: intakeForm.vehicle.engineDisplacement,
+      enginePower: intakeForm.vehicle.enginePower,
+      fuelType: intakeForm.vehicle.fuelType,
+      firstRegistrationDate: intakeForm.vehicle.firstRegistrationDate,
     },
     intake: {
       id: intakeForm.id,
