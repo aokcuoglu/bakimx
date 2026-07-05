@@ -4,10 +4,45 @@ import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
+import { resolveFeature } from "@/lib/features"
+import { type PlanTier } from "@/lib/plan"
+import { resolveVinToCatalog } from "@/lib/vin/resolve"
+import { isValidVin } from "@/lib/vin/types"
+import type { RuhsatHints } from "@/lib/vin/types"
 import type { Customer, Prisma, Vehicle } from "@prisma/client"
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
+}
+
+/**
+ * Build VIN-resolution hints from the confirmed model year plus the richer
+ * technical fields the OCR captured (fuel/cc/kW/first-registration) that the
+ * confirm form doesn't expose. More hints → a confident single-variant match,
+ * so the vehicle can be auto-linked to the parts catalog without manual steps.
+ */
+function buildVinHints(extractedJson: string | null, modelYear: number | null): RuhsatHints {
+  const hints: RuhsatHints = {}
+  if (modelYear) hints.modelYear = modelYear
+  if (!extractedJson) return hints
+  try {
+    const parsed = JSON.parse(extractedJson) as Record<string, { value?: string } | undefined>
+    const val = (k: string) => {
+      const v = parsed[k]?.value
+      return typeof v === "string" && v.trim() ? v.trim() : undefined
+    }
+    hints.fuelType = val("fuelType")
+    hints.engineDisplacement = val("engineDisplacement")
+    hints.enginePower = val("enginePower")
+    hints.firstRegistrationDate = val("registrationDate")
+    if (!hints.modelYear) {
+      const parsedYear = Number.parseInt(val("modelYear") ?? "", 10)
+      if (Number.isInteger(parsedYear)) hints.modelYear = parsedYear
+    }
+  } catch {
+    // Malformed extractedJson (legacy rows) — fall back to modelYear-only hints.
+  }
+  return hints
 }
 
 function parseModelYear(value: unknown): number | null {
@@ -236,6 +271,47 @@ export async function POST(request: Request) {
       JSON.stringify({ vehicleId: vehicle.id, customerId: customer.id })
     )
 
+    // Best-effort: geçerli 17-hane VIN varsa aracı parça kataloğuna otomatik bağla,
+    // böylece iş emrinde "VIN'den bağla" adımı olmadan araca uygun parçalar görünür.
+    // Kaydı ASLA bloklamaz/başarısız etmez — özellik kapalıysa, VIN eşleşmezse veya
+    // sağlayıcı hata verirse sessizce atlanır (araç + müşteri zaten kaydedildi).
+    let catalogLinked = false
+    if (isValidVin(vin) && !vehicle.catalogVehicleTypeId) {
+      try {
+        const workshop = await prisma.workshop.findUnique({
+          where: { id: user.workshopId },
+          select: { planTier: true },
+        })
+        const entitled =
+          workshop != null &&
+          (await resolveFeature(user.workshopId, workshop.planTier as PlanTier, "vinLookup"))
+        if (entitled) {
+          const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear))
+          if (resolution.status === "resolved" && resolution.autoSelected != null) {
+            await prisma.vehicle.update({
+              where: { id: vehicle.id },
+              data: {
+                catalogVehicleTypeId: resolution.autoSelected,
+                ...(resolution.brand ? { catalogBrandId: resolution.brand.id } : {}),
+                ...(resolution.model ? { catalogModelId: resolution.model.id } : {}),
+              },
+            })
+            catalogLinked = true
+            await AuditLogAction(
+              user.workshopId,
+              user.id,
+              "Vehicle",
+              vehicle.id,
+              "vehicle_catalog_linked",
+              JSON.stringify({ via: "ocr_vin", vehicleTypeId: resolution.autoSelected })
+            )
+          }
+        }
+      } catch (vinErr) {
+        console.error("[OCR CONFIRM VIN-LINK]", vinErr instanceof Error ? vinErr.message : vinErr)
+      }
+    }
+
     revalidatePath("/customers")
     revalidatePath(`/customers/${customer.id}`)
     revalidatePath("/vehicles")
@@ -257,6 +333,7 @@ export async function POST(request: Request) {
       vehicleCustomerChanged,
       customerName,
       vehicleLabel: `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}`,
+      catalogLinked,
       intakeUrl: `/orders/new?customerId=${customer.id}&vehicleId=${vehicle.id}&source=registration`,
       ...(warnings.length > 0 ? { warnings } : {}),
     })
