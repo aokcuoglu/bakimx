@@ -81,14 +81,16 @@ const TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
       type: "string",
       description: "Z.2 DİĞER BİLGİLER içindeki 'mua.geç.trh' muayene geçerlilik tarihi, GG.AA.YYYY (nokta ayraç)",
     },
-    rawText: { type: "string", description: "Belgede görünen tüm metnin düz transkripsiyonu (denetim için)" },
+    // rawText (tam belge transkripsiyonu) KASITLI olarak yok: çıktı token'larının büyük
+    // kısmıydı → gecikme/maliyet. Yalnız OcrLog audit'ine yazılıyordu, client'a zaten
+    // gitmiyor (route.ts strip ediyor). Yapılandırılmış alanlar audit için yeterli.
     uncertainFields: {
       type: "array",
       description: "Emin olmadığın alan adları (yukarıdaki anahtarlardan). Netse boş bırak.",
       items: { type: "string", enum: [...CONFIDENCE_KEYS] },
     },
   },
-  required: [...CONFIDENCE_KEYS, "rawText", "uncertainFields"],
+  required: [...CONFIDENCE_KEYS, "uncertainFields"],
 }
 
 const SYSTEM_PROMPT =

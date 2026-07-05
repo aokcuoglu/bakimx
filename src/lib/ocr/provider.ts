@@ -91,8 +91,10 @@ export async function getOcrProvider(): Promise<OcrProvider> {
           "Demo verisi kullanmak için OCR_PROVIDER=mock (veya boş) ayarlayabilirsiniz."
       )
     }
-    // Vision destekli bir Claude modeli. Varsayılan: hızlı/ucuz Haiku 4.5.
-    const model = process.env.OCR_MODEL || "claude-haiku-4-5"
+    // Vision destekli bir Claude modeli. Varsayılan: Sonnet 5 — ruhsatta sahip adı/
+    // tarih gibi kritik alanları Haiku'dan belirgin daha doğru okur (MVP standardı).
+    // Maliyet/hız için OCR_MODEL=claude-haiku-4-5 ile override edilebilir.
+    const model = process.env.OCR_MODEL || "claude-sonnet-5"
     _provider = new AnthropicOcrProvider(apiKey, model)
     return _provider
   }
