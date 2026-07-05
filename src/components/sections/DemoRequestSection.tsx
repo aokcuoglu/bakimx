@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle2, Loader2, Phone, Building2, User, MapPin, Hash, MessageSquare } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { TR_CITIES } from "@/lib/tr-cities";
 
 interface FormData {
   name: string;
@@ -34,13 +35,6 @@ interface FormErrors {
   monthlyVehicles?: string;
   _general?: string;
 }
-
-const cities = [
-  "Adana", "Ankara", "Antalya", "Bursa", "Diyarbakır",
-  "Erzurum", "Eskişehir", "Gaziantep", "İstanbul", "İzmir",
-  "Kayseri", "Konya", "Mersin", "Sakarya", "Samsun",
-  "Trabzon", "Şanlıurfa", "Van", "Diğer",
-];
 
 const benefitItems = [
   "Ücretsiz demo sürecesi",
@@ -283,9 +277,9 @@ export function DemoRequestSection() {
                         <SelectTrigger id="city" className="w-full">
                           <SelectValue placeholder="Şehir seçin" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-72">
                           <SelectGroup>
-                            {cities.map((city) => (
+                            {TR_CITIES.map((city) => (
                               <SelectItem key={city} value={city}>
                                 {city}
                               </SelectItem>
