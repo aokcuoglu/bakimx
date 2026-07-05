@@ -270,7 +270,20 @@ export function CustomerVehiclePicker({
               onOpenChange={setComboOpen}
               onValueChange={(r: UnifiedResult | null) => { if (r && r.kind === "vehicle") pickVehicle(r) }}
             >
-              <ComboboxInput showTrigger={false} placeholder="Plaka ile ara…" />
+              <ComboboxInput
+                showTrigger={false}
+                placeholder="Plaka ile ara…"
+                onKeyDown={(e) => {
+                  // Base UI Combobox, on Enter with no highlighted option, closes the
+                  // popup and reverts the input to the (empty) selected value — wiping
+                  // the typed plate. This box is free-form search (results are picked by
+                  // click), so keep the query. If an option is arrow-highlighted, let
+                  // Base UI select it normally.
+                  if (e.key === "Enter" && !e.currentTarget.getAttribute("aria-activedescendant")) {
+                    e.preventBaseUIHandler()
+                  }
+                }}
+              />
               <ComboboxContent>
                 <ComboboxEmpty className="p-0">
                   {loading ? (

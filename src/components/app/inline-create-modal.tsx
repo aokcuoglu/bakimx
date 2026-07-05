@@ -15,11 +15,14 @@ import {
   ocrFuelToSlug,
 } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, ChevronDown, Loader2, User, X } from "lucide-react"
+import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import { normalizePlate } from "@/lib/format"
+import { findExactPlateMatch, type ExistingVehicleMatch } from "@/lib/search/exact-plate-match"
+import type { UnifiedResult } from "@/lib/search/unified-results"
 
 export type InlineCreateResult = {
   customerId: string
@@ -94,6 +97,8 @@ export function InlineCreateModal({
   } | null>(null)
   const [confidence, setConfidence] = useState<Record<string, number | undefined>>({})
   const [showDetails, setShowDetails] = useState(false)
+  // Girilen plaka DB'de zaten kayıtlıysa: mevcut aracı seçime dönüştürmek için tutulur.
+  const [existingMatch, setExistingMatch] = useState<ExistingVehicleMatch | null>(null)
 
   function setField(key: keyof VehicleFields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }))
@@ -114,8 +119,34 @@ export function InlineCreateModal({
       setOwnerSeed(null)
       setConfidence({})
       setShowDetails(false)
+      setExistingMatch(null)
     }, 0)
   }, [open, initialPlate, fixedCustomer])
+
+  // Plaka değişince mevcut aracı ara (debounce). contains araması → client'ta
+  // birebir plaka filtresi. Modal kapalıyken çalışmaz.
+  useEffect(() => {
+    if (!open) return
+    const plate = normalizePlate(fields.plate)
+    if (plate.length < 5) {
+      const t = setTimeout(() => setExistingMatch(null), 0)
+      return () => clearTimeout(t)
+    }
+    let active = true
+    const t = setTimeout(() => {
+      fetch(`/api/search/customer-vehicle?q=${encodeURIComponent(plate)}`)
+        .then((r) => r.json())
+        .then((d: unknown) => {
+          if (!active) return
+          const results = Array.isArray((d as { results?: unknown })?.results)
+            ? (d as { results: UnifiedResult[] }).results
+            : []
+          setExistingMatch(findExactPlateMatch(results, fields.plate))
+        })
+        .catch(() => { if (active) setExistingMatch(null) })
+    }, 400)
+    return () => { active = false; clearTimeout(t) }
+  }, [open, fields.plate])
 
   function applyOcr({ values, confidence: conf, owner }: RuhsattanOkuResult) {
     setFields((prev) => ({
@@ -162,12 +193,31 @@ export function InlineCreateModal({
     return lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
   }
 
+  // Kart: mevcut aracı, DB'deki gerçek sahibiyle seç. onCreated picker'a araç
+  // seçimi olarak yansır. brand/model ayrı alan yok → label'ın " — " kuyruğu
+  // brand olarak geçer, model boş (picker etiketi "PLAKA — Marka Model" kalır).
+  function selectExisting() {
+    if (!existingMatch) return
+    const brandTail = existingMatch.label.split(" — ")[1] ?? ""
+    const ownerName = existingMatch.sublabel.replace(/^Sahip:\s*/, "")
+    onCreated({
+      customerId: existingMatch.customerId,
+      vehicleId: existingMatch.vehicleId,
+      plate: fields.plate,
+      brand: brandTail,
+      model: "",
+      customerName: ownerName,
+    })
+    onOpenChange(false)
+  }
+
   async function handleCreate(edit: boolean) {
     setError("")
     if (!owner) { setError("Önce müşteri seçin veya oluşturun"); return }
     if (!fields.plate.trim() || !fields.brand.trim() || !fields.model.trim()) {
       setError("Plaka, marka ve model zorunludur"); return
     }
+    if (existingMatch) { setError("Bu plaka zaten kayıtlı — aşağıdan mevcut aracı seçin."); return }
     setLoading(true)
     try {
       const vf = new FormData()
@@ -267,6 +317,21 @@ export function InlineCreateModal({
               required
             />
           </div>
+
+          {existingMatch && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="size-4 text-warning mt-0.5 shrink-0" />
+                <div className="min-w-0 text-sm">
+                  <p className="font-medium text-foreground">Bu plaka zaten kayıtlı: {existingMatch.label}</p>
+                  <p className="text-xs text-muted-foreground">{existingMatch.sublabel}</p>
+                </div>
+              </div>
+              <Button type="button" size="sm" className="w-full" onClick={selectExisting}>
+                <Car className="size-4 mr-1" /> Bu aracı seç
+              </Button>
+            </div>
+          )}
 
           {/* Detailed ruhsat fields */}
           <button
