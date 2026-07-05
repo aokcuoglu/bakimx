@@ -30,3 +30,11 @@ export interface ArticleSummary {
   /** Product photo (webp on the provider's S3) — may be null. */
   imageUrl: string | null
 }
+
+/** Normalized parça markası (TecDoc supplier) — Marka Combobox'ını doldurur. */
+export interface PartBrandSummary {
+  /** TecDoc supplierId — parça markasının katalog kimliği. */
+  supplierId: number
+  /** Marka adı (BOSCH, MAHLE, MANN-FILTER...). */
+  name: string
+}

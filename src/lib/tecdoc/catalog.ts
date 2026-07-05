@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/db"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
-import { normalizeArticles, normalizeCategories } from "./normalize"
-import { TecdocError, TYPE_ID, LANG_ID, type ArticleSummary, type CategoryNode } from "./types"
+import { normalizeArticles, normalizeCategories, normalizeSuppliers } from "./normalize"
+import { TecdocError, TYPE_ID, LANG_ID, type ArticleSummary, type CategoryNode, type PartBrandSummary } from "./types"
 
 /**
  * Cache-first TecDoc reads, mirroring src/lib/vin/lookup.ts: each (endpoint,
@@ -60,11 +60,91 @@ export async function getArticlesByCategory(vehicleId: number, categoryId: numbe
     throw new TecdocError("invalid_params", "Geçersiz katalog parametreleri.")
   }
   const provider = getTecdocProvider()
+
+  // First read normalized rows from DB — populated on first API fetch. Repeat
+  // queries for the same (vehicleTypeId, categoryId) skip the paid RapidAPI call
+  // (and even the raw JSON cache re-normalize) entirely. Mock provider never
+  // persists rows (see write guard below), so skip the DB round-trip for it.
+  if (provider.name !== "mock") {
+    const rows = await prisma.tecdocArticle.findMany({ where: { vehicleTypeId: vehicleId, categoryId } })
+    if (rows.length > 0) {
+      return rows.map((r) => ({
+        tecdocArticleId: r.tecdocArticleId,
+        articleNo: r.articleNo,
+        productName: r.productName,
+        supplierName: r.supplierName,
+        supplierId: r.supplierId,
+        imageUrl: r.imageUrl,
+      }))
+    }
+  }
+
   const raw = await cachedFetch(
     `articles:${TYPE_ID}:${vehicleId}:${categoryId}:${LANG_ID}`,
     "articles",
     provider.name,
     () => provider.getArticles(vehicleId, categoryId)
   )
-  return normalizeArticles(raw)
+  const articles = normalizeArticles(raw)
+
+  // Persist normalized rows so the next read comes from DB directly. Mock data
+  // must NOT be persisted (it would shadow real data after switching providers).
+  // Wrapped in a single transaction so a mid-batch failure rolls back all rows
+  // (avoids partial writes leaving the table in an inconsistent state).
+  if (provider.name !== "mock" && articles.length > 0) {
+    try {
+      await prisma.$transaction(
+        articles.map((a) =>
+          prisma.tecdocArticle.upsert({
+            where: {
+              vehicleTypeId_categoryId_tecdocArticleId: {
+                vehicleTypeId: vehicleId,
+                categoryId,
+                tecdocArticleId: a.tecdocArticleId,
+              },
+            },
+            create: {
+              vehicleTypeId: vehicleId,
+              categoryId,
+              tecdocArticleId: a.tecdocArticleId,
+              articleNo: a.articleNo,
+              productName: a.productName,
+              supplierName: a.supplierName,
+              supplierId: a.supplierId,
+              imageUrl: a.imageUrl,
+            },
+            update: {
+              articleNo: a.articleNo,
+              productName: a.productName,
+              supplierName: a.supplierName,
+              supplierId: a.supplierId,
+              imageUrl: a.imageUrl,
+            },
+          })
+        )
+      )
+    } catch (err) {
+      // DB write failure must not block the user from seeing API data.
+      console.error("[tecdoc] article persist failed", err)
+    }
+  }
+
+  return articles
+}
+
+/**
+ * Parça markaları (TecDoc suppliers) — araç-bağımsız, tek sefer çekilir ve
+ * cache'lenir. Cache key `suppliers:list` (vehicleId parametresi YOK). Mock
+ * provider cachedFetch içinde cache'ye yazılmaz (mock→rapidapi geçişinde
+ * gerçek veri gelir).
+ */
+export async function getPartBrands(): Promise<PartBrandSummary[]> {
+  const provider = getTecdocProvider()
+  const raw = await cachedFetch(
+    "suppliers:list",
+    "suppliers",
+    provider.name,
+    () => provider.getSuppliers()
+  )
+  return normalizeSuppliers(raw)
 }

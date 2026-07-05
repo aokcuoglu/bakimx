@@ -1387,6 +1387,29 @@ model TecdocCache {
   @@map("tecdoc_cache")
 }
 
+/// Normalized TecDoc article rows extracted from cached raw payloads, so repeat
+/// queries for the same (vehicleTypeId, categoryId) read from DB rows instead of
+/// re-normalizing the raw JSON. Global (NOT tenant-scoped) — catalog reference data.
+/// One row per (vehicleTypeId, categoryId, tecdocArticleId). Populated on first
+/// API fetch; subsequent reads skip the paid RapidAPI call entirely.
+model TecdocArticle {
+  id                BigInt   @id @default(autoincrement())
+  vehicleTypeId     Int      @map("vehicle_type_id")
+  categoryId        Int      @map("category_id")
+  tecdocArticleId   Int      @map("tecdoc_article_id")
+  articleNo         String   @map("article_no")
+  productName       String   @map("product_name")
+  supplierName      String   @map("supplier_name")
+  supplierId        Int?     @map("supplier_id")
+  imageUrl          String?  @map("image_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([vehicleTypeId, categoryId, tecdocArticleId])
+  @@index([vehicleTypeId, categoryId])
+  @@map("tecdoc_articles")
+}
+
 enum VinLookupStatus {
   found
   not_found

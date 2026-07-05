@@ -7,6 +7,7 @@ export interface TecdocProvider {
   readonly name: string
   getCategories(vehicleId: number): Promise<unknown>
   getArticles(vehicleId: number, categoryId: number): Promise<unknown>
+  getSuppliers(): Promise<unknown>
 }
 
 let _provider: TecdocProvider | null = null

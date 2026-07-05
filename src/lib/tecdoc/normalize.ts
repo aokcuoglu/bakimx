@@ -1,5 +1,10 @@
-import { TecdocError, type ArticleSummary, type CategoryNode } from "./types"
-import { categoriesResponseSchema, articlesResponseSchema, type CategoryNodeRaw } from "./schemas"
+import { TecdocError, type ArticleSummary, type CategoryNode, type PartBrandSummary } from "./types"
+import {
+  categoriesResponseSchema,
+  articlesResponseSchema,
+  suppliersResponseSchema,
+  type CategoryNodeRaw,
+} from "./schemas"
 
 function toNode(raw: CategoryNodeRaw): CategoryNode {
   const childMap =
@@ -35,4 +40,15 @@ export function normalizeArticles(raw: unknown): ArticleSummary[] {
     supplierId: a.supplierId ?? null,
     imageUrl: a.s3image || null,
   }))
+}
+
+/** Raw GET /suppliers/list array → sorted PartBrandSummary[]. Throws provider_error on shape mismatch. */
+export function normalizeSuppliers(raw: unknown): PartBrandSummary[] {
+  const parsed = suppliersResponseSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new TecdocError("provider_error", "Parça markası cevabı beklenen biçimde değil.")
+  }
+  return parsed.data
+    .map((s) => ({ supplierId: s.supplierId, name: s.supplierName }))
+    .sort((a, b) => a.name.localeCompare(b.name, "tr"))
 }

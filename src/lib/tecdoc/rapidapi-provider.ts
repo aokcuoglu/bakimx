@@ -59,4 +59,10 @@ export class RapidApiTecdocProvider implements TecdocProvider {
     // all-null fields on this provider (probed with both string and int ids).
     return this.get(`/articles/list/type-id/${TYPE_ID}/vehicle-id/${vehicleId}/category-id/${categoryId}/lang-id/${LANG_ID}`)
   }
+
+  getSuppliers(): Promise<unknown> {
+    // GET /suppliers/list — araç-bağımsız tüm parça markaları (supplierId +
+    // supplierName). Probed 2026-07-02: 1264 öğe top-level array döner.
+    return this.get(`/suppliers/list`)
+  }
 }

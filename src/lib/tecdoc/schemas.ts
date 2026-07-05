@@ -49,3 +49,20 @@ export const articlesResponseSchema = z.object({
 })
 
 export type ArticleRaw = z.infer<typeof articleRawSchema>
+
+/**
+ * Supplier (parça markası) raw schema — GET /suppliers/list top-level array
+ * döndürür (nesne değil). Probed 2026-07-02: 1264 öğe, alanlar:
+ * supplierId, supplierName, supplierMatchCode (opsiyonel), supplierLogoName
+ * (opsiyonel), s3image (opsiyonel).
+ */
+export const supplierRawSchema = z.object({
+  supplierId: z.number(),
+  supplierName: z.string(),
+  supplierMatchCode: z.string().nullish(),
+  supplierLogoName: z.string().nullish(),
+  s3image: z.string().nullish(),
+})
+
+export const suppliersResponseSchema = z.array(supplierRawSchema)
+export type SupplierRaw = z.infer<typeof supplierRawSchema>
