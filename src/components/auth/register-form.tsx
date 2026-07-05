@@ -7,8 +7,16 @@ import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin, Check
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { formatPhoneTR } from "@/lib/format"
+import { TR_CITIES } from "@/lib/tr-cities"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -130,10 +138,19 @@ export function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="city" className="text-sm font-medium text-muted-foreground">Şehir</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
-              <Input id="city" name="city" required placeholder="İstanbul" className="pl-9" />
-            </div>
+            <Select name="city" required>
+              <SelectTrigger id="city" className="w-full">
+                <MapPin className="size-4 text-muted-foreground/70" />
+                <SelectValue placeholder="İl seçin" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {TR_CITIES.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
