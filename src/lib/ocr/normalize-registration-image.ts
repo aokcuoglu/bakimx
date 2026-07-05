@@ -4,6 +4,13 @@ import { MAX_IMAGE_SIZE_BYTES } from "./types"
 
 const HEIC_MIME_TYPES = new Set(["image/heic", "image/heif"])
 
+// OCR sidecar'a giden görselin boyutu. CPU inference maliyeti ~piksel sayısıyla
+// orantılı, yani en uzun kenar ana hız kolu. 1280px ruhsat metnini okunur tutar
+// ama piksel sayısını eski 2000px'e göre ~2.4x azaltır. Küçük alanlar (VIN / motor
+// no) yanlış okunmaya başlarsa 1600'e doğru artır.
+const OCR_MAX_EDGE = 1280
+const OCR_JPEG_QUALITY = 80
+
 export type NormalizedRegistrationImage = {
   buffer: Buffer
   mimeType: string
@@ -46,21 +53,21 @@ async function preprocessImage(
 
   // Sharp pipeline:
   // rotate   → EXIF orientation düzeltme
-  // resize   → maksimum 2000px en uzun kenar (küçük fotolar içinse minimum garantisi)
+  // resize   → en uzun kenar OCR_MAX_EDGE; küçük fotoyu büyütme (withoutEnlargement)
   // grayscale/normalize/sharpen → yalnız Tesseract (plaka) modunda; vision modunda renk korunur.
   try {
     let pipeline = sharp(buffer)
       .rotate()
       .resize({
-        width: 2000,
-        height: 2000,
+        width: OCR_MAX_EDGE,
+        height: OCR_MAX_EDGE,
         fit: "inside",
-        withoutEnlargement: false,
+        withoutEnlargement: true,
       })
     if (grayscale) {
       pipeline = pipeline.grayscale().normalize().sharpen()
     }
-    const processed = await pipeline.jpeg({ quality: 95 }).toBuffer()
+    const processed = await pipeline.jpeg({ quality: OCR_JPEG_QUALITY }).toBuffer()
 
     if (processed.byteLength > MAX_IMAGE_SIZE_BYTES) {
       throw new Error(

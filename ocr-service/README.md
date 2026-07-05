@@ -1,5 +1,11 @@
 # BakımX Ruhsat OCR Sidecar (PaddleOCR)
 
+> **PARKED (MVP'de kullanılmıyor).** MVP OCR'ı Claude Vision'a geçti (`OCR_PROVIDER=anthropic`,
+> app içinde, sidecar yok). Bu sidecar staging/prod'da artık deploy EDİLMİYOR ve compose'dan
+> kaldırıldı. Kod, çevrimdışı/ücretsiz fallback gerekirse geri getirilebilsin diye repoda
+> tutuluyor — geri açmak için `OCR_PROVIDER=paddle` + ayrı container. Staging'de yavaştı
+> (~70sn, paylaşımlı VPS CPU + oneDNN kapalı); Claude ~16sn.
+
 Türk araç tescil belgesi (ruhsat) fotoğraflarından 15 alanı çıkaran **yerel, ücretsiz,
 çevrimdışı** OCR servisi. Next.js uygulaması bunu localhost HTTP ile çağırır
 (`src/lib/ocr/paddle-ocr-provider.ts`).

@@ -57,31 +57,23 @@ S3_FORCE_PATH_STYLE=true
 # Varsayılan: mock (demo verisi döndürür, API anahtarı gerekmez)
 OCR_PROVIDER=mock
 
-# Gerçek OCR için: deepseek, openai, veya tesseract
-# OCR_PROVIDER=deepseek
-# OCR_PROVIDER=openai
-# OCR_PROVIDER=tesseract
+# MVP önerisi: Claude Vision — app içinde, sidecar yok
+# OCR_PROVIDER=anthropic
+# ANTHROPIC_API_KEY=sk-ant-...
+# OCR_MODEL=claude-sonnet-5   # varsayılan; ucuz/hızlı için claude-haiku-4-5
 
-# Sağlayıcıdan bağımsız model override (opsiyonel)
-# OCR_MODEL=gpt-4o
-
-# DeepSeek (OCR_PROVIDER=deepseek iken gerekli)
-# DEEPSEEK_API_KEY=your-key
-# DEEPSEEK_OCR_MODEL=deepseek-chat
-
-# OpenAI (OCR_PROVIDER=openai iken gerekli)
-# OPENAI_API_KEY=your-key
-# OPENAI_OCR_MODEL=gpt-4o
-
-# Tesseract (OCR_PROVIDER=tesseract) — yerel OCR, API anahtarı gerekmez
-# Doğruluk DeepSeek/OpenAI'dan düşüktür; fallback olarak önerilir
+# Alternatif sağlayıcılar
+# OCR_PROVIDER=paddle    # yerel PaddleOCR sidecar (ocr-service/, ayrı container) + OCR_SERVICE_URL
+# OCR_PROVIDER=hybrid    # paddle birincil + Claude fallback (ANTHROPIC_API_KEY)
+# OCR_PROVIDER=openai    # OPENAI_API_KEY + OCR_MODEL=gpt-4o
 ```
 
 **OCR davranışı:**
 - `OCR_PROVIDER` ayarlanmazsa veya `mock` ise: sabit demo verisi döndürülür, API anahtarı gerekmez
-- `OCR_PROVIDER=deepseek`: Tesseract yerel metin çıkarma + DeepSeek JSON alan eşleme; `DEEPSEEK_API_KEY` zorunlu, `DEEPSEEK_OCR_MODEL` veya `OCR_MODEL` zorunlu
-- `OCR_PROVIDER=openai`: OpenAI Responses API vision OCR; `OPENAI_API_KEY` zorunlu, `OPENAI_OCR_MODEL` veya `OCR_MODEL` zorunlu
-- `OCR_PROVIDER=tesseract`: Yalnızca yerel Tesseract metin çıkarma; API anahtarı gerekmez, doğruluk düşük
+- `OCR_PROVIDER=anthropic` (MVP): Claude Vision ile doğrudan görüntüden yapılandırılmış çıkarım; `ANTHROPIC_API_KEY` zorunlu, `OCR_MODEL` varsayılanı `claude-sonnet-5`
+- `OCR_PROVIDER=paddle`: yerel PaddleOCR sidecar (ocr-service/, ayrı Python container); `OCR_SERVICE_URL` (varsayılan http://127.0.0.1:8000)
+- `OCR_PROVIDER=hybrid`: PaddleOCR birincil + düşük güvenli alanlarda Claude fallback; `ANTHROPIC_API_KEY` zorunlu
+- `OCR_PROVIDER=openai`: OpenAI vision OCR; `OPENAI_API_KEY` zorunlu, `OPENAI_OCR_MODEL` veya `OCR_MODEL` zorunlu
 - `OCR_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
 - Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
 - HEIC/HEIF dosyaları sunucuda JPEG'e dönüştürülerek okunur
