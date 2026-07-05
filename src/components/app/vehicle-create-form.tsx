@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug } from "@/lib/constants"
+import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
@@ -103,18 +103,6 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
     catalogVehicleTypeId: initial?.catalogVehicleTypeId ?? undefined,
     notes: initial?.notes || "",
   }
-}
-
-/** TecDoc English fuel_type → the form's fixed fuel Select values. */
-function tecdocFuelToFormValue(fuel: string | null): string {
-  if (!fuel) return ""
-  const f = fuel.toLowerCase()
-  if (f.includes("lpg")) return "lpg"
-  if (f.includes("diesel")) return "dizel"
-  if (f.includes("hybrid")) return "hibrit"
-  if (f.includes("electric")) return "elektrik"
-  if (f.includes("petrol")) return "benzin"
-  return ""
 }
 
 type VinResolveState = {

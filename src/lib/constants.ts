@@ -200,6 +200,18 @@ export function ocrFuelToSlug(raw: string | null | undefined): string {
   return ""
 }
 
+/** TecDoc English fuel_type (VIN resolve) → the form's fixed fuel Select values. */
+export function tecdocFuelToFormValue(fuel: string | null): string {
+  if (!fuel) return ""
+  const f = fuel.toLowerCase()
+  if (f.includes("lpg")) return "lpg"
+  if (f.includes("diesel")) return "dizel"
+  if (f.includes("hybrid")) return "hibrit"
+  if (f.includes("electric")) return "elektrik"
+  if (f.includes("petrol")) return "benzin"
+  return ""
+}
+
 export const QUOTE_STATUS = {
   draft: { label: "Taslak", color: "bg-muted text-foreground border-border" },
   sent: { label: "Gönderildi", color: "bg-primary/10 text-foreground border-primary/20" },
