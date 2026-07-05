@@ -233,6 +233,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <AppShell
+      constrained
       workshopName={workshop?.name}
       pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
     >

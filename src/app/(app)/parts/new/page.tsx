@@ -7,7 +7,7 @@ export default async function NewPartPage() {
   const { user, workshop } = await getAppData()
   const suppliers = await getActiveSuppliersForSelect(user.workshopId)
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Parça">
+    <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni Parça">
       <PartForm suppliers={suppliers} />
     </AppShell>
   )

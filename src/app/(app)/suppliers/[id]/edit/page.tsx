@@ -18,7 +18,7 @@ export default async function EditSupplierPage(props: { params: Promise<{ id: st
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Tedarikçi Düzenle">
+    <AppShell constrained workshopName={workshop?.name} pageTitle="Tedarikçi Düzenle">
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <SupplierForm supplier={serialized as any} />
     </AppShell>

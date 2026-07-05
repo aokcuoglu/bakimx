@@ -137,27 +137,40 @@ type PageHeaderState = {
 const SetPageHeaderContext = createContext<(state: PageHeaderState) => void>(() => {})
 
 /**
+ * Tek-kolon detay ve form sayfalarının içeriğini rahat okunur bir genişliğe
+ * sınırlayan sol-hizalı sarmalayıcı sınıfı. `/parts/new` referans alındı; tüm
+ * `constrained` sayfalar bu tek sabitten beslenir (değiştirmek için tek yer).
+ * Mobilde etkisizdir (ekran zaten bu genişliğin altında). İki/çok-kolon wizard
+ * sayfaları (quote/vehicle create, order wizard) bunu kullanmaz.
+ */
+const CONSTRAINED_WIDTH_CLASS = "max-w-3xl"
+
+/**
  * Sayfaların render ettiği ince sarmalayıcı. Görsel kabuk çizmez; verilen
- * başlık/aksiyon/arama bilgisini kalıcı kabuğa iletir ve içeriğini olduğu gibi
- * döndürür. Çağrı API'si geriye dönük uyumludur (`workshopName` prop'u artık
- * kullanılmıyor; mevcut sayfa çağrılarını bozmamak için kabul edilip yok sayılır).
+ * başlık/aksiyon/arama bilgisini kalıcı kabuğa iletir. `constrained` verilirse
+ * içeriği sol-hizalı sınırlı bir genişlikte sarar; aksi halde olduğu gibi döner.
+ * Çağrı API'si geriye dönük uyumludur (`workshopName` prop'u artık kullanılmıyor;
+ * mevcut sayfa çağrılarını bozmamak için kabul edilip yok sayılır).
  */
 export function AppShell({
   children,
   pageTitle,
   pageActions,
   showGlobalSearch = true,
+  constrained = false,
 }: {
   children: React.ReactNode
   workshopName?: string
   pageTitle?: string
   pageActions?: React.ReactNode
   showGlobalSearch?: boolean
+  constrained?: boolean
 }) {
   const setPageHeader = useContext(SetPageHeaderContext)
   useEffect(() => {
     setPageHeader({ pageTitle, pageActions, showGlobalSearch })
   }, [setPageHeader, pageTitle, pageActions, showGlobalSearch])
+  if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{children}</div>
   return <>{children}</>
 }
 

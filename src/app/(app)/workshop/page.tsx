@@ -48,7 +48,7 @@ export default async function WorkshopPage() {
   }))
 
   return (
-    <AppShell workshopName={workshop.name} pageTitle="İş Yeri Profili">
+    <AppShell constrained workshopName={workshop.name} pageTitle="İş Yeri Profili">
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>

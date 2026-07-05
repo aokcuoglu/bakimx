@@ -160,7 +160,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
         </div>
 
-        <div className="space-y-5 max-w-3xl">
+        <div className="space-y-5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold">Parça Bilgileri</CardTitle>

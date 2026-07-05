@@ -105,7 +105,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
 
   return (
-    <AppShell workshopName={workshop.name} pageTitle="Ayarlar">
+    <AppShell constrained workshopName={workshop.name} pageTitle="Ayarlar">
       <div className="space-y-5 sm:space-y-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ayarlar</h2>

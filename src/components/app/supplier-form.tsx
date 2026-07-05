@@ -113,7 +113,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Tedarikçi Düzenle" : "Yeni Tedarikçi"}</h2>
         </div>
 
-        <div className="space-y-5 max-w-3xl">
+        <div className="space-y-5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
