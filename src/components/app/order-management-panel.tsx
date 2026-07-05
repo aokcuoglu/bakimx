@@ -127,12 +127,12 @@ export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string;
   // Onay artık teslimde (delivery OTP) alınır, kabulde değil (bkz. status-transitions.ts).
   // Taslak iş emri doğrudan başlar; "Onaya Gönder" kaldırıldı. waiting_approval sadece
   // eski kayıtlar ileri gidebilsin diye durur (onay jargonu olmadan).
-  draft: [{ key: "in_progress", label: "İşleme Al", primary: true }],
+  draft: [{ key: "in_progress", label: "Başla", primary: true }],
   waiting_approval: [
-    { key: "in_progress", label: "İşleme Al", primary: true },
+    { key: "in_progress", label: "Başla", primary: true },
     { key: "cancelled", label: "İptal" },
   ],
-  approved: [{ key: "in_progress", label: "İşleme Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
+  approved: [{ key: "in_progress", label: "Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
   in_progress: [
     { key: "waiting_parts", label: "Parça Bekliyor" },
     { key: "ready_for_delivery", label: "Teslime Hazır", primary: true },
