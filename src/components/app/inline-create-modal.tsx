@@ -125,7 +125,7 @@ export function InlineCreateModal({
     }
     let active = true
     const t = setTimeout(() => {
-      fetch(`/api/search/customer-vehicle?q=${encodeURIComponent(fields.plate.trim())}`)
+      fetch(`/api/search/customer-vehicle?q=${encodeURIComponent(plate)}`)
         .then((r) => r.json())
         .then((d: unknown) => {
           if (!active) return
