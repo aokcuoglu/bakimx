@@ -51,8 +51,17 @@ export class RapidApiVinProvider implements VinProvider {
     }
 
     const sections = extractMatchSections(raw)
-    if (!sections || sections.matchingVehicles.length === 0) {
-      // A well-formed "no match" answer is a terminal fact worth caching.
+    // A manufacturer/model hit without an exact vehicle-level row is still a
+    // match — resolveVinToCatalog() falls back to brand/model in that case.
+    // Only cache "not_found" when NOTHING at all was recognized; otherwise a
+    // recognized-but-variant-less VIN would be miscached as a terminal miss
+    // and permanently skip that fallback (vin_lookups has no TTL).
+    const hasAnyMatch =
+      !!sections &&
+      (sections.matchingVehicles.length > 0 ||
+        sections.matchingModels.length > 0 ||
+        sections.matchingManufacturers.length > 0)
+    if (!hasAnyMatch) {
       return { status: "not_found", raw }
     }
     return { status: "found", raw }
