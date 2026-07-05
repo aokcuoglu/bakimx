@@ -75,6 +75,7 @@ const defaultItem = {
   unitPrice: null as number | null,
   totalPrice: null as number | null,
   note: "",
+  partId: "",
 }
 
 export function QuoteCreateForm() {
@@ -184,6 +185,7 @@ export function QuoteCreateForm() {
       unitPrice: priceLira,
       totalPrice: priceLira,
       note: part.sku ? `SKU: ${part.sku}` : "",
+      partId: part.id,
     })
     setCatalogSearch("")
     setCatalogResults([])
@@ -247,6 +249,7 @@ export function QuoteCreateForm() {
           unitPrice,
           totalPrice,
           note: i.note || undefined,
+          partId: i.partId || undefined,
         }
       })
     formData.set("items", JSON.stringify(cleanItems))

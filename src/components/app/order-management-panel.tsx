@@ -88,7 +88,7 @@ export type OrderDetailData = {
     phone: string
     email: string | null
   }
-  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; catalogVehicleTypeId: number | null }
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; catalogVehicleTypeId: number | null; engineDisplacement: string | null; enginePower: string | null; fuelType: string | null; firstRegistrationDate: string | null }
   intake: {
     id: string
     status: string
@@ -158,7 +158,7 @@ export function PartsLaborCard({
   orderId: string
   status: string
   items: OrderItem[]
-  vehicle?: { id: string; catalogVehicleTypeId: number | null }
+  vehicle?: { id: string; catalogVehicleTypeId: number | null; vin: string | null; modelYear: number | null; engineDisplacement: string | null; enginePower: string | null; fuelType: string | null; firstRegistrationDate: string | null }
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
@@ -178,6 +178,8 @@ export function PartsLaborCard({
   // Set when the part was picked from the TecDoc vehicle catalog; cleared on
   // reset and when a local stock part is selected instead.
   const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
+  // Kendi stoğundan seçilen parça (PartStockItem.id). Boşsa manuel/katalog parçası.
+  const [partId, setPartId] = useState<string | null>(null)
 
   const parts = items.filter((i) => i.type === "part")
   const labor = items.filter((i) => i.type === "labor")
@@ -202,6 +204,7 @@ export function PartsLaborCard({
     // Catalog prices are kuruş; the input holds TRY (lira).
     setPrice(part.salePrice != null ? String(kurusToLira(part.salePrice)) : "")
     setQty("1")
+    setPartId(part.id)
     setShowCatalog(false)
     setCatalogSearch("")
     setCatalogResults([])
@@ -220,6 +223,7 @@ export function PartsLaborCard({
     setCatalogSearch("")
     setCatalogResults([])
     setTecdocArticleId(null)
+    setPartId(null)
   }
 
   async function handleAdd() {
@@ -237,6 +241,8 @@ export function PartsLaborCard({
     if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
     if (addingType === "part" && tecdocArticleId != null) formData.set("tecdocArticleId", String(tecdocArticleId))
+    // Kendi stoğundan seçilen parça — server stok düşüp partId'yi kaydeder.
+    if (addingType === "part" && partId) formData.set("partId", partId)
 
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: formData })
@@ -384,6 +390,8 @@ export function PartsLaborCard({
                     setSku(sel.articleNo)
                     setUnit("adet")
                     setTecdocArticleId(sel.tecdocArticleId)
+                    // TecDoc katalog parçası kendi stoğumuzdan değil — partId'yi temizle.
+                    setPartId(null)
                     if (!note && sel.supplierName) setNote(sel.supplierName)
                   }}
                 />

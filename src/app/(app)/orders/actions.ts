@@ -7,6 +7,7 @@ import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
+import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -65,6 +66,7 @@ export async function addOrderItemAction(formData: FormData) {
     totalPrice: formData.get("totalPrice") as string,
     note: formData.get("note") as string,
     tecdocArticleId: formData.get("tecdocArticleId") as string,
+    partId: formData.get("partId") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -77,6 +79,7 @@ export async function addOrderItemAction(formData: FormData) {
     totalPrice: raw.totalPrice ? Number(raw.totalPrice) : undefined,
     note: raw.note || undefined,
     tecdocArticleId: raw.tecdocArticleId ? Number(raw.tecdocArticleId) : undefined,
+    partId: raw.partId || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -91,37 +94,65 @@ export async function addOrderItemAction(formData: FormData) {
   // Item prices are integer kuruş. Adding an item changes the order's
   // grandTotal, so re-derive paidAmount/remainingAmount/paymentStatus in the
   // same transaction (server authority).
-  const item = await prisma.$transaction(async (tx) => {
-    const created = await tx.serviceOrderItem.create({
-      data: {
-        workshopId: user.workshopId,
-        serviceOrderId: raw.serviceOrderId,
-        type: parsed.data.type,
-        name: parsed.data.name,
-        sku: parsed.data.sku || null,
-        unit: parsed.data.unit || null,
-        quantity: parsed.data.quantity,
-        unitPrice: parsed.data.unitPrice ?? null,
-        totalPrice: parsed.data.totalPrice ?? null,
-        note: parsed.data.note || null,
-        tecdocArticleId: parsed.data.tecdocArticleId ?? null,
-      },
+  // partId set edildiyse parça kendi stoğumuzdan seçilmiştir: workshopId scope
+  // doğrula, stok düş ve StockMovement (type=out) oluştur.
+  const partId = parsed.data.partId || null
+  if (partId) {
+    const part = await getActiveWorkshopPart(user.workshopId, partId)
+    if (!part) return { error: "Parça bulunamadı veya pasif" }
+  }
+
+  let createdItemId: string | null = null
+  try {
+    createdItemId = await prisma.$transaction(async (tx) => {
+      const created = await tx.serviceOrderItem.create({
+        data: {
+          workshopId: user.workshopId,
+          serviceOrderId: raw.serviceOrderId,
+          type: parsed.data.type,
+          name: parsed.data.name,
+          sku: parsed.data.sku || null,
+          unit: parsed.data.unit || null,
+          quantity: parsed.data.quantity,
+          unitPrice: parsed.data.unitPrice ?? null,
+          totalPrice: parsed.data.totalPrice ?? null,
+          note: parsed.data.note || null,
+          tecdocArticleId: parsed.data.tecdocArticleId ?? null,
+          partId: partId,
+        },
+      })
+      // Stok düş (sadece part'ı olan parça kalemleri için).
+      if (partId && parsed.data.type === "part") {
+        await reserveStockInTx(
+          tx,
+          user.workshopId,
+          partId,
+          parsed.data.quantity,
+          "work_order",
+          created.id,
+          user.id,
+          `İş emri ${order.workOrderNo || ""}: ${parsed.data.name}`,
+        )
+      }
+      await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
+      return created.id
     })
-    await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
-    return created
-  })
+  } catch (err) {
+    // Yetersiz stok / pasif parça hatalarını kullanıcıya döndür.
+    return { error: err instanceof Error ? err.message : "Kalem eklenemedi" }
+  }
 
   await AuditLogAction(
     user.workshopId,
     user.id,
     "ServiceOrderItem",
-    item.id,
+    createdItemId,
     "order_item_added",
     JSON.stringify({
-      name: item.name,
-      type: item.type,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
+      name: parsed.data.name,
+      type: parsed.data.type,
+      quantity: parsed.data.quantity,
+      unitPrice: parsed.data.unitPrice,
     }),
     raw.serviceOrderId,
   )
@@ -146,10 +177,24 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
 
   const deleteResult = await prisma.$transaction(async (tx) => {
+    // Önce silme (aşağıdaki iade zaten parçayı getirecek).
     const result = await tx.serviceOrderItem.deleteMany({
       where: { id: itemId, workshopId: user.workshopId },
     })
     if (result.count > 0) {
+      // partId set olan parça kalemi ise stok iade et.
+      if (item.partId && item.type === "part" && item.quantity > 0) {
+        await returnStockInTx(
+          tx,
+          user.workshopId,
+          item.partId,
+          item.quantity,
+          "work_order",
+          itemId,
+          user.id,
+          `İş emrinden silindi: ${item.name}`,
+        )
+      }
       await recalcOrderPayment(tx, orderId, user.workshopId)
     }
     return result
