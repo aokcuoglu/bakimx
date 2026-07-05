@@ -1061,10 +1061,14 @@ model OcrLog {
   customerId     String?
   vehicleId      String?
   serviceOrderId String?
+  /// SHA-256 (hex) of the raw uploaded image bytes — byte-hash dedup cache key.
+  /// Null on legacy rows and on mock-provider scans (never cached).
+  imageHash      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([workshopId])
+  @@index([workshopId, imageHash])
   @@index([customerId])
   @@index([vehicleId])
   @@index([serviceOrderId])
