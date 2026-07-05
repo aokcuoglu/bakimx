@@ -30,7 +30,7 @@ export function AdvisorPremiumLock() {
         </p>
         <Link
           href="/checkout?tier=premium&cycle=monthly"
-          className={cn(buttonVariants({ size: "sm" }), "w-full")}
+          className={cn(buttonVariants(), "w-full")}
         >
           <Sparkles className="size-3.5" />
           Premium Pakete Geç
