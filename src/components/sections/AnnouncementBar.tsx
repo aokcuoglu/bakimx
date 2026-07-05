@@ -18,7 +18,7 @@ export function AnnouncementBar() {
             Erken Üye
           </span>
           <span>
-            Erken üyelere özel başlangıç fiyatları · 15 gün ücretsiz deneyin, kredi kartı gerekmez.
+            Erken üyelere özel başlangıç fiyatları · 7 gün ücretsiz deneyin, kredi kartı gerekmez.
           </span>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import type { BillingCycle } from "@prisma/client"
-import type { PlanTier } from "@/lib/plan"
+import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 
 const MAX_ATTEMPTS = 5
 const MAX_REF_RETRIES = 5
@@ -16,10 +16,12 @@ const WINDOW_MS = 10 * 60_000
 const GENERIC_ERROR = "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin."
 
 /**
- * Public direct purchase. Creates an isolated Workshop + owner User in `pending`
- * approval (no access) plus a pending-payment BillingOrder. BakımX confirms the
- * havale in /admin, which doubles as approval and activates the plan. No session
- * is created here.
+ * Public direct purchase. Creates an isolated Workshop + owner User that is
+ * `approved` immediately — the owner can sign in and use the app on its 7-day
+ * trial right away — plus a pending-payment BillingOrder. BakımX confirming
+ * the havale in /admin activates the requested paid plan (switches
+ * subscriptionStatus to `active`); it no longer gates access. No session is
+ * created here.
  */
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
 
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
+    const now = new Date()
 
     for (let attempt = 0; attempt < MAX_REF_RETRIES; attempt++) {
       const reference = generateOrderReference()
@@ -80,12 +83,15 @@ export async function POST(request: Request) {
               invoiceTitle: data.invoiceTitle,
               taxNumber: data.taxNumber,
               taxOffice: data.taxOffice || null,
-              // No access until BakımX confirms the havale (which approves it).
-              approvalStatus: "pending",
+              // Instant activation: the owner can sign in right away on the
+              // trial. The pending havale only gates the paid plan upgrade.
+              approvalStatus: "approved",
               subscriptionStatus: "trialing",
+              trialStartedAt: now,
+              trialEndsAt: computeTrialEnd(now),
               planTier: "pro",
               requestedPlanTier: tier,
-              planRequestedAt: new Date(),
+              planRequestedAt: now,
               settings: { create: {} },
             },
           })

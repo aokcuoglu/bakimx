@@ -14,7 +14,7 @@ import {
 
 const trustItems = [
   "Kurulum gerektirmez",
-  "15 gün ücretsiz",
+  "7 gün ücretsiz",
   "Kredi kartı gerekmez",
 ];
 
@@ -67,7 +67,7 @@ export function HeroSection() {
                   href="/register"
                   className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 gap-2 shadow-lg shadow-primary/25" })}
                 >
-                  15 Gün Ücretsiz Dene
+                  7 Gün Ücretsiz Dene
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -78,7 +78,7 @@ export function HeroSection() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground">
-                Başvurunuz onaylandığında 15 günlük deneme başlar.
+                Kayıt olduğunuzda 7 günlük deneme anında başlar.
               </p>
               <a
                 href="#ruhsat-demo"

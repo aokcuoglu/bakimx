@@ -4,7 +4,11 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: early-access onboarding gate (admin approves self sign-ups)
+ *  - approvalStatus: legacy kill-switch gate. Self sign-ups (register + public
+ *    checkout) are approved instantly and start their trial immediately —
+ *    admin approval is no longer required to gain access. The gate still
+ *    exists so an admin can `rejectWorkshop` (suspend) an account, and for any
+ *    older rows still sitting in `pending` from before this change.
  *  - subscriptionStatus + trialEndsAt: billing/trial lifecycle
  *
  * Today only the ACCESS gate (`hasAccess`) is enforced (login + /app layout).
@@ -23,7 +27,7 @@ import type { Workshop } from "@prisma/client"
  *    are available across all tiers, so the gate is informational only.
  */
 
-export const TRIAL_DAYS = 15
+export const TRIAL_DAYS = 7
 const DAY_MS = 86_400_000
 
 export type PlanTier = "starter" | "pro" | "premium"

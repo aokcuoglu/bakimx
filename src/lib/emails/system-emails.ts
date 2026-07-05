@@ -26,7 +26,7 @@ export function workshopApprovedEmail(p: { firstName: string; workshopName: stri
       heading: "Hesabınız onaylandı",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 15 günlük ücretsiz deneme süreniz başladı.</p>` +
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 7 günlük ücretsiz deneme süreniz başladı.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
       footerNote: "Bu e-postayı, BakimX'e iş yeri başvurusu yaptığınız için aldınız.",
@@ -66,6 +66,36 @@ export function applicationReceivedEmail(p: { firstName: string; workshopName: s
   }
 }
 
+/** Sent the moment a self-serve registration/checkout completes — the account is
+ *  active immediately (no admin approval step) and the trial starts now. */
+export function welcomeTrialEmail(p: {
+  ownerName: string
+  workshopName: string
+  trialEndsAt: Date
+}): BuiltEmail {
+  const name = escapeHtml(p.ownerName || "Yetkili")
+  const ws = escapeHtml(p.workshopName)
+  const trialEndsFormatted = p.trialEndsAt.toLocaleDateString("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+  return {
+    subject: "BakimX'e hoş geldiniz — 7 günlük deneme süreniz başladı",
+    html: renderEmailLayout({
+      heading: "Hesabınız hazır",
+      bodyHtml:
+        `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX hesabınız oluşturuldu ve kullanıma hazır. ` +
+        `7 günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
+        `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
+      cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
+      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/billing">${appUrl()}/billing</a>`,
+    }),
+  }
+}
+
 export function newApplicationAdminEmail(p: {
   workshopName: string
   ownerName: string
@@ -79,17 +109,17 @@ export function newApplicationAdminEmail(p: {
   const phone = escapeHtml(p.phone)
   const city = escapeHtml(p.city)
   return {
-    subject: `Yeni iş yeri başvurusu: ${p.workshopName}`,
+    subject: `Yeni iş yeri kaydı: ${p.workshopName}`,
     html: renderEmailLayout({
-      heading: "Yeni iş yeri başvurusu",
+      heading: "Yeni iş yeri kaydı",
       bodyHtml:
-        `<p style="margin:0 0 12px;">Yeni bir BakimX deneme başvurusu geldi:</p>` +
+        `<p style="margin:0 0 12px;">Yeni bir BakimX iş yeri kaydı oluşturuldu (hesap zaten aktif, 7 günlük deneme başladı):</p>` +
         `<p style="margin:0 0 4px;"><strong>İş yeri:</strong> ${ws}</p>` +
         `<p style="margin:0 0 4px;"><strong>Yetkili:</strong> ${owner}</p>` +
         `<p style="margin:0 0 4px;"><strong>E-posta:</strong> ${email}</p>` +
         `<p style="margin:0 0 4px;"><strong>Telefon:</strong> ${phone}</p>` +
         `<p style="margin:0 0 12px;"><strong>Şehir:</strong> ${city}</p>`,
-      cta: { label: "Başvuruyu incele", url: `${appUrl()}/admin` },
+      cta: { label: "Kaydı incele", url: `${appUrl()}/admin` },
     }),
   }
 }

@@ -345,8 +345,10 @@ export function PurchaseWizard({
                     <div className="space-y-4">
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
                       <p className="text-sm text-muted-foreground">
-                        Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce
-                        teyit edilince {isPublic ? "hesabınız aktifleşir" : "paketiniz güncellenir"}.
+                        Onayladığınızda size havale/EFT talimatı ve referans kodu verilir.{" "}
+                        {isPublic
+                          ? "Hesabınız hemen kullanıma açılır; ödeme ekibimizce teyit edilince paketiniz aktifleşir."
+                          : "Ödeme ekibimizce teyit edilince paketiniz güncellenir."}
                       </p>
                       {!isPublic && (
                         <p className="text-xs text-muted-foreground">
@@ -399,10 +401,10 @@ function DonePanel({
         <CheckCircle2 className="size-7 text-primary" />
       </div>
       <div>
-        <h2 className="text-lg font-bold text-foreground">Talebiniz alındı</h2>
+        <h2 className="text-lg font-bold text-foreground">Hesabınız hazır</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "public"
-            ? "Hesabınız oluşturuldu. Ödemeniz teyit edilince giriş yapabilirsiniz."
+            ? "Hesabınız oluşturuldu, hemen giriş yapabilirsiniz. Ödemeniz teyit edilince paketiniz aktifleşir."
             : "Havale teyidinden sonra paketiniz aktifleşecek."}
         </p>
       </div>

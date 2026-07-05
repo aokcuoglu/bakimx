@@ -13,7 +13,7 @@ export default async function AdminWorkshopsPage() {
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">İş Yerleri</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Kayıtları onaylayın, paket taleplerini etkinleştirin. Detay için iş yeri adına tıklayın.
+          Yeni kayıtları görüntüleyin, paket taleplerini etkinleştirin. Detay için iş yeri adına tıklayın.
         </p>
       </div>
       <AdminWorkshops workshops={rows} />
