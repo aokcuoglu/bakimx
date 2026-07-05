@@ -274,14 +274,20 @@ export function CustomerVehiclePicker({
                 showTrigger={false}
                 placeholder="Plaka ile ara…"
                 onKeyDown={(e) => {
-                  // Base UI Combobox, on Enter with no highlighted option, closes the
-                  // popup and reverts the input to the (empty) selected value — wiping
-                  // the typed plate. This box is free-form search (results are picked by
-                  // click), so keep the query. If an option is arrow-highlighted, let
-                  // Base UI select it normally.
-                  if (e.key === "Enter" && !e.currentTarget.getAttribute("aria-activedescendant")) {
-                    e.preventBaseUIHandler()
-                  }
+                  if (e.key !== "Enter") return
+                  // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
+                  // Base UI onu normal şekilde seçsin.
+                  if (e.currentTarget.getAttribute("aria-activedescendant")) return
+                  // Doğrudan input'ta Enter: Base UI'nın Enter'da popup'ı kapatıp
+                  // input'u (boş) seçili değere geri döndürme davranışını durdur ve
+                  // kararı biz verelim — eşleşen araç varsa onu seç, yoksa "Oluştur"
+                  // yeni araç modalını (yazılan plakayla) aç.
+                  e.preventBaseUIHandler()
+                  e.preventDefault()
+                  if (loading) return
+                  const first = modeResults[0]
+                  if (first && first.kind === "vehicle") pickVehicle(first)
+                  else if (query.trim()) setModalOpen(true)
                 }}
               />
               <ComboboxContent>
