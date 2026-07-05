@@ -74,8 +74,9 @@ const clusters: Cluster[] = [
     icon: Sparkles,
     subtitle: "Daha az emekle daha çok bilgi.",
     items: [
+      { label: "Ruhsat & plaka okuma", icon: ScanLine, tag: "Yeni" },
+      { label: "VIN'e göre uygun parça", icon: Boxes },
       { label: "AI servis danışmanı", icon: Sparkles, tag: "Premium" },
-      { label: "Ruhsat & plaka okuma", icon: ScanLine },
       { label: "Operasyonel analiz", icon: Activity },
       { label: "Raporlar", icon: BarChart3 },
     ],

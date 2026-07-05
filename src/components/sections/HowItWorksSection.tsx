@@ -7,9 +7,9 @@ import { ScanLine, FileText, MessageSquare, Wallet } from "lucide-react";
 const steps = [
   {
     icon: ScanLine,
-    title: "Aracı kabul edin",
+    title: "Ruhsatı okutun, aracı kabul edin",
     description:
-      "Plaka/ruhsat okuma ile araç ve müşteriyi saniyede kaydedin; fotoğraf checklist'i ve gerekirse 2D hasar işaretlemesiyle aracı belgeleyin.",
+      "Ruhsat/plaka okuma ile araç ve müşteri saniyede kaydolsun; VIN'iyle eşleşen uygun parçaları görün. Fotoğraf checklist'i ve gerekirse 2D hasar işaretlemesiyle aracı belgeleyin.",
   },
   {
     icon: FileText,

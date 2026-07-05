@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
+  { label: "Canlı Demo", href: "/#ruhsat-demo" },
   { label: "Modüller", href: "/#moduller" },
   { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
   { label: "Özellikler", href: "/#ozellikler" },

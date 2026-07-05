@@ -2,6 +2,7 @@ import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 import { Header } from "@/components/sections/Header";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { TrustStrip } from "@/components/sections/TrustStrip";
+import { RuhsatDemoSection } from "@/components/sections/RuhsatDemoSection";
 import { ModulesSection } from "@/components/sections/ModulesSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { FeatureSpotlightSection } from "@/components/sections/FeatureSpotlightSection";
@@ -18,6 +19,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <TrustStrip />
+        <RuhsatDemoSection />
         <ModulesSection />
         <HowItWorksSection />
         <FeatureSpotlightSection />

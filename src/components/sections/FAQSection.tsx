@@ -16,6 +16,11 @@ const faqs = [
       "Evet, BakimX tamamen mobil öncelikli tasarlanmıştır. Telefonunuzdan araç kabul edebilir, fotoğraf çekebilir, iş emri ve teklif oluşturabilirsiniz. Masaüstü cihazlardan da erişim mümkündür.",
   },
   {
+    question: "Ruhsat okuma nasıl çalışır? Parça fiyatı veriyor musunuz?",
+    answer:
+      "Ruhsatın fotoğrafını yükleyin; plaka, marka/model, VIN, model yılı ve sahibi gibi bilgiler otomatik doldurulsun, siz onaylamadan önce kontrol edin. Aracın VIN'iyle eşleşen, ona uygun katalog parçalarını görürsünüz. Parça fiyatlarını biz belirlemeyiz; fiyatlandırma tamamen sizin kendi kataloğunuzdan gelir.",
+  },
+  {
     question: "Hangi modüller bugün hazır?",
     answer:
       "İş emri, teklif, randevu, takvim, stok/parça, tedarikçi, kasa (tahsilat ve yaşlandırma), müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim modülleri bugün kullanıma hazırdır. AI servis danışmanı Premium pakette yer alır.",
