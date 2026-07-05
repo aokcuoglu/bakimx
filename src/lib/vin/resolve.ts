@@ -181,16 +181,10 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
   const sections = extractMatchSections(lookup.raw)
   if (!sections) return notFound
 
-  const vehicleIds = [...new Set(sections.matchingVehicles.map((v) => v.vehicleId))]
-  const typeRows = vehicleIds.length
-    ? await prisma.vehicleType.findMany({
-        where: { id: { in: vehicleIds } },
-        include: { model: { include: { brand: true } } },
-      })
-    : []
-
-  if (typeRows.length === 0) {
-    // Catalog snapshot may lag TecDoc — fall back to model/brand-level match.
+  const providerVehicles = sections.matchingVehicles
+  if (providerVehicles.length === 0) {
+    // No vehicle-level match — fall back to model/brand so the form can still
+    // fill in brand/model text (no vehicleTypeId → parts stay unlinkable).
     const modelMatch = sections.matchingModels[0]
     if (modelMatch) {
       const model = await prisma.vehicleModel.findUnique({
@@ -225,20 +219,60 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
     return notFound
   }
 
-  const rows: CandidateTypeRow[] = typeRows.map((t) => ({
-    id: t.id,
-    name: t.name,
-    cc: t.cc,
-    fuelType: t.fuelType,
-    hp: t.hp,
-    kwt: t.kwt,
-    yearFrom: t.yearFrom,
-    yearTo: t.yearTo,
-    modelId: t.model.id,
-    modelName: t.model.name,
-    brandId: t.model.brand.id,
-    brandName: t.model.brand.name,
-  }))
+  // The provider's vehicleId IS the catalog key — categories/articles are served
+  // by that same id (see /api/tecdoc/*). The local snapshot (a different TecDoc
+  // dataset) may not carry the exact vehicle-type id, so it can only *enrich*
+  // (cc/kW/fuel/year for scoring, canonical names) — never gate — the match.
+  const vehicleIds = [...new Set(providerVehicles.map((v) => v.vehicleId))]
+  const modelIds = [...new Set(providerVehicles.map((v) => v.modelId))]
+  const [localTypes, localModels] = await Promise.all([
+    prisma.vehicleType.findMany({
+      where: { id: { in: vehicleIds } },
+      include: { model: { include: { brand: true } } },
+    }),
+    prisma.vehicleModel.findMany({ where: { id: { in: modelIds } }, include: { brand: true } }),
+  ])
+  const localTypeById = new Map(localTypes.map((t) => [t.id, t]))
+  const localModelById = new Map(localModels.map((m) => [m.id, m]))
+  const providerModelName = new Map(sections.matchingModels.map((m) => [m.modelId, m.modelName]))
+  const providerManuName = new Map(sections.matchingManufacturers.map((m) => [m.manuId, m.manuName]))
+
+  const rows: CandidateTypeRow[] = providerVehicles.map((v) => {
+    const local = localTypeById.get(v.vehicleId)
+    if (local) {
+      return {
+        id: local.id,
+        name: local.name,
+        cc: local.cc,
+        fuelType: local.fuelType,
+        hp: local.hp,
+        kwt: local.kwt,
+        yearFrom: local.yearFrom,
+        yearTo: local.yearTo,
+        modelId: local.model.id,
+        modelName: local.model.name,
+        brandId: local.model.brand.id,
+        brandName: local.model.brand.name,
+      }
+    }
+    // Provider-only vehicle: no local cc/kW to score on, but the carName carries
+    // the variant and matchingModels/Manufacturers give canonical names.
+    const model = localModelById.get(v.modelId)
+    return {
+      id: v.vehicleId,
+      name: v.vehicleTypeDescription || v.carName || `Araç #${v.vehicleId}`,
+      cc: null,
+      fuelType: null,
+      hp: null,
+      kwt: null,
+      yearFrom: null,
+      yearTo: null,
+      modelId: v.modelId,
+      modelName: model?.name ?? providerModelName.get(v.modelId) ?? v.carName ?? "",
+      brandId: v.manuId,
+      brandName: model?.brand.name ?? providerManuName.get(v.manuId) ?? "",
+    }
+  })
 
   // Score every catalog variant, then hard-filter to those matching the ruhsat
   // hints so the picker shows genuine matches (not all 10 engine variants).
