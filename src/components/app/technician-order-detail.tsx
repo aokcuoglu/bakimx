@@ -15,6 +15,7 @@ import {
 import {
   ORDER_STATUS, CHECKLIST_CATEGORIES,
   PARTS_REQUEST_STATUS,
+  fuelTypeLabel, transmissionLabel,
 } from "@/lib/constants"
 import type { ChecklistCategoryKey } from "@/lib/constants"
 import {
@@ -438,8 +439,8 @@ function VehicleCard({ vehicle }: { vehicle: OrderData["vehicle"] }) {
       <div className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model}</div>
       {vehicle.modelYear && <div className="text-xs text-muted-foreground">Yıl: {vehicle.modelYear}</div>}
       {vehicle.mileage && <div className="text-xs text-muted-foreground">KM: {vehicle.mileage.toLocaleString("tr-TR")}</div>}
-      {vehicle.fuelType && <div className="text-xs text-muted-foreground">Yakıt: {vehicle.fuelType}</div>}
-      {vehicle.transmission && <div className="text-xs text-muted-foreground">Vites: {vehicle.transmission}</div>}
+      {vehicle.fuelType && <div className="text-xs text-muted-foreground">Yakıt: {fuelTypeLabel(vehicle.fuelType)}</div>}
+      {vehicle.transmission && <div className="text-xs text-muted-foreground">Vites: {transmissionLabel(vehicle.transmission)}</div>}
     </div>
   )
 }

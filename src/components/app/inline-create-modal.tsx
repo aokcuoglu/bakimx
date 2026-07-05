@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
+import {
+  VEHICLE_TYPES,
+  VEHICLE_FUEL_TYPES,
+  vehicleTypeLabel,
+  fuelTypeLabel,
+  ocrVehicleTypeToSlug,
+  ocrFuelToSlug,
+} from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
@@ -114,13 +123,13 @@ export function InlineCreateModal({
       plate: values.plate || prev.plate,
       brand: values.brand || prev.brand,
       model: values.model || prev.model,
-      vehicleType: values.vehicleType || prev.vehicleType,
+      vehicleType: ocrVehicleTypeToSlug(values.vehicleType) || prev.vehicleType,
       modelYear: values.modelYear || prev.modelYear,
       vin: values.vin || prev.vin,
       engineNo: values.engineNo || prev.engineNo,
       firstRegistrationDate: values.registrationDate || prev.firstRegistrationDate,
       commercialName: values.commercialName || prev.commercialName,
-      fuelType: values.fuelType || prev.fuelType,
+      fuelType: ocrFuelToSlug(values.fuelType) || prev.fuelType,
       engineDisplacement: values.engineDisplacement || prev.engineDisplacement,
       enginePower: values.enginePower || prev.enginePower,
       inspectionValidUntil: values.inspectionValidUntil || prev.inspectionValidUntil,
@@ -277,11 +286,33 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.vehicleType} onChange={(e) => setField("vehicleType", e.target.value)} className={fieldClass("vehicleType")} />
+                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v ?? "")}>
+                  <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
+                    <SelectValue placeholder="Seçiniz">
+                      {(value) => vehicleTypeLabel(value) || "Seçiniz"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label>Yakıt Cinsi</Label>
-                <Input value={fields.fuelType} onChange={(e) => setField("fuelType", e.target.value)} />
+                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v ?? "")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seçiniz">
+                      {(value) => fuelTypeLabel(value) || "Seçiniz"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEHICLE_FUEL_TYPES.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1 col-span-2">
                 <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning" />}</Label>

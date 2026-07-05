@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
+import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
@@ -363,7 +363,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Araç tipi seçin" />
+                              <SelectValue placeholder="Araç tipi seçin">
+                                {(value) =>
+                                  VEHICLE_TYPES.find((t) => t.value === value)?.label ?? "Araç tipi seçin"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -535,7 +539,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Seçiniz" />
+                              <SelectValue placeholder="Seçiniz">
+                                {(value) =>
+                                  VEHICLE_FUEL_TYPES.find((ft) => ft.value === value)?.label ?? "Seçiniz"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -560,7 +568,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçiniz" />
+                            <SelectValue placeholder="Seçiniz">
+                              {(value) =>
+                                VEHICLE_TRANSMISSIONS.find((t) => t.value === value)?.label ?? "Seçiniz"
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -589,7 +601,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     setStr("engineNo", values.engineNo)
                     setStr("firstRegistrationDate", values.registrationDate)
                     setStr("commercialName", values.commercialName)
-                    setStr("fuelType", values.fuelType)
+                    // OCR returns free text ("BENZİNLİ - LPG", "OTOMOBİL") → map to the
+                    // fixed Select slugs; unmapped values are left for the user to pick.
+                    setStr("fuelType", ocrFuelToSlug(values.fuelType))
+                    setStr("vehicleType", ocrVehicleTypeToSlug(values.vehicleType))
                     setStr("engineDisplacement", values.engineDisplacement)
                     setStr("enginePower", values.enginePower)
                     setStr("inspectionValidUntil", values.inspectionValidUntil)
@@ -597,10 +612,6 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     if (values.modelYear && !Number.isNaN(year)) {
                       form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
                     }
-                    // vehicleType is a fixed Select (binek/hafif_ticari…) — OCR returns free text
-                    // like "OTOMOBİL", so we leave it for the user to pick rather than set an
-                    // invalid value.
-
                     // Valid VIN on the ruhsat → resolve brand/model/engine variant from the
                     // TecDoc catalog. Fire-and-forget: the OCR fill above is never blocked.
                     if (isValidVin(values.vin)) {

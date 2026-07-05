@@ -20,15 +20,22 @@ async function validateCatalogSelection(data: {
 }): Promise<string | null> {
   const { catalogBrandId, catalogModelId, catalogVehicleTypeId } = data
   if (catalogVehicleTypeId) {
-    const ok = await prisma.vehicleType.findFirst({
-      where: {
-        id: catalogVehicleTypeId,
-        ...(catalogModelId ? { modelId: catalogModelId } : {}),
-        ...(catalogBrandId ? { model: { brandId: catalogBrandId } } : {}),
-      },
-      select: { id: true },
+    const local = await prisma.vehicleType.findUnique({
+      where: { id: catalogVehicleTypeId },
+      select: { modelId: true, model: { select: { brandId: true } } },
     })
-    if (!ok) return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    // Not in the local snapshot → a VIN-provider vehicleId we trust: the same
+    // provider serves this vehicle's parts by that id, and the local catalog
+    // (imported from a different TecDoc dataset) can legitimately diverge at the
+    // vehicle-type level even when brand/model ids line up. Locally-known ids
+    // still get the brand/model consistency check.
+    if (!local) return null
+    if (catalogModelId && local.modelId !== catalogModelId) {
+      return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    }
+    if (catalogBrandId && local.model.brandId !== catalogBrandId) {
+      return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    }
     return null
   }
   if (catalogModelId) {
@@ -250,6 +257,46 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
   return { success: true }
+}
+
+/**
+ * Link a vehicle to the parts catalog from a VIN resolution done outside the
+ * edit form — e.g. the İş Emri → Parça sekmesi "VIN'den bağla" shortcut. Only
+ * the catalog id columns move; the brand/model text the user typed is left
+ * untouched. Same tenant-isolation + integrity guard as the edit form path.
+ */
+export async function linkVehicleCatalogAction(
+  vehicleId: string,
+  data: { catalogBrandId?: number; catalogModelId?: number; catalogVehicleTypeId: number }
+) {
+  const user = await requireAuth()
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, workshopId: user.workshopId },
+    select: { id: true },
+  })
+  if (!vehicle) return { error: "Araç bulunamadı" }
+
+  if (!Number.isInteger(data.catalogVehicleTypeId) || data.catalogVehicleTypeId <= 0) {
+    return { error: "Geçersiz katalog kimliği" }
+  }
+  const mismatch = await validateCatalogSelection(data)
+  if (mismatch) return { error: mismatch }
+
+  await prisma.vehicle.update({
+    where: { id: vehicleId },
+    data: {
+      catalogVehicleTypeId: data.catalogVehicleTypeId,
+      ...(data.catalogBrandId != null ? { catalogBrandId: data.catalogBrandId } : {}),
+      ...(data.catalogModelId != null ? { catalogModelId: data.catalogModelId } : {}),
+    },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_catalog_linked")
+
+  revalidatePath("/vehicles")
+  revalidatePath(`/vehicles/${vehicleId}`)
+  return { success: true as const }
 }
 
 export async function confirmVehicleVinAction(vehicleId: string) {
