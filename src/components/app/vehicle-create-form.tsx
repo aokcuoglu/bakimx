@@ -21,12 +21,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug } from "@/lib/constants"
+import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
-import { VinResolveButton, VinCandidateList } from "./vin-resolve"
-import { isValidVin, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
 
 type Customer = {
@@ -105,32 +105,10 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
   }
 }
 
-/** TecDoc English fuel_type → the form's fixed fuel Select values. */
-function tecdocFuelToFormValue(fuel: string | null): string {
-  if (!fuel) return ""
-  const f = fuel.toLowerCase()
-  if (f.includes("lpg")) return "lpg"
-  if (f.includes("diesel")) return "dizel"
-  if (f.includes("hybrid")) return "hibrit"
-  if (f.includes("electric")) return "elektrik"
-  if (f.includes("petrol")) return "benzin"
-  return ""
-}
-
-type VinResolveState = {
-  loading: boolean
-  error: string
-  notice: string
-  candidates: VinCandidate[]
-}
-
-const VIN_RESOLVE_IDLE: VinResolveState = { loading: false, error: "", notice: "", candidates: [] }
-
 export function VehicleCreateForm({ customers, initial, mode = "create", prefillCustomerId }: VehicleFormProps) {
   const router = useRouter()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [vinResolve, setVinResolve] = useState<VinResolveState>(VIN_RESOLVE_IDLE)
 
   const isEdit = mode === "edit" && initial?.id
 
@@ -153,7 +131,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
   }
 
   /** Bind an engine variant: catalog ids + canonical brand/model + backfill of empty engine fields. */
-  function applyCandidate(c: VinCandidate) {
+  function applyCandidateFields(c: VinCandidate) {
     form.setValue("brand", c.brandName, { shouldValidate: true, shouldDirty: true })
     form.setValue("model", c.modelName, { shouldValidate: true, shouldDirty: true })
     form.setValue("catalogBrandId", c.brandId, { shouldDirty: true })
@@ -167,57 +145,17 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
     if (!Number.isNaN(year)) setIfEmpty("modelYear", year)
   }
 
-  /** VIN → TecDoc → local catalog. Fire-and-forget; never blocks manual entry. */
-  async function runVinResolve(hints: RuhsatHints) {
-    const vin = form.getValues("vin") || ""
-    if (!isValidVin(vin)) return
-    setVinResolve({ ...VIN_RESOLVE_IDLE, loading: true })
-    try {
-      const res = await fetch("/api/vin/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vin, hints }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setVinResolve({ ...VIN_RESOLVE_IDLE, error: data.error || "VIN sorgulanamadı." })
-        return
-      }
-      const result = data as VinResolution
-      if (result.status === "not_found") {
-        setVinResolve({ ...VIN_RESOLVE_IDLE, notice: "VIN katalogda bulunamadı — marka ve modeli manuel seçin." })
-        return
-      }
-      if (result.brand) {
-        form.setValue("brand", result.brand.name, { shouldValidate: true, shouldDirty: true })
-        form.setValue("catalogBrandId", result.brand.id, { shouldDirty: true })
-      }
-      if (result.model) {
-        form.setValue("model", result.model.name, { shouldValidate: true, shouldDirty: true })
-        form.setValue("catalogModelId", result.model.id, { shouldDirty: true })
-      }
-      const autoCandidate =
-        result.status === "resolved" && result.autoSelected != null
-          ? result.candidates.find((c) => c.vehicleTypeId === result.autoSelected)
-          : undefined
-      if (autoCandidate) {
-        applyCandidate(autoCandidate)
-        setVinResolve({
-          ...VIN_RESOLVE_IDLE,
-          notice: `Araç katalogdan tanındı: ${autoCandidate.brandName} ${autoCandidate.modelName} ${autoCandidate.name}`,
-        })
-      } else if (result.status === "resolved") {
-        setVinResolve({
-          ...VIN_RESOLVE_IDLE,
-          notice: `Araç katalogdan tanındı: ${[result.brand?.name, result.model?.name].filter(Boolean).join(" ")}`,
-        })
-      } else {
-        setVinResolve({ ...VIN_RESOLVE_IDLE, candidates: result.candidates })
-      }
-    } catch {
-      setVinResolve({ ...VIN_RESOLVE_IDLE, error: "VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin." })
-    }
-  }
+  const vinResolve = useVinResolve({
+    onBrand: (b) => {
+      form.setValue("brand", b.name, { shouldValidate: true, shouldDirty: true })
+      form.setValue("catalogBrandId", b.id, { shouldDirty: true })
+    },
+    onModel: (m) => {
+      form.setValue("model", m.name, { shouldValidate: true, shouldDirty: true })
+      form.setValue("catalogModelId", m.id, { shouldDirty: true })
+    },
+    onCandidate: applyCandidateFields,
+  })
 
   async function onSubmit(values: VehicleFormValues) {
     setError("")
@@ -457,7 +395,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                           loading={vinResolve.loading}
                           disabled={!isValidVin(field.value)}
                           onClick={() =>
-                            runVinResolve({
+                            vinResolve.resolve(form.getValues("vin") || "", {
                               engineDisplacement: form.getValues("engineDisplacement") || undefined,
                               enginePower: form.getValues("enginePower") || undefined,
                               fuelType: form.getValues("fuelType") || undefined,
@@ -487,14 +425,8 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   <VinCandidateList
                     candidates={vinResolve.candidates}
                     selectedId={form.watch("catalogVehicleTypeId") ?? null}
-                    onSelect={(c) => {
-                      applyCandidate(c)
-                      setVinResolve({
-                        ...VIN_RESOLVE_IDLE,
-                        notice: `Araç katalogdan tanındı: ${c.brandName} ${c.modelName} ${c.name}`,
-                      })
-                    }}
-                    onDismiss={() => setVinResolve(VIN_RESOLVE_IDLE)}
+                    onSelect={(c) => vinResolve.applyCandidate(c)}
+                    onDismiss={() => vinResolve.reset()}
                   />
                 )}
 
@@ -614,15 +546,13 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     }
                     // Valid VIN on the ruhsat → resolve brand/model/engine variant from the
                     // TecDoc catalog. Fire-and-forget: the OCR fill above is never blocked.
-                    if (isValidVin(values.vin)) {
-                      void runVinResolve({
-                        engineDisplacement: values.engineDisplacement || undefined,
-                        enginePower: values.enginePower || undefined,
-                        fuelType: values.fuelType || undefined,
-                        firstRegistrationDate: values.registrationDate || undefined,
-                        modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
-                      })
-                    }
+                    void vinResolve.resolve(values.vin || "", {
+                      engineDisplacement: values.engineDisplacement || undefined,
+                      enginePower: values.enginePower || undefined,
+                      fuelType: values.fuelType || undefined,
+                      firstRegistrationDate: values.registrationDate || undefined,
+                      modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
+                    })
                   }}
                 />
               </CardContent>

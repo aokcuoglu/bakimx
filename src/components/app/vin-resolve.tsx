@@ -1,11 +1,98 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, ScanLine, Check, BadgeCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { VinCandidate } from "@/lib/vin/types"
+import { isValidVin, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 
 export type { VinCandidate }
+
+export type VinResolveState = {
+  loading: boolean
+  error: string
+  notice: string
+  candidates: VinCandidate[]
+}
+
+export const VIN_RESOLVE_IDLE: VinResolveState = { loading: false, error: "", notice: "", candidates: [] }
+
+export interface VinResolveCallbacks {
+  /** A brand-only or brand+model TecDoc hit. Always followed by onCandidate when a single engine variant auto-selects. */
+  onBrand?: (brand: { id: number; name: string }) => void
+  onModel?: (model: { id: number; name: string }) => void
+  /** The auto-selected candidate (status "resolved") or a manually-picked one from VinCandidateList. */
+  onCandidate: (candidate: VinCandidate) => void
+}
+
+/**
+ * Calls /api/vin/resolve and interprets the response into UI state, firing the
+ * given callbacks as a side effect. Pure aside from fetch + callbacks, so it's
+ * directly testable without rendering — the two consumers (react-hook-form vs.
+ * plain useState) each supply callbacks that write into their own field state.
+ */
+export async function performVinResolve(
+  vin: string,
+  hints: RuhsatHints,
+  callbacks: VinResolveCallbacks
+): Promise<VinResolveState> {
+  try {
+    const res = await fetch("/api/vin/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vin, hints }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      return { ...VIN_RESOLVE_IDLE, error: data.error || "VIN sorgulanamadı." }
+    }
+    const result = data as VinResolution
+    if (result.status === "not_found") {
+      return { ...VIN_RESOLVE_IDLE, notice: "VIN katalogda bulunamadı — marka ve modeli manuel seçin." }
+    }
+    if (result.brand) callbacks.onBrand?.(result.brand)
+    if (result.model) callbacks.onModel?.(result.model)
+    const autoCandidate =
+      result.status === "resolved" && result.autoSelected != null
+        ? result.candidates.find((c) => c.vehicleTypeId === result.autoSelected)
+        : undefined
+    if (autoCandidate) {
+      callbacks.onCandidate(autoCandidate)
+      return {
+        ...VIN_RESOLVE_IDLE,
+        notice: `Araç katalogdan tanındı: ${autoCandidate.brandName} ${autoCandidate.modelName} ${autoCandidate.name}`,
+      }
+    }
+    if (result.status === "resolved") {
+      return {
+        ...VIN_RESOLVE_IDLE,
+        notice: `Araç katalogdan tanındı: ${[result.brand?.name, result.model?.name].filter(Boolean).join(" ")}`,
+      }
+    }
+    return { ...VIN_RESOLVE_IDLE, candidates: result.candidates }
+  } catch {
+    return { ...VIN_RESOLVE_IDLE, error: "VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin." }
+  }
+}
+
+/** React state wrapper around performVinResolve — see that function for the interpretation rules. */
+export function useVinResolve(callbacks: VinResolveCallbacks) {
+  const [state, setState] = useState<VinResolveState>(VIN_RESOLVE_IDLE)
+
+  async function resolve(vin: string, hints: RuhsatHints) {
+    if (!isValidVin(vin)) return
+    setState({ ...VIN_RESOLVE_IDLE, loading: true })
+    const next = await performVinResolve(vin, hints, callbacks)
+    setState(next)
+  }
+
+  function applyCandidate(c: VinCandidate) {
+    callbacks.onCandidate(c)
+    setState({ ...VIN_RESOLVE_IDLE, notice: `Araç katalogdan tanındı: ${c.brandName} ${c.modelName} ${c.name}` })
+  }
+
+  return { ...state, resolve, applyCandidate, reset: () => setState(VIN_RESOLVE_IDLE) }
+}
 
 /** "VIN'den getir" — manual trigger next to the VIN input. */
 export function VinResolveButton({

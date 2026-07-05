@@ -13,12 +13,15 @@ import {
   fuelTypeLabel,
   ocrVehicleTypeToSlug,
   ocrFuelToSlug,
+  tecdocFuelToFormValue,
 } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
+import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { normalizePlate } from "@/lib/format"
 import { findExactPlateMatch, type ExistingVehicleMatch } from "@/lib/search/exact-plate-match"
@@ -99,10 +102,29 @@ export function InlineCreateModal({
   const [showDetails, setShowDetails] = useState(false)
   // Girilen plaka DB'de zaten kayıtlıysa: mevcut aracı seçime dönüştürmek için tutulur.
   const [existingMatch, setExistingMatch] = useState<ExistingVehicleMatch | null>(null)
+  // VIN çözümlemesinden gelen katalog bağı — marka/model elle değiştirilirse temizlenir.
+  const [catalogIds, setCatalogIds] = useState<{ brandId?: number; modelId?: number; vehicleTypeId?: number }>({})
 
   function setField(key: keyof VehicleFields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }))
   }
+
+  const vinResolve = useVinResolve({
+    onBrand: (b) => { setField("brand", b.name); setCatalogIds((p) => ({ ...p, brandId: b.id })) },
+    onModel: (m) => { setField("model", m.name); setCatalogIds((p) => ({ ...p, modelId: m.id })) },
+    onCandidate: (c: VinCandidate) => {
+      setCatalogIds({ brandId: c.brandId, modelId: c.modelId, vehicleTypeId: c.vehicleTypeId })
+      setFields((prev) => ({
+        ...prev,
+        brand: c.brandName,
+        model: c.modelName,
+        engineDisplacement: prev.engineDisplacement || (c.cc != null ? String(c.cc) : prev.engineDisplacement),
+        enginePower: prev.enginePower || (c.kwt != null ? `${c.kwt} kW` : prev.enginePower),
+        fuelType: prev.fuelType || tecdocFuelToFormValue(c.fuelType) || prev.fuelType,
+        modelYear: prev.modelYear || (c.yearFrom ? String(Number(c.yearFrom.slice(0, 4))) : prev.modelYear),
+      }))
+    },
+  })
 
   // Reset only on the OPEN transition (false→true), not on every prop change,
   // so the picker clearing its own query mid-session can't wipe typed values.
@@ -120,8 +142,10 @@ export function InlineCreateModal({
       setConfidence({})
       setShowDetails(false)
       setExistingMatch(null)
+      setCatalogIds({})
+      vinResolve.reset()
     }, 0)
-  }, [open, initialPlate, fixedCustomer])
+  }, [open, initialPlate, fixedCustomer]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
 
   // Plaka değişince mevcut aracı ara (debounce). contains araması → client'ta
   // birebir plaka filtresi. Modal kapalıyken çalışmaz.
@@ -182,6 +206,15 @@ export function InlineCreateModal({
     })
     if (owner.label) setOwnerSeed(owner)
     setShowDetails(true)
+    if (isValidVin(values.vin)) {
+      void vinResolve.resolve(values.vin, {
+        engineDisplacement: values.engineDisplacement || undefined,
+        enginePower: values.enginePower || undefined,
+        fuelType: values.fuelType || undefined,
+        firstRegistrationDate: values.registrationDate || undefined,
+        modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
+      })
+    }
   }
 
   function lowConf(key: string): boolean {
@@ -235,6 +268,9 @@ export function InlineCreateModal({
       vf.set("enginePower", fields.enginePower)
       vf.set("firstRegistrationDate", fields.firstRegistrationDate)
       vf.set("inspectionValidUntil", fields.inspectionValidUntil)
+      if (catalogIds.brandId) vf.set("catalogBrandId", String(catalogIds.brandId))
+      if (catalogIds.modelId) vf.set("catalogModelId", String(catalogIds.modelId))
+      if (catalogIds.vehicleTypeId) vf.set("catalogVehicleTypeId", String(catalogIds.vehicleTypeId))
       const vRes = await fetch("/api/vehicles", { method: "POST", body: vf })
       const vData = await vRes.json() as { success?: boolean; id?: string; error?: string }
       if (!vData?.success || !vData.id) { setError(vData?.error || "Araç oluşturulamadı"); setLoading(false); return }
@@ -312,8 +348,8 @@ export function InlineCreateModal({
             <VehicleBrandModelPicker
               brand={fields.brand}
               model={fields.model}
-              onBrandChange={(v) => setField("brand", v)}
-              onModelChange={(v) => setField("model", v)}
+              onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
+              onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
               required
             />
           </div>
@@ -381,7 +417,37 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1 col-span-2">
                 <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
+                <div className="flex gap-2">
+                  <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
+                  <VinResolveButton
+                    loading={vinResolve.loading}
+                    disabled={!isValidVin(fields.vin)}
+                    onClick={() =>
+                      vinResolve.resolve(fields.vin, {
+                        engineDisplacement: fields.engineDisplacement || undefined,
+                        enginePower: fields.enginePower || undefined,
+                        fuelType: fields.fuelType || undefined,
+                        firstRegistrationDate: fields.firstRegistrationDate || undefined,
+                        modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
+                      })
+                    }
+                  />
+                </div>
+                {vinResolve.loading && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Loader2 className="size-3 animate-spin" /> VIN sorgulanıyor…
+                  </p>
+                )}
+                {vinResolve.notice && <p className="text-xs text-muted-foreground">{vinResolve.notice}</p>}
+                {vinResolve.error && <p className="text-xs text-destructive">{vinResolve.error}</p>}
+                {vinResolve.candidates.length > 0 && (
+                  <VinCandidateList
+                    candidates={vinResolve.candidates}
+                    selectedId={catalogIds.vehicleTypeId ?? null}
+                    onSelect={(c) => vinResolve.applyCandidate(c)}
+                    onDismiss={() => vinResolve.reset()}
+                  />
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning" />}</Label>
