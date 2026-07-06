@@ -11,7 +11,7 @@ test("TR_DISTRICTS 81 ili kapsar ve anahtarlar TR_CITIES ile birebir eşleşir",
 })
 
 test("her ilin en az bir ilçesi var, boş/yinelenen ilçe yok", () => {
-  for (const [city, districts] of Object.entries(TR_DISTRICTS)) {
+  for (const districts of Object.values(TR_DISTRICTS)) {
     expect(Array.isArray(districts)).toBe(true)
     expect(districts.length).toBeGreaterThan(0)
     for (const d of districts) expect(d.trim().length).toBeGreaterThan(0)
