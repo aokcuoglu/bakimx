@@ -12,6 +12,15 @@ export function minorToTamiAmount(amountMinor: number): number {
 }
 
 /**
+ * Kuruş → callback wire formatındaki txnAmount string'i ("7499.00"). Banka/mock
+ * txnAmount'u tam 2 ondalıklı string gönderir (mock: `input.amount.toFixed(2)`);
+ * callback tarafındaki tutar karşılaştırması bu EXACT formata karşı yapılır.
+ */
+export function minorToTamiAmountString(amountMinor: number): string {
+  return minorToTamiAmount(amountMinor).toFixed(2)
+}
+
+/**
  * TAMI'ye giden `orderId` (= PaymentTransaction.providerOrderId). Deneme başına
  * BENZERSİZ olmalı (aynı BillingOrder retry alabilir) ve 2-36 karakter sığmalı.
  * Sipariş referansı + 12 hex rastgele: `BX-XXXXXX-<12 hex>` (~22 kar.). cuid'in

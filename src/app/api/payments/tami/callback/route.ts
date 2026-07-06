@@ -7,6 +7,7 @@ import { TamiError, TAMI_ERROR_MESSAGES, sanitizeForLog } from "@/lib/tami/error
 import { MOCK_SECRET_KEY } from "@/lib/tami/mock"
 import type { TamiCallbackHashFields } from "@/lib/tami/types"
 import { activateBillingOrder } from "@/lib/billing/activate"
+import { minorToTamiAmountString } from "@/lib/billing/payment-helpers"
 import { founderAlertEmail } from "@/lib/emails/system-emails"
 import { sendEmailDirect } from "@/lib/communications/sender"
 import { getAdminEmails } from "@/lib/admin"
@@ -84,9 +85,14 @@ export async function POST(request: Request) {
   const now = NOW()
   const sanitizedPayload = sanitizeForLog(raw) as Record<string, string>
 
-  // 3) İdempotent claim — yalnız initiated/callback_received durumundaki txn'i sahiplen.
+  // 3) İdempotent claim — TEK YÖNLÜ geçiş: yalnız `initiated` durumundaki txn
+  // sahiplenilir (hedef durum match set'inde DEĞİL). Böylece eşzamanlı/tekrar
+  // gelen callback'lerin (banka retry / çift POST) yalnız BİRİ kazanır; kaybeden
+  // count===0 alır ve complete3ds'e ASLA gitmez (çifte çekim yok, sahte founder
+  // alert yok). callback_received'da takılı kalan satırlar tekrar teslim edilen
+  // callback'lerle DEĞİL, cron mutabakatı + admin retry ile kurtarılır (ileriki görev).
   const claim = await prisma.paymentTransaction.updateMany({
-    where: { providerOrderId, status: { in: ["initiated", "callback_received"] } },
+    where: { providerOrderId, status: "initiated" },
     data: {
       status: "callback_received",
       callbackPayload: sanitizedPayload,
@@ -111,8 +117,34 @@ export async function POST(request: Request) {
   const mdStatus = raw.mdStatus ?? ""
   const successTruthy = raw.success === "true" || raw.success === "1"
 
-  // 4) Başarı yolu: mdStatus=1 + success → complete3ds → aktivasyon.
+  // 4) Başarı yolu: mdStatus=1 + success → tutar/para birimi doğrulaması →
+  // complete3ds → aktivasyon.
   if (mdStatus === "1" && successTruthy) {
+    // Tutar/para birimi, çekimden ÖNCE txn snapshot'ına karşı doğrulanır.
+    // txnAmount wire formatı: tam 2 ondalıklı string ("7499.00") — mock
+    // `input.amount.toFixed(2)` gönderir, karşılaştırma bu EXACT formata karşı.
+    // currencyCode: mock alfabetik "TRY" gönderir → txn.currency ile birebir;
+    // gerçek TAMI wire ISO 4217 sayısal kod kullanırsa diye TRY için "949" da
+    // kabul edilir (sandbox'ta canlı teyit edilmedi — raporda not).
+    const expectedAmount = minorToTamiAmountString(txn.amountMinor)
+    const currencyOk =
+      raw.currencyCode === txn.currency || (txn.currency === "TRY" && raw.currencyCode === "949")
+    if (raw.txnAmount !== expectedAmount || !currencyOk) {
+      console.warn(
+        "[payments/callback] tutar/para birimi uyuşmazlığı:",
+        sanitizeForLog({ providerOrderId, txnAmount: raw.txnAmount, currencyCode: raw.currencyCode, expectedAmount, expectedCurrency: txn.currency })
+      )
+      await prisma.paymentTransaction.update({
+        where: { id: txn.id },
+        data: {
+          status: "failed",
+          errorCode: "amount_mismatch",
+          errorMessage: TAMI_ERROR_MESSAGES.default,
+        },
+      })
+      return resultRedirect(request, ref)
+    }
+
     try {
       const completed = await getTamiClient().complete3ds(providerOrderId)
       if (!completed.success) {

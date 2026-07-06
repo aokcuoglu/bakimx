@@ -156,7 +156,9 @@ export async function POST(request: Request) {
   const auth: TamiAuth3dsInput = {
     orderId: providerOrderId,
     amount: minorToTamiAmount(order.amountMinor),
-    currency: "TRY",
+    // Sipariş para biriminden (DB default "TRY"); TamiAuth3dsInput tipi şimdilik
+    // yalnız "TRY" literal'ını tanıdığı için daraltma cast'i gerekiyor.
+    currency: order.currency as TamiAuth3dsInput["currency"],
     installmentCount: 1,
     callbackUrl: `${appOrigin(request)}/api/payments/tami/callback`,
     card: {
