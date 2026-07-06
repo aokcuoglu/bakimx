@@ -155,6 +155,53 @@ test("auth3ds: fetch reddedilirse (ağ hatası) → TamiError fırlatır, hata l
   expect(serialized).not.toContain(sampleInput.card.number)
   expect(serialized).not.toContain(sampleInput.card.cvv)
   expect(serialized).toContain("[redacted]")
+
+  // KRİTİK: securityHash bir HS512 JWS'tir — imzalı ama ŞİFRESİZ. Orta segmenti base64url
+  // decode edilirse kart verisi dahil tüm gövde geri okunur. Bu yüzden düz-metin PAN kontrolü
+  // yetmez: log çıktısındaki HER JWS-benzeri string'in payload'unu decode edip PAN/CVV'nin
+  // GERİ KAZANILAMADIĞINI da doğrula (securityHash redaksiyonu bozulursa bu test kırılır).
+  const jwsCandidates = serialized.match(/[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}/g) ?? []
+  for (const jws of jwsCandidates) {
+    const middle = jws.split(".")[1]
+    const decodedPayload = Buffer.from(middle, "base64url").toString("utf8")
+    expect(decodedPayload).not.toContain(sampleInput.card.number)
+    expect(decodedPayload).not.toContain(sampleInput.card.cvv)
+    expect(decodedPayload).not.toContain(sampleInput.card.holderName)
+  }
+  // Ayrıca loglanan body nesnesinde securityHash'in redakte edildiğini doğrudan doğrula.
+  const loggedBody = (errorLogs[0] as unknown[])?.[1] as { body?: Record<string, unknown> } | undefined
+  expect(loggedBody?.body?.securityHash).toBe("[redacted]")
+})
+
+test("TamiError: hata nesnesi istek gövdesini/kart verisini taşımaz (serialize edilirse sızıntı olmaz)", async () => {
+  globalThis.fetch = (async () => {
+    throw new Error("network down")
+  }) as typeof fetch
+
+  const client = createTamiClient(cfg)
+  let caught: unknown
+  try {
+    await client.auth3ds(sampleInput)
+  } catch (err) {
+    caught = err
+  }
+
+  expect(caught).toBeInstanceOf(TamiError)
+  const tamiErr = caught as TamiError
+  const serializedErr = JSON.stringify({
+    ...tamiErr,
+    message: tamiErr.message,
+    stack: tamiErr.stack,
+  })
+  expect(serializedErr).not.toContain(sampleInput.card.number)
+  expect(serializedErr).not.toContain(sampleInput.card.cvv)
+  // JWS-benzeri string'ler TamiError üzerinden de sızmamalı
+  const jwsInError = serializedErr.match(/[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}/g) ?? []
+  for (const jws of jwsInError) {
+    const decodedPayload = Buffer.from(jws.split(".")[1], "base64url").toString("utf8")
+    expect(decodedPayload).not.toContain(sampleInput.card.number)
+    expect(decodedPayload).not.toContain(sampleInput.card.cvv)
+  }
 })
 
 test("auth3ds: JSON parse edilemeyen yanıt → TamiError fırlatır", async () => {
@@ -166,15 +213,22 @@ test("auth3ds: JSON parse edilemeyen yanıt → TamiError fırlatır", async () 
   await expect(client.auth3ds(sampleInput)).rejects.toThrow(TamiError)
 })
 
-test("sanitizeForLog: card alanını [redacted] yapar, diğer alanları korur, orijinal nesneyi mutasyona uğratmaz", () => {
-  const body = { orderId: "X", card: { number: "4111111111111111", cvv: "123" }, amount: 10 }
+test("sanitizeForLog: card VE securityHash alanlarını [redacted] yapar, diğer alanları korur, orijinal nesneyi mutasyona uğratmaz", () => {
+  const body = {
+    orderId: "X",
+    card: { number: "4111111111111111", cvv: "123" },
+    amount: 10,
+    securityHash: "eyJhbGciOiJIUzUxMiJ9.eyJzZWNyZXQiOiJib2R5In0.sig",
+  }
   const sanitized = sanitizeForLog(body) as Record<string, unknown>
 
   expect(sanitized.card).toBe("[redacted]")
+  expect(sanitized.securityHash).toBe("[redacted]")
   expect(sanitized.orderId).toBe("X")
   expect(sanitized.amount).toBe(10)
   // orijinal nesne değişmemiş olmalı (kopya üzerinde çalışıldı)
   expect((body.card as { number: string }).number).toBe("4111111111111111")
+  expect(body.securityHash).toBe("eyJhbGciOiJIUzUxMiJ9.eyJzZWNyZXQiOiJib2R5In0.sig")
 })
 
 test("cancel/refund: ikisi de /payment/reverse'e POST eder, refund amount taşır cancel taşımaz", async () => {

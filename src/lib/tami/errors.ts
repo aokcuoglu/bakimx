@@ -66,14 +66,19 @@ export class TamiError extends Error {
 }
 
 /**
- * Loglama için istek gövdesindeki `card` alanını redakte eder. PAN/CVV/holderName hiçbir
- * log satırına düz metin olarak yazılmamalı — bu, client.ts'teki tüm console.error
- * çağrılarından önce zorunlu bir adımdır.
+ * Loglama için istek gövdesindeki hassas alanları redakte eder — client.ts'teki tüm
+ * console.error çağrılarından önce zorunlu tek geçiş noktası (choke point).
+ *
+ * - `card`: PAN/CVV/holderName hiçbir log satırına düz metin olarak yazılmamalı.
+ * - `securityHash`: gövdenin HS512 JWS'i — JWS İMZALIDIR ama ŞİFRELİ DEĞİLDİR; orta
+ *   segmenti base64url decode edilince kart verisi dahil TÜM gövde geri okunur. Bu yüzden
+ *   securityHash da aynı şekilde redakte edilir.
  */
 export function sanitizeForLog(reqBody: unknown): unknown {
   if (!reqBody || typeof reqBody !== "object" || Array.isArray(reqBody)) return reqBody
 
   const clone: Record<string, unknown> = { ...(reqBody as Record<string, unknown>) }
   if ("card" in clone) clone.card = "[redacted]"
+  if ("securityHash" in clone) clone.securityHash = "[redacted]"
   return clone
 }
