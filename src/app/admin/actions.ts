@@ -266,27 +266,51 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
     return { ok: true }
   }
 
-  // "Bu sipariş zaten işlenmiş." → order was confirmed by another path (the
-  // callback route racing this admin action, or an earlier retry). The bank
-  // already captured the money either way, so close the loop on the txn row
-  // too — but the audit trail records the different reason.
+  // "Bu sipariş zaten işlenmiş." → sipariş artık pending_payment DEĞİL. Bu iki
+  // ÇOK farklı durumu kapsar; siparişin gerçek durumunu okuyup ayırıyoruz:
+  //  - confirmed: başka bir yol (callback yarışı / önceki retry) aktive etmiş;
+  //    para çekilmiş, plan açık → txn'i completed yapıp kapatabiliriz.
+  //  - cancelled: sipariş iptal edilmiş ama txn hâlâ callback_received (yani
+  //    para çekilmiş olabilir!). BUNU başarı sayıp completed'a çekmek, ödemesi
+  //    alınıp aktive edilmemiş bir müşteriyi gizler. txn'e DOKUNMA, hatayı
+  //    döndür, distinct bir audit satırı bırak (iade portaldan yapılmalı).
   if (activation.error === "Bu sipariş zaten işlenmiş.") {
-    const claimed = await prisma.paymentTransaction.updateMany({
-      where: { id: transactionId, status: "callback_received" },
-      data: { status: "completed", completedAt: new Date() },
+    const order = await prisma.billingOrder.findUnique({
+      where: { id: txn.billingOrderId },
+      select: { status: true },
     })
-    if (claimed.count > 0) {
-      await AuditLogAction(
-        txn.workshopId,
-        admin.id,
-        "PaymentTransaction",
-        transactionId,
-        "payment_activation_retried",
-        JSON.stringify({ billingOrderId: txn.billingOrderId, result: "already_confirmed" })
-      )
+    if (order?.status === "confirmed") {
+      const claimed = await prisma.paymentTransaction.updateMany({
+        where: { id: transactionId, status: "callback_received" },
+        data: { status: "completed", completedAt: new Date() },
+      })
+      if (claimed.count > 0) {
+        await AuditLogAction(
+          txn.workshopId,
+          admin.id,
+          "PaymentTransaction",
+          transactionId,
+          "payment_activation_retried",
+          JSON.stringify({ billingOrderId: txn.billingOrderId, result: "already_confirmed" })
+        )
+      }
+      revalidatePath("/admin", "layout")
+      return { ok: true }
     }
-    revalidatePath("/admin", "layout")
-    return { ok: true }
+
+    // İptal (veya beklenmedik başka bir durum): txn callback_received'da bırakılır.
+    await AuditLogAction(
+      txn.workshopId,
+      admin.id,
+      "PaymentTransaction",
+      transactionId,
+      "payment_activation_retry_blocked",
+      JSON.stringify({ billingOrderId: txn.billingOrderId, result: "order_cancelled", orderStatus: order?.status ?? "unknown" })
+    )
+    return {
+      ok: false,
+      error: "Sipariş iptal edilmiş — ödeme çekildiyse TAMI portalından iade gerekir.",
+    }
   }
 
   // Any other failure (order missing, DB error): leave the txn untouched so
@@ -298,9 +322,26 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
 export async function cancelBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
-  const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true } })
+  const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true, method: true } })
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
   if (order.status !== "pending_payment") return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
+
+  // Kartlı siparişte canlı bir ödeme denemesi (initiated / callback_received)
+  // varken iptal etme: para çekilmiş olabilir. Önce ödemenin sonuçlanmasını
+  // (veya sweep ile expired olmasını) bekle; aksi halde çekilmiş bir ödemeyi
+  // iptal edilmiş bir siparişin arkasına saklamış oluruz.
+  if (order.method === "card") {
+    const liveTxn = await prisma.paymentTransaction.findFirst({
+      where: { billingOrderId: orderId, status: { in: ["initiated", "callback_received"] } },
+      select: { id: true },
+    })
+    if (liveTxn) {
+      return {
+        ok: false,
+        error: "Canlı ödeme denemesi olan kartlı sipariş iptal edilemez. Önce ödemenin sonuçlanmasını bekleyin.",
+      }
+    }
+  }
 
   const cancelled = await prisma.billingOrder.updateMany({
     where: { id: orderId, status: "pending_payment" },
