@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
-import { addPeriod, periodStartFrom } from "@/lib/billing/period"
+import { activateBillingOrder } from "@/lib/billing/activate"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -192,65 +192,17 @@ export async function updateSupportRequestStatus(
 }
 
 /** Confirm a pending havale: activate the plan + set the paid period. Doubles
- *  as approval for public direct-purchase workshops. */
+ *  as approval for public direct-purchase workshops. Thin wrapper — the
+ *  actual claim-guard transaction lives in activateBillingOrder so the TAMI
+ *  payment callback can share it. */
 export async function confirmBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()
-  if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
-
-  const order = await prisma.billingOrder.findUnique({ where: { id: orderId } })
-  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
-  if (order.status !== "pending_payment") return { ok: false, error: "Bu sipariş zaten işlenmiş." }
-
-  const workshop = await prisma.workshop.findUnique({
-    where: { id: order.workshopId },
-    select: { currentPeriodEnd: true },
+  const result = await activateBillingOrder(orderId, {
+    actor: "admin",
+    confirmedByEmail: admin.email,
+    actorUserId: admin.id,
   })
-  const now = new Date()
-  // Renewal extends from the current period end (no lost days); upgrade /
-  // new_purchase start a fresh period now (upgrades were proration-credited).
-  const periodStart =
-    order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
-  const periodEnd = addPeriod(periodStart, order.billingCycle)
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      const claimed = await tx.billingOrder.updateMany({
-        where: { id: order.id, status: "pending_payment" },
-        data: {
-          status: "confirmed",
-          confirmedAt: now,
-          confirmedByEmail: admin.email,
-          periodStart,
-          periodEnd,
-        },
-      })
-      if (claimed.count === 0) {
-        // Another confirm already processed this order — abort the whole tx.
-        throw new Error("ALREADY_PROCESSED")
-      }
-      await tx.workshop.update({
-        where: { id: order.workshopId },
-        data: {
-          planTier: order.planTier,
-          billingCycle: order.billingCycle,
-          subscriptionStatus: "active",
-          approvalStatus: "approved",
-          currentPeriodEnd: periodEnd,
-          requestedPlanTier: null,
-          planRequestedAt: null,
-        },
-      })
-    })
-  } catch (err) {
-    if (err instanceof Error && err.message === "ALREADY_PROCESSED") {
-      return { ok: false, error: "Bu sipariş zaten işlenmiş." }
-    }
-    console.error("[confirmBillingOrder] failed:", err instanceof Error ? err.message : err)
-    return { ok: false, error: "İşlem başarısız. Lütfen tekrar deneyin." }
-  }
-
-  await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
-    JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
+  if (!result.ok) return result
   revalidatePath("/admin", "layout")
   return { ok: true }
 }
