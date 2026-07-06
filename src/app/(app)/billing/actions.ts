@@ -20,10 +20,14 @@ import type { PlanTier } from "@/lib/plan"
 export async function createBillingOrder(input: {
   tier: string
   cycle: string
+  method?: string
   invoiceTitle: string
   taxNumber: string
   taxOffice?: string
-}): Promise<{ ok: true; reference: string; amountMinor: number } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale" }
+  | { ok: false; error: string }
+> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   const parsed = checkoutInAppSchema.safeParse(input)
@@ -117,7 +121,7 @@ export async function createBillingOrder(input: {
             billingCycle: cycle,
             amountMinor,
             status: "pending_payment",
-            method: "havale",
+            method: data.method,
             reference,
             billingSnapshot,
           },
@@ -130,11 +134,11 @@ export async function createBillingOrder(input: {
         "BillingOrder",
         reference,
         "billing_order_created",
-        JSON.stringify({ tier, cycle, amountMinor, type })
+        JSON.stringify({ tier, cycle, amountMinor, type, method: data.method })
       )
       revalidatePath("/billing")
       revalidatePath("/admin")
-      return { ok: true, reference, amountMinor }
+      return { ok: true, reference, amountMinor, method: data.method }
     } catch (err) {
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)

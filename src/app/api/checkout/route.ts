@@ -113,13 +113,13 @@ export async function POST(request: Request) {
               billingCycle: cycle,
               amountMinor,
               status: "pending_payment",
-              method: "havale",
+              method: data.method,
               reference,
               billingSnapshot,
             },
           })
         })
-        return NextResponse.json({ success: true, reference, amountMinor })
+        return NextResponse.json({ success: true, reference, amountMinor, method: data.method })
       } catch (err) {
         const e = err as { code?: string; meta?: { target?: string[] | string } }
         if (e.code === "P2002") {
