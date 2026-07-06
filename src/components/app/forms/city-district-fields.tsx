@@ -1,5 +1,7 @@
 "use client"
 
+import { useId } from "react"
+
 import {
   Combobox,
   ComboboxContent,
@@ -14,12 +16,14 @@ import { TR_CITIES } from "@/lib/tr-cities"
 import { getDistricts } from "@/lib/tr-districts"
 
 function StringCombobox({
+  id,
   items,
   value,
   placeholder,
   disabled,
   onValueChange,
 }: {
+  id?: string
   items: string[]
   value: string
   placeholder: string
@@ -33,7 +37,7 @@ function StringCombobox({
       itemToStringValue={(s: string) => s}
       onValueChange={(v: string | null) => onValueChange(v ?? "")}
     >
-      <ComboboxInput placeholder={placeholder} disabled={disabled} className="w-full" />
+      <ComboboxInput id={id} placeholder={placeholder} disabled={disabled} className="w-full" />
       <ComboboxContent>
         <ComboboxEmpty className="py-2 text-sm text-muted-foreground">Sonuç yok</ComboboxEmpty>
         <ComboboxList>
@@ -65,6 +69,7 @@ export function CityDistrictFields({
   districtError?: string
   className?: string
 }) {
+  const uid = useId()
   // Legacy güvenliği: kayıtlı serbest-metin değer kanonik listede yoksa yine de göster.
   const cityItems =
     city && !TR_CITIES.includes(city as (typeof TR_CITIES)[number]) ? [city, ...TR_CITIES] : [...TR_CITIES]
@@ -75,8 +80,9 @@ export function CityDistrictFields({
   return (
     <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", className)}>
       <div className="space-y-1.5">
-        <Label>İl</Label>
+        <Label htmlFor={`${uid}-city`}>İl</Label>
         <StringCombobox
+          id={`${uid}-city`}
           items={cityItems}
           value={city}
           placeholder="İl seçin"
@@ -88,8 +94,9 @@ export function CityDistrictFields({
         {cityError && <p className="text-sm text-destructive">{cityError}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label>İlçe</Label>
+        <Label htmlFor={`${uid}-district`}>İlçe</Label>
         <StringCombobox
+          id={`${uid}-district`}
           items={districtItems}
           value={district}
           placeholder={city ? "İlçe seçin" : "Önce il seçin"}

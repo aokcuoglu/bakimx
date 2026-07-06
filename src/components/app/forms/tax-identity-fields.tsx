@@ -1,5 +1,7 @@
 "use client"
 
+import { useId } from "react"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
@@ -25,6 +27,7 @@ export function TaxIdentityFields({
   showHeading?: boolean
   className?: string
 }) {
+  const uid = useId()
   return (
     <div className={cn("space-y-4", className)}>
       {showHeading && (
@@ -35,8 +38,9 @@ export function TaxIdentityFields({
       )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label>TC Kimlik No</Label>
+          <Label htmlFor={`${uid}-identity`}>TC Kimlik No</Label>
           <Input
+            id={`${uid}-identity`}
             value={identityNumber}
             onChange={(e) => onIdentityChange(e.target.value.replace(/\D/g, ""))}
             inputMode="numeric"
@@ -46,8 +50,9 @@ export function TaxIdentityFields({
           {errors?.identityNumber && <p className="text-sm text-destructive">{errors.identityNumber}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label>Vergi No</Label>
+          <Label htmlFor={`${uid}-tax-number`}>Vergi No</Label>
           <Input
+            id={`${uid}-tax-number`}
             value={taxNumber}
             onChange={(e) => onTaxNumberChange(e.target.value.replace(/\D/g, ""))}
             inputMode="numeric"
@@ -57,8 +62,13 @@ export function TaxIdentityFields({
           {errors?.taxNumber && <p className="text-sm text-destructive">{errors.taxNumber}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label>Vergi Dairesi</Label>
-          <Input value={taxOffice} onChange={(e) => onTaxOfficeChange(e.target.value)} placeholder="Kadıköy VD" />
+          <Label htmlFor={`${uid}-tax-office`}>Vergi Dairesi</Label>
+          <Input
+            id={`${uid}-tax-office`}
+            value={taxOffice}
+            onChange={(e) => onTaxOfficeChange(e.target.value)}
+            placeholder="Kadıköy VD"
+          />
           {errors?.taxOffice && <p className="text-sm text-destructive">{errors.taxOffice}</p>}
         </div>
       </div>
