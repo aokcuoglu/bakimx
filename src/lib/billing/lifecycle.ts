@@ -54,14 +54,16 @@ export function pickWarningThreshold(
   return target
 }
 
-/** Trial uyarı e-postaları tarihsiz sabit anahtar kullanır — trial tek pencere,
- *  workshop başına yalnız bir kez yaşanır. */
-export function trialTemplateKey(threshold: number): string {
-  return `trial_expiry_t${threshold}`
-}
-
 function dateKey(d: Date): string {
   return d.toISOString().slice(0, 10)
+}
+
+/** Trial uyarı anahtarına trial penceresi (trialEndsAt) gömülür — approveWorkshop
+ *  (un-reject) bir workshop'u yeni bir trialEndsAt ile tekrar trialing'e
+ *  sokabildiği için tarihsiz anahtar ikinci trial'da uyarıları susturur; dönem
+ *  gömülü anahtar abonelik desenindeki gibi doğal resetlenir. */
+export function trialTemplateKey(threshold: number, trialEndsAt: Date): string {
+  return `trial_expiry_t${threshold}:${dateKey(trialEndsAt)}`
 }
 
 /** Abonelik uyarı anahtarına dönem bitiş tarihi gömülür — bir sonraki
@@ -138,10 +140,11 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
       const state = getPlanState(workshop)
       if (state.trialDaysLeft == null || workshop.trialEndsAt == null) continue
 
-      const candidateKeys = TRIAL_WARNING_THRESHOLDS.map((t) => trialTemplateKey(t))
+      const trialEndsAt = workshop.trialEndsAt
+      const candidateKeys = TRIAL_WARNING_THRESHOLDS.map((t) => trialTemplateKey(t, trialEndsAt))
       const sentKeys = await fetchSentTemplateKeys(workshop.id, candidateKeys)
       const sentThresholds = new Set(
-        TRIAL_WARNING_THRESHOLDS.filter((t) => sentKeys.has(trialTemplateKey(t))),
+        TRIAL_WARNING_THRESHOLDS.filter((t) => sentKeys.has(trialTemplateKey(t, trialEndsAt))),
       )
 
       const threshold = pickWarningThreshold(state.trialDaysLeft, sentThresholds, TRIAL_WARNING_THRESHOLDS)
@@ -161,7 +164,7 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
         subject: built.subject,
         html: built.html,
         workshopId: workshop.id,
-        templateKey: trialTemplateKey(threshold),
+        templateKey: trialTemplateKey(threshold, trialEndsAt),
       })
       if (sendResult.ok) result.sent++
       else result.failed++
@@ -249,6 +252,37 @@ export async function sweepSubscriptionWarnings(): Promise<LifecycleSweepResult>
   return result
 }
 
+/** Bir ödeme denemesinin hâlâ "canlı" sayıldığı durumlar — bu durumdaki bir
+ *  transaction'ı olan sipariş ASLA iptal edilmez (banka çekimi sürüyor olabilir). */
+const NON_TERMINAL_TXN_STATUSES = new Set(["initiated", "callback_received"])
+
+/** Son ödeme denemesinden sonra siparişi ayakta tutma penceresi: terminal
+ *  (failed/expired) bir deneme bile 24 saatten yeniyse kullanıcı aktif demektir. */
+const RECENT_TXN_GRACE_MS = 24 * HOUR_MS
+
+/**
+ * Saf çekirdek: eski bir kart siparişinin (pending_payment) iptal edilip
+ * edilemeyeceğine karar verir. İptal YALNIZ şu üç koşul birlikte sağlanınca:
+ *  1. Sipariş 7 günden eski (createdAt < now - 7g),
+ *  2. Hiçbir transaction'ı non-terminal (initiated/callback_received) durumda
+ *     DEĞİL — kullanıcı eski sipariş üzerinde ödemeyi her an yeniden
+ *     deneyebilir; cron tam banka çekimi sırasında siparişi iptal ederse
+ *     activateBillingOrder claim-guard'ı "zaten işlenmiş" der → para çekilir
+ *     ama plan asla aktive olmaz (iptal edilmiş sipariş diriltilemez),
+ *  3. En son transaction'ı (varsa) 24 saatten eski.
+ */
+export function shouldCancelStaleOrder(
+  order: { createdAt: Date },
+  txns: ReadonlyArray<{ status: string; createdAt: Date }>,
+  now: Date,
+): boolean {
+  if (order.createdAt.getTime() >= now.getTime() - SWEEP_LOOKBACK_MS) return false
+  if (txns.some((t) => NON_TERMINAL_TXN_STATUSES.has(t.status))) return false
+  const latestTxnAt = txns.reduce((max, t) => Math.max(max, t.createdAt.getTime()), 0)
+  if (latestTxnAt >= now.getTime() - RECENT_TXN_GRACE_MS) return false
+  return true
+}
+
 /** Founder alert'i tek bir stuck transaction için en fazla bir kez gönderir
  *  (dedup: CommunicationLog'da templateKey `stuck_txn_alert:<txnId>` + status
  *  "sent" var mı diye önceden kontrol edilir — sendSystemEmail zaten loglar). */
@@ -301,15 +335,33 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
     result.errors.push(`stale-initiated: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)
   }
 
-  // (b) card + pending_payment → cancelled
+  // (b) card + pending_payment → cancelled — YALNIZ canlı ödeme denemesi
+  // olmayan siparişler (bkz. shouldCancelStaleOrder): kullanıcı eski sipariş
+  // üzerinde ödemeyi yeniden deneyebilir; aktif/yeni denemesi olan siparişi
+  // iptal etmek "para çekildi ama plan aktive olmadı" felaketine yol açar.
   try {
     const stalePendingCutoff = new Date(now.getTime() - SWEEP_LOOKBACK_MS)
-    const cancelled = await prisma.billingOrder.updateMany({
+    const candidates = await prisma.billingOrder.findMany({
       where: { method: "card", status: "pending_payment", createdAt: { lt: stalePendingCutoff } },
-      data: { status: "cancelled" },
+      select: {
+        id: true,
+        createdAt: true,
+        paymentTransactions: { select: { status: true, createdAt: true } },
+      },
     })
-    result.processed += cancelled.count
-    result.sent += cancelled.count
+    const cancellableIds = candidates
+      .filter((order) => shouldCancelStaleOrder(order, order.paymentTransactions, now))
+      .map((order) => order.id)
+    result.processed += candidates.length
+    if (cancellableIds.length > 0) {
+      // status guardı where'de tekrarlanır: aday okuması ile update arasında
+      // sipariş onaylanmışsa (yarış) yine de iptal edilmesin.
+      const cancelled = await prisma.billingOrder.updateMany({
+        where: { id: { in: cancellableIds }, status: "pending_payment" },
+        data: { status: "cancelled" },
+      })
+      result.sent += cancelled.count
+    }
   } catch (error) {
     result.failed++
     result.errors.push(`stale-pending-order: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)

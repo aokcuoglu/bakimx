@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test"
-import { pickWarningThreshold, trialTemplateKey, subscriptionTemplateKey } from "./lifecycle"
+import {
+  pickWarningThreshold,
+  trialTemplateKey,
+  subscriptionTemplateKey,
+  shouldCancelStaleOrder,
+} from "./lifecycle"
 
 const TRIAL_THRESHOLDS = [3, 1, 0]
 const SUB_THRESHOLDS = [7, 3, 1, 0]
@@ -48,13 +53,91 @@ test("pickWarningThreshold: abonelik eşikleri (7/3/1/0) ile de aynı kural çal
   expect(pickWarningThreshold(1, new Set([7, 3]), SUB_THRESHOLDS)).toBe(1)
 })
 
-test("trialTemplateKey: tarihsiz sabit anahtar (trial tek pencere)", () => {
-  expect(trialTemplateKey(3)).toBe("trial_expiry_t3")
-  expect(trialTemplateKey(0)).toBe("trial_expiry_t0")
+test("trialTemplateKey: trial penceresi (trialEndsAt) gömülü — yeniden-trial'da (un-reject) doğal reset", () => {
+  const trialEndsAt = new Date("2026-07-12T00:00:00.000Z")
+  expect(trialTemplateKey(3, trialEndsAt)).toBe("trial_expiry_t3:2026-07-12")
+  expect(trialTemplateKey(0, trialEndsAt)).toBe("trial_expiry_t0:2026-07-12")
+  // Yeni bir trial penceresi (farklı trialEndsAt) → farklı anahtar → dedup resetlenir.
+  expect(trialTemplateKey(3, new Date("2026-09-01T00:00:00.000Z"))).toBe("trial_expiry_t3:2026-09-01")
 })
 
 test("subscriptionTemplateKey: dönem tarihi gömülü (yenilemede doğal reset)", () => {
   const periodEnd = new Date("2026-08-06T00:00:00.000Z")
   expect(subscriptionTemplateKey(7, periodEnd)).toBe("sub_expiry_t7:2026-08-06")
   expect(subscriptionTemplateKey(0, periodEnd)).toBe("sub_expiry_t0:2026-08-06")
+})
+
+// ---- shouldCancelStaleOrder ----
+
+const NOW = new Date("2026-07-06T12:00:00.000Z")
+const DAY = 86_400_000
+const HOUR = 60 * 60 * 1000
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * DAY)
+const hoursAgo = (n: number) => new Date(NOW.getTime() - n * HOUR)
+
+test("shouldCancelStaleOrder: 7 günden eski + hiç transaction yok → iptal edilir", () => {
+  expect(shouldCancelStaleOrder({ createdAt: daysAgo(8) }, [], NOW)).toBe(true)
+})
+
+test("shouldCancelStaleOrder: 7 günden yeni sipariş → iptal edilmez (pencere dolmadı)", () => {
+  expect(shouldCancelStaleOrder({ createdAt: daysAgo(6) }, [], NOW)).toBe(false)
+})
+
+test("shouldCancelStaleOrder: canlı ödeme denemesi (initiated) varsa iptal edilmez — yaşı ne olursa olsun", () => {
+  // KRİTİK yarış senaryosu: kullanıcı eski pending_payment sipariş üzerinde
+  // ödemeyi YENİDEN denedi; cron tam banka çekimi sırasında siparişi iptal
+  // ederse para çekilir ama aktivasyon "zaten işlenmiş" der → asla iptal etme.
+  expect(
+    shouldCancelStaleOrder(
+      { createdAt: daysAgo(10) },
+      [{ status: "initiated", createdAt: hoursAgo(0.1) }],
+      NOW,
+    ),
+  ).toBe(false)
+  // Eski bir initiated bile (henüz expired süpürmesinden geçmemiş) iptali bloklar.
+  expect(
+    shouldCancelStaleOrder(
+      { createdAt: daysAgo(10) },
+      [{ status: "initiated", createdAt: daysAgo(3) }],
+      NOW,
+    ),
+  ).toBe(false)
+})
+
+test("shouldCancelStaleOrder: callback_received (takılı/aktivasyon bekleyen) varsa iptal edilmez", () => {
+  expect(
+    shouldCancelStaleOrder(
+      { createdAt: daysAgo(10) },
+      [{ status: "callback_received", createdAt: daysAgo(2) }],
+      NOW,
+    ),
+  ).toBe(false)
+})
+
+test("shouldCancelStaleOrder: son transaction 24 saatten yeniyse iptal edilmez (terminal durumda olsa bile)", () => {
+  // failed/expired olsa da: 24s içinde denenmişse kullanıcı hâlâ aktif —
+  // yeni bir deneme her an gelebilir, siparişi ayakta tut.
+  expect(
+    shouldCancelStaleOrder(
+      { createdAt: daysAgo(10) },
+      [
+        { status: "failed", createdAt: daysAgo(5) },
+        { status: "failed", createdAt: hoursAgo(3) },
+      ],
+      NOW,
+    ),
+  ).toBe(false)
+})
+
+test("shouldCancelStaleOrder: tüm transaction'lar terminal ve 24 saatten eski → iptal edilir", () => {
+  expect(
+    shouldCancelStaleOrder(
+      { createdAt: daysAgo(10) },
+      [
+        { status: "failed", createdAt: daysAgo(5) },
+        { status: "expired", createdAt: daysAgo(2) },
+      ],
+      NOW,
+    ),
+  ).toBe(true)
 })
