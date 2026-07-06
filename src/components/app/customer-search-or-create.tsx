@@ -69,14 +69,6 @@ export function CustomerSearchOrCreate({
   // When the entered phone already belongs to a customer, offer to select them
   // instead of creating a duplicate (a phone belongs to a single customer).
   const [duplicate, setDuplicate] = useState<{ id: string; label: string } | null>(null)
-  // Optional TC / tax / il-ilçe / address fields, collapsed by default.
-  const [showExtra, setShowExtra] = useState(false)
-  const [identityNumber, setIdentityNumber] = useState("")
-  const [taxNumber, setTaxNumber] = useState("")
-  const [taxOffice, setTaxOffice] = useState("")
-  const [city, setCity] = useState("")
-  const [district, setDistrict] = useState("")
-  const [address, setAddress] = useState("")
 
   useEffect(() => {
     if (creating || query.trim().length < 1) {

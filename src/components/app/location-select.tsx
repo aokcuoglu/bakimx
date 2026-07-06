@@ -10,7 +10,7 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { TR_CITIES } from "@/lib/tr-cities"
-import { districtsForCity } from "@/lib/tr-districts"
+import { getDistricts } from "@/lib/tr-districts"
 
 type LocationComboboxProps = {
   id?: string
@@ -100,7 +100,7 @@ export function DistrictSelect({
   placeholder = "İlçe seçin",
   ...props
 }: Omit<LocationComboboxProps, "items" | "emptyText"> & { city: string }) {
-  const districts = districtsForCity(city)
+  const districts = getDistricts(city)
   const noCity = districts.length === 0
 
   // İl elle değiştirildiğinde, seçili ilçe yeni ilin ilçesi değilse temizle.
