@@ -8,7 +8,8 @@ import { checkoutInAppSchema } from "@/lib/validations/billing"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
-import type { BillingCycle, BillingOrderType } from "@prisma/client"
+import { deriveBillingOrderType } from "@/lib/billing/order-type"
+import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 
 /**
@@ -58,19 +59,16 @@ export async function createBillingOrder(input: {
     }
   }
 
-  // Aktif olarak sahip olunan paket tekrar "satın alınamaz" — UI (wizard + /billing)
-  // bunu zaten "Mevcut paketiniz" olarak kilitler; burası doğrudan action çağrısına
-  // karşı savunma katmanı.
-  if (workshop.subscriptionStatus === "active" && workshop.planTier === tier) {
-    return { ok: false, error: "Zaten bu pakete sahipsiniz." }
-  }
-
-  const type: BillingOrderType =
-    workshop.currentPeriodEnd == null
-      ? "new_purchase"
-      : workshop.subscriptionStatus === "active" && workshop.planTier === tier
-        ? "renewal"
-        : "upgrade"
+  // Sipariş tipini türet. Aktif + aynı paket talebi KASITLI olarak reddedilmez:
+  // "renewal" olarak işlenir (dönem sonundan uzar, gün kaybı yok — bkz. activate.ts).
+  // Aynı paket için mükerrer talep, yukarıdaki bekleyen-sipariş guard'ı ile
+  // zaten engellenmiştir; bu yüzden burada ayrı bir "zaten sahipsiniz" reddi yok.
+  const type = deriveBillingOrderType({
+    subscriptionStatus: workshop.subscriptionStatus,
+    planTier: workshop.planTier,
+    currentPeriodEnd: workshop.currentPeriodEnd,
+    targetTier: tier,
+  })
 
   // Upgrades credit the unused portion of the current plan against the new
   // plan's price (and get a fresh period on confirm); new_purchase/renewal pay full.

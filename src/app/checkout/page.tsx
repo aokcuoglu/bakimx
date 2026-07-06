@@ -23,9 +23,10 @@ export default async function CheckoutPage({
   const tier = (hasExplicitTier ? sp.tier : "pro") as PlanTier
   const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
   const ownedTier = workshop?.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
-  // Sahip olunan pakete talep atlanarak (adım 1'e geçilerek) gelinmesin — adım 0'da
-  // "Mevcut paketiniz" olarak kilitli görünsün ve kullanıcı başka bir paket seçsin.
-  const skipPackageStep = hasExplicitTier && tier !== ownedTier
+  // Açık bir paketle gelindiyse (yükseltme VEYA aynı paketi yenileme) doğrudan
+  // fatura adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
+  // (bkz. deriveBillingOrderType → "renewal"); adım 0'da yine seçili görünür.
+  const skipPackageStep = hasExplicitTier
 
   // createBillingOrder da aynı kuralı sunucu tarafında zorunlu kılar; bu yalnızca
   // sihirbazın 3 adımını doldurup sonda reddedilmek yerine erken ve net bir mesaj verir.
