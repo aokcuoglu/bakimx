@@ -112,6 +112,15 @@ export async function POST(request: Request) {
 
   const providerOrderId = raw.orderId || ""
 
+  // 1b) Production'da TAMI yapılandırması eksikse callback'i mock secret ile
+  // DOĞRULAMADAN reddet. Aksi halde public mock secret ile imzalanmış sahte bir
+  // callback prod'da bir siparişi bedava aktive edebilirdi (initiate tarafı da
+  // aynı guard ile kapalı). Hiçbir durum değiştirilmez; 503 döner.
+  if (getTamiConfig().env === "production" && !isTamiConfigured()) {
+    console.error("[payments/callback] TAMI prod yapılandırması eksik — callback reddedildi:", sanitizeForLog({ providerOrderId }))
+    return new Response("payment provider not configured", { status: 503 })
+  }
+
   // 2) hashedData doğrulaması — RAW string alanlarla, durum değişmeden ÖNCE.
   const hashFields: TamiCallbackHashFields & { hashedData: string } = {
     cardOrganization: raw.cardOrganization ?? "",

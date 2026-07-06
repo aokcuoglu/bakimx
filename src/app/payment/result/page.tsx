@@ -242,9 +242,14 @@ export default async function PaymentResultPage({
     errorMessage = "Kart bilgilerini kontrol edip yeniden deneyin."
   } else if (err === "rate") {
     errorMessage = "Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin."
+  } else if (err === "config") {
+    errorMessage =
+      "Kart ödemesi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin."
   }
 
-  const canRetryCard = order.method === "card"
+  // Yapılandırma hatasında kart yeniden-deneme panelini gösterme — deneme yine
+  // aynı guard'a takılır; kullanıcıya "iletişime geçin" ipucu daha doğru.
+  const canRetryCard = order.method === "card" && err !== "config"
 
   return (
     <Shell>

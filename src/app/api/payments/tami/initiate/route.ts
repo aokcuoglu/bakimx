@@ -5,6 +5,8 @@ import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getCurrentUser } from "@/lib/auth"
 import { getTamiClient } from "@/lib/tami"
+import { getTamiConfig, isTamiConfigured } from "@/lib/tami/config"
+import { alertTamiMisconfigOnce } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
 import type { TamiAuth3dsInput } from "@/lib/tami/types"
 import {
@@ -109,6 +111,18 @@ export async function POST(request: Request) {
   const user = await getCurrentUser().catch(() => null)
   if (user && user.workshopId !== order.workshopId) {
     return resultRedirect(request, reference)
+  }
+
+  // 4b) Production'da TAMI kimlik bilgileri eksikse mock istemciye SESSİZCE düşme:
+  // hiçbir txn oluşturma/işaretleme, kullanıcıya genel hata (err=config), founder'ı
+  // günlük dedup ile uyar. Aksi halde sahte bir mock callback bedava aktivasyon
+  // yapabilir (mock secret repoda public). Bu ekip iki kez prod env'i unuttu.
+  if (getTamiConfig().env === "production" && !isTamiConfigured()) {
+    console.error("[payments/initiate] TAMI prod yapılandırması eksik — kart akışı kapalı")
+    await alertTamiMisconfigOnce({ workshopId: order.workshopId, reference }).catch((err) => {
+      console.error("[payments/initiate] misconfig alert error:", err instanceof Error ? err.message : err)
+    })
+    return resultRedirect(request, reference, "config")
   }
 
   // Buyer/adres bilgisi: workshop + billingSnapshot + owner kullanıcısı.
