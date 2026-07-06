@@ -197,6 +197,25 @@ export async function updateSupportRequestStatus(
  *  payment callback can share it. */
 export async function confirmBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()
+  if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
+
+  // Sunucu tarafı guard (UI zaten kartlı siparişte butonu gizliyor ama tek
+  // başına yeterli değil): kartlı sipariş yalnız otomatik callback ya da
+  // takılı-ödeme retry'ı ile aktive olur. Elle confirm, banka çekimi sürerken
+  // çifte aktivasyon riskidir.
+  const order = await prisma.billingOrder.findUnique({
+    where: { id: orderId },
+    select: { method: true },
+  })
+  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
+  if (order.method === "card") {
+    return {
+      ok: false,
+      error:
+        "Kartlı siparişler otomatik onaylanır; elle onaylanamaz. Takılı ödeme için 'Aktivasyonu Tekrar Dene' kullanın.",
+    }
+  }
+
   const result = await activateBillingOrder(orderId, {
     actor: "admin",
     confirmedByEmail: admin.email,
