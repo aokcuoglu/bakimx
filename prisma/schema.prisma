@@ -124,6 +124,8 @@ model BillingOrder {
   periodStart      DateTime?
   periodEnd        DateTime?
 
+  paymentTransactions PaymentTransaction[]
+
   @@index([workshopId])
   @@index([status])
 }
@@ -149,6 +151,40 @@ enum BillingMethod {
   havale
   manual
   card
+}
+
+// Kartlı ödeme denemesi — bir BillingOrder birden çok deneme alabilir
+// (başarısız 3DS → retry). Callback idempotency deneme-başına unique key ister.
+model PaymentTransaction {
+  id              String                    @id @default(cuid())
+  billingOrderId  String
+  billingOrder    BillingOrder              @relation(fields: [billingOrderId], references: [id])
+  workshopId      String                    // denormalize — tenant-scoped admin sorguları için
+  provider        String                    @default("tami")
+  providerOrderId String                    @unique // TAMI'ye giden orderId (2-36 kar.), deneme başına benzersiz
+  status          PaymentTransactionStatus  @default(initiated)
+  amountMinor     Int                       // kuruş snapshot
+  currency        String                    @default("TRY")
+  maskedPan       String?                   // SADECE callback'ten gelen maskeli numara
+  cardBrand       String?
+  errorCode       String?
+  errorMessage    String?
+  correlationId   String?
+  callbackPayload Json?                     // sanitize edilmiş callback gövdesi (TAMI zaten PAN/CVV dönmez)
+  // Kart verisi (PAN/CVV/expiry/holder) ASLA saklanmaz — PCI
+  createdAt       DateTime                  @default(now())
+  completedAt     DateTime?
+
+  @@index([billingOrderId])
+  @@index([workshopId, createdAt])
+}
+
+enum PaymentTransactionStatus {
+  initiated
+  callback_received
+  completed
+  failed
+  expired
 }
 
 model WorkshopSettings {
