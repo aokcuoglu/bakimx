@@ -58,3 +58,8 @@ scripts/.staging-vps
 
 # Postman collections may embed live API keys (e.g. RapidAPI) — keep out of git
 docs/*.postman_collection.json
+
+# Ad-hoc UI probe/debug screenshots at repo root (anchored so public/ assets stay tracked)
+/probe-*.png
+/before-enter.png
+/after-enter.png
