@@ -108,6 +108,41 @@ işyerlerine uyarı e-postaları (T-3/T-1/T-0 ve T-7/T-3/T-1/T-0) gönderir, esk
 ödeme kayıtlarını temizler (initiated → expired, asılı kart siparişi → cancelled) ve
 takılı `callback_received` işlemleri için founder alert'i tetikler.
 
+## 8. TAMI Sanal POS
+
+Kart akışı: `/api/payments/tami/initiate` sipariş açar → müşteri bankanın 3DS sayfasına
+yönlenir → banka `/api/payments/tami/callback`'e form-urlencoded POST atar (hash doğrulanır,
+idempotent claim) → `complete-3ds` → başarılıysa plan otomatik aktive olur ve makbuz e-postası
+gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden kurtarılır; cron
+(§7) de bunları mutabakatla temizler/uyarır.
+
+- **Env'ler — VPS `.env.production`'a elle eklenir** (deploy.yml env yönetmez; `ADMIN_EMAILS`/
+  `RESEND_*` ile aynı desen, bkz. §4):
+  ```
+  TAMI_ENV=production
+  TAMI_MERCHANT_NUMBER=...
+  TAMI_TERMINAL_NUMBER=...
+  TAMI_SECRET_KEY=...
+  TAMI_JWK_KID=...
+  TAMI_JWK_KEY=...
+  ```
+  Beş kimlik alanından biri bile boşsa sistem sessizce mock istemciye düşer (`isTamiConfigured`) —
+  prod'da gerçek ödeme almak için **hepsi dolu olmalı**.
+- **Callback URL whitelist** — TAMI portalında (sandbox: `sandbox-portal.tami.com.tr`, prod:
+  `portal.tami.com.tr`) şu adres beyaz listeye eklenmeli: `https://app.bakimx.com/api/payments/tami/callback`.
+- **Sandbox test kartları/creds** — kimlik bilgilerini bu dokümana kopyalama, referans linkler:
+  `dev.tami.com.tr/test-kartlari` ve `dev.tami.com.tr/tami-satis-islemi`.
+
+### GO-LIVE CHECKLIST
+1. Staging'de sandbox creds ile uçtan uca 3DS testi: başarılı kart + başarısız kart + callback
+   replay (aynı `providerOrderId` ile ikinci POST — yan etkisiz olmalı).
+2. Prod creds ile smoke test: gerçek kart küçük tutar + TAMI portalından anında iade.
+3. Callback URL whitelist doğrulaması (sandbox ve prod ayrı ayrı).
+4. Crontab kurulu (§7) ve ops konsolunda `CronRun` → "billing" job'ı yeşil.
+5. Founder alert e-postası test edilmiş (hash doğrulama hatası / aktivasyon başarısız senaryosu).
+6. `EMAIL_PROVIDER=resend` aktif — makbuz ve uyarı e-postaları gerçek adrese gitmeli.
+7. `TAMI_ENV=production` **EN SON** değiştirilir (sandbox'ta doğrulama bitmeden asla).
+
 ---
 
 ## Doğrulama
