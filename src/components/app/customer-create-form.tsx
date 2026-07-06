@@ -40,6 +40,8 @@ import { useForm } from "react-hook-form"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
 import { typedResolver } from "@/lib/validations/resolver"
 import { formatPhoneTR, toTrUpper } from "@/lib/format"
+import { CityDistrictFields } from "@/components/app/forms/city-district-fields"
+import { TaxIdentityFields } from "@/components/app/forms/tax-identity-fields"
 
 const SOURCE_LABELS: Record<string, string> = {
   referral: "Tavsiye",
@@ -297,32 +299,16 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>İl</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="İstanbul" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>İlçe</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Kadıköy" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="sm:col-span-2">
+                    <CityDistrictFields
+                      city={form.watch("city")}
+                      district={form.watch("district")}
+                      onCityChange={(v) => form.setValue("city", v, { shouldDirty: true })}
+                      onDistrictChange={(v) => form.setValue("district", v, { shouldDirty: true })}
+                      cityError={form.formState.errors.city?.message}
+                      districtError={form.formState.errors.district?.message}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="address"
@@ -404,32 +390,16 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>İl</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="İstanbul" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>İlçe</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Kadıköy" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="sm:col-span-2">
+                    <CityDistrictFields
+                      city={form.watch("city")}
+                      district={form.watch("district")}
+                      onCityChange={(v) => form.setValue("city", v, { shouldDirty: true })}
+                      onDistrictChange={(v) => form.setValue("district", v, { shouldDirty: true })}
+                      cityError={form.formState.errors.city?.message}
+                      districtError={form.formState.errors.district?.message}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="address"
@@ -452,47 +422,20 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                 <h3 className="text-sm font-semibold text-foreground">Vergi / Kimlik Bilgileri</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Fatura ve resmi kayıtlar için</p>
               </header>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <FormField
-                  control={form.control}
-                  name="identityNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>TC Kimlik No</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="numeric" maxLength={11} placeholder="12345678901" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="taxNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vergi No</FormLabel>
-                      <FormControl>
-                        <Input {...field} inputMode="numeric" placeholder="1234567890" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="taxOffice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vergi Dairesi</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Kadıköy VD" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <TaxIdentityFields
+                showHeading={false}
+                identityNumber={form.watch("identityNumber")}
+                taxNumber={form.watch("taxNumber")}
+                taxOffice={form.watch("taxOffice")}
+                onIdentityChange={(v) => form.setValue("identityNumber", v, { shouldDirty: true })}
+                onTaxNumberChange={(v) => form.setValue("taxNumber", v, { shouldDirty: true })}
+                onTaxOfficeChange={(v) => form.setValue("taxOffice", v, { shouldDirty: true })}
+                errors={{
+                  identityNumber: form.formState.errors.identityNumber?.message,
+                  taxNumber: form.formState.errors.taxNumber?.message,
+                  taxOffice: form.formState.errors.taxOffice?.message,
+                }}
+              />
             </section>
 
             <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
