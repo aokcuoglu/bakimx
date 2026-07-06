@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, ChevronRight, User, ClipboardList, Camera, Car, Gauge } from "lucide-react"
+import { Check, ChevronRight, User, ClipboardList, Camera, Car, Gauge, Plus } from "lucide-react"
 import {
   Form,
   FormControl,
@@ -161,6 +161,22 @@ export function IntakeWizard({
     else params.delete("vehicleId")
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
+
+  // Kaydet & Yeni: bu iş emri zaten kaydedildi (foto adımına gelindiyse POST
+  // başarılı olmuş). Wizard'ı sıfırdan başlat — peş peşe birden çok araç kabul
+  // ederken her seferinde /orders/new'e gidip sayfayı yeniden yüklemeye gerek
+  // kalmasın.
+  function handleSaveAndNew() {
+    form.reset()
+    setIntakeId("")
+    setOrderId("")
+    setVehicleInfo(null)
+    setError("")
+    setStep(1)
+    // URL'deki önceki müşteri/araç seçimini temizle (rehydrate/prefill tetiklenmesin)
+    router.replace(pathname, { scroll: false })
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   async function handleCreateIntake() {
@@ -404,13 +420,18 @@ export function IntakeWizard({
             <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <PhotoAnnotate intakeFormId={intakeId} />
-              <div className="pt-4 flex justify-between">
+              <div className="pt-4 flex flex-wrap items-center justify-between gap-2">
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
                   Geri
                 </Button>
-                <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={orderId ? `/orders/${orderId}` : "/orders"} />}>
-                  İş Emrine Git
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="lg" className="gap-2" onClick={handleSaveAndNew}>
+                    <Plus className="size-4" /> Kaydet & Yeni
+                  </Button>
+                  <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={orderId ? `/orders/${orderId}` : "/orders"} />}>
+                    İş Emrine Git
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
