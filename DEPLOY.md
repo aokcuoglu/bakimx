@@ -138,7 +138,10 @@ gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden 
    replay (aynı `providerOrderId` ile ikinci POST — yan etkisiz olmalı).
 2. Prod creds ile smoke test: gerçek kart küçük tutar + TAMI portalından anında iade.
 3. Callback URL whitelist doğrulaması (sandbox ve prod ayrı ayrı).
-4. Crontab kurulu (§7) ve ops konsolunda `CronRun` → "billing" job'ı yeşil.
+4. Crontab kurulu (§7); kurulumdan sonraki gün DB'de kontrol (DBeaver/psql — bkz. staging DB
+   erişim notları): `SELECT job, status, "finishedAt" FROM "CronRun" WHERE job='billing' ORDER BY
+   "startedAt" DESC LIMIT 3;` → `success` satırları görünmeli. Not: `/admin/health` şu an yalnız
+   `reminders` job'ını özetler; billing görünürlüğü follow-up.
 5. Founder alert e-postası test edilmiş (hash doğrulama hatası / aktivasyon başarısız senaryosu).
 6. `EMAIL_PROVIDER=resend` aktif — makbuz ve uyarı e-postaları gerçek adrese gitmeli.
 7. `TAMI_ENV=production` **EN SON** değiştirilir (sandbox'ta doğrulama bitmeden asla).
