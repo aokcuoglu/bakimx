@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, ChevronRight, User, ClipboardList, Camera } from "lucide-react"
+import { Check, ChevronRight, User, ClipboardList, Camera, Car, Gauge } from "lucide-react"
 import {
   Form,
   FormControl,
@@ -31,6 +31,23 @@ type Customer = {
   companyName: string | null
   type: string
   phone: string
+}
+
+// Seçili aracın kabul ekranında salt-görüntü özet kartında gösterilen bilgileri
+// (/api/vehicles/[id] cevabının alt kümesi). Servis yetkilisinin gireceği "yeni
+// kilometre"den ayrıştırmak için aracın son kayıtlı km'si burada referans durur.
+type VehicleInfo = {
+  plate: string
+  brand: string
+  model: string
+  mileage: number | null
+  modelYear: number | null
+  fuelType: string | null
+  transmission: string | null
+  color: string | null
+  vin: string | null
+  firstRegistrationDate: string | null
+  inspectionValidUntil: string | null
 }
 
 const STEPS = [
@@ -60,6 +77,7 @@ export function IntakeWizard({
 
   const [intakeId, setIntakeId] = useState("")
   const [orderId, setOrderId] = useState("")
+  const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null)
 
   const form = useForm<IntakeFormValues, unknown, IntakeFormValues>({
     resolver: typedResolver(intakeSchema),
@@ -88,6 +106,14 @@ export function IntakeWizard({
   const selectedCustomerId = form.watch("selectedCustomerId")
   const selectedVehicleId = form.watch("selectedVehicleId")
   const customerComplaint = form.watch("customerComplaint")
+  const mileageAtIntake = form.watch("mileageAtIntake")
+
+  // Km geriye gidemez: girilen yeni km, aracın son kayıtlı km'sinden düşükse kabul
+  // engellenir. Boş alan "" → girilmemiş sayılır (0'a çevrilip yanlış tetiklememesi
+  // için parseInt kullanılıyor; NaN ise kontrol dışı bırakılır).
+  const enteredKm = mileageAtIntake ? parseInt(mileageAtIntake, 10) : null
+  const lastKm = vehicleInfo?.mileage ?? null
+  const kmTooLow = enteredKm != null && !Number.isNaN(enteredKm) && lastKm != null && enteredKm < lastKm
 
   // Step completion tracking
   const completedSteps = new Set<number>()
@@ -105,22 +131,21 @@ export function IntakeWizard({
     }
   }, [prefillCustomerId, prefillVehicleId, source, customers, form])
 
-  // Seçili aracın güncel km'sini Kilometre alanına ön-doldur (kullanıcı girdisini ezme).
+  // Seçili aracın bilgilerini kabul ekranındaki salt-görüntü özet kartı için çek.
+  // Son kayıtlı km artık "Yeni Kilometre" alanına ÖN-DOLDURULMUYOR: eski ve yeni
+  // km'yi ayrıştırmak için son km yalnızca sağ paneldeki özet kartta referans olur.
   useEffect(() => {
-    if (!selectedVehicleId || form.getValues("mileageAtIntake")) return
+    if (!selectedVehicleId) { setVehicleInfo(null); return }
     let active = true
     fetch(`/api/vehicles/${selectedVehicleId}`)
       .then((r) => r.json())
       .then((v: unknown) => {
-        if (!active || !v || typeof v !== "object") return
-        const km = (v as { mileage?: number | null }).mileage
-        if (km != null && !form.getValues("mileageAtIntake")) {
-          form.setValue("mileageAtIntake", String(km))
-        }
+        if (!active || !v || typeof v !== "object" || "error" in v) return
+        setVehicleInfo(v as VehicleInfo)
       })
       .catch(() => {})
     return () => { active = false }
-  }, [selectedVehicleId, form])
+  }, [selectedVehicleId])
 
   // Seçimi URL'e yansıt. Next router'ın kendi replace()'i kullanılıyor (ham
   // history.replaceState değil) — aksi halde Next'in istemci router cache'i URL
@@ -141,6 +166,11 @@ export function IntakeWizard({
   async function handleCreateIntake() {
     const valid = await form.trigger(["customerComplaint"])
     if (!valid) return
+    // Km geriye gidemez — buton zaten devre dışı ama guard olarak da engelle.
+    if (kmTooLow) {
+      setError(`Yeni kilometre, aracın son kaydından (${lastKm!.toLocaleString("tr-TR")} km) düşük olamaz.`)
+      return
+    }
     // Kabul zaten oluşturulduysa (Adım 3'e geri dönüp tekrar ilerleme) yeniden
     // POST'lama — çift kabul kaydı oluşmasın; sadece foto adımına geç.
     if (intakeId) { setStep(4); return }
@@ -240,75 +270,130 @@ export function IntakeWizard({
           </Card>
         )}
 
-        {/* Step 3: Intake details */}
+        {/* Step 3: Intake details — iki kolon: sol=servis yetkilisinin girdiği kabul
+            detayları, sağ=aracın salt-görüntü geçmiş/bilgi özeti. Mobilde alt alta yığılır
+            (araç bilgileri formun altına düşer). */}
         {step === 3 && (
-          <Card>
-            <CardHeader><CardTitle>Kabul Detayları</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="mileageAtIntake"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kilometre</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        inputMode="numeric"
-                        placeholder="50000"
-                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+            {/* Bölüm-1: Kabul detayları */}
+            <Card>
+              <CardHeader><CardTitle>Kabul Detayları</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="mileageAtIntake"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Yeni Kilometre</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          inputMode="numeric"
+                          placeholder="50000"
+                          onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                        />
+                      </FormControl>
+                      {kmTooLow ? (
+                        <p className="text-xs text-destructive">
+                          Yeni kilometre, aracın son kaydından ({lastKm!.toLocaleString("tr-TR")} km) düşük olamaz.
+                        </p>
+                      ) : vehicleInfo?.mileage != null ? (
+                        <p className="text-xs text-muted-foreground">
+                          Son kayıtlı: {vehicleInfo.mileage.toLocaleString("tr-TR")} km
+                        </p>
+                      ) : null}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="customerComplaint"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Müşteri Şikayeti *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Müşterinin şikayetini detaylı olarak yazınız..."
+                          className="min-h-[100px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="internalNote"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>İç Not</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[80px]" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="pt-4 flex justify-between">
+                  <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
+                    Geri
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreateIntake}
+                    disabled={loading || !customerComplaint.trim() || kmTooLow}
+                    size="lg"
+                    className="gap-2"
+                  >
+                    {loading ? "Oluşturuluyor..." : "Kabul Oluştur ve Devam Et"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bölüm-2: Araç bilgileri / geçmiş özeti (salt-görüntü) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Car className="h-5 w-5 text-muted-foreground" />
+                  Araç Bilgileri
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vehicleInfo ? (
+                  <div className="space-y-4">
+                    {/* Son kayıtlı km — vurgulu referans */}
+                    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                      <Gauge className="h-5 w-5 shrink-0 text-primary" />
+                      <div>
+                        <div className="text-xs text-muted-foreground">Son kayıtlı kilometre</div>
+                        <div className="text-lg font-semibold tabular-nums">
+                          {vehicleInfo.mileage != null
+                            ? `${vehicleInfo.mileage.toLocaleString("tr-TR")} km`
+                            : "—"}
+                        </div>
+                      </div>
+                    </div>
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                      <InfoRow label="Plaka" value={vehicleInfo.plate} />
+                      <InfoRow label="Marka / Model" value={`${vehicleInfo.brand} ${vehicleInfo.model}`.trim()} />
+                      <InfoRow label="Model Yılı" value={vehicleInfo.modelYear != null ? String(vehicleInfo.modelYear) : null} />
+                      <InfoRow label="Yakıt" value={vehicleInfo.fuelType} />
+                      <InfoRow label="Vites" value={vehicleInfo.transmission} />
+                      <InfoRow label="Renk" value={vehicleInfo.color} />
+                      <InfoRow label="İlk Tescil" value={vehicleInfo.firstRegistrationDate} />
+                      <InfoRow label="Muayene Geçerlilik" value={vehicleInfo.inspectionValidUntil} />
+                      <InfoRow label="Şasi (VIN)" value={vehicleInfo.vin} className="col-span-2" />
+                    </dl>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Araç bilgileri yükleniyor…</p>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="customerComplaint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Müşteri Şikayeti *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Müşterinin şikayetini detaylı olarak yazınız..."
-                        className="min-h-[100px]"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="internalNote"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>İç Not</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Servis içi notlar (opsiyonel)..." className="min-h-[80px]" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
-                  Geri
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCreateIntake}
-                  disabled={loading || !customerComplaint.trim()}
-                  size="lg"
-                  className="gap-2"
-                >
-                  {loading ? "Oluşturuluyor..." : "Kabul Oluştur ve Devam Et"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Step 4: Photos — kabul oluşturulduktan sonra mount'lu kalır; Adım 3'e
@@ -333,5 +418,15 @@ export function IntakeWizard({
 
       </div>
     </Form>
+  )
+}
+
+// Araç bilgi kartındaki tek satır (etiket + değer). Değer boşsa "—" gösterir.
+function InfoRow({ label, value, className }: { label: string; value?: string | null; className?: string }) {
+  return (
+    <div className={className}>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="font-medium break-words">{value?.trim() ? value : "—"}</dd>
+    </div>
   )
 }
