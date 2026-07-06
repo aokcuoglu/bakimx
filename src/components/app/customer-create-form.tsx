@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CustomerTagBadge, PriceGroupBadge } from "@/components/app/customer-badges"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CitySelect, DistrictSelect } from "@/components/app/location-select"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
@@ -125,6 +126,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
   })
 
   const type = form.watch("type")
+  const city = form.watch("city")
   const tag = form.watch("tag")
   const priceGroup = form.watch("priceGroup")
   const kvkkApprovedAt = form.watch("kvkkApprovedAt")
@@ -304,7 +306,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>İl</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="İstanbul" />
+                          <CitySelect value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -317,7 +319,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>İlçe</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Kadıköy" />
+                          <DistrictSelect city={city ?? ""} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -411,7 +413,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>İl</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="İstanbul" />
+                          <CitySelect value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -424,7 +426,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       <FormItem>
                         <FormLabel>İlçe</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Kadıköy" />
+                          <DistrictSelect city={city ?? ""} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

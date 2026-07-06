@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { CitySelect, DistrictSelect } from "@/components/app/location-select"
 import { formatPhoneTR } from "@/lib/format"
 
 type Workshop = {
@@ -25,6 +26,8 @@ type Workshop = {
 
 export function WorkshopForm({ workshop }: { workshop: Workshop }) {
   const [error, setError] = useState("")
+  const [city, setCity] = useState(workshop.city)
+  const [district, setDistrict] = useState(workshop.district || "")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -76,12 +79,12 @@ export function WorkshopForm({ workshop }: { workshop: Workshop }) {
 
             <div className="space-y-2">
               <Label htmlFor="city">Şehir *</Label>
-              <Input id="city" name="city" defaultValue={workshop.city} required />
+              <CitySelect id="city" name="city" value={city} onValueChange={setCity} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="district">İlçe</Label>
-              <Input id="district" name="district" defaultValue={workshop.district || ""} />
+              <DistrictSelect id="district" name="district" city={city} value={district} onValueChange={setDistrict} />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
