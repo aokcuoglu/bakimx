@@ -1,0 +1,63 @@
+name: Sync main into dev
+
+# After every release (a push to main — normally a dev->main PR merge, see
+# deploy.yml), realign dev with main's merge commits so dev never shows
+# "N commits behind main" and never misses a fix committed straight to main.
+#
+# In the normal case this is content-neutral: main's content already lives in
+# dev (the release merged dev INTO main), so this only replays the merge commit
+# back onto dev to keep history in sync. No local `git merge origin/main` chore.
+#
+# Loop-safety: this pushes to dev, never to main, so it cannot re-trigger itself.
+# The push uses GITHUB_TOKEN, and pushes made with GITHUB_TOKEN do NOT start new
+# workflow runs — so it will NOT re-deploy staging (staging.yml) either. That's
+# intended: the merge changes no file content, so a staging rebuild is pointless.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Two quick main pushes should not run two syncs at once; queue the second.
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the merge commit to dev
+    steps:
+      - name: Checkout dev (full history)
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Merge main into dev
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+
+          # dev already contains main -> nothing to sync (e.g. a re-run).
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "dev already contains main — nothing to sync."
+            exit 0
+          fi
+
+          # --no-edit keeps a plain "Merge ... into dev" message. Content-neutral
+          # in the normal case, so this rarely touches files.
+          if git merge origin/main --no-edit; then
+            git push origin HEAD:dev
+            echo "Synced main -> dev."
+          else
+            # Only reaches here if main has content that conflicts with dev
+            # (e.g. a hand-edit committed straight to main). Never force-push;
+            # bail loudly so a human resolves it.
+            git merge --abort
+            echo "::error::Merge conflict syncing main -> dev. Resolve manually: git checkout dev && git merge origin/main"
+            exit 1
+          fi
