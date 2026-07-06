@@ -207,6 +207,74 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
   return { ok: true }
 }
 
+/** Recover a card payment stuck at `callback_received` (bank captured the
+ *  charge but activation never completed — see sweepStalePaymentArtifacts'
+ *  founder alert). Reuses the exact same claim-guard transaction as the
+ *  automated callback and the manual havale confirm, so this can never
+ *  double-activate an already-confirmed order. */
+export async function retryStuckActivation(transactionId: string): Promise<Result> {
+  const admin = await requireAdmin()
+  if (!transactionId) return { ok: false, error: "İşlem seçilmedi." }
+
+  const txn = await prisma.paymentTransaction.findUnique({ where: { id: transactionId } })
+  if (!txn) return { ok: false, error: "İşlem bulunamadı." }
+  if (txn.status !== "callback_received") {
+    return { ok: false, error: "Bu işlem kurtarma için uygun durumda değil." }
+  }
+
+  const activation = await activateBillingOrder(txn.billingOrderId, {
+    actor: "admin",
+    confirmedByEmail: admin.email,
+    actorUserId: admin.id,
+  })
+
+  if (activation.ok) {
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ billingOrderId: txn.billingOrderId, result: "activated" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
+  // "Bu sipariş zaten işlenmiş." → order was confirmed by another path (the
+  // callback route racing this admin action, or an earlier retry). The bank
+  // already captured the money either way, so close the loop on the txn row
+  // too — but the audit trail records the different reason.
+  if (activation.error === "Bu sipariş zaten işlenmiş.") {
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ billingOrderId: txn.billingOrderId, result: "already_confirmed" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
+  // Any other failure (order missing, DB error): leave the txn untouched so
+  // it stays visible in the stuck-transactions list for another attempt.
+  return activation
+}
+
 /** Cancel a pending order (e.g. havale never arrived). */
 export async function cancelBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()

@@ -7,12 +7,13 @@ import { TamiError, TAMI_ERROR_MESSAGES, sanitizeForLog } from "@/lib/tami/error
 import { MOCK_SECRET_KEY } from "@/lib/tami/mock"
 import type { TamiCallbackHashFields } from "@/lib/tami/types"
 import { activateBillingOrder } from "@/lib/billing/activate"
-import { minorToTamiAmountString } from "@/lib/billing/payment-helpers"
+import { minorToTamiAmountString, resolveClientIp } from "@/lib/billing/payment-helpers"
 import { founderAlertEmail, paymentReceiptEmail } from "@/lib/emails/system-emails"
 import { sendEmailDirect } from "@/lib/communications/sender"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { getAdminEmails } from "@/lib/admin"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { alertHashFailureOnce } from "@/lib/tami/hash-fail-alert"
 
 /**
  * TAMI 3DS callback (public, oturumsuz). Banka (veya mock form) 3DS doğrulaması
@@ -126,8 +127,13 @@ export async function POST(request: Request) {
     hashedData: raw.hashedData ?? "",
   }
   if (!verifyCallbackHash(hashFields, { secretKey: callbackSecret() })) {
-    // Her istekte founder alert GÖNDERME — yalnız logla (debounce'lı alert Task 9).
+    // Mevcut davranış AYNEN kalır: logla + 400. Ek olarak saatte en fazla 1
+    // founder alert (dedup — bkz. hash-fail-alert.ts); best-effort, akışı bozmaz.
     console.warn("[payments/callback] hash doğrulaması başarısız:", sanitizeForLog({ providerOrderId }))
+    const ip = resolveClientIp(request.headers.get("x-forwarded-for"), request.headers.get("x-real-ip"))
+    await alertHashFailureOnce({ providerOrderId, ip }).catch((err) => {
+      console.error("[payments/callback] hash-fail alert error:", err instanceof Error ? err.message : err)
+    })
     return new Response("invalid signature", { status: 400 })
   }
 

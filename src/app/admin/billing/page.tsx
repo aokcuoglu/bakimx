@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export default async function AdminBillingPage() {
   await requireAdmin()
-  const { orderRows, subscriptions, revenue } = await getBillingData()
+  const { orderRows, recentOrders, stuckTransactions, subscriptions, revenue } = await getBillingData()
 
   return (
     <div className="space-y-6">
@@ -16,7 +16,13 @@ export default async function AdminBillingPage() {
           Havaleleri teyit edin, abonelikleri ve geliri görün.
         </p>
       </div>
-      <AdminBilling orders={orderRows} subscriptions={subscriptions} revenue={revenue} />
+      <AdminBilling
+        orders={orderRows}
+        recentOrders={recentOrders}
+        stuckTransactions={stuckTransactions}
+        subscriptions={subscriptions}
+        revenue={revenue}
+      />
     </div>
   )
 }
