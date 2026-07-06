@@ -4,6 +4,23 @@ import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { founderAlertEmail } from "@/lib/emails/system-emails"
 
 /**
+ * Kart akışı (initiate + callback) kapatılmalı mı? Saf fonksiyon — iki route'un
+ * paylaştığı TEK guard koşulu. KASITLI olarak NODE_ENV tabanlıdır, TAMI_ENV
+ * DEĞİL: gerçek hata modu prod .env'e TAMI bloğunun HİÇ girmemesidir — o zaman
+ * TAMI_ENV de unset olur, config "sandbox"a düşer ve TAMI_ENV tabanlı bir guard
+ * bypass edilirdi (public mock secret ile bedava aktivasyon). NODE_ENV=production
+ * her prod build'de garantidir. Local dev (NODE_ENV=development) mock ile
+ * çalışmaya devam eder; staging go-live checklist adım 1 gereği sandbox kimlik
+ * bilgileri kullanır. Bilerek TAMI_ALLOW_MOCK gibi bir kaçış kapısı YOK.
+ */
+export function isCardPaymentBlocked(opts: {
+  nodeEnv: string | undefined
+  tamiConfigured: boolean
+}): boolean {
+  return opts.nodeEnv === "production" && !opts.tamiConfigured
+}
+
+/**
  * TAMI production ortamında kimlik bilgileri eksik olduğunda (mock istemciye
  * sessizce düşmenin engellendiği durum) GÜNLÜK dedup anahtarı (UTC). Saf
  * fonksiyon — hash-fail-alert.ts ile aynı deseni izler; günde en fazla 1

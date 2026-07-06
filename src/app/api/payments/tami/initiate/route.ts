@@ -5,8 +5,8 @@ import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getCurrentUser } from "@/lib/auth"
 import { getTamiClient } from "@/lib/tami"
-import { getTamiConfig, isTamiConfigured } from "@/lib/tami/config"
-import { alertTamiMisconfigOnce } from "@/lib/tami/misconfig-alert"
+import { isTamiConfigured } from "@/lib/tami/config"
+import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
 import type { TamiAuth3dsInput } from "@/lib/tami/types"
 import {
@@ -113,11 +113,12 @@ export async function POST(request: Request) {
     return resultRedirect(request, reference)
   }
 
-  // 4b) Production'da TAMI kimlik bilgileri eksikse mock istemciye SESSİZCE düşme:
-  // hiçbir txn oluşturma/işaretleme, kullanıcıya genel hata (err=config), founder'ı
-  // günlük dedup ile uyar. Aksi halde sahte bir mock callback bedava aktivasyon
-  // yapabilir (mock secret repoda public). Bu ekip iki kez prod env'i unuttu.
-  if (getTamiConfig().env === "production" && !isTamiConfigured()) {
+  // 4b) Prod build'de (NODE_ENV) TAMI kimlik bilgileri eksikse mock istemciye
+  // SESSİZCE düşme: hiçbir txn oluşturma/işaretleme, kullanıcıya genel hata
+  // (err=config), founder'ı günlük dedup ile uyar. TAMI_ENV'e GÜVENİLMEZ — prod
+  // .env'e TAMI bloğu hiç girmediyse TAMI_ENV de unset olur ve "sandbox"a düşerdi
+  // (bkz. isCardPaymentBlocked). Bu ekip iki kez prod env'i unuttu.
+  if (isCardPaymentBlocked({ nodeEnv: process.env.NODE_ENV, tamiConfigured: isTamiConfigured() })) {
     console.error("[payments/initiate] TAMI prod yapılandırması eksik — kart akışı kapalı")
     await alertTamiMisconfigOnce({ workshopId: order.workshopId, reference }).catch((err) => {
       console.error("[payments/initiate] misconfig alert error:", err instanceof Error ? err.message : err)

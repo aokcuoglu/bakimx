@@ -14,6 +14,7 @@ import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { getAdminEmails } from "@/lib/admin"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { alertHashFailureOnce } from "@/lib/tami/hash-fail-alert"
+import { isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 
 /**
  * TAMI 3DS callback (public, oturumsuz). Banka (veya mock form) 3DS doğrulaması
@@ -112,11 +113,13 @@ export async function POST(request: Request) {
 
   const providerOrderId = raw.orderId || ""
 
-  // 1b) Production'da TAMI yapılandırması eksikse callback'i mock secret ile
-  // DOĞRULAMADAN reddet. Aksi halde public mock secret ile imzalanmış sahte bir
-  // callback prod'da bir siparişi bedava aktive edebilirdi (initiate tarafı da
-  // aynı guard ile kapalı). Hiçbir durum değiştirilmez; 503 döner.
-  if (getTamiConfig().env === "production" && !isTamiConfigured()) {
+  // 1b) Prod build'de (NODE_ENV) TAMI yapılandırması eksikse callback'i mock
+  // secret ile DOĞRULAMADAN reddet. Aksi halde public mock secret ile imzalanmış
+  // sahte bir callback prod'da bir siparişi bedava aktive edebilirdi (initiate
+  // tarafı da aynı guard ile kapalı). TAMI_ENV'e GÜVENİLMEZ — prod .env'e TAMI
+  // bloğu hiç girmediyse TAMI_ENV de unset olur ve "sandbox"a düşerdi (bkz.
+  // isCardPaymentBlocked). Hiçbir durum değiştirilmez; 503 döner.
+  if (isCardPaymentBlocked({ nodeEnv: process.env.NODE_ENV, tamiConfigured: isTamiConfigured() })) {
     console.error("[payments/callback] TAMI prod yapılandırması eksik — callback reddedildi:", sanitizeForLog({ providerOrderId }))
     return new Response("payment provider not configured", { status: 503 })
   }
