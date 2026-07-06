@@ -8,9 +8,11 @@ import { MOCK_SECRET_KEY } from "@/lib/tami/mock"
 import type { TamiCallbackHashFields } from "@/lib/tami/types"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { minorToTamiAmountString } from "@/lib/billing/payment-helpers"
-import { founderAlertEmail } from "@/lib/emails/system-emails"
+import { founderAlertEmail, paymentReceiptEmail } from "@/lib/emails/system-emails"
 import { sendEmailDirect } from "@/lib/communications/sender"
+import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { getAdminEmails } from "@/lib/admin"
+import { getPlanPackage } from "@/lib/plans-catalog"
 
 /**
  * TAMI 3DS callback (public, oturumsuz). Banka (veya mock form) 3DS doğrulaması
@@ -46,6 +48,53 @@ async function alertFounders(title: string, detail: string): Promise<void> {
     await sendEmailDirect(to.join(","), built.subject, built.html)
   } catch (err) {
     console.error("[payments/callback] founder alert failed:", err instanceof Error ? err.message : err)
+  }
+}
+
+/** Başarılı kart ödemesi sonrası makbuz e-postası — best-effort, akışı BOZMAZ
+ *  (hata durumunda yalnız loglanır; 303 redirect her koşulda çalışır). */
+async function sendReceiptEmail(orderId: string, maskedPan: string | null, reference: string | null): Promise<void> {
+  try {
+    const order = await prisma.billingOrder.findUnique({
+      where: { id: orderId },
+      select: {
+        planTier: true,
+        billingCycle: true,
+        amountMinor: true,
+        periodEnd: true,
+        workshopId: true,
+        workshop: { select: { name: true, email: true } },
+      },
+    })
+    if (!order || !order.periodEnd) return
+
+    const owner = await prisma.user.findFirst({
+      where: { workshopId: order.workshopId, role: "owner" },
+      select: { email: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const to = owner?.email || order.workshop.email
+    if (!to) return
+
+    const built = paymentReceiptEmail({
+      workshopName: order.workshop.name,
+      planLabel: getPlanPackage(order.planTier)?.name ?? order.planTier,
+      cycleLabel: order.billingCycle === "monthly" ? "Aylık" : "Yıllık",
+      amountMinor: order.amountMinor,
+      maskedPan,
+      periodEnd: order.periodEnd,
+      reference: reference ?? orderId,
+    })
+
+    await sendSystemEmail({
+      to,
+      subject: built.subject,
+      html: built.html,
+      workshopId: order.workshopId,
+      templateKey: `payment_receipt:${reference ?? orderId}`,
+    })
+  } catch (err) {
+    console.error("[payments/callback] receipt email failed:", err instanceof Error ? err.message : err)
   }
 }
 
@@ -175,6 +224,7 @@ export async function POST(request: Request) {
         where: { id: txn.id },
         data: { status: "completed", completedAt: now },
       })
+      await sendReceiptEmail(orderId, raw.maskedNumber || null, ref)
       return resultRedirect(request, ref)
     } catch (err) {
       const code = err instanceof TamiError ? err.code : "COMPLETE_ERROR"

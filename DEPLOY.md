@@ -101,7 +101,12 @@ ayrıntısı için **DB.md**'ye bak; bu dosya deploy akışını anlatır.
 ## 7. (Opsiyonel) Hatırlatma cron'u
 ```
 */15 * * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.bakimx.com/api/cron/reminders >/dev/null 2>&1
+0 8 * * * curl -fsS -H "Authorization: Bearer <CRON_SECRET>" https://app.bakimx.com/api/cron/billing >/dev/null 2>&1
 ```
+İkinci satır günlük fatura/yaşam-döngüsü süpürmesi: deneme/abonelik bitişine yaklaşan
+işyerlerine uyarı e-postaları (T-3/T-1/T-0 ve T-7/T-3/T-1/T-0) gönderir, eski/takılı
+ödeme kayıtlarını temizler (initiated → expired, asılı kart siparişi → cancelled) ve
+takılı `callback_received` işlemleri için founder alert'i tetikler.
 
 ---
 
