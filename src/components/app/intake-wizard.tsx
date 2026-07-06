@@ -252,7 +252,12 @@ export function IntakeWizard({
                   <FormItem>
                     <FormLabel>Kilometre</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="50000" />
+                      <Input
+                        {...field}
+                        inputMode="numeric"
+                        placeholder="50000"
+                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
