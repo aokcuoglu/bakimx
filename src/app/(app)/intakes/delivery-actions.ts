@@ -1,7 +1,8 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { PlanWriteLockedError } from "@/lib/plan"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
@@ -21,8 +22,12 @@ function isDemoSms(): boolean {
   return process.env.NODE_ENV !== "production" || (process.env.SMS_PROVIDER ?? "mock") === "mock"
 }
 
+// Salt-okunur kilit MUAFİYETİ (ürün kararı 2026-07-06): süresi dolan dükkân,
+// içerideki aracı müşteriye OTP ile TESLİM EDEBİLMELİ — araç ödeme duvarına
+// rehin kalmasın. Bu yüzden iki OTP aksiyonu requireWritableWorkshop yerine
+// getCurrentUserWithWorkshop kullanır (bilinçli; Task 7 sweep'ine geri alma değil).
 export async function requestDeliveryOtpAction(intakeFormId: string) {
-  const user = await requireAuth()
+  const { user } = await getCurrentUserWithWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -80,7 +85,7 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
 }
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {
-  const user = await requireAuth()
+  const { user } = await getCurrentUserWithWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -124,9 +129,23 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
     where: { intakeFormId, workshopId: user.workshopId },
   })
   if (order && order.status === "ready_for_delivery") {
-    const orderResult = await updateOrderStatusAction(order.id, "delivered")
-    if (orderResult && "error" in orderResult) {
-      console.error("[verifyDeliveryOtp] Order teslim senkronu başarısız:", orderResult.error)
+    try {
+      const orderResult = await updateOrderStatusAction(order.id, "delivered")
+      if (orderResult && "error" in orderResult) {
+        console.error("[verifyDeliveryOtp] Order teslim senkronu başarısız:", orderResult.error)
+      }
+    } catch (e) {
+      if (e instanceof PlanWriteLockedError) {
+        // Kilitli dükkân muafiyeti: guard'lı action yerine temel senkron inline —
+        // sipariş delivered + audit. Yan etkiler (ödeme hatırlatma SMS'i) bilinçli atlanır.
+        await prisma.serviceOrder.updateMany({
+          where: { id: order.id, workshopId: user.workshopId, status: "ready_for_delivery" },
+          data: { status: "delivered" },
+        })
+        await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "order_status_changed_to_delivered", undefined, order.id)
+      } else {
+        throw e
+      }
     }
   }
 

@@ -1,14 +1,14 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function createPartAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw: Record<string, string> = {}
@@ -71,7 +71,7 @@ export async function createPartAction(formData: FormData) {
 }
 
 export async function updatePartAction(partId: string, formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -124,7 +124,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
 }
 
 export async function deactivatePartAction(partId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -144,7 +144,7 @@ export async function deactivatePartAction(partId: string) {
 }
 
 export async function reactivatePartAction(partId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -164,7 +164,7 @@ export async function reactivatePartAction(partId: string) {
 }
 
 export async function deletePartAction(partId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -200,7 +200,7 @@ export async function deletePartAction(partId: string) {
 }
 
 export async function createStockMovementAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw = {

@@ -1,14 +1,14 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { supplierCreateSchema, supplierUpdateSchema } from "@/lib/validations/supplier"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function createSupplierAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw: Record<string, string> = {}
@@ -49,7 +49,7 @@ export async function createSupplierAction(formData: FormData) {
 }
 
 export async function updateSupplierAction(supplierId: string, formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -96,7 +96,7 @@ export async function updateSupplierAction(supplierId: string, formData: FormDat
 }
 
 export async function deactivateSupplierAction(supplierId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -116,7 +116,7 @@ export async function deactivateSupplierAction(supplierId: string) {
 }
 
 export async function reactivateSupplierAction(supplierId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -136,7 +136,7 @@ export async function reactivateSupplierAction(supplierId: string) {
 }
 
 export async function deleteSupplierAction(supplierId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({

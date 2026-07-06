@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CitySelect, DistrictSelect } from "@/components/app/location-select"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -62,6 +63,8 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
     resolver: typedResolver(businessProfileFormSchema),
     defaultValues: toDefaults(workshop),
   })
+
+  const city = form.watch("city")
 
   async function onSubmit(values: BusinessProfileFormValues) {
     setError("")
@@ -151,7 +154,7 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
                   <FormItem>
                     <FormLabel>Şehir *</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Şehir" />
+                      <CitySelect value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} placeholder="İl seçin" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,7 +168,7 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
                   <FormItem>
                     <FormLabel>İlçe</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="İlçe" />
+                      <DistrictSelect city={city ?? ""} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

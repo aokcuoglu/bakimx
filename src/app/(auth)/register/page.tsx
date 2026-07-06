@@ -6,7 +6,7 @@ import { isAuthenticated } from "@/lib/auth"
 
 export const metadata: Metadata = {
   title: "Ücretsiz Dene",
-  description: "BakimX iş yeri hesabınızı oluşturun — 15 gün ücretsiz deneme.",
+  description: "BakimX iş yeri hesabınızı oluşturun — 7 gün ücretsiz deneme.",
 }
 
 export default async function RegisterPage() {

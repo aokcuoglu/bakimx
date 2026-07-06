@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { appointmentCreateSchema, appointmentStatusUpdateSchema } from "@/lib/validations/appointment"
 import { getValidationError } from "@/lib/validations/shared"
@@ -12,7 +12,7 @@ import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
 
 export async function createAppointmentAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}
@@ -85,7 +85,7 @@ export async function createAppointmentAction(formData: FormData) {
 }
 
 export async function updateAppointmentStatusAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const appointmentId = formData.get("appointmentId") as string
   const newStatus = formData.get("status") as string
@@ -113,7 +113,7 @@ export async function updateAppointmentStatusAction(formData: FormData) {
 }
 
 export async function convertAppointmentToWorkOrderAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const appointmentId = formData.get("appointmentId") as string
   if (!appointmentId) return { error: "Randevu ID gerekli" }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
@@ -9,7 +10,9 @@ import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES }
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
 
     const contentLength = request.headers.get("content-length")
     if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {

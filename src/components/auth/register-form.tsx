@@ -66,13 +66,13 @@ export function RegisterForm() {
         <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10">
           <CheckCircle2 className="size-7 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Başvurunuz alındı</h1>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Hesabınız hazır</h1>
         <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-          Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz. Onay sonrası{" "}
-          <span className="font-medium text-foreground">15 günlük ücretsiz deneme</span> süreniz başlayacaktır.
+          <span className="font-medium text-foreground">7 günlük ücretsiz deneme</span> süreniz başladı. Hemen
+          giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.
         </p>
         <Link href="/login" className={cn(buttonVariants({ size: "xl" }), "mt-7 w-full")}>
-          Giriş ekranına dön
+          Giriş yap
         </Link>
       </motion.div>
     )
@@ -85,7 +85,7 @@ export function RegisterForm() {
           BakimX hesabınızı oluşturun
         </h1>
         <p className="mt-2 text-muted-foreground text-sm lg:text-base">
-          15 gün ücretsiz deneyin — kredi kartı gerekmez.
+          7 gün ücretsiz deneyin — kredi kartı gerekmez.
         </p>
       </div>
 

@@ -53,7 +53,7 @@ const faqs = [
   {
     question: "Nasıl başlarım? Ücretsiz deneme var mı?",
     answer:
-      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle başvurunuzu oluşturursunuz. Başvurunuz onaylandığında 15 günlük ücretsiz deneme süreniz başlar ve özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
+      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturursunuz. Hesabınız anında açılır ve 7 günlük ücretsiz deneme süreniz hemen başlar; özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",

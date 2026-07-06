@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import {
   businessProfileSchema,
@@ -59,7 +59,7 @@ export async function getWorkshopSettings() {
 }
 
 export async function updateBusinessProfileAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     name: formData.get("name") as string,
@@ -104,7 +104,7 @@ export async function updateBusinessProfileAction(formData: FormData) {
 }
 
 export async function updateBrandingAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     pdfLogoUrl: formData.get("pdfLogoUrl") as string,
@@ -145,7 +145,7 @@ export async function updateBrandingAction(formData: FormData) {
 }
 
 export async function updateCommunicationSettingsAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     smsProvider: formData.get("smsProvider") as string,
@@ -203,7 +203,7 @@ export async function updateCommunicationSettingsAction(formData: FormData) {
 }
 
 export async function updateWorkingHoursAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     weekdayStart: formData.get("weekdayStart") as string,
@@ -253,7 +253,7 @@ export async function updateWorkingHoursAction(formData: FormData) {
 }
 
 export async function updateAppointmentRulesAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     defaultAppointmentDuration: formData.get("defaultAppointmentDuration") as string,
@@ -288,7 +288,7 @@ export async function updateAppointmentRulesAction(formData: FormData) {
 }
 
 export async function updatePdfTemplateAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     workOrderTemplate: formData.get("workOrderTemplate") as string,

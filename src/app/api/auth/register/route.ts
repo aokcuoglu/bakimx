@@ -5,24 +5,24 @@ import { registerSchema } from "@/lib/validations/auth"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getAdminEmails } from "@/lib/admin"
-import { applicationReceivedEmail, newApplicationAdminEmail } from "@/lib/emails/system-emails"
+import { computeTrialEnd } from "@/lib/plan"
+import { welcomeTrialEmail, newApplicationAdminEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 
 /**
- * Self-serve workshop registration (early-access, approval-gated).
+ * Self-serve workshop registration (instant activation).
  *
- * Creates a new isolated Workshop + its first owner User, but leaves the
- * workshop in `pending` approval and `trialing` status. The account CANNOT sign
- * in until an admin approves it (which starts the 15-day trial). No session is
- * created here.
+ * Creates a new isolated Workshop + its first owner User, already `approved`
+ * and `trialing` with its 7-day trial started. No admin approval step — the
+ * owner can sign in immediately. No session is created here.
  */
 
 const REGISTER_MAX_ATTEMPTS = 5
 const REGISTER_WINDOW_MS = 10 * 60_000 // 10 minutes
 
 const GENERIC_ERROR = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
-const PENDING_MESSAGE =
-  "Başvurunuz alındı. Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz ve 15 günlük deneme süreniz başlayacaktır."
+const READY_MESSAGE =
+  "Hesabınız hazır — 7 günlük ücretsiz deneme süreniz başladı. Giriş yapabilirsiniz."
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
@@ -78,6 +78,8 @@ export async function POST(request: Request) {
 
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
+    const now = new Date()
+    const trialEndsAt = computeTrialEnd(now)
 
     const workshop = await prisma.$transaction(async (tx) => {
       const ws = await tx.workshop.create({
@@ -87,9 +89,11 @@ export async function POST(request: Request) {
           city: data.city,
           address: data.address,
           email: data.email,
-          // Early-access: requires admin approval; trial starts on approval.
-          approvalStatus: "pending",
+          // Instant activation: no admin approval gate for self sign-ups.
+          approvalStatus: "approved",
           subscriptionStatus: "trialing",
+          trialStartedAt: now,
+          trialEndsAt,
           planTier: "pro",
           settings: { create: {} },
         },
@@ -111,9 +115,10 @@ export async function POST(request: Request) {
 
     // Best-effort bildirimler — hata kayıt sonucunu etkilemez.
     try {
-      const applicant = applicationReceivedEmail({
-        firstName: data.firstName,
+      const welcome = welcomeTrialEmail({
+        ownerName: data.firstName,
         workshopName: data.workshopName,
+        trialEndsAt,
       })
       const adminMail = newApplicationAdminEmail({
         workshopName: data.workshopName,
@@ -125,10 +130,10 @@ export async function POST(request: Request) {
       await Promise.allSettled([
         sendSystemEmail({
           to: data.email,
-          subject: applicant.subject,
-          html: applicant.html,
+          subject: welcome.subject,
+          html: welcome.html,
           workshopId: workshop.id,
-          templateKey: "application_received",
+          templateKey: "welcome_trial",
         }),
         ...getAdminEmails().map((to) =>
           sendSystemEmail({
@@ -144,7 +149,7 @@ export async function POST(request: Request) {
       console.error("[register] notification failed:", mailErr instanceof Error ? mailErr.message : mailErr)
     }
 
-    return NextResponse.json({ success: true, message: PENDING_MESSAGE })
+    return NextResponse.json({ success: true, message: READY_MESSAGE })
   } catch (err) {
     // Unique-constraint race (duplicate e-mail) or any other failure.
     const code = (err as { code?: string })?.code

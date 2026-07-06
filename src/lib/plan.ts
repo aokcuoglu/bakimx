@@ -4,7 +4,11 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: early-access onboarding gate (admin approves self sign-ups)
+ *  - approvalStatus: legacy kill-switch gate. Self sign-ups (register + public
+ *    checkout) are approved instantly and start their trial immediately —
+ *    admin approval is no longer required to gain access. The gate still
+ *    exists so an admin can `rejectWorkshop` (suspend) an account, and for any
+ *    older rows still sitting in `pending` from before this change.
  *  - subscriptionStatus + trialEndsAt: billing/trial lifecycle
  *
  * Today only the ACCESS gate (`hasAccess`) is enforced (login + /app layout).
@@ -23,7 +27,7 @@ import type { Workshop } from "@prisma/client"
  *    are available across all tiers, so the gate is informational only.
  */
 
-export const TRIAL_DAYS = 15
+export const TRIAL_DAYS = 7
 const DAY_MS = 86_400_000
 
 export type PlanTier = "starter" | "pro" | "premium"
@@ -86,6 +90,15 @@ export interface PlanState {
   hasAccess: boolean
   /** Why access is blocked, or null when access is granted. */
   lockReason: LockReason
+  /**
+   * True when the workshop may perform data mutations. False only for the
+   * read-only lock reasons (`trial_expired | subscription_expired |
+   * subscription_inactive`), where data stays visible but writes are blocked
+   * centrally. `pending`/`rejected` are full-screen locked elsewhere, so
+   * `canWrite` is left `true` for them on purpose — it must never become a
+   * second, confusing gate for accounts that already see PlanLocked.
+   */
+  canWrite: boolean
 }
 
 export function getPlanState(workshop: WorkshopPlanFields): PlanState {
@@ -130,6 +143,14 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     lockReason = "subscription_inactive"
   }
 
+  // Read-only lock: data remains visible but mutations are blocked centrally.
+  // Only the expiry lock reasons flip this; pending/rejected keep canWrite=true
+  // (they are full-screen locked separately — see the PlanState.canWrite doc).
+  const canWrite =
+    lockReason !== "trial_expired" &&
+    lockReason !== "subscription_expired" &&
+    lockReason !== "subscription_inactive"
+
   return {
     tier,
     isApproved,
@@ -141,7 +162,38 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     subscriptionDaysLeft,
     hasAccess,
     lockReason,
+    canWrite,
   }
+}
+
+/**
+ * Thrown by {@link assertWriteAccess} when a workshop is in the read-only
+ * (plan-expired) state. Carries the `lockReason` so callers/API routes can map
+ * it to a stable machine code (`plan_locked`) plus the user-facing message.
+ */
+export class PlanWriteLockedError extends Error {
+  readonly lockReason: LockReason
+  constructor(message: string, lockReason: LockReason) {
+    super(message)
+    this.name = "PlanWriteLockedError"
+    this.lockReason = lockReason
+  }
+}
+
+/**
+ * Central write guard. Throws {@link PlanWriteLockedError} when the workshop's
+ * plan has expired (read-only mode). Server actions/routes that mutate tenant
+ * data should call this after auth. The billing/purchase flow and auth actions
+ * are intentionally exempt so a locked workshop can still pay to recover.
+ */
+export function assertWriteAccess(workshop: WorkshopPlanFields): void {
+  const { canWrite, lockReason } = getPlanState(workshop)
+  if (canWrite) return
+  const message =
+    lockReason === "trial_expired"
+      ? "Deneme süreniz doldu. Devam etmek için bir paket satın alın."
+      : "Aboneliğiniz sona erdi. Devam etmek için aboneliğinizi yenileyin."
+  throw new PlanWriteLockedError(message, lockReason)
 }
 
 /** Trial end timestamp computed from a start date (used when a workshop is approved). */

@@ -6,7 +6,8 @@ export interface HavaleInfo {
   bank: string
 }
 
-export interface PaymentInstruction {
+/** Havale/EFT talimatı — admin teyidiyle aktifleşir. */
+export interface HavaleInstruction {
   method: "havale"
   reference: string
   havale: HavaleInfo
@@ -14,9 +15,22 @@ export interface PaymentInstruction {
 }
 
 /**
- * Payment provider seam. v1 = manual havale (admin confirms). A future
- * IyzicoProvider implements the same interface (initiate -> redirect/3DS,
- * confirm -> webhook), so the checkout UI + BillingOrder stay unchanged.
+ * Kart talimatı — istemci `initiateUrl`'e NATIVE form POST yapıp 3DS'e gider.
+ * Sipariş `pending_payment` + `method="card"` olduğu sürece geçerlidir.
+ */
+export interface CardInstruction {
+  method: "card"
+  reference: string
+  amountMinor: number
+  initiateUrl: "/api/payments/tami/initiate"
+}
+
+export type PaymentInstruction = HavaleInstruction | CardInstruction
+
+/**
+ * Payment provider seam. v1 = manual havale (admin confirms) + TAMI kart (3DS).
+ * Yeni bir sağlayıcı aynı arabirimi (initiate -> redirect/3DS, confirm ->
+ * webhook) uyguladığında checkout UI + BillingOrder değişmeden kalır.
  */
 export interface PaymentProvider {
   initiate(input: { amountMinor: number; reference?: string }): PaymentInstruction
@@ -38,6 +52,21 @@ export const manualHavaleProvider: PaymentProvider = {
       reference: reference ?? generateOrderReference(),
       havale: getHavaleInstructions(),
       amountMinor,
+    }
+  },
+}
+
+/**
+ * TAMI kart sağlayıcısı. Kart verisi asla sunucudan geçmez; talimat yalnız
+ * istemcinin NATIVE form POST atacağı uç noktayı ve tutar/referans özetini taşır.
+ */
+export const tamiCardProvider: PaymentProvider = {
+  initiate({ amountMinor, reference }) {
+    return {
+      method: "card",
+      reference: reference ?? generateOrderReference(),
+      amountMinor,
+      initiateUrl: "/api/payments/tami/initiate",
     }
   },
 }

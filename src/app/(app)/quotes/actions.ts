@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemActionSchema } from "@/lib/validations/quote"
 import { getValidationError } from "@/lib/validations/shared"
@@ -13,7 +13,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { reserveStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 
 export async function createQuoteAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}
@@ -116,7 +116,7 @@ export async function createQuoteAction(formData: FormData) {
 }
 
 export async function updateQuoteStatusAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const quoteId = formData.get("quoteId") as string
   const newStatus = formData.get("status") as string
@@ -168,7 +168,7 @@ export async function updateQuoteStatusAction(formData: FormData) {
 }
 
 export async function convertQuoteToWorkOrderAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const quoteId = formData.get("quoteId") as string
   if (!quoteId) return { error: "Teklif ID gerekli" }

@@ -1,12 +1,12 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireWritableWorkshop } from "@/lib/auth"
 import { businessProfileSchema } from "@/lib/validations/settings"
 import { revalidatePath } from "next/cache"
 
 export async function updateWorkshopAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     name: formData.get("name") as string,
