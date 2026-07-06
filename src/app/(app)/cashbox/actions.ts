@@ -22,8 +22,8 @@ const collectionCreateSchema = z.object({
 })
 
 export async function createCollectionAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -126,8 +126,8 @@ export async function createCollectionAction(formData: FormData) {
 }
 
 export async function cancelCollectionAction(collectionId: string, reason?: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const collection = await prisma.collectionPayment.findFirst({
     where: { id: collectionId, workshopId: user.workshopId },

@@ -5,13 +5,13 @@
 // removed; this module now only mints the read-only customer share link.
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function generateShareLinkAction(intakeFormId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },

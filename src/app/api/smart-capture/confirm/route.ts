@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
@@ -53,7 +54,9 @@ function parseModelYear(value: unknown): number | null {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
     const body = await request.json()
     const { ocrLogId, confirmedFields } = body
 

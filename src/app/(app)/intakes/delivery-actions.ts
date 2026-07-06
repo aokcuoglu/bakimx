@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
@@ -22,7 +22,7 @@ function isDemoSms(): boolean {
 }
 
 export async function requestDeliveryOtpAction(intakeFormId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -80,7 +80,7 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
 }
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },

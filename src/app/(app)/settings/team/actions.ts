@@ -4,7 +4,7 @@ import { z } from "zod/v4"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { UserRole } from "@prisma/client"
-import { requireAuth, assertWorkshopAccess } from "@/lib/auth"
+import { requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import {
@@ -63,7 +63,7 @@ async function sendInviteEmail(opts: {
 
 /** Invite a teammate by e-mail. Owner/manager only. */
 export async function inviteMemberAction(formData: FormData): Promise<Result> {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   try {
     assertCanManageTeam(user)
 
@@ -168,7 +168,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
 
 /** Re-issue a pending invite (new token + e-mail). */
 export async function resendInviteAction(inviteId: string): Promise<Result> {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   try {
     assertCanManageTeam(user)
     const invite = await prisma.invite.findUnique({ where: { id: inviteId } })
@@ -210,7 +210,7 @@ export async function resendInviteAction(inviteId: string): Promise<Result> {
 
 /** Revoke a pending invite (its link dies immediately). */
 export async function revokeInviteAction(inviteId: string): Promise<Result> {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   try {
     assertCanManageTeam(user)
     const invite = await prisma.invite.findUnique({ where: { id: inviteId } })
@@ -228,7 +228,7 @@ export async function revokeInviteAction(inviteId: string): Promise<Result> {
 
 /** Change a member's role. Guards: self, rank, assign-rank, last-owner. */
 export async function updateMemberRoleAction(userId: string, role: string): Promise<Result> {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   try {
     assertCanManageTeam(user)
     const parsed = roleSchema.safeParse(role)
@@ -282,7 +282,7 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
 
 /** Activate / deactivate a member's seat. Guards: self, rank, last-owner. */
 export async function setMemberActiveAction(userId: string, isActive: boolean): Promise<Result> {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   try {
     assertCanManageTeam(user)
     if (userId === user.id) return fail("Kendinizi devre dışı bırakamazsınız.")

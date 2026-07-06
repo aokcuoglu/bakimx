@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { notifyCollectionReminder } from "@/lib/communications/triggers"
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
     const body = await request.json()
     const { customerId, serviceOrderId, channels } = body as {
       customerId?: string

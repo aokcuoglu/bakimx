@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { COMMUNICATION_TEMPLATES, getDefaultTemplate, sanitizeTemplate } from "@/lib/communications/templates"
 import { sendSMSDirect, sendWhatsAppDirect, sendEmailDirect, checkRateLimit, recordAttempt } from "@/lib/communications"
@@ -43,7 +43,7 @@ export async function getNotificationTemplates() {
 }
 
 export async function saveNotificationTemplateAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const templateKey = formData.get("templateKey") as string
   const channel = formData.get("channel") as string
   const content = formData.get("content") as string
@@ -76,7 +76,7 @@ export async function saveNotificationTemplateAction(formData: FormData) {
 }
 
 export async function resetNotificationTemplateAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const templateKey = formData.get("templateKey") as string
   const channel = formData.get("channel") as string
 
@@ -119,7 +119,8 @@ export async function sendProviderTestAction(formData: FormData): Promise<{
   providerId?: string
   error?: string
 }> {
-  const { workshopId } = await requireAuth()
+  const { user } = await requireWritableWorkshop()
+  const workshopId = user.workshopId
 
   const channel = formData.get("channel") as CommunicationType
   const rawRecipient = (formData.get("recipient") as string | null)?.trim() ?? ""

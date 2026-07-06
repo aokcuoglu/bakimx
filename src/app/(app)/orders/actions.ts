@@ -15,8 +15,8 @@ import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 
 export async function createServiceOrderAction(intakeFormId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -52,8 +52,8 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
 })
 
 export async function addOrderItemAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -162,8 +162,8 @@ export async function addOrderItemAction(formData: FormData) {
 }
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -216,8 +216,8 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
 }
 
 export async function updateOrderStatusAction(orderId: string, status: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
 
@@ -305,8 +305,8 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 }
 
 export async function updateOrderPaymentStatusAction(orderId: string, paymentStatus: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   if (!isPaymentStatus(paymentStatus)) return { error: "Geçersiz ödeme durumu" }
 
@@ -337,8 +337,8 @@ const orderMetaSchema = z.object({
 })
 
 export async function updateOrderMetaAction(orderId: string, formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     technicianName: formData.get("technicianName") as string,

@@ -43,9 +43,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const cookieStore = await cookies()
   const initialSidebarCollapsed = cookieStore.get("sidebar-state")?.value === "collapsed"
 
-  // Access gate: trial expired / subscription inactive → locked upgrade screen.
-  // Keep the impersonation banner so the founder can always exit.
-  if (!plan.hasAccess && plan.lockReason) {
+  // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
+  // app now. Plan-expiry reasons drop to read-only mode below (data visible,
+  // writes blocked server-side, persistent banner). Keep the impersonation
+  // banner so the founder can always exit.
+  if (!plan.hasAccess && (plan.lockReason === "pending" || plan.lockReason === "rejected")) {
     const pendingOrder = await prisma.billingOrder.findFirst({
       where: { workshopId: user.workshopId, status: "pending_payment" },
       select: { id: true },
@@ -58,10 +60,31 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
+  // Read-only lock: plan/trial expired. App stays visible but every mutation is
+  // blocked centrally (requireWritableWorkshop / assertWriteAccess). A persistent,
+  // non-dismissable banner drives the workshop to /checkout to recover.
+  const readOnlyLocked = !plan.canWrite
+  const readOnlyMessage =
+    plan.lockReason === "trial_expired"
+      ? "Deneme süreniz doldu. Verileriniz görüntülenebilir ancak değişiklik yapmak için bir paket satın alın."
+      : "Aboneliğiniz sona erdi. Verileriniz görüntülenebilir ancak değişiklik yapmak için aboneliğinizi yenileyin."
+  const readOnlyCta = plan.lockReason === "trial_expired" ? "Paket Satın Al" : "Yenile"
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
-      {plan.isTrialing && plan.trialDaysLeft != null && (
+      {readOnlyLocked && (
+        <div className="bg-destructive text-destructive-foreground text-xs sm:text-sm px-4 py-2 flex flex-wrap items-center justify-center gap-2 text-center">
+          <span>{readOnlyMessage}</span>
+          <Link
+            href="/checkout"
+            className="font-semibold underline underline-offset-2 whitespace-nowrap"
+          >
+            {readOnlyCta}
+          </Link>
+        </div>
+      )}
+      {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
         <div className="bg-primary/10 text-primary text-xs sm:text-sm px-4 py-2 text-center">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} gün</span> kaldı.{" "}
@@ -70,7 +93,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
       )}
-      {!plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
+      {!readOnlyLocked && !plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
         <div className="bg-amber-100 text-amber-800 text-xs sm:text-sm px-4 py-2 text-center">
           Aboneliğinizin bitmesine{" "}
           <span className="font-semibold">{plan.subscriptionDaysLeft} gün</span> kaldı.{" "}
