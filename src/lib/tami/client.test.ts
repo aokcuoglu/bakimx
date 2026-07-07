@@ -2,10 +2,11 @@ import { afterEach, beforeEach, expect, test } from "bun:test"
 import { createTamiClient } from "./client"
 import { verifyCallbackHash } from "./hash"
 import { createMockTamiClient, MOCK_SECRET_KEY } from "./mock"
+import { buildTamiPaymentBody } from "./request-builder"
 import { sanitizeForLog } from "./errors"
 import { TamiError } from "./errors"
 import type { TamiConfig } from "./config"
-import type { TamiAuth3dsInput, TamiCallbackHashFields } from "./types"
+import type { TamiCallbackHashFields } from "./types"
 
 const cfg: TamiConfig = {
   env: "sandbox",
@@ -17,11 +18,11 @@ const cfg: TamiConfig = {
   jwkKey: "uTFK37C1qQddme6Qjyd1KkcrvdJbHfSAHG9m1zmDhSc",
 }
 
-const sampleInput: TamiAuth3dsInput = {
+// buildTamiPaymentBody'den üretilir (Task 1 wire şeması) — elle şekillendirilmiş bir
+// istek gövdesi DEĞİL, böylece bu test dosyası gerçek şemayla senkron kalır.
+const sampleInput = buildTamiPaymentBody({
   orderId: "ORDER-CLIENT-TEST-1",
-  amount: 199.9,
-  currency: "TRY",
-  installmentCount: 1,
+  amountMinor: 19990,
   callbackUrl: "https://app.bakimx.com/api/tami/callback",
   card: {
     number: "5406697543211173",
@@ -30,15 +31,15 @@ const sampleInput: TamiAuth3dsInput = {
     expireYear: 2027,
     cvv: "423",
   },
-  buyer: {
-    buyerId: "buyer-1",
+  contact: {
     name: "Test",
     surName: "Kullanıcı",
-    ipAddress: "127.0.0.1",
-    emailAddress: "test@bakimx.com",
-    phoneNumber: "+905551234567",
+    email: "test@bakimx.com",
+    phone: "+905551234567",
+    ip: "127.0.0.1",
   },
-}
+  basketItemName: "Test Ürün",
+})
 
 let originalFetch: typeof globalThis.fetch
 

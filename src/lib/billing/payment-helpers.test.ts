@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import {
   minorToTamiAmount,
   minorToTamiAmountString,
+  tamiAmountEqualsMinor,
   generateProviderOrderId,
   resolveClientIp,
   splitName,
@@ -46,6 +47,15 @@ test("splitName: ad/soyad ayrımı", () => {
   expect(splitName("Ali Can Veli")).toEqual({ name: "Ali", surName: "Can Veli" })
   expect(splitName("Ali")).toEqual({ name: "Ali", surName: "Ali" })
   expect(splitName("  ")).toEqual({ name: "-", surName: "-" })
+})
+
+test("tamiAmountEqualsMinor: wire formatlarından bağımsız", () => {
+  expect(tamiAmountEqualsMinor("1", 100)).toBe(true)      // canlı yakalanan format
+  expect(tamiAmountEqualsMinor("1.00", 100)).toBe(true)
+  expect(tamiAmountEqualsMinor("1299.5", 129950)).toBe(true)
+  expect(tamiAmountEqualsMinor("2", 100)).toBe(false)
+  expect(tamiAmountEqualsMinor("abc", 100)).toBe(false)
+  expect(tamiAmountEqualsMinor("", 100)).toBe(false)
 })
 
 test("luhnCheck: geçerli/geçersiz kart numaraları", () => {

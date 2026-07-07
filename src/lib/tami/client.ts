@@ -2,11 +2,11 @@ import type { TamiConfig } from "./config"
 import { TAMI_ERROR_MESSAGES, TamiError, sanitizeForLog } from "./errors"
 import { buildAuthToken, signSecurityHash } from "./hash"
 import type {
-  TamiAuth3dsInput,
   TamiAuth3dsResponse,
   TamiCancelInput,
   TamiClient,
   TamiComplete3dsResponse,
+  TamiPaymentBody,
   TamiQueryInput,
   TamiQueryResponse,
   TamiRefundInput,
@@ -87,10 +87,11 @@ async function postJson<TResp>(path: string, body: Record<string, unknown>, cfg:
 /** Gerçek TAMI sanal POS istemcisi — sandbox/production ortak fetch wrapper'ı. */
 export function createTamiClient(cfg: TamiConfig): TamiClient {
   return {
-    async auth3ds(input: TamiAuth3dsInput): Promise<TamiAuth3dsResponse> {
-      const body = { ...input, paymentGroup: input.paymentGroup ?? "PRODUCT" }
-      const securityHash = await signSecurityHash(body, cfg)
-      return postJson<TamiAuth3dsResponse>("/payment/auth", { ...body, securityHash }, cfg)
+    async auth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse> {
+      // Gövde tam olarak buildTamiPaymentBody'den gelir — alan-alan varsayılan
+      // kurulumu artık burada YAPILMAZ (tek doğruluk kaynağı request-builder.ts).
+      const securityHash = await signSecurityHash(input, cfg)
+      return postJson<TamiAuth3dsResponse>("/payment/auth", { ...input, securityHash }, cfg)
     },
 
     async complete3ds(orderId: string): Promise<TamiComplete3dsResponse> {

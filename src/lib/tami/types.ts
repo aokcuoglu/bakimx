@@ -3,6 +3,10 @@
  * Alan adları dev.tami.com.tr dokümanlarından doğrulanmıştır (bkz. task raporu).
  */
 
+// Tip-only import: runtime'da izi kalmaz, request-builder.ts'nin bu dosyadan TamiCard
+// tip-only import'uyla oluşturduğu döngü zararsızdır (her iki yönde de `import type`).
+import type { buildTamiPaymentBody } from "./request-builder"
+
 export type TamiEnvName = "sandbox" | "production"
 
 export type TamiPaymentChannel = "WEB" | "MOBILE" | "MOBILE_WEB"
@@ -19,50 +23,6 @@ export interface TamiCard {
   cvv: string
 }
 
-export interface TamiBuyer {
-  buyerId: string
-  name: string
-  surName: string
-  ipAddress: string
-  emailAddress: string
-  phoneNumber: string
-  identityNumber?: string
-  city?: string
-  country?: string
-  zipCode?: string
-  registrationAddress?: string
-  registrationDate?: string
-  lastLoginDate?: string
-}
-
-export interface TamiAddress {
-  address: string
-  city: string
-  country: string
-  district?: string
-  zipCode?: string
-  contactName?: string
-  companyName?: string
-  emailAddress?: string
-  phoneNumber?: string
-}
-
-export interface TamiBasketItem {
-  itemId: string
-  name: string
-  itemType: "PHYSICAL" | "VIRTUAL"
-  numberOfProducts: number
-  unitPrice: number
-  totalPrice: number
-  category?: string
-  subCategory?: string
-}
-
-export interface TamiBasket {
-  basketId?: string
-  basketItems?: TamiBasketItem[]
-}
-
 export interface TamiCardSummary {
   binNumber: string
   maskedNumber: string
@@ -71,21 +31,13 @@ export interface TamiCardSummary {
   cardType: string
 }
 
-/** `/payment/auth` isteği (securityHash imzalanmadan önceki hali). */
-export interface TamiAuth3dsInput {
-  orderId: string
-  amount: number
-  currency: "TRY"
-  installmentCount: number
-  paymentGroup?: string
-  paymentChannel?: TamiPaymentChannel
-  callbackUrl: string
-  card: TamiCard
-  buyer: TamiBuyer
-  billingAddress?: TamiAddress
-  shippingAddress?: TamiAddress
-  basket?: TamiBasket
-}
+/**
+ * `/payment/auth` (ve `/payment/pre-auth`) isteği (securityHash imzalanmadan önceki hali).
+ * Elle yazılmış bir arayüz DEĞİL — canlı sandbox'ta doğrulanan gerçek gövde şeklini üreten
+ * `buildTamiPaymentBody`'nin dönüş tipinden türetilir, böylece istek tipi ile fiili wire
+ * şeması birbirinden asla sapmaz. Bkz. request-builder.ts.
+ */
+export type TamiPaymentBody = ReturnType<typeof buildTamiPaymentBody>
 
 export interface TamiAuth3dsResponse {
   success: boolean
@@ -190,7 +142,7 @@ export interface TamiCallbackPayload extends TamiCallbackHashFields {
 }
 
 export interface TamiClient {
-  auth3ds(input: TamiAuth3dsInput): Promise<TamiAuth3dsResponse>
+  auth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse>
   complete3ds(orderId: string): Promise<TamiComplete3dsResponse>
   cancel(input: TamiCancelInput): Promise<TamiReverseResponse>
   refund(input: TamiRefundInput): Promise<TamiReverseResponse>

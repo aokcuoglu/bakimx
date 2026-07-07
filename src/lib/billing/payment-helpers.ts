@@ -21,6 +21,18 @@ export function minorToTamiAmountString(amountMinor: number): string {
 }
 
 /**
+ * Callback txnAmount ("1" | "1.00" | "1299.5") ↔ kuruş eşitliği; parse edilemeyen → false.
+ * Canlı yakalanan callback wire'ı ondalıksız/serbest biçimli sayı string'i gönderir
+ * ("1", "1299.5") — sabit 2-ondalık string karşılaştırması (minorToTamiAmountString)
+ * YERİNE sayısal karşılaştırma kullanılır (bkz. callback-capture.json).
+ */
+export function tamiAmountEqualsMinor(wire: string, amountMinor: number): boolean {
+  const n = Number(wire)
+  if (!Number.isFinite(n) || wire.trim() === "") return false
+  return Math.round(n * 100) === Math.round(amountMinor)
+}
+
+/**
  * TAMI'ye giden `orderId` (= PaymentTransaction.providerOrderId). Deneme başına
  * BENZERSİZ olmalı (aynı BillingOrder retry alabilir) ve 2-36 karakter sığmalı.
  * Sipariş referansı + 12 hex rastgele: `BX-XXXXXX-<12 hex>` (~22 kar.). cuid'in

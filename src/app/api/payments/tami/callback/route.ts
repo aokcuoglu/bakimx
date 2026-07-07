@@ -7,7 +7,7 @@ import { TamiError, TAMI_ERROR_MESSAGES, sanitizeForLog } from "@/lib/tami/error
 import { MOCK_SECRET_KEY } from "@/lib/tami/mock"
 import type { TamiCallbackHashFields } from "@/lib/tami/types"
 import { activateBillingOrder } from "@/lib/billing/activate"
-import { minorToTamiAmountString, resolveClientIp } from "@/lib/billing/payment-helpers"
+import { tamiAmountEqualsMinor, resolveClientIp } from "@/lib/billing/payment-helpers"
 import { founderAlertEmail, paymentReceiptEmail } from "@/lib/emails/system-emails"
 import { sendEmailDirect } from "@/lib/communications/sender"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -188,18 +188,18 @@ export async function POST(request: Request) {
   // complete3ds → aktivasyon.
   if (mdStatus === "1" && successTruthy) {
     // Tutar/para birimi, çekimden ÖNCE txn snapshot'ına karşı doğrulanır.
-    // txnAmount wire formatı: tam 2 ondalıklı string ("7499.00") — mock
-    // `input.amount.toFixed(2)` gönderir, karşılaştırma bu EXACT formata karşı.
+    // txnAmount wire formatı canlı sandbox'ta SAYISAL biçimli string'dir ("1", "1299.5" —
+    // tam 2 ondalıklı DEĞİL); karşılaştırma bu yüzden EXACT string yerine sayısal eşitlik
+    // (tamiAmountEqualsMinor) ile yapılır (bkz. callback-capture.json).
     // currencyCode: mock alfabetik "TRY" gönderir → txn.currency ile birebir;
     // gerçek TAMI wire ISO 4217 sayısal kod kullanırsa diye TRY için "949" da
     // kabul edilir (sandbox'ta canlı teyit edilmedi — raporda not).
-    const expectedAmount = minorToTamiAmountString(txn.amountMinor)
     const currencyOk =
       raw.currencyCode === txn.currency || (txn.currency === "TRY" && raw.currencyCode === "949")
-    if (raw.txnAmount !== expectedAmount || !currencyOk) {
+    if (!tamiAmountEqualsMinor(raw.txnAmount ?? "", txn.amountMinor) || !currencyOk) {
       console.warn(
         "[payments/callback] tutar/para birimi uyuşmazlığı:",
-        sanitizeForLog({ providerOrderId, txnAmount: raw.txnAmount, currencyCode: raw.currencyCode, expectedAmount, expectedCurrency: txn.currency })
+        sanitizeForLog({ providerOrderId, txnAmount: raw.txnAmount, currencyCode: raw.currencyCode, expectedAmountMinor: txn.amountMinor, expectedCurrency: txn.currency })
       )
       await prisma.paymentTransaction.update({
         where: { id: txn.id },

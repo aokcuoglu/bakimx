@@ -8,9 +8,9 @@ import { getTamiClient } from "@/lib/tami"
 import { isTamiConfigured } from "@/lib/tami/config"
 import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
-import type { TamiAuth3dsInput } from "@/lib/tami/types"
+import { buildTamiPaymentBody } from "@/lib/tami/request-builder"
+import { getPlanPackage } from "@/lib/plans-catalog"
 import {
-  minorToTamiAmount,
   generateProviderOrderId,
   resolveClientIp,
   splitName,
@@ -167,14 +167,14 @@ export async function POST(request: Request) {
     },
   })
 
-  // 6) TAMI 3DS auth çağrısı — tutar order.amountMinor'dan türetilir.
-  const auth: TamiAuth3dsInput = {
+  // 6) TAMI 3DS auth çağrısı — gövde tek doğruluk kaynağı buildTamiPaymentBody'den
+  // gelir (canlı sandbox'ta doğrulanan gerçek wire şeması); tutar order.amountMinor'dan
+  // türetilir (client'tan asla).
+  const planLabel = getPlanPackage(order.planTier)?.name ?? order.planTier
+  const cycleLabel = order.billingCycle === "monthly" ? "Aylık" : "Yıllık"
+  const auth = buildTamiPaymentBody({
     orderId: providerOrderId,
-    amount: minorToTamiAmount(order.amountMinor),
-    // Sipariş para biriminden (DB default "TRY"); TamiAuth3dsInput tipi şimdilik
-    // yalnız "TRY" literal'ını tanıdığı için daraltma cast'i gerekiyor.
-    currency: order.currency as TamiAuth3dsInput["currency"],
-    installmentCount: 1,
+    amountMinor: order.amountMinor,
     callbackUrl: `${appOrigin(request)}/api/payments/tami/callback`,
     card: {
       number: card.number,
@@ -183,22 +183,18 @@ export async function POST(request: Request) {
       expireYear: card.expireYear,
       cvv: card.cvv,
     },
-    buyer: {
-      buyerId: order.workshopId,
+    contact: {
       name: ownerName.name,
       surName: ownerName.surName,
-      ipAddress: buyerIp,
-      emailAddress: email,
-      phoneNumber: phone,
-    },
-    billingAddress: {
-      address: snap("address") || workshop.address || "-",
-      city: workshop.city || "-",
-      country: "Türkiye",
-      contactName: `${ownerName.name} ${ownerName.surName}`.trim(),
+      email,
+      phone,
+      ip: buyerIp,
+      city: workshop.city || undefined,
+      address: snap("address") || workshop.address || undefined,
       companyName: snap("invoiceTitle") || workshop.name,
     },
-  }
+    basketItemName: `${planLabel} · ${cycleLabel}`,
+  })
 
   try {
     const res = await getTamiClient().auth3ds(auth)
