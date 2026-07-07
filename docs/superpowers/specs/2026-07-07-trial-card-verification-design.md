@@ -67,6 +67,24 @@ gövdesi de buna göre düzeltilmeli** (mock her şeyi kabul ettiği için fark 
   04/27 CVV 423 (Garanti), 4938… 12/29, 4155… 01/50, 4543… 09/27, 5127… 01/35.
 - TAMI resmi örnek zip'indeki 77006950 JWK'sı eski (4046 veriyor) — JWK'lar portaldan güncel alınmalı.
 
+### CANLI DOĞRULAMA TURU 2 (77006950 güncel JWK ile — HEPSİ GEÇTİ)
+- `/payment/auth` VE `/payment/pre-auth` 3DS initiation → success:true + threeDSHtmlContent ✓
+- GERÇEK banka callback'i yakalandı (yerel dinleyici): alanlar callbackStatus, success,
+  systemTime (nanosaniyeli ISO), orderId, cardBrand (banka adı!), cardOrganization
+  (MASTERCARD), cardType, maskedNumber ("54066975****73" — 8+4 maskeleme), installmentCount,
+  currencyCode, txnAmount, mdStatus, mdErrorMessage, hashedData, callbackUrl, `hashParams`
+  (bankanın kendisi hash girdi sırasını söylüyor:
+  cardOrganization+cardBrand+cardType+maskedNumber+installmentCount+currencyCode+txnAmount+orderId+systemTime+success).
+- **verifyCallbackHash GERÇEK payload'da TRUE** — HMAC formülümüz birebir doğru ✓
+- ⚠️ KRİTİK DÜZELTME: `txnAmount` telde **"1"** gelir ("1.00" değil) → callback route'taki
+  amount_mismatch karşılaştırması exact-string yerine SAYISAL eşdeğerlik (kuruşa çevirip
+  karşılaştır) olmalı; mevcut hâliyle her gerçek ödemeyi yanlış reddederdi. Mock da "1"
+  formatını taklit etmeli.
+- AÇIK KONU: banka simülatörlerinin 3DS OTP kodu dokümante değil (Garanti kartında 3DS
+  telefonu tanımsız; İş Bankası sim 6 haneli OTP istiyor, 147852/123456 değil) → mdStatus=1
+  + complete-3ds + reverse canlı testi bu OTP öğrenilene dek açık; TAMI destek'e sorulacak.
+  Mekanizma satış akışıyla aynı olduğundan geliştirmeyi BLOKLAMAZ.
+
 ## Hata yönetimi
 - 3DS başarısız / kart red → txn failed + sonuç sayfasında Türkçe hata + aynı kayıtla tekrar dene.
 - complete başarılı ama reverse başarısız → doğrulama YİNE BAŞARILI sayılır (kart doğrulandı),
