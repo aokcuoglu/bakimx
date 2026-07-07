@@ -57,7 +57,10 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
         workshopName: workshop.name,
         trialEndsAt,
       })
-      // templateKey "welcome_trial" — sendSystemEmail CommunicationLog ile ayrıca dedup eder.
+      // Tek-gönderim garantisi CLAIM-GUARD'dır: bu blok yalnız claimed===1
+      // (gerçek pending→approved geçişi) olunca çalışır, dolayısıyla welcome
+      // e-postası workshop başına bir kez gider. (sendSystemEmail'in kendisi
+      // CommunicationLog ile dedup ETMEZ.)
       await sendSystemEmail({
         to,
         subject: built.subject,

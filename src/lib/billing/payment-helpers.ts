@@ -12,19 +12,10 @@ export function minorToTamiAmount(amountMinor: number): number {
 }
 
 /**
- * Kuruş → callback wire formatındaki txnAmount string'i ("7499.00"). Banka/mock
- * txnAmount'u tam 2 ondalıklı string gönderir (mock: `input.amount.toFixed(2)`);
- * callback tarafındaki tutar karşılaştırması bu EXACT formata karşı yapılır.
- */
-export function minorToTamiAmountString(amountMinor: number): string {
-  return minorToTamiAmount(amountMinor).toFixed(2)
-}
-
-/**
  * Callback txnAmount ("1" | "1.00" | "1299.5") ↔ kuruş eşitliği; parse edilemeyen → false.
  * Canlı yakalanan callback wire'ı ondalıksız/serbest biçimli sayı string'i gönderir
- * ("1", "1299.5") — sabit 2-ondalık string karşılaştırması (minorToTamiAmountString)
- * YERİNE sayısal karşılaştırma kullanılır (bkz. callback-capture.json).
+ * ("1", "1299.5") — sabit 2-ondalık string karşılaştırması YERİNE sayısal
+ * karşılaştırma kullanılır (bkz. callback-capture.json).
  */
 export function tamiAmountEqualsMinor(wire: string, amountMinor: number): boolean {
   const n = Number(wire)
