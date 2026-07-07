@@ -15,7 +15,7 @@ import {
 const trustItems = [
   "Kurulum gerektirmez",
   "7 gün ücretsiz",
-  "Kredi kartı gerekmez",
+  "Deneme süresince ücret yok",
 ];
 
 export function HeroSection() {
@@ -78,7 +78,8 @@ export function HeroSection() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground">
-                Kayıt olduğunuzda 7 günlük deneme anında başlar.
+                Kart doğrulamasının ardından 7 günlük denemeniz anında başlar
+                (1 TL iade edilen kart doğrulaması).
               </p>
               <a
                 href="#ruhsat-demo"
