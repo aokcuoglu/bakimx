@@ -7,7 +7,8 @@ import { getPlanPackage } from "@/lib/plans-catalog"
 import { TAMI_ERROR_MESSAGES } from "@/lib/tami/errors"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
-import { readVerifyToken } from "@/lib/billing/verify-token"
+import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
+import { readVerifyToken, createVerifyToken } from "@/lib/billing/verify-token"
 import type { PlanTier } from "@/lib/plan"
 
 export const metadata: Metadata = {
@@ -174,14 +175,19 @@ async function VerifyResultView({ vref, err }: { vref: string; err: string | nul
     )
   }
 
-  // 3) Pending + son deneme başarısız / hiç yok → hata + yeniden dene bilgisi.
-  //    (Yeniden doğrulama paneli register/kilit ekranından gelir — Task 4.)
+  // 3) Pending + son deneme başarısız / hiç yok → hata + yeniden dene paneli.
   let errorMessage = "Kart doğrulaması tamamlanamadı."
   if (err === "card") errorMessage = "Kart bilgilerini kontrol edip yeniden deneyin."
   else if (err === "rate") errorMessage = "Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin."
   else if (err === "config")
     errorMessage = "Kart doğrulama şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin."
   else if (err === "vtoken") errorMessage = "Doğrulama bağlantısı geçersiz veya süresi dolmuş."
+
+  // Hâlâ pending ise doğrulama TAZE bir token ile bu sayfadan yeniden denenebilir
+  // (mevcut vref süresi dolmuş olabilir — server-side yeniden imzala). Onaylanmışsa
+  // 1. dal döndü; buraya yalnız gerçekten tamamlanmamış doğrulama gelir.
+  const canRetry = workshop?.approvalStatus === "pending"
+  const freshToken = canRetry ? createVerifyToken(workshopId) : null
 
   return (
     <Shell>
@@ -196,9 +202,15 @@ async function VerifyResultView({ vref, err }: { vref: string; err: string | nul
         )}
         <p className="mt-6 flex items-start gap-2 text-xs text-muted-foreground">
           <Clock className="mt-0.5 size-4 shrink-0" />
-          <span>Kartınızı doğrulamak için kayıt adımına dönüp tekrar deneyebilirsiniz.</span>
+          <span>Kartınızı doğrulamak için aşağıdan tekrar deneyebilirsiniz.</span>
         </p>
       </div>
+
+      {freshToken && (
+        <div className="mt-6 border-t pt-6">
+          <VerifyCardPanel vtoken={freshToken} />
+        </div>
+      )}
     </Shell>
   )
 }
