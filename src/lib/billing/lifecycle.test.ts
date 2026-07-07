@@ -5,6 +5,7 @@ import {
   subscriptionTemplateKey,
   shouldCancelStaleOrder,
   shouldPurgeUnverifiedWorkshop,
+  resolvePurgeLegacyCutoff,
 } from "./lifecycle"
 
 const TRIAL_THRESHOLDS = [3, 1, 0]
@@ -167,4 +168,28 @@ test("shouldPurgeUnverifiedWorkshop", () => {
   // aktivasyon tamamlanmamış) retryStuckActivation ile kurtarılabilir kalmalı;
   // silmek hem banka blokesini sahipsiz bırakır hem kurtarılacak satırı yok eder.
   expect(shouldPurgeUnverifiedWorkshop({ ...base, liveVerificationTxnCount: 1 }, hoursAgo(999))).toBe(false)
+})
+
+// ---- resolvePurgeLegacyCutoff (TRIAL_PURGE_CUTOFF env override) ----
+
+const FALLBACK = new Date("2026-07-07T00:00:00Z")
+
+test("resolvePurgeLegacyCutoff: geçerli ISO env değeri kullanılır (gerçek deploy anına ayarlanabilir)", () => {
+  const override = "2026-09-01T00:00:00Z"
+  expect(resolvePurgeLegacyCutoff(override, FALLBACK).getTime()).toBe(new Date(override).getTime())
+})
+
+test("resolvePurgeLegacyCutoff: yalnız tarih (saatsiz) ISO da kabul edilir", () => {
+  expect(resolvePurgeLegacyCutoff("2026-08-15", FALLBACK).getTime()).toBe(new Date("2026-08-15").getTime())
+})
+
+test("resolvePurgeLegacyCutoff: env yoksa/boşsa gömülü varsayılana düşer", () => {
+  expect(resolvePurgeLegacyCutoff(undefined, FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("   ", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+})
+
+test("resolvePurgeLegacyCutoff: çöp/geçersiz env değeri varsayılana düşer (gerçek başvuruları koru)", () => {
+  expect(resolvePurgeLegacyCutoff("not-a-date", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("2026-13-99", FALLBACK).getTime()).toBe(FALLBACK.getTime())
 })

@@ -401,8 +401,29 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
 /** Kart doğrulaması hiç yayına girmeden önce (legacy) yaratılmış pending
  *  workshoplar süpürmeye ASLA dahil edilmez — bu tarihten sonra yaratılan
  *  workshoplar kart-doğrulama gate'ine tabidir, öncekiler farklı (admin
- *  onaylı) bir akıştan gelir ve gerçek başvuru olabilir. */
-const PURGE_LEGACY_CUTOFF = new Date("2026-07-07T00:00:00Z")
+ *  onaylı) bir akıştan gelir ve gerçek başvuru olabilir.
+ *
+ *  Gömülü varsayılan. GERÇEK prod deploy tarihi bundan sonraya kayabilir (ve
+ *  eski register akışı hâlâ bu tarihten sonra pending kayıt yaratabilir); o
+ *  yüzden gerçek deploy anı `TRIAL_PURGE_CUTOFF` (ISO tarih) env'i ile
+ *  ezilebilir — aksi hâlde eski akıştan gelen gerçek başvurular 48s sonra
+ *  silinebilir (bkz. DEPLOY.md GO-LIVE). */
+const PURGE_LEGACY_CUTOFF_FALLBACK = new Date("2026-07-07T00:00:00Z")
+
+/**
+ * `TRIAL_PURGE_CUTOFF` env değerini çözer (saf/test edilebilir): geçerli bir ISO
+ * tarih ise onu, yoksa/geçersiz/boş ise gömülü varsayılanı döndürür.
+ */
+export function resolvePurgeLegacyCutoff(
+  raw: string | undefined,
+  fallback: Date = PURGE_LEGACY_CUTOFF_FALLBACK,
+): Date {
+  if (!raw || !raw.trim()) return fallback
+  const parsed = new Date(raw.trim())
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed
+}
+
+const PURGE_LEGACY_CUTOFF = resolvePurgeLegacyCutoff(process.env.TRIAL_PURGE_CUTOFF)
 /** Doğrulanmamış bir kaydın "terk edilmiş" sayılması için geçmesi gereken süre. */
 const PURGE_STALE_MS = 48 * HOUR_MS
 

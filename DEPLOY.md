@@ -150,6 +150,10 @@ gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden 
    (TAMI portalından doğrula) → workshop `approved`+`trialing`. `cancel` başarısız senaryosu da
    ayrıca doğrulanmış olmalı (founder alert gider, akış BOZULMAZ — bkz. `verify-activation.ts`).
 8. `TAMI_ENV=production` **EN SON** değiştirilir (sandbox'ta doğrulama bitmeden asla).
+9. **PROD-MERGE öncesi:** `TRIAL_PURGE_CUTOFF`'u gerçek prod deploy zamanına ayarla (VPS
+   `.env.production`) VEYA deploy anında 2026-07-07 sonrası oluşmuş pending workshop olmadığını
+   doğrula — aksi hâlde eski akıştan gelen gerçek başvurular 48s sonra silinir (bkz.
+   `lifecycle.ts` `PURGE_LEGACY_CUTOFF` / `resolvePurgeLegacyCutoff`).
 
 ---
 
