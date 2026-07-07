@@ -144,7 +144,12 @@ gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden 
    `reminders` job'ını özetler; billing görünürlüğü follow-up.
 5. Founder alert e-postası test edilmiş (hash doğrulama hatası / aktivasyon başarısız senaryosu).
 6. `EMAIL_PROVIDER=resend` aktif — makbuz ve uyarı e-postaları gerçek adrese gitmeli.
-7. `TAMI_ENV=production` **EN SON** değiştirilir (sandbox'ta doğrulama bitmeden asla).
+7. **1 TL kart doğrulama** (register akışı — pre-auth3ds + anında iptal) sandbox'ta uçtan uca
+   test edilmiş: kayıt → `/api/payments/tami/verify/initiate` → banka 3DS ekranı (OTP TAMI
+   destekten öğrenilecek) → callback başarı → 1 TL bloke aynı anda `cancel` ile düşürülüyor
+   (TAMI portalından doğrula) → workshop `approved`+`trialing`. `cancel` başarısız senaryosu da
+   ayrıca doğrulanmış olmalı (founder alert gider, akış BOZULMAZ — bkz. `verify-activation.ts`).
+8. `TAMI_ENV=production` **EN SON** değiştirilir (sandbox'ta doğrulama bitmeden asla).
 
 ---
 

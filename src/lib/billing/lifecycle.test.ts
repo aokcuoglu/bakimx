@@ -4,6 +4,7 @@ import {
   trialTemplateKey,
   subscriptionTemplateKey,
   shouldCancelStaleOrder,
+  shouldPurgeUnverifiedWorkshop,
 } from "./lifecycle"
 
 const TRIAL_THRESHOLDS = [3, 1, 0]
@@ -140,4 +141,24 @@ test("shouldCancelStaleOrder: tüm transaction'lar terminal ve 24 saatten eski �
       NOW,
     ),
   ).toBe(true)
+})
+
+// ---- shouldPurgeUnverifiedWorkshop ----
+
+// özellik yayın tarihi; öncesi legacy pending (bu tarihten önce yaratılmış
+// pending workshoplar kart-doğrulama akışından ÖNCEKİ dönemden kalma —
+// süpürmeye ASLA dahil edilmez, aksi halde eski/gerçek başvurular silinir).
+const CUTOFF = new Date("2026-07-07T00:00:00Z")
+test("shouldPurgeUnverifiedWorkshop", () => {
+  const base = { approvalStatus: "pending", trialStartedAt: null, createdAt: new Date("2026-07-08"),
+    billingOrderCount: 0, serviceOrderCount: 0 }
+  // Bu test grubüne özel "hoursAgo": kaydın KENDİ createdAt'ına göre N saat
+  // sonrası (dosya başındaki paylaşılan hoursAgo/NOW ile karıştırılmasın —
+  // o farklı bir sabit ana referans noktasını temel alır).
+  const hoursAgo = (n: number) => new Date(base.createdAt.getTime() + n * HOUR)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base }, hoursAgo(49))).toBe(true)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base }, hoursAgo(1))).toBe(false)          // taze
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, createdAt: new Date(CUTOFF.getTime() - HOUR) }, hoursAgo(999))).toBe(false) // legacy
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, billingOrderCount: 1 }, hoursAgo(99))).toBe(false)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, trialStartedAt: new Date() }, hoursAgo(99))).toBe(false)
 })

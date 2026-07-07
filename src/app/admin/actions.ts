@@ -7,6 +7,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
+import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -240,11 +241,35 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
   if (txn.status !== "callback_received") {
     return { ok: false, error: "Bu işlem kurtarma için uygun durumda değil." }
   }
+
   // Kart doğrulama denemelerinin (purpose=card_verification) siparişi yoktur —
-  // bu ekran yalnız sipariş aktivasyonunu kurtarır. Doğrulama akışının kendi
-  // kurtarma dalı Task 5'te eklenecek (bkz. plan: retryStuckActivation purpose dalı).
+  // ayrı bir dal: activateVerifiedWorkshop çağırır (claim-guard'lı, replay-safe).
+  // Aynı "yalnız callback_received'dan completed'a" disiplinini korur.
+  if (txn.purpose === "card_verification") {
+    const activation = await activateVerifiedWorkshop(txn.workshopId)
+    if (!activation.ok) {
+      return { ok: false, error: "Doğrulama aktivasyonu başarısız oldu — tekrar deneyin." }
+    }
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ purpose: "card_verification", result: "activated" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
   if (!txn.billingOrderId) {
-    return { ok: false, error: "Bu işlem bir siparişe bağlı değil (kart doğrulama denemesi) — bu ekrandan kurtarılamıyor." }
+    return { ok: false, error: "Bu işlem bir siparişe bağlı değil — bu ekrandan kurtarılamıyor." }
   }
 
   const activation = await activateBillingOrder(txn.billingOrderId, {

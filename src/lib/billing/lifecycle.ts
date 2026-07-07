@@ -397,3 +397,116 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
 
   return result
 }
+
+/** Kart doğrulaması hiç yayına girmeden önce (legacy) yaratılmış pending
+ *  workshoplar süpürmeye ASLA dahil edilmez — bu tarihten sonra yaratılan
+ *  workshoplar kart-doğrulama gate'ine tabidir, öncekiler farklı (admin
+ *  onaylı) bir akıştan gelir ve gerçek başvuru olabilir. */
+const PURGE_LEGACY_CUTOFF = new Date("2026-07-07T00:00:00Z")
+/** Doğrulanmamış bir kaydın "terk edilmiş" sayılması için geçmesi gereken süre. */
+const PURGE_STALE_MS = 48 * HOUR_MS
+
+export interface PurgeCandidateWorkshop {
+  approvalStatus: string
+  trialStartedAt: Date | null
+  createdAt: Date
+  billingOrderCount: number
+  serviceOrderCount: number
+}
+
+/**
+ * Saf çekirdek: bir workshop'un "doğrulamasız terk edilmiş kayıt" olarak
+ * SİLİNİP silinemeyeceğine karar verir — bu bir DELETE'in güvenlik sınırıdır,
+ * yalnız TÜMÜ birden sağlanınca true döner:
+ *  1. approvalStatus hâlâ "pending" (asla approved/rejected bir workshop'a dokunma),
+ *  2. trialStartedAt null (kart doğrulaması hiç tamamlanmamış — dolayısıyla
+ *     activateVerifiedWorkshop asla çalışmamış),
+ *  3. createdAt >= PURGE_LEGACY_CUTOFF (özellik yayınından SONRA yaratılmış —
+ *     legacy/admin-akışlı pending kayıtlar asla süpürülmez),
+ *  4. createdAt en az 48 saat önce (kullanıcıya kart adımını tamamlaması için
+ *     makul süre tanınır; taze kayıtlar dokunulmaz),
+ *  5. billingOrderCount === 0 VE serviceOrderCount === 0 (herhangi bir iz
+ *     bırakmış workshop ASLA silinmez — bu imkansız olmalı zira pending
+ *     workshoplar uygulamaya erişemez, ama çift güvenlik).
+ */
+export function shouldPurgeUnverifiedWorkshop(w: PurgeCandidateWorkshop, now: Date): boolean {
+  if (w.approvalStatus !== "pending") return false
+  if (w.trialStartedAt !== null) return false
+  if (w.createdAt.getTime() < PURGE_LEGACY_CUTOFF.getTime()) return false
+  if (w.billingOrderCount > 0 || w.serviceOrderCount > 0) return false
+  return now.getTime() - w.createdAt.getTime() >= PURGE_STALE_MS
+}
+
+/**
+ * Kart doğrulamasını hiç tamamlamamış, 48 saatten eski, terk edilmiş
+ * self-serve kayıtları siler (DB temizliği — kalıcı e-posta rezervasyonu
+ * bırakmasın diye). Yalnız gerçekten dokunulmamış (sıfır sipariş/iş emri)
+ * workshoplar hedeflenir; şüpheli bir satır bulunsa bile o workshop
+ * ATLANIR (silme değil, sonraki turda tekrar değerlendirilir).
+ *
+ * Silme sırası FK'lere uyar (çocuktan ebeveyne): PaymentTransaction (denormalize
+ * workshopId, gerçek FK yok ama tutarlılık için) → CommunicationLog → AuditLog →
+ * WorkshopFeatureOverride → Invite (User'a da FK'li, User'dan ÖNCE silinir) →
+ * WorkshopSettings → User → Workshop. schema.prisma'daki Workshop'a FK'li ~30
+ * diğer model (Customer/Vehicle/ServiceOrder/...) uygulamaya erişim gerektirir;
+ * pending+doğrulamasız bir workshop hiçbir zaman bu tabloları dolduramaz
+ * (approval gate uygulamayı kilitler) — yine de beklenmedik bir FK çakışması
+ * olursa o workshop'un silinmesi try/catch ile başarısız sayılıp atlanır,
+ * tüm süpürme ÇÖKMEZ.
+ */
+export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResult> {
+  const result = newResult()
+  const now = new Date()
+  const staleCutoff = new Date(now.getTime() - PURGE_STALE_MS)
+
+  const candidates = await prisma.workshop.findMany({
+    where: {
+      approvalStatus: "pending",
+      trialStartedAt: null,
+      createdAt: { gte: PURGE_LEGACY_CUTOFF, lt: staleCutoff },
+    },
+    select: {
+      id: true,
+      email: true,
+      approvalStatus: true,
+      trialStartedAt: true,
+      createdAt: true,
+      _count: { select: { billingOrders: true, orders: true } },
+    },
+  })
+
+  for (const w of candidates) {
+    result.processed++
+    const eligible = shouldPurgeUnverifiedWorkshop(
+      {
+        approvalStatus: w.approvalStatus,
+        trialStartedAt: w.trialStartedAt,
+        createdAt: w.createdAt,
+        billingOrderCount: w._count.billingOrders,
+        serviceOrderCount: w._count.orders,
+      },
+      now,
+    )
+    if (!eligible) continue
+
+    try {
+      await prisma.$transaction([
+        prisma.paymentTransaction.deleteMany({ where: { workshopId: w.id } }),
+        prisma.communicationLog.deleteMany({ where: { workshopId: w.id } }),
+        prisma.auditLog.deleteMany({ where: { workshopId: w.id } }),
+        prisma.workshopFeatureOverride.deleteMany({ where: { workshopId: w.id } }),
+        prisma.invite.deleteMany({ where: { workshopId: w.id } }),
+        prisma.workshopSettings.deleteMany({ where: { workshopId: w.id } }),
+        prisma.user.deleteMany({ where: { workshopId: w.id } }),
+        prisma.workshop.delete({ where: { id: w.id } }),
+      ])
+      result.sent++
+      console.info(`[sweepUnverifiedRegistrations] silindi: workshopId=${w.id} email=${w.email ?? "—"}`)
+    } catch (error) {
+      result.failed++
+      result.errors.push(`purge ${w.id}: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)
+    }
+  }
+
+  return result
+}
