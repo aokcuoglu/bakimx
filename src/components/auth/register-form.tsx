@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin, CheckCircle2 } from "lucide-react"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -14,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { formatPhoneTR } from "@/lib/format"
 import { TR_CITIES } from "@/lib/tr-cities"
+import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -27,7 +27,7 @@ export function RegisterForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [verifyToken, setVerifyToken] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -48,8 +48,8 @@ export function RegisterForm() {
         body: formData,
       })
       const data = await res.json()
-      if (data.success) {
-        setSubmitted(true)
+      if (data.ok && data.verifyToken) {
+        setVerifyToken(data.verifyToken)
       } else {
         setError(data.error || "Kayıt başarısız")
       }
@@ -60,20 +60,23 @@ export function RegisterForm() {
     }
   }
 
-  if (submitted) {
+  // Kayıt başarılı → son adım: kartı doğrula (kartsız hesap kullanılamaz; "daha
+  // sonra doğrula" yolu yoktur). Doğrulama başarıya ulaşınca 7 günlük deneme başlar.
+  if (verifyToken) {
     return (
-      <motion.div variants={formVariants} initial="hidden" animate="visible" className="w-full text-center">
-        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="size-7 text-primary" />
+      <motion.div variants={formVariants} initial="hidden" animate="visible" className="w-full">
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
+            <CheckCircle2 className="size-7 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Son adım: kartınızı doğrulayın
+          </h1>
+          <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+            Kartınızı doğruladığınızda 7 günlük ücretsiz denemeniz başlar.
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Hesabınız hazır</h1>
-        <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-          <span className="font-medium text-foreground">7 günlük ücretsiz deneme</span> süreniz başladı. Hemen
-          giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.
-        </p>
-        <Link href="/login" className={cn(buttonVariants({ size: "xl" }), "mt-7 w-full")}>
-          Giriş yap
-        </Link>
+        <VerifyCardPanel vtoken={verifyToken} />
       </motion.div>
     )
   }
@@ -85,7 +88,7 @@ export function RegisterForm() {
           BakimX hesabınızı oluşturun
         </h1>
         <p className="mt-2 text-muted-foreground text-sm lg:text-base">
-          7 gün ücretsiz deneyin — kredi kartı gerekmez.
+          Kart doğrulamasının ardından 7 günlük ücretsiz deneme başlar.
         </p>
       </div>
 

@@ -5,24 +5,27 @@ import { registerSchema } from "@/lib/validations/auth"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getAdminEmails } from "@/lib/admin"
-import { computeTrialEnd } from "@/lib/plan"
-import { welcomeTrialEmail, newApplicationAdminEmail } from "@/lib/emails/system-emails"
+import { newApplicationAdminEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
+import { createVerifyToken } from "@/lib/billing/verify-token"
+import { canResumeVerification } from "@/lib/billing/verify-resume"
 
 /**
- * Self-serve workshop registration (instant activation).
+ * Self-serve workshop registration (card-verification gated trial).
  *
- * Creates a new isolated Workshop + its first owner User, already `approved`
- * and `trialing` with its 7-day trial started. No admin approval step — the
- * owner can sign in immediately. No session is created here.
+ * Creates a new isolated Workshop + its first owner User in `pending` status
+ * with NO trial started yet — the 7-day trial begins only after the owner
+ * verifies a card via a 1 TL 3DS pre-auth (see activateVerifiedWorkshop). The
+ * welcome e-mail also moved there (single-send). This route returns a signed
+ * `verifyToken` the UI uses to open the card-verification step. No session is
+ * created here.
  */
 
 const REGISTER_MAX_ATTEMPTS = 5
 const REGISTER_WINDOW_MS = 10 * 60_000 // 10 minutes
 
 const GENERIC_ERROR = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
-const READY_MESSAGE =
-  "Hesabınız hazır — 7 günlük ücretsiz deneme süreniz başladı. Giriş yapabilirsiniz."
+const EMAIL_IN_USE_ERROR = "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin."
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
@@ -63,23 +66,39 @@ export async function POST(request: Request) {
 
   const data = parsed.data
 
-  // Reject duplicate e-mail up front with a clear message (also enforced by the
-  // User.email unique constraint inside the transaction below).
+  // Existing e-mail: either an AUTH-BOUNDED resume of an interrupted registration
+  // or the ordinary "e-posta kullanımda" rejection. RESUME only when the supplied
+  // password verifies against the stored hash (same bcrypt.compare login uses) AND
+  // the workshop is still pending with no trial started — otherwise the generic
+  // rejection (wrong password is indistinguishable from a non-resumable account,
+  // so there is no account-takeover path).
   const existing = await prisma.user.findUnique({
     where: { email: data.email },
-    select: { id: true },
+    select: {
+      password: true,
+      workshop: { select: { id: true, approvalStatus: true, trialStartedAt: true } },
+    },
   })
   if (existing) {
-    return NextResponse.json(
-      { error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin." },
-      { status: 409 }
-    )
+    const passwordValid = await bcrypt.compare(data.password, existing.password)
+    if (
+      canResumeVerification({
+        passwordValid,
+        approvalStatus: existing.workshop.approvalStatus,
+        trialStartedAt: existing.workshop.trialStartedAt,
+      })
+    ) {
+      return NextResponse.json({
+        ok: true,
+        resumed: true,
+        verifyToken: createVerifyToken(existing.workshop.id),
+      })
+    }
+    return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
   }
 
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
-    const now = new Date()
-    const trialEndsAt = computeTrialEnd(now)
 
     const workshop = await prisma.$transaction(async (tx) => {
       const ws = await tx.workshop.create({
@@ -89,11 +108,12 @@ export async function POST(request: Request) {
           city: data.city,
           address: data.address,
           email: data.email,
-          // Instant activation: no admin approval gate for self sign-ups.
-          approvalStatus: "approved",
+          // Approval-gated trial: pending until the card is verified. The trial
+          // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
+          approvalStatus: "pending",
           subscriptionStatus: "trialing",
-          trialStartedAt: now,
-          trialEndsAt,
+          trialStartedAt: null,
+          trialEndsAt: null,
           planTier: "pro",
           settings: { create: {} },
         },
@@ -113,13 +133,10 @@ export async function POST(request: Request) {
       return ws
     })
 
-    // Best-effort bildirimler — hata kayıt sonucunu etkilemez.
+    // Best-effort admin bildirimi — hata kayıt sonucunu etkilemez. Karşılama
+    // e-postası BURADA DEĞİL, kart doğrulaması başarıya ulaştığında
+    // activateVerifiedWorkshop içinde tek sefer gönderilir (çifte gönderim yok).
     try {
-      const welcome = welcomeTrialEmail({
-        ownerName: data.firstName,
-        workshopName: data.workshopName,
-        trialEndsAt,
-      })
       const adminMail = newApplicationAdminEmail({
         workshopName: data.workshopName,
         ownerName: `${data.firstName} ${data.lastName}`.trim(),
@@ -127,15 +144,8 @@ export async function POST(request: Request) {
         phone: data.phone,
         city: data.city,
       })
-      await Promise.allSettled([
-        sendSystemEmail({
-          to: data.email,
-          subject: welcome.subject,
-          html: welcome.html,
-          workshopId: workshop.id,
-          templateKey: "welcome_trial",
-        }),
-        ...getAdminEmails().map((to) =>
+      await Promise.allSettled(
+        getAdminEmails().map((to) =>
           sendSystemEmail({
             to,
             subject: adminMail.subject,
@@ -144,20 +154,17 @@ export async function POST(request: Request) {
             templateKey: "new_application_admin",
           }),
         ),
-      ])
+      )
     } catch (mailErr) {
       console.error("[register] notification failed:", mailErr instanceof Error ? mailErr.message : mailErr)
     }
 
-    return NextResponse.json({ success: true, message: READY_MESSAGE })
+    return NextResponse.json({ ok: true, verifyToken: createVerifyToken(workshop.id) })
   } catch (err) {
     // Unique-constraint race (duplicate e-mail) or any other failure.
     const code = (err as { code?: string })?.code
     if (code === "P2002") {
-      return NextResponse.json(
-        { error: "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin." },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
     }
     console.error("[register] failed:", err)
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 })
