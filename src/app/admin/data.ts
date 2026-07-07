@@ -190,7 +190,10 @@ export async function getBillingData(): Promise<BillingData> {
       include: orderInclude,
     }),
     prisma.paymentTransaction.findMany({
-      where: { status: "callback_received" },
+      // purpose: "purchase" — kart doğrulama denemelerinin (card_verification)
+      // billingOrderId'si yoktur; bu ekran yalnız sipariş aktivasyonu kurtarır
+      // (bkz. Task 5: doğrulama takılmaları için ayrı dal).
+      where: { status: "callback_received", purpose: "purchase" },
       orderBy: { createdAt: "desc" },
       include: { billingOrder: { select: { reference: true, workshop: { select: { name: true } } } } },
     }),
@@ -206,15 +209,21 @@ export async function getBillingData(): Promise<BillingData> {
 
   const orderRows: AdminOrderRow[] = pendingOrders.map(toOrderRow)
   const recentOrders: AdminOrderRow[] = recentOrdersRaw.map(toOrderRow)
-  const stuckTransactions: AdminStuckTxnRow[] = stuckTxns.map((t) => ({
-    id: t.id,
-    billingOrderId: t.billingOrderId,
-    workshopName: t.billingOrder.workshop.name,
-    reference: t.billingOrder.reference,
-    providerOrderId: t.providerOrderId,
-    amountLabel: formatMinor(t.amountMinor),
-    createdAt: t.createdAt.toISOString(),
-  }))
+  // where zaten purpose: "purchase" filtreli — billingOrderId/billingOrder her
+  // zaman dolu olmalı; yine de tip daralt (asla `!`): filtre olmayan bir satır
+  // gelirse sessizce atlanır (admin listesinden düşer, hatalı satır göstermez).
+  const stuckTransactions: AdminStuckTxnRow[] = stuckTxns
+    .filter((t): t is typeof t & { billingOrderId: string; billingOrder: NonNullable<typeof t.billingOrder> } =>
+      t.billingOrderId != null && t.billingOrder != null)
+    .map((t) => ({
+      id: t.id,
+      billingOrderId: t.billingOrderId,
+      workshopName: t.billingOrder.workshop.name,
+      reference: t.billingOrder.reference,
+      providerOrderId: t.providerOrderId,
+      amountLabel: formatMinor(t.amountMinor),
+      createdAt: t.createdAt.toISOString(),
+    }))
 
   const now = Date.now()
   const subscriptions: AdminSubRow[] = activeWorkshops.map((w) => {

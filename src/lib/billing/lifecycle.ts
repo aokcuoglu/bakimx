@@ -346,7 +346,10 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
       select: {
         id: true,
         createdAt: true,
-        paymentTransactions: { select: { status: true, createdAt: true } },
+        // purpose: "purchase" — açıklık için: bu ilişki zaten yalnız billingOrderId
+        // dolu (purchase) txn'leri döner, ama doğrulama denemeleri süpürmeye asla
+        // karışmasın diye niyet burada da açıkça filtrelenir.
+        paymentTransactions: { where: { purpose: "purchase" }, select: { status: true, createdAt: true } },
       },
     })
     const cancellableIds = candidates

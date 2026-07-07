@@ -173,10 +173,18 @@ export async function POST(request: Request) {
     where: { providerOrderId },
     include: { billingOrder: { select: { id: true, reference: true } } },
   })
-  const ref = txn?.billingOrder.reference ?? null
+  const ref = txn?.billingOrder?.reference ?? null
 
   // count===0 → zaten işlenmiş ya da bilinmeyen orderId → yan etkisiz, result'a dön.
   if (claim.count === 0 || !txn) {
+    return resultRedirect(request, ref)
+  }
+
+  // purpose=card_verification denemelerinin siparişi yoktur (billingOrder null) —
+  // bu görevde (Task 2) yalnız şema geçişi yapılır, gerçek purpose dallanması
+  // Task 3'te eklenecek. Şimdilik böyle bir txn'e rastlanırsa (henüz üretilmiyor)
+  // satış aktivasyon yoluna hiç girmeden no-op result'a döner.
+  if (!txn.billingOrder) {
     return resultRedirect(request, ref)
   }
 

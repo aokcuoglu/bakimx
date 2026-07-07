@@ -240,6 +240,12 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
   if (txn.status !== "callback_received") {
     return { ok: false, error: "Bu işlem kurtarma için uygun durumda değil." }
   }
+  // Kart doğrulama denemelerinin (purpose=card_verification) siparişi yoktur —
+  // bu ekran yalnız sipariş aktivasyonunu kurtarır. Doğrulama akışının kendi
+  // kurtarma dalı Task 5'te eklenecek (bkz. plan: retryStuckActivation purpose dalı).
+  if (!txn.billingOrderId) {
+    return { ok: false, error: "Bu işlem bir siparişe bağlı değil (kart doğrulama denemesi) — bu ekrandan kurtarılamıyor." }
+  }
 
   const activation = await activateBillingOrder(txn.billingOrderId, {
     actor: "admin",
