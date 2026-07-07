@@ -151,7 +151,7 @@ test("shouldCancelStaleOrder: tüm transaction'lar terminal ve 24 saatten eski �
 const CUTOFF = new Date("2026-07-07T00:00:00Z")
 test("shouldPurgeUnverifiedWorkshop", () => {
   const base = { approvalStatus: "pending", trialStartedAt: null, createdAt: new Date("2026-07-08"),
-    billingOrderCount: 0, serviceOrderCount: 0 }
+    billingOrderCount: 0, serviceOrderCount: 0, liveVerificationTxnCount: 0 }
   // Bu test grubüne özel "hoursAgo": kaydın KENDİ createdAt'ına göre N saat
   // sonrası (dosya başındaki paylaşılan hoursAgo/NOW ile karıştırılmasın —
   // o farklı bir sabit ana referans noktasını temel alır).
@@ -160,5 +160,11 @@ test("shouldPurgeUnverifiedWorkshop", () => {
   expect(shouldPurgeUnverifiedWorkshop({ ...base }, hoursAgo(1))).toBe(false)          // taze
   expect(shouldPurgeUnverifiedWorkshop({ ...base, createdAt: new Date(CUTOFF.getTime() - HOUR) }, hoursAgo(999))).toBe(false) // legacy
   expect(shouldPurgeUnverifiedWorkshop({ ...base, billingOrderCount: 1 }, hoursAgo(99))).toBe(false)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, serviceOrderCount: 1 }, hoursAgo(99))).toBe(false)
   expect(shouldPurgeUnverifiedWorkshop({ ...base, trialStartedAt: new Date() }, hoursAgo(99))).toBe(false)
+  // KRİTİK: canlı (initiated/callback_received) doğrulama denemesi olan workshop
+  // ASLA silinmez — callback_received'da takılı bir 1 TL bloke (para çekilmiş,
+  // aktivasyon tamamlanmamış) retryStuckActivation ile kurtarılabilir kalmalı;
+  // silmek hem banka blokesini sahipsiz bırakır hem kurtarılacak satırı yok eder.
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, liveVerificationTxnCount: 1 }, hoursAgo(999))).toBe(false)
 })

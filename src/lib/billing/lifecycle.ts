@@ -412,6 +412,9 @@ export interface PurgeCandidateWorkshop {
   createdAt: Date
   billingOrderCount: number
   serviceOrderCount: number
+  /** Canlı (initiated/callback_received) card_verification txn sayısı —
+   *  bkz. kural 6. */
+  liveVerificationTxnCount: number
 }
 
 /**
@@ -427,20 +430,29 @@ export interface PurgeCandidateWorkshop {
  *     makul süre tanınır; taze kayıtlar dokunulmaz),
  *  5. billingOrderCount === 0 VE serviceOrderCount === 0 (herhangi bir iz
  *     bırakmış workshop ASLA silinmez — bu imkansız olmalı zira pending
- *     workshoplar uygulamaya erişemez, ama çift güvenlik).
+ *     workshoplar uygulamaya erişemez, ama çift güvenlik),
+ *  6. liveVerificationTxnCount === 0 — canlı (initiated/callback_received)
+ *     doğrulama denemesi olan workshop ASLA silinmez: callback_received'da
+ *     takılı bir txn "1 TL çekilmiş ama aktivasyon tamamlanmamış" demektir;
+ *     retryStuckActivation tam bu satırı kurtarmak için var. Silmek banka
+ *     blokesini sahipsiz bırakır VE kurtarılacak kanıt satırını yok eder.
+ *     (initiated txn'ler zaten 2 saatte expired'a süpürülür — bu guard
+ *     yalnız kısa süreli, callback_received içinse kalıcı koruma sağlar.)
  */
 export function shouldPurgeUnverifiedWorkshop(w: PurgeCandidateWorkshop, now: Date): boolean {
   if (w.approvalStatus !== "pending") return false
   if (w.trialStartedAt !== null) return false
   if (w.createdAt.getTime() < PURGE_LEGACY_CUTOFF.getTime()) return false
   if (w.billingOrderCount > 0 || w.serviceOrderCount > 0) return false
+  if (w.liveVerificationTxnCount > 0) return false
   return now.getTime() - w.createdAt.getTime() >= PURGE_STALE_MS
 }
 
 /**
  * Kart doğrulamasını hiç tamamlamamış, 48 saatten eski, terk edilmiş
  * self-serve kayıtları siler (DB temizliği — kalıcı e-posta rezervasyonu
- * bırakmasın diye). Yalnız gerçekten dokunulmamış (sıfır sipariş/iş emri)
+ * bırakmasın diye). Yalnız gerçekten dokunulmamış (sıfır sipariş/iş emri,
+ * sıfır CANLI doğrulama denemesi — takılı 1 TL bloke kurtarılabilir kalmalı)
  * workshoplar hedeflenir; şüpheli bir satır bulunsa bile o workshop
  * ATLANIR (silme değil, sonraki turda tekrar değerlendirilir).
  *
@@ -459,21 +471,55 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
   const now = new Date()
   const staleCutoff = new Date(now.getTime() - PURGE_STALE_MS)
 
-  const candidates = await prisma.workshop.findMany({
-    where: {
-      approvalStatus: "pending",
-      trialStartedAt: null,
-      createdAt: { gte: PURGE_LEGACY_CUTOFF, lt: staleCutoff },
-    },
-    select: {
-      id: true,
-      email: true,
-      approvalStatus: true,
-      trialStartedAt: true,
-      createdAt: true,
-      _count: { select: { billingOrders: true, orders: true } },
-    },
-  })
+  // Aday + canlı-txn sorguları try/catch'te (sweepStalePaymentArtifacts
+  // deseniyle tutarlı): sorgu hatası tüm billing cron'unu düşürmesin —
+  // diğer süpürmelerin sayaçları yine kaydedilir.
+  let candidates: Array<{
+    id: string
+    email: string | null
+    approvalStatus: string
+    trialStartedAt: Date | null
+    createdAt: Date
+    _count: { billingOrders: number; orders: number }
+  }>
+  let liveVerifyTxnCountByWorkshopId: Map<string, number>
+  try {
+    candidates = await prisma.workshop.findMany({
+      where: {
+        approvalStatus: "pending",
+        trialStartedAt: null,
+        createdAt: { gte: PURGE_LEGACY_CUTOFF, lt: staleCutoff },
+      },
+      select: {
+        id: true,
+        email: true,
+        approvalStatus: true,
+        trialStartedAt: true,
+        createdAt: true,
+        _count: { select: { billingOrders: true, orders: true } },
+      },
+    })
+
+    // PaymentTransaction.workshopId denormalize (Workshop'ta ters relation yok)
+    // → canlı doğrulama denemeleri ikinci bir sorguyla sayılır. Saf filtredeki
+    // kural 6'nın DB tarafı: canlı txn'i olan aday hiçbir koşulda silinmez.
+    const liveVerifyTxns = candidates.length
+      ? await prisma.paymentTransaction.groupBy({
+          by: ["workshopId"],
+          where: {
+            workshopId: { in: candidates.map((w) => w.id) },
+            purpose: "card_verification",
+            status: { in: ["initiated", "callback_received"] },
+          },
+          _count: { _all: true },
+        })
+      : []
+    liveVerifyTxnCountByWorkshopId = new Map(liveVerifyTxns.map((t) => [t.workshopId, t._count._all]))
+  } catch (error) {
+    result.failed++
+    result.errors.push(`purge-query: ${error instanceof Error ? error.message : "Bilinmeyen hata"}`)
+    return result
+  }
 
   for (const w of candidates) {
     result.processed++
@@ -484,22 +530,39 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
         createdAt: w.createdAt,
         billingOrderCount: w._count.billingOrders,
         serviceOrderCount: w._count.orders,
+        liveVerificationTxnCount: liveVerifyTxnCountByWorkshopId.get(w.id) ?? 0,
       },
       now,
     )
     if (!eligible) continue
 
     try {
-      await prisma.$transaction([
-        prisma.paymentTransaction.deleteMany({ where: { workshopId: w.id } }),
-        prisma.communicationLog.deleteMany({ where: { workshopId: w.id } }),
-        prisma.auditLog.deleteMany({ where: { workshopId: w.id } }),
-        prisma.workshopFeatureOverride.deleteMany({ where: { workshopId: w.id } }),
-        prisma.invite.deleteMany({ where: { workshopId: w.id } }),
-        prisma.workshopSettings.deleteMany({ where: { workshopId: w.id } }),
-        prisma.user.deleteMany({ where: { workshopId: w.id } }),
-        prisma.workshop.delete({ where: { id: w.id } }),
-      ])
+      // İnteraktif transaction: canlı doğrulama denemesi transaction İÇİNDE bir
+      // kez daha sayılır — aday sorgusu ile silme arasında kullanıcı pending
+      // kilit ekranından yeni bir doğrulama başlatmış olabilir (yarış). Canlı
+      // txn görülürse silme atlanır (deleted=false), workshop sonraki turda
+      // tekrar değerlendirilir.
+      const deleted = await prisma.$transaction(async (tx) => {
+        const liveNow = await tx.paymentTransaction.count({
+          where: {
+            workshopId: w.id,
+            purpose: "card_verification",
+            status: { in: ["initiated", "callback_received"] },
+          },
+        })
+        if (liveNow > 0) return false
+
+        await tx.paymentTransaction.deleteMany({ where: { workshopId: w.id } })
+        await tx.communicationLog.deleteMany({ where: { workshopId: w.id } })
+        await tx.auditLog.deleteMany({ where: { workshopId: w.id } })
+        await tx.workshopFeatureOverride.deleteMany({ where: { workshopId: w.id } })
+        await tx.invite.deleteMany({ where: { workshopId: w.id } })
+        await tx.workshopSettings.deleteMany({ where: { workshopId: w.id } })
+        await tx.user.deleteMany({ where: { workshopId: w.id } })
+        await tx.workshop.delete({ where: { id: w.id } })
+        return true
+      })
+      if (!deleted) continue
       result.sent++
       console.info(`[sweepUnverifiedRegistrations] silindi: workshopId=${w.id} email=${w.email ?? "—"}`)
     } catch (error) {
