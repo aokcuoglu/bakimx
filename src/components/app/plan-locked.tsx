@@ -1,6 +1,7 @@
 import { Clock, Lock } from "lucide-react"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { PlanPackages } from "@/components/app/plan-packages"
+import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
 import type { LockReason } from "@/lib/plan"
 
 const COPY: Record<
@@ -29,8 +30,9 @@ const COPY: Record<
     showPackages: true,
   },
   pending: {
-    title: "Hesabınız onay bekliyor",
-    description: "Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.",
+    title: "Hesabınız kart doğrulaması bekliyor",
+    description:
+      "Ücretsiz denemenizi başlatmak için kartınızı doğrulayın. Kartınızdan 1 TL'lik doğrulama provizyonu alınır ve anında iade edilir.",
     icon: Lock,
     showPackages: false,
   },
@@ -46,12 +48,16 @@ export function PlanLocked({
   reason,
   workshopName,
   hasPendingOrder = false,
+  verifyToken,
 }: {
   reason: Exclude<LockReason, null>
   workshopName?: string
   hasPendingOrder?: boolean
+  /** pending durumunda kart doğrulama panelini süren imzalı token (layout üretir). */
+  verifyToken?: string
 }) {
   const { title, description, icon: Icon, showPackages } = COPY[reason]
+  const showVerifyCard = reason === "pending" && !!verifyToken
 
   return (
     <div className="min-h-screen bg-muted px-4 py-10">
@@ -65,6 +71,12 @@ export function PlanLocked({
             {description}
           </p>
         </div>
+
+        {showVerifyCard && (
+          <div className="mx-auto max-w-md rounded-2xl border bg-background p-6 shadow-sm sm:p-8">
+            <VerifyCardPanel vtoken={verifyToken!} />
+          </div>
+        )}
 
         {showPackages && (
           <PlanPackages ownedTier={null} workshopName={workshopName} hasPendingOrder={hasPendingOrder} />

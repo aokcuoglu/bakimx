@@ -11,9 +11,11 @@ import {
 } from "@/lib/auth-login"
 import { redirect } from "next/navigation"
 
-// NOTE: self-serve signup is an approval-gated trial application (see /register):
-// it creates a workshop in `pending` status that cannot sign in until an admin
-// approves it. Accounts may also be provisioned via seed / admin.
+// NOTE: self-serve signup (see /register) creates a workshop in `pending` status.
+// Pending workshops CAN sign in — they land on the full-screen card-verification
+// lock ((app)/layout.tsx) and start their trial once the card is verified. Only
+// `rejected` workshops are blocked at login. Accounts may also be provisioned via
+// seed / admin.
 
 export async function loginAction(formData: FormData) {
   const raw = {

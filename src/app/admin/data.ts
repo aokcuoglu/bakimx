@@ -190,6 +190,10 @@ export async function getBillingData(): Promise<BillingData> {
       include: orderInclude,
     }),
     prisma.paymentTransaction.findMany({
+      // purpose'tan BAĞIMSIZ: kart doğrulama denemeleri (card_verification) de
+      // takılabilir (banka çekimi tamamlanmış ama activateVerifiedWorkshop hiç
+      // tetiklenmemiş olabilir) — bu ekran artık iki purpose'u da kurtarır
+      // (retryStuckActivation'daki purpose dalına bkz.).
       where: { status: "callback_received" },
       orderBy: { createdAt: "desc" },
       include: { billingOrder: { select: { reference: true, workshop: { select: { name: true } } } } },
@@ -206,15 +210,47 @@ export async function getBillingData(): Promise<BillingData> {
 
   const orderRows: AdminOrderRow[] = pendingOrders.map(toOrderRow)
   const recentOrders: AdminOrderRow[] = recentOrdersRaw.map(toOrderRow)
-  const stuckTransactions: AdminStuckTxnRow[] = stuckTxns.map((t) => ({
-    id: t.id,
-    billingOrderId: t.billingOrderId,
-    workshopName: t.billingOrder.workshop.name,
-    reference: t.billingOrder.reference,
-    providerOrderId: t.providerOrderId,
-    amountLabel: formatMinor(t.amountMinor),
-    createdAt: t.createdAt.toISOString(),
-  }))
+
+  // card_verification denemelerinin billingOrder'ı yoktur (workshopId
+  // denormalize) — workshop adını ayrı bir toplu sorguyla çözümle.
+  const verifyWorkshopIds = [
+    ...new Set(stuckTxns.filter((t) => t.purpose === "card_verification").map((t) => t.workshopId)),
+  ]
+  const verifyWorkshops = verifyWorkshopIds.length
+    ? await prisma.workshop.findMany({ where: { id: { in: verifyWorkshopIds } }, select: { id: true, name: true } })
+    : []
+  const verifyWorkshopNameById = new Map(verifyWorkshops.map((w) => [w.id, w.name]))
+
+  const stuckTransactions: AdminStuckTxnRow[] = stuckTxns.flatMap((t): AdminStuckTxnRow[] => {
+    if (t.purpose === "purchase") {
+      // Tip daralt (asla `!`): billingOrderId/billingOrder eksikse (beklenmedik
+      // veri tutarsızlığı) o satır sessizce atlanır, hatalı satır gösterilmez.
+      if (t.billingOrderId == null || t.billingOrder == null) return []
+      return [{
+        id: t.id,
+        purpose: "purchase",
+        billingOrderId: t.billingOrderId,
+        workshopName: t.billingOrder.workshop.name,
+        reference: t.billingOrder.reference,
+        providerOrderId: t.providerOrderId,
+        amountLabel: formatMinor(t.amountMinor),
+        createdAt: t.createdAt.toISOString(),
+      }]
+    }
+    // card_verification: sipariş yok; workshop adı bulunamazsa (silinmiş/yarış) atla.
+    const workshopName = verifyWorkshopNameById.get(t.workshopId)
+    if (!workshopName) return []
+    return [{
+      id: t.id,
+      purpose: "card_verification",
+      billingOrderId: null,
+      workshopName,
+      reference: null,
+      providerOrderId: t.providerOrderId,
+      amountLabel: formatMinor(t.amountMinor),
+      createdAt: t.createdAt.toISOString(),
+    }]
+  })
 
   const now = Date.now()
   const subscriptions: AdminSubRow[] = activeWorkshops.map((w) => {

@@ -4,14 +4,23 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: legacy kill-switch gate. Self sign-ups (register + public
- *    checkout) are approved instantly and start their trial immediately —
- *    admin approval is no longer required to gain access. The gate still
- *    exists so an admin can `rejectWorkshop` (suspend) an account, and for any
- *    older rows still sitting in `pending` from before this change.
+ *  - approvalStatus: card-verification gate. Self sign-ups (/register) create a
+ *    `pending` workshop with NO trial; the workshop flips to `approved` and its
+ *    7-day trial starts only when 1 TL card verification succeeds
+ *    (activateVerifiedWorkshop). Pending users CAN sign in — they land on the
+ *    full-screen PlanLocked verify screen ((app)/layout.tsx). `rejected` is the
+ *    admin kill switch (blocks login entirely); admin approveWorkshop remains a
+ *    legacy/manual escape hatch.
  *  - subscriptionStatus + trialEndsAt: billing/trial lifecycle
  *
- * Today only the ACCESS gate (`hasAccess`) is enforced (login + /app layout).
+ * Enforcement layers:
+ *  - `canWrite` / `assertWriteAccess` (via requireWritableWorkshop) is the
+ *    SERVER-SIDE enforcement: every mutating server action / API route must be
+ *    blocked when ANY lockReason is set — pending/rejected included, since a
+ *    pending session could otherwise call actions/APIs directly with its
+ *    cookie and use the app without ever verifying a card.
+ *  - `hasAccess` + PlanLocked ((app)/layout.tsx) is the UX layer: full-screen
+ *    lock for pending/rejected, read-only banner for plan-expiry reasons.
  *
  * Per-feature gating:
  *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
@@ -91,12 +100,13 @@ export interface PlanState {
   /** Why access is blocked, or null when access is granted. */
   lockReason: LockReason
   /**
-   * True when the workshop may perform data mutations. False only for the
-   * read-only lock reasons (`trial_expired | subscription_expired |
-   * subscription_inactive`), where data stays visible but writes are blocked
-   * centrally. `pending`/`rejected` are full-screen locked elsewhere, so
-   * `canWrite` is left `true` for them on purpose — it must never become a
-   * second, confusing gate for accounts that already see PlanLocked.
+   * True when the workshop may perform data mutations — false whenever ANY
+   * `lockReason` is set (i.e. `canWrite === hasAccess`). This is the
+   * server-side enforcement (assertWriteAccess / requireWritableWorkshop);
+   * PlanLocked / the read-only banner are only the UX layer on top. In
+   * particular `pending` (card not verified yet) and `rejected` MUST block
+   * writes here too: those sessions can reach server actions / API routes
+   * directly with their cookie, bypassing the full-screen lock HTML.
    */
   canWrite: boolean
 }
@@ -143,13 +153,9 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     lockReason = "subscription_inactive"
   }
 
-  // Read-only lock: data remains visible but mutations are blocked centrally.
-  // Only the expiry lock reasons flip this; pending/rejected keep canWrite=true
-  // (they are full-screen locked separately — see the PlanState.canWrite doc).
-  const canWrite =
-    lockReason !== "trial_expired" &&
-    lockReason !== "subscription_expired" &&
-    lockReason !== "subscription_inactive"
+  // Write gate: ANY lock reason blocks mutations centrally (server actions /
+  // API routes). pending/rejected included — see the PlanState.canWrite doc.
+  const canWrite = hasAccess
 
   return {
     tier,
@@ -167,9 +173,10 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 }
 
 /**
- * Thrown by {@link assertWriteAccess} when a workshop is in the read-only
- * (plan-expired) state. Carries the `lockReason` so callers/API routes can map
- * it to a stable machine code (`plan_locked`) plus the user-facing message.
+ * Thrown by {@link assertWriteAccess} when a workshop may not mutate data
+ * (pending/rejected approval gate or plan-expired read-only state). Carries the
+ * `lockReason` so callers/API routes can map it to a stable machine code
+ * (`plan_locked`) plus the user-facing message.
  */
 export class PlanWriteLockedError extends Error {
   readonly lockReason: LockReason
@@ -181,18 +188,30 @@ export class PlanWriteLockedError extends Error {
 }
 
 /**
- * Central write guard. Throws {@link PlanWriteLockedError} when the workshop's
- * plan has expired (read-only mode). Server actions/routes that mutate tenant
- * data should call this after auth. The billing/purchase flow and auth actions
- * are intentionally exempt so a locked workshop can still pay to recover.
+ * Central write guard. Throws {@link PlanWriteLockedError} whenever the
+ * workshop may not mutate data: card verification not completed (`pending`),
+ * suspended (`rejected`), or plan expired (read-only mode). Server
+ * actions/routes that mutate tenant data should call this after auth. The
+ * billing/purchase flow and auth actions are intentionally exempt so a locked
+ * workshop can still pay/verify to recover.
  */
 export function assertWriteAccess(workshop: WorkshopPlanFields): void {
   const { canWrite, lockReason } = getPlanState(workshop)
   if (canWrite) return
-  const message =
-    lockReason === "trial_expired"
-      ? "Deneme süreniz doldu. Devam etmek için bir paket satın alın."
-      : "Aboneliğiniz sona erdi. Devam etmek için aboneliğinizi yenileyin."
+  let message: string
+  switch (lockReason) {
+    case "pending":
+      message = "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      break
+    case "rejected":
+      message = "Hesabınız askıya alınmış. Destek ile iletişime geçin."
+      break
+    case "trial_expired":
+      message = "Deneme süreniz doldu. Devam etmek için bir paket satın alın."
+      break
+    default:
+      message = "Aboneliğiniz sona erdi. Devam etmek için aboneliğinizi yenileyin."
+  }
   throw new PlanWriteLockedError(message, lockReason)
 }
 

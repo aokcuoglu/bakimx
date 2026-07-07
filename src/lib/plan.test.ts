@@ -84,13 +84,21 @@ test("canWrite is false when the subscription is past_due (inactive)", () => {
   expect(s.canWrite).toBe(false)
 })
 
-// pending/rejected are full-screen locked elsewhere; canWrite stays true there
-// deliberately (see plan.ts) so it never becomes a second confusing gate.
-test("canWrite is true for a pending workshop (full-lock handled separately)", () => {
+// pending/rejected MUST also block writes: the full-screen PlanLocked view is
+// only HTML — a pending session can call server actions / API routes directly
+// with its cookie, so canWrite (server-side enforcement) is the real gate.
+test("canWrite is false for a pending workshop (card not verified — server-side gate)", () => {
   const s = getPlanState(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
   expect(s.hasAccess).toBe(false)
   expect(s.lockReason).toBe("pending")
-  expect(s.canWrite).toBe(true)
+  expect(s.canWrite).toBe(false)
+})
+
+test("canWrite is false for a rejected workshop (suspended)", () => {
+  const s = getPlanState(wsFields({ approvalStatus: "rejected", subscriptionStatus: "trialing" }))
+  expect(s.hasAccess).toBe(false)
+  expect(s.lockReason).toBe("rejected")
+  expect(s.canWrite).toBe(false)
 })
 
 // --- assertWriteAccess ------------------------------------------------------
@@ -120,5 +128,29 @@ test("assertWriteAccess throws the subscription message for an expired subscript
   } catch (e) {
     expect(e).toBeInstanceOf(PlanWriteLockedError)
     expect((e as Error).message).toBe("Aboneliğiniz sona erdi. Devam etmek için aboneliğinizi yenileyin.")
+  }
+})
+
+test("assertWriteAccess throws the card-verification message for a pending workshop", () => {
+  try {
+    assertWriteAccess(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
+    throw new Error("expected throw")
+  } catch (e) {
+    expect(e).toBeInstanceOf(PlanWriteLockedError)
+    expect((e as PlanWriteLockedError).lockReason).toBe("pending")
+    expect((e as Error).message).toBe(
+      "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+    )
+  }
+})
+
+test("assertWriteAccess throws the suspended message for a rejected workshop", () => {
+  try {
+    assertWriteAccess(wsFields({ approvalStatus: "rejected", subscriptionStatus: "trialing" }))
+    throw new Error("expected throw")
+  } catch (e) {
+    expect(e).toBeInstanceOf(PlanWriteLockedError)
+    expect((e as PlanWriteLockedError).lockReason).toBe("rejected")
+    expect((e as Error).message).toBe("Hesabınız askıya alınmış. Destek ile iletişime geçin.")
   }
 })

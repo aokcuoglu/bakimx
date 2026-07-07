@@ -155,24 +155,27 @@ enum BillingMethod {
 
 // Kartlı ödeme denemesi — bir BillingOrder birden çok deneme alabilir
 // (başarısız 3DS → retry). Callback idempotency deneme-başına unique key ister.
+// purpose=card_verification denemelerinin billingOrderId'si YOKTUR (kayıtta 1 TL
+// kart doğrulaması bir siparişe değil doğrudan workshop'a bağlıdır — bkz. workshopId).
 model PaymentTransaction {
-  id              String                    @id @default(cuid())
-  billingOrderId  String
-  billingOrder    BillingOrder              @relation(fields: [billingOrderId], references: [id])
-  workshopId      String                    // denormalize — tenant-scoped admin sorguları için
-  provider        String                    @default("tami")
-  providerOrderId String                    @unique // TAMI'ye giden orderId (2-36 kar.), deneme başına benzersiz
-  status          PaymentTransactionStatus  @default(initiated)
-  amountMinor     Int                       // kuruş snapshot
-  currency        String                    @default("TRY")
-  maskedPan       String?                   // SADECE callback'ten gelen maskeli numara
+  id              String                     @id @default(cuid())
+  billingOrderId  String?
+  billingOrder    BillingOrder?              @relation(fields: [billingOrderId], references: [id])
+  purpose         PaymentTransactionPurpose  @default(purchase)
+  workshopId      String                     // denormalize — tenant-scoped admin sorguları için
+  provider        String                     @default("tami")
+  providerOrderId String                     @unique // TAMI'ye giden orderId (2-36 kar.), deneme başına benzersiz
+  status          PaymentTransactionStatus   @default(initiated)
+  amountMinor     Int                        // kuruş snapshot
+  currency        String                     @default("TRY")
+  maskedPan       String?                    // SADECE callback'ten gelen maskeli numara
   cardBrand       String?
   errorCode       String?
   errorMessage    String?
   correlationId   String?
-  callbackPayload Json?                     // sanitize edilmiş callback gövdesi (TAMI zaten PAN/CVV dönmez)
+  callbackPayload Json?                      // sanitize edilmiş callback gövdesi (TAMI zaten PAN/CVV dönmez)
   // Kart verisi (PAN/CVV/expiry/holder) ASLA saklanmaz — PCI
-  createdAt       DateTime                  @default(now())
+  createdAt       DateTime                   @default(now())
   completedAt     DateTime?
 
   @@index([billingOrderId])
@@ -185,6 +188,11 @@ enum PaymentTransactionStatus {
   completed
   failed
   expired
+}
+
+enum PaymentTransactionPurpose {
+  purchase
+  card_verification
 }
 
 model WorkshopSettings {

@@ -60,24 +60,8 @@ export function workshopRejectedEmail(p: { firstName: string; workshopName: stri
   }
 }
 
-export function applicationReceivedEmail(p: { firstName: string; workshopName: string }): BuiltEmail {
-  const name = escapeHtml(p.firstName || "Yetkili")
-  const ws = escapeHtml(p.workshopName)
-  return {
-    subject: "BakimX başvurunuz alındı",
-    html: renderEmailLayout({
-      heading: "Başvurunuz alındı",
-      bodyHtml:
-        `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuzu aldık. Ekibimiz başvurunuzu inceledikten sonra hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.</p>` +
-        `<p style="margin:0 0 12px;">Onay sonrası 15 günlük ücretsiz deneme süreniz başlayacaktır.</p>`,
-      footerNote: "Bu otomatik bir bilgilendirme mesajıdır.",
-    }),
-  }
-}
-
-/** Sent the moment a self-serve registration/checkout completes — the account is
- *  active immediately (no admin approval step) and the trial starts now. */
+/** Sent the moment card verification succeeds (activateVerifiedWorkshop) — the
+ *  pending workshop flips to approved and its 7-day trial starts right then. */
 export function welcomeTrialEmail(p: {
   ownerName: string
   workshopName: string

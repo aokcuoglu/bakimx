@@ -53,7 +53,7 @@ const faqs = [
   {
     question: "Nasıl başlarım? Ücretsiz deneme var mı?",
     answer:
-      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturursunuz. Hesabınız anında açılır ve 7 günlük ücretsiz deneme süreniz hemen başlar; özellikleri kredi kartı gerekmeden kullanırsınız. Beğenirseniz size uygun pakete geçersiniz; istemezseniz herhangi bir ücret ödemezsiniz.",
+      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturur ve kartınızı doğrularsınız. Doğrulama sırasında kartınızdan yalnızca 1 TL'lik provizyon alınır ve anında iade edilir; kart doğrulamasının ardından hesabınız anında açılır ve 7 günlük ücretsiz deneme süreniz başlar. Deneme süresince ücret ödemezsiniz; beğenirseniz size uygun pakete geçersiniz.",
   },
   {
     question: "Kurulum için bilgisayar gerekir mi?",

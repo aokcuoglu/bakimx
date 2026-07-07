@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { z } from "zod/v4"
 import { prisma } from "@/lib/db"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
@@ -8,13 +7,13 @@ import { getTamiClient } from "@/lib/tami"
 import { isTamiConfigured } from "@/lib/tami/config"
 import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconfig-alert"
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
-import type { TamiAuth3dsInput } from "@/lib/tami/types"
+import { buildTamiPaymentBody } from "@/lib/tami/request-builder"
+import { getPlanPackage } from "@/lib/plans-catalog"
+import { cardSchema } from "@/lib/billing/card-schema"
 import {
-  minorToTamiAmount,
   generateProviderOrderId,
   resolveClientIp,
   splitName,
-  luhnCheck,
 } from "@/lib/billing/payment-helpers"
 
 /**
@@ -28,35 +27,6 @@ import {
 
 const RL_MAX = 10
 const RL_WINDOW_MS = 10 * 60_000
-
-const NOW = () => new Date()
-
-const cardSchema = z
-  .object({
-    holderName: z.string().trim().min(2).max(64),
-    number: z
-      .string()
-      .transform((s) => s.replace(/\s/g, ""))
-      .refine((s) => /^\d{12,19}$/.test(s), "Kart numarası geçersiz")
-      .refine((s) => luhnCheck(s), "Kart numarası geçersiz"),
-    expireMonth: z.coerce.number().int().min(1).max(12),
-    expireYear: z.coerce.number().int(),
-    cvv: z.string().refine((s) => /^\d{3,4}$/.test(s), "CVV geçersiz"),
-  })
-  .transform((c) => ({
-    ...c,
-    // 2 haneli yılı 4 haneye normalize et ("28" → 2028).
-    expireYear: c.expireYear < 100 ? c.expireYear + 2000 : c.expireYear,
-  }))
-  .refine(
-    (c) => {
-      const now = NOW()
-      const y = now.getFullYear()
-      const m = now.getMonth() + 1
-      return c.expireYear > y || (c.expireYear === y && c.expireMonth >= m)
-    },
-    { message: "Kartın son kullanma tarihi geçmiş" }
-  )
 
 function appOrigin(request: Request): string {
   return process.env.APP_URL || new URL(request.url).origin
@@ -167,14 +137,14 @@ export async function POST(request: Request) {
     },
   })
 
-  // 6) TAMI 3DS auth çağrısı — tutar order.amountMinor'dan türetilir.
-  const auth: TamiAuth3dsInput = {
+  // 6) TAMI 3DS auth çağrısı — gövde tek doğruluk kaynağı buildTamiPaymentBody'den
+  // gelir (canlı sandbox'ta doğrulanan gerçek wire şeması); tutar order.amountMinor'dan
+  // türetilir (client'tan asla).
+  const planLabel = getPlanPackage(order.planTier)?.name ?? order.planTier
+  const cycleLabel = order.billingCycle === "monthly" ? "Aylık" : "Yıllık"
+  const auth = buildTamiPaymentBody({
     orderId: providerOrderId,
-    amount: minorToTamiAmount(order.amountMinor),
-    // Sipariş para biriminden (DB default "TRY"); TamiAuth3dsInput tipi şimdilik
-    // yalnız "TRY" literal'ını tanıdığı için daraltma cast'i gerekiyor.
-    currency: order.currency as TamiAuth3dsInput["currency"],
-    installmentCount: 1,
+    amountMinor: order.amountMinor,
     callbackUrl: `${appOrigin(request)}/api/payments/tami/callback`,
     card: {
       number: card.number,
@@ -183,22 +153,18 @@ export async function POST(request: Request) {
       expireYear: card.expireYear,
       cvv: card.cvv,
     },
-    buyer: {
-      buyerId: order.workshopId,
+    contact: {
       name: ownerName.name,
       surName: ownerName.surName,
-      ipAddress: buyerIp,
-      emailAddress: email,
-      phoneNumber: phone,
-    },
-    billingAddress: {
-      address: snap("address") || workshop.address || "-",
-      city: workshop.city || "-",
-      country: "Türkiye",
-      contactName: `${ownerName.name} ${ownerName.surName}`.trim(),
+      email,
+      phone,
+      ip: buyerIp,
+      city: workshop.city || undefined,
+      address: snap("address") || workshop.address || undefined,
       companyName: snap("invoiceTitle") || workshop.name,
     },
-  }
+    basketItemName: `${planLabel} · ${cycleLabel}`,
+  })
 
   try {
     const res = await getTamiClient().auth3ds(auth)

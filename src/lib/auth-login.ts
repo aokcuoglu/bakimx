@@ -23,8 +23,6 @@ export const NO_WORKSHOP_MESSAGE =
   "Hesabınıza bağlı iş yeri bulunamadı. Lütfen destek ile iletişime geçin."
 export const TOO_MANY_ATTEMPTS_MESSAGE =
   "Çok fazla deneme yapıldı. Lütfen bir dakika sonra tekrar deneyin."
-export const PENDING_APPROVAL_MESSAGE =
-  "Hesabınız henüz onaylanmadı. Onaylandığında e-posta ile bilgilendirileceksiniz."
 export const ACCOUNT_REJECTED_MESSAGE =
   "Başvurunuz onaylanmadı. Lütfen destek ile iletişime geçin."
 
@@ -80,11 +78,13 @@ export async function verifyCredentials(email: string, password: string): Promis
     return { ok: false, error: NO_WORKSHOP_MESSAGE }
   }
 
-  // Early-access onboarding gate: block sign-in until an admin approves the
-  // workshop. (Reached only after a correct password, so no enumeration risk.)
-  if (workshop.approvalStatus === "pending") {
-    return { ok: false, error: PENDING_APPROVAL_MESSAGE }
-  }
+  // Rejected accounts are suspended and cannot sign in. (Reached only after a
+  // correct password, so no enumeration risk.)
+  //
+  // `pending` workshops are NOT blocked here: they authenticate and land on the
+  // full-screen PlanLocked verify screen (see (app)/layout.tsx), which mints a
+  // vtoken so the owner can complete card verification and start the trial.
+  // Blocking pending at login would make that recovery path unreachable.
   if (workshop.approvalStatus === "rejected") {
     return { ok: false, error: ACCOUNT_REJECTED_MESSAGE }
   }

@@ -33,21 +33,25 @@ async function handle(request: Request) {
   const { recordCronRun } = await import("@/lib/ops/cron-run")
 
   try {
-    const { sweepTrialWarnings, sweepSubscriptionWarnings, sweepStalePaymentArtifacts } = await import(
-      "@/lib/billing/lifecycle"
-    )
+    const {
+      sweepTrialWarnings,
+      sweepSubscriptionWarnings,
+      sweepStalePaymentArtifacts,
+      sweepUnverifiedRegistrations,
+    } = await import("@/lib/billing/lifecycle")
     const trialResult = await sweepTrialWarnings()
     const subscriptionResult = await sweepSubscriptionWarnings()
     const staleResult = await sweepStalePaymentArtifacts()
+    const purgeResult = await sweepUnverifiedRegistrations()
 
     // Record the run for the ops health surface (best-effort; alerts on failures).
     await recordCronRun({
       job: "billing",
       startedAt,
       status: "success",
-      processed: trialResult.processed + subscriptionResult.processed + staleResult.processed,
-      sent: trialResult.sent + subscriptionResult.sent + staleResult.sent,
-      failed: trialResult.failed + subscriptionResult.failed + staleResult.failed,
+      processed: trialResult.processed + subscriptionResult.processed + staleResult.processed + purgeResult.processed,
+      sent: trialResult.sent + subscriptionResult.sent + staleResult.sent + purgeResult.sent,
+      failed: trialResult.failed + subscriptionResult.failed + staleResult.failed + purgeResult.failed,
     })
 
     return NextResponse.json({
@@ -55,6 +59,7 @@ async function handle(request: Request) {
       trial: trialResult,
       subscription: subscriptionResult,
       stale: staleResult,
+      purge: purgeResult,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Bilinmeyen hata"

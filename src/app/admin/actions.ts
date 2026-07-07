@@ -7,6 +7,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
+import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -55,9 +56,11 @@ type SubStatus = (typeof STATUSES)[number]
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
 
-/** Approve a workshop and (re)start its 7-day trial. Legacy path: self
- *  sign-ups are approved instantly now, so this is only reached for old
- *  `pending` rows or to un-reject a previously rejected workshop. */
+/** Approve a workshop and (re)start its 7-day trial. Legacy / manual escape
+ *  hatch: self sign-ups now flip to approved automatically when card
+ *  verification succeeds (activateVerifiedWorkshop), so this is only reached to
+ *  approve a `pending` row without a card (manual admin override) or to
+ *  un-reject a previously rejected workshop. */
 export async function approveWorkshop(workshopId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
@@ -239,6 +242,36 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
   if (!txn) return { ok: false, error: "İşlem bulunamadı." }
   if (txn.status !== "callback_received") {
     return { ok: false, error: "Bu işlem kurtarma için uygun durumda değil." }
+  }
+
+  // Kart doğrulama denemelerinin (purpose=card_verification) siparişi yoktur —
+  // ayrı bir dal: activateVerifiedWorkshop çağırır (claim-guard'lı, replay-safe).
+  // Aynı "yalnız callback_received'dan completed'a" disiplinini korur.
+  if (txn.purpose === "card_verification") {
+    const activation = await activateVerifiedWorkshop(txn.workshopId)
+    if (!activation.ok) {
+      return { ok: false, error: "Doğrulama aktivasyonu başarısız oldu — tekrar deneyin." }
+    }
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ purpose: "card_verification", result: "activated" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
+  if (!txn.billingOrderId) {
+    return { ok: false, error: "Bu işlem bir siparişe bağlı değil — bu ekrandan kurtarılamıyor." }
   }
 
   const activation = await activateBillingOrder(txn.billingOrderId, {

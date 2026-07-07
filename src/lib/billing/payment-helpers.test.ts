@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import {
   minorToTamiAmount,
-  minorToTamiAmountString,
+  tamiAmountEqualsMinor,
   generateProviderOrderId,
   resolveClientIp,
   splitName,
@@ -14,13 +14,6 @@ test("minorToTamiAmount: kuruş → 2 ondalık lira", () => {
   expect(minorToTamiAmount(749950).toFixed(2)).toBe("7499.50")
   expect(minorToTamiAmount(1999).toFixed(2)).toBe("19.99")
   expect(minorToTamiAmount(0).toFixed(2)).toBe("0.00")
-})
-
-test("minorToTamiAmountString: kuruş → wire formatı ('7499.00')", () => {
-  expect(minorToTamiAmountString(749900)).toBe("7499.00")
-  expect(minorToTamiAmountString(749950)).toBe("7499.50")
-  expect(minorToTamiAmountString(1999)).toBe("19.99")
-  expect(minorToTamiAmountString(0)).toBe("0.00")
 })
 
 test("generateProviderOrderId: 2-36 kar., reference prefix'li, benzersiz", () => {
@@ -46,6 +39,15 @@ test("splitName: ad/soyad ayrımı", () => {
   expect(splitName("Ali Can Veli")).toEqual({ name: "Ali", surName: "Can Veli" })
   expect(splitName("Ali")).toEqual({ name: "Ali", surName: "Ali" })
   expect(splitName("  ")).toEqual({ name: "-", surName: "-" })
+})
+
+test("tamiAmountEqualsMinor: wire formatlarından bağımsız", () => {
+  expect(tamiAmountEqualsMinor("1", 100)).toBe(true)      // canlı yakalanan format
+  expect(tamiAmountEqualsMinor("1.00", 100)).toBe(true)
+  expect(tamiAmountEqualsMinor("1299.5", 129950)).toBe(true)
+  expect(tamiAmountEqualsMinor("2", 100)).toBe(false)
+  expect(tamiAmountEqualsMinor("abc", 100)).toBe(false)
+  expect(tamiAmountEqualsMinor("", 100)).toBe(false)
 })
 
 test("luhnCheck: geçerli/geçersiz kart numaraları", () => {

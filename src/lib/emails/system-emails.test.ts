@@ -2,7 +2,6 @@ import { expect, test } from "bun:test"
 import {
   workshopApprovedEmail,
   workshopRejectedEmail,
-  applicationReceivedEmail,
   newApplicationAdminEmail,
   welcomeTrialEmail,
   trialExpiryWarningEmail,
@@ -23,12 +22,6 @@ test("workshopRejectedEmail: CTA yok, iletişim notu var", () => {
   const e = workshopRejectedEmail({ firstName: "Ali", workshopName: "Usta Oto" })
   expect(e.html).not.toContain("href=")
   expect(e.html).toContain("hey@bakimx.com")
-})
-
-test("applicationReceivedEmail: onay bekleniyor mesajı", () => {
-  const e = applicationReceivedEmail({ firstName: "Ali", workshopName: "Usta Oto" })
-  expect(e.subject).toContain("alındı")
-  expect(e.html).toContain("onay")
 })
 
 test("newApplicationAdminEmail: başvuran alanları + admin CTA", () => {
@@ -69,7 +62,7 @@ test("welcomeTrialEmail: kullanıcı değerlerini HTML-escape eder", () => {
 })
 
 test("sistem e-postaları kullanıcı değerlerini HTML-escape eder", () => {
-  const e = applicationReceivedEmail({ firstName: "<script>", workshopName: "A&B" })
+  const e = workshopApprovedEmail({ firstName: "<script>", workshopName: "A&B" })
   expect(e.html).not.toContain("<script>")
   expect(e.html).toContain("&lt;script&gt;")
   expect(e.html).toContain("A&amp;B")

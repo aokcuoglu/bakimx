@@ -2,10 +2,11 @@ import { afterEach, beforeEach, expect, test } from "bun:test"
 import { createTamiClient } from "./client"
 import { verifyCallbackHash } from "./hash"
 import { createMockTamiClient, MOCK_SECRET_KEY } from "./mock"
+import { buildTamiPaymentBody } from "./request-builder"
 import { sanitizeForLog } from "./errors"
 import { TamiError } from "./errors"
 import type { TamiConfig } from "./config"
-import type { TamiAuth3dsInput, TamiCallbackHashFields } from "./types"
+import type { TamiCallbackHashFields } from "./types"
 
 const cfg: TamiConfig = {
   env: "sandbox",
@@ -17,11 +18,11 @@ const cfg: TamiConfig = {
   jwkKey: "uTFK37C1qQddme6Qjyd1KkcrvdJbHfSAHG9m1zmDhSc",
 }
 
-const sampleInput: TamiAuth3dsInput = {
+// buildTamiPaymentBody'den üretilir (Task 1 wire şeması) — elle şekillendirilmiş bir
+// istek gövdesi DEĞİL, böylece bu test dosyası gerçek şemayla senkron kalır.
+const sampleInput = buildTamiPaymentBody({
   orderId: "ORDER-CLIENT-TEST-1",
-  amount: 199.9,
-  currency: "TRY",
-  installmentCount: 1,
+  amountMinor: 19990,
   callbackUrl: "https://app.bakimx.com/api/tami/callback",
   card: {
     number: "5406697543211173",
@@ -30,15 +31,15 @@ const sampleInput: TamiAuth3dsInput = {
     expireYear: 2027,
     cvv: "423",
   },
-  buyer: {
-    buyerId: "buyer-1",
+  contact: {
     name: "Test",
     surName: "Kullanıcı",
-    ipAddress: "127.0.0.1",
-    emailAddress: "test@bakimx.com",
-    phoneNumber: "+905551234567",
+    email: "test@bakimx.com",
+    phone: "+905551234567",
+    ip: "127.0.0.1",
   },
-}
+  basketItemName: "Test Ürün",
+})
 
 let originalFetch: typeof globalThis.fetch
 
@@ -101,6 +102,31 @@ test("auth3ds: gönderilen body'de securityHash alanı vardır ve boş değildir
   expect((sentBody?.securityHash as string).length).toBeGreaterThan(0)
   // JWS compact format: header.payload.signature
   expect((sentBody?.securityHash as string).split(".").length).toBe(3)
+})
+
+test("preAuth3ds: /payment/pre-auth'a POST eder (auth3ds ile aynı gövde, farklı endpoint)", async () => {
+  let path = ""
+  let sentBody: Record<string, unknown> | undefined
+  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    path = new URL(url).pathname
+    sentBody = JSON.parse(init?.body as string)
+    return new Response(
+      JSON.stringify({
+        success: true,
+        systemTime: "2026-07-07T12:00:00Z",
+        correlationId: "c1",
+        orderId: sampleInput.orderId,
+        threeDSHtmlContent: "PGh0bWw+PC9odG1sPg==",
+      }),
+      { status: 200 }
+    )
+  }) as typeof fetch
+
+  const client = createTamiClient(cfg)
+  await client.preAuth3ds(sampleInput)
+
+  expect(path).toBe("/payment/pre-auth")
+  expect(typeof sentBody?.securityHash).toBe("string")
 })
 
 test("auth3ds: TAMI hata yanıtı (errorCode) → TamiError fırlatır, userMessage haritadan gelir", async () => {
@@ -341,6 +367,15 @@ test("mock auth3ds: formlar sipariş/tutar bilgilerini taşır, card PAN'ı form
   }
   expect(html).not.toContain(sampleInput.card.number)
   expect(html).not.toContain(sampleInput.card.cvv)
+})
+
+test("mock preAuth3ds: auth3ds ile aynı sahte 3DS yanıtını üretir (base64 HTML)", async () => {
+  const client = createMockTamiClient()
+  const result = await client.preAuth3ds(sampleInput)
+
+  expect(result.success).toBe(true)
+  const html = Buffer.from(result.threeDSHtmlContent as string, "base64").toString("utf8")
+  expect(html).toContain("TAMI Mock 3D Secure")
 })
 
 test("mock complete3ds/cancel/refund/queryTransaction: gerçek HTTP olmadan success döner", async () => {

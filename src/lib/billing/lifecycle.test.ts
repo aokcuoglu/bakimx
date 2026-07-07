@@ -4,6 +4,8 @@ import {
   trialTemplateKey,
   subscriptionTemplateKey,
   shouldCancelStaleOrder,
+  shouldPurgeUnverifiedWorkshop,
+  resolvePurgeLegacyCutoff,
 } from "./lifecycle"
 
 const TRIAL_THRESHOLDS = [3, 1, 0]
@@ -140,4 +142,54 @@ test("shouldCancelStaleOrder: tüm transaction'lar terminal ve 24 saatten eski �
       NOW,
     ),
   ).toBe(true)
+})
+
+// ---- shouldPurgeUnverifiedWorkshop ----
+
+// özellik yayın tarihi; öncesi legacy pending (bu tarihten önce yaratılmış
+// pending workshoplar kart-doğrulama akışından ÖNCEKİ dönemden kalma —
+// süpürmeye ASLA dahil edilmez, aksi halde eski/gerçek başvurular silinir).
+const CUTOFF = new Date("2026-07-07T00:00:00Z")
+test("shouldPurgeUnverifiedWorkshop", () => {
+  const base = { approvalStatus: "pending", trialStartedAt: null, createdAt: new Date("2026-07-08"),
+    billingOrderCount: 0, serviceOrderCount: 0, liveVerificationTxnCount: 0 }
+  // Bu test grubüne özel "hoursAgo": kaydın KENDİ createdAt'ına göre N saat
+  // sonrası (dosya başındaki paylaşılan hoursAgo/NOW ile karıştırılmasın —
+  // o farklı bir sabit ana referans noktasını temel alır).
+  const hoursAgo = (n: number) => new Date(base.createdAt.getTime() + n * HOUR)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base }, hoursAgo(49))).toBe(true)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base }, hoursAgo(1))).toBe(false)          // taze
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, createdAt: new Date(CUTOFF.getTime() - HOUR) }, hoursAgo(999))).toBe(false) // legacy
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, billingOrderCount: 1 }, hoursAgo(99))).toBe(false)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, serviceOrderCount: 1 }, hoursAgo(99))).toBe(false)
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, trialStartedAt: new Date() }, hoursAgo(99))).toBe(false)
+  // KRİTİK: canlı (initiated/callback_received) doğrulama denemesi olan workshop
+  // ASLA silinmez — callback_received'da takılı bir 1 TL bloke (para çekilmiş,
+  // aktivasyon tamamlanmamış) retryStuckActivation ile kurtarılabilir kalmalı;
+  // silmek hem banka blokesini sahipsiz bırakır hem kurtarılacak satırı yok eder.
+  expect(shouldPurgeUnverifiedWorkshop({ ...base, liveVerificationTxnCount: 1 }, hoursAgo(999))).toBe(false)
+})
+
+// ---- resolvePurgeLegacyCutoff (TRIAL_PURGE_CUTOFF env override) ----
+
+const FALLBACK = new Date("2026-07-07T00:00:00Z")
+
+test("resolvePurgeLegacyCutoff: geçerli ISO env değeri kullanılır (gerçek deploy anına ayarlanabilir)", () => {
+  const override = "2026-09-01T00:00:00Z"
+  expect(resolvePurgeLegacyCutoff(override, FALLBACK).getTime()).toBe(new Date(override).getTime())
+})
+
+test("resolvePurgeLegacyCutoff: yalnız tarih (saatsiz) ISO da kabul edilir", () => {
+  expect(resolvePurgeLegacyCutoff("2026-08-15", FALLBACK).getTime()).toBe(new Date("2026-08-15").getTime())
+})
+
+test("resolvePurgeLegacyCutoff: env yoksa/boşsa gömülü varsayılana düşer", () => {
+  expect(resolvePurgeLegacyCutoff(undefined, FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("   ", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+})
+
+test("resolvePurgeLegacyCutoff: çöp/geçersiz env değeri varsayılana düşer (gerçek başvuruları koru)", () => {
+  expect(resolvePurgeLegacyCutoff("not-a-date", FALLBACK).getTime()).toBe(FALLBACK.getTime())
+  expect(resolvePurgeLegacyCutoff("2026-13-99", FALLBACK).getTime()).toBe(FALLBACK.getTime())
 })

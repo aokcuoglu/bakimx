@@ -53,12 +53,15 @@ export interface AdminOrderRow {
 }
 
 /** callback_received durumunda takılı kalmış (para muhtemelen çekilmiş,
- *  aktivasyon tamamlanmamış) kart ödemesi. */
+ *  aktivasyon tamamlanmamış) kart ödemesi — satın alma siparişi VEYA kart
+ *  doğrulama denemesi olabilir (purpose ile ayırt edilir; doğrulamada
+ *  billingOrderId/reference yoktur). */
 export interface AdminStuckTxnRow {
   id: string
-  billingOrderId: string
+  purpose: "purchase" | "card_verification"
+  billingOrderId: string | null
   workshopName: string
-  reference: string
+  reference: string | null
   providerOrderId: string
   amountLabel: string
   createdAt: string
@@ -356,10 +359,13 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground">{r.workshopName}</span>
             <span className="font-semibold text-foreground">{r.amountLabel}</span>
+            {r.purpose === "card_verification" && <Badge variant="outline" className="text-[11px]">Doğrulama</Badge>}
           </div>
           <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1">
-            Referans: <span className="font-mono text-foreground">{r.reference}</span>
-            · İşlem: <CopyMono value={r.providerOrderId} />
+            {r.reference && (
+              <>Referans: <span className="font-mono text-foreground">{r.reference}</span> ·{" "}</>
+            )}
+            İşlem: <CopyMono value={r.providerOrderId} />
           </p>
           <p className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("tr-TR")} tarihinden beri &quot;callback_received&quot;</p>
           {error && <p className="text-destructive mt-1">{error}</p>}
