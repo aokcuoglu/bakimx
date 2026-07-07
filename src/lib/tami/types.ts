@@ -143,6 +143,9 @@ export interface TamiCallbackPayload extends TamiCallbackHashFields {
 
 export interface TamiClient {
   auth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse>
+  /** `/payment/pre-auth` — kart doğrulama (1 TL ön provizyon). auth3ds ile aynı
+   *  3DS başlatma sarmalayıcısı; başarıda iptal (cancel) ile bloke serbest bırakılır. */
+  preAuth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse>
   complete3ds(orderId: string): Promise<TamiComplete3dsResponse>
   cancel(input: TamiCancelInput): Promise<TamiReverseResponse>
   refund(input: TamiRefundInput): Promise<TamiReverseResponse>

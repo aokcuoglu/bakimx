@@ -110,30 +110,40 @@ ${hiddenInputsHtml(failFields)}
  * uçtan uca çalışır. İki buton: "Ödemeyi Onayla" (mdStatus=1/success=true) ve
  * "Başarısız Dene" (mdStatus=0/success=false).
  */
+function mockAuthResponse(input: TamiPaymentBody): TamiAuth3dsResponse {
+  const html = renderMockThreeDsHtml(input)
+  const threeDSHtmlContent = Buffer.from(html, "utf8").toString("base64")
+
+  return {
+    success: true,
+    systemTime: new Date().toISOString(),
+    correlationId: crypto.randomUUID(),
+    orderId: input.orderId,
+    amount: input.amount,
+    currency: input.currency,
+    installmentCount: input.installmentCount,
+    card: {
+      binNumber: input.card.number.replace(/\s/g, "").slice(0, 8),
+      maskedNumber: maskCardNumber(input.card.number),
+      cardBrand: "BONUS",
+      cardOrganization: "VISA",
+      cardType: "CREDIT",
+    },
+    threeDSHtmlContent,
+    securityHash: "mock-security-hash",
+  }
+}
+
 export function createMockTamiClient(): TamiClient {
   return {
     async auth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse> {
-      const html = renderMockThreeDsHtml(input)
-      const threeDSHtmlContent = Buffer.from(html, "utf8").toString("base64")
+      return mockAuthResponse(input)
+    },
 
-      return {
-        success: true,
-        systemTime: new Date().toISOString(),
-        correlationId: crypto.randomUUID(),
-        orderId: input.orderId,
-        amount: input.amount,
-        currency: input.currency,
-        installmentCount: input.installmentCount,
-        card: {
-          binNumber: input.card.number.replace(/\s/g, "").slice(0, 8),
-          maskedNumber: maskCardNumber(input.card.number),
-          cardBrand: "BONUS",
-          cardOrganization: "VISA",
-          cardType: "CREDIT",
-        },
-        threeDSHtmlContent,
-        securityHash: "mock-security-hash",
-      }
+    async preAuth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse> {
+      // Mock: ön provizyon 3DS'i auth3ds ile birebir aynı sahte akışı üretir
+      // (amount 1, aynı callback formları) — doğrulama akışı mock'ta da uçtan uca çalışır.
+      return mockAuthResponse(input)
     },
 
     async complete3ds(orderId: string): Promise<TamiComplete3dsResponse> {

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { z } from "zod/v4"
 import { prisma } from "@/lib/db"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
@@ -10,11 +9,11 @@ import { alertTamiMisconfigOnce, isCardPaymentBlocked } from "@/lib/tami/misconf
 import { TamiError, sanitizeForLog } from "@/lib/tami/errors"
 import { buildTamiPaymentBody } from "@/lib/tami/request-builder"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { cardSchema } from "@/lib/billing/card-schema"
 import {
   generateProviderOrderId,
   resolveClientIp,
   splitName,
-  luhnCheck,
 } from "@/lib/billing/payment-helpers"
 
 /**
@@ -28,35 +27,6 @@ import {
 
 const RL_MAX = 10
 const RL_WINDOW_MS = 10 * 60_000
-
-const NOW = () => new Date()
-
-const cardSchema = z
-  .object({
-    holderName: z.string().trim().min(2).max(64),
-    number: z
-      .string()
-      .transform((s) => s.replace(/\s/g, ""))
-      .refine((s) => /^\d{12,19}$/.test(s), "Kart numarası geçersiz")
-      .refine((s) => luhnCheck(s), "Kart numarası geçersiz"),
-    expireMonth: z.coerce.number().int().min(1).max(12),
-    expireYear: z.coerce.number().int(),
-    cvv: z.string().refine((s) => /^\d{3,4}$/.test(s), "CVV geçersiz"),
-  })
-  .transform((c) => ({
-    ...c,
-    // 2 haneli yılı 4 haneye normalize et ("28" → 2028).
-    expireYear: c.expireYear < 100 ? c.expireYear + 2000 : c.expireYear,
-  }))
-  .refine(
-    (c) => {
-      const now = NOW()
-      const y = now.getFullYear()
-      const m = now.getMonth() + 1
-      return c.expireYear > y || (c.expireYear === y && c.expireMonth >= m)
-    },
-    { message: "Kartın son kullanma tarihi geçmiş" }
-  )
 
 function appOrigin(request: Request): string {
   return process.env.APP_URL || new URL(request.url).origin

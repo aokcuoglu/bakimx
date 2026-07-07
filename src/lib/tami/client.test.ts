@@ -104,6 +104,31 @@ test("auth3ds: gönderilen body'de securityHash alanı vardır ve boş değildir
   expect((sentBody?.securityHash as string).split(".").length).toBe(3)
 })
 
+test("preAuth3ds: /payment/pre-auth'a POST eder (auth3ds ile aynı gövde, farklı endpoint)", async () => {
+  let path = ""
+  let sentBody: Record<string, unknown> | undefined
+  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    path = new URL(url).pathname
+    sentBody = JSON.parse(init?.body as string)
+    return new Response(
+      JSON.stringify({
+        success: true,
+        systemTime: "2026-07-07T12:00:00Z",
+        correlationId: "c1",
+        orderId: sampleInput.orderId,
+        threeDSHtmlContent: "PGh0bWw+PC9odG1sPg==",
+      }),
+      { status: 200 }
+    )
+  }) as typeof fetch
+
+  const client = createTamiClient(cfg)
+  await client.preAuth3ds(sampleInput)
+
+  expect(path).toBe("/payment/pre-auth")
+  expect(typeof sentBody?.securityHash).toBe("string")
+})
+
 test("auth3ds: TAMI hata yanıtı (errorCode) → TamiError fırlatır, userMessage haritadan gelir", async () => {
   globalThis.fetch = (async () => {
     return new Response(
@@ -342,6 +367,15 @@ test("mock auth3ds: formlar sipariş/tutar bilgilerini taşır, card PAN'ı form
   }
   expect(html).not.toContain(sampleInput.card.number)
   expect(html).not.toContain(sampleInput.card.cvv)
+})
+
+test("mock preAuth3ds: auth3ds ile aynı sahte 3DS yanıtını üretir (base64 HTML)", async () => {
+  const client = createMockTamiClient()
+  const result = await client.preAuth3ds(sampleInput)
+
+  expect(result.success).toBe(true)
+  const html = Buffer.from(result.threeDSHtmlContent as string, "base64").toString("utf8")
+  expect(html).toContain("TAMI Mock 3D Secure")
 })
 
 test("mock complete3ds/cancel/refund/queryTransaction: gerçek HTTP olmadan success döner", async () => {

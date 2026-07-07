@@ -94,6 +94,13 @@ export function createTamiClient(cfg: TamiConfig): TamiClient {
       return postJson<TamiAuth3dsResponse>("/payment/auth", { ...input, securityHash }, cfg)
     },
 
+    async preAuth3ds(input: TamiPaymentBody): Promise<TamiAuth3dsResponse> {
+      // Kart doğrulama ön provizyonu — gövde auth3ds ile aynı (buildTamiPaymentBody),
+      // yalnız endpoint farklı: /payment/pre-auth (canlı sandbox'ta doğrulandı).
+      const securityHash = await signSecurityHash(input, cfg)
+      return postJson<TamiAuth3dsResponse>("/payment/pre-auth", { ...input, securityHash }, cfg)
+    },
+
     async complete3ds(orderId: string): Promise<TamiComplete3dsResponse> {
       const body = { orderId }
       const securityHash = await signSecurityHash(body, cfg)
