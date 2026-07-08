@@ -159,6 +159,36 @@ test("auth3ds: TAMI hata yanıtı (errorCode) → TamiError fırlatır, userMess
   }
 })
 
+test("auth3ds: TAMI errorCode'u SAYI dönerse code STRING'e normalize edilir (Prisma String? kolonuna güvenli yazım)", async () => {
+  // Gerçek TAMI /payment/complete-3ds yanıtı errorCode'u JSON SAYI olarak dönebiliyor (148).
+  // Bu sayı Prisma'nın String? errorCode kolonuna doğrudan yazılırsa update FIRLATIR ve
+  // .catch(()=>{}) onu yutup txn'i callback_received'da takılı bırakır (canlı prod bug'ı).
+  // TamiError.code her zaman string olmalı.
+  globalThis.fetch = (async () => {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        systemTime: "2026-07-08T22:57:57Z",
+        correlationId: "err-corr-num",
+        errorCode: 148,
+        errorMessage: "Kart bilgileri hatalı. TAMI-148",
+      }),
+      { status: 200 }
+    )
+  }) as typeof fetch
+
+  const client = createTamiClient(cfg)
+  try {
+    await client.complete3ds("ORDER-NUM-CODE")
+    throw new Error("beklenen hata fırlatılmadı")
+  } catch (err) {
+    expect(err).toBeInstanceOf(TamiError)
+    const tamiErr = err as TamiError
+    expect(typeof tamiErr.code).toBe("string")
+    expect(tamiErr.code).toBe("148")
+  }
+})
+
 test("auth3ds: fetch reddedilirse (ağ hatası) → TamiError fırlatır, hata loglama çağrısı card alanını sızdırmaz", async () => {
   const errorLogs: unknown[] = []
   const originalConsoleError = console.error
