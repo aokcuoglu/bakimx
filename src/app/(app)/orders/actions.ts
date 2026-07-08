@@ -251,7 +251,9 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     note: has("note") ? (formData.get("note") as string) : undefined,
     brand: has("brand") ? (formData.get("brand") as string) : undefined,
     category: has("category") ? (formData.get("category") as string) : undefined,
-    categoryId: has("categoryId") ? Number(formData.get("categoryId")) : undefined,
+    categoryId: has("categoryId")
+      ? ((formData.get("categoryId") as string) === "" ? null : Number(formData.get("categoryId")))
+      : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -288,10 +290,17 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.serviceOrderItem.update({
-        where: { id: itemId, workshopId: user.workshopId },
-        data,
-      })
+      // Miktar değişiyorsa optimistik kilit (CAS): satır hâlâ okuduğumuz miktarda mı?
+      // Değilse (eşzamanlı düzenleme veya çift gönderim) stok deltası bayat kalır ve
+      // envanteri sessizce bozardı — reddet.
+      const guardedWhere =
+        newQty !== undefined
+          ? { id: itemId, workshopId: user.workshopId, quantity: item.quantity }
+          : { id: itemId, workshopId: user.workshopId }
+      const updRes = await tx.serviceOrderItem.updateMany({ where: guardedWhere, data })
+      if (updRes.count !== 1) {
+        throw new Error("Kalem bu sırada değişti, lütfen sayfayı yenileyip tekrar deneyin")
+      }
 
       if (stockNeedsSync && item.partId) {
         const delta = computeStockDelta(item.quantity, newQty!)

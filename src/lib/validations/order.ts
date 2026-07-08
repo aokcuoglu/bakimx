@@ -35,5 +35,5 @@ export const serviceOrderItemUpdateSchema = z.object({
   note: z.string().optional(),
   brand: z.string().optional(),
   category: z.string().optional(),
-  categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().optional(),
+  categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),
 })
