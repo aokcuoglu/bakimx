@@ -238,6 +238,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
   if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
 
   // Yalnızca formData'da gerçekten bulunan alanlar patch'lenir (kısmi güncelleme).
@@ -272,6 +273,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     brand?: string | null
     category?: string | null
     categoryId?: number | null
+    totalPrice?: number | null
   } = {}
   if (parsed.data.name !== undefined) data.name = parsed.data.name
   if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
@@ -282,6 +284,13 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+
+  // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat
+  // totalPrice satır totalini/genel toplamı yanlış gösterir — null'a çekip
+  // unitPrice×quantity fallback'ine düşür (totals.ts ve recalc bunu kullanır).
+  if (data.quantity !== undefined || data.unitPrice !== undefined) {
+    data.totalPrice = null
+  }
 
   // Miktar değiştiyse ve satır kendi stoğumuza bağlıysa (partId + type=part) stok farkını mutabık kıl.
   const newQty = parsed.data.quantity

@@ -45,7 +45,18 @@ export function PartBrandCombobox({
       onInputValueChange={(v: string) => onChange(v)}
       onValueChange={(b: PartBrandSummary | null) => { if (b) onChange(b.name) }}
     >
-      <ComboboxInput placeholder={placeholder} />
+      <ComboboxInput
+        placeholder={placeholder}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return
+          // Ok tuşuyla bir seçenek vurguluysa Base UI normal seçsin.
+          if (e.currentTarget.getAttribute("aria-activedescendant")) return
+          // Serbest metinde Enter: Base UI input'u boşaltıp değeri geri alır —
+          // durdur ki yazılan marka korunsun.
+          e.preventBaseUIHandler()
+          e.preventDefault()
+        }}
+      />
       <ComboboxContent>
         <ComboboxEmpty className="py-2 text-sm text-muted-foreground">
           Listede yok — yazdığınız değer kullanılacak

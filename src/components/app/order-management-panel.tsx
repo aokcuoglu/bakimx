@@ -515,6 +515,7 @@ export function PartsLaborCard({
                   <Label className="text-xs">Kategori</Label>
                   <div className="mt-1">
                     <ItemCategoryCascade
+                      key={`add-cat-${category}`}
                       vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
                       value={category || null}
                       onSelect={(sel) => { setCategory(sel.category); setCategoryId(sel.categoryId) }}
