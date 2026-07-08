@@ -178,6 +178,9 @@ export function PartsLaborCard({
   const [qty, setQty] = useState("1")
   const [price, setPrice] = useState("")
   const [note, setNote] = useState("")
+  const [brand, setBrand] = useState("")
+  const [category, setCategory] = useState("")
+  const [categoryId, setCategoryId] = useState<number | null>(null)
   const [catalogSearch, setCatalogSearch] = useState("")
   const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
@@ -277,6 +280,9 @@ export function PartsLaborCard({
     setQty("1")
     setPrice("")
     setNote("")
+    setBrand("")
+    setCategory("")
+    setCategoryId(null)
     setAddingType(null)
     setShowCatalog(false)
     setCatalogSearch("")
@@ -299,6 +305,9 @@ export function PartsLaborCard({
     // Price input is TRY (lira); the server stores kuruş.
     if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
+    if (addingType === "part" && brand) formData.set("brand", brand)
+    if (addingType === "part" && category) formData.set("category", category)
+    if (addingType === "part" && categoryId != null) formData.set("categoryId", String(categoryId))
     if (addingType === "part" && tecdocArticleId != null) formData.set("tecdocArticleId", String(tecdocArticleId))
     // Kendi stoğundan seçilen parça — server stok düşüp partId'yi kaydeder.
     if (addingType === "part" && partId) formData.set("partId", partId)
@@ -464,7 +473,7 @@ export function PartsLaborCard({
                     setTecdocArticleId(sel.tecdocArticleId)
                     // TecDoc katalog parçası kendi stoğumuzdan değil — partId'yi temizle.
                     setPartId(null)
-                    if (!note && sel.supplierName) setNote(sel.supplierName)
+                    if (!brand && sel.supplierName) setBrand(sel.supplierName)
                   }}
                 />
               </div>
@@ -496,6 +505,24 @@ export function PartsLaborCard({
                 <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
               </div>
             </div>
+            {addingType === "part" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Marka</Label>
+                  <PartBrandCombobox value={brand} onChange={setBrand} />
+                </div>
+                <div>
+                  <Label className="text-xs">Kategori</Label>
+                  <div className="mt-1">
+                    <ItemCategoryCascade
+                      vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                      value={category || null}
+                      onSelect={(sel) => { setCategory(sel.category); setCategoryId(sel.categoryId) }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <Label className="text-xs">Not</Label>
               <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsiyonel" />
