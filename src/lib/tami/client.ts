@@ -52,7 +52,9 @@ async function postJson<TResp>(path: string, body: Record<string, unknown>, cfg:
     }
 
     if (!res.ok || json?.success === false || json?.errorCode) {
-      const code = json?.errorCode || String(res.status)
+      // TAMI errorCode'u JSON SAYI dönebiliyor (ör. 148); Prisma String? kolonuna güvenli
+      // yazım için burada string'e normalize edilir (0 dahil — `|| status` sıfırı düşürürdü).
+      const code = json?.errorCode != null ? String(json.errorCode) : String(res.status)
       throw new TamiError({
         code,
         message: json?.errorMessage || `TAMI isteği başarısız oldu (HTTP ${res.status})`,

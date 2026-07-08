@@ -277,7 +277,12 @@ export async function POST(request: Request) {
       console.error("[payments/callback] complete3ds failed:", sanitizeForLog({ providerOrderId, code, message }))
       await prisma.paymentTransaction
         .update({ where: { id: txn.id }, data: { status: "failed", errorCode: code, errorMessage: message } })
-        .catch(() => {})
+        .catch((e) =>
+          console.error(
+            "[payments/callback] txn 'failed' durumuna yazılamadı (yutulmuş hata):",
+            sanitizeForLog({ providerOrderId, error: e instanceof Error ? e.message : String(e) })
+          )
+        )
       return resultRedirect(request, ref)
     }
   }
@@ -405,7 +410,12 @@ async function handleCardVerificationCallback(
     console.error("[payments/callback] doğrulama complete3ds failed:", sanitizeForLog({ providerOrderId, code, message }))
     await prisma.paymentTransaction
       .update({ where: { id: txn.id }, data: { status: "failed", errorCode: code, errorMessage: message } })
-      .catch(() => {})
+      .catch((e) =>
+        console.error(
+          "[payments/callback] txn 'failed' durumuna yazılamadı (yutulmuş hata):",
+          sanitizeForLog({ providerOrderId, error: e instanceof Error ? e.message : String(e) })
+        )
+      )
     return verifyResultRedirect(request, vtoken)
   }
 }
