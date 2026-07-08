@@ -197,6 +197,13 @@ export function PartsLaborCard({
 
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
+  useEffect(() => {
+    const timers = saveTimers.current
+    return () => {
+      Object.values(timers).forEach((t) => clearTimeout(t))
+    }
+  }, [])
+
   function updateItem(itemId: string, patch: Partial<OrderItem>, opts?: { debounce?: boolean }) {
     // 1) Optimistik güncelleme
     setLocalItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...patch } : i)))
@@ -223,8 +230,11 @@ export function PartsLaborCard({
       }
     }
     if (opts?.debounce) {
-      clearTimeout(saveTimers.current[itemId])
-      saveTimers.current[itemId] = setTimeout(send, 500)
+      // Alan-bazlı anahtar: aynı kalemde marka ile miktar birbirinin bekleyen
+      // gönderimini iptal etmesin (paylaşılan itemId anahtarı bunu yapardı).
+      const key = `${itemId}:${Object.keys(patch).sort().join(",")}`
+      clearTimeout(saveTimers.current[key])
+      saveTimers.current[key] = setTimeout(send, 500)
     } else {
       void send()
     }
@@ -532,7 +542,7 @@ function ItemRow({
   function commitPrice() {
     setEditingPrice(false)
     const lira = Number(priceDraft)
-    if (!priceDraft || Number.isNaN(lira)) return
+    if (!priceDraft || Number.isNaN(lira) || lira < 0) return
     const kurus = liraToKurus(lira)
     if (kurus !== item.unitPrice) onUpdate?.(item.id, { unitPrice: kurus })
   }
@@ -616,7 +626,7 @@ function ItemRow({
             <div className="w-40">
               <PartBrandCombobox
                 value={item.brand || ""}
-                onChange={(v) => { onUpdate(item.id, { brand: v }); }}
+                onChange={(v) => onUpdate(item.id, { brand: v }, { debounce: true })}
               />
             </div>
           ) : (
