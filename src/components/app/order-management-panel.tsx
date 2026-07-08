@@ -46,6 +46,9 @@ export type OrderItem = {
   unitPrice: number | null
   totalPrice: number | null
   note: string | null
+  brand: string | null
+  category: string | null
+  categoryId: number | null
 }
 
 export type Totals = {

@@ -105,6 +105,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       note: i.note,
+      brand: i.brand,
+      category: i.category,
+      categoryId: i.categoryId,
     })),
     customer: {
       id: intakeForm.customer.id,
