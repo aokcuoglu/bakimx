@@ -753,6 +753,12 @@ model ServiceOrderItem {
   partId         String?
   part           PartStockItem? @relation(fields: [partId], references: [id])
   note           String?
+  // Parça markası (TecDoc supplier adı veya serbest). Eski satırlarda marka note'ta kalabilir.
+  brand           String?
+  // Seçilen yaprak kategori etiketi (örn. "Yağ filtresi").
+  category        String?
+  // TecDoc kategori düğüm id'si (ileride filtre/rapor için); serbest metin kategoride null.
+  categoryId      Int?
   // TecDoc article linkage when the part was picked from the vehicle catalog
   // (no FK — external id). Enables future reorder/OEM cross-reference.
   tecdocArticleId Int?
