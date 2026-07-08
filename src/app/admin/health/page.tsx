@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { requireAdminCapability } from "@/lib/admin"
 import { getHealthDetail } from "@/lib/ops/health"
+import { getRapidApiUsage } from "@/lib/rapidapi-quota"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -17,7 +18,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AdminHealthPage() {
   await requireAdminCapability("viewHealth")
   const detail = await getHealthDetail()
+  const usage = await getRapidApiUsage()
   const { summary } = detail
+
+  const usageTone =
+    usage.pct >= 90 ? "rose" : usage.pct >= 70 ? "amber" : "emerald"
+  const usageBar =
+    usageTone === "rose" ? "bg-rose-500" : usageTone === "amber" ? "bg-amber-500" : "bg-emerald-500"
 
   return (
     <div className="space-y-6">
@@ -94,6 +101,51 @@ export default async function AdminHealthPage() {
           </div>
         </Section>
       </div>
+
+      <Section title="RapidAPI Kotası (bu ay · VIN + parça kataloğu ortak)">
+        <div className="flex items-baseline justify-between">
+          <span className="text-2xl font-bold text-foreground tabular-nums">
+            {usage.total.toLocaleString("tr-TR")}
+            <span className="text-sm font-normal text-muted-foreground">
+              {" "}/ {usage.cap.toLocaleString("tr-TR")}
+            </span>
+          </span>
+          <span
+            className={cn(
+              "text-sm font-semibold tabular-nums",
+              usageTone === "rose" ? "text-rose-600" : usageTone === "amber" ? "text-amber-600" : "text-emerald-600",
+            )}
+          >
+            %{usage.pct.toFixed(1)}
+          </span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div className={cn("h-full rounded-full", usageBar)} style={{ width: `${Math.min(usage.pct, 100)}%` }} />
+        </div>
+
+        <div className="space-y-1 pt-1">
+          {usage.breakdown.map((b) => (
+            <div key={b.label} className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{b.label}</span>
+              <span className="text-foreground tabular-nums">
+                {b.billed.toLocaleString("tr-TR")} çağrı
+                {b.served > 0 && (
+                  <span className="text-muted-foreground"> · {b.served.toLocaleString("tr-TR")} cache</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
+          <AlertTriangle className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
+          <span>
+            Yalnızca bu uygulamanın kaydettiği çağrıları sayar. Hatalı çağrılar faturalanır ama cache'lenmez ve{" "}
+            <code className="font-mono">migrate reset</code> bu satırları siler — gerçek sayı için RapidAPI panosuna
+            bakın. Geliştirme sırasındaki manuel denemeler burada görünmez.
+          </span>
+        </p>
+      </Section>
 
       <Section title={`Başarısız İletişim (son 24s · ${detail.failedComms.length})`}>
         {detail.failedComms.length === 0 ? (

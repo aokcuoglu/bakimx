@@ -199,7 +199,7 @@ export function CustomerVehiclePicker({
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
-              render={<Link href={`/vehicles/${selected.vehicleId}`} target="_blank" />}
+              render={<Link href={`/vehicles/${selected.vehicleId}`} />}
             >
               <Info className="size-4 mr-1" /> Detay
             </Button>
@@ -270,7 +270,26 @@ export function CustomerVehiclePicker({
               onOpenChange={setComboOpen}
               onValueChange={(r: UnifiedResult | null) => { if (r && r.kind === "vehicle") pickVehicle(r) }}
             >
-              <ComboboxInput showTrigger={false} placeholder="Plaka ile ara…" />
+              <ComboboxInput
+                showTrigger={false}
+                placeholder="Plaka ile ara…"
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return
+                  // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
+                  // Base UI onu normal şekilde seçsin.
+                  if (e.currentTarget.getAttribute("aria-activedescendant")) return
+                  // Doğrudan input'ta Enter: Base UI'nın Enter'da popup'ı kapatıp
+                  // input'u (boş) seçili değere geri döndürme davranışını durdur ve
+                  // kararı biz verelim — eşleşen araç varsa onu seç, yoksa "Oluştur"
+                  // yeni araç modalını (yazılan plakayla) aç.
+                  e.preventBaseUIHandler()
+                  e.preventDefault()
+                  if (loading) return
+                  const first = modeResults[0]
+                  if (first && first.kind === "vehicle") pickVehicle(first)
+                  else if (query.trim()) setModalOpen(true)
+                }}
+              />
               <ComboboxContent>
                 <ComboboxEmpty className="p-0">
                   {loading ? (

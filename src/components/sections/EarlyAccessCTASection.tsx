@@ -32,8 +32,9 @@ export function EarlyAccessCTASection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="mt-4 text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
         >
-          Erken üyelere özel başlangıç fiyatı · 15 gün ücretsiz · kredi kartı
-          gerekmez.
+          Erken üyelere özel başlangıç fiyatı · 7 gün ücretsiz deneme · kartınızdan
+          yalnızca 1 TL&apos;lik doğrulama provizyonu alınır ve anında iade edilir;
+          deneme süresince ücret ödemezsiniz.
         </motion.p>
         <motion.div
           initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}

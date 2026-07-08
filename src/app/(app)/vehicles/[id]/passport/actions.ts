@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
@@ -16,7 +16,7 @@ export async function createPassportTokenAction(vehicleId: string, data: {
   showReminders?: boolean
   showPaymentStatus?: boolean
 }) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -58,7 +58,7 @@ export async function updatePassportTokenAction(tokenId: string, vehicleId: stri
   showReminders?: boolean
   showPaymentStatus?: boolean
 }) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const existing = await prisma.vehiclePassportToken.findFirst({
     where: { id: tokenId, workshopId: user.workshopId, vehicleId },
@@ -88,7 +88,7 @@ export async function updatePassportTokenAction(tokenId: string, vehicleId: stri
 }
 
 export async function deletePassportTokenAction(tokenId: string, vehicleId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const existing = await prisma.vehiclePassportToken.findFirst({
     where: { id: tokenId, workshopId: user.workshopId, vehicleId },

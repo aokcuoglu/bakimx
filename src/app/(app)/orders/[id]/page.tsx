@@ -9,6 +9,7 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getTechnicians } from "@/lib/technician/queries"
+import { getOrderActivity } from "@/lib/orders/activity"
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -117,12 +118,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       email: intakeForm.customer.email,
     },
     vehicle: {
+      id: intakeForm.vehicle.id,
       plate: intakeForm.vehicle.plate,
       brand: intakeForm.vehicle.brand,
       model: intakeForm.vehicle.model,
       modelYear: intakeForm.vehicle.modelYear,
       mileage: intakeForm.vehicle.mileage,
       vin: intakeForm.vehicle.vin,
+      catalogVehicleTypeId: intakeForm.vehicle.catalogVehicleTypeId,
+      // Ruhsat ipuçları — "VIN'den bağla" resolver'ının doğru motor varyantını
+      // otomatik seçmesi için gönderilir (yoksa kullanıcı listeden seçer).
+      engineDisplacement: intakeForm.vehicle.engineDisplacement,
+      enginePower: intakeForm.vehicle.enginePower,
+      fuelType: intakeForm.vehicle.fuelType,
+      firstRegistrationDate: intakeForm.vehicle.firstRegistrationDate,
     },
     intake: {
       id: intakeForm.id,
@@ -216,8 +225,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const technicians = await getTechnicians(user.workshopId)
 
+  const activity = await getOrderActivity({
+    workshopId: user.workshopId,
+    orderId: order.id,
+    intakeFormId: intakeForm.id,
+  })
+
   return (
     <AppShell
+      constrained
       workshopName={workshop?.name}
       pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
     >
@@ -226,6 +242,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         order={safeOrder}
         technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
         hasAiAdvisor={hasAiAdvisor}
+        activity={activity}
       />
     </AppShell>
   )

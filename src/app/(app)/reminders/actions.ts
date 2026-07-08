@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
-import { getCurrentUser, assertWorkshopAccess } from "@/lib/auth"
+import { requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
 import { reminderCreateSchema } from "@/lib/validations/reminder"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
@@ -13,8 +13,7 @@ import { syncMaintenanceReminderToCalendar } from "@/lib/calendar/sync"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
 
 export async function createReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -119,8 +118,7 @@ export async function createReminderAction(formData: FormData) {
 }
 
 export async function updateReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -199,8 +197,7 @@ export async function updateReminderAction(formData: FormData) {
 }
 
 export async function completeReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -224,8 +221,7 @@ export async function completeReminderAction(formData: FormData) {
 }
 
 export async function postponeReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const id = formData.get("id") as string
   const newDueDate = formData.get("dueDate") as string
@@ -251,8 +247,7 @@ export async function postponeReminderAction(formData: FormData) {
 }
 
 export async function cancelReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -273,8 +268,7 @@ export async function cancelReminderAction(formData: FormData) {
 }
 
 export async function createAppointmentFromReminderAction(formData: FormData) {
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Unauthorized")
+  const { user } = await requireWritableWorkshop()
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")

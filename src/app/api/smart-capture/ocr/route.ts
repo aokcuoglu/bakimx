@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { getOcrProvider } from "@/lib/ocr/provider"
+import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
@@ -8,7 +10,9 @@ import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES }
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
 
     const contentLength = request.headers.get("content-length")
     if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
@@ -86,9 +90,64 @@ export async function POST(request: Request) {
       }
     }
 
-    // Vision OCR için rengi koru (gri tonlama yalnız Tesseract/plaka içindir).
-    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType, { grayscale: false })
+    const imageHash = hashImageBuffer(imageBuffer)
     const provider = await getOcrProvider()
+
+    // Byte-hash dedup: aynı görsel daha önce (aynı provider ile) okunduysa
+    // provider'ı hiç çağırmadan cache'ten dön. Mock asla cache'lenmez.
+    const cachedLog =
+      provider.name === "mock"
+        ? null
+        : await prisma.ocrLog.findFirst({
+            where: {
+              workshopId: user.workshopId,
+              imageHash,
+              ocrProvider: provider.name,
+              extractedJson: { not: null },
+            },
+            orderBy: { createdAt: "desc" },
+          })
+
+    // Vision OCR için rengi koru (gri tonlama yalnız Tesseract/plaka içindir).
+    // Preview UI için cache hit'te de normalize yaparız (ucuz kısım); yalnız OCR atlanır.
+    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType, { grayscale: false })
+
+    if (cachedLog) {
+      // Extraction'ı önceki satırdan aynen al; bu tarama için YENİ bir OcrLog aç
+      // (her taramanın kendi confirmedJson slotu olmalı, confirm akışı bozulmasın).
+      const cachedFields = JSON.parse(cachedLog.extractedJson as string) as Record<
+        string,
+        { value: string; confidence?: number }
+      >
+
+      const cachedOcrLog = await prisma.ocrLog.create({
+        data: {
+          workshopId: user.workshopId,
+          ocrProvider: provider.name,
+          rawText: cachedLog.rawText,
+          extractedJson: cachedLog.extractedJson,
+          imageHash,
+          userId: user.id,
+        },
+      })
+
+      await AuditLogAction(
+        user.workshopId,
+        user.id,
+        "OcrLog",
+        cachedOcrLog.id,
+        "ocr_capture",
+        JSON.stringify({ provider: provider.name, cacheHit: true, sourceOcrLogId: cachedLog.id })
+      )
+
+      return NextResponse.json({
+        result: { ...cachedFields, provider: provider.name },
+        ocrLogId: cachedOcrLog.id,
+        provider: provider.name,
+        previewDataUrl: normalizedImage.previewDataUrl,
+      })
+    }
+
     const result = await provider.extractRegistration(
       normalizedImage.buffer,
       normalizedImage.mimeType
@@ -118,6 +177,7 @@ export async function POST(request: Request) {
         ocrProvider: provider.name,
         rawText: result.rawText,
         extractedJson,
+        imageHash: provider.name === "mock" ? null : imageHash,
         userId: user.id,
       },
     })

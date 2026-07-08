@@ -31,7 +31,10 @@ import {
 import { cn } from "@/lib/utils"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { SendReminderButton } from "@/components/app/send-reminder-button"
+import { TecdocPartPicker } from "@/components/app/tecdoc-part-picker"
 import { formatPrice } from "@/lib/parts/format"
+import { isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 
 export type OrderItem = {
   id: string
@@ -85,7 +88,7 @@ export type OrderDetailData = {
     phone: string
     email: string | null
   }
-  vehicle: { plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null }
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; catalogVehicleTypeId: number | null; engineDisplacement: string | null; enginePower: string | null; fuelType: string | null; firstRegistrationDate: string | null }
   intake: {
     id: string
     status: string
@@ -121,13 +124,15 @@ export type PricingMetaDraft = {
 // `primary: true` marks the happy-path forward action; other forwards are
 // secondary, `cancelled` is destructive. Consumed by the merged detail header.
 export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string; primary?: boolean }[]> = {
-  draft: [{ key: "in_progress", label: "İşleme Al", primary: true }, { key: "waiting_approval", label: "Onaya Gönder" }],
+  // Onay artık teslimde (delivery OTP) alınır, kabulde değil (bkz. status-transitions.ts).
+  // Taslak iş emri doğrudan başlar; "Onaya Gönder" kaldırıldı. waiting_approval sadece
+  // eski kayıtlar ileri gidebilsin diye durur (onay jargonu olmadan).
+  draft: [{ key: "in_progress", label: "Başla", primary: true }],
   waiting_approval: [
-    { key: "approved", label: "Onayla", primary: true },
-    { key: "in_progress", label: "Onaysız Devam" },
+    { key: "in_progress", label: "Başla", primary: true },
     { key: "cancelled", label: "İptal" },
   ],
-  approved: [{ key: "in_progress", label: "İşleme Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
+  approved: [{ key: "in_progress", label: "Başla", primary: true }, { key: "waiting_parts", label: "Parça Bekliyor" }],
   in_progress: [
     { key: "waiting_parts", label: "Parça Bekliyor" },
     { key: "ready_for_delivery", label: "Teslime Hazır", primary: true },
@@ -138,22 +143,27 @@ export const NEXT_STATUSES: Record<string, { key: OrderStatusKey; label: string;
   ],
   ready_for_delivery: [{ key: "delivered", label: "Teslim Edildi", primary: true }, { key: "cancelled", label: "İptal" }],
   delivered: [],
-  cancelled: [],
+  cancelled: [{ key: "draft", label: "Yeniden Aktif Et", primary: true }],
 }
 
 export function PartsLaborCard({
   orderId,
+  status,
   items,
+  vehicle,
   onError,
   onLoading,
   loading,
 }: {
   orderId: string
+  status: string
   items: OrderItem[]
+  vehicle?: { id: string; catalogVehicleTypeId: number | null; vin: string | null; modelYear: number | null; engineDisplacement: string | null; enginePower: string | null; fuelType: string | null; firstRegistrationDate: string | null }
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
 }) {
+  const locked = isOrderLocked(status as OrderStatus)
   const [addingType, setAddingType] = useState<"part" | "labor" | null>(null)
   const [name, setName] = useState("")
   const [sku, setSku] = useState("")
@@ -165,6 +175,11 @@ export function PartsLaborCard({
   const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
+  // Set when the part was picked from the TecDoc vehicle catalog; cleared on
+  // reset and when a local stock part is selected instead.
+  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
+  // Kendi stoğundan seçilen parça (PartStockItem.id). Boşsa manuel/katalog parçası.
+  const [partId, setPartId] = useState<string | null>(null)
 
   const parts = items.filter((i) => i.type === "part")
   const labor = items.filter((i) => i.type === "labor")
@@ -189,9 +204,11 @@ export function PartsLaborCard({
     // Catalog prices are kuruş; the input holds TRY (lira).
     setPrice(part.salePrice != null ? String(kurusToLira(part.salePrice)) : "")
     setQty("1")
+    setPartId(part.id)
     setShowCatalog(false)
     setCatalogSearch("")
     setCatalogResults([])
+    setTecdocArticleId(null)
   }
 
   function resetForm() {
@@ -205,6 +222,8 @@ export function PartsLaborCard({
     setShowCatalog(false)
     setCatalogSearch("")
     setCatalogResults([])
+    setTecdocArticleId(null)
+    setPartId(null)
   }
 
   async function handleAdd() {
@@ -221,6 +240,9 @@ export function PartsLaborCard({
     // Price input is TRY (lira); the server stores kuruş.
     if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
+    if (addingType === "part" && tecdocArticleId != null) formData.set("tecdocArticleId", String(tecdocArticleId))
+    // Kendi stoğundan seçilen parça — server stok düşüp partId'yi kaydeder.
+    if (addingType === "part" && partId) formData.set("partId", partId)
 
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: formData })
@@ -271,7 +293,7 @@ export function PartsLaborCard({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Parçalar ({parts.length})</p>
             <div className="space-y-1.5">
               {parts.map((item) => (
-                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={handleRemove} />
+                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={locked ? undefined : handleRemove} />
               ))}
             </div>
           </div>
@@ -281,7 +303,7 @@ export function PartsLaborCard({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">İşçilikler ({labor.length})</p>
             <div className="space-y-1.5">
               {labor.map((item) => (
-                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={handleRemove} />
+                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={locked ? undefined : handleRemove} />
               ))}
             </div>
           </div>
@@ -294,7 +316,11 @@ export function PartsLaborCard({
           </div>
         )}
 
-        {!addingType ? (
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 text-center pt-2 border-t">
+            Teslim edilmiş veya iptal edilmiş iş emrinde kalem eklenemez/silinemez
+          </p>
+        ) : !addingType ? (
           <div className="flex flex-wrap gap-2 pt-2 border-t">
             <Button size="sm" variant="outline" onClick={() => setAddingType("part")} className="flex-1 sm:flex-none">
               <Plus className="size-3.5 mr-1" /> Parça Ekle
@@ -357,6 +383,18 @@ export function PartsLaborCard({
                     ))}
                   </div>
                 )}
+                <TecdocPartPicker
+                  vehicle={vehicle}
+                  onSelect={(sel) => {
+                    setName(sel.name)
+                    setSku(sel.articleNo)
+                    setUnit("adet")
+                    setTecdocArticleId(sel.tecdocArticleId)
+                    // TecDoc katalog parçası kendi stoğumuzdan değil — partId'yi temizle.
+                    setPartId(null)
+                    if (!note && sel.supplierName) setNote(sel.supplierName)
+                  }}
+                />
               </div>
             )}
 
@@ -406,7 +444,7 @@ export function PartsLaborCard({
   )
 }
 
-function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: number | null; onRemove: (id: string) => void }) {
+function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: number | null; onRemove?: (id: string) => void }) {
   return (
     <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg gap-2">
       <div className="min-w-0 flex-1">
@@ -424,13 +462,15 @@ function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: nu
         <span className={cn("text-sm font-semibold", lineTotal == null ? "text-muted-foreground/70 font-normal text-xs" : "text-foreground")}>
           {lineTotal != null ? formatTRY(lineTotal) : "—"}
         </span>
-        <button
-          onClick={() => onRemove(item.id)}
-          className="p-1 text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
-          aria-label="Kalemi sil"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
+        {onRemove && (
+          <button
+            onClick={() => onRemove(item.id)}
+            className="p-1 text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+            aria-label="Kalemi sil"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -441,6 +481,7 @@ export function PricingSummaryCard({
   paymentStatus,
   paidAmount,
   remainingAmount,
+  locked,
   editingMeta,
   setEditingMeta,
   metaDraft,
@@ -452,6 +493,7 @@ export function PricingSummaryCard({
   paymentStatus: string
   paidAmount: number
   remainingAmount: number
+  locked: boolean
   editingMeta: boolean
   setEditingMeta: (b: boolean) => void
   metaDraft: PricingMetaDraft
@@ -532,7 +574,11 @@ export function PricingSummaryCard({
         )}
 
         <div className="pt-3 border-t">
-          {editingMeta ? (
+          {locked ? (
+            <p className="text-xs text-muted-foreground/70 text-center">
+              Teslim edilmiş veya iptal edilmiş iş emrinde fiyatlandırma düzenlenemez
+            </p>
+          ) : editingMeta ? (
             <div className="flex gap-2">
               <Button onClick={saveMeta} disabled={loading} size="sm" className="flex-1">
                 {loading ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
@@ -603,6 +649,7 @@ export function OrderInfoCard({
   order: OrderDetailData
   technicians?: { id: string; fullName: string; role: string }[]
 }) {
+  const locked = isOrderLocked(order.status as OrderStatus)
   const [isPending, startTransition] = useTransition()
   const handleAssign = (technicianId: string) => {
     startTransition(async () => {
@@ -647,20 +694,22 @@ export function OrderInfoCard({
                   <User className="size-3.5 text-muted-foreground/70" />
                   {order.assignedTechnicianName}
                 </span>
-                <button
-                  onClick={handleUnassign}
-                  disabled={isPending}
-                  className="text-[11px] text-foreground hover:text-foreground/80 underline disabled:opacity-50"
-                >
-                  Kaldır
-                </button>
+                {!locked && (
+                  <button
+                    onClick={handleUnassign}
+                    disabled={isPending}
+                    className="text-[11px] text-foreground hover:text-foreground/80 underline disabled:opacity-50"
+                  >
+                    Kaldır
+                  </button>
+                )}
               </>
             ) : (
               <span className="text-sm text-muted-foreground/70">—</span>
             )}
           </div>
         </div>
-        {technicians && technicians.length > 0 && (
+        {!locked && technicians && technicians.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {technicians.map((t) => (
               <button

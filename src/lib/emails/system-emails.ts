@@ -1,4 +1,5 @@
 import { renderEmailLayout } from "./layout"
+import { formatMinor } from "@/lib/billing/pricing"
 
 export interface BuiltEmail {
   subject: string
@@ -17,6 +18,15 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;")
 }
 
+function formatTrDate(d: Date): string {
+  return d.toLocaleDateString("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
 export function workshopApprovedEmail(p: { firstName: string; workshopName: string }): BuiltEmail {
   const name = escapeHtml(p.firstName || "Yetkili")
   const ws = escapeHtml(p.workshopName)
@@ -26,7 +36,7 @@ export function workshopApprovedEmail(p: { firstName: string; workshopName: stri
       heading: "Hesabınız onaylandı",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 15 günlük ücretsiz deneme süreniz başladı.</p>` +
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 7 günlük ücretsiz deneme süreniz başladı.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
       footerNote: "Bu e-postayı, BakimX'e iş yeri başvurusu yaptığınız için aldınız.",
@@ -50,18 +60,32 @@ export function workshopRejectedEmail(p: { firstName: string; workshopName: stri
   }
 }
 
-export function applicationReceivedEmail(p: { firstName: string; workshopName: string }): BuiltEmail {
-  const name = escapeHtml(p.firstName || "Yetkili")
+/** Sent the moment card verification succeeds (activateVerifiedWorkshop) — the
+ *  pending workshop flips to approved and its 7-day trial starts right then. */
+export function welcomeTrialEmail(p: {
+  ownerName: string
+  workshopName: string
+  trialEndsAt: Date
+}): BuiltEmail {
+  const name = escapeHtml(p.ownerName || "Yetkili")
   const ws = escapeHtml(p.workshopName)
+  const trialEndsFormatted = p.trialEndsAt.toLocaleDateString("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
   return {
-    subject: "BakimX başvurunuz alındı",
+    subject: "BakimX'e hoş geldiniz — 7 günlük deneme süreniz başladı",
     html: renderEmailLayout({
-      heading: "Başvurunuz alındı",
+      heading: "Hesabınız hazır",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuzu aldık. Ekibimiz başvurunuzu inceledikten sonra hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.</p>` +
-        `<p style="margin:0 0 12px;">Onay sonrası 15 günlük ücretsiz deneme süreniz başlayacaktır.</p>`,
-      footerNote: "Bu otomatik bir bilgilendirme mesajıdır.",
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX hesabınız oluşturuldu ve kullanıma hazır. ` +
+        `7 günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
+        `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
+      cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
+      footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/billing">${appUrl()}/billing</a>`,
     }),
   }
 }
@@ -79,17 +103,17 @@ export function newApplicationAdminEmail(p: {
   const phone = escapeHtml(p.phone)
   const city = escapeHtml(p.city)
   return {
-    subject: `Yeni iş yeri başvurusu: ${p.workshopName}`,
+    subject: `Yeni iş yeri kaydı: ${p.workshopName}`,
     html: renderEmailLayout({
-      heading: "Yeni iş yeri başvurusu",
+      heading: "Yeni iş yeri kaydı",
       bodyHtml:
-        `<p style="margin:0 0 12px;">Yeni bir BakimX deneme başvurusu geldi:</p>` +
+        `<p style="margin:0 0 12px;">Yeni bir BakimX iş yeri kaydı oluşturuldu (hesap zaten aktif, 7 günlük deneme başladı):</p>` +
         `<p style="margin:0 0 4px;"><strong>İş yeri:</strong> ${ws}</p>` +
         `<p style="margin:0 0 4px;"><strong>Yetkili:</strong> ${owner}</p>` +
         `<p style="margin:0 0 4px;"><strong>E-posta:</strong> ${email}</p>` +
         `<p style="margin:0 0 4px;"><strong>Telefon:</strong> ${phone}</p>` +
         `<p style="margin:0 0 12px;"><strong>Şehir:</strong> ${city}</p>`,
-      cta: { label: "Başvuruyu incele", url: `${appUrl()}/admin` },
+      cta: { label: "Kaydı incele", url: `${appUrl()}/admin` },
     }),
   }
 }
@@ -108,6 +132,113 @@ export function founderAlertEmail(p: { title: string; detail: string }): BuiltEm
         `<p style="margin:0 0 12px;">${detail}</p>`,
       cta: { label: "Sistem sağlığını gör", url: `${appUrl()}/admin/health` },
       footerNote: "Bu, BakimX yönetici ekibine giden otomatik bir sistem uyarısıdır.",
+    }),
+  }
+}
+
+/** Deneme süresinin bitişine yaklaşırken (T-3/T-1) ve bittiğinde (T-0) gönderilen
+ *  uyarı — gerçek kalan gün sayısını gösterir (eşik değeri değil). */
+export function trialExpiryWarningEmail(p: {
+  ownerName: string
+  workshopName: string
+  daysLeft: number
+  trialEndsAt: Date
+}): BuiltEmail {
+  const name = escapeHtml(p.ownerName || "Yetkili")
+  const ws = escapeHtml(p.workshopName)
+  const trialEndsFormatted = formatTrDate(p.trialEndsAt)
+  const isExpired = p.daysLeft <= 0
+
+  const heading = isExpired ? "Deneme süreniz sona erdi" : `Deneme sürenizin bitmesine ${p.daysLeft} gün kaldı`
+  const bodyHtml = isExpired
+    ? `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 günlük ücretsiz deneme süreniz ${trialEndsFormatted} tarihinde sona erdi.</p>` +
+      `<p style="margin:0 0 12px;">Mevcut verileriniz (müşteri, araç, iş emri kayıtlarınız) güvende ve salt-okunur kilitte tutuluyor; bir paket seçtiğinizde kaldığınız yerden devam edebilirsiniz.</p>`
+    : `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 günlük ücretsiz deneme süreniz <strong>${trialEndsFormatted}</strong> tarihinde sona erecek.</p>` +
+      `<p style="margin:0 0 12px;">Kesintisiz kullanmaya devam etmek için şimdi bir paket seçebilirsiniz.</p>`
+
+  return {
+    subject: heading,
+    html: renderEmailLayout({
+      heading,
+      bodyHtml,
+      cta: { label: "Paket seç", url: `${appUrl()}/checkout` },
+      footerNote: "Bu, deneme sürenizle ilgili otomatik bir bilgilendirmedir.",
+    }),
+  }
+}
+
+/** Abonelik döneminin bitişine yaklaşırken (T-7/T-3/T-1) ve bittiğinde (T-0)
+ *  gönderilen uyarı — gerçek kalan gün sayısını gösterir (eşik değeri değil). */
+export function subscriptionExpiryWarningEmail(p: {
+  ownerName: string
+  workshopName: string
+  daysLeft: number
+  currentPeriodEnd: Date
+  planTier: string
+}): BuiltEmail {
+  const name = escapeHtml(p.ownerName || "Yetkili")
+  const ws = escapeHtml(p.workshopName)
+  const periodEndFormatted = formatTrDate(p.currentPeriodEnd)
+  const plan = escapeHtml(p.planTier)
+  const isExpired = p.daysLeft <= 0
+
+  const heading = isExpired ? "Aboneliğiniz sona erdi" : `Aboneliğinizin bitmesine ${p.daysLeft} gün kaldı`
+  const bodyHtml = isExpired
+    ? `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için <strong>${plan}</strong> paketi aboneliğiniz ${periodEndFormatted} tarihinde sona erdi.</p>` +
+      `<p style="margin:0 0 12px;">Verileriniz güvende ve salt-okunur kilitte tutuluyor; aboneliğinizi yenilediğinizde kaldığınız yerden devam edebilirsiniz.</p>`
+    : `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için <strong>${plan}</strong> paketi aboneliğiniz <strong>${periodEndFormatted}</strong> tarihinde sona erecek.</p>` +
+      `<p style="margin:0 0 12px;">Kesintisiz kullanmaya devam etmek için şimdi yenileyebilirsiniz.</p>`
+
+  return {
+    subject: heading,
+    html: renderEmailLayout({
+      heading,
+      bodyHtml,
+      cta: { label: "Yenile", url: `${appUrl()}/checkout` },
+      footerNote: "Bu, aboneliğinizle ilgili otomatik bir bilgilendirmedir.",
+    }),
+  }
+}
+
+/** Başarılı kart ödemesi sonrası gönderilen makbuz özeti. Yasal e-fatura DEĞİL
+ *  (bkz. src/lib/billing/receipt.ts'in aynı dildeki uyarısı) — yalnızca
+ *  bilgilendirme amaçlıdır. */
+export function paymentReceiptEmail(p: {
+  workshopName: string
+  planLabel: string
+  cycleLabel: string
+  amountMinor: number
+  maskedPan: string | null
+  periodEnd: Date
+  reference: string
+}): BuiltEmail {
+  const ws = escapeHtml(p.workshopName)
+  const planLabel = escapeHtml(p.planLabel)
+  const cycleLabel = escapeHtml(p.cycleLabel)
+  const amount = escapeHtml(formatMinor(p.amountMinor))
+  const reference = escapeHtml(p.reference)
+  const periodEndFormatted = formatTrDate(p.periodEnd)
+  const maskedPanHtml = p.maskedPan
+    ? `<p style="margin:0 0 4px;"><strong>Kart:</strong> ${escapeHtml(p.maskedPan)}</p>`
+    : ""
+
+  return {
+    subject: "Ödemeniz alındı",
+    html: renderEmailLayout({
+      heading: "Ödemeniz alındı",
+      bodyHtml:
+        `<p style="margin:0 0 12px;">Merhaba,</p>` +
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için ödemeniz başarıyla alındı.</p>` +
+        `<p style="margin:0 0 4px;"><strong>Paket:</strong> ${planLabel} (${cycleLabel})</p>` +
+        `<p style="margin:0 0 4px;"><strong>Tutar:</strong> ${amount}</p>` +
+        maskedPanHtml +
+        `<p style="margin:0 0 4px;"><strong>Referans:</strong> ${reference}</p>` +
+        `<p style="margin:0 0 12px;"><strong>Yeni dönem bitişi:</strong> ${periodEndFormatted}</p>`,
+      footerNote: "Bu bir bilgilendirme makbuzudur; yasal fatura ayrıca düzenlenir.",
     }),
   }
 }

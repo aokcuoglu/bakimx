@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import type { UserRole } from "@prisma/client"
+import { assertWriteAccess } from "@/lib/plan"
 
 export interface AuthUser {
   id: string
@@ -86,6 +87,21 @@ export async function getCurrentUserWithWorkshop() {
   if (!workshop) {
     throw new Error("Workshop not found — hesabınızla ilişkili bir iş yeri bulunamadı")
   }
+  return { user, workshop }
+}
+
+/**
+ * Like {@link getCurrentUserWithWorkshop}, but additionally enforces the plan
+ * write gate: throws {@link PlanWriteLockedError} when the workshop is in the
+ * read-only (plan-expired) state. Use this as the first line of any server
+ * action that MUTATES tenant data, so an expired workshop can still read/list
+ * everything but cannot write. Read-only actions should keep using
+ * `requireAuth()` / `getCurrentUserWithWorkshop()`. Billing/purchase and auth
+ * actions must stay exempt so a locked workshop can recover by paying.
+ */
+export async function requireWritableWorkshop() {
+  const { user, workshop } = await getCurrentUserWithWorkshop()
+  assertWriteAccess(workshop)
   return { user, workshop }
 }
 

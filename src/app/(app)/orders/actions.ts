@@ -7,15 +7,16 @@ import { serviceOrderItemSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
-import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake } from "@/lib/status-transitions"
+import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
+import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
 
 export async function createServiceOrderAction(intakeFormId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -31,7 +32,7 @@ export async function createServiceOrderAction(intakeFormId: string) {
     createServiceOrderForIntake(tx, user.workshopId, intakeFormId),
   )
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created")
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", order.id, "service_order_created", undefined, order.id)
 
   await addTimelineEvent({
     workshopId: user.workshopId,
@@ -51,8 +52,8 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
 })
 
 export async function addOrderItemAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -64,6 +65,8 @@ export async function addOrderItemAction(formData: FormData) {
     unitPrice: formData.get("unitPrice") as string,
     totalPrice: formData.get("totalPrice") as string,
     note: formData.get("note") as string,
+    tecdocArticleId: formData.get("tecdocArticleId") as string,
+    partId: formData.get("partId") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -75,6 +78,8 @@ export async function addOrderItemAction(formData: FormData) {
     unitPrice: raw.unitPrice ? Number(raw.unitPrice) : undefined,
     totalPrice: raw.totalPrice ? Number(raw.totalPrice) : undefined,
     note: raw.note || undefined,
+    tecdocArticleId: raw.tecdocArticleId ? Number(raw.tecdocArticleId) : undefined,
+    partId: raw.partId || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -84,64 +89,135 @@ export async function addOrderItemAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrine kalem eklenemez" }
 
   // Item prices are integer kuruş. Adding an item changes the order's
   // grandTotal, so re-derive paidAmount/remainingAmount/paymentStatus in the
   // same transaction (server authority).
-  const item = await prisma.$transaction(async (tx) => {
-    const created = await tx.serviceOrderItem.create({
-      data: {
-        workshopId: user.workshopId,
-        serviceOrderId: raw.serviceOrderId,
-        type: parsed.data.type,
-        name: parsed.data.name,
-        sku: parsed.data.sku || null,
-        unit: parsed.data.unit || null,
-        quantity: parsed.data.quantity,
-        unitPrice: parsed.data.unitPrice ?? null,
-        totalPrice: parsed.data.totalPrice ?? null,
-        note: parsed.data.note || null,
-      },
-    })
-    await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
-    return created
-  })
+  // partId set edildiyse parça kendi stoğumuzdan seçilmiştir: workshopId scope
+  // doğrula, stok düş ve StockMovement (type=out) oluştur.
+  const partId = parsed.data.partId || null
+  if (partId) {
+    const part = await getActiveWorkshopPart(user.workshopId, partId)
+    if (!part) return { error: "Parça bulunamadı veya pasif" }
+  }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", item.id, "order_item_added")
+  let createdItemId: string | null = null
+  try {
+    createdItemId = await prisma.$transaction(async (tx) => {
+      const created = await tx.serviceOrderItem.create({
+        data: {
+          workshopId: user.workshopId,
+          serviceOrderId: raw.serviceOrderId,
+          type: parsed.data.type,
+          name: parsed.data.name,
+          sku: parsed.data.sku || null,
+          unit: parsed.data.unit || null,
+          quantity: parsed.data.quantity,
+          unitPrice: parsed.data.unitPrice ?? null,
+          totalPrice: parsed.data.totalPrice ?? null,
+          note: parsed.data.note || null,
+          tecdocArticleId: parsed.data.tecdocArticleId ?? null,
+          partId: partId,
+        },
+      })
+      // Stok düş (sadece part'ı olan parça kalemleri için).
+      if (partId && parsed.data.type === "part") {
+        await reserveStockInTx(
+          tx,
+          user.workshopId,
+          partId,
+          parsed.data.quantity,
+          "work_order",
+          created.id,
+          user.id,
+          `İş emri ${order.workOrderNo || ""}: ${parsed.data.name}`,
+        )
+      }
+      await recalcOrderPayment(tx, raw.serviceOrderId, user.workshopId)
+      return created.id
+    })
+  } catch (err) {
+    // Yetersiz stok / pasif parça hatalarını kullanıcıya döndür.
+    return { error: err instanceof Error ? err.message : "Kalem eklenemedi" }
+  }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    createdItemId,
+    "order_item_added",
+    JSON.stringify({
+      name: parsed.data.name,
+      type: parsed.data.type,
+      quantity: parsed.data.quantity,
+      unitPrice: parsed.data.unitPrice,
+    }),
+    raw.serviceOrderId,
+  )
 
   revalidatePath(`/orders/${raw.serviceOrderId}`)
   return { success: true }
 }
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kalem bulunamadı" }
 
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+
   const deleteResult = await prisma.$transaction(async (tx) => {
+    // Önce silme (aşağıdaki iade zaten parçayı getirecek).
     const result = await tx.serviceOrderItem.deleteMany({
       where: { id: itemId, workshopId: user.workshopId },
     })
     if (result.count > 0) {
+      // partId set olan parça kalemi ise stok iade et.
+      if (item.partId && item.type === "part" && item.quantity > 0) {
+        await returnStockInTx(
+          tx,
+          user.workshopId,
+          item.partId,
+          item.quantity,
+          "work_order",
+          itemId,
+          user.id,
+          `İş emrinden silindi: ${item.name}`,
+        )
+      }
       await recalcOrderPayment(tx, orderId, user.workshopId)
     }
     return result
   })
   if (deleteResult.count === 0) return { error: "Kalem bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrderItem", itemId, "order_item_removed")
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    "order_item_removed",
+    JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity }),
+    orderId,
+  )
 
   revalidatePath(`/orders/${orderId}`)
   return { success: true }
 }
 
 export async function updateOrderStatusAction(orderId: string, status: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
 
@@ -160,7 +236,7 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`)
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`, undefined, orderId)
 
   // Intake + work order are presented as one unified flow (see work-order-detail.tsx's
   // "Sipariş" tab, which drives this action directly); keep the linked intake's
@@ -229,8 +305,8 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 }
 
 export async function updateOrderPaymentStatusAction(orderId: string, paymentStatus: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   if (!isPaymentStatus(paymentStatus)) return { error: "Geçersiz ödeme durumu" }
 
@@ -245,7 +321,7 @@ export async function updateOrderPaymentStatusAction(orderId: string, paymentSta
   })
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`)
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`, undefined, orderId)
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath("/orders")
@@ -261,8 +337,8 @@ const orderMetaSchema = z.object({
 })
 
 export async function updateOrderMetaAction(orderId: string, formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     technicianName: formData.get("technicianName") as string,
@@ -287,6 +363,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
 
   const estimatedDeliveryAt = parsed.data.estimatedDeliveryAt
     ? new Date(parsed.data.estimatedDeliveryAt)
@@ -308,7 +385,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
     await recalcOrderPayment(tx, orderId, user.workshopId)
   })
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated")
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "order_meta_updated", undefined, orderId)
 
   if (estimatedDeliveryAt) {
     try {

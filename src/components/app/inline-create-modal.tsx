@@ -3,13 +3,29 @@
 import { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
+import {
+  VEHICLE_TYPES,
+  VEHICLE_FUEL_TYPES,
+  vehicleTypeLabel,
+  fuelTypeLabel,
+  ocrVehicleTypeToSlug,
+  ocrFuelToSlug,
+  tecdocFuelToFormValue,
+} from "@/lib/constants"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, ChevronDown, Loader2, User, X } from "lucide-react"
+import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
+import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import { normalizePlate } from "@/lib/format"
+import { findExactPlateMatch, type ExistingVehicleMatch } from "@/lib/search/exact-plate-match"
+import type { UnifiedResult } from "@/lib/search/unified-results"
 
 export type InlineCreateResult = {
   customerId: string
@@ -84,10 +100,31 @@ export function InlineCreateModal({
   } | null>(null)
   const [confidence, setConfidence] = useState<Record<string, number | undefined>>({})
   const [showDetails, setShowDetails] = useState(false)
+  // Girilen plaka DB'de zaten kayıtlıysa: mevcut aracı seçime dönüştürmek için tutulur.
+  const [existingMatch, setExistingMatch] = useState<ExistingVehicleMatch | null>(null)
+  // VIN çözümlemesinden gelen katalog bağı — marka/model elle değiştirilirse temizlenir.
+  const [catalogIds, setCatalogIds] = useState<{ brandId?: number; modelId?: number; vehicleTypeId?: number }>({})
 
   function setField(key: keyof VehicleFields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }))
   }
+
+  const vinResolve = useVinResolve({
+    onBrand: (b) => { setField("brand", b.name); setCatalogIds((p) => ({ ...p, brandId: b.id })) },
+    onModel: (m) => { setField("model", m.name); setCatalogIds((p) => ({ ...p, modelId: m.id })) },
+    onCandidate: (c: VinCandidate) => {
+      setCatalogIds({ brandId: c.brandId, modelId: c.modelId, vehicleTypeId: c.vehicleTypeId })
+      setFields((prev) => ({
+        ...prev,
+        brand: c.brandName,
+        model: c.modelName,
+        engineDisplacement: prev.engineDisplacement || (c.cc != null ? String(c.cc) : prev.engineDisplacement),
+        enginePower: prev.enginePower || (c.kwt != null ? `${c.kwt} kW` : prev.enginePower),
+        fuelType: prev.fuelType || tecdocFuelToFormValue(c.fuelType) || prev.fuelType,
+        modelYear: prev.modelYear || (c.yearFrom ? String(Number(c.yearFrom.slice(0, 4))) : prev.modelYear),
+      }))
+    },
+  })
 
   // Reset only on the OPEN transition (false→true), not on every prop change,
   // so the picker clearing its own query mid-session can't wipe typed values.
@@ -104,8 +141,36 @@ export function InlineCreateModal({
       setOwnerSeed(null)
       setConfidence({})
       setShowDetails(false)
+      setExistingMatch(null)
+      setCatalogIds({})
+      vinResolve.reset()
     }, 0)
-  }, [open, initialPlate, fixedCustomer])
+  }, [open, initialPlate, fixedCustomer]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
+
+  // Plaka değişince mevcut aracı ara (debounce). contains araması → client'ta
+  // birebir plaka filtresi. Modal kapalıyken çalışmaz.
+  useEffect(() => {
+    if (!open) return
+    const plate = normalizePlate(fields.plate)
+    if (plate.length < 5) {
+      const t = setTimeout(() => setExistingMatch(null), 0)
+      return () => clearTimeout(t)
+    }
+    let active = true
+    const t = setTimeout(() => {
+      fetch(`/api/search/customer-vehicle?q=${encodeURIComponent(plate)}`)
+        .then((r) => r.json())
+        .then((d: unknown) => {
+          if (!active) return
+          const results = Array.isArray((d as { results?: unknown })?.results)
+            ? (d as { results: UnifiedResult[] }).results
+            : []
+          setExistingMatch(findExactPlateMatch(results, fields.plate))
+        })
+        .catch(() => { if (active) setExistingMatch(null) })
+    }, 400)
+    return () => { active = false; clearTimeout(t) }
+  }, [open, fields.plate])
 
   function applyOcr({ values, confidence: conf, owner }: RuhsattanOkuResult) {
     setFields((prev) => ({
@@ -113,13 +178,13 @@ export function InlineCreateModal({
       plate: values.plate || prev.plate,
       brand: values.brand || prev.brand,
       model: values.model || prev.model,
-      vehicleType: values.vehicleType || prev.vehicleType,
+      vehicleType: ocrVehicleTypeToSlug(values.vehicleType) || prev.vehicleType,
       modelYear: values.modelYear || prev.modelYear,
       vin: values.vin || prev.vin,
       engineNo: values.engineNo || prev.engineNo,
       firstRegistrationDate: values.registrationDate || prev.firstRegistrationDate,
       commercialName: values.commercialName || prev.commercialName,
-      fuelType: values.fuelType || prev.fuelType,
+      fuelType: ocrFuelToSlug(values.fuelType) || prev.fuelType,
       engineDisplacement: values.engineDisplacement || prev.engineDisplacement,
       enginePower: values.enginePower || prev.enginePower,
       inspectionValidUntil: values.inspectionValidUntil || prev.inspectionValidUntil,
@@ -141,6 +206,15 @@ export function InlineCreateModal({
     })
     if (owner.label) setOwnerSeed(owner)
     setShowDetails(true)
+    if (isValidVin(values.vin)) {
+      void vinResolve.resolve(values.vin, {
+        engineDisplacement: values.engineDisplacement || undefined,
+        enginePower: values.enginePower || undefined,
+        fuelType: values.fuelType || undefined,
+        firstRegistrationDate: values.registrationDate || undefined,
+        modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
+      })
+    }
   }
 
   function lowConf(key: string): boolean {
@@ -152,12 +226,31 @@ export function InlineCreateModal({
     return lowConf(key) ? "border-warning/40 bg-warning/10 focus-visible:border-warning" : ""
   }
 
+  // Kart: mevcut aracı, DB'deki gerçek sahibiyle seç. onCreated picker'a araç
+  // seçimi olarak yansır. brand/model ayrı alan yok → label'ın " — " kuyruğu
+  // brand olarak geçer, model boş (picker etiketi "PLAKA — Marka Model" kalır).
+  function selectExisting() {
+    if (!existingMatch) return
+    const brandTail = existingMatch.label.split(" — ")[1] ?? ""
+    const ownerName = existingMatch.sublabel.replace(/^Sahip:\s*/, "")
+    onCreated({
+      customerId: existingMatch.customerId,
+      vehicleId: existingMatch.vehicleId,
+      plate: fields.plate,
+      brand: brandTail,
+      model: "",
+      customerName: ownerName,
+    })
+    onOpenChange(false)
+  }
+
   async function handleCreate(edit: boolean) {
     setError("")
     if (!owner) { setError("Önce müşteri seçin veya oluşturun"); return }
     if (!fields.plate.trim() || !fields.brand.trim() || !fields.model.trim()) {
       setError("Plaka, marka ve model zorunludur"); return
     }
+    if (existingMatch) { setError("Bu plaka zaten kayıtlı — aşağıdan mevcut aracı seçin."); return }
     setLoading(true)
     try {
       const vf = new FormData()
@@ -175,6 +268,9 @@ export function InlineCreateModal({
       vf.set("enginePower", fields.enginePower)
       vf.set("firstRegistrationDate", fields.firstRegistrationDate)
       vf.set("inspectionValidUntil", fields.inspectionValidUntil)
+      if (catalogIds.brandId) vf.set("catalogBrandId", String(catalogIds.brandId))
+      if (catalogIds.modelId) vf.set("catalogModelId", String(catalogIds.modelId))
+      if (catalogIds.vehicleTypeId) vf.set("catalogVehicleTypeId", String(catalogIds.vehicleTypeId))
       const vRes = await fetch("/api/vehicles", { method: "POST", body: vf })
       const vData = await vRes.json() as { success?: boolean; id?: string; error?: string }
       if (!vData?.success || !vData.id) { setError(vData?.error || "Araç oluşturulamadı"); setLoading(false); return }
@@ -252,11 +348,26 @@ export function InlineCreateModal({
             <VehicleBrandModelPicker
               brand={fields.brand}
               model={fields.model}
-              onBrandChange={(v) => setField("brand", v)}
-              onModelChange={(v) => setField("model", v)}
+              onBrandChange={(v) => { setField("brand", v); setCatalogIds({}) }}
+              onModelChange={(v) => { setField("model", v); setCatalogIds((p) => ({ brandId: p.brandId })) }}
               required
             />
           </div>
+
+          {existingMatch && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="size-4 text-warning mt-0.5 shrink-0" />
+                <div className="min-w-0 text-sm">
+                  <p className="font-medium text-foreground">Bu plaka zaten kayıtlı: {existingMatch.label}</p>
+                  <p className="text-xs text-muted-foreground">{existingMatch.sublabel}</p>
+                </div>
+              </div>
+              <Button type="button" size="sm" className="w-full" onClick={selectExisting}>
+                <Car className="size-4 mr-1" /> Bu aracı seç
+              </Button>
+            </div>
+          )}
 
           {/* Detailed ruhsat fields */}
           <button
@@ -276,15 +387,67 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.vehicleType} onChange={(e) => setField("vehicleType", e.target.value)} className={fieldClass("vehicleType")} />
+                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v ?? "")}>
+                  <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
+                    <SelectValue placeholder="Seçiniz">
+                      {(value) => vehicleTypeLabel(value) || "Seçiniz"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label>Yakıt Cinsi</Label>
-                <Input value={fields.fuelType} onChange={(e) => setField("fuelType", e.target.value)} />
+                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v ?? "")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seçiniz">
+                      {(value) => fuelTypeLabel(value) || "Seçiniz"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEHICLE_FUEL_TYPES.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1 col-span-2">
                 <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
+                <div className="flex gap-2">
+                  <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
+                  <VinResolveButton
+                    loading={vinResolve.loading}
+                    disabled={!isValidVin(fields.vin)}
+                    onClick={() =>
+                      vinResolve.resolve(fields.vin, {
+                        engineDisplacement: fields.engineDisplacement || undefined,
+                        enginePower: fields.enginePower || undefined,
+                        fuelType: fields.fuelType || undefined,
+                        firstRegistrationDate: fields.firstRegistrationDate || undefined,
+                        modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
+                      })
+                    }
+                  />
+                </div>
+                {vinResolve.loading && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Loader2 className="size-3 animate-spin" /> VIN sorgulanıyor…
+                  </p>
+                )}
+                {vinResolve.notice && <p className="text-xs text-muted-foreground">{vinResolve.notice}</p>}
+                {vinResolve.error && <p className="text-xs text-destructive">{vinResolve.error}</p>}
+                {vinResolve.candidates.length > 0 && (
+                  <VinCandidateList
+                    candidates={vinResolve.candidates}
+                    selectedId={catalogIds.vehicleTypeId ?? null}
+                    onSelect={(c) => vinResolve.applyCandidate(c)}
+                    onDismiss={() => vinResolve.reset()}
+                  />
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning" />}</Label>
@@ -300,11 +463,11 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning" />}</Label>
-                <Input value={fields.firstRegistrationDate} onChange={(e) => setField("firstRegistrationDate", e.target.value)} placeholder="GG.AA.YYYY" className={fieldClass("firstRegistrationDate")} />
+                <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
               </div>
               <div className="space-y-1 col-span-2">
                 <Label>Muayene Geçerlilik Tarihi</Label>
-                <Input value={fields.inspectionValidUntil} onChange={(e) => setField("inspectionValidUntil", e.target.value)} placeholder="GG.AA.YYYY" />
+                <DatePicker value={fields.inspectionValidUntil} onChange={(v) => setField("inspectionValidUntil", v)} />
               </div>
             </div>
           )}

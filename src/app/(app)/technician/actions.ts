@@ -5,15 +5,20 @@ import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
+import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
+
+const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   const technician = await prisma.technician.findFirst({
     where: { id: technicianId, workshopId: user.workshopId, isActive: true },
@@ -45,13 +50,14 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
 }
 
 export async function unassignTechnicianAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -77,13 +83,16 @@ export async function unassignTechnicianAction(orderId: string) {
 }
 
 export async function startWorkAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (!canTransitionOrder(order.status as OrderStatus, "in_progress")) {
+    return { error: "Bu durum geçişine izin verilmiyor" }
+  }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -107,13 +116,16 @@ export async function startWorkAction(orderId: string) {
 }
 
 export async function holdWorkAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (!canTransitionOrder(order.status as OrderStatus, "waiting_parts")) {
+    return { error: "Bu durum geçişine izin verilmiyor" }
+  }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -137,13 +149,16 @@ export async function holdWorkAction(orderId: string) {
 }
 
 export async function completeWorkAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (!canTransitionOrder(order.status as OrderStatus, "ready_for_delivery")) {
+    return { error: "Bu durum geçişine izin verilmiyor" }
+  }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -170,8 +185,8 @@ export async function completeWorkAction(orderId: string) {
 }
 
 export async function addChecklistItemAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -189,6 +204,7 @@ export async function addChecklistItemAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.checklistItem.create({
     data: {
@@ -208,13 +224,18 @@ export async function addChecklistItemAction(formData: FormData) {
 }
 
 export async function toggleChecklistItemAction(itemId: string, checked: boolean) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.checklistItem.updateMany({
     where: { id: itemId, workshopId: user.workshopId },
@@ -231,13 +252,18 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
 }
 
 export async function updateChecklistNoteAction(itemId: string, note: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.checklistItem.updateMany({
     where: { id: itemId, workshopId: user.workshopId },
@@ -249,13 +275,18 @@ export async function updateChecklistNoteAction(itemId: string, note: string) {
 }
 
 export async function deleteChecklistItemAction(itemId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.checklistItem.deleteMany({
     where: { id: itemId, workshopId: user.workshopId },
@@ -267,8 +298,8 @@ export async function deleteChecklistItemAction(itemId: string) {
 }
 
 export async function addInternalNoteAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -284,6 +315,7 @@ export async function addInternalNoteAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.internalNote.create({
     data: {
@@ -299,13 +331,18 @@ export async function addInternalNoteAction(formData: FormData) {
 }
 
 export async function deleteInternalNoteAction(noteId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const note = await prisma.internalNote.findFirst({
     where: { id: noteId, workshopId: user.workshopId },
   })
   if (!note) return { error: "Not bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: note.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.internalNote.deleteMany({
     where: { id: noteId, workshopId: user.workshopId },
@@ -317,8 +354,8 @@ export async function deleteInternalNoteAction(noteId: string) {
 }
 
 export async function createPartsRequestAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -337,6 +374,7 @@ export async function createPartsRequestAction(formData: FormData) {
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.partsRequest.create({
     data: {
@@ -365,13 +403,18 @@ export async function createPartsRequestAction(formData: FormData) {
 }
 
 export async function updatePartsRequestStatusAction(requestId: string, status: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const request = await prisma.partsRequest.findFirst({
     where: { id: requestId, workshopId: user.workshopId },
   })
   if (!request) return { error: "Parça talebi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   await prisma.partsRequest.updateMany({
     where: { id: requestId, workshopId: user.workshopId },
@@ -397,13 +440,14 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
 }
 
 export async function startLaborSessionAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
   })
   if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   const activeSession = await prisma.laborSession.findFirst({
     where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
@@ -424,8 +468,8 @@ export async function startLaborSessionAction(orderId: string) {
 }
 
 export async function stopLaborSessionAction(orderId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const activeSession = await prisma.laborSession.findFirst({
     where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
@@ -450,8 +494,8 @@ export async function stopLaborSessionAction(orderId: string) {
 }
 
 export async function createTechnicianAction(formData: FormData) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const fullName = (formData.get("fullName") as string || "").trim()
   const phone = (formData.get("phone") as string || "").trim()
@@ -480,8 +524,8 @@ export async function createTechnicianAction(formData: FormData) {
 }
 
 export async function toggleTechnicianActiveAction(technicianId: string) {
-  const { requireAuth } = await import("@/lib/auth")
-  const user = await requireAuth()
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
 
   const technician = await prisma.technician.findFirst({
     where: { id: technicianId, workshopId: user.workshopId },

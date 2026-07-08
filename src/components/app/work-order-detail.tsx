@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useRef, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DetailHeader, type DetailHeaderAction } from "@/components/app/detail-header"
 import { StatusBadge, PaymentBadge } from "@/components/app/status-badge"
 import {
@@ -38,19 +39,29 @@ import {
   Package,
   PackageCheck,
   XCircle,
+  RotateCcw,
   Plus,
+  Wallet,
+  History,
+  ArrowRight,
 } from "lucide-react"
 import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
+import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
+import { isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 import { PhotoAnnotate } from "./photo-annotate"
 import { PhotoGalleryGrid } from "./photo-gallery-grid"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/app/intake-evidence-summary"
 import { ApprovalTimeline } from "@/components/app/approval-timeline"
+import { OrderActivityLog } from "@/components/app/order-activity-log"
+import { useOrderSync } from "@/hooks/use-order-sync"
+import type { OrderActivityEntry } from "@/lib/orders/activity"
 import {
   NEXT_STATUSES,
   PartsLaborCard,
@@ -76,7 +87,20 @@ const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
   ready_for_delivery: PackageCheck,
   delivered: KeyRound,
   cancelled: XCircle,
+  draft: RotateCcw,
 }
+
+// Detay içeriği sekmelere bölünür (uzun tek-scroll yerine). Aktif sekme URL'de
+// `?tab=` ile tutulur; settings-tabs deseniyle aynı.
+type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "gecmis"
+
+const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "ozet", label: "Özet", icon: Info },
+  { key: "parca", label: "Parça & İşçilik", icon: Package },
+  { key: "tahsilat", label: "Tahsilat", icon: Wallet },
+  { key: "kanit", label: "Kanıt", icon: Camera },
+  { key: "gecmis", label: "Geçmiş", icon: History },
+]
 
 type VehiclePhoto = {
   id: string
@@ -125,13 +149,25 @@ export function WorkOrderDetail({
   order,
   technicians,
   hasAiAdvisor,
+  activity = [],
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
   technicians?: { id: string; fullName: string; role: string }[]
   hasAiAdvisor: boolean
+  activity?: OrderActivityEntry[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const activeTab = (searchParams.get("tab") as TabKey) || "ozet"
+
+  useOrderSync()
+
+  function handleTabChange(key: string | null) {
+    if (!key) return
+    router.replace(`/orders/${order.id}?tab=${key}`, { scroll: false })
+  }
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -162,6 +198,7 @@ export function WorkOrderDetail({
   const [photoNote, setPhotoNote] = useState("")
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const pendingPhotoScrollRef = useRef(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Share
@@ -171,6 +208,16 @@ export function WorkOrderDetail({
   const [deliveryOtpMode, setDeliveryOtpMode] = useState(false)
   const [deliveryOtpCode, setDeliveryOtpCode] = useState("")
   const [deliverySentCode, setDeliverySentCode] = useState<string | null>(null)
+
+  // Kanıt sekmesi aktif olunca (panel mount olduktan sonra) foto bölümüne kaydır.
+  // Base UI Tabs pasif paneli unmount ettiği için scroll senkron yapılamaz; ref
+  // ile bekleyen istek işaretlenir (state değil → cascading render/lint yok).
+  useEffect(() => {
+    if (activeTab === "kanit" && pendingPhotoScrollRef.current) {
+      pendingPhotoScrollRef.current = false
+      photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [activeTab])
 
   async function changeStatus(newStatus: string) {
     setLoading(true)
@@ -382,10 +429,19 @@ export function WorkOrderDetail({
     ? (typeof window !== "undefined" ? `${window.location.origin}/s/${shareToken}` : `/s/${shareToken}`)
     : null
 
+  // Eksik/istenen foto akışı: Kanıt sekmesine geç (paneli mount et), tipini
+  // seç ve dialog'u aç; scroll useEffect ile panel render olunca yapılır.
   function focusPhoto(typeKey?: string) {
     if (typeKey) setPhotoType(typeKey)
     setAddingPhoto(true)
-    photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    if (activeTab === "kanit") {
+      // Panel zaten mount; doğrudan kaydır.
+      photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    } else {
+      // Sekmeye geç; scroll panel mount olunca useEffect'te yapılır.
+      pendingPhotoScrollRef.current = true
+      handleTabChange("kanit")
+    }
   }
 
   return (
@@ -412,7 +468,7 @@ export function WorkOrderDetail({
         </div>
       )}
 
-      {deliveryOtpMode && (
+      {deliveryOtpMode && order.status === "ready_for_delivery" && (
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> Teslim Onayı (OTP)</p>
           {order.paymentStatus !== "paid" && (
@@ -450,9 +506,31 @@ export function WorkOrderDetail({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* MAIN */}
-        <div className="lg:col-span-2 space-y-5">
+      {/* Finansal özet şerit — sekmeden bağımsız hep görünür (durum/ödeme rozetleri
+          zaten header'da; burada yalnız header'da olmayan tutarlar). */}
+      {order.totals.hasAnyPrice && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
+          <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
+          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span></span>
+          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span></span>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {TABS.map((t) => {
+            const Icon = t.icon
+            return (
+              <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
+                <Icon className="size-4" />
+                <span>{t.label}</span>
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
+
+        {/* ÖZET */}
+        <TabsContent value="ozet" className="space-y-5">
           {/* Müşteri & Araç */}
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
@@ -478,8 +556,17 @@ export function WorkOrderDetail({
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <Car className="size-3" /> Araç
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <Car className="size-3" /> Araç
+                    </div>
+                    <Link
+                      href={`/vehicles/${order.vehicle.id}`}
+                      className="text-xs text-primary hover:text-primary font-medium inline-flex items-center gap-1 shrink-0 touch-manipulation"
+                    >
+                      Araç Detayı
+                      <ArrowRight className="size-3" />
+                    </Link>
                   </div>
                   <p className="text-sm font-semibold text-foreground">
                     {order.vehicle.plate} · {order.vehicle.brand} {order.vehicle.model}
@@ -555,22 +642,8 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
-          {/* Parça & İşçilik */}
-          <PartsLaborCard orderId={order.id} items={order.items} onError={setError} onLoading={setLoading} loading={loading} />
-
-          {/* AI Danışman */}
-          {hasAiAdvisor ? (
-            <ServiceAdvisorPanel
-              intakeFormId={intake.id}
-              customerComplaint={order.intake.customerComplaint}
-              vehicleBrand={order.vehicle.brand}
-              vehicleModel={order.vehicle.model}
-              mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-              onAddItems={handleAddAiItems}
-            />
-          ) : (
-            <AdvisorPremiumLock />
-          )}
+          {/* İş Emri Bilgileri */}
+          <OrderInfoCard order={order} technicians={technicians} />
 
           {/* Özet & Kanıt */}
           <Card>
@@ -592,6 +665,161 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
+          {/* Müşteri Çıktısı & Paylaşım */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2"><Share2 className="size-4 text-muted-foreground" /> Müşteri Çıktısı</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!shareToken ? (
+                <>
+                  <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
+                  <Button onClick={handleGenerateShareLink} disabled={loading} className="w-full">
+                    <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-xs">
+                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success" /> : <EyeOff className="size-3.5 text-destructive" />}
+                    <span className={intake.shareLinks[0]?.isActive ? "text-success font-medium" : "text-destructive font-medium"}>
+                      {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
+                    </span>
+                  </div>
+                  <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
+                    <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
+                  </Link>
+                  <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
+                    <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!shareLinkFull) return
+                      const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
+                      window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
+                    }}
+                    className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
+                  >
+                    <Share2 className="size-4" /> WhatsApp ile Paylaş
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const linkId = intake.shareLinks[0]?.id
+                        if (!linkId) return
+                        try {
+                          await fetch(`/api/intakes/${intake.id}/share-visibility`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ linkId, isActive: !intake.shareLinks[0].isActive }),
+                          })
+                          router.refresh()
+                        } catch {}
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      {intake.shareLinks[0]?.isActive ? <><EyeOff className="size-3.5" /> Devre Dışı</> : <><Eye className="size-3.5" /> Etkinleştir</>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => { if (shareLinkFull) { try { await navigator.clipboard.writeText(shareLinkFull) } catch {} } }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+                    >
+                      <LinkIcon className="size-3.5" /> Kopyala
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {order.status === "ready_for_delivery" && !deliveryOtpMode && (
+                <div className="pt-3 border-t">
+                  <Button onClick={handleRequestDeliveryOtp} disabled={loading} variant="outline" className="w-full">
+                    <KeyRound className="size-4 mr-2" /> Teslim Onayı (OTP) Gönder
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* PARÇA & İŞÇİLİK */}
+        <TabsContent value="parca" className="space-y-5">
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
+
+          <PricingSummaryCard
+            totals={order.totals}
+            paymentStatus={order.paymentStatus}
+            paidAmount={order.paidAmount}
+            remainingAmount={order.remainingAmount}
+            locked={isOrderLocked(order.status as OrderStatus)}
+            editingMeta={editingMeta}
+            setEditingMeta={setEditingMeta}
+            metaDraft={metaDraft}
+            setMetaDraft={setMetaDraft}
+            saveMeta={saveMeta}
+            loading={loading}
+          />
+
+          {/* AI Danışman */}
+          {hasAiAdvisor ? (
+            <ServiceAdvisorPanel
+              intakeFormId={intake.id}
+              customerComplaint={order.intake.customerComplaint}
+              vehicleBrand={order.vehicle.brand}
+              vehicleModel={order.vehicle.model}
+              mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
+              onAddItems={handleAddAiItems}
+            />
+          ) : (
+            <AdvisorPremiumLock />
+          )}
+        </TabsContent>
+
+        {/* TAHSİLAT */}
+        <TabsContent value="tahsilat" className="space-y-5">
+          {/* Kompakt ödeme özeti */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2"><Wallet className="size-4" /> Ödeme Özeti</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {order.totals.hasAnyPrice ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Genel Toplam</span>
+                    <span className="font-semibold">{formatTRY(order.totals.grandTotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Ödenen</span>
+                    <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t pt-2">
+                    <span className="text-muted-foreground">Kalan</span>
+                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center py-2">Henüz tutar girilmedi</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <PaymentHistoryCard
+            orderId={order.id}
+            isCancelled={order.status === "cancelled"}
+            totals={order.totals}
+            paidAmount={order.paidAmount}
+            remainingAmount={order.remainingAmount}
+            collections={order.collectionHistory}
+            customerId={order.customer.id}
+            customerName={customerName}
+          />
+        </TabsContent>
+
+        {/* KANIT (Foto & Hasar) */}
+        <TabsContent value="kanit" className="space-y-5">
           {/* Fotoğraflar */}
           <div ref={photosRef} className="scroll-mt-4">
           <Card>
@@ -629,7 +857,7 @@ export function WorkOrderDetail({
               )}
 
               {/* Add photo trigger + dialog */}
-              <Button variant="outline" size="sm" onClick={() => setAddingPhoto(true)} className="w-full">
+              <Button variant="outline" onClick={() => setAddingPhoto(true)} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
               </Button>
 
@@ -767,115 +995,14 @@ export function WorkOrderDetail({
               )}
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
 
-        {/* SIDEBAR */}
-        <div className="lg:col-span-1 space-y-5">
-          <PricingSummaryCard
-            totals={order.totals}
-            paymentStatus={order.paymentStatus}
-            paidAmount={order.paidAmount}
-            remainingAmount={order.remainingAmount}
-            editingMeta={editingMeta}
-            setEditingMeta={setEditingMeta}
-            metaDraft={metaDraft}
-            setMetaDraft={setMetaDraft}
-            saveMeta={saveMeta}
-            loading={loading}
-          />
-
-          <PaymentHistoryCard
-            orderId={order.id}
-            isCancelled={order.status === "cancelled"}
-            totals={order.totals}
-            paidAmount={order.paidAmount}
-            remainingAmount={order.remainingAmount}
-            collections={order.collectionHistory}
-            customerId={order.customer.id}
-            customerName={customerName}
-          />
-
-          <OrderInfoCard order={order} technicians={technicians} />
-
-          {/* Müşteri Çıktısı & Paylaşım */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><Share2 className="size-4 text-muted-foreground" /> Müşteri Çıktısı</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {!shareToken ? (
-                <>
-                  <p className="text-xs text-muted-foreground">Müşteriyle paylaşabileceğiniz salt-görüntü bir özet linki oluşturun.</p>
-                  <Button onClick={handleGenerateShareLink} disabled={loading} size="sm" className="w-full">
-                    <Share2 className="size-4 mr-2" /> Müşteri Çıktı Linki Oluştur
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 text-xs">
-                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success" /> : <EyeOff className="size-3.5 text-destructive" />}
-                    <span className={intake.shareLinks[0]?.isActive ? "text-success font-medium" : "text-destructive font-medium"}>
-                      {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
-                    </span>
-                  </div>
-                  <Link href={`/s/${shareToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
-                    <FileText className="size-4 text-muted-foreground" /> Müşteri Çıktısını Aç
-                  </Link>
-                  <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
-                    <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!shareLinkFull) return
-                      const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
-                      window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
-                    }}
-                    className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
-                  >
-                    <Share2 className="size-4" /> WhatsApp ile Paylaş
-                  </button>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const linkId = intake.shareLinks[0]?.id
-                        if (!linkId) return
-                        try {
-                          await fetch(`/api/intakes/${intake.id}/share-visibility`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ linkId, isActive: !intake.shareLinks[0].isActive }),
-                          })
-                          router.refresh()
-                        } catch {}
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
-                    >
-                      {intake.shareLinks[0]?.isActive ? <><EyeOff className="size-3.5" /> Devre Dışı</> : <><Eye className="size-3.5" /> Etkinleştir</>}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => { if (shareLinkFull) { try { await navigator.clipboard.writeText(shareLinkFull) } catch {} } }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-border bg-background text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
-                    >
-                      <LinkIcon className="size-3.5" /> Kopyala
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {order.status === "ready_for_delivery" && !deliveryOtpMode && (
-                <div className="pt-3 border-t">
-                  <Button onClick={handleRequestDeliveryOtp} disabled={loading} size="sm" variant="outline" className="w-full">
-                    <KeyRound className="size-4 mr-2" /> Teslim Onayı (OTP) Gönder
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        {/* GEÇMİŞ */}
+        <TabsContent value="gecmis">
+          {/* İşlem Geçmişi (personel-içi; public paylaşıma dahil değildir) */}
+          <OrderActivityLog entries={activity} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

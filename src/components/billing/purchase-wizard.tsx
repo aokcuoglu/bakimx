@@ -4,7 +4,7 @@ import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,9 +22,12 @@ import { createBillingOrder } from "@/app/(app)/billing/actions"
 import type { PlanTier } from "@/lib/plan"
 import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
+import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
+import { getPlanPackage } from "@/lib/plans-catalog"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
+type PayMethod = "card" | "havale"
 
 export function PurchaseWizard({
   mode,
@@ -51,9 +54,14 @@ export function PurchaseWizard({
   const [step, setStep] = useState(initialStep)
   const [tier, setTier] = useState<PlanTier>(initialTier)
   const [cycle, setCycle] = useState<Cycle>(initialCycle)
+  const [method, setMethod] = useState<PayMethod>("card")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [done, setDone] = useState<{ reference: string; amountMinor: number } | null>(null)
+  const [done, setDone] = useState<{
+    reference: string
+    amountMinor: number
+    method: PayMethod
+  } | null>(null)
 
   const schema = isPublic ? checkoutPublicSchema : checkoutInAppSchema
   const form = useForm<CheckoutPublicValues | CheckoutInAppValues>({
@@ -99,6 +107,7 @@ export function PurchaseWizard({
       const values = getValues() as Record<string, unknown>
       values.tier = tier
       values.cycle = cycle
+      values.method = method
       if (isPublic) {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -106,17 +115,19 @@ export function PurchaseWizard({
           body: JSON.stringify(values),
         })
         const data = await res.json()
-        if (data.success) setDone({ reference: data.reference, amountMinor: data.amountMinor })
+        if (data.success)
+          setDone({ reference: data.reference, amountMinor: data.amountMinor, method })
         else setError(data.error || "Satın alma başarısız")
       } else {
         const res = await createBillingOrder({
           tier,
           cycle,
+          method,
           invoiceTitle: String(values.invoiceTitle ?? ""),
           taxNumber: String(values.taxNumber ?? ""),
           taxOffice: String(values.taxOffice ?? ""),
         })
-        if (res.ok) setDone({ reference: res.reference, amountMinor: res.amountMinor })
+        if (res.ok) setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
         else setError(res.error)
       }
     } catch {
@@ -140,7 +151,15 @@ export function PurchaseWizard({
         {/* my-auto: boş alan varsa dikey ortalar, içerik taşarsa kırpmadan üstten başlar */}
         <div className="mx-auto w-full max-w-md md:my-auto">
           {done ? (
-            <DonePanel mode={mode} done={done} havale={havale} />
+            done.method === "card" ? (
+              <CardPaymentPanel
+                reference={done.reference}
+                amountMinor={done.amountMinor}
+                planLabel={planLabelFor(tier, cycle)}
+              />
+            ) : (
+              <DonePanel mode={mode} done={done} havale={havale} />
+            )
           ) : (
             <>
               {/* ilerleme */}
@@ -202,30 +221,27 @@ export function PurchaseWizard({
                       <div className="grid gap-3">
                         {PLAN_PACKAGES.map((pkg) => {
                           const isOwned = ownedTier === pkg.tier
-                          const selected = !isOwned && tier === pkg.tier
+                          const selected = tier === pkg.tier
                           const minor = getPlanPriceMinor(pkg.tier, cycle)
                           return (
                             <button
                               key={pkg.tier}
                               type="button"
-                              disabled={isOwned}
                               onClick={() => setTier(pkg.tier)}
                               aria-pressed={selected}
                               className={cn(
                                 "relative flex items-center justify-between rounded-xl border p-4 text-left transition-all",
-                                isOwned
-                                  ? "cursor-not-allowed border-border bg-muted/30 opacity-60"
-                                  : selected
-                                    ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                                    : "border-border hover:border-primary/40 hover:bg-muted/30",
+                                selected
+                                  ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                                  : "border-border hover:border-primary/40 hover:bg-muted/30",
                               )}
                             >
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold text-foreground">{pkg.name}</p>
                                   {isOwned ? (
-                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                      Mevcut paketiniz
+                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                      Mevcut paketiniz — Yenile
                                     </span>
                                   ) : pkg.popular ? (
                                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
@@ -251,7 +267,6 @@ export function PurchaseWizard({
                         <Button
                           type="button"
                           size="lg"
-                          disabled={tier === ownedTier}
                           onClick={() => next([])}
                         >
                           Devam <ChevronRight className="size-4" />
@@ -340,13 +355,52 @@ export function PurchaseWizard({
                     </div>
                   )}
 
-                  {/* Step 2: summary */}
+                  {/* Step 2: summary + payment method */}
                   {step === 2 && (
                     <div className="space-y-4">
                       <h2 className="text-lg font-bold text-foreground">Özet</h2>
+
+                      {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
+                      <div>
+                        <Label className="text-xs">Ödeme yöntemi</Label>
+                        <div className="mt-1.5 grid grid-cols-2 gap-2">
+                          {(
+                            [
+                              { value: "card", label: "Kredi/Banka Kartı", icon: CreditCard },
+                              { value: "havale", label: "Havale/EFT", icon: Landmark },
+                            ] as const
+                          ).map((opt) => {
+                            const selected = method === opt.value
+                            const Icon = opt.icon
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => setMethod(opt.value)}
+                                aria-pressed={selected}
+                                className={cn(
+                                  "flex items-center gap-2 rounded-xl border p-3 text-left text-sm font-medium transition-all",
+                                  selected
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
+                                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                                )}
+                              >
+                                <Icon className="size-4 shrink-0 text-primary" />
+                                {opt.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
                       <p className="text-sm text-muted-foreground">
-                        Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce
-                        teyit edilince {isPublic ? "hesabınız aktifleşir" : "paketiniz güncellenir"}.
+                        {method === "card"
+                          ? isPublic
+                            ? "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen aktifleşir."
+                            : "Onayladığınızda 3D Secure ödeme adımına geçersiniz. Ödeme onaylanınca paketiniz hemen güncellenir."
+                          : isPublic
+                            ? "Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Hesabınız hemen kullanıma açılır; ödeme ekibimizce teyit edilince paketiniz aktifleşir."
+                            : "Onayladığınızda size havale/EFT talimatı ve referans kodu verilir. Ödeme ekibimizce teyit edilince paketiniz güncellenir."}
                       </p>
                       {!isPublic && (
                         <p className="text-xs text-muted-foreground">
@@ -367,6 +421,8 @@ export function PurchaseWizard({
                             <>
                               <Loader2 className="size-4 animate-spin" /> Gönderiliyor…
                             </>
+                          ) : method === "card" ? (
+                            "Ödemeye geç"
                           ) : (
                             "Siparişi oluştur"
                           )}
@@ -399,10 +455,10 @@ function DonePanel({
         <CheckCircle2 className="size-7 text-primary" />
       </div>
       <div>
-        <h2 className="text-lg font-bold text-foreground">Talebiniz alındı</h2>
+        <h2 className="text-lg font-bold text-foreground">Hesabınız hazır</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "public"
-            ? "Hesabınız oluşturuldu. Ödemeniz teyit edilince giriş yapabilirsiniz."
+            ? "Hesabınız oluşturuldu, hemen giriş yapabilirsiniz. Ödemeniz teyit edilince paketiniz aktifleşir."
             : "Havale teyidinden sonra paketiniz aktifleşecek."}
         </p>
       </div>
@@ -454,6 +510,12 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       <p className="min-h-[16px] text-xs leading-4 text-destructive">{error ?? ""}</p>
     </div>
   )
+}
+
+function planLabelFor(tier: PlanTier, cycle: Cycle): string {
+  const pkg = getPlanPackage(tier)
+  const cycleLabel = cycle === "yearly" ? "Yıllık" : "Aylık"
+  return pkg ? `${pkg.name} · ${cycleLabel}` : cycleLabel
 }
 
 function fieldError(

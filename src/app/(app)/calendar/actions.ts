@@ -1,12 +1,12 @@
 "use server"
 
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { runAllReminderJobs } from "@/lib/calendar/reminder-scheduler"
 import { getCalendarSyncLogs, getReminderExecutionLogs } from "@/lib/calendar"
 import { revalidatePath } from "next/cache"
 
 export async function checkRemindersAction() {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const results = await runAllReminderJobs(user.workshopId)
   revalidatePath("/calendar")
   return results.map((r) => ({

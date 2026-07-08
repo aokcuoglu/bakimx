@@ -8,7 +8,8 @@ import { checkoutInAppSchema } from "@/lib/validations/billing"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
-import type { BillingCycle, BillingOrderType } from "@prisma/client"
+import { deriveBillingOrderType } from "@/lib/billing/order-type"
+import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 
 /**
@@ -20,10 +21,14 @@ import type { PlanTier } from "@/lib/plan"
 export async function createBillingOrder(input: {
   tier: string
   cycle: string
+  method?: string
   invoiceTitle: string
   taxNumber: string
   taxOffice?: string
-}): Promise<{ ok: true; reference: string; amountMinor: number } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; reference: string; amountMinor: number; method: "card" | "havale" }
+  | { ok: false; error: string }
+> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
   const parsed = checkoutInAppSchema.safeParse(input)
@@ -54,19 +59,16 @@ export async function createBillingOrder(input: {
     }
   }
 
-  // Aktif olarak sahip olunan paket tekrar "satın alınamaz" — UI (wizard + /billing)
-  // bunu zaten "Mevcut paketiniz" olarak kilitler; burası doğrudan action çağrısına
-  // karşı savunma katmanı.
-  if (workshop.subscriptionStatus === "active" && workshop.planTier === tier) {
-    return { ok: false, error: "Zaten bu pakete sahipsiniz." }
-  }
-
-  const type: BillingOrderType =
-    workshop.currentPeriodEnd == null
-      ? "new_purchase"
-      : workshop.subscriptionStatus === "active" && workshop.planTier === tier
-        ? "renewal"
-        : "upgrade"
+  // Sipariş tipini türet. Aktif + aynı paket talebi KASITLI olarak reddedilmez:
+  // "renewal" olarak işlenir (dönem sonundan uzar, gün kaybı yok — bkz. activate.ts).
+  // Aynı paket için mükerrer talep, yukarıdaki bekleyen-sipariş guard'ı ile
+  // zaten engellenmiştir; bu yüzden burada ayrı bir "zaten sahipsiniz" reddi yok.
+  const type = deriveBillingOrderType({
+    subscriptionStatus: workshop.subscriptionStatus,
+    planTier: workshop.planTier,
+    currentPeriodEnd: workshop.currentPeriodEnd,
+    targetTier: tier,
+  })
 
   // Upgrades credit the unused portion of the current plan against the new
   // plan's price (and get a fresh period on confirm); new_purchase/renewal pay full.
@@ -117,7 +119,7 @@ export async function createBillingOrder(input: {
             billingCycle: cycle,
             amountMinor,
             status: "pending_payment",
-            method: "havale",
+            method: data.method,
             reference,
             billingSnapshot,
           },
@@ -130,11 +132,11 @@ export async function createBillingOrder(input: {
         "BillingOrder",
         reference,
         "billing_order_created",
-        JSON.stringify({ tier, cycle, amountMinor, type })
+        JSON.stringify({ tier, cycle, amountMinor, type, method: data.method })
       )
       revalidatePath("/billing")
       revalidatePath("/admin")
-      return { ok: true, reference, amountMinor }
+      return { ok: true, reference, amountMinor, method: data.method }
     } catch (err) {
       if ((err as { code?: string })?.code === "P2002") continue // reference collision → retry
       console.error("[createBillingOrder] failed:", err)

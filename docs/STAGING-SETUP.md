@@ -20,17 +20,17 @@ done once, before the first `dev` push deploys staging.
    creates the schema in the empty staging DB; the app comes up. To seed, point your LOCAL
    `bun run db:seed` at the staging `DATABASE_URL` (the runner image has no bun/tsx/dev-deps),
    or just create a test workshop via `/register` on staging.
-6. **Ruhsat OCR sidecar (PaddleOCR):** the `staging.yml` workflow also builds/pushes
-   `ghcr.io/aokcuoglu/ocr-service:staging` and the compose runs it as the `ocr` service on
-   the `internal` network (not public). To actually route ruhsat OCR through it, add to
-   `.env.staging`:
+6. **Ruhsat OCR (Claude Vision):** MVP OCR'ı Claude Vision (Sonnet 5) üzerinden çalışır —
+   app container'ının içinde, ayrı sidecar YOK. `.env.staging`'e ekle (bir sonraki `dev`
+   push'tan ÖNCE — yoksa OCR 500 döner):
    ```
-   OCR_PROVIDER=paddle
-   OCR_SERVICE_URL=http://ocr:8000
+   OCR_PROVIDER=anthropic
+   OCR_MODEL=claude-sonnet-5
+   ANTHROPIC_API_KEY=sk-ant-...
    ```
-   Models are baked into the image (no runtime download). Without these vars the `ocr`
-   container still runs but the app keeps using whatever `OCR_PROVIDER` is set (mock/…).
-   First `dev` push after this change: `build-ocr` must succeed before `deploy` runs (deploy
-   `needs: [build, build-ocr]`), so the image exists before compose references it.
-7. **RAM:** staging adds ~1.5GB (app 1g + db 512m) **+ ~2g for the `ocr` sidecar** during
-   inference. Confirm headroom on the shared VPS.
+   VPS'ten `api.anthropic.com`:443 erişimi gerekir (Resend zaten 443 kullanıyor, sorun yok).
+   Tarama başı ~0.02$ (~0.8₺); aynı görsel tekrar taranırsa OcrLog byte-hash cache çağrıyı atlar.
+   Not: PaddleOCR sidecar emekliye ayrıldı (`ocr-service/` kodu repoda parked; çevrimdışı
+   fallback gerekirse `OCR_PROVIDER=paddle` + ayrı container ile geri getirilir).
+7. **RAM:** staging adds ~1.5GB (app 1g + db 512m). (Eski PaddleOCR sidecar'ının ~2-4g'lik
+   yükü artık yok — Claude API çağrısı bellek eklemez.)

@@ -42,7 +42,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { formatTRY } from "@/lib/format"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
-import { DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES } from "@/lib/constants"
+import {
+  DAMAGE_TYPES,
+  DAMAGE_SEVERITY,
+  PHOTO_TYPES,
+  vehicleTypeLabel,
+  fuelTypeLabel,
+  transmissionLabel,
+} from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
 
@@ -198,15 +205,15 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                 <SummaryItem label="Plaka" value={v.plate} />
                 <SummaryItem label="Marka" value={v.brand} />
                 <SummaryItem label="Model" value={v.model} />
-                <SummaryItem label="Araç Tipi" value={v.vehicleType || "—"} />
+                <SummaryItem label="Araç Tipi" value={vehicleTypeLabel(v.vehicleType) || "—"} />
                 <SummaryItem label="Model Yılı" value={v.modelYear ? v.modelYear.toString() : "—"} />
                 <SummaryItem
                   label="Kilometre"
                   value={v.mileage ? `${v.mileage.toLocaleString("tr-TR")} km` : "—"}
                 />
                 <SummaryItem label="Renk" value={v.color || "—"} />
-                <SummaryItem label="Yakıt" value={v.fuelType || "—"} />
-                <SummaryItem label="Şanzıman" value={v.transmission || "—"} />
+                <SummaryItem label="Yakıt" value={fuelTypeLabel(v.fuelType) || "—"} />
+                <SummaryItem label="Şanzıman" value={transmissionLabel(v.transmission) || "—"} />
                 <SummaryItem
                   label="Şase No"
                   value={

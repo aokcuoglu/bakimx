@@ -24,7 +24,7 @@ export default async function EditPartPage(props: { params: Promise<{ id: string
   }
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle={`Düzenle: ${part.name}`}>
+    <AppShell constrained workshopName={workshop?.name} pageTitle={`Düzenle: ${part.name}`}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <PartForm part={serialized as any} suppliers={suppliers} />
     </AppShell>

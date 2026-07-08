@@ -20,7 +20,7 @@ export default async function CalendarSettingsPage() {
   const settings = await getCalendarSettings()
 
   return (
-    <AppShell workshopName={workshop.name} pageTitle="Takvim Ayarları">
+    <AppShell constrained workshopName={workshop.name} pageTitle="Takvim Ayarları">
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>

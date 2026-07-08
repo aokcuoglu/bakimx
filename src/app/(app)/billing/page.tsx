@@ -49,7 +49,7 @@ export default async function BillingPage({
   return (
     <AppShell workshopName={workshop.name} pageTitle="Paket & Abonelik">
       {sp.pendingBlocked === "1" && pendingOrder && (
-        <PendingOrderAlert reference={pendingOrder.reference} />
+        <PendingOrderAlert reference={pendingOrder.reference} method={pendingOrder.method} />
       )}
       <div className="space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
@@ -68,13 +68,27 @@ export default async function BillingPage({
         {pendingOrder && (
           <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
             <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-sm">
+            <div className="text-sm flex-1">
               <p className="font-medium text-foreground">
                 Bekleyen ödeme · {getPlanPackage(pendingOrder.planTier)?.name} ({pendingOrder.billingCycle === "monthly" ? "Aylık" : "Yıllık"}) · {formatMinor(pendingOrder.amountMinor)}
               </p>
-              <p className="text-muted-foreground mt-0.5">
-                Havale açıklamasına <span className="font-semibold">{pendingOrder.reference}</span> yazın. Ödemeniz teyit edilince paketiniz aktifleşecek.
-              </p>
+              {pendingOrder.method === "card" ? (
+                <>
+                  <p className="text-muted-foreground mt-0.5">
+                    Başlattığınız kart ödemesi henüz tamamlanmadı. Ödemenizi tamamlamak için devam edin.
+                  </p>
+                  <Link
+                    href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}
+                    className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  >
+                    Ödemeye devam et
+                  </Link>
+                </>
+              ) : (
+                <p className="text-muted-foreground mt-0.5">
+                  Havale açıklamasına <span className="font-semibold">{pendingOrder.reference}</span> yazın. Ödemeniz teyit edilince paketiniz aktifleşecek.
+                </p>
+              )}
             </div>
           </div>
         )}

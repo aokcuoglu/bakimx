@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import { sanitizePassportForPublic, escapePassportForHtml } from "@/lib/passport/data-safety"
 import { formatTRY, formatMileage } from "@/lib/format"
-import { VEHICLE_ZONES } from "@/lib/constants"
+import { VEHICLE_ZONES, fuelTypeLabel } from "@/lib/constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { escapeHtml } from "@/lib/html-escape"
 
@@ -36,7 +36,7 @@ async function generatePassportPdfHtml(data: {
   const safePlate = escapeHtml(vehicle.plate)
   const safeVehicleLabel = escapeHtml(vehicleLabel)
   const safeVehicleColor = vehicle.color ? escapeHtml(vehicle.color) : null
-  const safeVehicleFuel = vehicle.fuelType ? escapeHtml(vehicle.fuelType) : null
+  const safeVehicleFuel = vehicle.fuelType ? escapeHtml(fuelTypeLabel(vehicle.fuelType)) : null
   const safeVin = vehicle.vin ? escapeHtml(vehicle.vin) : null
   const safeCustomerName = escapeHtml(customerName)
   const safeCustomerPhone = escapeHtml(customer.phone)

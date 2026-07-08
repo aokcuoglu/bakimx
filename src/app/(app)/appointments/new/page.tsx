@@ -21,7 +21,7 @@ export default async function NewAppointmentPage() {
   })
 
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Randevu">
+    <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni Randevu">
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/appointments" className="hover:text-foreground inline-flex items-center gap-1">

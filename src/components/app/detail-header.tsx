@@ -79,14 +79,14 @@ export function DetailHeader({
           <ArrowLeft className="size-5" />
         </button>
         <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="flex flex-col items-start gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-wrap sm:gap-2">
-            <PlateBadge plate={plate} />
-            <span className="hidden sm:inline text-muted-foreground/40">•</span>
+          <div className="flex flex-col items-start gap-1 min-w-0 sm:flex-row sm:items-center sm:flex-nowrap sm:gap-2">
+            <PlateBadge plate={plate} size="sm" className="shrink-0" />
+            <span className="hidden sm:inline text-muted-foreground/40 shrink-0">•</span>
             <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
               <Car className="size-3.5 shrink-0" />
               <span className="truncate">{vehicleLabel}</span>
             </span>
-            <span className="hidden sm:inline text-muted-foreground/40">•</span>
+            <span className="hidden sm:inline text-muted-foreground/40 shrink-0">•</span>
             <span className="inline-flex items-center gap-1 min-w-0 text-sm text-muted-foreground">
               <User className="size-3.5 shrink-0" />
               <span className="truncate">{customerLabel}</span>

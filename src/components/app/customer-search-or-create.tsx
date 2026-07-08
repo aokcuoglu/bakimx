@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
   Combobox,
@@ -13,9 +14,11 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Plus, User } from "lucide-react"
+import { ChevronDown, Loader2, Plus, User } from "lucide-react"
 import type { UnifiedResult } from "@/lib/search/unified-results"
 import { formatPhoneTR, toTrUpper } from "@/lib/format"
+import { CityDistrictFields } from "@/components/app/forms/city-district-fields"
+import { TaxIdentityFields } from "@/components/app/forms/tax-identity-fields"
 
 type CustomerHit = Extract<UnifiedResult, { kind: "customer" }>
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
@@ -55,6 +58,14 @@ export function CustomerSearchOrCreate({
   const [phone, setPhone] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  // Optional TC / tax / address fields, hidden behind a collapsible section.
+  const [showExtra, setShowExtra] = useState(false)
+  const [identityNumber, setIdentityNumber] = useState("")
+  const [taxNumber, setTaxNumber] = useState("")
+  const [taxOffice, setTaxOffice] = useState("")
+  const [city, setCity] = useState("")
+  const [district, setDistrict] = useState("")
+  const [address, setAddress] = useState("")
   // When the entered phone already belongs to a customer, offer to select them
   // instead of creating a duplicate (a phone belongs to a single customer).
   const [duplicate, setDuplicate] = useState<{ id: string; label: string } | null>(null)
@@ -101,6 +112,13 @@ export function CustomerSearchOrCreate({
     setBusy(false)
     setError("")
     setDuplicate(null)
+    setShowExtra(false)
+    setIdentityNumber("")
+    setTaxNumber("")
+    setTaxOffice("")
+    setCity("")
+    setDistrict("")
+    setAddress("")
     setCreating(true)
   }
 
@@ -132,6 +150,13 @@ export function CustomerSearchOrCreate({
       if (type === "individual") { cf.set("firstName", firstName); cf.set("lastName", lastName); cf.set("fullName", [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")) }
       else { cf.set("companyName", companyName) }
       cf.set("phone", phone)
+      // Optional fields — her zaman üçü; dolu olanı gönder (boş alan gönderilmez).
+      if (identityNumber.trim()) cf.set("identityNumber", identityNumber.trim())
+      if (taxNumber.trim()) cf.set("taxNumber", taxNumber.trim())
+      if (taxOffice.trim()) cf.set("taxOffice", taxOffice.trim())
+      if (city.trim()) cf.set("city", city.trim())
+      if (district.trim()) cf.set("district", district.trim())
+      if (address.trim()) cf.set("address", address.trim())
       const res = await fetch("/api/customers", { method: "POST", body: cf })
       const data = await res.json() as { success?: boolean; id?: string; error?: string; existingCustomer?: { id: string; label: string } }
       if (data?.existingCustomer) { setDuplicate(data.existingCustomer); setError(data.error || ""); setBusy(false); return }
@@ -160,6 +185,37 @@ export function CustomerSearchOrCreate({
           <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
         )}
         <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicate(null); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
+        <button
+          type="button"
+          onClick={() => setShowExtra((s) => !s)}
+          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
+        >
+          <span>Ek bilgiler (opsiyonel)</span>
+          <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
+        </button>
+
+        {showExtra && (
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <TaxIdentityFields
+              identityNumber={identityNumber}
+              taxNumber={taxNumber}
+              taxOffice={taxOffice}
+              onIdentityChange={setIdentityNumber}
+              onTaxNumberChange={setTaxNumber}
+              onTaxOfficeChange={setTaxOffice}
+            />
+            <CityDistrictFields
+              city={city}
+              district={district}
+              onCityChange={setCity}
+              onDistrictChange={setDistrict}
+            />
+            <div className="space-y-1.5">
+              <Label>Adres</Label>
+              <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Mahalle / Sokak / No" />
+            </div>
+          </div>
+        )}
         {duplicate ? (
           <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
             <p className="text-sm text-foreground">Bu telefon <span className="font-medium">{duplicate.label}</span> adlı müşteriye ait.</p>
@@ -184,7 +240,26 @@ export function CustomerSearchOrCreate({
       onInputValueChange={(v: string) => setQuery(v)}
       onValueChange={(r: CustomerHit | null) => { if (r) onSelected(r.customerId, r.label) }}
     >
-      <ComboboxInput autoFocus={autoFocus} placeholder="Müşteri adı veya telefon ile ara…" />
+      <ComboboxInput
+        autoFocus={autoFocus}
+        placeholder="Müşteri adı veya telefon ile ara…"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return
+          // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
+          // Base UI onu normal şekilde seçsin.
+          if (e.currentTarget.getAttribute("aria-activedescendant")) return
+          // Doğrudan input'ta Enter: Base UI'nın Enter'da popup'ı kapatıp
+          // input'u (boş) seçili değere geri döndürme davranışını durdur ve
+          // kararı biz verelim — eşleşen ilk müşteri varsa onu seç, yoksa
+          // "Yeni müşteri" oluşturma formunu (yazılan adla) aç.
+          e.preventBaseUIHandler()
+          e.preventDefault()
+          if (loading || query.trim().length < 1) return
+          const first = results[0]
+          if (first) onSelected(first.customerId, first.label)
+          else openCreate()
+        }}
+      />
       <ComboboxContent>
         <ComboboxEmpty className="p-0">
           {loading ? (

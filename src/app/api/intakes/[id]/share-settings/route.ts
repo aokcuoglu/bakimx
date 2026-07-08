@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
@@ -14,7 +15,9 @@ type ShareSettings = {
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireAuth()
+    const { user, workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
     const { id } = await params
     const body: ShareSettings = await request.json()
     const { linkId, ...settings } = body

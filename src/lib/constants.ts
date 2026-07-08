@@ -152,6 +152,66 @@ export const VEHICLE_TRANSMISSIONS = [
   { value: "yarim_otomatik", label: "Yarı Otomatik" },
 ] as const
 
+/** Map a stored slug to its Türkçe label, falling back to the raw value (e.g. free-text OCR values). */
+function labelFromOptions(
+  list: ReadonlyArray<{ value: string; label: string }>,
+  value: string | null | undefined,
+): string {
+  if (!value) return ""
+  return list.find((o) => o.value === value)?.label ?? value
+}
+
+export const vehicleTypeLabel = (v: string | null | undefined) => labelFromOptions(VEHICLE_TYPES, v)
+export const fuelTypeLabel = (v: string | null | undefined) => labelFromOptions(VEHICLE_FUEL_TYPES, v)
+export const transmissionLabel = (v: string | null | undefined) =>
+  labelFromOptions(VEHICLE_TRANSMISSIONS, v)
+
+// Ruhsat/OCR "Aracın Cinsi" ve "Yakıt Cinsi" alanları serbest Türkçe metin döner
+// (ör. "OTOMOBİL", "BENZİNLİ - LPG"). Bu alanlar artık Select ile toplandığından,
+// OCR ön-doldurmasını da bir enum slug'ına indirgemek gerekir. Eşleşme bulunamazsa ""
+// döner → kullanıcı yanlış bir değer saklamak yerine kendisi seçer.
+// tr-TR upper + İ→I sadeleştirmesi, noktalı/noktasız I tuzağını ([[base-ui]]) atlatır.
+function normalizeOcrText(raw: string | null | undefined): string {
+  if (!raw) return ""
+  return raw.toLocaleUpperCase("tr-TR").replace(/İ/g, "I")
+}
+
+/** Best-effort ruhsat "Aracın Cinsi" serbest metnini VEHICLE_TYPES slug'ına eşler. */
+export function ocrVehicleTypeToSlug(raw: string | null | undefined): string {
+  const t = normalizeOcrText(raw)
+  if (!t) return ""
+  if (t.includes("MOTOS")) return "motosiklet"
+  if (t.includes("KAMYONET") || t.includes("MINIB") || t.includes("PANEL") || t.includes("PICK")) return "hafif_ticari"
+  if (t.includes("KAMYON") || t.includes("OTOB") || t.includes("ÇEK") || t.includes("CEK") || t.includes("TIR")) return "agir_vasita"
+  if (t.includes("OTOMOB") || t.includes("BINEK") || t.includes("HUSUS")) return "binek"
+  return ""
+}
+
+/** Best-effort ruhsat "Yakıt Cinsi" serbest metnini VEHICLE_FUEL_TYPES slug'ına eşler. */
+export function ocrFuelToSlug(raw: string | null | undefined): string {
+  const t = normalizeOcrText(raw)
+  if (!t) return ""
+  if (t.includes("ELEKTR")) return "elektrik"
+  if (t.includes("HIBR") || t.includes("HYBR")) return "hibrit"
+  if (t.includes("DIZEL") || t.includes("MOTORIN")) return "dizel"
+  if (t.includes("LPG")) return "lpg" // "BENZİNLİ - LPG" gibi çift yakıt → LPG (dönüşümlü araç)
+  if (t.includes("CNG") || t.includes("DOĞAL")) return "diger"
+  if (t.includes("BENZIN")) return "benzin"
+  return ""
+}
+
+/** TecDoc English fuel_type (VIN resolve) → the form's fixed fuel Select values. */
+export function tecdocFuelToFormValue(fuel: string | null): string {
+  if (!fuel) return ""
+  const f = fuel.toLowerCase()
+  if (f.includes("lpg")) return "lpg"
+  if (f.includes("diesel")) return "dizel"
+  if (f.includes("hybrid")) return "hibrit"
+  if (f.includes("electric")) return "elektrik"
+  if (f.includes("petrol")) return "benzin"
+  return ""
+}
+
 export const QUOTE_STATUS = {
   draft: { label: "Taslak", color: "bg-muted text-foreground border-border" },
   sent: { label: "Gönderildi", color: "bg-primary/10 text-foreground border-primary/20" },

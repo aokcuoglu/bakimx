@@ -13,7 +13,7 @@ export default function FiyatlarPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Paketler</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
-            İş yerinize uygun paketi seçin. 15 gün ücretsiz denemek için{" "}
+            İş yerinize uygun paketi seçin. 7 gün ücretsiz denemek için{" "}
             <Link href="/register" className="text-primary hover:underline">kayıt olun</Link>, ya da doğrudan satın alın.
           </p>
         </div>

@@ -94,3 +94,14 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
   if (from === to) return true
   return ORDER_TRANSITIONS[from]?.includes(to) ?? false
 }
+
+/**
+ * `delivered`/`cancelled` are terminal for order *composition* (parts, labor,
+ * pricing, technician assignment, checklist, notes, parts requests, labor
+ * sessions) — the vehicle has left or the job never happened, so nothing about
+ * what was done to it should still be editable. `cancelled` can still reactivate
+ * to `draft` (see ORDER_TRANSITIONS), which unlocks it again.
+ */
+export function isOrderLocked(status: OrderStatus): boolean {
+  return status === "delivered" || status === "cancelled"
+}

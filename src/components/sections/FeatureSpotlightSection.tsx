@@ -9,6 +9,8 @@ import {
   Search,
   Sparkles,
   MousePointerClick,
+  ScanLine,
+  Car,
 } from "lucide-react";
 
 export function FeatureSpotlightSection() {
@@ -26,6 +28,23 @@ export function FeatureSpotlightSection() {
             reverse={false}
             text={
               <FeatureText
+                title="Ruhsattan araca uygun parça"
+                description="Ruhsatı okutun; araç ve müşteri otomatik dolsun. Aracın VIN'iyle TecDoc kataloğunu eşleştirip ona uygun orijinal/muadil parçaları görün — marka ve model tahmininden kurtulun."
+                bullets={[
+                  "Ruhsat/plaka okuma ile saniyede araç kabul",
+                  "VIN'iyle eşleşen, araca uygun katalog parçaları",
+                  "Doğru parçayı tek dokunuşla iş emrine ekleyin",
+                ]}
+                microcopy="Uygun katalog parçalarıdır; fiyatları kendi kataloğunuzdan siz belirlersiniz."
+              />
+            }
+            visual={<RuhsatPartCard />}
+          />
+
+          <SpotlightRow
+            reverse
+            text={
+              <FeatureText
                 title="Tek iş emrinde her şey"
                 description="Parça, işçilik, fotoğraf, hasar ve tahsilat aynı iş emrinde birleşir; aracın geçmişi tek yerde toplanır."
                 bullets={[
@@ -39,7 +58,7 @@ export function FeatureSpotlightSection() {
           />
 
           <SpotlightRow
-            reverse
+            reverse={false}
             text={
               <FeatureText
                 title="Dakikalar içinde teklif"
@@ -56,7 +75,7 @@ export function FeatureSpotlightSection() {
           />
 
           <SpotlightRow
-            reverse={false}
+            reverse
             text={
               <FeatureText
                 tag="Premium"
@@ -146,6 +165,51 @@ function FeatureText({
       {microcopy && (
         <p className="mt-4 text-xs italic text-muted-foreground/80">{microcopy}</p>
       )}
+    </div>
+  );
+}
+
+function RuhsatPartCard() {
+  return (
+    <div className="rounded-lg border bg-card shadow-xl overflow-hidden">
+      <div className="flex items-center gap-2 border-b bg-muted/40 px-5 py-3">
+        <ScanLine className="h-4 w-4 text-primary" />
+        <h4 className="text-sm font-semibold">Ruhsat → Uygun Parça</h4>
+        <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+          <CheckCircle2 className="size-3" />
+          VIN eşleşti
+        </span>
+      </div>
+      <div className="p-5 space-y-3">
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+          <Car className="size-4 text-primary shrink-0" />
+          <span className="font-mono text-sm font-semibold">34 ABC 123</span>
+          <span className="ml-auto text-xs text-muted-foreground">Honda Civic 1.6 · 2018</span>
+        </div>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          Araca uygun parçalar
+        </p>
+        <PartRow name="Ön fren balatası" meta="BOSCH · 0 986 494 700" />
+        <PartRow name="Yağ filtresi" meta="MAHLE · OX 813/1" />
+        <PartRow name="Triger seti" meta="GATES · K015649XS" />
+        <p className="pt-1 text-[11px] italic text-muted-foreground">
+          Uygun katalog parçalarıdır; fiyatı siz belirlersiniz.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PartRow({ name, meta }: { name: string; meta: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{name}</p>
+        <p className="text-[11px] text-muted-foreground">{meta}</p>
+      </div>
+      <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+        uygun
+      </span>
     </div>
   );
 }

@@ -4,10 +4,23 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: early-access onboarding gate (admin approves self sign-ups)
+ *  - approvalStatus: card-verification gate. Self sign-ups (/register) create a
+ *    `pending` workshop with NO trial; the workshop flips to `approved` and its
+ *    7-day trial starts only when 1 TL card verification succeeds
+ *    (activateVerifiedWorkshop). Pending users CAN sign in — they land on the
+ *    full-screen PlanLocked verify screen ((app)/layout.tsx). `rejected` is the
+ *    admin kill switch (blocks login entirely); admin approveWorkshop remains a
+ *    legacy/manual escape hatch.
  *  - subscriptionStatus + trialEndsAt: billing/trial lifecycle
  *
- * Today only the ACCESS gate (`hasAccess`) is enforced (login + /app layout).
+ * Enforcement layers:
+ *  - `canWrite` / `assertWriteAccess` (via requireWritableWorkshop) is the
+ *    SERVER-SIDE enforcement: every mutating server action / API route must be
+ *    blocked when ANY lockReason is set — pending/rejected included, since a
+ *    pending session could otherwise call actions/APIs directly with its
+ *    cookie and use the app without ever verifying a card.
+ *  - `hasAccess` + PlanLocked ((app)/layout.tsx) is the UX layer: full-screen
+ *    lock for pending/rejected, read-only banner for plan-expiry reasons.
  *
  * Per-feature gating:
  *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
@@ -23,7 +36,7 @@ import type { Workshop } from "@prisma/client"
  *    are available across all tiers, so the gate is informational only.
  */
 
-export const TRIAL_DAYS = 15
+export const TRIAL_DAYS = 7
 const DAY_MS = 86_400_000
 
 export type PlanTier = "starter" | "pro" | "premium"
@@ -51,15 +64,18 @@ export type LockReason =
 
 const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 
-// Premium-only capabilities. Used by assertFeature() as these features come
-// online. During the trial a workshop is on the `pro` tier, so premium features
-// remain locked behind an upgrade.
-export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac"
+// Gated capabilities. Used by assertFeature() as these features come online.
+// During the trial a workshop is on the `pro` tier, so premium features remain
+// locked behind an upgrade. `starter` min tier = enabled for every plan (the
+// gate then only serves as a per-tenant kill switch via feature overrides).
+export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup" | "partsCatalog"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
+  vinLookup: "starter",
+  partsCatalog: "starter",
 }
 
 type WorkshopPlanFields = Pick<
@@ -83,6 +99,16 @@ export interface PlanState {
   hasAccess: boolean
   /** Why access is blocked, or null when access is granted. */
   lockReason: LockReason
+  /**
+   * True when the workshop may perform data mutations — false whenever ANY
+   * `lockReason` is set (i.e. `canWrite === hasAccess`). This is the
+   * server-side enforcement (assertWriteAccess / requireWritableWorkshop);
+   * PlanLocked / the read-only banner are only the UX layer on top. In
+   * particular `pending` (card not verified yet) and `rejected` MUST block
+   * writes here too: those sessions can reach server actions / API routes
+   * directly with their cookie, bypassing the full-screen lock HTML.
+   */
+  canWrite: boolean
 }
 
 export function getPlanState(workshop: WorkshopPlanFields): PlanState {
@@ -127,6 +153,10 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     lockReason = "subscription_inactive"
   }
 
+  // Write gate: ANY lock reason blocks mutations centrally (server actions /
+  // API routes). pending/rejected included — see the PlanState.canWrite doc.
+  const canWrite = hasAccess
+
   return {
     tier,
     isApproved,
@@ -138,7 +168,51 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
     subscriptionDaysLeft,
     hasAccess,
     lockReason,
+    canWrite,
   }
+}
+
+/**
+ * Thrown by {@link assertWriteAccess} when a workshop may not mutate data
+ * (pending/rejected approval gate or plan-expired read-only state). Carries the
+ * `lockReason` so callers/API routes can map it to a stable machine code
+ * (`plan_locked`) plus the user-facing message.
+ */
+export class PlanWriteLockedError extends Error {
+  readonly lockReason: LockReason
+  constructor(message: string, lockReason: LockReason) {
+    super(message)
+    this.name = "PlanWriteLockedError"
+    this.lockReason = lockReason
+  }
+}
+
+/**
+ * Central write guard. Throws {@link PlanWriteLockedError} whenever the
+ * workshop may not mutate data: card verification not completed (`pending`),
+ * suspended (`rejected`), or plan expired (read-only mode). Server
+ * actions/routes that mutate tenant data should call this after auth. The
+ * billing/purchase flow and auth actions are intentionally exempt so a locked
+ * workshop can still pay/verify to recover.
+ */
+export function assertWriteAccess(workshop: WorkshopPlanFields): void {
+  const { canWrite, lockReason } = getPlanState(workshop)
+  if (canWrite) return
+  let message: string
+  switch (lockReason) {
+    case "pending":
+      message = "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      break
+    case "rejected":
+      message = "Hesabınız askıya alınmış. Destek ile iletişime geçin."
+      break
+    case "trial_expired":
+      message = "Deneme süreniz doldu. Devam etmek için bir paket satın alın."
+      break
+    default:
+      message = "Aboneliğiniz sona erdi. Devam etmek için aboneliğinizi yenileyin."
+  }
+  throw new PlanWriteLockedError(message, lockReason)
 }
 
 /** Trial end timestamp computed from a start date (used when a workshop is approved). */

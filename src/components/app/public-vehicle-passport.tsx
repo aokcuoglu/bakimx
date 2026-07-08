@@ -19,7 +19,7 @@ import {
   Gauge,
   Calendar,
 } from "lucide-react"
-import { ORDER_STATUS, PAYMENT_STATUS, MAINTENANCE_REMINDER_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS, MAINTENANCE_REMINDER_STATUS, vehicleTypeLabel, fuelTypeLabel, transmissionLabel } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { generatePassportWhatsAppText } from "@/lib/passport/data-safety"
 import { BrandLogo } from "@/components/shared/brand-logo"
@@ -229,10 +229,10 @@ export function PublicVehiclePassportPage({
               <h2 className="text-lg font-bold text-foreground">{vehicle.plate}</h2>
               <p className="text-sm text-muted-foreground">{vehicleLabel}</p>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
-                {vehicle.vehicleType && <span>{vehicle.vehicleType}</span>}
+                {vehicle.vehicleType && <span>{vehicleTypeLabel(vehicle.vehicleType)}</span>}
                 {vehicle.color && <span>{vehicle.color}</span>}
-                {vehicle.fuelType && <span>{vehicle.fuelType}</span>}
-                {vehicle.transmission && <span>{vehicle.transmission}</span>}
+                {vehicle.fuelType && <span>{fuelTypeLabel(vehicle.fuelType)}</span>}
+                {vehicle.transmission && <span>{transmissionLabel(vehicle.transmission)}</span>}
                 {vehicle.mileage && <span>{formatMileage(vehicle.mileage)}</span>}
                 {vehicle.vin && <span className="font-mono">VIN: {vehicle.vin}</span>}
               </div>

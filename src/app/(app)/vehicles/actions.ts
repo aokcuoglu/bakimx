@@ -1,14 +1,60 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { vehicleCreateSchema, vehicleUpdateSchema } from "@/lib/validations/vehicle"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
 
+/**
+ * The catalog id columns have no DB foreign keys (the catalog is re-importable
+ * reference data), so this single indexed lookup is the integrity guard.
+ * Only our own UI sends these ids — a mismatch means a bug worth surfacing,
+ * hence reject instead of silently nulling.
+ */
+async function validateCatalogSelection(data: {
+  catalogBrandId?: number
+  catalogModelId?: number
+  catalogVehicleTypeId?: number
+}): Promise<string | null> {
+  const { catalogBrandId, catalogModelId, catalogVehicleTypeId } = data
+  if (catalogVehicleTypeId) {
+    const local = await prisma.vehicleType.findUnique({
+      where: { id: catalogVehicleTypeId },
+      select: { modelId: true, model: { select: { brandId: true } } },
+    })
+    // Not in the local snapshot → a VIN-provider vehicleId we trust: the same
+    // provider serves this vehicle's parts by that id, and the local catalog
+    // (imported from a different TecDoc dataset) can legitimately diverge at the
+    // vehicle-type level even when brand/model ids line up. Locally-known ids
+    // still get the brand/model consistency check.
+    if (!local) return null
+    if (catalogModelId && local.modelId !== catalogModelId) {
+      return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    }
+    if (catalogBrandId && local.model.brandId !== catalogBrandId) {
+      return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    }
+    return null
+  }
+  if (catalogModelId) {
+    const ok = await prisma.vehicleModel.findFirst({
+      where: { id: catalogModelId, ...(catalogBrandId ? { brandId: catalogBrandId } : {}) },
+      select: { id: true },
+    })
+    if (!ok) return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+    return null
+  }
+  if (catalogBrandId) {
+    const ok = await prisma.vehicleBrand.findUnique({ where: { id: catalogBrandId }, select: { id: true } })
+    if (!ok) return "Araç katalog seçimi tutarsız. Lütfen marka/model seçimini yenileyin."
+  }
+  return null
+}
+
 export async function createVehicleAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -29,6 +75,9 @@ export async function createVehicleAction(formData: FormData) {
     engineDisplacement: (formData.get("engineDisplacement") as string || "").trim(),
     enginePower: (formData.get("enginePower") as string || "").trim(),
     inspectionValidUntil: (formData.get("inspectionValidUntil") as string || "").trim(),
+    catalogBrandId: (formData.get("catalogBrandId") as string) || undefined,
+    catalogModelId: (formData.get("catalogModelId") as string) || undefined,
+    catalogVehicleTypeId: (formData.get("catalogVehicleTypeId") as string) || undefined,
     notes: (formData.get("notes") as string || "").trim(),
   }
 
@@ -43,6 +92,9 @@ export async function createVehicleAction(formData: FormData) {
   if (!customer) {
     return { error: "Müşteri bulunamadı" }
   }
+
+  const catalogError = await validateCatalogSelection(parsed.data)
+  if (catalogError) return { error: catalogError }
 
   try {
     const vehicle = await prisma.vehicle.create({
@@ -66,6 +118,9 @@ export async function createVehicleAction(formData: FormData) {
         engineDisplacement: parsed.data.engineDisplacement || null,
         enginePower: parsed.data.enginePower || null,
         inspectionValidUntil: parsed.data.inspectionValidUntil || null,
+        catalogBrandId: parsed.data.catalogBrandId ?? null,
+        catalogModelId: parsed.data.catalogModelId ?? null,
+        catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
         notes: parsed.data.notes || null,
       },
     })
@@ -122,7 +177,7 @@ export async function getVehicleAction(vehicleId: string) {
 }
 
 export async function updateVehicleAction(vehicleId: string, formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -148,6 +203,9 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     engineDisplacement: (formData.get("engineDisplacement") as string || "").trim(),
     enginePower: (formData.get("enginePower") as string || "").trim(),
     inspectionValidUntil: (formData.get("inspectionValidUntil") as string || "").trim(),
+    catalogBrandId: (formData.get("catalogBrandId") as string) || undefined,
+    catalogModelId: (formData.get("catalogModelId") as string) || undefined,
+    catalogVehicleTypeId: (formData.get("catalogVehicleTypeId") as string) || undefined,
     notes: (formData.get("notes") as string || "").trim(),
   }
 
@@ -162,6 +220,9 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   if (!customer) {
     return { error: "Müşteri bulunamadı" }
   }
+
+  const catalogError = await validateCatalogSelection(parsed.data)
+  if (catalogError) return { error: catalogError }
 
   await prisma.vehicle.update({
     where: { id: vehicleId },
@@ -184,6 +245,9 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       engineDisplacement: parsed.data.engineDisplacement || null,
       enginePower: parsed.data.enginePower || null,
       inspectionValidUntil: parsed.data.inspectionValidUntil || null,
+      catalogBrandId: parsed.data.catalogBrandId ?? null,
+      catalogModelId: parsed.data.catalogModelId ?? null,
+      catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
       notes: parsed.data.notes || null,
     },
   })
@@ -195,8 +259,48 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   return { success: true }
 }
 
+/**
+ * Link a vehicle to the parts catalog from a VIN resolution done outside the
+ * edit form — e.g. the İş Emri → Parça sekmesi "VIN'den bağla" shortcut. Only
+ * the catalog id columns move; the brand/model text the user typed is left
+ * untouched. Same tenant-isolation + integrity guard as the edit form path.
+ */
+export async function linkVehicleCatalogAction(
+  vehicleId: string,
+  data: { catalogBrandId?: number; catalogModelId?: number; catalogVehicleTypeId: number }
+) {
+  const { user } = await requireWritableWorkshop()
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, workshopId: user.workshopId },
+    select: { id: true },
+  })
+  if (!vehicle) return { error: "Araç bulunamadı" }
+
+  if (!Number.isInteger(data.catalogVehicleTypeId) || data.catalogVehicleTypeId <= 0) {
+    return { error: "Geçersiz katalog kimliği" }
+  }
+  const mismatch = await validateCatalogSelection(data)
+  if (mismatch) return { error: mismatch }
+
+  await prisma.vehicle.update({
+    where: { id: vehicleId },
+    data: {
+      catalogVehicleTypeId: data.catalogVehicleTypeId,
+      ...(data.catalogBrandId != null ? { catalogBrandId: data.catalogBrandId } : {}),
+      ...(data.catalogModelId != null ? { catalogModelId: data.catalogModelId } : {}),
+    },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_catalog_linked")
+
+  revalidatePath("/vehicles")
+  revalidatePath(`/vehicles/${vehicleId}`)
+  return { success: true as const }
+}
+
 export async function confirmVehicleVinAction(vehicleId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -218,7 +322,7 @@ export async function confirmVehicleVinAction(vehicleId: string) {
 }
 
 export async function deleteVehicleAction(vehicleId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -238,7 +342,7 @@ export async function deleteVehicleAction(vehicleId: string) {
 }
 
 export async function changeVehicleOwnerAction(vehicleId: string, newCustomerId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },

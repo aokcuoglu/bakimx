@@ -38,6 +38,12 @@ export async function createIntakeAction(formData: FormData) {
   })
   if (!vehicle) return { error: "Araç bulunamadı" }
 
+  // Km geriye gidemez: girilen yeni km, aracın son kayıtlı km'sinden düşük olamaz.
+  // (0/boş → girilmemiş sayılır; falsy olduğu için koşula girmez.)
+  if (parsed.data.mileageAtIntake && vehicle.mileage != null && parsed.data.mileageAtIntake < vehicle.mileage) {
+    return { error: `Girilen kilometre aracın son kayıtlı kilometresinden (${vehicle.mileage} km) düşük olamaz.` }
+  }
+
   const { intake, order } = await prisma.$transaction(async (tx) => {
     const intake = await tx.vehicleIntakeForm.create({
       data: {
@@ -147,6 +153,11 @@ export async function updateIntakeDetailsAction(
   const newNote = parsed.data.internalNote?.trim() || null
   const newMileage = parsed.data.mileageAtIntake || null
 
+  // Km geriye gidemez: yeni km aracın son kayıtlı km'sinden düşük olamaz.
+  if (newMileage != null && intake.vehicle.mileage != null && newMileage < intake.vehicle.mileage) {
+    return { error: `Girilen kilometre aracın son kayıtlı kilometresinden (${intake.vehicle.mileage} km) düşük olamaz.` }
+  }
+
   // Sadece gerçekten değişen alanları kaydet/loglayalım (gürültüsüz denetim izi).
   const changes: string[] = []
   if (intake.customerComplaint !== newComplaint) changes.push("müşteri şikayeti")
@@ -252,6 +263,15 @@ export async function addDamageMarkAction(formData: FormData) {
     eventType: "damage_marks_added",
     description: `Hasar kaydı: ${parsed.data.zone} - ${parsed.data.damageType}`,
   })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "DamageMark",
+    mark.id,
+    "damage_mark_added",
+    JSON.stringify({ zone: parsed.data.zone, damageType: parsed.data.damageType, severity: parsed.data.severity }),
+  )
 
   revalidatePath(`/intakes/${raw.intakeFormId}`)
   return { success: true, id: mark.id }

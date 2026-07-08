@@ -7,19 +7,15 @@ import {
   CheckCircle2,
   MessageSquare,
   ArrowRight,
-  Smartphone,
-  LayoutDashboard,
-  Wrench,
-  CalendarClock,
-  FileText,
-  Boxes,
-  AlertTriangle,
+  ScanLine,
+  Car,
+  Sparkles,
 } from "lucide-react";
 
 const trustItems = [
   "Kurulum gerektirmez",
-  "15 gün ücretsiz",
-  "Kredi kartı gerekmez",
+  "7 gün ücretsiz",
+  "Deneme süresince ücret yok",
 ];
 
 export function HeroSection() {
@@ -39,8 +35,8 @@ export function HeroSection() {
               transition={{ duration: 0.4, delay: 0.1 }}
               className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-foreground w-fit"
             >
-              <Smartphone className="h-4 w-4" />
-              Mobil öncelikli platform
+              <ScanLine className="h-4 w-4" />
+              Ruhsatı okut, saniyede kabul et
             </motion.div>
             <motion.h1
               initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
@@ -48,8 +44,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
             >
-              Servisinizin tüm operasyonu{" "}
-              <span className="text-primary">tek ekranda.</span>
+              Ruhsatı okut, araç{" "}
+              <span className="text-primary">saniyede</span> sisteme girsin.
             </motion.h1>
             <motion.p
               initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
@@ -57,8 +53,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.35 }}
               className="text-base sm:text-lg text-muted-foreground leading-relaxed"
             >
-              İş emri, teklif, randevu, stok, kasa ve müşteri iletişimi — kâğıt ve
-              WhatsApp dağınıklığı olmadan, mobil öncelikli tek platformda.
+              Plakayı ve ruhsatı okut; araç ve müşteri otomatik dolsun, VIN&apos;iyle eşleşen
+              uygun parçaları gör. Sonra iş emri, teklif, randevu ve tahsilat — hepsi tek ekranda.
             </motion.p>
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
@@ -71,7 +67,7 @@ export function HeroSection() {
                   href="/register"
                   className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8 gap-2 shadow-lg shadow-primary/25" })}
                 >
-                  15 Gün Ücretsiz Dene
+                  7 Gün Ücretsiz Dene
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -82,8 +78,16 @@ export function HeroSection() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground">
-                Başvurunuz onaylandığında 15 günlük deneme başlar.
+                Kart doğrulamasının ardından 7 günlük denemeniz anında başlar
+                (1 TL iade edilen kart doğrulaması).
               </p>
+              <a
+                href="#ruhsat-demo"
+                className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <ScanLine className="h-4 w-4" />
+                Ruhsat okumayı canlı deneyin
+              </a>
             </motion.div>
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0 }}
@@ -106,7 +110,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex justify-center lg:justify-end"
           >
-            <HeroDashboardMock />
+            <HeroScanMock />
           </motion.div>
         </div>
       </div>
@@ -114,29 +118,33 @@ export function HeroSection() {
   );
 }
 
-function HeroDashboardMock() {
+function HeroScanMock() {
   return (
     <div className="relative w-full max-w-md">
       <div className="rounded-lg border bg-card shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-brand to-brand/80 px-5 py-3">
-          <div className="flex items-center gap-2 text-primary-foreground">
-            <LayoutDashboard className="h-5 w-5" />
-            <h3 className="font-semibold text-sm">Genel Bakış</h3>
-          </div>
+        <div className="flex items-center gap-2 bg-gradient-to-r from-brand to-brand/80 px-5 py-3 text-primary-foreground">
+          <ScanLine className="h-5 w-5" />
+          <h3 className="font-semibold text-sm">Ruhsat Okundu</h3>
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium">
+            <CheckCircle2 className="size-3" />
+            Otomatik dolduruldu
+          </span>
         </div>
         <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <KpiTile icon={<Wrench className="size-3" />} label="Açık iş emri" value="8" />
-            <KpiTile icon={<CalendarClock className="size-3" />} label="Bugünkü randevu" value="3" />
-            <KpiTile icon={<FileText className="size-3" />} label="Bekleyen teklif" value="5" />
-            <KpiTile icon={<Boxes className="size-3" />} label="Kritik stok" value="2" valueClassName="text-warning" />
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
+            <Car className="size-4 text-primary shrink-0" />
+            <span className="font-mono text-sm font-semibold">34 ABC 123</span>
+            <span className="ml-auto text-xs text-muted-foreground">HONDA CIVIC</span>
           </div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Aktif iş emirleri</p>
-            <div className="space-y-1.5">
-              <OrderRow plate="34 ABC 123" status="Devam ediyor" statusClassName="text-primary bg-primary/10" />
-              <OrderRow plate="06 XY 4567" status="Onay bekliyor" statusClassName="text-warning bg-warning/10" />
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <ScanField label="Marka / Model" value="Honda Civic 1.6" />
+            <ScanField label="Model yılı" value="2018" />
+            <ScanField label="Yakıt" value="Dizel" />
+            <ScanField label="Şasi (VIN)" value="SHHFK2…234" mono />
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary">
+            <Sparkles className="size-4 shrink-0" />
+            VIN eşleşti · araca uygun parçalar hazır
           </div>
         </div>
       </div>
@@ -145,8 +153,8 @@ function HeroDashboardMock() {
         className="absolute -top-3 -right-3"
         icon={<CheckCircle2 className="h-4 w-4 text-success" />}
         iconBg="bg-success/10"
-        title="Teklif onaylandı"
-        subtitle="Müşteri onayladı"
+        title="Araç kabul edildi"
+        subtitle="Müşteri + araç kaydı"
         delay={0.6}
       />
 
@@ -158,56 +166,23 @@ function HeroDashboardMock() {
         subtitle="Teklif #1042"
         delay={0.75}
       />
-
-      <FloatingCard
-        className="absolute top-1/2 -right-6 hidden lg:block"
-        icon={<AlertTriangle className="h-4 w-4 text-warning" />}
-        iconBg="bg-warning/10"
-        title="Kritik stok uyarısı"
-        subtitle="2 parça"
-        delay={0.9}
-      />
     </div>
   );
 }
 
-function KpiTile({
-  icon,
+function ScanField({
   label,
   value,
-  valueClassName = "",
+  mono = false,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
-  valueClassName?: string;
+  mono?: boolean;
 }) {
   return (
-    <div className="rounded-lg border bg-muted/50 px-3 py-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <p className={`mt-1 text-xl font-bold ${valueClassName}`}>{value}</p>
-    </div>
-  );
-}
-
-function OrderRow({
-  plate,
-  status,
-  statusClassName,
-}: {
-  plate: string;
-  status: string;
-  statusClassName: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
-      <span className="text-sm font-mono font-medium">{plate}</span>
-      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClassName}`}>
-        {status}
-      </span>
+    <div className="rounded-lg border bg-muted/50 px-3 py-2">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className={`mt-0.5 text-sm font-semibold truncate ${mono ? "font-mono" : ""}`}>{value}</p>
     </div>
   );
 }

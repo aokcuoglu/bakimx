@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
-import { addPeriod, periodStartFrom } from "@/lib/billing/period"
+import { activateBillingOrder } from "@/lib/billing/activate"
+import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
@@ -55,7 +56,11 @@ type SubStatus = (typeof STATUSES)[number]
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
 
-/** Approve a pending workshop and start its 15-day trial. */
+/** Approve a workshop and (re)start its 7-day trial. Legacy / manual escape
+ *  hatch: self sign-ups now flip to approved automatically when card
+ *  verification succeeds (activateVerifiedWorkshop), so this is only reached to
+ *  approve a `pending` row without a card (manual admin override) or to
+ *  un-reject a previously rejected workshop. */
 export async function approveWorkshop(workshopId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
@@ -190,76 +195,186 @@ export async function updateSupportRequestStatus(
 }
 
 /** Confirm a pending havale: activate the plan + set the paid period. Doubles
- *  as approval for public direct-purchase workshops. */
+ *  as approval for public direct-purchase workshops. Thin wrapper — the
+ *  actual claim-guard transaction lives in activateBillingOrder so the TAMI
+ *  payment callback can share it. */
 export async function confirmBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
 
-  const order = await prisma.billingOrder.findUnique({ where: { id: orderId } })
-  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
-  if (order.status !== "pending_payment") return { ok: false, error: "Bu sipariş zaten işlenmiş." }
-
-  const workshop = await prisma.workshop.findUnique({
-    where: { id: order.workshopId },
-    select: { currentPeriodEnd: true },
+  // Sunucu tarafı guard (UI zaten kartlı siparişte butonu gizliyor ama tek
+  // başına yeterli değil): kartlı sipariş yalnız otomatik callback ya da
+  // takılı-ödeme retry'ı ile aktive olur. Elle confirm, banka çekimi sürerken
+  // çifte aktivasyon riskidir.
+  const order = await prisma.billingOrder.findUnique({
+    where: { id: orderId },
+    select: { method: true },
   })
-  const now = new Date()
-  // Renewal extends from the current period end (no lost days); upgrade /
-  // new_purchase start a fresh period now (upgrades were proration-credited).
-  const periodStart =
-    order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
-  const periodEnd = addPeriod(periodStart, order.billingCycle)
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      const claimed = await tx.billingOrder.updateMany({
-        where: { id: order.id, status: "pending_payment" },
-        data: {
-          status: "confirmed",
-          confirmedAt: now,
-          confirmedByEmail: admin.email,
-          periodStart,
-          periodEnd,
-        },
-      })
-      if (claimed.count === 0) {
-        // Another confirm already processed this order — abort the whole tx.
-        throw new Error("ALREADY_PROCESSED")
-      }
-      await tx.workshop.update({
-        where: { id: order.workshopId },
-        data: {
-          planTier: order.planTier,
-          billingCycle: order.billingCycle,
-          subscriptionStatus: "active",
-          approvalStatus: "approved",
-          currentPeriodEnd: periodEnd,
-          requestedPlanTier: null,
-          planRequestedAt: null,
-        },
-      })
-    })
-  } catch (err) {
-    if (err instanceof Error && err.message === "ALREADY_PROCESSED") {
-      return { ok: false, error: "Bu sipariş zaten işlenmiş." }
+  if (!order) return { ok: false, error: "Sipariş bulunamadı." }
+  if (order.method === "card") {
+    return {
+      ok: false,
+      error:
+        "Kartlı siparişler otomatik onaylanır; elle onaylanamaz. Takılı ödeme için 'Aktivasyonu Tekrar Dene' kullanın.",
     }
-    console.error("[confirmBillingOrder] failed:", err instanceof Error ? err.message : err)
-    return { ok: false, error: "İşlem başarısız. Lütfen tekrar deneyin." }
   }
 
-  await AuditLogAction(order.workshopId, admin.id, "BillingOrder", order.id, "billing_order_confirmed",
-    JSON.stringify({ tier: order.planTier, cycle: order.billingCycle, amountMinor: order.amountMinor }))
+  const result = await activateBillingOrder(orderId, {
+    actor: "admin",
+    confirmedByEmail: admin.email,
+    actorUserId: admin.id,
+  })
+  if (!result.ok) return result
   revalidatePath("/admin", "layout")
   return { ok: true }
+}
+
+/** Recover a card payment stuck at `callback_received` (bank captured the
+ *  charge but activation never completed — see sweepStalePaymentArtifacts'
+ *  founder alert). Reuses the exact same claim-guard transaction as the
+ *  automated callback and the manual havale confirm, so this can never
+ *  double-activate an already-confirmed order. */
+export async function retryStuckActivation(transactionId: string): Promise<Result> {
+  const admin = await requireAdmin()
+  if (!transactionId) return { ok: false, error: "İşlem seçilmedi." }
+
+  const txn = await prisma.paymentTransaction.findUnique({ where: { id: transactionId } })
+  if (!txn) return { ok: false, error: "İşlem bulunamadı." }
+  if (txn.status !== "callback_received") {
+    return { ok: false, error: "Bu işlem kurtarma için uygun durumda değil." }
+  }
+
+  // Kart doğrulama denemelerinin (purpose=card_verification) siparişi yoktur —
+  // ayrı bir dal: activateVerifiedWorkshop çağırır (claim-guard'lı, replay-safe).
+  // Aynı "yalnız callback_received'dan completed'a" disiplinini korur.
+  if (txn.purpose === "card_verification") {
+    const activation = await activateVerifiedWorkshop(txn.workshopId)
+    if (!activation.ok) {
+      return { ok: false, error: "Doğrulama aktivasyonu başarısız oldu — tekrar deneyin." }
+    }
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ purpose: "card_verification", result: "activated" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
+  if (!txn.billingOrderId) {
+    return { ok: false, error: "Bu işlem bir siparişe bağlı değil — bu ekrandan kurtarılamıyor." }
+  }
+
+  const activation = await activateBillingOrder(txn.billingOrderId, {
+    actor: "admin",
+    confirmedByEmail: admin.email,
+    actorUserId: admin.id,
+  })
+
+  if (activation.ok) {
+    const claimed = await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: "callback_received" },
+      data: { status: "completed", completedAt: new Date() },
+    })
+    if (claimed.count > 0) {
+      await AuditLogAction(
+        txn.workshopId,
+        admin.id,
+        "PaymentTransaction",
+        transactionId,
+        "payment_activation_retried",
+        JSON.stringify({ billingOrderId: txn.billingOrderId, result: "activated" })
+      )
+    }
+    revalidatePath("/admin", "layout")
+    return { ok: true }
+  }
+
+  // "Bu sipariş zaten işlenmiş." → sipariş artık pending_payment DEĞİL. Bu iki
+  // ÇOK farklı durumu kapsar; siparişin gerçek durumunu okuyup ayırıyoruz:
+  //  - confirmed: başka bir yol (callback yarışı / önceki retry) aktive etmiş;
+  //    para çekilmiş, plan açık → txn'i completed yapıp kapatabiliriz.
+  //  - cancelled: sipariş iptal edilmiş ama txn hâlâ callback_received (yani
+  //    para çekilmiş olabilir!). BUNU başarı sayıp completed'a çekmek, ödemesi
+  //    alınıp aktive edilmemiş bir müşteriyi gizler. txn'e DOKUNMA, hatayı
+  //    döndür, distinct bir audit satırı bırak (iade portaldan yapılmalı).
+  if (activation.error === "Bu sipariş zaten işlenmiş.") {
+    const order = await prisma.billingOrder.findUnique({
+      where: { id: txn.billingOrderId },
+      select: { status: true },
+    })
+    if (order?.status === "confirmed") {
+      const claimed = await prisma.paymentTransaction.updateMany({
+        where: { id: transactionId, status: "callback_received" },
+        data: { status: "completed", completedAt: new Date() },
+      })
+      if (claimed.count > 0) {
+        await AuditLogAction(
+          txn.workshopId,
+          admin.id,
+          "PaymentTransaction",
+          transactionId,
+          "payment_activation_retried",
+          JSON.stringify({ billingOrderId: txn.billingOrderId, result: "already_confirmed" })
+        )
+      }
+      revalidatePath("/admin", "layout")
+      return { ok: true }
+    }
+
+    // İptal (veya beklenmedik başka bir durum): txn callback_received'da bırakılır.
+    await AuditLogAction(
+      txn.workshopId,
+      admin.id,
+      "PaymentTransaction",
+      transactionId,
+      "payment_activation_retry_blocked",
+      JSON.stringify({ billingOrderId: txn.billingOrderId, result: "order_cancelled", orderStatus: order?.status ?? "unknown" })
+    )
+    return {
+      ok: false,
+      error: "Sipariş iptal edilmiş — ödeme çekildiyse TAMI portalından iade gerekir.",
+    }
+  }
+
+  // Any other failure (order missing, DB error): leave the txn untouched so
+  // it stays visible in the stuck-transactions list for another attempt.
+  return activation
 }
 
 /** Cancel a pending order (e.g. havale never arrived). */
 export async function cancelBillingOrder(orderId: string): Promise<Result> {
   const admin = await requireAdmin()
   if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
-  const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true } })
+  const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true, method: true } })
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
   if (order.status !== "pending_payment") return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
+
+  // Kartlı siparişte canlı bir ödeme denemesi (initiated / callback_received)
+  // varken iptal etme: para çekilmiş olabilir. Önce ödemenin sonuçlanmasını
+  // (veya sweep ile expired olmasını) bekle; aksi halde çekilmiş bir ödemeyi
+  // iptal edilmiş bir siparişin arkasına saklamış oluruz.
+  if (order.method === "card") {
+    const liveTxn = await prisma.paymentTransaction.findFirst({
+      where: { billingOrderId: orderId, status: { in: ["initiated", "callback_received"] } },
+      select: { id: true },
+    })
+    if (liveTxn) {
+      return {
+        ok: false,
+        error: "Canlı ödeme denemesi olan kartlı sipariş iptal edilemez. Önce ödemenin sonuçlanmasını bekleyin.",
+      }
+    }
+  }
 
   const cancelled = await prisma.billingOrder.updateMany({
     where: { id: orderId, status: "pending_payment" },

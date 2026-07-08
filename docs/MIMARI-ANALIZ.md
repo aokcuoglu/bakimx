@@ -123,7 +123,7 @@ bakimx/
 | Özellik | Ne yapar | Sürüm | Durum |
 |---------|----------|-------|-------|
 | RBAC & ekipler | owner/manager/staff rolleri, token-hash'li davetler, admin konsolu | v0.5.10 | ✅ |
-| Faturalama iskeleti | Plan tier'ları, deneme süresi, koltuk limiti, yükseltme talebi (DB+UI) | v0.5.10 | 🟡 (gerçek ödeme yok — iyzico'ya kadar manuel) |
+| Faturalama iskeleti | Plan tier'ları, deneme süresi, koltuk limiti, yükseltme talebi (DB+UI) | v0.5.10 | 🟡 (manuel/havale + TAMI sanal POS kart ödemesi/3DS kodda hazır, prod go-live testi bekliyor — bkz. DEPLOY.md §8; iyzico değil) |
 | Lead yönetimi | Demo & destek talepleri DB'ye persist + admin durum yönetimi | HEAD (yayınlanmamış) | ✅ |
 | Subdomain ayrımı | `bakimx.com` (landing/auth/public) + `app.bakimx.com` (uygulama, temiz URL) | v0.5.11 | ✅ |
 | Provider enum temizliği | Uygulanmamış SMS/WhatsApp/e-posta sağlayıcıları (iletimerkezi/sendgrid/custom) düşürüldü | HEAD (yayınlanmamış) | ✅ |

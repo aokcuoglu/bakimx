@@ -2,13 +2,15 @@ import { prisma } from "@/lib/db"
 import { hasFeature, type GatedFeature, type PlanTier } from "@/lib/plan"
 
 /** Founder-toggleable gated features (the GatedFeature union, enumerated). */
-export const GATED_FEATURES: GatedFeature[] = ["aiAdvisor", "eInvoice", "multiBranch", "rbac"]
+export const GATED_FEATURES: GatedFeature[] = ["aiAdvisor", "eInvoice", "multiBranch", "rbac", "vinLookup", "partsCatalog"]
 
 export const FEATURE_LABELS: Record<GatedFeature, string> = {
   aiAdvisor: "AI Servis Danışmanı",
   eInvoice: "e-Fatura",
   multiBranch: "Çoklu şube",
   rbac: "Rol tabanlı yetki",
+  vinLookup: "VIN'den araç tanıma",
+  partsCatalog: "Araca uygun parça kataloğu",
 }
 
 export function isGatedFeature(key: string): key is GatedFeature {

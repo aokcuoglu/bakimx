@@ -41,7 +41,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-import { ORDER_STATUS, PAYMENT_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES, MAINTENANCE_REMINDER_TYPES, MAINTENANCE_REMINDER_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPES, MAINTENANCE_REMINDER_TYPES, MAINTENANCE_REMINDER_STATUS, vehicleTypeLabel } from "@/lib/constants"
 import { formatTRY, formatMileage, customerDisplayName } from "@/lib/format"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { Input } from "@/components/ui/input"
@@ -266,7 +266,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                 </h2>
               </div>
               <div className="mt-1 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
-                {vehicle.vehicleType ? <span>{vehicle.vehicleType}</span> : null}
+                {vehicle.vehicleType ? <span>{vehicleTypeLabel(vehicle.vehicleType)}</span> : null}
                 {vehicle.modelYear ? <span>{vehicle.modelYear}</span> : null}
                 {vehicle.color ? <span>{vehicle.color}</span> : null}
                 {vehicle.mileage ? <span>{formatMileage(vehicle.mileage)}</span> : null}

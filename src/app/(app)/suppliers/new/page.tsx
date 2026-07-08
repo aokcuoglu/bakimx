@@ -5,7 +5,7 @@ import { SupplierForm } from "@/components/app/supplier-form"
 export default async function NewSupplierPage() {
   const { workshop } = await getAppData()
   return (
-    <AppShell workshopName={workshop?.name} pageTitle="Yeni Tedarikçi">
+    <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni Tedarikçi">
       <SupplierForm />
     </AppShell>
   )

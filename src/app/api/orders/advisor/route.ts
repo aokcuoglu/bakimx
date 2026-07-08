@@ -3,11 +3,15 @@ import { AuditLogAction } from "@/lib/audit"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { type PlanTier } from "@/lib/plan"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { resolveFeature } from "@/lib/features"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
+
+  const locked = assertWritableOr403(workshop)
+  if (locked) return locked
 
   if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))) {
     return NextResponse.json(

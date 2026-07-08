@@ -58,6 +58,9 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
             engineDisplacement: vehicle.engineDisplacement,
             enginePower: vehicle.enginePower,
             inspectionValidUntil: vehicle.inspectionValidUntil,
+            catalogBrandId: vehicle.catalogBrandId,
+            catalogModelId: vehicle.catalogModelId,
+            catalogVehicleTypeId: vehicle.catalogVehicleTypeId,
             notes: vehicle.notes,
           }}
         />

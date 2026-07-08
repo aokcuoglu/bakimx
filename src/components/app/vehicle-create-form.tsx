@@ -21,10 +21,13 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS } from "@/lib/constants"
+import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
+import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { isValidVin, type VinCandidate } from "@/lib/vin/types"
+import { DatePicker } from "@/components/ui/date-picker"
 
 type Customer = {
   id: string
@@ -66,6 +69,9 @@ type VehicleFormProps = {
     engineDisplacement: string | null
     enginePower: string | null
     inspectionValidUntil: string | null
+    catalogBrandId: number | null
+    catalogModelId: number | null
+    catalogVehicleTypeId: number | null
     notes: string | null
   }
   mode?: "create" | "edit"
@@ -92,6 +98,9 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
     engineDisplacement: initial?.engineDisplacement || "",
     enginePower: initial?.enginePower || "",
     inspectionValidUntil: initial?.inspectionValidUntil || "",
+    catalogBrandId: initial?.catalogBrandId ?? undefined,
+    catalogModelId: initial?.catalogModelId ?? undefined,
+    catalogVehicleTypeId: initial?.catalogVehicleTypeId ?? undefined,
     notes: initial?.notes || "",
   }
 }
@@ -106,6 +115,46 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
   const form = useForm<VehicleFormValues, unknown, VehicleFormValues>({
     resolver: typedResolver(vehicleSchema),
     defaultValues: toValues(initial, prefillCustomerId),
+  })
+
+  function clearCatalogIds(scope: "all" | "model") {
+    if (scope === "all") form.setValue("catalogBrandId", undefined, { shouldDirty: true })
+    form.setValue("catalogModelId", undefined, { shouldDirty: true })
+    form.setValue("catalogVehicleTypeId", undefined, { shouldDirty: true })
+  }
+
+  const setIfEmpty = (name: "engineDisplacement" | "enginePower" | "fuelType" | "modelYear", value: string | number) => {
+    const current = form.getValues(name)
+    if (current === "" || current === undefined || current === null) {
+      form.setValue(name, value as never, { shouldValidate: true, shouldDirty: true })
+    }
+  }
+
+  /** Bind an engine variant: catalog ids + canonical brand/model + backfill of empty engine fields. */
+  function applyCandidateFields(c: VinCandidate) {
+    form.setValue("brand", c.brandName, { shouldValidate: true, shouldDirty: true })
+    form.setValue("model", c.modelName, { shouldValidate: true, shouldDirty: true })
+    form.setValue("catalogBrandId", c.brandId, { shouldDirty: true })
+    form.setValue("catalogModelId", c.modelId, { shouldDirty: true })
+    form.setValue("catalogVehicleTypeId", c.vehicleTypeId, { shouldDirty: true })
+    if (c.cc != null) setIfEmpty("engineDisplacement", String(c.cc))
+    if (c.kwt != null) setIfEmpty("enginePower", `${c.kwt} kW`)
+    const fuel = tecdocFuelToFormValue(c.fuelType)
+    if (fuel) setIfEmpty("fuelType", fuel)
+    const year = c.yearFrom ? Number(c.yearFrom.slice(0, 4)) : NaN
+    if (!Number.isNaN(year)) setIfEmpty("modelYear", year)
+  }
+
+  const vinResolve = useVinResolve({
+    onBrand: (b) => {
+      form.setValue("brand", b.name, { shouldValidate: true, shouldDirty: true })
+      form.setValue("catalogBrandId", b.id, { shouldDirty: true })
+    },
+    onModel: (m) => {
+      form.setValue("model", m.name, { shouldValidate: true, shouldDirty: true })
+      form.setValue("catalogModelId", m.id, { shouldDirty: true })
+    },
+    onCandidate: applyCandidateFields,
   })
 
   async function onSubmit(values: VehicleFormValues) {
@@ -224,8 +273,15 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   <VehicleBrandModelPicker
                     brand={form.watch("brand")}
                     model={form.watch("model")}
-                    onBrandChange={(v) => form.setValue("brand", v, { shouldValidate: true })}
-                    onModelChange={(v) => form.setValue("model", v, { shouldValidate: true })}
+                    onBrandChange={(v) => {
+                      form.setValue("brand", v, { shouldValidate: true })
+                      // Manual override invalidates the VIN-resolved catalog linkage.
+                      clearCatalogIds("all")
+                    }}
+                    onModelChange={(v) => {
+                      form.setValue("model", v, { shouldValidate: true })
+                      clearCatalogIds("model")
+                    }}
                     required
                   />
                   {(form.formState.errors.brand || form.formState.errors.model) && (
@@ -245,7 +301,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Araç tipi seçin" />
+                              <SelectValue placeholder="Araç tipi seçin">
+                                {(value) =>
+                                  VEHICLE_TYPES.find((t) => t.value === value)?.label ?? "Araç tipi seçin"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -327,13 +387,48 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Şase No (VIN)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="1HGBH41JXMN109186" />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input {...field} placeholder="1HGBH41JXMN109186" />
+                        </FormControl>
+                        <VinResolveButton
+                          loading={vinResolve.loading}
+                          disabled={!isValidVin(field.value)}
+                          onClick={() =>
+                            vinResolve.resolve(form.getValues("vin") || "", {
+                              engineDisplacement: form.getValues("engineDisplacement") || undefined,
+                              enginePower: form.getValues("enginePower") || undefined,
+                              fuelType: form.getValues("fuelType") || undefined,
+                              firstRegistrationDate: form.getValues("firstRegistrationDate") || undefined,
+                              modelYear: form.getValues("modelYear") ?? undefined,
+                            })
+                          }
+                        />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {vinResolve.loading && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="size-3.5 animate-spin" /> VIN sorgulanıyor…
+                  </p>
+                )}
+                {vinResolve.notice && <p className="text-sm text-muted-foreground">{vinResolve.notice}</p>}
+                {vinResolve.error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{vinResolve.error}</AlertDescription>
+                  </Alert>
+                )}
+                {vinResolve.candidates.length > 0 && (
+                  <VinCandidateList
+                    candidates={vinResolve.candidates}
+                    selectedId={form.watch("catalogVehicleTypeId") ?? null}
+                    onSelect={(c) => vinResolve.applyCandidate(c)}
+                    onDismiss={() => vinResolve.reset()}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -376,7 +471,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                         <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Seçiniz" />
+                              <SelectValue placeholder="Seçiniz">
+                                {(value) =>
+                                  VEHICLE_FUEL_TYPES.find((ft) => ft.value === value)?.label ?? "Seçiniz"
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -401,7 +500,11 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçiniz" />
+                            <SelectValue placeholder="Seçiniz">
+                              {(value) =>
+                                VEHICLE_TRANSMISSIONS.find((t) => t.value === value)?.label ?? "Seçiniz"
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -430,7 +533,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     setStr("engineNo", values.engineNo)
                     setStr("firstRegistrationDate", values.registrationDate)
                     setStr("commercialName", values.commercialName)
-                    setStr("fuelType", values.fuelType)
+                    // OCR returns free text ("BENZİNLİ - LPG", "OTOMOBİL") → map to the
+                    // fixed Select slugs; unmapped values are left for the user to pick.
+                    setStr("fuelType", ocrFuelToSlug(values.fuelType))
+                    setStr("vehicleType", ocrVehicleTypeToSlug(values.vehicleType))
                     setStr("engineDisplacement", values.engineDisplacement)
                     setStr("enginePower", values.enginePower)
                     setStr("inspectionValidUntil", values.inspectionValidUntil)
@@ -438,9 +544,15 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     if (values.modelYear && !Number.isNaN(year)) {
                       form.setValue("modelYear", year, { shouldValidate: true, shouldDirty: true })
                     }
-                    // vehicleType is a fixed Select (binek/hafif_ticari…) — OCR returns free text
-                    // like "OTOMOBİL", so we leave it for the user to pick rather than set an
-                    // invalid value.
+                    // Valid VIN on the ruhsat → resolve brand/model/engine variant from the
+                    // TecDoc catalog. Fire-and-forget: the OCR fill above is never blocked.
+                    void vinResolve.resolve(values.vin || "", {
+                      engineDisplacement: values.engineDisplacement || undefined,
+                      enginePower: values.enginePower || undefined,
+                      fuelType: values.fuelType || undefined,
+                      firstRegistrationDate: values.registrationDate || undefined,
+                      modelYear: values.modelYear ? Number(values.modelYear) || undefined : undefined,
+                    })
                   }}
                 />
               </CardContent>
@@ -502,10 +614,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>İlk Tescil Tarihi</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="GG.AA.YYYY"
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Tarih seçin"
                           />
                         </FormControl>
                         <FormMessage />
@@ -519,10 +631,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormItem>
                         <FormLabel>Muayene Geçerlilik Tarihi</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="GG.AA.YYYY"
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Tarih seçin"
                           />
                         </FormControl>
                         <FormMessage />

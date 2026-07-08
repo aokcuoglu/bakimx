@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, startTransition } from "react"
+import { useActionState, useEffect, useState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { liraToKurus, kurusToLira } from "@/lib/money"
@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
 import {
   Form,
   FormControl,
@@ -50,6 +58,9 @@ type PartData = {
   shelfLocation: string | null
   barcode: string | null
 }
+
+/** TecDoc supplier — parça markası (Marka Combobox'ını doldurur). */
+type Brand = { supplierId: number; name: string }
 
 type SupplierOption = {
   id: string
@@ -95,6 +106,18 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
     defaultValues: toDefaults(part),
   })
 
+  // Parça markaları (TecDoc suppliers) — araç-bağımsız, tek sefer çekilir.
+  // Combobox serbest girişi destekler: liste boş olsa da yazılan değer geçerli.
+  const [brands, setBrands] = useState<Brand[]>([])
+  useEffect(() => {
+    let active = true
+    fetch("/api/tecdoc/brands")
+      .then((r) => r.json())
+      .then((d) => { if (active) setBrands(Array.isArray(d?.brands) ? d.brands : []) })
+      .catch(() => { if (active) setBrands([]) })
+    return () => { active = false }
+  }, [])
+
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && part) {
       return updatePartAction(part.id, formData) as unknown as Promise<ActionState | null>
@@ -137,7 +160,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
         </div>
 
-        <div className="space-y-5 max-w-3xl">
+        <div className="space-y-5">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-semibold">Parça Bilgileri</CardTitle>
@@ -192,7 +215,28 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                     <FormItem>
                       <FormLabel>Marka</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Bosch, Mann, OEM..." />
+                        <Combobox
+                          items={brands}
+                          filter={(item: Brand, query: string) =>
+                            item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+                          itemToStringLabel={(b: Brand) => b.name}
+                          itemToStringValue={(b: Brand) => b.name}
+                          inputValue={field.value}
+                          onInputValueChange={(v: string) => field.onChange(v)}
+                          onValueChange={(b: Brand | null) => { if (b) field.onChange(b.name) }}
+                        >
+                          <ComboboxInput placeholder="Bosch, Mann, OEM..." />
+                          <ComboboxContent>
+                            <ComboboxEmpty className="py-2 text-sm text-muted-foreground">
+                              Listede yok — yazdığınız değer kullanılacak
+                            </ComboboxEmpty>
+                            <ComboboxList>
+                              {(b: Brand) => (
+                                <ComboboxItem key={b.supplierId} value={b}>{b.name}</ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

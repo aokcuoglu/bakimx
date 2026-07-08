@@ -105,13 +105,19 @@ export function PlanPackages({
                 ))}
               </ul>
 
-              {isOwned ? (
-                <Button type="button" disabled variant="secondary" size="lg" className="w-full">
-                  <Check className="size-4" /> Mevcut paketiniz
-                </Button>
-              ) : hasPendingOrder ? (
+              {hasPendingOrder ? (
                 <Button type="button" disabled variant="outline" size="lg" className="w-full">
                   Bekleyen talebiniz var
+                </Button>
+              ) : isOwned ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleSelect(pkg.tier)}
+                >
+                  <Check className="size-4" /> Yenile
                 </Button>
               ) : (
                 <Button

@@ -8,6 +8,9 @@ export const quoteItemSchema = z.object({
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").nullable(),
   totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").nullable(),
   note: z.string().optional().default(""),
+  // Kendi stoğundan seçilen parça (DB PartStockItem.id) — boşsa manuel/katalog parçası.
+  // Teklif stok düşMEZ, sadece partId bağlar; çevrim sırasında stok düşülür.
+  partId: z.string().optional().default(""),
 })
 
 export type QuoteItemFormValues = z.infer<typeof quoteItemSchema>
@@ -38,6 +41,8 @@ export const quoteItemActionSchema = z.object({
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").optional(),
   note: z.string().optional(),
+  // Kendi stoğundan seçilen parça (DB PartStockItem.id). Teklif stok düşMEZ.
+  partId: z.string().optional(),
 })
 
 export const quoteCreateSchema = z.object({

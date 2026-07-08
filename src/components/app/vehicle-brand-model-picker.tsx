@@ -63,6 +63,18 @@ export function VehicleBrandModelPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brands])
 
+  // Keep brandId in sync when the brand prop changes externally (OCR fill,
+  // VIN resolver) — otherwise the model list stays stale for the new brand.
+  useEffect(() => {
+    if (brands.length === 0) return
+    const current = brandId != null ? brands.find((b) => b.id === brandId) : null
+    if (current?.name.toLocaleLowerCase("tr") !== brand.trim().toLocaleLowerCase("tr")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      selectBrandId(brand)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand, brands])
+
   // Fetch the brand's models, filtered server-side by the typed query so that
   // high-volume brands (>100 models) are reachable via search, not just the first
   // alphabetical page the server returns. The brand-triggered load (empty query)

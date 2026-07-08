@@ -21,6 +21,7 @@ const LOADING_STEPS: Step[] = ["saving"]
 const PROVIDER_LABELS: Record<OcrProviderName, string> = {
   mock: "Demo (Mock)",
   paddle: "PaddleOCR",
+  hybrid: "PaddleOCR + Claude",
   openai: "OpenAI Vision",
   anthropic: "Claude Vision",
 }
@@ -33,6 +34,7 @@ type SaveResult = {
   vehicleCustomerChanged: boolean
   customerName: string
   vehicleLabel: string
+  catalogLinked?: boolean
   intakeUrl: string
   warnings?: string[]
 }
@@ -263,7 +265,13 @@ export function SmartCaptureRegistration() {
                       ? "Mevcut araç bilgileri ve müşteri bağlantısı güncellendi."
                       : "Mevcut araç bilgileri güncellendi."}
                 </p>
-                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+                {saveResult.catalogLinked && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                    <CheckCircle2 className="size-3 shrink-0" />
+                    VIN eşleşti — araca uygun parçalar iş emrinde hazır
+                  </p>
+                )}
+                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:text-primary/80">
                   Aracı görüntüle
                 </Link>
               </div>

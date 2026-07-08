@@ -2,11 +2,14 @@ import { z } from "zod/v4"
 
 const tier = z.enum(["starter", "pro", "premium"])
 const cycle = z.enum(["monthly", "yearly"])
+// Ödeme yöntemi — eski istemciler alanı göndermezse `havale` (geriye uyumlu).
+const method = z.enum(["card", "havale"]).default("havale")
 
 // In-app: account exists; collect plan + invoice/tax info.
 export const checkoutInAppSchema = z.object({
   tier,
   cycle,
+  method,
   invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
   taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
   taxOffice: z.string().optional().default(""),
@@ -17,6 +20,7 @@ export type CheckoutInAppValues = z.infer<typeof checkoutInAppSchema>
 export const checkoutPublicSchema = z.object({
   tier,
   cycle,
+  method,
   invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
   taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
   taxOffice: z.string().optional().default(""),

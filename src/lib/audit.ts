@@ -6,7 +6,8 @@ export async function AuditLogAction(
   entityType: string,
   entityId: string,
   action: string,
-  metadataJson?: string
+  metadataJson?: string,
+  orderId?: string
 ) {
   await prisma.auditLog.create({
     data: {
@@ -16,6 +17,7 @@ export async function AuditLogAction(
       entityId,
       action,
       metadataJson,
+      orderId,
     },
   })
 }

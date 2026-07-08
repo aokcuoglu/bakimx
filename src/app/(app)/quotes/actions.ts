@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { quoteCreateSchema, quoteStatusUpdateSchema, quoteItemActionSchema } from "@/lib/validations/quote"
 import { getValidationError } from "@/lib/validations/shared"
@@ -10,9 +10,10 @@ import { generateUniqueWorkOrderNo } from "@/lib/work-order-number"
 import { AuditLogAction } from "@/lib/audit"
 import { notifyQuoteReady } from "@/lib/communications/triggers"
 import { calculateOrderTotals } from "@/lib/totals"
+import { reserveStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 
 export async function createQuoteAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}
@@ -40,7 +41,7 @@ export async function createQuoteAction(formData: FormData) {
 
   // Parse + validate the line items first; the server is the single authority
   // over totals, so we never trust a client-sent grandTotal.
-  const lineItems: Array<{ type: "part" | "labor"; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }> = []
+  const lineItems: Array<{ type: "part" | "labor"; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null }> = []
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
     let items: Array<Record<string, unknown>>
@@ -59,6 +60,7 @@ export async function createQuoteAction(formData: FormData) {
           unitPrice: parsedItem.data.unitPrice ?? null,
           totalPrice: parsedItem.data.totalPrice ?? null,
           note: parsedItem.data.note || null,
+          partId: parsedItem.data.partId || null,
         })
       }
     }
@@ -103,6 +105,7 @@ export async function createQuoteAction(formData: FormData) {
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
         note: item.note,
+        partId: item.partId,
       },
     })
   }
@@ -113,7 +116,7 @@ export async function createQuoteAction(formData: FormData) {
 }
 
 export async function updateQuoteStatusAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const quoteId = formData.get("quoteId") as string
   const newStatus = formData.get("status") as string
@@ -165,7 +168,7 @@ export async function updateQuoteStatusAction(formData: FormData) {
 }
 
 export async function convertQuoteToWorkOrderAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
   const quoteId = formData.get("quoteId") as string
   if (!quoteId) return { error: "Teklif ID gerekli" }
@@ -187,6 +190,20 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
 
   if (!resolvedVehicleId) {
     return { error: "Dönüştürme için müşteriye ait bir araç bulunamadı" }
+  }
+
+  // Stok yeterliliğini önceden doğrula (transaction rollback'i önlemek için).
+  // Pasiflemiş parçalar reddedilir.
+  for (const item of quote.items) {
+    if (item.type === "part" && item.partId && item.quantity > 0) {
+      const part = await getActiveWorkshopPart(workshopId, item.partId)
+      if (!part) {
+        return { error: `"${item.name}" bulunamadı veya pasifleştirilmiş. Teklif çevrilemiyor.` }
+      }
+      if (part.stockQty < item.quantity) {
+        return { error: `Yetersiz stok: ${part.name}. Mevcut: ${part.stockQty}, İhtiyaç: ${item.quantity}` }
+      }
+    }
   }
 
   const order = await prisma.$transaction(async (tx) => {
@@ -220,7 +237,7 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
     })
 
     for (const item of quote.items) {
-      await tx.serviceOrderItem.create({
+      const createdItem = await tx.serviceOrderItem.create({
         data: {
           workshopId,
           serviceOrderId: createdOrder.id,
@@ -230,8 +247,22 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
           note: item.note,
+          partId: item.partId,
         },
       })
+      // Teklif stok düşMEMİŞTİ — çevrim sırasında iş emrine düş.
+      if (item.type === "part" && item.partId && item.quantity > 0) {
+        await reserveStockInTx(
+          tx,
+          workshopId,
+          item.partId,
+          item.quantity,
+          "work_order",
+          createdItem.id,
+          user.id,
+          `Tekliften çevrim: ${item.name}`,
+        )
+      }
     }
 
     await tx.quote.update({
@@ -240,14 +271,23 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
     })
 
     return createdOrder
+  }).catch((err: unknown) => {
+    if (err instanceof Error) {
+      return { __error: err.message }
+    }
+    return { __error: "Teklif çevrilemedi" }
   })
 
+  if ("__error" in order) {
+    return { error: (order as { __error: string }).__error }
+  }
+
   await AuditLogAction(workshopId, user.id, "Quote", quoteId, "quote_converted_to_work_order")
-  await AuditLogAction(workshopId, user.id, "ServiceOrder", order.id, "service_order_created_from_quote")
+  await AuditLogAction(workshopId, user.id, "ServiceOrder", (order as { id: string }).id, "service_order_created_from_quote")
   revalidatePath(`/quotes/${quoteId}`)
   revalidatePath("/quotes")
   revalidatePath("/orders")
-  return { success: true, orderId: order.id }
+  return { success: true, orderId: (order as { id: string }).id }
 }
 
 export async function getQuotesAction(search?: string, status?: string) {

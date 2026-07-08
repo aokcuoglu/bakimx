@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { PSM } from "tesseract.js"
-import { requireAuth } from "@/lib/auth"
+import { getCurrentUserWithWorkshop } from "@/lib/auth"
+import { assertWritableOr403 } from "@/lib/plan-guard"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
 import { extractRegistrationText } from "@/lib/ocr/tesseract-text-extractor"
 import { parsePlateFromText } from "@/lib/ocr/plate"
@@ -17,7 +18,9 @@ export const maxDuration = 60
  */
 export async function POST(request: Request) {
   try {
-    await requireAuth()
+    const { workshop } = await getCurrentUserWithWorkshop()
+    const locked = assertWritableOr403(workshop)
+    if (locked) return locked
 
     const contentLength = request.headers.get("content-length")
     if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
