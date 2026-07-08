@@ -9,6 +9,7 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
 import { readVerifyToken, createVerifyToken } from "@/lib/billing/verify-token"
+import { revealedCardSuffix } from "@/lib/billing/payment-helpers"
 import type { PlanTier } from "@/lib/plan"
 
 export const metadata: Metadata = {
@@ -67,7 +68,7 @@ function OrderSummary({
   amountMinor: number
   maskedPan?: string | null
 }) {
-  const last4 = maskedPan ? maskedPan.replace(/\D/g, "").slice(-4) : null
+  const last4 = revealedCardSuffix(maskedPan)
   return (
     <div className="mt-4 space-y-1.5 rounded-lg border bg-muted/40 p-4 text-left text-sm">
       <div className="flex items-center justify-between">
@@ -127,7 +128,7 @@ async function VerifyResultView({ vref, err }: { vref: string; err: string | nul
     orderBy: { createdAt: "desc" },
     select: { status: true, maskedPan: true },
   })
-  const last4 = lastTxn?.maskedPan ? lastTxn.maskedPan.replace(/\D/g, "").slice(-4) : null
+  const last4 = revealedCardSuffix(lastTxn?.maskedPan)
 
   // 1) Onaylandı → kart doğrulandı, deneme başladı.
   if (workshop?.approvalStatus === "approved") {
