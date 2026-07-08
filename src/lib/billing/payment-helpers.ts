@@ -62,6 +62,20 @@ export function splitName(full: string): { name: string; surName: string } {
 }
 
 /**
+ * TAMI maskedNumber'dan GERÇEKTEN açık olan son haneleri döndürür. TAMI maskesi
+ * `<BIN haneleri>****<son haneler>` biçimindedir (ör. "54407806****11"); yıldızları
+ * silip `.slice(-4)` almak BIN hanelerini karıştırıp YANLIŞ bir "son 4" üretir
+ * ("54407806****11" → "5440780611" → "0611" ≠ kartın gerçek son haneleri). Doğru
+ * davranış: maskeden SONRAKİ (en sondaki) rakam grubunu al — TAMI'nin açtığı gerçek
+ * son haneler (burada "11"). Rakamla bitmeyen/boş maske → null.
+ */
+export function revealedCardSuffix(maskedPan: string | null | undefined): string | null {
+  if (!maskedPan) return null
+  const m = maskedPan.match(/\d+$/)
+  return m ? m[0] : null
+}
+
+/**
  * Luhn (mod-10) kontrolü — kart numarası server-side doğrulaması için. Yalnız
  * rakamlar; boşluk/tire yoksa çağıran temizler. Boş/rakam-dışı → false.
  */

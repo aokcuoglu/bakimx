@@ -6,6 +6,7 @@ import {
   resolveClientIp,
   splitName,
   luhnCheck,
+  revealedCardSuffix,
 } from "./payment-helpers"
 
 test("minorToTamiAmount: kuruş → 2 ondalık lira", () => {
@@ -56,4 +57,18 @@ test("luhnCheck: geçerli/geçersiz kart numaraları", () => {
   expect(luhnCheck("4242424242424241")).toBe(false)
   expect(luhnCheck("1234")).toBe(false) // çok kısa
   expect(luhnCheck("")).toBe(false)
+})
+
+test("revealedCardSuffix: TAMI maskesinden gerçek son haneler (BIN karışmaz)", () => {
+  // Regresyon: yıldızları silip slice(-4) YANLIŞ "0611"/"0035" üretiyordu.
+  expect(revealedCardSuffix("54407806****11")).toBe("11")
+  expect(revealedCardSuffix("55261000****35")).toBe("35")
+  // Farklı maske biçimleri de sondaki rakam grubunu vermeli.
+  expect(revealedCardSuffix("123456******7890")).toBe("7890")
+  expect(revealedCardSuffix("****1234")).toBe("1234")
+  // Boş/geçersiz/rakamla bitmeyen → null.
+  expect(revealedCardSuffix(null)).toBeNull()
+  expect(revealedCardSuffix(undefined)).toBeNull()
+  expect(revealedCardSuffix("")).toBeNull()
+  expect(revealedCardSuffix("5440****")).toBeNull()
 })
