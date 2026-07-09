@@ -43,6 +43,13 @@ interface FormErrors {
 
 const EMPTY: FormData = { name: "", businessName: "", phone: "", city: "", monthlyVehicles: "", notes: "" };
 
+const MONTHLY_VEHICLE_OPTIONS = [
+  { value: "1-20", label: "1 - 20" },
+  { value: "21-50", label: "21 - 50" },
+  { value: "51-100", label: "51 - 100" },
+  { value: "100+", label: "100+" },
+];
+
 export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
   const [data, setData] = useState<FormData>(EMPTY);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -135,14 +142,21 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
         <Label htmlFor="da-vehicles">Aylık ortalama araç adedi *</Label>
         <Select value={data.monthlyVehicles} onValueChange={(value) => setData({ ...data, monthlyVehicles: value ?? "" })}>
           <SelectTrigger id="da-vehicles" className="w-full">
-            <SelectValue placeholder="Seçin" />
+            <SelectValue placeholder="Seçin">
+              {(value: string | null) => {
+                if (!value) return null;
+                const option = MONTHLY_VEHICLE_OPTIONS.find((opt) => opt.value === value);
+                return option ? option.label : value;
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="1-20">1 - 20</SelectItem>
-              <SelectItem value="21-50">21 - 50</SelectItem>
-              <SelectItem value="51-100">51 - 100</SelectItem>
-              <SelectItem value="100+">100+</SelectItem>
+              {MONTHLY_VEHICLE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>
