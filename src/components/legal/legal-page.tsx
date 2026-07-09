@@ -10,7 +10,7 @@ import { Footer } from "@/components/sections/Footer";
  */
 export const COMPANY = {
   /** İşletmeyi yürüten tüzel kişinin tam ticaret unvanı. */
-  legalName: "Ergül Enerji San. Tic. Ltd. Şti.",
+  legalName: "Ergül Enerji Sanayi ve Ticaret Limited Şirketi",
   /** Marka adı (rehbere göre her zaman "BakımX"). */
   brand: "BakımX",
   address:
