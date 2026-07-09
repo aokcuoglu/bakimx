@@ -5,6 +5,7 @@ import { X, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AssistantView, SuccessContext } from "./site-assistant";
 import { MenuView } from "./views/menu-view";
+import { DemoFormView } from "./views/demo-form-view";
 
 interface AssistantPanelProps {
   view: AssistantView;
@@ -14,7 +15,7 @@ interface AssistantPanelProps {
   onClose: () => void;
 }
 
-export function AssistantPanel({ view, onNavigate, onClose }: AssistantPanelProps) {
+export function AssistantPanel({ view, onNavigate, onSuccess, onClose }: AssistantPanelProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -57,7 +58,8 @@ export function AssistantPanel({ view, onNavigate, onClose }: AssistantPanelProp
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === "menu" && <MenuView onNavigate={onNavigate} />}
-        {view !== "menu" && (
+        {view === "demo" && <DemoFormView onBack={() => onNavigate("menu")} onSuccess={onSuccess} />}
+        {(view === "support" || view === "faq" || view === "success") && (
           <div className="p-4 text-sm text-muted-foreground">Görünüm: {view}</div>
         )}
       </div>
