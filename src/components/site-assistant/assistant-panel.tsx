@@ -8,6 +8,7 @@ import { MenuView } from "./views/menu-view";
 import { DemoFormView } from "./views/demo-form-view";
 import { SupportFormView } from "./views/support-form-view";
 import { FaqView } from "./views/faq-view";
+import { SuccessView } from "./views/success-view";
 
 interface AssistantPanelProps {
   view: AssistantView;
@@ -17,7 +18,7 @@ interface AssistantPanelProps {
   onClose: () => void;
 }
 
-export function AssistantPanel({ view, onNavigate, onSuccess, onClose }: AssistantPanelProps) {
+export function AssistantPanel({ view, successContext, onNavigate, onSuccess, onClose }: AssistantPanelProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -64,7 +65,7 @@ export function AssistantPanel({ view, onNavigate, onSuccess, onClose }: Assista
         {view === "support" && <SupportFormView onBack={() => onNavigate("menu")} onSuccess={onSuccess} />}
         {view === "faq" && <FaqView onBack={() => onNavigate("menu")} />}
         {view === "success" && (
-          <div className="p-4 text-sm text-muted-foreground">Görünüm: {view}</div>
+          <SuccessView context={successContext} onReset={() => onNavigate("menu")} onClose={onClose} />
         )}
       </div>
     </div>
