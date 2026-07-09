@@ -270,7 +270,7 @@ export default function TermsPage() {
       <LegalSection n={16} title="Uygulanacak Hukuk ve Yetkili Mahkeme">
         <p>
           İşbu Sözleşme&apos;nin yorumunda ve uygulanmasında Türkiye Cumhuriyeti
-          hukuku geçerlidir. Uyuşmazlıklarda [İSTANBUL] Mahkemeleri ve İcra
+          hukuku geçerlidir. Uyuşmazlıklarda İstanbul Anadolu Mahkemeleri ve İcra
           Daireleri yetkilidir. Tüketici sıfatını haiz kullanıcılar bakımından
           Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri&apos;nin yetkisi
           saklıdır.

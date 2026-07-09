@@ -9,16 +9,21 @@ import { Footer } from "@/components/sections/Footer";
  * doldurulmalıdır. Tek yerden güncellenince tüm hukuki sayfalara yansır.
  */
 export const COMPANY = {
-  /** Tam ticaret unvanı — örn. "BakımX Yazılım A.Ş." */
-  legalName: "[ŞİRKET TİCARET UNVANI]",
+  /** İşletmeyi yürüten tüzel kişinin tam ticaret unvanı. */
+  legalName: "Ergül Enerji San. Tic. Ltd. Şti.",
   /** Marka adı (rehbere göre her zaman "BakımX"). */
   brand: "BakımX",
-  address: "[ŞİRKET ADRESİ]",
-  mersis: "[MERSİS NO]",
-  tradeRegistryNo: "[TİCARET SİCİL NO]",
-  taxOffice: "[VERGİ DAİRESİ]",
-  taxNo: "[VERGİ NO]",
+  address:
+    "Esentepe Mah. Kartal Oto Sanayi Sitesi C1 Blok No:25 Kartal / İstanbul / Türkiye",
+  mersis: "0357042224900019",
+  tradeRegistryNo: "64972-5",
+  taxOffice: "Kartal Vergi Dairesi",
+  taxNo: "3570422249",
+  /** KVKK başvuru ve iletişim için birincil e-posta. */
   email: "hey@bakimx.com",
+  /** Resmî/tebligata elverişli KEP adresi (formal KVKK başvurusu için). */
+  kep: "ergulenerji@hs03.kep.tr",
+  phone: "0216 387 00 78",
   website: "bakimx.com",
   app: "app.bakimx.com",
 } as const;

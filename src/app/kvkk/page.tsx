@@ -180,9 +180,11 @@ export default function KvkkPage() {
       <LegalSection n={10} title="Başvuru Yöntemi">
         <p>
           Haklarınıza ilişkin taleplerinizi{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine
-          iletebilirsiniz. Başvurular, KVKK ve ilgili mevzuatta öngörülen sürede
-          (kural olarak en geç 30 gün içinde) sonuçlandırılır.
+          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine veya
+          resmî/tebligata elverişli KEP adresimize (
+          <strong>{COMPANY.kep}</strong>) iletebilirsiniz. Başvurular, KVKK ve
+          ilgili mevzuatta öngörülen sürede (kural olarak en geç 30 gün içinde)
+          sonuçlandırılır.
         </p>
         <p>
           İşletmenin kendi müşterilerine ait verilerle ilgili talepler,{" "}
