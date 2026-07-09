@@ -3,11 +3,12 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { serviceOrderItemSchema } from "@/lib/validations/order"
+import { serviceOrderItemSchema, serviceOrderItemUpdateSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
+import { computeStockDelta } from "@/lib/parts/stock-delta"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -67,6 +68,9 @@ export async function addOrderItemAction(formData: FormData) {
     note: formData.get("note") as string,
     tecdocArticleId: formData.get("tecdocArticleId") as string,
     partId: formData.get("partId") as string,
+    brand: formData.get("brand") as string,
+    category: formData.get("category") as string,
+    categoryId: formData.get("categoryId") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -80,6 +84,9 @@ export async function addOrderItemAction(formData: FormData) {
     note: raw.note || undefined,
     tecdocArticleId: raw.tecdocArticleId ? Number(raw.tecdocArticleId) : undefined,
     partId: raw.partId || undefined,
+    brand: raw.brand || undefined,
+    category: raw.category || undefined,
+    categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -119,6 +126,9 @@ export async function addOrderItemAction(formData: FormData) {
           note: parsed.data.note || null,
           tecdocArticleId: parsed.data.tecdocArticleId ?? null,
           partId: partId,
+          brand: parsed.data.brand || null,
+          category: parsed.data.category || null,
+          categoryId: parsed.data.categoryId ?? null,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
@@ -208,6 +218,127 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     itemId,
     "order_item_removed",
     JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity }),
+    orderId,
+  )
+
+  revalidatePath(`/orders/${orderId}`)
+  return { success: true }
+}
+
+export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+
+  // Yalnızca formData'da gerçekten bulunan alanlar patch'lenir (kısmi güncelleme).
+  const has = (k: string) => formData.get(k) !== null
+  const raw = {
+    name: has("name") ? (formData.get("name") as string).trim() : undefined,
+    sku: has("sku") ? (formData.get("sku") as string) : undefined,
+    unit: has("unit") ? (formData.get("unit") as string) : undefined,
+    quantity: has("quantity") ? Number(formData.get("quantity")) : undefined,
+    unitPrice: has("unitPrice") ? Number(formData.get("unitPrice")) : undefined,
+    note: has("note") ? (formData.get("note") as string) : undefined,
+    brand: has("brand") ? (formData.get("brand") as string) : undefined,
+    category: has("category") ? (formData.get("category") as string) : undefined,
+    categoryId: has("categoryId")
+      ? ((formData.get("categoryId") as string) === "" ? null : Number(formData.get("categoryId")))
+      : undefined,
+  }
+
+  const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  // Boş string gönderilen serbest-metin alanları null'a çevrilir (temizleme).
+  const data: {
+    name?: string
+    sku?: string | null
+    unit?: string | null
+    quantity?: number
+    unitPrice?: number | null
+    note?: string | null
+    brand?: string | null
+    category?: string | null
+    categoryId?: number | null
+    totalPrice?: number | null
+  } = {}
+  if (parsed.data.name !== undefined) data.name = parsed.data.name
+  if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
+  if (parsed.data.unit !== undefined) data.unit = parsed.data.unit || null
+  if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
+  if (parsed.data.unitPrice !== undefined) data.unitPrice = parsed.data.unitPrice
+  if (parsed.data.note !== undefined) data.note = parsed.data.note || null
+  if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
+  if (parsed.data.category !== undefined) data.category = parsed.data.category || null
+  if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+
+  // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat
+  // totalPrice satır totalini/genel toplamı yanlış gösterir — null'a çekip
+  // unitPrice×quantity fallback'ine düşür (totals.ts ve recalc bunu kullanır).
+  if (data.quantity !== undefined || data.unitPrice !== undefined) {
+    data.totalPrice = null
+  }
+
+  // Miktar değiştiyse ve satır kendi stoğumuza bağlıysa (partId + type=part) stok farkını mutabık kıl.
+  const newQty = parsed.data.quantity
+  const stockNeedsSync =
+    newQty !== undefined && newQty !== item.quantity && item.partId != null && item.type === "part"
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Miktar değişiyorsa optimistik kilit (CAS): satır hâlâ okuduğumuz miktarda mı?
+      // Değilse (eşzamanlı düzenleme veya çift gönderim) stok deltası bayat kalır ve
+      // envanteri sessizce bozardı — reddet.
+      const guardedWhere =
+        newQty !== undefined
+          ? { id: itemId, workshopId: user.workshopId, quantity: item.quantity }
+          : { id: itemId, workshopId: user.workshopId }
+      const updRes = await tx.serviceOrderItem.updateMany({ where: guardedWhere, data })
+      if (updRes.count !== 1) {
+        throw new Error("Kalem bu sırada değişti, lütfen sayfayı yenileyip tekrar deneyin")
+      }
+
+      if (stockNeedsSync && item.partId) {
+        const delta = computeStockDelta(item.quantity, newQty!)
+        if (delta.direction === "reserve") {
+          await reserveStockInTx(
+            tx, user.workshopId, item.partId, delta.amount, "work_order", itemId, user.id,
+            `İş emri ${order.workOrderNo || ""}: miktar güncellendi (${item.name})`,
+          )
+        } else if (delta.direction === "return") {
+          await returnStockInTx(
+            tx, user.workshopId, item.partId, delta.amount, "work_order", itemId, user.id,
+            `İş emri ${order.workOrderNo || ""}: miktar düşürüldü (${item.name})`,
+          )
+        }
+      }
+
+      await recalcOrderPayment(tx, orderId, user.workshopId)
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Kalem güncellenemedi" }
+  }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    "order_item_updated",
+    JSON.stringify({ name: item.name, changes: data }),
     orderId,
   )
 

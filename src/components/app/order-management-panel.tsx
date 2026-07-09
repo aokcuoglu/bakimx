@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,8 @@ import { cn } from "@/lib/utils"
 import { StockStatusBadge } from "@/components/app/stock-status-badge"
 import { SendReminderButton } from "@/components/app/send-reminder-button"
 import { TecdocPartPicker } from "@/components/app/tecdoc-part-picker"
+import { PartBrandCombobox } from "@/components/app/part-brand-combobox"
+import { ItemCategoryCascade } from "@/components/app/item-category-cascade"
 import { formatPrice } from "@/lib/parts/format"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -46,6 +49,9 @@ export type OrderItem = {
   unitPrice: number | null
   totalPrice: number | null
   note: string | null
+  brand: string | null
+  category: string | null
+  categoryId: number | null
 }
 
 export type Totals = {
@@ -163,6 +169,7 @@ export function PartsLaborCard({
   onLoading: (b: boolean) => void
   loading: boolean
 }) {
+  const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
   const [addingType, setAddingType] = useState<"part" | "labor" | null>(null)
   const [name, setName] = useState("")
@@ -171,6 +178,9 @@ export function PartsLaborCard({
   const [qty, setQty] = useState("1")
   const [price, setPrice] = useState("")
   const [note, setNote] = useState("")
+  const [brand, setBrand] = useState("")
+  const [category, setCategory] = useState("")
+  const [categoryId, setCategoryId] = useState<number | null>(null)
   const [catalogSearch, setCatalogSearch] = useState("")
   const [catalogResults, setCatalogResults] = useState<Array<{ id: string; name: string; sku: string | null; stockQty: number; criticalStockQty: number; salePrice: number | null; unit: string; isActive: boolean }>>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
@@ -181,8 +191,60 @@ export function PartsLaborCard({
   // Kendi stoğundan seçilen parça (PartStockItem.id). Boşsa manuel/katalog parçası.
   const [partId, setPartId] = useState<string | null>(null)
 
-  const parts = items.filter((i) => i.type === "part")
-  const labor = items.filter((i) => i.type === "labor")
+  // Optimistik local kopya — sunucu güncellenene kadar UI anında yanıt versin.
+  const [localItems, setLocalItems] = useState<OrderItem[]>(items)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalItems(items)
+  }, [items])
+
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  useEffect(() => {
+    const timers = saveTimers.current
+    return () => {
+      Object.values(timers).forEach((t) => clearTimeout(t))
+    }
+  }, [])
+
+  function updateItem(itemId: string, patch: Partial<OrderItem>, opts?: { debounce?: boolean }) {
+    // 1) Optimistik güncelleme
+    setLocalItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...patch } : i)))
+    // 2) Sunucuya gönder (miktar stepper için debounce)
+    const send = async () => {
+      const fd = new FormData()
+      if (patch.quantity !== undefined) fd.set("quantity", String(patch.quantity))
+      if (patch.unitPrice !== undefined) fd.set("unitPrice", String(patch.unitPrice))
+      if (patch.brand !== undefined) fd.set("brand", patch.brand ?? "")
+      if (patch.category !== undefined) fd.set("category", patch.category ?? "")
+      if (patch.categoryId !== undefined) fd.set("categoryId", patch.categoryId != null ? String(patch.categoryId) : "")
+      try {
+        const res = await fetch(`/api/orders/items?id=${itemId}&orderId=${orderId}`, { method: "PATCH", body: fd })
+        const data = await res.json()
+        if (!data.success) {
+          onError(data.error || "Kalem güncellenemedi")
+          setLocalItems(items) // rollback
+        } else {
+          router.refresh() // toplamları/fiyatlandırmayı tazele
+        }
+      } catch {
+        onError("Bir hata oluştu")
+        setLocalItems(items) // rollback
+      }
+    }
+    if (opts?.debounce) {
+      // Alan-bazlı anahtar: aynı kalemde marka ile miktar birbirinin bekleyen
+      // gönderimini iptal etmesin (paylaşılan itemId anahtarı bunu yapardı).
+      const key = `${itemId}:${Object.keys(patch).sort().join(",")}`
+      clearTimeout(saveTimers.current[key])
+      saveTimers.current[key] = setTimeout(send, 500)
+    } else {
+      void send()
+    }
+  }
+
+  const parts = localItems.filter((i) => i.type === "part")
+  const labor = localItems.filter((i) => i.type === "labor")
 
   async function searchCatalog(query: string) {
     if (query.length < 1) { setCatalogResults([]); return }
@@ -218,6 +280,9 @@ export function PartsLaborCard({
     setQty("1")
     setPrice("")
     setNote("")
+    setBrand("")
+    setCategory("")
+    setCategoryId(null)
     setAddingType(null)
     setShowCatalog(false)
     setCatalogSearch("")
@@ -240,6 +305,9 @@ export function PartsLaborCard({
     // Price input is TRY (lira); the server stores kuruş.
     if (price) formData.set("unitPrice", String(liraToKurus(Number(price))))
     if (note) formData.set("note", note)
+    if (addingType === "part" && brand) formData.set("brand", brand)
+    if (addingType === "part" && category) formData.set("category", category)
+    if (addingType === "part" && categoryId != null) formData.set("categoryId", String(categoryId))
     if (addingType === "part" && tecdocArticleId != null) formData.set("tecdocArticleId", String(tecdocArticleId))
     // Kendi stoğundan seçilen parça — server stok düşüp partId'yi kaydeder.
     if (addingType === "part" && partId) formData.set("partId", partId)
@@ -249,8 +317,7 @@ export function PartsLaborCard({
       const data = await res.json()
       if (data.success) {
         resetForm()
-        // Soft refresh via reload since we use revalidatePath
-        window.location.reload()
+        router.refresh()
       } else {
         onError(data.error || "Kalem eklenemedi")
       }
@@ -264,7 +331,7 @@ export function PartsLaborCard({
   async function handleRemove(itemId: string) {
     try {
       await fetch(`/api/orders/items?id=${itemId}&orderId=${orderId}`, { method: "DELETE" })
-      window.location.reload()
+      router.refresh()
     } catch {
       onError("Kalem silinemedi")
     }
@@ -293,7 +360,15 @@ export function PartsLaborCard({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Parçalar ({parts.length})</p>
             <div className="space-y-1.5">
               {parts.map((item) => (
-                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={locked ? undefined : handleRemove} />
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  lineTotal={lineTotal(item)}
+                  onRemove={locked ? undefined : handleRemove}
+                  onUpdate={locked ? undefined : updateItem}
+                  vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                  editable={!locked && item.type === "part"}
+                />
               ))}
             </div>
           </div>
@@ -303,7 +378,13 @@ export function PartsLaborCard({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">İşçilikler ({labor.length})</p>
             <div className="space-y-1.5">
               {labor.map((item) => (
-                <ItemRow key={item.id} item={item} lineTotal={lineTotal(item)} onRemove={locked ? undefined : handleRemove} />
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  lineTotal={lineTotal(item)}
+                  onRemove={locked ? undefined : handleRemove}
+                  editable={false}
+                />
               ))}
             </div>
           </div>
@@ -392,7 +473,7 @@ export function PartsLaborCard({
                     setTecdocArticleId(sel.tecdocArticleId)
                     // TecDoc katalog parçası kendi stoğumuzdan değil — partId'yi temizle.
                     setPartId(null)
-                    if (!note && sel.supplierName) setNote(sel.supplierName)
+                    if (!brand && sel.supplierName) setBrand(sel.supplierName)
                   }}
                 />
               </div>
@@ -424,6 +505,25 @@ export function PartsLaborCard({
                 <Input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
               </div>
             </div>
+            {addingType === "part" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Marka</Label>
+                  <PartBrandCombobox value={brand} onChange={setBrand} />
+                </div>
+                <div>
+                  <Label className="text-xs">Kategori</Label>
+                  <div className="mt-1">
+                    <ItemCategoryCascade
+                      key={`add-cat-${category}`}
+                      vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                      value={category || null}
+                      onSelect={(sel) => { setCategory(sel.category); setCategoryId(sel.categoryId) }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <Label className="text-xs">Not</Label>
               <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsiyonel" />
@@ -444,34 +544,147 @@ export function PartsLaborCard({
   )
 }
 
-function ItemRow({ item, lineTotal, onRemove }: { item: OrderItem; lineTotal: number | null; onRemove?: (id: string) => void }) {
+function ItemRow({
+  item,
+  lineTotal,
+  onRemove,
+  onUpdate,
+  vehicleTypeId,
+  editable,
+}: {
+  item: OrderItem
+  lineTotal: number | null
+  onRemove?: (id: string) => void
+  onUpdate?: (id: string, patch: Partial<OrderItem>, opts?: { debounce?: boolean }) => void
+  vehicleTypeId?: number | null
+  editable?: boolean
+}) {
+  const [editingPrice, setEditingPrice] = useState(false)
+  const [priceDraft, setPriceDraft] = useState("")
+  const [brandOpen, setBrandOpen] = useState(false)
+
+  function startPrice() {
+    setPriceDraft(item.unitPrice != null ? String(kurusToLira(item.unitPrice)) : "")
+    setEditingPrice(true)
+  }
+  function commitPrice() {
+    setEditingPrice(false)
+    const lira = Number(priceDraft)
+    if (!priceDraft || Number.isNaN(lira) || lira < 0) return
+    const kurus = liraToKurus(lira)
+    if (kurus !== item.unitPrice) onUpdate?.(item.id, { unitPrice: kurus })
+  }
+
   return (
-    <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg gap-2">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
+    <div className="p-2.5 bg-muted rounded-lg space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-foreground truncate">{item.name}</span>
           {item.sku && <span className="text-[10px] font-mono text-muted-foreground bg-white px-1.5 py-0.5 rounded border border-border">{item.sku}</span>}
         </div>
-        <div className="text-xs text-muted-foreground mt-0.5">
-          {item.quantity} {item.unit || (item.type === "part" ? "adet" : "saat")}
-          {item.unitPrice ? ` × ${formatTRY(item.unitPrice)}` : ""}
-          {item.note && ` • ${item.note}`}
+        <div className="text-right shrink-0 flex items-center gap-2">
+          <span className={cn("text-sm font-semibold", lineTotal == null ? "text-muted-foreground/70 font-normal text-xs" : "text-foreground")}>
+            {lineTotal != null ? formatTRY(lineTotal) : "—"}
+          </span>
+          {onRemove && (
+            <button
+              onClick={() => onRemove(item.id)}
+              className="p-1 text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+              aria-label="Kalemi sil"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
         </div>
       </div>
-      <div className="text-right shrink-0 flex items-center gap-2">
-        <span className={cn("text-sm font-semibold", lineTotal == null ? "text-muted-foreground/70 font-normal text-xs" : "text-foreground")}>
-          {lineTotal != null ? formatTRY(lineTotal) : "—"}
-        </span>
-        {onRemove && (
-          <button
-            onClick={() => onRemove(item.id)}
-            className="p-1 text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
-            aria-label="Kalemi sil"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        )}
-      </div>
+
+      {editable && onUpdate ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Miktar stepper */}
+          <div className="inline-flex items-center rounded-lg border border-border bg-white">
+            <button
+              type="button"
+              disabled={item.quantity <= 1}
+              onClick={() => onUpdate(item.id, { quantity: item.quantity - 1 }, { debounce: true })}
+              className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
+              aria-label="Azalt"
+            >
+              −
+            </button>
+            <span className="px-2 text-xs font-medium tabular-nums">{item.quantity} {item.unit || "adet"}</span>
+            <button
+              type="button"
+              onClick={() => onUpdate(item.id, { quantity: item.quantity + 1 }, { debounce: true })}
+              className="px-2 py-1 text-muted-foreground hover:text-foreground"
+              aria-label="Arttır"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Fiyat inline */}
+          {editingPrice ? (
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              autoFocus
+              value={priceDraft}
+              onChange={(e) => setPriceDraft(e.target.value)}
+              onBlur={commitPrice}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitPrice()
+                if (e.key === "Escape") setEditingPrice(false)
+              }}
+              className="h-8 w-24 text-xs"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={startPrice}
+              className="inline-flex items-center gap-1 h-8 px-2 rounded-lg border border-border bg-white text-xs hover:bg-muted"
+            >
+              <Pencil className="size-3 text-muted-foreground" />
+              {item.unitPrice != null ? formatTRY(item.unitPrice) : "Fiyat"}
+            </button>
+          )}
+
+          {/* Marka */}
+          {brandOpen ? (
+            <div className="w-40">
+              <PartBrandCombobox
+                value={item.brand || ""}
+                onChange={(v) => onUpdate(item.id, { brand: v }, { debounce: true })}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setBrandOpen(true)}
+              className="inline-flex items-center gap-1 h-8 px-2 rounded-lg border border-border bg-white text-xs hover:bg-muted max-w-40"
+            >
+              <span className="truncate">{item.brand || "Marka"}</span>
+            </button>
+          )}
+
+          {/* Kategori cascade — key, kalıcı kategori değişince (router.refresh sonrası)
+              serbest-metin fallback'ının input'unu yeniden tohumlaması için remount ettirir. */}
+          <ItemCategoryCascade
+            key={`cat-${item.id}-${item.category ?? ""}`}
+            vehicleTypeId={vehicleTypeId ?? null}
+            value={item.category}
+            onSelect={(sel) => onUpdate(item.id, { category: sel.category, categoryId: sel.categoryId })}
+          />
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground">
+          {item.quantity} {item.unit || (item.type === "part" ? "adet" : "saat")}
+          {item.unitPrice ? ` × ${formatTRY(item.unitPrice)}` : ""}
+          {item.brand && ` • ${item.brand}`}
+          {item.category && ` • ${item.category}`}
+          {item.note && ` • ${item.note}`}
+        </div>
+      )}
     </div>
   )
 }
