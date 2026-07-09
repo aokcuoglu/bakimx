@@ -77,6 +77,7 @@ export function calculateOrderTotals(
 ): {
   partsTotal: number
   laborTotal: number
+  externalLaborTotal: number
   subtotal: number
   discountAmount: number
   taxRate: number
@@ -84,11 +85,13 @@ export function calculateOrderTotals(
   grandTotal: number
   partsCount: number
   laborCount: number
+  externalLaborCount: number
   hasAnyPrice: boolean
 } {
   const partsTotal = calculateGroupTotal(items, "part")
   const laborTotal = calculateGroupTotal(items, "labor")
-  const subtotal = addKurus(partsTotal, laborTotal)
+  const externalLaborTotal = calculateGroupTotal(items, "external_labor")
+  const subtotal = sumKurus([partsTotal, laborTotal, externalLaborTotal])
   const discountAmount = Math.max(0, Math.trunc(options.discountAmount ?? 0))
   const afterDiscount = applyDiscountKurus(subtotal, discountAmount)
   const taxRate = Math.max(0, Math.trunc(options.taxRate ?? 0))
@@ -98,6 +101,7 @@ export function calculateOrderTotals(
   return {
     partsTotal,
     laborTotal,
+    externalLaborTotal,
     subtotal,
     discountAmount,
     taxRate,
@@ -105,6 +109,7 @@ export function calculateOrderTotals(
     grandTotal,
     partsCount: items.filter((i) => i.type === "part").length,
     laborCount: items.filter((i) => i.type === "labor").length,
+    externalLaborCount: items.filter((i) => i.type === "external_labor").length,
     hasAnyPrice: items.some(hasPrice),
   }
 }
@@ -115,6 +120,7 @@ export function formatOrderSummary(
 ): {
   partsTotal: string
   laborTotal: string
+  externalLaborTotal: string
   subtotal: string
   discountAmount: string
   taxAmount: string
@@ -128,6 +134,7 @@ export function formatOrderSummary(
   return {
     partsTotal: totals.partsCount > 0 ? formatKurus(totals.partsTotal) : "—",
     laborTotal: totals.laborCount > 0 ? formatKurus(totals.laborTotal) : "—",
+    externalLaborTotal: totals.externalLaborCount > 0 ? formatKurus(totals.externalLaborTotal) : "—",
     subtotal: totals.hasAnyPrice ? formatKurus(totals.subtotal) : "—",
     discountAmount: totals.discountAmount > 0 ? formatKurus(totals.discountAmount) : "—",
     taxAmount: totals.taxRate > 0 ? formatKurus(totals.taxAmount) : "—",
