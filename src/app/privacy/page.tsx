@@ -1,55 +1,100 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
-  title: "Gizlilik Politikası",
-  description: "BakimX gizlilik politikası sayfası.",
+  title: "Gizlilik ve Çerez Politikası",
+  description:
+    "BakımX gizlilik ve çerez (cookie) politikası; hangi verilerin nasıl toplandığı ve kullanıldığı.",
 };
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8">
-            Gizlilik Politikası
-          </h1>
-          <div className="space-y-6 text-muted-foreground">
-            <p className="text-base leading-relaxed">
-              Bu sayfa, BakimX gizlilik politikasını içermektedir. Şu anda bu
-              sayfa bir yer tutucu olarak sunulmaktadır.
-            </p>
-            <p className="text-base leading-relaxed">
-              BakimX, kullanıcı kişisel verilerini 6698 sayılı Kişisel Verilerin
-              Korunması Kanunu (KVKK) kapsamında işlemektedir.
-            </p>
-            <h2 className="text-xl font-semibold text-foreground pt-4">
-              Veri Toplama
-            </h2>
-            <p className="text-base leading-relaxed">
-              Demo talep formu aracılığıyla paylaştığınız ad, telefon, işletme
-              adı, şehir ve diğer bilgiler yalnızca size ulaşmak amacıyla
-              kullanılmaktadır.
-            </p>
-            <h2 className="text-xl font-semibold text-foreground pt-4">
-              Veri Paylaşımı
-            </h2>
-            <p className="text-base leading-relaxed">
-              Kişisel verileriniz üçüncü taraflarla paylaşılmaz, satılmaz veya
-              aktarılmaz.
-            </p>
-            <h2 className="text-xl font-semibold text-foreground pt-4">
-              İletişim
-            </h2>
-            <p className="text-base leading-relaxed">
-              Gizlilik politikası ile ilgili sorularınız için bizimle iletişime
-              geçebilirsiniz.
-            </p>
-            <p className="text-sm text-muted-foreground mt-8">
-              Son güncelleme: 2025
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
+    <LegalPage
+      slug="privacy"
+      title="Gizlilik ve Çerez Politikası"
+      intro={
+        <>
+          Bu politika, {COMPANY.brand} web sitesi ve uygulamasını kullanırken
+          verilerinizin nasıl toplandığını, kullanıldığını ve çerezlerle nasıl
+          işlem yapıldığını açıklar. Kişisel verilerin işlenmesine ilişkin detaylar{" "}
+          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde yer alır.
+        </>
+      }
+    >
+      <LegalSection n={1} title="Genel">
+        <p>
+          {COMPANY.legalName} olarak gizliliğinize önem veriyoruz. Yalnızca hizmeti
+          sunmak, güvenliği sağlamak ve deneyimi iyileştirmek için gerekli olan
+          verileri işleriz.
+        </p>
+      </LegalSection>
+
+      <LegalSection n={2} title="Topladığımız Veriler">
+        <ul>
+          <li>
+            <strong>Site ziyaretçisi:</strong> demo/iletişim formu aracılığıyla
+            paylaştığınız ad, telefon, işletme adı, şehir gibi bilgiler yalnızca
+            size ulaşmak amacıyla kullanılır.
+          </li>
+          <li>
+            <strong>Hesap sahibi:</strong> kayıt sırasında verilen ad, e-posta ve
+            işletme bilgileri ile hizmeti kullanırken oluşan işlem kayıtları.
+          </li>
+          <li>
+            <strong>Teknik:</strong> güvenlik ve hata giderme için IP adresi,
+            tarayıcı türü ve sistem log kayıtları.
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection n={3} title="Çerezler (Cookies)">
+        <p>
+          {COMPANY.brand}, çalışması için gerekli olan sınırlı sayıda çerez
+          kullanır:
+        </p>
+        <ul>
+          <li>
+            <strong>Zorunlu çerezler:</strong> oturum açma ve güvenlik (kimlik
+            doğrulama) için gereklidir; bunlar olmadan platforma giriş yapılamaz.
+          </li>
+          <li>
+            <strong>İşlevsel çerezler:</strong> arayüz tercihlerinizi (örneğin
+            kenar çubuğu durumu) hatırlamak için kullanılır.
+          </li>
+        </ul>
+        <p>
+          Çerezleri tarayıcı ayarlarınızdan silebilir veya engelleyebilirsiniz;
+          ancak zorunlu çerezler engellenirse platform düzgün çalışmayabilir.
+        </p>
+      </LegalSection>
+
+      <LegalSection n={4} title="Verilerin Paylaşımı">
+        <p>
+          Kişisel verileriniz pazarlama amacıyla üçüncü taraflara satılmaz. Veriler
+          yalnızca hizmetin sunulması için gerekli sağlayıcılarla (barındırma,
+          ödeme, mesajlaşma, OCR/yapay zeka vb.) ve yasal yükümlülükler
+          çerçevesinde yetkili kurumlarla paylaşılır. Ayrıntılar{" "}
+          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde açıklanmıştır.
+        </p>
+      </LegalSection>
+
+      <LegalSection n={5} title="Haklarınız">
+        <p>
+          KVKK m.11 kapsamındaki haklarınızı ve bunları nasıl kullanacağınızı{" "}
+          <Link href="/kvkk">KVKK Aydınlatma Metni</Link>&apos;nde bulabilirsiniz.
+          Açık rıza gerektiren işlemler için{" "}
+          <Link href="/acik-riza">Açık Rıza Metni</Link>&apos;ne bakabilirsiniz.
+        </p>
+      </LegalSection>
+
+      <LegalSection n={6} title="İletişim">
+        <p>
+          Gizlilik ve çerez uygulamalarımıza ilişkin sorularınız için{" "}
+          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> adresine
+          yazabilirsiniz.
+        </p>
+      </LegalSection>
+    </LegalPage>
   );
 }
