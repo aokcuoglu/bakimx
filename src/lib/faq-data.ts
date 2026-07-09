@@ -1,0 +1,57 @@
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    question: "BakimX mobilde çalışır mı?",
+    answer:
+      "Evet, BakimX tamamen mobil öncelikli tasarlanmıştır. Telefonunuzdan araç kabul edebilir, fotoğraf çekebilir, iş emri ve teklif oluşturabilirsiniz. Masaüstü cihazlardan da erişim mümkündür.",
+  },
+  {
+    question: "Ruhsat okuma nasıl çalışır? Parça fiyatı veriyor musunuz?",
+    answer:
+      "Ruhsatın fotoğrafını yükleyin; plaka, marka/model, VIN, model yılı ve sahibi gibi bilgiler otomatik doldurulsun, siz onaylamadan önce kontrol edin. Aracın VIN'iyle eşleşen, ona uygun katalog parçalarını görürsünüz. Parça fiyatlarını biz belirlemeyiz; fiyatlandırma tamamen sizin kendi kataloğunuzdan gelir.",
+  },
+  {
+    question: "Hangi modüller bugün hazır?",
+    answer:
+      "İş emri, teklif, randevu, takvim, stok/parça, tedarikçi, kasa (tahsilat ve yaşlandırma), müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim modülleri bugün kullanıma hazırdır. AI servis danışmanı Premium pakette yer alır.",
+  },
+  {
+    question: "Stok, tedarikçi ve tahsilat takibi var mı?",
+    answer:
+      "Evet. Parça stoğunuzu kritik eşiklerle takip eder, tedarikçilerinizi yönetir, tahsilatları kasada toplar ve yaşlandırma (alacak) raporu alırsınız.",
+  },
+  {
+    question: "Müşteriye WhatsApp ile çıktı gönderilebilir mi?",
+    answer:
+      "Evet. Teklif ve iş emri özetini WhatsApp veya link ile doğrudan müşteriye gönderebilir, tarayıcıdan yazdırabilirsiniz. Markalı PDF dışa aktarma yakında ekleniyor.",
+  },
+  {
+    question: "Birden fazla kullanıcı ekleyebilir miyim?",
+    answer:
+      "Evet. Ekibinizi davet edip rol verebilirsiniz; teknisyen, servis danışmanı ve yönetici farklı yetkilerle çalışır.",
+  },
+  {
+    question: "Verilerim güvende mi?",
+    answer:
+      "Her servis yalnızca kendi verisini görür ve erişim rol bazlıdır (sahip / yönetici / personel). Platform KVKK uyumlu olacak şekilde geliştiriliyor.",
+  },
+  {
+    question: "Küçük oto tamircileri için uygun mu?",
+    answer:
+      "Kesinlikle. BakimX, küçük ve orta ölçekli oto tamir atölyeleri için tasarlanmıştır. Tek kişilik kullanıma uygundur ve kurulum için teknik bilgi gerektirmez.",
+  },
+  {
+    question: "Nasıl başlarım? Ücretsiz deneme var mı?",
+    answer:
+      "\"Ücretsiz Dene\" diyerek iş yeri bilgilerinizle hesabınızı oluşturur ve kartınızı doğrularsınız. Doğrulama sırasında kartınızdan yalnızca 1 TL'lik provizyon alınır ve anında iade edilir; kart doğrulamasının ardından hesabınız anında açılır ve 7 günlük ücretsiz deneme süreniz başlar. Deneme süresince ücret ödemezsiniz; beğenirseniz size uygun pakete geçersiniz.",
+  },
+  {
+    question: "Kurulum için bilgisayar gerekir mi?",
+    answer:
+      "Hayır. BakimX tarayıcı tabanlı bir platformdur. Telefonunuzun internet tarayıcısından doğrudan erişebilirsiniz. Herhangi bir kurulum veya indirme gerekmez.",
+  },
+];
