@@ -195,8 +195,9 @@ export function RegisterForm() {
             className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
           />
           <span>
-            <Link href="/privacy" target="_blank" className="text-primary hover:underline">Aydınlatma metni</Link> ve{" "}
-            <Link href="/terms" target="_blank" className="text-primary hover:underline">kullanım koşullarını</Link> okudum, onaylıyorum.
+            <Link href="/terms" target="_blank" className="text-primary hover:underline">Kullanım koşulları</Link>,{" "}
+            <Link href="/kvkk" target="_blank" className="text-primary hover:underline">aydınlatma metni</Link> ve{" "}
+            <Link href="/acik-riza" target="_blank" className="text-primary hover:underline">açık rıza metnini</Link> okudum, onaylıyorum.
           </span>
         </label>
 
