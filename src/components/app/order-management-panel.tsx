@@ -57,6 +57,7 @@ export type OrderItem = {
 export type Totals = {
   partsTotal: number
   laborTotal: number
+  externalLaborTotal: number
   subtotal: number
   discountAmount: number
   taxAmount: number
@@ -64,6 +65,7 @@ export type Totals = {
   hasAnyPrice: boolean
   partsCount: number
   laborCount: number
+  externalLaborCount: number
 }
 
 export type OrderDetailData = {
@@ -728,6 +730,7 @@ export function PricingSummaryCard({
       <CardContent className="space-y-2">
         <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
         <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
+        <SummaryRow label="Dış İşçilik Toplamı" value={totals.externalLaborCount > 0 ? formatTRY(totals.externalLaborTotal) : "—"} muted={totals.externalLaborCount === 0} />
             <div className="border-t pt-2 mt-2">
               <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
             </div>
