@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Tüm etkileşimli kontroller shadcn `ui/*` primitifleri (`Button`, `Input`, `Label`, `Textarea`, `Select`) — native `<select>`/hand-rolled kontrol YOK. Kap/konumlandırma div'leri serbest. [[shadcn-components-only-no-custom]]
+- Tüm etkileşimli kontroller shadcn `ui/*` primitifleri (`Button`, `Input`, `Label`, `Textarea`, `Select`) — native `<select>`/`<button>`/hand-rolled kontrol YOK. Kap/konumlandırma div'leri serbest. Görünüm-içi "← Geri + başlık" için tekrar eden native buton yerine paylaşılan `views/view-header.tsx` (`ViewHeader`, shadcn Button ghost) kullanılır. [[shadcn-components-only-no-custom]]
 - Form kontrolleri web'de `h-9` (ui varsayılanları zaten sağlar); override etme. Birincil CTA `size="lg"`. [[component-height-web-h9]]
 - Renk: blue/navy marka; FAB & panel başlığı `bg-primary` (`#2563EB`). Yeşil yalnız WhatsApp bağlamında (bu widget'ta yok).
 - Yükleme durumu: inline `Loader2 animate-spin` (mevcut form deseni) — bu widget küçük olduğundan mevcut `DemoRequestSection` desenini birebir izle.
@@ -47,6 +47,7 @@ git checkout -b feat/site-assistant
 - `src/components/site-assistant/site-assistant.tsx` — üst bileşen (gate + state + tipler)
 - `src/components/site-assistant/assistant-launcher.tsx` — FAB
 - `src/components/site-assistant/assistant-panel.tsx` — panel kabı + Esc + görünüm switch
+- `src/components/site-assistant/views/view-header.tsx` — paylaşılan "← Geri + başlık" (shadcn Button ghost)
 - `src/components/site-assistant/views/menu-view.tsx`
 - `src/components/site-assistant/views/demo-form-view.tsx`
 - `src/components/site-assistant/views/support-form-view.tsx`
@@ -431,7 +432,7 @@ export function AssistantPanel({ view, onClose }: AssistantPanelProps) {
     >
       <header className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
-          <Wrench className="h-4.5 w-4.5" />
+          <Wrench className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-tight">BakımX Asistanı</p>
@@ -550,7 +551,7 @@ function ActionInner({ action }: { action: MenuAction }) {
   return (
     <>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="h-4.5 w-4.5" />
+        <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-foreground">{action.label}</span>
@@ -643,24 +644,59 @@ git commit -m "feat(site-assistant): menü görünümü — 4 hızlı aksiyon"
 Panel-içi demo formu; mevcut `DemoRequestSection` desenini (Select+TR_CITIES, monthlyVehicles, hata sözleşmesi) izler. `POST /api/demo-request`. Başarıda `onSuccess("demo")`.
 
 **Files:**
+- Create: `src/components/site-assistant/views/view-header.tsx` (paylaşılan — Task 6/7 de kullanır)
 - Create: `src/components/site-assistant/views/demo-form-view.tsx`
 - Modify: `src/components/site-assistant/assistant-panel.tsx` (demo view bağla)
 
 **Interfaces:**
 - Consumes: `SuccessContext` (Task 3), `TR_CITIES` from `@/lib/tr-cities`
-- Produces: `DemoFormView` props `{ onBack: () => void; onSuccess: (context: SuccessContext) => void }`
+- Produces:
+  - `ViewHeader` props `{ title: string; onBack: () => void }` (paylaşılan geri+başlık, shadcn Button)
+  - `DemoFormView` props `{ onBack: () => void; onSuccess: (context: SuccessContext) => void }`
 
-- [ ] **Step 1: `demo-form-view.tsx`**
+- [ ] **Step 1a: `view-header.tsx` (paylaşılan — shadcn Button ghost; native `<button>` YOK)**
+
+```tsx
+"use client";
+
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface ViewHeaderProps {
+  title: string;
+  onBack: () => void;
+}
+
+export function ViewHeader({ title, onBack }: ViewHeaderProps) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className="-ml-1.5 gap-1 px-2 text-xs text-muted-foreground"
+      >
+        <ArrowLeft className="size-3.5" /> Geri
+      </Button>
+      <span className="text-sm font-medium text-foreground">{title}</span>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 1b: `demo-form-view.tsx`**
 
 ```tsx
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ViewHeader } from "./view-header";
 import {
   Select,
   SelectContent,
@@ -742,10 +778,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 p-4">
-      <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3.5 w-3.5" /> Geri
-      </button>
-      <p className="text-sm font-medium text-foreground">Demo talebi — sizi arayalım</p>
+      <ViewHeader title="Demo talebi — sizi arayalım" onBack={onBack} />
 
       {errors._general && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2 text-xs text-foreground">
@@ -881,11 +914,12 @@ git commit -m "feat(site-assistant): demo talep formu görünümü → /api/demo
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ViewHeader } from "./view-header";
 import type { SuccessContext } from "../site-assistant";
 
 interface SupportFormViewProps {
@@ -957,10 +991,7 @@ export function SupportFormView({ onBack, onSuccess }: SupportFormViewProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 p-4">
-      <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3.5 w-3.5" /> Geri
-      </button>
-      <p className="text-sm font-medium text-foreground">Destek / İletişim</p>
+      <ViewHeader title="Destek / İletişim" onBack={onBack} />
 
       {errors._general && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2 text-xs text-foreground">
@@ -1067,7 +1098,7 @@ git commit -m "feat(site-assistant): destek formu görünümü → /api/support-
 ```tsx
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ViewHeader } from "./view-header";
 import {
   Accordion,
   AccordionContent,
@@ -1083,10 +1114,7 @@ interface FaqViewProps {
 export function FaqView({ onBack }: FaqViewProps) {
   return (
     <div className="space-y-3 p-4">
-      <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3.5 w-3.5" /> Geri
-      </button>
-      <p className="text-sm font-medium text-foreground">Sık Sorulanlar</p>
+      <ViewHeader title="Sık Sorulanlar" onBack={onBack} />
       <Accordion className="w-full">
         {FAQ_ITEMS.map((item, i) => (
           <AccordionItem key={i} value={`q-${i}`}>
