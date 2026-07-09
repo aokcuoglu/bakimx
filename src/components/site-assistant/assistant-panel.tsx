@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { X, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AssistantView, SuccessContext } from "./site-assistant";
+import { MenuView } from "./views/menu-view";
 
 interface AssistantPanelProps {
   view: AssistantView;
@@ -13,7 +14,7 @@ interface AssistantPanelProps {
   onClose: () => void;
 }
 
-export function AssistantPanel({ view, onClose }: AssistantPanelProps) {
+export function AssistantPanel({ view, onNavigate, onClose }: AssistantPanelProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -55,8 +56,10 @@ export function AssistantPanel({ view, onClose }: AssistantPanelProps) {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {/* GEÇİCİ — Task 4-8 gerçek görünümleri bağlayacak */}
-        <div className="p-4 text-sm text-muted-foreground">Görünüm: {view}</div>
+        {view === "menu" && <MenuView onNavigate={onNavigate} />}
+        {view !== "menu" && (
+          <div className="p-4 text-sm text-muted-foreground">Görünüm: {view}</div>
+        )}
       </div>
     </div>
   );
