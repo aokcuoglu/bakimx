@@ -7,6 +7,7 @@ import type { AssistantView, SuccessContext } from "./site-assistant";
 import { MenuView } from "./views/menu-view";
 import { DemoFormView } from "./views/demo-form-view";
 import { SupportFormView } from "./views/support-form-view";
+import { FaqView } from "./views/faq-view";
 
 interface AssistantPanelProps {
   view: AssistantView;
@@ -61,7 +62,8 @@ export function AssistantPanel({ view, onNavigate, onSuccess, onClose }: Assista
         {view === "menu" && <MenuView onNavigate={onNavigate} />}
         {view === "demo" && <DemoFormView onBack={() => onNavigate("menu")} onSuccess={onSuccess} />}
         {view === "support" && <SupportFormView onBack={() => onNavigate("menu")} onSuccess={onSuccess} />}
-        {(view === "faq" || view === "success") && (
+        {view === "faq" && <FaqView onBack={() => onNavigate("menu")} />}
+        {view === "success" && (
           <div className="p-4 text-sm text-muted-foreground">Görünüm: {view}</div>
         )}
       </div>
