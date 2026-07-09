@@ -24,7 +24,7 @@ type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string 
 function toRow(i: OrderItem): Row { return { ...i } }
 
 export function PartsLaborGrid({
-  orderId, status, items, vehicle, onError, onLoading, loading,
+  orderId, status, items, vehicle, onError, loading,
 }: {
   orderId: string
   status: string
@@ -39,6 +39,9 @@ export function PartsLaborGrid({
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
   const draftCounter = useRef(0)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  // rows'un en güncel kopyası — async persist callback'leri bayat closure okumasın.
+  const rowsRef = useRef<Row[]>(rows)
+  useEffect(() => { rowsRef.current = rows }, [rows])
 
   // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU.
   useEffect(() => {
@@ -64,35 +67,53 @@ export function PartsLaborGrid({
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } : r)))
   }
 
-  // Taslak satırı sunucuya kaydet (ad dolunca). Çift-kaydet guard: __saving.
-  async function persistDraft(row: Row) {
-    if (!row.__draft || row.__saving || !row.name.trim()) return
-    patchLocal(row.id, { __saving: true })
+  // Taslak satırı sunucuya kaydet. onCell'den DEBOUNCE ile tetiklenir (ilk harfte değil).
+  // rowsRef'ten en güncel satırı okur; POST uçarken yapılan düzenlemeleri POST sonrası
+  // "catch-up" PATCH ile gönderir → veri kaybı olmaz. Çift-kaydet guard: __saving.
+  async function persistDraft(rowId: string) {
+    const row = rowsRef.current.find((r) => r.id === rowId)
+    if (!row || !row.__draft || row.__saving || !row.name.trim()) return
+    patchLocal(rowId, { __saving: true })
+    const snapshot = { ...row }
     const fd = new FormData()
     fd.set("serviceOrderId", orderId)
-    fd.set("type", row.type)
-    fd.set("name", row.name)
-    if (row.sku) fd.set("sku", row.sku)
-    if (row.unit) fd.set("unit", row.unit)
-    fd.set("quantity", String(row.quantity))
-    if (row.unitPrice != null) fd.set("unitPrice", String(row.unitPrice))
-    if (row.brand) fd.set("brand", row.brand)
-    if (row.category) fd.set("category", row.category)
-    if (row.categoryId != null) fd.set("categoryId", String(row.categoryId))
+    fd.set("type", snapshot.type)
+    fd.set("name", snapshot.name)
+    if (snapshot.sku) fd.set("sku", snapshot.sku)
+    if (snapshot.unit) fd.set("unit", snapshot.unit)
+    fd.set("quantity", String(snapshot.quantity))
+    if (snapshot.unitPrice != null) fd.set("unitPrice", String(snapshot.unitPrice))
+    if (snapshot.brand) fd.set("brand", snapshot.brand)
+    if (snapshot.category) fd.set("category", snapshot.category)
+    if (snapshot.categoryId != null) fd.set("categoryId", String(snapshot.categoryId))
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: fd })
       const data = await res.json()
       if (data.success && data.id) {
-        // temp satırı gerçek id ile değiştir; __draft kalkar. router.refresh totalleri tazeler.
-        setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, id: data.id, tempId: undefined, __draft: false, __saving: false } : r)))
+        const realId: string = data.id
+        setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, id: realId, tempId: undefined, __draft: false, __saving: false } : r)))
+        // POST uçarken kullanıcı bir şey değiştirdiyse catch-up PATCH gönder (kayıp yok).
+        const latest = rowsRef.current.find((r) => r.id === rowId)
+        if (latest) {
+          const diff: Partial<OrderItem> = {}
+          if (latest.name !== snapshot.name) diff.name = latest.name
+          if (latest.sku !== snapshot.sku) diff.sku = latest.sku
+          if (latest.unit !== snapshot.unit) diff.unit = latest.unit
+          if (latest.quantity !== snapshot.quantity) diff.quantity = latest.quantity
+          if (latest.unitPrice !== snapshot.unitPrice) diff.unitPrice = latest.unitPrice
+          if (latest.brand !== snapshot.brand) diff.brand = latest.brand
+          if (latest.category !== snapshot.category) diff.category = latest.category
+          if (latest.categoryId !== snapshot.categoryId) diff.categoryId = latest.categoryId
+          if (Object.keys(diff).length > 0) { persistUpdate(realId, diff); return }
+        }
         router.refresh()
       } else {
         onError(data.error || "Kalem eklenemedi")
-        patchLocal(row.id, { __saving: false })
+        patchLocal(rowId, { __saving: false })
       }
     } catch {
       onError("Bir hata oluştu")
-      patchLocal(row.id, { __saving: false })
+      patchLocal(rowId, { __saving: false })
     }
   }
 
@@ -111,9 +132,9 @@ export function PartsLaborGrid({
       try {
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
-        if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows(items.map(toRow)) }
+        if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)]) }
         else router.refresh()
-      } catch { onError("Bir hata oluştu"); setRows(items.map(toRow)) }
+      } catch { onError("Bir hata oluştu"); setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)]) }
     }
     if (opts?.debounce) {
       const key = `${rowId}:${Object.keys(patch).sort().join(",")}`
@@ -122,12 +143,17 @@ export function PartsLaborGrid({
     } else { void send() }
   }
 
-  // Bir satırdaki değişikliği uygula: taslak → local + (ad ise) kaydet; kalıcı → optimistik + PATCH.
+  // Bir satırdaki değişikliği uygula: taslak → local + (ad doluysa) DEBOUNCE'lu kaydet; kalıcı → PATCH.
   function onCell(row: Row, patch: Partial<Row>, opts?: { debounce?: boolean }) {
     patchLocal(row.id, patch)
     if (row.__draft) {
       const next = { ...row, ...patch }
-      if (next.name.trim() && !row.__saving) void persistDraft(next)
+      if (next.name.trim()) {
+        const key = `draft:${row.id}`
+        const id = row.id
+        clearTimeout(saveTimers.current[key])
+        saveTimers.current[key] = setTimeout(() => persistDraft(id), 700)
+      }
       return
     }
     persistUpdate(row.id, patch, opts)
@@ -231,7 +257,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
           <div className="flex items-center gap-1.5">
             <Input
               value={row.name}
-              onChange={(e) => onCell(row, { name: e.target.value })}
+              onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
               onBlur={() => { if (row.__draft && row.name.trim()) onCell(row, {}) }}
               placeholder={isPart ? "Parça adı" : "İşçilik adı"}
               disabled={!editable || row.__saving}
@@ -252,7 +278,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
             {row.__saving && <Loader2 className="size-3.5 animate-spin text-muted-foreground shrink-0" />}
           </div>
           {row.sku && <span className="text-[10px] font-mono text-muted-foreground">{row.sku}</span>}
-          {isPart && editable && (
+          {isPart && (editable ? (
             <div className="flex items-center gap-1.5 flex-wrap">
               <div className="w-32"><PartBrandCombobox value={row.brand || ""} onChange={(v) => onCell(row, { brand: v }, { debounce: true })} /></div>
               <ItemCategoryCascade
@@ -262,7 +288,13 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
                 onSelect={(sel) => onCell(row, { category: sel.category, categoryId: sel.categoryId })}
               />
             </div>
-          )}
+          ) : (
+            (row.brand || row.category) && (
+              <div className="text-xs text-muted-foreground">
+                {[row.brand, row.category].filter(Boolean).join(" • ")}
+              </div>
+            )
+          ))}
         </div>
 
         {/* Miktar */}
