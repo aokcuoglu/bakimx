@@ -59,6 +59,7 @@ export function MenuView({ onNavigate }: MenuViewProps) {
               key={action.key}
               variant="outline"
               className={ROW_CLASS}
+              nativeButton={false}
               render={
                 <a href={action.href}>
                   <ActionInner action={action} />
