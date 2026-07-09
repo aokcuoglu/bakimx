@@ -40,8 +40,10 @@ const footerLinks = {
     { label: "İletişim", href: "#" },
   ],
   legal: [
-    { label: "Gizlilik Politikası", href: "/privacy" },
     { label: "Kullanım Koşulları", href: "/terms" },
+    { label: "KVKK Aydınlatma Metni", href: "/kvkk" },
+    { label: "Açık Rıza Metni", href: "/acik-riza" },
+    { label: "Gizlilik ve Çerez Politikası", href: "/privacy" },
   ],
 };
 

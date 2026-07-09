@@ -328,8 +328,12 @@ export function PurchaseWizard({
                         <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
                           <input type="checkbox" {...register("kvkkConsent" as never)} className="mt-0.5" />
                           <span>
-                            <Link href="/privacy" className="text-primary hover:underline" target="_blank">
-                              Aydınlatma metnini
+                            <Link href="/kvkk" className="text-primary hover:underline" target="_blank">
+                              Aydınlatma metni
+                            </Link>{" "}
+                            ve{" "}
+                            <Link href="/acik-riza" className="text-primary hover:underline" target="_blank">
+                              açık rıza metnini
                             </Link>{" "}
                             okudum, onaylıyorum.
                           </span>

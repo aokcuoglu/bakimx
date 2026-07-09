@@ -9,7 +9,7 @@ const APP_ORIGIN = "https://app.bakimx.com"
 const LANDING_ORIGIN = "https://bakimx.com"
 
 // Pages served on the landing host. Everything else is app surface.
-const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/fiyatlar"])
+const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
 const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al", "/payment"]
