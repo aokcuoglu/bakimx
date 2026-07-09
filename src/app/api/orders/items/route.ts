@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, id: result.id })
   } catch {
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
   }
