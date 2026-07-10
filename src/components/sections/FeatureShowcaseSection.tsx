@@ -76,7 +76,7 @@ export function FeatureShowcaseSection() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section id="ozellikler" className="scroll-mt-24 bg-background py-16 sm:py-24">
+    <section id="ozellikler" className="scroll-mt-24 bg-background py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-7xl space-y-20 px-4 sm:px-6 sm:space-y-28 lg:px-8">
         {features.map((feature, i) => {
           const reversed = i % 2 === 1;

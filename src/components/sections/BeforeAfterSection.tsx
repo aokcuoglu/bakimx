@@ -21,7 +21,7 @@ export function BeforeAfterSection() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section className="bg-muted/30 py-16 sm:py-24">
+    <section className="bg-muted/30 py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
           Defterden panele geçin
