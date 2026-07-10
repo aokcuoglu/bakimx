@@ -89,6 +89,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
   const summary = formatOrderSummary(orderItems)
   const parts = orderItems.filter((i) => i.type === "part")
   const labor = orderItems.filter((i) => i.type === "labor")
+  const externalLabor = orderItems.filter((i) => i.type === "external_labor")
 
   function handlePrint() {
     window.print()
@@ -442,6 +443,28 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   </div>
                 )}
 
+                {externalLabor.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-foreground uppercase tracking-wide mb-1.5">Dış İşçilik ({summary.externalLaborCount})</p>
+                    <div className="space-y-1.5">
+                      {externalLabor.map((item, idx) => (
+                        <div key={`external-labor-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-border last:border-0">
+                          <div>
+                            <span className="font-medium">{item.name}</span>
+                            <span className="text-muted-foreground/60 ml-1.5">×{item.quantity}</span>
+                            {item.unitPrice != null && item.unitPrice > 0 && (
+                              <span className="text-muted-foreground/60 text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
+                            )}
+                          </div>
+                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground/60 italic text-xs" : ""}`}>
+                            {formatLineTotal(item)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {summary.hasAnyPrice && (
                   <div className="border-t border-border pt-2 space-y-1 text-sm">
                     {parts.length > 0 && (
@@ -454,6 +477,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                       <div className="flex justify-between text-muted-foreground">
                         <span>İşçilik Toplamı</span>
                         <span>{summary.laborTotal}</span>
+                      </div>
+                    )}
+                    {externalLabor.length > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Dış İşçilik Toplamı</span>
+                        <span>{summary.externalLaborTotal}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-base pt-1 border-t border-border">
