@@ -538,12 +538,6 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           </Card>
 
           <div className="flex flex-col gap-2">
-            <Link href={`/vehicles/${v.id}/passport`}>
-              <Button variant="navy" className="w-full gap-2">
-                <ScrollText className="size-4" />
-                Servis Pasaportu
-              </Button>
-            </Link>
             <Link href={`/vehicles/${v.id}/edit`}>
               <Button variant="outline" className="w-full gap-2">
                 <Pencil className="size-4" />
