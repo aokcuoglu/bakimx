@@ -1,8 +1,8 @@
 import { z } from "zod/v4"
 
 export const serviceOrderItemSchema = z.object({
-  type: z.enum(["part", "labor"], {
-    error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)",
+  type: z.enum(["part", "labor", "external_labor"], {
+    error: "Geçerli bir kalem tipi seçiniz (parça/işçilik/dış işçilik)",
   }),
   name: z.string().min(1, "Kalem adı zorunludur"),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
