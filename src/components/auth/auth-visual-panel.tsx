@@ -29,7 +29,7 @@ export function AuthVisualPanel() {
       <Image
         src="/04-bakimx-icon-dark.svg"
         alt=""
-        width={303}
+        width={208}
         height={190}
         priority
         unoptimized

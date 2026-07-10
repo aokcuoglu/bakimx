@@ -16,13 +16,12 @@ function baseUrl(): string {
   return process.env.APP_URL || "http://localhost:3000"
 }
 
-/** Primary-dark wordmark (white on navy) — the brand "Primary Dark" variant is
- *  the one specified for lacivert/koyu backgrounds. PNG (not SVG): most e-mail
- *  clients, including Gmail, strip SVG. */
+/** Only-logo tasarım: koyu (navy) e-posta başlığında beyaz kollu X ikonu.
+ *  PNG (not SVG): most e-mail clients, including Gmail, strip SVG. */
 function logoImgHtml(): string {
-  const src = `${baseUrl()}/02-bakimx-primary-dark.png`
-  // 1800x351 source → 5.13:1; rendered at 28px tall keeps it crisp on retina.
-  return `<img src="${src}" alt="BakimX" width="144" height="28" style="display:block;border:0;outline:none;text-decoration:none;height:28px;width:144px;max-width:144px;" />`
+  const src = `${baseUrl()}/logo-icon-dark.png`
+  // 512x468 source → 1.09:1; rendered at 28px tall keeps it crisp on retina.
+  return `<img src="${src}" alt="BakimX" width="31" height="28" style="display:block;border:0;outline:none;text-decoration:none;height:28px;width:31px;max-width:31px;" />`
 }
 
 export function renderEmailLayout(opts: EmailLayoutOptions): string {

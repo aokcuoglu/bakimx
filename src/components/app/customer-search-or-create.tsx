@@ -150,10 +150,10 @@ export function CustomerSearchOrCreate({
       if (type === "individual") { cf.set("firstName", firstName); cf.set("lastName", lastName); cf.set("fullName", [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")) }
       else { cf.set("companyName", companyName) }
       cf.set("phone", phone)
-      // Optional fields — her zaman üçü; dolu olanı gönder (boş alan gönderilmez).
-      if (identityNumber.trim()) cf.set("identityNumber", identityNumber.trim())
-      if (taxNumber.trim()) cf.set("taxNumber", taxNumber.trim())
-      if (taxOffice.trim()) cf.set("taxOffice", taxOffice.trim())
+      // Optional fields — send only what's relevant to the selected type so a
+      // stale value (e.g. a TC typed before switching to corporate) never leaks.
+      if (type === "individual") { if (identityNumber.trim()) cf.set("identityNumber", identityNumber.trim()) }
+      else { if (taxNumber.trim()) cf.set("taxNumber", taxNumber.trim()); if (taxOffice.trim()) cf.set("taxOffice", taxOffice.trim()) }
       if (city.trim()) cf.set("city", city.trim())
       if (district.trim()) cf.set("district", district.trim())
       if (address.trim()) cf.set("address", address.trim())

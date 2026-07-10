@@ -479,7 +479,7 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
         {/* Brand footer */}
         <View style={styles.brandFooter}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt */}
-          <Image src="/01-bakimx-primary-light.png" style={styles.brandLogo} />
+          <Image src="/logo-icon-light.png" style={styles.brandLogo} />
           <Text style={{ fontSize: 7, color: "#999" }}>
             ile oluşturuldu • {new Date(createdAt).toLocaleDateString("tr-TR")}
           </Text>

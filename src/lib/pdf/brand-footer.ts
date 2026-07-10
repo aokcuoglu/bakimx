@@ -1,4 +1,4 @@
-export const BAKIMX_PRIMARY_LIGHT_SVG_PATH = "/01-bakimx-primary-light.svg"
+export const BAKIMX_PRIMARY_LIGHT_SVG_PATH = "/03-bakimx-icon-light.svg"
 
 export function bakimxPdfFooterBar(createdAt: Date | string): string {
   const fmtDate = (d: Date | string) =>
