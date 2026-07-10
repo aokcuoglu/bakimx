@@ -21,7 +21,9 @@ const partners = [
     width: 96,
     height: 50,
     imgClass:
-      "opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0 dark:grayscale-0 dark:opacity-100 dark:rounded-md dark:bg-white dark:p-1",
+      "opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0 dark:grayscale-0 dark:opacity-100",
+    // Chip padding'i Image yerine sarmalayıcıda: border-box img'de en-boy oranını bozuyordu.
+    wrapClass: "dark:rounded-md dark:bg-white dark:p-1",
   },
 ];
 
@@ -48,6 +50,7 @@ export function PartnersStrip() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
+              className={partner.wrapClass}
             >
               <Image
                 src={partner.src}
