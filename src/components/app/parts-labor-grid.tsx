@@ -233,7 +233,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
         {/* Tür */}
         <div className="flex items-center justify-between md:block">
           {row.__draft && editable ? (
-            <Select value={row.type} onValueChange={(v) => onCell(row, { type: v as ItemType })}>
+            <Select items={TYPE_LABELS} value={row.type} onValueChange={(v) => onCell(row, { type: v as ItemType })}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="part">Yedek Parça</SelectItem>
