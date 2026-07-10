@@ -42,16 +42,22 @@ export async function POST(request: Request) {
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12)
 
-  await prisma.$transaction([
-    prisma.user.update({
+  const claimed = await prisma.$transaction(async (tx) => {
+    const consume = await tx.passwordResetToken.updateMany({
+      where: { id: record.id, usedAt: null },
+      data: { usedAt: new Date() },
+    })
+    if (consume.count === 0) return false // already consumed by a concurrent request
+    await tx.user.update({
       where: { id: record.userId },
       data: { password: passwordHash },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: record.id },
-      data: { usedAt: new Date() },
-    }),
-  ])
+    })
+    return true
+  })
+
+  if (!claimed) {
+    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 400 })
+  }
 
   return NextResponse.json({ ok: true })
 }
