@@ -43,7 +43,15 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Bayat-chunk kurtarması (Katman 2): build'in static asset'lerini `.next/static` yerine
+# pristine bir snapshot olarak sakla. Entrypoint bunları çalışma anında kalıcı volume'a
+# (biriktirerek) kopyalar; böylece eski deploy'ların chunk'ları diskte kalır. Ayrıca
+# nextjs-sahipli boş bir `.next/static` bırak ki named volume ilk mount'ta bu sahipliği
+# devralsın (aksi halde root olur ve entrypoint yazamaz). Bkz. docker-entrypoint.sh.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./static-dist
+RUN mkdir -p /app/.next/static && chown nextjs:nodejs /app/.next/static
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Migration tooling for the one-shot `migrate` service. The Prisma 7 CLI's runtime
 # closure (CLI bundle + @prisma/* + top-level-hoisted effect/c12/jiti/typescript/iconv-lite/…)
@@ -64,4 +72,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Entrypoint, server başlamadan önce static asset'leri kalıcı volume'da biriktirir
+# (bkz. docker-entrypoint.sh) ve sonra `exec "$@"` ile CMD'i çalıştırır. `migrate`
+# job'ı kendi command'ını geçtiği için biriktirme adımı orada atlanır.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server.js"]
