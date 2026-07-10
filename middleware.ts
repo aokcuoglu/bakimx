@@ -112,6 +112,7 @@ export const config = {
   // çalıştırır) logolar kayboluyordu — hem doğrudan erişimde hem next/image'in
   // kaynak fetch'inde. Ayrıca transactional e-postaların logosu (02-bakimx-
   // primary-dark.png) anonim çekildiği için kök PNG'ler de PUBLIC olmalı.
-  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) hariç bırakılır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) ve landing
+  // marketing asset'leri (/landing/**) hariç bırakılır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

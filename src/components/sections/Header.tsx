@@ -10,9 +10,8 @@ import { Menu, X } from "lucide-react";
 
 const navItems = [
   { label: "Canlı Demo", href: "/#ruhsat-demo" },
-  { label: "Modüller", href: "/#moduller" },
-  { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
   { label: "Özellikler", href: "/#ozellikler" },
+  { label: "Neden BakimX", href: "/#neden" },
   { label: "SSS", href: "/#sss" },
   { label: "Fiyatlar", href: "/fiyatlar" },
 ];
