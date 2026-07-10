@@ -12,7 +12,7 @@ const LANDING_ORIGIN = "https://bakimx.com"
 const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
-const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al", "/payment"]
+const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
