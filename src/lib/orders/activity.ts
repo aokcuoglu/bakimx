@@ -84,17 +84,19 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
 
     case "order_item_added": {
       const name = String(meta.name ?? "Kalem")
-      const isLabor = meta.type === "labor"
+      const isLabor = meta.type === "labor" || meta.type === "external_labor"
+      const typeLabel = meta.type === "external_labor" ? "Dış İşçilik" : isLabor ? "İşçilik" : "Parça"
       const qty = Number(meta.quantity ?? 1)
-      const parts = [isLabor ? "İşçilik" : "Parça"]
+      const parts = [typeLabel]
       if (qty > 1) parts.push(`${qty} adet`)
       if (typeof meta.unitPrice === "number") parts.push(formatTRY(meta.unitPrice))
       return { category: isLabor ? "labor" : "part", label: `${name} eklendi`, detail: parts.join(" · ") }
     }
     case "order_item_removed": {
       const name = String(meta.name ?? "Kalem")
-      const isLabor = meta.type === "labor"
-      return { category: isLabor ? "labor" : "part", label: `${name} çıkarıldı`, detail: isLabor ? "İşçilik" : "Parça" }
+      const isLabor = meta.type === "labor" || meta.type === "external_labor"
+      const typeLabel = meta.type === "external_labor" ? "Dış İşçilik" : isLabor ? "İşçilik" : "Parça"
+      return { category: isLabor ? "labor" : "part", label: `${name} çıkarıldı`, detail: typeLabel }
     }
 
     case "order_meta_updated":
