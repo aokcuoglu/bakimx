@@ -242,3 +242,20 @@ export function paymentReceiptEmail(p: {
     }),
   }
 }
+
+export function passwordResetEmail(p: { resetUrl: string; firstName?: string }): BuiltEmail {
+  const name = escapeHtml(p.firstName || "Yetkili")
+  return {
+    subject: "BakimX şifre sıfırlama talebi",
+    html: renderEmailLayout({
+      heading: "Şifrenizi sıfırlayın",
+      bodyHtml:
+        `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+        `<p style="margin:0 0 12px;">BakimX hesabınız için bir şifre sıfırlama talebi aldık. Yeni şifrenizi belirlemek için aşağıdaki butona tıklayın.</p>` +
+        `<p style="margin:0 0 12px;">Bu bağlantı <strong>1 saat</strong> boyunca geçerlidir.</p>` +
+        `<p style="margin:0 0 12px;color:#64748b;">Bu talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz; şifreniz değişmez.</p>`,
+      cta: { label: "Şifremi Sıfırla", url: p.resetUrl },
+      footerNote: "Bu e-postayı, BakimX hesabınızda şifre sıfırlama talebi yapıldığı için aldınız.",
+    }),
+  }
+}

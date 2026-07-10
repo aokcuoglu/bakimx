@@ -7,6 +7,7 @@ import {
   trialExpiryWarningEmail,
   subscriptionExpiryWarningEmail,
   paymentReceiptEmail,
+  passwordResetEmail,
 } from "./system-emails"
 
 test("workshopApprovedEmail: giriş CTA'sı + 7 gün deneme mesajı", () => {
@@ -155,4 +156,20 @@ test("paymentReceiptEmail: maskedPan yoksa kart satırı basılmaz", () => {
     reference: "REF-123",
   })
   expect(e.html).not.toContain("<strong>Kart:</strong>")
+})
+
+test("passwordResetEmail embeds the reset url, name and mentions expiry", () => {
+  const { subject, html } = passwordResetEmail({
+    resetUrl: "https://bakimx.com/reset-password/TOKEN123",
+    firstName: "Ali",
+  })
+  expect(subject.toLowerCase()).toContain("şifre")
+  expect(html).toContain("https://bakimx.com/reset-password/TOKEN123")
+  expect(html).toContain("Ali")
+  expect(html).toContain("1 saat")
+})
+
+test("passwordResetEmail falls back to a generic greeting without a name", () => {
+  const { html } = passwordResetEmail({ resetUrl: "https://bakimx.com/reset-password/X" })
+  expect(html).toContain("Yetkili")
 })
