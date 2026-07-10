@@ -27,7 +27,7 @@ export function BeforeAfterSection() {
           Defterden panele geçin
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-base text-muted-foreground">
-          Servislerin her gün yaşadığı dağınıklığın BakimX'teki karşılığı:
+          Servislerin her gün yaşadığı dağınıklığın BakimX&apos;teki karşılığı:
         </p>
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <motion.div

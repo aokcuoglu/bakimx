@@ -28,9 +28,8 @@ const socialLinks = [
 
 const footerLinks = {
   product: [
-    { label: "Modüller", href: "/#moduller" },
+    { label: "Canlı Demo", href: "/#ruhsat-demo" },
     { label: "Özellikler", href: "/#ozellikler" },
-    { label: "Nasıl Çalışır", href: "/#nasil-calisir" },
     { label: "Neden BakimX", href: "/#neden" },
     { label: "SSS", href: "/#sss" },
     { label: "Fiyatlar", href: "/fiyatlar" },
