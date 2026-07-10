@@ -168,7 +168,7 @@ export async function addOrderItemAction(formData: FormData) {
   )
 
   revalidatePath(`/orders/${raw.serviceOrderId}`)
-  return { success: true }
+  return { success: true, id: createdItemId }
 }
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {

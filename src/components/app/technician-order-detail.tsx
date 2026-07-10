@@ -328,7 +328,7 @@ export function TechnicianOrderDetail({
                       "text-[10px] px-1.5 py-0.5 rounded font-medium",
                       item.type === "part" ? "bg-primary/20 text-foreground" : "bg-primary/20 text-foreground"
                     )}>
-                      {item.type === "part" ? "Parça" : "İşçilik"}
+                      {item.type === "part" ? "Parça" : item.type === "external_labor" ? "Dış İşçilik" : "İşçilik"}
                     </span>
                   </div>
                   {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}

@@ -57,7 +57,7 @@ export function ServiceAnalyticsSection({ analytics }: { analytics: ServiceAnaly
         items={analytics.topRepairs.map((r) => ({
           name: r.itemName,
           count: r.count,
-          extra: r.type === "part" ? "Parça" : "İşçilik",
+          extra: r.type === "part" ? "Parça" : r.type === "external_labor" ? "Dış İşçilik" : "İşçilik",
         }))}
       />
       <TopList

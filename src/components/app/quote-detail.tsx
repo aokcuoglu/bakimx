@@ -302,7 +302,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                                 ? "bg-muted text-muted-foreground"
                                 : "bg-primary/10 text-foreground"
                             )}>
-                              {item.type === "part" ? "Parça" : "İşçilik"}
+                              {item.type === "part" ? "Parça" : item.type === "external_labor" ? "Dış İşçilik" : "İşçilik"}
                             </span>
                           </td>
                           <td className="py-2 pr-3 font-medium">{item.name}</td>

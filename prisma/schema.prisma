@@ -773,6 +773,7 @@ model ServiceOrderItem {
 enum OrderItemType {
   part
   labor
+  external_labor
 }
 
 model Quote {

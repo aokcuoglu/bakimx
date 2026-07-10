@@ -210,6 +210,7 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
   const orderItems = intakeForm.order?.items ?? []
   const parts = orderItems.filter((i) => i.type === "part")
   const labor = orderItems.filter((i) => i.type === "labor")
+  const externalLabor = orderItems.filter((i) => i.type === "external_labor")
 
   const partsTotal = parts.reduce((sum, i) => {
     if (i.totalPrice != null && i.totalPrice > 0) return sum + i.totalPrice
@@ -221,7 +222,12 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
     if (i.unitPrice != null && i.unitPrice > 0) return sum + i.unitPrice * i.quantity
     return sum
   }, 0)
-  const grandTotal = partsTotal + laborTotal
+  const externalLaborTotal = externalLabor.reduce((sum, i) => {
+    if (i.totalPrice != null && i.totalPrice > 0) return sum + i.totalPrice
+    if (i.unitPrice != null && i.unitPrice > 0) return sum + i.unitPrice * i.quantity
+    return sum
+  }, 0)
+  const grandTotal = partsTotal + laborTotal + externalLaborTotal
 
   return (
     <Document>
@@ -401,7 +407,30 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
                   ))}
                 </View>
               )}
-              {(partsTotal > 0 || laborTotal > 0) && (
+              {externalLabor.length > 0 && (
+                <View style={{ marginBottom: 4 }}>
+                  <Text style={{ fontSize: 7, fontWeight: 700, color: "#7C3AED", marginBottom: 2 }}>DIŞ İŞÇİLİK</Text>
+                  {externalLabor.map((item, idx) => (
+                    <View key={`el-${idx}`} style={[styles.itemRow, idx === externalLabor.length - 1 ? styles.itemRowLast : {}]}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Text style={{ fontSize: 8, fontWeight: 700 }}>{item.name}</Text>
+                        <Text style={{ fontSize: 7, color: "#888" }}>×{item.quantity}</Text>
+                        {item.unitPrice != null && item.unitPrice > 0 && (
+                          <Text style={{ fontSize: 7, color: "#888" }}>({formatTRY(item.unitPrice)}/birim)</Text>
+                        )}
+                      </View>
+                      <Text style={{ fontSize: 8, fontWeight: 700 }}>
+                        {item.totalPrice != null && item.totalPrice > 0
+                          ? formatTRY(item.totalPrice)
+                          : item.unitPrice != null && item.unitPrice > 0
+                            ? formatTRY(item.unitPrice * item.quantity)
+                            : "—"}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {(partsTotal > 0 || laborTotal > 0 || externalLaborTotal > 0) && (
                 <>
                   {partsTotal > 0 && (
                     <View style={styles.totalRow}>
@@ -413,6 +442,12 @@ export function PublicOutputDocument({ workshop, intakeForm, createdAt }: Public
                     <View style={styles.totalRow}>
                       <Text style={{ fontSize: 8, color: "#666" }}>İşçilik Toplamı</Text>
                       <Text style={{ fontSize: 8 }}>{formatTRY(laborTotal)}</Text>
+                    </View>
+                  )}
+                  {externalLaborTotal > 0 && (
+                    <View style={styles.totalRow}>
+                      <Text style={{ fontSize: 8, color: "#666" }}>Dış İşçilik Toplamı</Text>
+                      <Text style={{ fontSize: 8 }}>{formatTRY(externalLaborTotal)}</Text>
                     </View>
                   )}
                   <View style={styles.grandTotal}>
