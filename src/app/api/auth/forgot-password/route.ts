@@ -46,27 +46,31 @@ export async function POST(request: Request) {
   // E-posta bazlı limit aşıldıysa da generic yanıt (enumeration sızıntısı yok)
   const emailLimit = rateLimit(`pwreset-email:${parsed.data.email}`, 3, 15 * 60 * 1000)
   if (emailLimit.allowed) {
-    const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
-    if (user && user.isActive) {
-      await prisma.passwordResetToken.updateMany({
-        where: { userId: user.id, usedAt: null },
-        data: { usedAt: new Date() },
-      })
+    try {
+      const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
+      if (user && user.isActive) {
+        await prisma.passwordResetToken.updateMany({
+          where: { userId: user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        })
 
-      const { token, tokenHash } = generateResetToken()
-      await prisma.passwordResetToken.create({
-        data: { userId: user.id, tokenHash, expiresAt: resetExpiry() },
-      })
+        const { token, tokenHash } = generateResetToken()
+        await prisma.passwordResetToken.create({
+          data: { userId: user.id, tokenHash, expiresAt: resetExpiry() },
+        })
 
-      const resetUrl = `${appUrl()}/reset-password/${token}`
-      const mail = passwordResetEmail({ resetUrl, firstName: user.firstName ?? undefined })
-      await sendSystemEmail({
-        to: user.email,
-        subject: mail.subject,
-        html: mail.html,
-        workshopId: user.workshopId,
-        templateKey: "password_reset",
-      })
+        const resetUrl = `${appUrl()}/reset-password/${token}`
+        const mail = passwordResetEmail({ resetUrl, firstName: user.firstName ?? undefined })
+        void sendSystemEmail({
+          to: user.email,
+          subject: mail.subject,
+          html: mail.html,
+          workshopId: user.workshopId,
+          templateKey: "password_reset",
+        }).catch(() => {})
+      }
+    } catch {
+      // swallow: fall through to the generic response (no existence oracle on DB errors)
     }
   }
 
