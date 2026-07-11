@@ -38,7 +38,12 @@ export function PartBrandCombobox({
   const [brands, setBrands] = useState<PartBrandSummary[]>([])
   // Arama kutusu metni — committed value'dan ayrı; value değişince senkronlanır.
   const [query, setQuery] = useState(value ?? "")
+  // Son commit'lenen değeri senkron tutar — kapanışta güvenilir revert için:
+  // seçimde onOpenChange, onValueChange'den hemen sonra senkron çalışır ve o an
+  // `value` prop'u henüz bayattır (parent re-render olmadı), ref ise günceldir.
+  const committedRef = useRef(value ?? "")
   useEffect(() => {
+    committedRef.current = value ?? ""
     const t = setTimeout(() => setQuery(value ?? ""), 0)
     return () => clearTimeout(t)
   }, [value])
@@ -91,11 +96,12 @@ export function PartBrandCombobox({
         if (!strict) onChange(v, null)
       }}
       onValueChange={(b: PartBrandSummary | null) => {
-        if (b) { setQuery(b.name); onChange(b.name, b.supplierId) }
+        if (b) { committedRef.current = b.name; setQuery(b.name); onChange(b.name, b.supplierId) }
       }}
       onOpenChange={(open: boolean) => {
         // Kapanışta seçilmeyen arama metnini committed değere geri al (strict için önemli).
-        if (!open) setQuery(value ?? "")
+        // value prop'u değil committedRef okunur — seçim anındaki bayat-closure flicker'ını önler.
+        if (!open) setQuery(committedRef.current)
       }}
     >
       <ComboboxInput

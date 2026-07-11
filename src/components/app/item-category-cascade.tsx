@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Combobox,
   ComboboxInput,
@@ -63,7 +63,11 @@ function CategoryComboboxImpl({
   const [leaves, setLeaves] = useState<CategoryLeaf[]>([])
   // Arama metni committed value'dan ayrı; value değişince senkronlanır.
   const [query, setQuery] = useState(value ?? "")
+  // Son commit'lenen değeri senkron tutar — kapanışta güvenilir revert için
+  // (seçimde onOpenChange, prop güncellenmeden önce senkron çalışır).
+  const committedRef = useRef(value ?? "")
   useEffect(() => {
+    committedRef.current = value ?? ""
     const t = setTimeout(() => setQuery(value ?? ""), 0)
     return () => clearTimeout(t)
   }, [value])
@@ -96,9 +100,9 @@ function CategoryComboboxImpl({
       inputValue={query}
       onInputValueChange={(v: string) => setQuery(v)}
       onValueChange={(c: CategoryLeaf | null) => {
-        if (c) { setQuery(c.name); onSelect({ category: c.name, categoryId: c.id }) }
+        if (c) { committedRef.current = c.name; setQuery(c.name); onSelect({ category: c.name, categoryId: c.id }) }
       }}
-      onOpenChange={(open: boolean) => { if (!open) setQuery(value ?? "") }}
+      onOpenChange={(open: boolean) => { if (!open) setQuery(committedRef.current) }}
     >
       <ComboboxInput placeholder="Kategori ara..." className="w-40" />
       <ComboboxContent>
