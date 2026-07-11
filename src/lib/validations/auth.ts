@@ -20,3 +20,18 @@ export const registerSchema = z.object({
       message: "Devam etmek için aydınlatma metnini onaylamanız gerekir",
     }),
 })
+
+export const forgotPasswordSchema = z.object({
+  email: z.email("Geçerli bir e-posta adresi giriniz"),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Geçersiz sıfırlama bağlantısı"),
+    password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
+    confirmPassword: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Şifreler eşleşmiyor",
+    path: ["confirmPassword"],
+  })

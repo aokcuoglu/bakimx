@@ -87,6 +87,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     totals: {
       partsTotal: totals.partsTotal,
       laborTotal: totals.laborTotal,
+      externalLaborTotal: totals.externalLaborTotal,
       subtotal: totals.subtotal,
       discountAmount: totals.discountAmount,
       taxAmount: totals.taxAmount,
@@ -94,6 +95,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       hasAnyPrice: totals.hasAnyPrice,
       partsCount: totals.partsCount,
       laborCount: totals.laborCount,
+      externalLaborCount: totals.externalLaborCount,
     },
     items: order.items.map((i) => ({
       id: i.id,

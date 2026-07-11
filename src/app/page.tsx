@@ -1,14 +1,14 @@
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 import { Header } from "@/components/sections/Header";
 import { HeroSection } from "@/components/sections/HeroSection";
-import { TrustStrip } from "@/components/sections/TrustStrip";
+import { PillarsSection } from "@/components/sections/PillarsSection";
+import { PartnersStrip } from "@/components/sections/PartnersStrip";
 import { RuhsatDemoSection } from "@/components/sections/RuhsatDemoSection";
-import { ModulesSection } from "@/components/sections/ModulesSection";
-import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
-import { FeatureSpotlightSection } from "@/components/sections/FeatureSpotlightSection";
-import { WhyBakimxSection } from "@/components/sections/WhyBakimxSection";
-import { EarlyAccessCTASection } from "@/components/sections/EarlyAccessCTASection";
+import { FeatureShowcaseSection } from "@/components/sections/FeatureShowcaseSection";
+import { StandOutSection } from "@/components/sections/StandOutSection";
+import { BeforeAfterSection } from "@/components/sections/BeforeAfterSection";
 import { FAQSection } from "@/components/sections/FAQSection";
+import { FinalCTASection } from "@/components/sections/FinalCTASection";
 import { Footer } from "@/components/sections/Footer";
 
 export default function Home() {
@@ -18,14 +18,14 @@ export default function Home() {
       <Header />
       <main>
         <HeroSection />
-        <TrustStrip />
+        <PillarsSection />
+        <PartnersStrip />
         <RuhsatDemoSection />
-        <ModulesSection />
-        <HowItWorksSection />
-        <FeatureSpotlightSection />
-        <WhyBakimxSection />
-        <EarlyAccessCTASection />
+        <FeatureShowcaseSection />
+        <StandOutSection />
+        <BeforeAfterSection />
         <FAQSection />
+        <FinalCTASection />
       </main>
       <Footer />
     </>

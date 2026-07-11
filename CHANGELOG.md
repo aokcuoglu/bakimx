@@ -3,12 +3,21 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [RELEASE.md](./RELEASE.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.6.0 yayınlandı, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.7.0 yayınlandı, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.7.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.7.0 | Canlı kartlı ödeme (TAMI), TecDoc parça kataloğu + VIN, Claude Vision OCR | [v0.7.0](./docs/releases/v0.7.0.md) |
+
+Öne çıkanlar: **canlı kartlı ödeme (TAMI sanal POS)** — abonelik + kayıtta 1 TL 3DS ön provizyonla kart doğrulama gerçek merchant üzerinden; araca uygun **TecDoc parça seçici** + VIN→araç çözümleyici; ruhsat OCR **Claude Vision (Sonnet 5)**'a geçti (PaddleOCR sidecar emekli) + byte-hash dedup; iş emri **İşlem Geçmişi** (AuditLog). 7 migration.
 
 ## 0.6.x
 
 | Sürüm | Başlık | Not |
 |---|---|---|
+| 0.6.1 | intake→orders birleşik akışı, PaddleOCR sidecar, AI advisor Claude göçü | tag `v0.6.1` |
 | 0.6.0 | Onay→teslim & birleşik iş emri, para kuruş modeli, katalog/admin/e-posta | [v0.6.0](./docs/releases/v0.6.0.md) |
 
 Öne çıkanlar: müşteri onayı kabulden **teslime** taşındı (iş emri direkt başlar) + WhatsApp (wa.me) gönder; birleşik iş emri akışı + teslim OTP; para modeli **Int kuruş/bps** + sunucu-otoriter toplamlar; DB tabanlı marka/model kataloğu; admin impersonation + işletme bazlı feature flag; transactional onay e-postaları; iş emri adımında plaka OCR; ruhsat tarayıcı sadeleştirme; landing redesign. 5 migration.

@@ -33,6 +33,7 @@ async function generatePdfHtml(data: {
   const orderItems = intakeForm.order?.items ?? []
   const parts = orderItems.filter((i) => i.type === "part")
   const labor = orderItems.filter((i) => i.type === "labor")
+  const externalLabor = orderItems.filter((i) => i.type === "external_labor")
 
   const partsTotal = parts.reduce((sum, i) => {
     if (i.totalPrice != null && i.totalPrice > 0) return sum + i.totalPrice
@@ -44,7 +45,12 @@ async function generatePdfHtml(data: {
     if (i.unitPrice != null && i.unitPrice > 0) return sum + i.unitPrice * i.quantity
     return sum
   }, 0)
-  const grandTotal = partsTotal + laborTotal
+  const externalLaborTotal = externalLabor.reduce((sum, i) => {
+    if (i.totalPrice != null && i.totalPrice > 0) return sum + i.totalPrice
+    if (i.unitPrice != null && i.unitPrice > 0) return sum + i.unitPrice * i.quantity
+    return sum
+  }, 0)
+  const grandTotal = partsTotal + laborTotal + externalLaborTotal
 
   const fmtDate = (d: Date) => new Date(d).toLocaleDateString("tr-TR")
 
@@ -90,6 +96,20 @@ async function generatePdfHtml(data: {
         ? formatTRY(item.unitPrice * item.quantity)
         : "—"
     laborRows += `<tr>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${item.name}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center;">${item.quantity}</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:right;">${lineTotal}</td>
+    </tr>`
+  }
+
+  let externalLaborRows = ""
+  for (const item of externalLabor) {
+    const lineTotal = item.totalPrice != null && item.totalPrice > 0
+      ? formatTRY(item.totalPrice)
+      : item.unitPrice != null && item.unitPrice > 0
+        ? formatTRY(item.unitPrice * item.quantity)
+        : "—"
+    externalLaborRows += `<tr>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${item.name}</td>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center;">${item.quantity}</td>
       <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:right;">${lineTotal}</td>
@@ -166,10 +186,22 @@ async function generatePdfHtml(data: {
             <tbody>${laborRows}</tbody>
           </table>
         ` : ""}
-        ${(partsTotal > 0 || laborTotal > 0) ? `
+        ${externalLabor.length > 0 ? `
+          <div style="font-size:8px;font-weight:700;color:#7C3AED;margin-bottom:4px;text-transform:uppercase;">Dış İşçilik</div>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:8px;">
+            <thead><tr style="background:#f8fafc;">
+              <th style="padding:4px 8px;text-align:left;border-bottom:1px solid #e2e8f0;">Kalem</th>
+              <th style="padding:4px 8px;text-align:center;border-bottom:1px solid #e2e8f0;">Adet</th>
+              <th style="padding:4px 8px;text-align:right;border-bottom:1px solid #e2e8f0;">Tutar</th>
+            </tr></thead>
+            <tbody>${externalLaborRows}</tbody>
+          </table>
+        ` : ""}
+        ${(partsTotal > 0 || laborTotal > 0 || externalLaborTotal > 0) ? `
           <div style="border-top:2px solid ${primaryColor};padding-top:6px;margin-top:4px;">
             ${partsTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>Parça Toplamı</span><span>${formatTRY(partsTotal)}</span></div>` : ""}
             ${laborTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>İşçilik Toplamı</span><span>${formatTRY(laborTotal)}</span></div>` : ""}
+            ${externalLaborTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>Dış İşçilik Toplamı</span><span>${formatTRY(externalLaborTotal)}</span></div>` : ""}
             <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-top:4px;"><span>Genel Toplam</span><span>${formatTRY(grandTotal)}</span></div>
           </div>
         ` : ""}

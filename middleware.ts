@@ -9,10 +9,10 @@ const APP_ORIGIN = "https://app.bakimx.com"
 const LANDING_ORIGIN = "https://bakimx.com"
 
 // Pages served on the landing host. Everything else is app surface.
-const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/fiyatlar"])
+const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
-const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al", "/payment"]
+const PUBLIC_PREFIX = ["/s/", "/p/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
@@ -112,6 +112,7 @@ export const config = {
   // çalıştırır) logolar kayboluyordu — hem doğrudan erişimde hem next/image'in
   // kaynak fetch'inde. Ayrıca transactional e-postaların logosu (02-bakimx-
   // primary-dark.png) anonim çekildiği için kök PNG'ler de PUBLIC olmalı.
-  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) hariç bırakılır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) ve landing
+  // marketing asset'leri (/landing/**) hariç bırakılır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

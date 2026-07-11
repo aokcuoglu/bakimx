@@ -12,6 +12,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      # Bayat-chunk kurtarması (Katman 2): static asset'leri deploy'lar arası biriktir
+      # (prod ile aynı davranış → burada test edilir). Bkz. docker-entrypoint.sh.
+      - next-static-staging:/app/.next/static
     networks:
       internal:
       proxy:
@@ -63,6 +67,7 @@ services:
 
 volumes:
   pgdata-staging:
+  next-static-staging:
 
 networks:
   internal:

@@ -6,12 +6,19 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ChevronLeft, ChevronRight, Loader2, PackageSearch, ScanLine } from "lucide-react"
 import { VinCandidateList } from "./vin-resolve"
@@ -36,6 +43,8 @@ export type TecdocPartSelection = {
   articleNo: string
   tecdocArticleId: number
   supplierName: string
+  categoryName: string
+  categoryId: number
 }
 
 /** Render cap for huge categories (the API has no pagination). */
@@ -58,15 +67,24 @@ function trIncludes(haystack: string, needle: string): boolean {
 export function TecdocPartPicker({
   vehicle,
   onSelect,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  hideTrigger,
 }: {
   vehicle: PickerVehicle | undefined
   onSelect: (sel: TecdocPartSelection) => void
+  open?: boolean
+  onOpenChange?: (v: boolean) => void
+  hideTrigger?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = controlledOnOpenChange ?? setUncontrolledOpen
   const [tree, setTree] = useState<CategoryNode[] | null>(null)
   const [stack, setStack] = useState<CategoryNode[]>([]) // drill-down breadcrumb
   const [articles, setArticles] = useState<ArticleSummary[] | null>(null)
   const [filter, setFilter] = useState("")
+  const [supplierFilter, setSupplierFilter] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -123,38 +141,45 @@ export function TecdocPartPicker({
       setStack([])
       setArticles(null)
       setFilter("")
+      setSupplierFilter("")
       setError("")
     }
   }
 
   const currentNodes = stack.length === 0 ? tree ?? [] : stack[stack.length - 1].children
+  const supplierOptions = useMemo(() => {
+    if (!articles) return []
+    const names = Array.from(new Set(articles.map((a) => a.supplierName).filter(Boolean)))
+    return names.sort((x, y) => x.localeCompare(y, "tr"))
+  }, [articles])
+
   const filteredArticles = useMemo(() => {
     if (!articles) return null
     const q = filter.trim()
-    const list = q
-      ? articles.filter(
-          (a) => trIncludes(a.productName, q) || trIncludes(a.articleNo, q) || trIncludes(a.supplierName, q)
-        )
-      : articles
+    let list = supplierFilter ? articles.filter((a) => a.supplierName === supplierFilter) : articles
+    if (q) list = list.filter((a) => trIncludes(a.productName, q) || trIncludes(a.articleNo, q) || trIncludes(a.supplierName, q))
     return list
-  }, [articles, filter])
+  }, [articles, filter, supplierFilter])
 
   if (!vehicle) return null
 
   if (vehicleTypeId == null) {
+    if (hideTrigger) return null
     return <VinLinkPrompt vehicle={vehicle} />
   }
 
   return (
     <>
-      <Button type="button" size="sm" variant="outline" onClick={() => handleOpenChange(true)} className="gap-1.5">
-        <PackageSearch className="size-3.5" />
-        Araca Uygun Parçalar
-      </Button>
+      {!hideTrigger && (
+        <Button type="button" size="sm" variant="outline" onClick={() => handleOpenChange(true)} className="gap-1.5">
+          <PackageSearch className="size-3.5" />
+          Araca Uygun Parçalar
+        </Button>
+      )}
 
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-md p-0 gap-0">
-          <SheetHeader className="border-b px-4 py-3">
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="p-0 gap-0 sm:max-w-md max-h-[85vh] flex flex-col">
+          <DialogHeader className="border-b px-4 py-3">
             <div className="flex items-center gap-2 pr-8">
               {(stack.length > 0 || articles) && (
                 <button type="button" onClick={goBack} className="p-1 -ml-1 text-muted-foreground hover:text-foreground" aria-label="Geri">
@@ -162,17 +187,17 @@ export function TecdocPartPicker({
                 </button>
               )}
               <div className="min-w-0">
-                <SheetTitle className="text-sm truncate">
+                <DialogTitle className="text-sm truncate">
                   {stack.length === 0 ? "Araca Uygun Parçalar" : stack[stack.length - 1].name}
-                </SheetTitle>
-                <SheetDescription className="text-xs truncate">
+                </DialogTitle>
+                <DialogDescription className="text-xs truncate">
                   {stack.length === 0
                     ? "Kategori seçin"
                     : stack.map((n) => n.name).join(" / ")}
-                </SheetDescription>
+                </DialogDescription>
               </div>
             </div>
-          </SheetHeader>
+          </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
             {loading && (
@@ -217,17 +242,29 @@ export function TecdocPartPicker({
                     onChange={(e) => setFilter(e.target.value)}
                     placeholder={`${articles!.length} parça içinde ara...`}
                   />
+                  {supplierOptions.length > 0 && (
+                    <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v && v !== "all" ? v : "")}>
+                      <SelectTrigger className="h-9 mt-2"><SelectValue placeholder="Tüm markalar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm markalar</SelectItem>
+                        {supplierOptions.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 {filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => (
                   <button
                     key={a.tecdocArticleId}
                     type="button"
                     onClick={() => {
+                      const cat = stack[stack.length - 1]
                       onSelect({
                         name: a.productName,
                         articleNo: a.articleNo,
                         tecdocArticleId: a.tecdocArticleId,
                         supplierName: a.supplierName,
+                        categoryName: cat?.name ?? "",
+                        categoryId: cat?.id ?? 0,
                       })
                       handleOpenChange(false)
                     }}
@@ -263,8 +300,8 @@ export function TecdocPartPicker({
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

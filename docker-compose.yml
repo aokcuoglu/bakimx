@@ -13,6 +13,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      # Bayat-chunk kurtarması (Katman 2): static asset'leri deploy'lar arası biriktir.
+      # Entrypoint her build'in chunk'larını buraya kopyalar; eski deploy'ların chunk'ları
+      # diskte kaldığı için cache'li istemciler 404 almaz. Bkz. docker-entrypoint.sh.
+      - next-static:/app/.next/static
     networks:
       internal:
       # Stable alias on the shared Caddy network so the reverse proxy can target
@@ -61,6 +66,7 @@ services:
 
 volumes:
   pgdata:
+  next-static:
 
 networks:
   internal:

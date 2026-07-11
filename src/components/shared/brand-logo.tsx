@@ -1,16 +1,14 @@
 import Image from "next/image"
 
 /**
- * BakimX logo variant'ları (logo kullanım rehberine göre).
+ * BakimX logo variant'ları.
  *
- * - `primary-light`: Beyaz / açık gri arka plan — web sitesi header, landing,
- *   teklif, sunum, PDF.
- * - `primary-dark`: Lacivert / siyah / fotoğraf üstü koyu alanlar — login sol
- *   paneli, dark mode, sunum kapağı.
- * - `icon-light`: Açık arka planda yalnız sembol — favicon, LinkedIn profil
- *   görseli, app icon, dar sidebar (40px altı kullanım).
- * - `icon-dark`: Koyu arka planda yalnız sembol — dark sidebar, koyu mobil
- *   header, login ekranı (40px altı kullanım).
+ * Marka only-logo tasarıma geçti (2026-07-09): "BakimX" yazılı wordmark
+ * kullanılmıyor, primary variant'lar da ikon dosyalarına işaret eder.
+ * Variant API'si geriye dönük korunur; ayrım yalnız zemin rengidir.
+ *
+ * - `primary-light` / `icon-light`: Beyaz / açık zemin — lacivert kollu X.
+ * - `primary-dark` / `icon-dark`: Lacivert / koyu zemin — beyaz kollu X.
  */
 export type BrandLogoVariant =
   | "primary-light"
@@ -32,23 +30,23 @@ export const BRAND_LOGOS: Record<
   { src: string; width: number; height: number }
 > = {
   "primary-light": {
-    src: "/01-bakimx-primary-light.svg",
-    width: 1087,
-    height: 211,
+    src: "/03-bakimx-icon-light.svg",
+    width: 208,
+    height: 190,
   },
   "primary-dark": {
-    src: "/02-bakimx-primary-dark.svg",
-    width: 754,
-    height: 147,
+    src: "/04-bakimx-icon-dark.svg",
+    width: 208,
+    height: 190,
   },
   "icon-light": {
     src: "/03-bakimx-icon-light.svg",
-    width: 303,
+    width: 208,
     height: 190,
   },
   "icon-dark": {
     src: "/04-bakimx-icon-dark.svg",
-    width: 303,
+    width: 208,
     height: 190,
   },
 }

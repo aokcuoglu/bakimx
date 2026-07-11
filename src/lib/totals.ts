@@ -127,6 +127,7 @@ export function formatOrderSummary(
   grandTotal: string
   partsCount: number
   laborCount: number
+  externalLaborCount: number
   hasAnyPrice: boolean
 } {
   const totals = calculateOrderTotals(items, options)
@@ -141,6 +142,7 @@ export function formatOrderSummary(
     grandTotal: totals.hasAnyPrice ? formatKurus(totals.grandTotal) : "—",
     partsCount: totals.partsCount,
     laborCount: totals.laborCount,
+    externalLaborCount: totals.externalLaborCount,
     hasAnyPrice: totals.hasAnyPrice,
   }
 }

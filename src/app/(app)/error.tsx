@@ -3,14 +3,19 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { AlertTriangle, RotateCw } from "lucide-react"
+import { isChunkLoadError, reloadOnceForChunkError } from "@/lib/chunk-error"
 
 /**
  * App-segment error boundary. Catches uncaught errors from pages and server
  * actions (e.g. the read-only impersonation write-guard) and renders a clean
  * message instead of a crash. In dev, Next still shows its overlay on top.
+ *
+ * Deploy sonrası bayat chunk hatasını yakalarsa sayfayı bir kez yeniler
+ * (cache/history temizlemeye gerek kalmadan kurtarır).
  */
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    if (isChunkLoadError(error) && reloadOnceForChunkError()) return
     console.error("[app error boundary]", error)
   }, [error])
 

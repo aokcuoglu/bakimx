@@ -216,7 +216,7 @@ export function AppShellChrome({
       <div className="flex">
         <aside
           className={cn(
-            "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-navy text-navy-foreground border-r border-navy-foreground/10 transition-[width] duration-200 ease-in-out",
+            "hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 bg-navy text-navy-foreground border-r border-navy-foreground/10 transition-[width] duration-200 ease-in-out",
             desktopSidebarWidth,
           )}
         >
@@ -435,8 +435,27 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Daralt/genişlet toggle'ı, sidebar ile içerik arasındaki dikey çizginin
+          üzerine oturan yüzen buton olarak konumlanır (aside `fixed` olduğu için
+          absolute burada aside'a göre hizalanır). `top-5` merkezi (~32px), collapsed
+          logo (sm=20px) ile expanded logo (lg=32px) dikey merkezinin arasına denk
+          gelir; böylece iki durumda da logo hizasında kalır. Yalnız masaüstünde
+          (onToggleCollapse geçilen aside'da) render edilir; mobil Sheet'te değil. */}
+      {onToggleCollapse && (
+        <Tooltip>
+          <TooltipTrigger render={<button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+            className="absolute top-5 -right-3 z-40 flex items-center justify-center size-6 rounded-full bg-navy border border-navy-foreground/20 text-navy-foreground/70 shadow-sm transition-colors hover:bg-navy hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40"
+          />}>
+            {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
+          </TooltipTrigger>
+          <TooltipContent side="right">{collapsed ? "Menüyü genişlet" : "Menüyü daralt"}</TooltipContent>
+        </Tooltip>
+      )}
       <div className={cn("py-5 border-b border-navy-foreground/10", collapsed ? "px-2" : "px-5")}>
-        <div className={collapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between gap-2"}>
+        <div className={collapsed ? "flex justify-center" : "flex items-center"}>
           <Tooltip>
             <TooltipTrigger render={<Link href="/dashboard" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
               {collapsed ? (
@@ -448,14 +467,6 @@ function SidebarContent({
             </Link>} />
             <TooltipContent side="right">BakimX</TooltipContent>
           </Tooltip>
-          {onToggleCollapse && (
-            <Tooltip>
-              <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={onToggleCollapse} aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"} />}>
-                {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
-              </TooltipTrigger>
-              <TooltipContent side="top">{collapsed ? "Menüyü genişlet" : "Menüyü daralt"}</TooltipContent>
-            </Tooltip>
-          )}
         </div>
       </div>
 
