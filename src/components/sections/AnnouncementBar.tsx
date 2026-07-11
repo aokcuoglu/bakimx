@@ -18,7 +18,7 @@ export function AnnouncementBar() {
             Erken Üye
           </span>
           <span>
-            Erken üyelere özel başlangıç fiyatları · 7 gün ücretsiz dene (1 TL iade edilen kart doğrulaması).
+            Erken üyelere özel başlangıç fiyatları · 7 gün ücretsiz dene.
           </span>
         </div>
       </div>

@@ -78,8 +78,7 @@ export function HeroSection() {
                 </Link>
               </div>
               <p className="text-xs text-muted-foreground">
-                Kart doğrulamasının ardından 7 günlük denemeniz anında başlar
-                (1 TL iade edilen kart doğrulaması).
+                Kart doğrulamasının ardından 7 günlük denemeniz anında başlar.
               </p>
               <a
                 href="#ruhsat-demo"
