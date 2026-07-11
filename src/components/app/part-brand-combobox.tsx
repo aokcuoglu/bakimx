@@ -16,6 +16,10 @@ import type { PartBrandSummary } from "@/lib/tecdoc/types"
  * - Katalog-bağlı araç (vehicleTypeId != null): araç/kategori-scoped liste, KATI
  *   (yalnız listeden seçim). Kategori değişince uyumsuz marka otomatik temizlenir.
  * - Katalog-bağlı değil (vehicleTypeId == null): global liste + serbest metin fallback.
+ *
+ * Arama metni (query) committed değerden (value) ayrı tutulur: strict modda da
+ * yazarak filtrelenebilir; commit yalnız listeden seçimle olur. Popup kapanınca
+ * seçilmeyen arama metni committed değere geri döner.
  */
 export function PartBrandCombobox({
   value,
@@ -32,6 +36,12 @@ export function PartBrandCombobox({
 }) {
   const strict = vehicleTypeId != null
   const [brands, setBrands] = useState<PartBrandSummary[]>([])
+  // Arama kutusu metni — committed value'dan ayrı; value değişince senkronlanır.
+  const [query, setQuery] = useState(value ?? "")
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(value ?? ""), 0)
+    return () => clearTimeout(t)
+  }, [value])
   // Auto-clear yalnız kategori GERÇEKTEN değişince tetiklensin (ilk mount'ta değil).
   const prevCategoryId = useRef<number | null>(categoryId)
 
@@ -70,13 +80,23 @@ export function PartBrandCombobox({
   return (
     <Combobox
       items={brands}
-      filter={(item: PartBrandSummary, query: string) =>
-        item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+      filter={(item: PartBrandSummary, q: string) =>
+        item.name.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr"))}
       itemToStringLabel={(b: PartBrandSummary) => b.name}
       itemToStringValue={(b: PartBrandSummary) => b.name}
-      inputValue={value}
-      onInputValueChange={(v: string) => { if (!strict) onChange(v, null) }}
-      onValueChange={(b: PartBrandSummary | null) => { if (b) onChange(b.name, b.supplierId) }}
+      inputValue={query}
+      onInputValueChange={(v: string) => {
+        setQuery(v)
+        // Serbest metin fallback: yazılan metin doğrudan committed değer olur.
+        if (!strict) onChange(v, null)
+      }}
+      onValueChange={(b: PartBrandSummary | null) => {
+        if (b) { setQuery(b.name); onChange(b.name, b.supplierId) }
+      }}
+      onOpenChange={(open: boolean) => {
+        // Kapanışta seçilmeyen arama metnini committed değere geri al (strict için önemli).
+        if (!open) setQuery(value ?? "")
+      }}
     >
       <ComboboxInput
         placeholder={placeholder}

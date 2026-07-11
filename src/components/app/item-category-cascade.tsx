@@ -61,6 +61,12 @@ function CategoryComboboxImpl({
   onSelect: (sel: { category: string; categoryId: number | null }) => void
 }) {
   const [leaves, setLeaves] = useState<CategoryLeaf[]>([])
+  // Arama metni committed value'dan ayrı; value değişince senkronlanır.
+  const [query, setQuery] = useState(value ?? "")
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(value ?? ""), 0)
+    return () => clearTimeout(t)
+  }, [value])
 
   useEffect(() => {
     let active = true
@@ -82,15 +88,17 @@ function CategoryComboboxImpl({
   return (
     <Combobox
       items={leaves}
-      filter={(item: CategoryLeaf, query: string) =>
-        item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr")) ||
-        item.path.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
+      filter={(item: CategoryLeaf, q: string) =>
+        item.name.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr")) ||
+        item.path.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr"))}
       itemToStringLabel={(c: CategoryLeaf) => c.name}
       itemToStringValue={(c: CategoryLeaf) => c.name}
-      inputValue={value ?? ""}
+      inputValue={query}
+      onInputValueChange={(v: string) => setQuery(v)}
       onValueChange={(c: CategoryLeaf | null) => {
-        if (c) onSelect({ category: c.name, categoryId: c.id })
+        if (c) { setQuery(c.name); onSelect({ category: c.name, categoryId: c.id }) }
       }}
+      onOpenChange={(open: boolean) => { if (!open) setQuery(value ?? "") }}
     >
       <ComboboxInput placeholder="Kategori ara..." className="w-40" />
       <ComboboxContent>
