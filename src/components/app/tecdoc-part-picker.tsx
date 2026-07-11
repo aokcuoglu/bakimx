@@ -25,6 +25,7 @@ import { VinCandidateList } from "./vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 import type { ArticleSummary, CategoryNode } from "@/lib/tecdoc/types"
+import { trIncludes } from "@/lib/tr-search"
 
 /** Vehicle fields the picker needs: the catalog link + VIN/hints to build it. */
 export type PickerVehicle = {
@@ -49,15 +50,6 @@ export type TecdocPartSelection = {
 
 /** Render cap for huge categories (the API has no pagination). */
 const MAX_VISIBLE_ARTICLES = 100
-
-/** Case-insensitive contains that survives the Turkish dotted/dotless I:
- *  "aisin" must match "AISIN" (tr-lower → "aısın") and "İ" must match "i". */
-function trIncludes(haystack: string, needle: string): boolean {
-  return (
-    haystack.toLocaleLowerCase("tr").includes(needle.toLocaleLowerCase("tr")) ||
-    haystack.toLowerCase().includes(needle.toLowerCase())
-  )
-}
 
 /**
  * TecDoc vehicle-parts picker: category drill-down → article list → onSelect.

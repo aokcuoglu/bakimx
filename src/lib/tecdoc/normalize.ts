@@ -52,3 +52,20 @@ export function normalizeSuppliers(raw: unknown): PartBrandSummary[] {
     .map((s) => ({ supplierId: s.supplierId, name: s.supplierName }))
     .sort((a, b) => a.name.localeCompare(b.name, "tr"))
 }
+
+/**
+ * TecdocArticle satırlarından (supplierId, supplierName) → tekil, tr-sıralı
+ * PartBrandSummary[]. supplierId null olan satırlar (filtrelenemez marka) atlanır.
+ */
+export function dedupeBrands(
+  rows: { supplierId: number | null; supplierName: string }[]
+): PartBrandSummary[] {
+  const byId = new Map<number, string>()
+  for (const r of rows) {
+    if (r.supplierId == null) continue
+    if (!byId.has(r.supplierId)) byId.set(r.supplierId, r.supplierName)
+  }
+  return [...byId.entries()]
+    .map(([supplierId, name]) => ({ supplierId, name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "tr"))
+}

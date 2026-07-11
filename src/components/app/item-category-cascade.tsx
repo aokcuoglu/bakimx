@@ -1,22 +1,31 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useEffect, useRef, useState } from "react"
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, Loader2, Tag } from "lucide-react"
-import type { CategoryNode } from "@/lib/tecdoc/types"
-import { cn } from "@/lib/utils"
+import { flattenCategoryLeaves } from "@/lib/tecdoc/tree"
+import type { CategoryLeaf, CategoryNode } from "@/lib/tecdoc/types"
+import { trIncludes } from "@/lib/tr-search"
 
 export function ItemCategoryCascade({
   vehicleTypeId,
+  supplierId,
   value,
   onSelect,
 }: {
   vehicleTypeId: number | null
+  supplierId: number | null
   value: string | null
   onSelect: (sel: { category: string; categoryId: number | null }) => void
 }) {
-  // Araç TecDoc'ta eşleşmemiş → serbest metin fallback.
+  // Araç TecDoc'ta eşleşmemiş → serbest metin fallback (mevcut davranış).
   const [freeText, setFreeText] = useState(value || "")
   if (vehicleTypeId == null) {
     return (
@@ -31,118 +40,85 @@ export function ItemCategoryCascade({
       />
     )
   }
-  return <CascadePopover vehicleTypeId={vehicleTypeId} value={value} onSelect={onSelect} />
+  return (
+    <CategoryComboboxImpl
+      vehicleTypeId={vehicleTypeId}
+      supplierId={supplierId}
+      value={value}
+      onSelect={onSelect}
+    />
+  )
 }
 
-function CascadePopover({
+function CategoryComboboxImpl({
   vehicleTypeId,
+  supplierId,
   value,
   onSelect,
 }: {
   vehicleTypeId: number
+  supplierId: number | null
   value: string | null
   onSelect: (sel: { category: string; categoryId: number | null }) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [tree, setTree] = useState<CategoryNode[] | null>(null)
-  const [stack, setStack] = useState<CategoryNode[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [leaves, setLeaves] = useState<CategoryLeaf[]>([])
+  // Arama metni committed value'dan ayrı; value değişince senkronlanır.
+  const [query, setQuery] = useState(value ?? "")
+  // Son commit'lenen değeri senkron tutar — kapanışta güvenilir revert için
+  // (seçimde onOpenChange, prop güncellenmeden önce senkron çalışır).
+  const committedRef = useRef(value ?? "")
+  useEffect(() => {
+    committedRef.current = value ?? ""
+    const t = setTimeout(() => setQuery(value ?? ""), 0)
+    return () => clearTimeout(t)
+  }, [value])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await fetch(`/api/tecdoc/categories?vehicleId=${vehicleTypeId}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Katalog yüklenemedi.")
-      setTree(data.categories as CategoryNode[])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Katalog yüklenemedi.")
-    } finally {
-      setLoading(false)
-    }
-  }, [vehicleTypeId])
-
-  function handleOpenChange(next: boolean) {
-    setOpen(next)
-    if (next && tree == null) void load()
-    if (!next) setStack([])
-  }
-
-  const currentNodes = stack.length === 0 ? tree ?? [] : stack[stack.length - 1].children
-
-  function pick(node: CategoryNode) {
-    if (node.children.length > 0) {
-      // Alt kategorisi var → cascade: içine in (next).
-      setStack((s) => [...s, node])
-    } else {
-      // Yaprak → seç ve kapat.
-      onSelect({ category: node.name, categoryId: node.id })
-      setOpen(false)
-      setStack([])
-    }
-  }
+  useEffect(() => {
+    let active = true
+    const url =
+      supplierId != null
+        ? `/api/tecdoc/categories?vehicleId=${vehicleTypeId}&supplierId=${supplierId}`
+        : `/api/tecdoc/categories?vehicleId=${vehicleTypeId}`
+    fetch(url)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active) return
+        const tree: CategoryNode[] = Array.isArray(d?.categories) ? d.categories : []
+        setLeaves(flattenCategoryLeaves(tree))
+      })
+      .catch(() => { if (active) setLeaves([]) })
+    return () => { active = false }
+  }, [vehicleTypeId, supplierId])
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger
-        render={
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 h-8 px-2 rounded-lg border border-border bg-white text-xs text-foreground hover:bg-muted transition-colors max-w-40"
-          />
-        }
-      >
-        <Tag className="size-3 shrink-0 text-muted-foreground" />
-        <span className="truncate">{value || "Kategori"}</span>
-        <ChevronRight className="size-3 shrink-0 text-muted-foreground" />
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
-        <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
-          {stack.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setStack((s) => s.slice(0, -1))}
-              className="p-1 rounded hover:bg-muted"
-              aria-label="Geri"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
+    <Combobox
+      items={leaves}
+      filter={(item: CategoryLeaf, q: string) => trIncludes(item.name, q) || trIncludes(item.path, q)}
+      itemToStringLabel={(c: CategoryLeaf) => c.name}
+      itemToStringValue={(c: CategoryLeaf) => c.name}
+      inputValue={query}
+      onInputValueChange={(v: string) => setQuery(v)}
+      onValueChange={(c: CategoryLeaf | null) => {
+        if (c) { committedRef.current = c.name; setQuery(c.name); onSelect({ category: c.name, categoryId: c.id }) }
+      }}
+      onOpenChange={(open: boolean) => { if (!open) setQuery(committedRef.current) }}
+    >
+      <ComboboxInput placeholder="Kategori ara..." className="w-40" />
+      <ComboboxContent>
+        <ComboboxEmpty className="py-2 text-sm text-muted-foreground">
+          Uygun kategori bulunamadı
+        </ComboboxEmpty>
+        <ComboboxList>
+          {(c: CategoryLeaf) => (
+            <ComboboxItem key={c.id} value={c}>
+              <span className="flex flex-col">
+                <span>{c.name}</span>
+                {c.path && <span className="text-xs text-muted-foreground">{c.path}</span>}
+              </span>
+            </ComboboxItem>
           )}
-          <span className="text-xs font-medium text-muted-foreground truncate">
-            {stack.length === 0 ? "Kategori seç" : stack[stack.length - 1].name}
-          </span>
-        </div>
-        <div className="max-h-64 overflow-y-auto">
-          {loading && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="size-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          {error && <div className="px-3 py-2 text-xs text-destructive">{error}</div>}
-          {!loading &&
-            !error &&
-            currentNodes.map((node) => (
-              <button
-                key={node.id}
-                type="button"
-                onClick={() => pick(node)}
-                className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted border-b border-border last:border-0"
-                )}
-              >
-                <span className="truncate">{node.name}</span>
-                {node.children.length > 0 && (
-                  <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-                )}
-              </button>
-            ))}
-          {!loading && !error && currentNodes.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">Alt kategori yok</div>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   )
 }

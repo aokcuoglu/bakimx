@@ -20,6 +20,13 @@ export interface CategoryNode {
   children: CategoryNode[]
 }
 
+/** Düzleştirilmiş yaprak kategori — Combobox listesini doldurur. `path` üst kategori yolu (" › " ayraçlı, yaprağın adı hariç). */
+export interface CategoryLeaf {
+  id: number
+  name: string
+  path: string
+}
+
 /** Normalized article row shown in the picker. */
 export interface ArticleSummary {
   tecdocArticleId: number

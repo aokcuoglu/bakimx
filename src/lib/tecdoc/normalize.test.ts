@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test"
-import { normalizeCategories, normalizeArticles } from "./normalize"
+import { describe, test, expect, it } from "bun:test"
+import { normalizeCategories, normalizeArticles, dedupeBrands } from "./normalize"
 import { TecdocError } from "./types"
 import categoriesFixture from "./fixtures/categories-v2.json"
 import articlesFixture from "./fixtures/articles.json"
@@ -52,4 +52,22 @@ test("normalizeArticles: null articles (empty category) → empty list; garbage 
   expect(normalizeArticles({ countArticles: null, articles: null })).toEqual([])
   expect(normalizeArticles({ countArticles: 0, articles: [] })).toEqual([])
   expect(() => normalizeArticles({ articles: [{ bogus: true }] })).toThrow(TecdocError)
+})
+
+describe("dedupeBrands", () => {
+  it("null supplierId'yi dışlar, supplierId'ye göre tekilleştirir, tr-sıralar", () => {
+    const rows = [
+      { supplierId: 10, supplierName: "MANN-FILTER" },
+      { supplierId: 5, supplierName: "BOSCH" },
+      { supplierId: 10, supplierName: "MANN-FILTER" },
+      { supplierId: null, supplierName: "İSİMSİZ" },
+    ]
+    expect(dedupeBrands(rows)).toEqual([
+      { supplierId: 5, name: "BOSCH" },
+      { supplierId: 10, name: "MANN-FILTER" },
+    ])
+  })
+  it("boş girişte boş dizi", () => {
+    expect(dedupeBrands([])).toEqual([])
+  })
 })

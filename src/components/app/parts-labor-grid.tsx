@@ -19,7 +19,9 @@ import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-pa
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
 
-type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string }
+// brandSupplierId: yalnız runtime — marka→kategori best-effort filtresi için
+// seçili markanın TecDoc supplierId'sini taşır; ASLA persist edilmez.
+type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null }
 
 function toRow(i: OrderItem): Row { return { ...i } }
 
@@ -43,10 +45,22 @@ export function PartsLaborGrid({
   const rowsRef = useRef<Row[]>(rows)
   useEffect(() => { rowsRef.current = rows }, [rows])
 
-  // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU.
+  // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU. Runtime-only
+  // brandSupplierId (persist EDİLMEZ) önceki satırdan id ile taşınır ki
+  // marka→kategori filtresi router.refresh() sonrası da yaşasın (tam yeniden
+  // yüklemeye kadar; o noktada zaten en baştan best-effort).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)])
+    setRows((prev) => {
+      const prevById = new Map(prev.map((r) => [r.id, r]))
+      return [
+        ...items.map((i) => {
+          const prevRow = prevById.get(i.id)
+          return prevRow ? { ...toRow(i), brandSupplierId: prevRow.brandSupplierId } : toRow(i)
+        }),
+        ...prev.filter((r) => r.__draft),
+      ]
+    })
   }, [items])
 
   useEffect(() => {
@@ -280,10 +294,19 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
           {row.sku && <span className="text-[10px] font-mono text-muted-foreground">{row.sku}</span>}
           {isPart && (editable ? (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <div className="w-32"><PartBrandCombobox value={row.brand || ""} onChange={(v) => onCell(row, { brand: v }, { debounce: true })} /></div>
+              <div className="w-32">
+                <PartBrandCombobox
+                  value={row.brand || ""}
+                  vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                  categoryId={row.categoryId}
+                  onChange={(name, supplierId) =>
+                    onCell(row, { brand: name || null, brandSupplierId: supplierId }, { debounce: true })}
+                />
+              </div>
               <ItemCategoryCascade
                 key={`cat-${row.id}-${row.category ?? ""}`}
                 vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                supplierId={row.brandSupplierId ?? null}
                 value={row.category}
                 onSelect={(sel) => onCell(row, { category: sel.category, categoryId: sel.categoryId })}
               />
