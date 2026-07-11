@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { flattenCategoryLeaves } from "@/lib/tecdoc/tree"
 import type { CategoryLeaf, CategoryNode } from "@/lib/tecdoc/types"
+import { trIncludes } from "@/lib/tr-search"
 
 export function ItemCategoryCascade({
   vehicleTypeId,
@@ -92,9 +93,7 @@ function CategoryComboboxImpl({
   return (
     <Combobox
       items={leaves}
-      filter={(item: CategoryLeaf, q: string) =>
-        item.name.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr")) ||
-        item.path.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr"))}
+      filter={(item: CategoryLeaf, q: string) => trIncludes(item.name, q) || trIncludes(item.path, q)}
       itemToStringLabel={(c: CategoryLeaf) => c.name}
       itemToStringValue={(c: CategoryLeaf) => c.name}
       inputValue={query}

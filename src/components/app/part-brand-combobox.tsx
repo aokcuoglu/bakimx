@@ -10,6 +10,7 @@ import {
   ComboboxEmpty,
 } from "@/components/ui/combobox"
 import type { PartBrandSummary } from "@/lib/tecdoc/types"
+import { trIncludes } from "@/lib/tr-search"
 
 /**
  * Parça markası seçici.
@@ -85,8 +86,7 @@ export function PartBrandCombobox({
   return (
     <Combobox
       items={brands}
-      filter={(item: PartBrandSummary, q: string) =>
-        item.name.toLocaleLowerCase("tr").includes(q.trim().toLocaleLowerCase("tr"))}
+      filter={(item: PartBrandSummary, q: string) => trIncludes(item.name, q)}
       itemToStringLabel={(b: PartBrandSummary) => b.name}
       itemToStringValue={(b: PartBrandSummary) => b.name}
       inputValue={query}
