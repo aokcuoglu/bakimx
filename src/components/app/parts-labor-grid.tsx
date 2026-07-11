@@ -45,10 +45,22 @@ export function PartsLaborGrid({
   const rowsRef = useRef<Row[]>(rows)
   useEffect(() => { rowsRef.current = rows }, [rows])
 
-  // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU.
+  // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU. Runtime-only
+  // brandSupplierId (persist EDİLMEZ) önceki satırdan id ile taşınır ki
+  // marka→kategori filtresi router.refresh() sonrası da yaşasın (tam yeniden
+  // yüklemeye kadar; o noktada zaten en baştan best-effort).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)])
+    setRows((prev) => {
+      const prevById = new Map(prev.map((r) => [r.id, r]))
+      return [
+        ...items.map((i) => {
+          const prevRow = prevById.get(i.id)
+          return prevRow ? { ...toRow(i), brandSupplierId: prevRow.brandSupplierId } : toRow(i)
+        }),
+        ...prev.filter((r) => r.__draft),
+      ]
+    })
   }, [items])
 
   useEffect(() => {

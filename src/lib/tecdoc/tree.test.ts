@@ -47,4 +47,7 @@ describe("pruneTreeToCategoryIds", () => {
       { id: 3, name: "Yağ (yaprak-kök)", children: [] },
     ])
   })
+  it("boş ağaçta boş dizi", () => {
+    expect(pruneTreeToCategoryIds([], new Set([1]))).toEqual([])
+  })
 })
