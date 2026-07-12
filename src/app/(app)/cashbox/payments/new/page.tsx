@@ -79,8 +79,13 @@ export default async function NewPaymentPage({ searchParams }: { searchParams: P
       }
     })
 
-  const filteredOrders = params.customerId
-    ? orders.filter((o) => o.customerId === params.customerId)
+  // orderId ile gelindiğinde müşteri de ön-seçilsin (iş emrinden "Tahsilat Ekle" akışı)
+  const preselectedCustomerId =
+    params.customerId ||
+    (params.orderId ? orders.find((o) => o.id === params.orderId)?.customerId : undefined)
+
+  const filteredOrders = preselectedCustomerId
+    ? orders.filter((o) => o.customerId === preselectedCustomerId)
     : orders
 
   return (
@@ -96,7 +101,7 @@ export default async function NewPaymentPage({ searchParams }: { searchParams: P
           phone: c.phone,
         }))}
         orders={filteredOrders}
-        preselectedCustomerId={params.customerId}
+        preselectedCustomerId={preselectedCustomerId}
         preselectedOrderId={params.orderId}
       />
     </AppShell>
