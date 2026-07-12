@@ -174,6 +174,63 @@ export async function getCategoryBrands(vehicleId: number, categoryId: number): 
   return dedupeBrands(articles.map((a) => ({ supplierId: a.supplierId, supplierName: a.supplierName })))
 }
 
+/** Arama sonucu — parça özeti + (satırı doldurmak için) kategori kimliği/adı. */
+export type ArticleSearchResult = ArticleSummary & { categoryId: number; categoryName: string }
+
+/**
+ * Bu araç için cache'lenmiş parçalarda ad VEYA parça-numarasına göre arama —
+ * SADECE DB okur (provider fetch YOK, kotasız). Sağlayıcıda numara-arama ucu
+ * olmadığı için best-effort: yalnız daha önce göz atılmış (persist edilmiş)
+ * kategorilerdeki parçaları bulur. Kategori adı cache'li ağaçtan çözülür.
+ */
+export async function searchVehicleArticles(
+  vehicleId: number,
+  query: string,
+  limit = 20
+): Promise<ArticleSearchResult[]> {
+  if (!Number.isInteger(vehicleId) || vehicleId <= 0) {
+    throw new TecdocError("invalid_params", "Geçersiz araç katalog kimliği.")
+  }
+  const q = query.trim()
+  if (q.length < 2) return []
+  const rows = await prisma.tecdocArticle.findMany({
+    where: {
+      vehicleTypeId: vehicleId,
+      OR: [
+        { articleNo: { contains: q, mode: "insensitive" } },
+        { productName: { contains: q, mode: "insensitive" } },
+      ],
+    },
+    take: limit,
+    orderBy: { articleNo: "asc" },
+  })
+  if (rows.length === 0) return []
+  // Kategori adlarını cache'li ağaçtan çöz (id→ad). Ağaç yoksa ad boş kalır ama
+  // parça sonucu yine döner.
+  const nameById = new Map<number, string>()
+  try {
+    const walk = (nodes: CategoryNode[]) => {
+      for (const n of nodes) {
+        nameById.set(n.id, n.name)
+        if (n.children.length) walk(n.children)
+      }
+    }
+    walk(await getVehicleCategories(vehicleId))
+  } catch {
+    /* kategori adı çözülemese de sonuç dönmeli */
+  }
+  return rows.map((r) => ({
+    tecdocArticleId: r.tecdocArticleId,
+    articleNo: r.articleNo,
+    productName: r.productName,
+    supplierName: r.supplierName,
+    supplierId: r.supplierId,
+    imageUrl: r.imageUrl,
+    categoryId: r.categoryId,
+    categoryName: nameById.get(r.categoryId) ?? "",
+  }))
+}
+
 /**
  * Bir markanın (supplierId) bu araç için cache'lenmiş makalelerinin bulunduğu
  * distinct categoryId'ler — best-effort marka→kategori filtresi. Sadece DB okur,

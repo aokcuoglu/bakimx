@@ -14,7 +14,9 @@ import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/app/order-management-panel"
 import { PartBrandCombobox } from "@/components/app/part-brand-combobox"
 import { ItemCategoryCascade } from "@/components/app/item-category-cascade"
+import { PartSearchInput } from "@/components/app/part-search-input"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
+import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
@@ -133,6 +135,10 @@ export function PartsLaborGrid({
 
   // Kalıcı satır hücre patch'i (debounce'lu, alan-bazlı anahtar).
   function persistUpdate(rowId: string, patch: Partial<OrderItem>, opts?: { debounce?: boolean }) {
+    // Boş ad'ı sunucuya GÖNDERME: sunucu min(1) ile reddedip satırı eski adına
+    // revert ediyordu → kayıtlı satırın adı temizlenip yeniden yazılamıyordu.
+    // Ad yalnız yerelde boşaltılır; geçerli (dolu) ad yazılınca/seçilince PATCH gider.
+    if (patch.name !== undefined && !patch.name.trim()) return
     const send = async () => {
       const fd = new FormData()
       if (patch.quantity !== undefined) fd.set("quantity", String(patch.quantity))
@@ -158,8 +164,11 @@ export function PartsLaborGrid({
   }
 
   // Bir satırdaki değişikliği uygula: taslak → local + (ad doluysa) DEBOUNCE'lu kaydet; kalıcı → PATCH.
-  function onCell(row: Row, patch: Partial<Row>, opts?: { debounce?: boolean }) {
+  // opts.localOnly: yalnız yereli günceller, kalıcılaştırmaz — katalog arama
+  // kutusuna YAZMAK için (yazarken kaydetme; kalıcılık yalnız SEÇİMde olur).
+  function onCell(row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; localOnly?: boolean }) {
     patchLocal(row.id, patch)
+    if (opts?.localOnly) return
     if (row.__draft) {
       const next = { ...row, ...patch }
       if (next.name.trim()) {
@@ -171,6 +180,35 @@ export function PartsLaborGrid({
       return
     }
     persistUpdate(row.id, patch, opts)
+  }
+
+  // Parça seçimini temizle. Taslak → yalnız yerel sıfırla. Kayıtlı kalem → adı boş
+  // bırakılamayacağı (min-1) ve yerel sıfırlama refresh'te geri dolacağı için
+  // sunucudan SİL ve yerine boş taslak satır koy (satır kalır, içerik gider).
+  async function clearRow(row: Row) {
+    if (row.__draft) {
+      patchLocal(row.id, { name: "", sku: null, brand: null, category: null, categoryId: null, brandSupplierId: null })
+      return
+    }
+    try {
+      await fetch(`/api/orders/items?id=${row.id}&orderId=${orderId}`, { method: "DELETE" })
+    } catch {
+      onError("Kalem temizlenemedi")
+      return
+    }
+    draftCounter.current += 1
+    const tempId = `draft-${draftCounter.current}`
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === row.id
+          ? {
+              id: tempId, tempId, __draft: true, type: r.type, name: "", sku: null, unit: "adet",
+              quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
+            }
+          : r
+      )
+    )
+    router.refresh()
   }
 
   async function removeRow(row: Row) {
@@ -201,6 +239,7 @@ export function PartsLaborGrid({
             vehicle={vehicle}
             onCell={onCell}
             onRemove={removeRow}
+            onClear={clearRow}
           />
         ))}
       </div>
@@ -214,17 +253,62 @@ export function PartsLaborGrid({
   )
 }
 
-function GridRow({ row, locked, vehicle, onCell, onRemove }: {
+function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
   row: Row
   locked: boolean
   vehicle?: PickerVehicle
-  onCell: (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean }) => void
+  onCell: (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; localOnly?: boolean }) => void
   onRemove: (row: Row) => void
+  onClear: (row: Row) => void
 }) {
   const isPart = row.type === "part"
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
   const [tecdocOpen, setTecdocOpen] = useState(false)
+
+  // Katalog parçasından satırı doldur (arama seçimi + picker ortak yolu değil ama
+  // aynı şekil): ad/SKU/marka/kategori tek seferde.
+  function fillFromArticle(a: ArticleSearchResult) {
+    onCell(row, {
+      name: a.productName,
+      sku: a.articleNo,
+      brand: a.supplierName || null,
+      category: a.categoryName || null,
+      categoryId: a.categoryId || null,
+    })
+  }
+
+  // İstek 2: kategori + marka seçiliyken o kombinasyonda TEK parça varsa adı
+  // otomatik doldur (yalnız ad boşken; kullanıcının yazdığını ezmez). Kategori
+  // marka listesi için zaten cache'lenmiş → kotasız DB okuması.
+  const autoFilledRef = useRef<string>("")
+  useEffect(() => {
+    const catId = row.categoryId
+    const supId = row.brandSupplierId
+    if (!isPart || locked || vehicle?.catalogVehicleTypeId == null) return
+    if (catId == null || supId == null || row.name.trim()) return
+    const key = `${catId}:${supId}`
+    if (autoFilledRef.current === key) return
+    autoFilledRef.current = key
+    let active = true
+    fetch(`/api/tecdoc/articles?vehicleId=${vehicle.catalogVehicleTypeId}&categoryId=${catId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active) return
+        const arts: { articleNo: string; productName: string; supplierName: string; supplierId: number | null }[] =
+          Array.isArray(d?.articles) ? d.articles : []
+        const forBrand = arts.filter((a) => a.supplierId === supId)
+        if (forBrand.length === 1) {
+          const a = forBrand[0]
+          onCell(row, { name: a.productName, sku: a.articleNo, brand: a.supplierName || null })
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row.categoryId, row.brandSupplierId, row.name, isPart, locked, vehicle?.catalogVehicleTypeId])
 
   const lineTotal = row.totalPrice != null && row.totalPrice > 0
     ? row.totalPrice
@@ -269,14 +353,28 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
         {/* Parça / Ad */}
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-1.5">
-            <Input
-              value={row.name}
-              onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
-              onBlur={() => { if (row.__draft && row.name.trim()) onCell(row, {}) }}
-              placeholder={isPart ? "Parça adı" : "İşçilik adı"}
-              disabled={!editable || row.__saving}
-              className="h-8 text-sm"
-            />
+            {isPart ? (
+              <PartSearchInput
+                value={row.name}
+                vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                disabled={!editable || row.__saving}
+                placeholder="Parça adı"
+                onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
+                onSelectArticle={fillFromArticle}
+                onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
+                onClear={() => onClear(row)}
+                showClear={editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
+              />
+            ) : (
+              <Input
+                value={row.name}
+                onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
+                onBlur={() => { if (row.__draft && row.name.trim()) onCell(row, {}) }}
+                placeholder="İşçilik adı"
+                disabled={!editable || row.__saving}
+                className="h-8 text-sm"
+              />
+            )}
             {isPart && editable && (
               <button
                 type="button"
@@ -369,6 +467,10 @@ function GridRow({ row, locked, vehicle, onCell, onRemove }: {
           hideTrigger
           open={tecdocOpen}
           onOpenChange={setTecdocOpen}
+          initialCategoryId={row.categoryId}
+          initialCategoryName={row.category}
+          initialSupplierId={row.brandSupplierId ?? null}
+          initialSupplierName={row.brand}
           onSelect={(sel) => {
             onCell(row, { name: sel.name, sku: sel.articleNo, brand: sel.supplierName, category: sel.categoryName || null, categoryId: sel.categoryId || null })
             setTecdocOpen(false)
