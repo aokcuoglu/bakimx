@@ -15,7 +15,7 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { PackageSearch, XIcon } from "lucide-react"
+import { PackageSearch, Search, XIcon } from "lucide-react"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 /**
@@ -27,6 +27,7 @@ import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
  */
 export function PartSearchInput({
   value,
+  sku,
   vehicleTypeId,
   disabled,
   placeholder,
@@ -35,8 +36,13 @@ export function PartSearchInput({
   onCommit,
   onClear,
   showClear,
+  onSearchClick,
+  searchDisabled,
+  searchTitle,
 }: {
   value: string
+  /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
+  sku?: string | null
   vehicleTypeId: number | null
   disabled?: boolean
   placeholder?: string
@@ -48,15 +54,40 @@ export function PartSearchInput({
   /** Parça seçimini (ad/SKU/marka/kategori) temizler; showClear ile gösterilir. */
   onClear?: () => void
   showClear?: boolean
+  /** 🔍 TecDoc picker'ı açar (input içinde arkadaki buton). */
+  onSearchClick?: () => void
+  searchDisabled?: boolean
+  searchTitle?: string
 }) {
-  const clearAddon =
-    onClear && showClear && !disabled ? (
+  const canClear = !!(onClear && showClear && !disabled)
+  // Input'un arkasındaki butonlar: 🔍 (katalog picker) + X (temizle).
+  const trailing =
+    onSearchClick || canClear ? (
       <InputGroupAddon align="inline-end">
-        <InputGroupButton size="icon-xs" aria-label="Temizle" onClick={onClear}>
-          <XIcon />
-        </InputGroupButton>
+        {onSearchClick && (
+          <InputGroupButton
+            size="icon-xs"
+            aria-label="Katalogdan parça seç"
+            title={searchTitle}
+            onClick={onSearchClick}
+            disabled={searchDisabled}
+          >
+            <Search />
+          </InputGroupButton>
+        )}
+        {canClear && (
+          <InputGroupButton size="icon-xs" aria-label="Temizle" onClick={onClear}>
+            <XIcon />
+          </InputGroupButton>
+        )}
       </InputGroupAddon>
     ) : null
+  // Seçili parça numarası — input içinde öndeki mono çip.
+  const skuChip = sku ? (
+    <InputGroupAddon align="inline-start" className="pr-1">
+      <span className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">{sku}</span>
+    </InputGroupAddon>
+  ) : null
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<ArticleSearchResult[]>([])
   // Dış `value` (kayıtlı ad / otomatik-doldur / seçim) query'yi güncellesin ama
@@ -107,7 +138,8 @@ export function PartSearchInput({
   // Araç kataloğa bağlı değil → arama yok, düz metin girişi (mevcut davranış) + clear.
   if (vehicleTypeId == null) {
     return (
-      <InputGroup className="h-8">
+      <InputGroup>
+        {skuChip}
         <InputGroupInput
           value={value}
           onChange={(e) => onNameChange(e.target.value)}
@@ -116,7 +148,7 @@ export function PartSearchInput({
           disabled={disabled}
           className="text-sm"
         />
-        {clearAddon}
+        {trailing}
       </InputGroup>
     )
   }
@@ -133,7 +165,8 @@ export function PartSearchInput({
         onNameChange(v)
       }}
     >
-      <InputGroup className="h-8">
+      <InputGroup>
+        {skuChip}
         <AutocompleteInput
           onKeyDown={(e) => {
             // Sonuç yokken Enter → yazılan serbest metni kaydet (katalogda olmayan
@@ -147,7 +180,7 @@ export function PartSearchInput({
             <InputGroupInput placeholder={placeholder} disabled={disabled} className="text-sm" />
           }
         />
-        {clearAddon}
+        {trailing}
       </InputGroup>
       {query.trim().length >= 2 && (
       <AutocompleteContent>

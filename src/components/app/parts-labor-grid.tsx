@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Trash2, Search, Loader2, Pencil } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira } from "@/lib/money"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/app/order-management-panel"
-import { PartBrandCombobox } from "@/components/app/part-brand-combobox"
-import { ItemCategoryCascade } from "@/components/app/item-category-cascade"
 import { PartSearchInput } from "@/components/app/part-search-input"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
@@ -221,27 +219,37 @@ export function PartsLaborGrid({
 
   return (
     <div className="space-y-2">
-      {/* Masaüstü tablo başlığı */}
-      <div className="hidden md:grid grid-cols-[7rem_1fr_auto_auto_auto] gap-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        <span>Tür</span><span>Parça / İşçilik</span><span>Miktar</span><span>Birim Fiyat</span><span className="text-right">Toplam</span>
-      </div>
+      {/* Masaüstü: geniş tablo — dar ekranda kırpmak yerine yatay kaydırır. */}
+      <div className="md:overflow-x-auto md:pb-1">
+        <div className="space-y-1.5 md:min-w-[63rem]">
+          {/* Tablo başlığı (yalnız md+) */}
+          <div className="hidden md:grid grid-cols-[7rem_minmax(14rem,1.8fr)_8rem_10.5rem_5.5rem_6.5rem_5.5rem_2.25rem] gap-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <span>Tür</span>
+            <span>Parça / İşçilik</span>
+            <span>Marka</span>
+            <span>Kategori</span>
+            <span className="text-center">Miktar</span>
+            <span className="text-right">Birim Fiyat</span>
+            <span className="text-right">Toplam</span>
+            <span aria-hidden />
+          </div>
 
-      {rows.length === 0 && (
-        <p className="text-center py-6 text-sm text-muted-foreground">Henüz kalem eklenmedi</p>
-      )}
+          {rows.length === 0 && (
+            <p className="text-center py-6 text-sm text-muted-foreground">Henüz kalem eklenmedi</p>
+          )}
 
-      <div className="space-y-1.5">
-        {rows.map((row) => (
-          <GridRow
-            key={row.id}
-            row={row}
-            locked={locked}
-            vehicle={vehicle}
-            onCell={onCell}
-            onRemove={removeRow}
-            onClear={clearRow}
-          />
-        ))}
+          {rows.map((row) => (
+            <GridRow
+              key={row.id}
+              row={row}
+              locked={locked}
+              vehicle={vehicle}
+              onCell={onCell}
+              onRemove={removeRow}
+              onClear={clearRow}
+            />
+          ))}
+        </div>
       </div>
 
       {!locked && (
@@ -278,38 +286,6 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
     })
   }
 
-  // İstek 2: kategori + marka seçiliyken o kombinasyonda TEK parça varsa adı
-  // otomatik doldur (yalnız ad boşken; kullanıcının yazdığını ezmez). Kategori
-  // marka listesi için zaten cache'lenmiş → kotasız DB okuması.
-  const autoFilledRef = useRef<string>("")
-  useEffect(() => {
-    const catId = row.categoryId
-    const supId = row.brandSupplierId
-    if (!isPart || locked || vehicle?.catalogVehicleTypeId == null) return
-    if (catId == null || supId == null || row.name.trim()) return
-    const key = `${catId}:${supId}`
-    if (autoFilledRef.current === key) return
-    autoFilledRef.current = key
-    let active = true
-    fetch(`/api/tecdoc/articles?vehicleId=${vehicle.catalogVehicleTypeId}&categoryId=${catId}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!active) return
-        const arts: { articleNo: string; productName: string; supplierName: string; supplierId: number | null }[] =
-          Array.isArray(d?.articles) ? d.articles : []
-        const forBrand = arts.filter((a) => a.supplierId === supId)
-        if (forBrand.length === 1) {
-          const a = forBrand[0]
-          onCell(row, { name: a.productName, sku: a.articleNo, brand: a.supplierName || null })
-        }
-      })
-      .catch(() => {})
-    return () => {
-      active = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [row.categoryId, row.brandSupplierId, row.name, isPart, locked, vehicle?.catalogVehicleTypeId])
-
   const lineTotal = row.totalPrice != null && row.totalPrice > 0
     ? row.totalPrice
     : (row.unitPrice != null && row.unitPrice > 0 ? row.unitPrice * row.quantity : null)
@@ -327,12 +303,12 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
 
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 md:p-0 md:border-0 md:bg-transparent">
-      <div className="grid gap-2 md:grid-cols-[7rem_1fr_auto_auto_auto] md:items-center md:px-2 md:py-1.5 md:rounded-lg md:bg-muted">
+      <div className="grid gap-2 md:grid-cols-[7rem_minmax(14rem,1.8fr)_8rem_10.5rem_5.5rem_6.5rem_5.5rem_2.25rem] md:items-center md:px-2 md:py-1.5 md:rounded-lg md:bg-muted">
         {/* Tür */}
-        <div className="flex items-center justify-between md:block">
+        <div className="flex min-w-0 items-center justify-between gap-2 md:block">
           {row.__draft && editable ? (
             <Select items={TYPE_LABELS} value={row.type} onValueChange={(v) => onCell(row, { type: v as ItemType })}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full min-w-0 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="part">Yedek Parça</SelectItem>
                 <SelectItem value="labor">İşçilik</SelectItem>
@@ -344,26 +320,31 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
           )}
           {/* mobilde sil butonu üst satırda */}
           {editable && (
-            <button onClick={() => onRemove(row)} className="md:hidden p-1 text-muted-foreground/70 hover:text-destructive" aria-label="Sil">
-              <Trash2 className="size-3.5" />
-            </button>
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
+              className="text-muted-foreground/70 hover:text-destructive md:hidden" aria-label="Sil">
+              <Trash2 className="size-4" />
+            </Button>
           )}
         </div>
 
-        {/* Parça / Ad */}
-        <div className="min-w-0 space-y-1">
+        {/* Parça / İşçilik */}
+        <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-1.5">
             {isPart ? (
               <PartSearchInput
                 value={row.name}
+                sku={row.sku}
                 vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
                 disabled={!editable || row.__saving}
-                placeholder="Parça adı"
+                placeholder="Parça no veya adı"
                 onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
                 onSelectArticle={fillFromArticle}
                 onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
                 onClear={() => onClear(row)}
                 showClear={editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
+                onSearchClick={() => setTecdocOpen(true)}
+                searchDisabled={vehicle?.catalogVehicleTypeId == null}
+                searchTitle={vehicle?.catalogVehicleTypeId == null ? "Araç TecDoc'ta eşleşmedi" : "TecDoc kataloğundan seç"}
               />
             ) : (
               <Input
@@ -372,89 +353,87 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
                 onBlur={() => { if (row.__draft && row.name.trim()) onCell(row, {}) }}
                 placeholder="İşçilik adı"
                 disabled={!editable || row.__saving}
-                className="h-8 text-sm"
+                className="text-sm"
               />
             )}
-            {isPart && editable && (
-              <button
-                type="button"
-                onClick={() => setTecdocOpen(true)}
-                disabled={vehicle?.catalogVehicleTypeId == null}
-                title={vehicle?.catalogVehicleTypeId == null ? "Araç TecDoc'ta eşleşmedi" : "TecDoc kataloğundan seç"}
-                className="shrink-0 p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40"
-                aria-label="Katalogdan parça seç"
-              >
-                <Search className="size-3.5" />
-              </button>
-            )}
-            {row.__saving && <Loader2 className="size-3.5 animate-spin text-muted-foreground shrink-0" />}
+            {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
           </div>
-          {row.sku && <span className="text-[10px] font-mono text-muted-foreground">{row.sku}</span>}
-          {isPart && (editable ? (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <div className="w-32">
-                <PartBrandCombobox
-                  value={row.brand || ""}
-                  vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
-                  categoryId={row.categoryId}
-                  onChange={(name, supplierId) =>
-                    onCell(row, { brand: name || null, brandSupplierId: supplierId }, { debounce: true })}
-                />
-              </div>
-              <ItemCategoryCascade
-                key={`cat-${row.id}-${row.category ?? ""}`}
-                vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
-                supplierId={row.brandSupplierId ?? null}
-                value={row.category}
-                onSelect={(sel) => onCell(row, { category: sel.category, categoryId: sel.categoryId })}
-              />
-            </div>
+        </div>
+
+        {/* Marka */}
+        <div className={cn("min-w-0", !(isPart && row.brand) && "hidden md:block")}>
+          {isPart && (row.brand ? (
+            <span className="block truncate text-xs text-muted-foreground">
+              <span className="text-muted-foreground/70 md:hidden">Marka: </span>{row.brand}
+            </span>
           ) : (
-            (row.brand || row.category) && (
-              <div className="text-xs text-muted-foreground">
-                {[row.brand, row.category].filter(Boolean).join(" • ")}
-              </div>
-            )
+            <span className="hidden text-xs text-muted-foreground/40 md:block">—</span>
+          ))}
+        </div>
+
+        {/* Kategori */}
+        <div className={cn("min-w-0", !(isPart && row.category) && "hidden md:block")}>
+          {isPart && (row.category ? (
+            <span className="block truncate text-xs text-muted-foreground">
+              <span className="text-muted-foreground/70 md:hidden">Kategori: </span>{row.category}
+            </span>
+          ) : (
+            <span className="hidden text-xs text-muted-foreground/40 md:block">—</span>
           ))}
         </div>
 
         {/* Miktar */}
         <div className="flex items-center gap-2 md:justify-center">
-          <span className="md:hidden text-xs text-muted-foreground">Miktar</span>
-          <div className="inline-flex items-center rounded-lg border border-border bg-white">
-            <button type="button" disabled={!editable || row.quantity <= 1} onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })} className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-40" aria-label="Azalt">−</button>
-            <span className="px-2 text-xs font-medium tabular-nums">{row.quantity}</span>
-            <button type="button" disabled={!editable} onClick={() => onCell(row, { quantity: row.quantity + 1 }, { debounce: true })} className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-40" aria-label="Arttır">+</button>
+          <span className="text-xs text-muted-foreground md:hidden">Miktar</span>
+          <div className="inline-flex h-8 items-center rounded-lg border border-input bg-background">
+            <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
+              disabled={!editable || row.quantity <= 1}
+              onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
+              <Minus />
+            </Button>
+            <span className="min-w-6 px-1 text-center text-xs font-medium tabular-nums">{row.quantity}</span>
+            <Button type="button" variant="ghost" size="icon-xs" className="rounded-l-none" aria-label="Arttır"
+              disabled={!editable}
+              onClick={() => onCell(row, { quantity: row.quantity + 1 }, { debounce: true })}>
+              <Plus />
+            </Button>
           </div>
         </div>
 
         {/* Birim Fiyat */}
         <div className="flex items-center gap-2 md:justify-end">
-          <span className="md:hidden text-xs text-muted-foreground">Fiyat</span>
+          <span className="text-xs text-muted-foreground md:hidden">Birim Fiyat</span>
           {editingPrice ? (
             <Input type="number" min="0" step="0.01" autoFocus value={priceDraft}
               onChange={(e) => setPriceDraft(e.target.value)} onBlur={commitPrice}
               onKeyDown={(e) => { if (e.key === "Enter") commitPrice(); if (e.key === "Escape") setEditingPrice(false) }}
               className="h-8 w-24 text-xs" />
           ) : (
-            <button type="button" onClick={() => editable && startPrice()} disabled={!editable}
-              className="inline-flex items-center gap-1 h-8 px-2 rounded-lg border border-border bg-white text-xs hover:bg-muted disabled:opacity-60">
+            <Button type="button" variant="outline" disabled={!editable}
+              onClick={() => editable && startPrice()} className="gap-1 font-normal">
               <Pencil className="size-3 text-muted-foreground" />
-              {row.unitPrice != null ? formatTRY(row.unitPrice) : "Fiyat"}
-            </button>
+              <span className={cn("tabular-nums", row.unitPrice == null && "text-muted-foreground")}>
+                {row.unitPrice != null ? formatTRY(row.unitPrice) : "Fiyat"}
+              </span>
+            </Button>
           )}
         </div>
 
-        {/* Toplam + sil (masaüstü) */}
-        <div className="flex items-center justify-between md:justify-end gap-2">
-          <span className="md:hidden text-xs text-muted-foreground">Toplam</span>
-          <span className={cn("text-sm font-semibold", lineTotal == null ? "text-muted-foreground/70 font-normal text-xs" : "text-foreground")}>
+        {/* Toplam */}
+        <div className="flex items-center justify-between gap-2 md:justify-end">
+          <span className="text-xs text-muted-foreground md:hidden">Toplam</span>
+          <span className={cn("text-sm font-semibold tabular-nums", lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground")}>
             {lineTotal != null ? formatTRY(lineTotal) : "—"}
           </span>
+        </div>
+
+        {/* Sil (masaüstü) */}
+        <div className="hidden md:flex md:justify-end">
           {editable && (
-            <button onClick={() => onRemove(row)} className="hidden md:inline-flex p-1 text-muted-foreground/70 hover:text-destructive" aria-label="Sil">
-              <Trash2 className="size-3.5" />
-            </button>
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
+              className="text-muted-foreground/70 hover:text-destructive" aria-label="Sil">
+              <Trash2 className="size-4" />
+            </Button>
           )}
         </div>
       </div>
