@@ -259,3 +259,22 @@ export function passwordResetEmail(p: { resetUrl: string; firstName?: string }):
     }),
   }
 }
+
+/** Kayıt sonrası e-posta doğrulama linki — linke tıklayınca 7 günlük deneme
+ *  başlar (bkz. activateVerifiedWorkshop). Kart provizyonunun yerini alır. */
+export function verifyEmailEmail(p: { verifyUrl: string; firstName?: string }): BuiltEmail {
+  const name = escapeHtml(p.firstName || "Yetkili")
+  return {
+    subject: "BakimX — e-posta adresinizi doğrulayın",
+    html: renderEmailLayout({
+      heading: "E-posta adresinizi doğrulayın",
+      bodyHtml:
+        `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
+        `<p style="margin:0 0 12px;">BakimX ücretsiz denemenizi başlatmak için e-posta adresinizi doğrulamanız yeterli. Aşağıdaki butona tıkladığınızda <strong>7 günlük ücretsiz denemeniz</strong> hemen başlar.</p>` +
+        `<p style="margin:0 0 12px;">Bu bağlantı <strong>48 saat</strong> boyunca geçerlidir.</p>` +
+        `<p style="margin:0 0 12px;color:#64748b;">Bu talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>`,
+      cta: { label: "E-postamı Doğrula ve Denemeyi Başlat", url: p.verifyUrl },
+      footerNote: "Bu e-postayı, BakimX'e iş yeri kaydı başlattığınız için aldınız.",
+    }),
+  }
+}

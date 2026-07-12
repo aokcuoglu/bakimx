@@ -8,6 +8,7 @@ import {
   subscriptionExpiryWarningEmail,
   paymentReceiptEmail,
   passwordResetEmail,
+  verifyEmailEmail,
 } from "./system-emails"
 
 test("workshopApprovedEmail: giriş CTA'sı + 7 gün deneme mesajı", () => {
@@ -172,4 +173,19 @@ test("passwordResetEmail embeds the reset url, name and mentions expiry", () => 
 test("passwordResetEmail falls back to a generic greeting without a name", () => {
   const { html } = passwordResetEmail({ resetUrl: "https://bakimx.com/reset-password/X" })
   expect(html).toContain("Yetkili")
+})
+
+test("verifyEmailEmail: verifyUrl'i CTA olarak gömer, isim escape edilir, 7 gün deneme metni içerir", () => {
+  const built = verifyEmailEmail({ verifyUrl: "https://app.bakimx.com/api/auth/verify-email?token=abc", firstName: "Ali<x>" })
+  expect(built.subject).toContain("doğrula")
+  expect(built.html).toContain("https://app.bakimx.com/api/auth/verify-email?token=abc")
+  expect(built.html).toContain("7 günlük")
+  // XSS koruması: ham "<x>" HTML'de görünmez, escape'lenir.
+  expect(built.html).not.toContain("Ali<x>")
+  expect(built.html).toContain("Ali&lt;x&gt;")
+})
+
+test("verifyEmailEmail: firstName yoksa 'Yetkili' kullanılır", () => {
+  const built = verifyEmailEmail({ verifyUrl: "https://x/y" })
+  expect(built.html).toContain("Yetkili")
 })
