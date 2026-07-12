@@ -48,9 +48,6 @@ export function PartBrandCombobox({
     const t = setTimeout(() => setQuery(value ?? ""), 0)
     return () => clearTimeout(t)
   }, [value])
-  // Auto-clear yalnız kategori GERÇEKTEN değişince tetiklensin (ilk mount'ta değil).
-  const prevCategoryId = useRef<number | null>(categoryId)
-
   useEffect(() => {
     let active = true
     const url =
@@ -63,29 +60,23 @@ export function PartBrandCombobox({
       .then((r) => r.json())
       .then((d) => {
         if (!active) return
-        const list: PartBrandSummary[] = Array.isArray(d?.brands) ? d.brands : []
-        setBrands(list)
-        // GÜVENİLİR yön auto-clear: kategori değişti, mevcut marka yeni sette yok,
-        // liste boş değil (transient/boş cevapta silme yok) → temizle.
-        const categoryChanged = prevCategoryId.current !== categoryId
-        prevCategoryId.current = categoryId
-        if (
-          strict && categoryChanged && value &&
-          categoryId != null && list.length > 0 &&
-          !list.some((b) => b.name === value)
-        ) {
-          onChange("", null)
-        }
+        setBrands(Array.isArray(d?.brands) ? d.brands : [])
       })
       .catch(() => { if (active) setBrands([]) })
     return () => { active = false }
-    // value/onChange kasıtlı olarak dep dışı: yalnız scope değişiminde fetch + kontrol.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleTypeId, categoryId])
+
+  // Seçili değeri (selectedValue) KONTROL et: dışarıdan (parça araması/picker) set
+  // edilen marka, combobox açılınca kaybolmasın. Listede yoksa sentetik item ile
+  // göster (isItemEqualToValue ad ile eşler). value boşsa seçim yok.
+  const selected: PartBrandSummary | null =
+    value ? brands.find((b) => b.name === value) ?? { supplierId: -1, name: value } : null
 
   return (
     <Combobox
       items={brands}
+      value={selected}
+      isItemEqualToValue={(a: PartBrandSummary | null, b: PartBrandSummary | null) => a?.name === b?.name}
       filter={(item: PartBrandSummary, q: string) => trIncludes(item.name, q)}
       itemToStringLabel={(b: PartBrandSummary) => b.name}
       itemToStringValue={(b: PartBrandSummary) => b.name}

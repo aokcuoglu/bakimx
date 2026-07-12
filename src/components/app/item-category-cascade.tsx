@@ -90,9 +90,16 @@ function CategoryComboboxImpl({
     return () => { active = false }
   }, [vehicleTypeId, supplierId])
 
+  // Seçili değeri (selectedValue) KONTROL et: dışarıdan (parça araması/picker) set
+  // edilen kategori, combobox açılınca kaybolmasın. Listede yoksa sentetik item.
+  const selected: CategoryLeaf | null =
+    value ? leaves.find((l) => l.name === value) ?? { id: -1, name: value, path: "" } : null
+
   return (
     <Combobox
       items={leaves}
+      value={selected}
+      isItemEqualToValue={(a: CategoryLeaf | null, b: CategoryLeaf | null) => a?.name === b?.name}
       filter={(item: CategoryLeaf, q: string) => trIncludes(item.name, q) || trIncludes(item.path, q)}
       itemToStringLabel={(c: CategoryLeaf) => c.name}
       itemToStringValue={(c: CategoryLeaf) => c.name}
