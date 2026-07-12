@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { isIntakeStatus, canTransitionIntake, isOrderStatus, canTransitionOrder } from "@/lib/status-transitions"
+import { isIntakeStatus, canTransitionIntake, isOrderStatus, canTransitionOrder, isIntakeWriteLocked } from "@/lib/status-transitions"
 import type { IntakeStatus, OrderStatus } from "@prisma/client"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
@@ -145,9 +145,12 @@ export async function updateIntakeDetailsAction(
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
-    include: { vehicle: true },
+    include: { vehicle: true, order: { select: { status: true } } },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
+  if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emrinde bilgiler düzenlenemez" }
+  }
 
   const newComplaint = parsed.data.customerComplaint
   const newNote = parsed.data.internalNote?.trim() || null
@@ -242,8 +245,12 @@ export async function addDamageMarkAction(formData: FormData) {
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: raw.intakeFormId, workshopId: user.workshopId },
+    include: { order: { select: { status: true } } },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
+  if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emrine hasar işareti eklenemez" }
+  }
 
   const mark = await prisma.damageMark.create({
     data: {
@@ -296,8 +303,12 @@ export async function addPhotoAction(formData: FormData) {
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
+    include: { order: { select: { status: true } } },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
+  if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emrine fotoğraf eklenemez" }
+  }
 
   const photoId = nanoid()
   let fileUrl: string | null = null
