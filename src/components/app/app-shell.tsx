@@ -144,6 +144,8 @@ const SetPageHeaderContext = createContext<(state: PageHeaderState) => void>(() 
  * sayfaları (quote/vehicle create, order wizard) bunu kullanmaz.
  */
 const CONSTRAINED_WIDTH_CLASS = "max-w-3xl"
+/** `wide` sayfalar (ör. iş emri detayı — parça tablosu ek kolonlarla) daha geniş. */
+const WIDE_WIDTH_CLASS = "max-w-5xl"
 
 /**
  * Sayfaların render ettiği ince sarmalayıcı. Görsel kabuk çizmez; verilen
@@ -158,6 +160,7 @@ export function AppShell({
   pageActions,
   showGlobalSearch = true,
   constrained = false,
+  wide = false,
 }: {
   children: React.ReactNode
   workshopName?: string
@@ -165,11 +168,14 @@ export function AppShell({
   pageActions?: React.ReactNode
   showGlobalSearch?: boolean
   constrained?: boolean
+  /** constrained'den daha geniş bir sarmalayıcı (ör. iş emri detayı). */
+  wide?: boolean
 }) {
   const setPageHeader = useContext(SetPageHeaderContext)
   useEffect(() => {
     setPageHeader({ pageTitle, pageActions, showGlobalSearch })
   }, [setPageHeader, pageTitle, pageActions, showGlobalSearch])
+  if (wide) return <div className={WIDE_WIDTH_CLASS}>{children}</div>
   if (constrained) return <div className={CONSTRAINED_WIDTH_CLASS}>{children}</div>
   return <>{children}</>
 }
