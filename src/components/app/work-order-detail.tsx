@@ -51,8 +51,8 @@ import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { ServiceAdvisorPanel } from "@/components/app/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
-import { isOrderLocked } from "@/lib/status-transitions"
-import type { OrderStatus } from "@prisma/client"
+import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
+import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { PhotoAnnotate } from "./photo-annotate"
 import { PhotoGalleryGrid } from "./photo-gallery-grid"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
@@ -170,6 +170,8 @@ export function WorkOrderDetail({
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  const orderLocked = isOrderLocked(order.status as OrderStatus)
 
   // Order-side pricing/meta edit
   const [editingMeta, setEditingMeta] = useState(false)
@@ -591,7 +593,7 @@ export function WorkOrderDetail({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
-                {!editingInfo && (
+                {!editingInfo && !orderLocked && (
                   <button
                     onClick={startEditInfo}
                     className="flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 px-2 py-1 rounded-lg touch-manipulation"
@@ -808,7 +810,7 @@ export function WorkOrderDetail({
 
           <PaymentHistoryCard
             orderId={order.id}
-            isCancelled={order.status === "cancelled"}
+            collectionsLocked={order.status === "cancelled" || isCollectionLockedForOrder(order.status as OrderStatus, order.paymentStatus as PaymentStatus)}
             totals={order.totals}
             paidAmount={order.paidAmount}
             remainingAmount={order.remainingAmount}
@@ -857,6 +859,7 @@ export function WorkOrderDetail({
               )}
 
               {/* Add photo trigger + dialog */}
+              {!orderLocked && (<>
               <Button variant="outline" onClick={() => setAddingPhoto(true)} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
               </Button>
@@ -957,6 +960,7 @@ export function WorkOrderDetail({
                   </div>
                 </DialogContent>
               </Dialog>
+              </>)}
             </CardContent>
           </Card>
           </div>
@@ -967,7 +971,7 @@ export function WorkOrderDetail({
               <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />
+              {!orderLocked && <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />}
 
               {intake.damageMarks.length > 0 && (
                 <div className="pt-3 border-t">

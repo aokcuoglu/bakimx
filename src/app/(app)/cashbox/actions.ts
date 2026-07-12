@@ -7,6 +7,7 @@ import { z } from "zod/v4"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
 import { subKurus, sumKurus } from "@/lib/money"
+import { isCollectionLockedForOrder } from "@/lib/status-transitions"
 
 const collectionCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
@@ -61,6 +62,9 @@ export async function createCollectionAction(formData: FormData) {
     })
     if (!order) return { error: "İş emri bulunamadı" }
     if (order.status === "cancelled") return { error: "İptal edilmiş iş emrine tahsilat eklenemez" }
+    if (isCollectionLockedForOrder(order.status, order.paymentStatus)) {
+      return { error: "Bu iş emri teslim edildi ve tamamen ödendi; yeni tahsilat eklenemez" }
+    }
   }
 
   const paymentDate = new Date(data.paymentDate)
