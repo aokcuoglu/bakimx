@@ -186,20 +186,30 @@ export type ArticleSearchResult = ArticleSummary & { categoryId: number; categor
 export async function searchVehicleArticles(
   vehicleId: number,
   query: string,
-  limit = 20
+  opts: { supplierId?: number | null; categoryId?: number | null; limit?: number } = {}
 ): Promise<ArticleSearchResult[]> {
   if (!Number.isInteger(vehicleId) || vehicleId <= 0) {
     throw new TecdocError("invalid_params", "Geçersiz araç katalog kimliği.")
   }
+  const { supplierId = null, categoryId = null, limit = 20 } = opts
+  const hasFilter = supplierId != null || categoryId != null
   const q = query.trim()
-  if (q.length < 2) return []
+  // Böngöz: filtre yoksa kısa query hiçbir şey döndürmez; filtre varsa boş
+  // query'de bile o grubun parçaları listelenir (kullanıcı yazınca daralır).
+  if (q.length < 2 && !hasFilter) return []
   const rows = await prisma.tecdocArticle.findMany({
     where: {
       vehicleTypeId: vehicleId,
-      OR: [
-        { articleNo: { contains: q, mode: "insensitive" } },
-        { productName: { contains: q, mode: "insensitive" } },
-      ],
+      ...(supplierId != null ? { supplierId } : {}),
+      ...(categoryId != null ? { categoryId } : {}),
+      ...(q.length >= 2
+        ? {
+            OR: [
+              { articleNo: { contains: q, mode: "insensitive" as const } },
+              { productName: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
     },
     take: limit,
     orderBy: { articleNo: "asc" },

@@ -17,9 +17,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Geçersiz araç katalog kimliği (vehicleId)." }, { status: 400 })
   }
   const q = params.get("q") || ""
+  const supplierId = parsePositiveInt(params.get("supplierId"))
+  const categoryId = parsePositiveInt(params.get("categoryId"))
 
   try {
-    const articles = await searchVehicleArticles(vehicleId, q)
+    const articles = await searchVehicleArticles(vehicleId, q, { supplierId, categoryId })
     return NextResponse.json({ articles })
   } catch (err) {
     return tecdocErrorResponse(err)
