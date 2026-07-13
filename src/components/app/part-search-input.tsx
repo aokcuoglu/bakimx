@@ -29,6 +29,8 @@ export function PartSearchInput({
   value,
   sku,
   vehicleTypeId,
+  supplierId,
+  categoryId,
   disabled,
   placeholder,
   onNameChange,
@@ -44,6 +46,10 @@ export function PartSearchInput({
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
   sku?: string | null
   vehicleTypeId: number | null
+  /** Marka filtresi (grid kolonu) — seçiliyse boş query'de bile arama tetiklenir. */
+  supplierId?: number | null
+  /** Kategori filtresi (grid kolonu) — seçiliyse boş query'de bile arama tetiklenir. */
+  categoryId?: number | null
   disabled?: boolean
   placeholder?: string
   /** Yazarken çağrılır — YALNIZ yerel güncelleme (kaydetmez); katalog modunda arama sorgusu. */
@@ -112,7 +118,8 @@ export function PartSearchInput({
     }
     if (vehicleTypeId == null) return
     const q = query.trim()
-    if (q.length < 2) {
+    const hasFilter = supplierId != null || categoryId != null
+    if (q.length < 2 && !hasFilter) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([])
       return
@@ -120,9 +127,11 @@ export function PartSearchInput({
     let active = true
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `/api/tecdoc/articles/search?vehicleId=${vehicleTypeId}&q=${encodeURIComponent(q)}`
-        )
+        const qs = new URLSearchParams({ vehicleId: String(vehicleTypeId) })
+        if (q.length >= 2) qs.set("q", q)
+        if (supplierId != null) qs.set("supplierId", String(supplierId))
+        if (categoryId != null) qs.set("categoryId", String(categoryId))
+        const res = await fetch(`/api/tecdoc/articles/search?${qs.toString()}`)
         const data = await res.json()
         if (active && res.ok) setResults(Array.isArray(data.articles) ? data.articles : [])
       } catch {
@@ -133,7 +142,7 @@ export function PartSearchInput({
       active = false
       clearTimeout(t)
     }
-  }, [query, vehicleTypeId])
+  }, [query, vehicleTypeId, supplierId, categoryId])
 
   // Araç kataloğa bağlı değil → arama yok, düz metin girişi (mevcut davranış) + clear.
   if (vehicleTypeId == null) {
@@ -182,7 +191,7 @@ export function PartSearchInput({
         />
         {trailing}
       </InputGroup>
-      {query.trim().length >= 2 && (
+      {(query.trim().length >= 2 || supplierId != null || categoryId != null) && (
       <AutocompleteContent>
         <AutocompleteEmpty className="flex-col gap-1.5">
           <span>Eşleşen parça yok</span>
