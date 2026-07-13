@@ -13,6 +13,7 @@ import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/app/order-management-panel"
 import { PartSearchInput } from "@/components/app/part-search-input"
+import { PartFilterCombobox } from "@/components/app/part-filter-combobox"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
@@ -274,6 +275,12 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
   const [priceDraft, setPriceDraft] = useState("")
   const [tecdocOpen, setTecdocOpen] = useState(false)
 
+  // Satır-yerel arama filtresi (persist EDİLMEZ). Combobox seçimi buraya yazar;
+  // parça seçilince senkronlanır; satır temizlenince sıfırlanır.
+  type PartFilter = { supplierId?: number; supplierName?: string; categoryId?: number; categoryName?: string }
+  const [filter, setFilter] = useState<PartFilter>({})
+  const linked = vehicle?.catalogVehicleTypeId != null
+
   // Katalog parçasından satırı doldur (arama seçimi + picker ortak yolu değil ama
   // aynı şekil): ad/SKU/marka/kategori tek seferde.
   function fillFromArticle(a: ArticleSearchResult) {
@@ -283,6 +290,12 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
       brand: a.supplierName || null,
       category: a.categoryName || null,
       categoryId: a.categoryId || null,
+    })
+    setFilter({
+      supplierId: a.supplierId ?? undefined,
+      supplierName: a.supplierName || undefined,
+      categoryId: a.categoryId ?? undefined,
+      categoryName: a.categoryName || undefined,
     })
   }
 
@@ -335,12 +348,14 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
                 value={row.name}
                 sku={row.sku}
                 vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+                supplierId={filter.supplierId ?? null}
+                categoryId={filter.categoryId ?? null}
                 disabled={!editable || row.__saving}
                 placeholder="Parça no veya adı"
                 onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
                 onSelectArticle={fillFromArticle}
                 onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
-                onClear={() => onClear(row)}
+                onClear={() => { onClear(row); setFilter({}) }}
                 showClear={editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
                 onSearchClick={() => setTecdocOpen(true)}
                 searchDisabled={vehicle?.catalogVehicleTypeId == null}
@@ -361,8 +376,18 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
         </div>
 
         {/* Marka */}
-        <div className={cn("min-w-0", !(isPart && row.brand) && "hidden md:block")}>
-          {isPart && (row.brand ? (
+        <div className={cn("min-w-0", !(isPart && (row.brand || (linked && editable))) && "hidden md:block")}>
+          {isPart && (linked && editable ? (
+            <PartFilterCombobox
+              kind="brand"
+              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
+              value={filter.supplierName ?? row.brand ?? ""}
+              disabled={row.__saving}
+              onSelect={(id, name) => setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))}
+              onClear={() => setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))}
+              onOpenPicker={() => setTecdocOpen(true)}
+            />
+          ) : row.brand ? (
             <span className="block truncate text-xs text-muted-foreground">
               <span className="text-muted-foreground/70 md:hidden">Marka: </span>{row.brand}
             </span>
@@ -372,8 +397,18 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
         </div>
 
         {/* Kategori */}
-        <div className={cn("min-w-0", !(isPart && row.category) && "hidden md:block")}>
-          {isPart && (row.category ? (
+        <div className={cn("min-w-0", !(isPart && (row.category || (linked && editable))) && "hidden md:block")}>
+          {isPart && (linked && editable ? (
+            <PartFilterCombobox
+              kind="category"
+              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
+              value={filter.categoryName ?? row.category ?? ""}
+              disabled={row.__saving}
+              onSelect={(id, name) => setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))}
+              onClear={() => setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))}
+              onOpenPicker={() => setTecdocOpen(true)}
+            />
+          ) : row.category ? (
             <span className="block truncate text-xs text-muted-foreground">
               <span className="text-muted-foreground/70 md:hidden">Kategori: </span>{row.category}
             </span>
@@ -446,10 +481,10 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
           hideTrigger
           open={tecdocOpen}
           onOpenChange={setTecdocOpen}
-          initialCategoryId={row.categoryId}
-          initialCategoryName={row.category}
-          initialSupplierId={row.brandSupplierId ?? null}
-          initialSupplierName={row.brand}
+          initialCategoryId={row.categoryId ?? filter.categoryId ?? null}
+          initialCategoryName={row.category ?? filter.categoryName ?? null}
+          initialSupplierId={row.brandSupplierId ?? filter.supplierId ?? null}
+          initialSupplierName={row.brand ?? filter.supplierName ?? null}
           onSelect={(sel) => {
             onCell(row, { name: sel.name, sku: sel.articleNo, brand: sel.supplierName, category: sel.categoryName || null, categoryId: sel.categoryId || null })
             setTecdocOpen(false)
