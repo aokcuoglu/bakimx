@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin } from "lucide-react"
@@ -22,11 +22,24 @@ const formVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.15, ease: "easeOut" as const } },
 }
 
+/** Hydration-safe "is the client interactive yet?" — false during SSR/first
+ *  paint, true once hydrated. useSyncExternalStore (not a setState-in-effect)
+ *  keeps it lint-clean and free of hydration mismatch. */
+const noopSubscribe = () => () => {}
+
 export function RegisterForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [submitted, setSubmitted] = useState<string | null>(null)
+  // Submit stays disabled until the client hydrates. Without this, a form whose
+  // JS never runs (failed hydration, stale chunk, JS disabled) falls back to a
+  // NATIVE submit — and since the fields include the password, a GET fallback
+  // would serialize it into the URL (history/access logs). Gating on `hydrated`
+  // means the form can only be submitted through handleSubmit (which
+  // preventDefault()s), never natively. `method="post"` on the form is a
+  // second layer: any native submit that slips through stays out of the URL.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -103,7 +116,7 @@ export function RegisterForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} method="post" className="space-y-4">
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {error}
@@ -212,7 +225,7 @@ export function RegisterForm() {
           </span>
         </label>
 
-        <Button type="submit" size="xl" disabled={loading} className="w-full">
+        <Button type="submit" size="xl" disabled={loading || !hydrated} className="w-full">
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="size-4 animate-spin" />
