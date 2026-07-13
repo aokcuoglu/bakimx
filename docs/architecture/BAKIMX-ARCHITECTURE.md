@@ -90,11 +90,12 @@ These are the natural candidates for the AWS build-out (see §12).
 
 ### Deployment topology (current)
 - **One VPS** (Ubuntu) hosts **two independent stacks**: `getirbakim` and `bakimx`.
-- **Nginx + TLS are owned by `getirbakim`.** Its Nginx terminates 80/443, holds the Let's Encrypt
-  certificates, and reverse-proxies `app.bakimx.com` to the BakımX container via a **shared external
-  Docker network** (`getirbakim_app-network`). BakımX joins that network as `external` and exposes a
-  stable alias **`bakimx-app:3000`** so the proxy target never collides with other stacks. **There is
-  no Caddy and no separate BakımX load balancer.**
+- **Nginx + TLS are owned by a neutral `edge` unit** (not by getirbakim). `edge-nginx` terminates
+  80/443, holds the Let's Encrypt certificates, and reverse-proxies `app.bakimx.com` to the BakımX
+  container via a **shared external Docker network** (`edge`). BakımX joins that network as `external`
+  and exposes a stable alias **`bakimx-app:3000`** so the proxy target never collides with other
+  stacks. **There is no Caddy and no separate BakımX load balancer.** (Edge unit + migration:
+  `edge/README.md`.)
 - **Two containers for BakımX:**
   - `bakimx-app` — Next.js standalone server, `:3000`, **memory-limited to 2 GB** (headroom for
     `sharp`/`heic-convert` image processing on photo uploads).

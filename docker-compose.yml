@@ -20,8 +20,8 @@ services:
       - next-static:/app/.next/static
     networks:
       internal:
-      # Stable alias on the shared Caddy network so the reverse proxy can target
-      # `bakimx-app:3000` without colliding with other stacks' `app` services.
+      # Stable alias on the shared neutral edge network so the edge nginx can
+      # target `bakimx-app:3000` without colliding with other stacks' `app`.
       proxy:
         aliases:
           - bakimx-app
@@ -70,6 +70,9 @@ volumes:
 
 networks:
   internal:
+  # Shared neutral edge network, owned by the standalone `edge` unit (see the
+  # edge/ repo/dir on the VPS) — NOT by getirbakim. Created out of band:
+  # `docker network create edge`. The edge nginx proxies to `bakimx-app:3000`.
   proxy:
     external: true
-    name: getirbakim_app-network
+    name: edge
