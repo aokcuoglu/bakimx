@@ -184,7 +184,21 @@ export function PartSearchInput({
       </InputGroup>
       {query.trim().length >= 2 && (
       <AutocompleteContent>
-        <AutocompleteEmpty>Eşleşen parça yok</AutocompleteEmpty>
+        <AutocompleteEmpty className="flex-col gap-1.5">
+          <span>Eşleşen parça yok</span>
+          {onSearchClick && !searchDisabled && (
+            <InputGroupButton
+              size="sm"
+              variant="outline"
+              // Input blur'ı popup'ı onClick'ten önce kapatmasın diye focus'u koru.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onSearchClick}
+            >
+              <Search />
+              Katalogdan getir
+            </InputGroupButton>
+          )}
+        </AutocompleteEmpty>
         <AutocompleteList>
           {(a: ArticleSearchResult) => (
             <AutocompleteItem
