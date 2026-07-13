@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin, CheckCircle2 } from "lucide-react"
+import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/select"
 import { formatPhoneTR } from "@/lib/format"
 import { TR_CITIES } from "@/lib/tr-cities"
-import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -27,7 +26,7 @@ export function RegisterForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [verifyToken, setVerifyToken] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -48,8 +47,9 @@ export function RegisterForm() {
         body: formData,
       })
       const data = await res.json()
-      if (data.ok && data.verifyToken) {
-        setVerifyToken(data.verifyToken)
+      if (data.ok) {
+        const email = (formData.get("email") as string || "").trim()
+        setSubmitted(email)
       } else {
         setError(data.error || "Kayıt başarısız")
       }
@@ -60,23 +60,34 @@ export function RegisterForm() {
     }
   }
 
-  // Kayıt başarılı → son adım: kartı doğrula (kartsız hesap kullanılamaz; "daha
-  // sonra doğrula" yolu yoktur). Doğrulama başarıya ulaşınca 7 günlük deneme başlar.
-  if (verifyToken) {
+  // Kayıt başarılı → e-posta doğrulama linki gönderildi. Linke tıklayınca 7 günlük
+  // deneme başlar ve otomatik giriş yapılır (bkz. /api/auth/verify-email).
+  if (submitted) {
     return (
       <motion.div variants={formVariants} initial="hidden" animate="visible" className="w-full">
-        <div className="mb-6 text-center">
+        <div className="mb-2 text-center">
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="size-7 text-primary" />
+            <Mail className="size-7 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Son adım: kartınızı doğrulayın
+            E-postanızı kontrol edin
           </h1>
           <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-            Kartınızı doğruladığınızda 7 günlük ücretsiz denemeniz başlar.
+            <span className="font-medium text-foreground">{submitted}</span> adresine bir doğrulama
+            bağlantısı gönderdik. Bağlantıya tıkladığınızda 7 günlük ücretsiz denemeniz başlar ve
+            otomatik olarak giriş yaparsınız.
+          </p>
+          <p className="mt-4 text-muted-foreground text-xs leading-relaxed">
+            E-posta birkaç dakika içinde gelmezse spam/gereksiz klasörünü kontrol edin. Bağlantı 48
+            saat geçerlidir.
           </p>
         </div>
-        <VerifyCardPanel vtoken={verifyToken} />
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          Zaten hesabınız var mı?{" "}
+          <Link href="/login" className="text-primary hover:underline transition-colors font-medium">
+            Giriş yapın
+          </Link>
+        </div>
       </motion.div>
     )
   }
@@ -88,7 +99,7 @@ export function RegisterForm() {
           BakimX hesabınızı oluşturun
         </h1>
         <p className="mt-2 text-muted-foreground text-sm lg:text-base">
-          Kart doğrulamasının ardından 7 günlük ücretsiz deneme başlar.
+          E-posta doğrulamasının ardından 7 günlük ücretsiz deneme başlar.
         </p>
       </div>
 

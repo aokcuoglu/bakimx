@@ -6,7 +6,7 @@ import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { welcomeTrialEmail, founderAlertEmail } from "@/lib/emails/system-emails"
 
 /**
- * Kart doğrulaması başarıya ulaştığında pending workshop'u active bir denemeye çevirir.
+ * E-posta doğrulaması tamamlandığında pending workshop'u active bir denemeye çevirir.
  *
  * Güvenlik/idempotency değişmezleri:
  *  - CLAIM-GUARD: updateMany yalnız `approvalStatus: "pending"` satırı sahiplenir.
@@ -78,7 +78,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
     undefined,
     "Workshop",
     workshopId,
-    "card_verified_trial_started"
+    "email_verified_trial_started"
   ).catch((err) => {
     console.error("[activateVerifiedWorkshop] audit failed:", err instanceof Error ? err.message : err)
   })

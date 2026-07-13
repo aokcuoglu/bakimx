@@ -7,18 +7,18 @@ import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getAdminEmails } from "@/lib/admin"
 import { newApplicationAdminEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
-import { createVerifyToken } from "@/lib/billing/verify-token"
 import { canResumeVerification } from "@/lib/billing/verify-resume"
+import { sendVerifyEmail } from "@/lib/billing/verify-email"
 
 /**
- * Self-serve workshop registration (card-verification gated trial).
+ * Self-serve workshop registration (email-verification gated trial).
  *
  * Creates a new isolated Workshop + its first owner User in `pending` status
  * with NO trial started yet — the 7-day trial begins only after the owner
- * verifies a card via a 1 TL 3DS pre-auth (see activateVerifiedWorkshop). The
- * welcome e-mail also moved there (single-send). This route returns a signed
- * `verifyToken` the UI uses to open the card-verification step. No session is
- * created here.
+ * verifies their e-mail address (see activateVerifiedWorkshop). The welcome
+ * e-mail also moved there (single-send). This route sends a verification
+ * e-mail via `sendVerifyEmail` and returns `{ ok: true }`; no token is
+ * returned in the response and no session is created here.
  */
 
 const REGISTER_MAX_ATTEMPTS = 5
@@ -26,6 +26,7 @@ const REGISTER_WINDOW_MS = 10 * 60_000 // 10 minutes
 
 const GENERIC_ERROR = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
 const EMAIL_IN_USE_ERROR = "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin."
+const EMAIL_SEND_ERROR = "Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin."
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
@@ -88,11 +89,11 @@ export async function POST(request: Request) {
         trialStartedAt: existing.workshop.trialStartedAt,
       })
     ) {
-      return NextResponse.json({
-        ok: true,
-        resumed: true,
-        verifyToken: createVerifyToken(existing.workshop.id),
-      })
+      const sent = await sendVerifyEmail(existing.workshop.id)
+      if (!sent.ok) {
+        return NextResponse.json({ error: EMAIL_SEND_ERROR }, { status: 500 })
+      }
+      return NextResponse.json({ ok: true, resumed: true })
     }
     return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
   }
@@ -133,8 +134,13 @@ export async function POST(request: Request) {
       return ws
     })
 
+    // Doğrulama e-postası — akışın kilit taşı. Workshop+User zaten commit edildi;
+    // gönderim başarısızsa 500 döner ve kullanıcı aynı bilgilerle tekrar POST edince
+    // resume yolu (pending + trialsız) linki yeniden yollar (veri kaybı yok).
+    const sent = await sendVerifyEmail(workshop.id)
+
     // Best-effort admin bildirimi — hata kayıt sonucunu etkilemez. Karşılama
-    // e-postası BURADA DEĞİL, kart doğrulaması başarıya ulaştığında
+    // e-postası BURADA DEĞİL, e-posta doğrulaması başarıya ulaştığında
     // activateVerifiedWorkshop içinde tek sefer gönderilir (çifte gönderim yok).
     try {
       const adminMail = newApplicationAdminEmail({
@@ -159,7 +165,10 @@ export async function POST(request: Request) {
       console.error("[register] notification failed:", mailErr instanceof Error ? mailErr.message : mailErr)
     }
 
-    return NextResponse.json({ ok: true, verifyToken: createVerifyToken(workshop.id) })
+    if (!sent.ok) {
+      return NextResponse.json({ error: EMAIL_SEND_ERROR }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true })
   } catch (err) {
     // Unique-constraint race (duplicate e-mail) or any other failure.
     const code = (err as { code?: string })?.code
