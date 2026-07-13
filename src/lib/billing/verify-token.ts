@@ -24,7 +24,7 @@ function verifyTokenSecret(): string {
   if (secret && secret.trim() !== "") return secret
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "SESSION_SECRET ortam değişkeni production ortamında zorunludur (kart doğrulama token imzası)."
+      "SESSION_SECRET ortam değişkeni production ortamında zorunludur (e-posta doğrulama token imzası)."
     )
   }
   // Dev/test fallback — session.ts ile birebir aynı değer (tokenlar uyumlu kalsın).

@@ -7,8 +7,6 @@ import { getPlanPackage } from "@/lib/plans-catalog"
 import { TAMI_ERROR_MESSAGES } from "@/lib/tami/errors"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
-import { VerifyCardPanel } from "@/components/billing/verify-card-panel"
-import { readVerifyToken, createVerifyToken } from "@/lib/billing/verify-token"
 import { revealedCardSuffix } from "@/lib/billing/payment-helpers"
 import type { PlanTier } from "@/lib/plan"
 
@@ -89,147 +87,14 @@ function OrderSummary({
   )
 }
 
-/**
- * Kart doğrulama sonucu (vref). Token yalnız workshop'u tanıtır; DURUM anlık DB'den
- * okunur. Workshop adı/e-postası GÖSTERİLMEZ (token'ı taşıyan herkes açabilir) —
- * yalnız durum + kartın son 4 hanesi.
- */
-async function VerifyResultView({ vref, err }: { vref: string; err: string | null }) {
-  const workshopId = readVerifyToken(vref)
-
-  // Token geçersiz/süresi geçmiş → nazik genel hata.
-  if (!workshopId) {
-    return (
-      <Shell>
-        <div className="text-center">
-          <IconBadge icon={AlertCircle} tone="muted" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Bağlantı geçersiz</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Doğrulama bağlantısı geçersiz veya süresi dolmuş. Lütfen kayıt adımlarını yeniden
-            başlatın.
-          </p>
-          <Link
-            href="/register"
-            className="mt-6 inline-flex items-center text-sm font-medium text-primary hover:underline"
-          >
-            Kayıt sayfasına git
-          </Link>
-        </div>
-      </Shell>
-    )
-  }
-
-  const workshop = await prisma.workshop.findUnique({
-    where: { id: workshopId },
-    select: { approvalStatus: true },
-  })
-  const lastTxn = await prisma.paymentTransaction.findFirst({
-    where: { workshopId, purpose: "card_verification" },
-    orderBy: { createdAt: "desc" },
-    select: { status: true, maskedPan: true },
-  })
-  const last4 = revealedCardSuffix(lastTxn?.maskedPan)
-
-  // 1) Onaylandı → kart doğrulandı, deneme başladı.
-  if (workshop?.approvalStatus === "approved") {
-    return (
-      <Shell>
-        <div className="text-center">
-          <IconBadge icon={CheckCircle2} tone="success" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Kartınız doğrulandı</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            7 günlük ücretsiz deneme süreniz başladı. Hemen giriş yaparak kullanmaya
-            başlayabilirsiniz.
-          </p>
-          {last4 && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Kart: <span className="font-mono text-foreground">•••• {last4}</span>
-            </p>
-          )}
-          <Link
-            href="/login"
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 md:h-9"
-          >
-            Giriş Yap
-          </Link>
-        </div>
-      </Shell>
-    )
-  }
-
-  // 2) Pending + callback geldi, aktivasyon henüz tamamlanmadı → işleniyor (auto-refresh).
-  if (lastTxn?.status === "callback_received") {
-    return (
-      <Shell>
-        <meta httpEquiv="refresh" content="4" />
-        <div className="flex flex-col items-center text-center">
-          <BrandSpinner size={52} />
-          <h1 className="mt-4 text-xl font-bold tracking-tight text-foreground">
-            Doğrulama işleniyor
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Bankadan onay alındı, hesabınız hazırlanıyor. Bu sayfa birkaç saniye içinde otomatik
-            yenilenecek.
-          </p>
-        </div>
-      </Shell>
-    )
-  }
-
-  // 3) Pending + son deneme başarısız / hiç yok → hata + yeniden dene paneli.
-  let errorMessage = "Kart doğrulaması tamamlanamadı."
-  if (err === "card") errorMessage = "Kart bilgilerini kontrol edip yeniden deneyin."
-  else if (err === "rate") errorMessage = "Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin."
-  else if (err === "config")
-    errorMessage = "Kart doğrulama şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin."
-  else if (err === "vtoken") errorMessage = "Doğrulama bağlantısı geçersiz veya süresi dolmuş."
-
-  // Hâlâ pending ise doğrulama TAZE bir token ile bu sayfadan yeniden denenebilir
-  // (mevcut vref süresi dolmuş olabilir — server-side yeniden imzala). Onaylanmışsa
-  // 1. dal döndü; buraya yalnız gerçekten tamamlanmamış doğrulama gelir.
-  const canRetry = workshop?.approvalStatus === "pending"
-  const freshToken = canRetry ? createVerifyToken(workshopId) : null
-
-  return (
-    <Shell>
-      <div className="text-center">
-        <IconBadge icon={AlertCircle} tone="error" />
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Doğrulama tamamlanamadı</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{errorMessage}</p>
-        {last4 && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Kart: <span className="font-mono text-foreground">•••• {last4}</span>
-          </p>
-        )}
-        <p className="mt-6 flex items-start gap-2 text-xs text-muted-foreground">
-          <Clock className="mt-0.5 size-4 shrink-0" />
-          <span>Kartınızı doğrulamak için aşağıdan tekrar deneyebilirsiniz.</span>
-        </p>
-      </div>
-
-      {freshToken && (
-        <div className="mt-6 border-t pt-6">
-          <VerifyCardPanel vtoken={freshToken} />
-        </div>
-      )}
-    </Shell>
-  )
-}
-
 export default async function PaymentResultPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string; err?: string; vref?: string }>
+  searchParams: Promise<{ ref?: string; err?: string }>
 }) {
   const sp = await searchParams
   const ref = typeof sp.ref === "string" ? sp.ref : null
   const err = typeof sp.err === "string" ? sp.err : null
-  const vref = typeof sp.vref === "string" ? sp.vref : null
-
-  // Kart doğrulama sonucu — vref taşıyan istekler ayrı görünüm (satış ref'inden bağımsız).
-  if (vref) {
-    return <VerifyResultView vref={vref} err={err} />
-  }
 
   // 1) Referans yok → nazik genel hata.
   if (!ref) {
