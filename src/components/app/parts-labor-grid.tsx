@@ -376,45 +376,65 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
         </div>
 
         {/* Marka */}
-        <div className={cn("min-w-0", !(isPart && (row.brand || (linked && editable))) && "hidden md:block")}>
-          {isPart && (linked && editable ? (
-            <PartFilterCombobox
-              kind="brand"
-              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
-              value={filter.supplierName ?? row.brand ?? ""}
-              disabled={row.__saving}
-              onSelect={(id, name) => setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))}
-              onClear={() => setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))}
-              onOpenPicker={() => setTecdocOpen(true)}
-            />
-          ) : row.brand ? (
-            <span className="block truncate text-xs text-muted-foreground">
-              <span className="text-muted-foreground/70 md:hidden">Marka: </span>{row.brand}
-            </span>
-          ) : (
-            <span className="hidden text-xs text-muted-foreground/40 md:block">—</span>
-          ))}
+        <div className={cn("min-w-0", !(isPart && row.brand) && "hidden md:block")}>
+          {isPart && (
+            <>
+              {/* md+ : combobox (linked+editable) veya salt-görünür */}
+              <div className="hidden md:block">
+                {linked && editable ? (
+                  <PartFilterCombobox
+                    kind="brand"
+                    vehicleTypeId={vehicle!.catalogVehicleTypeId!}
+                    value={filter.supplierName ?? row.brand ?? ""}
+                    disabled={row.__saving}
+                    onSelect={(id, name) => setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))}
+                    onClear={() => setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))}
+                    onOpenPicker={() => setTecdocOpen(true)}
+                  />
+                ) : row.brand ? (
+                  <span className="block truncate text-xs text-muted-foreground">{row.brand}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground/40">—</span>
+                )}
+              </div>
+              {/* mobil : yalnız salt-görünür metin (combobox mobilde yok — Karar 6) */}
+              {row.brand && (
+                <span className="block truncate text-xs text-muted-foreground md:hidden">
+                  <span className="text-muted-foreground/70">Marka: </span>{row.brand}
+                </span>
+              )}
+            </>
+          )}
         </div>
 
         {/* Kategori */}
-        <div className={cn("min-w-0", !(isPart && (row.category || (linked && editable))) && "hidden md:block")}>
-          {isPart && (linked && editable ? (
-            <PartFilterCombobox
-              kind="category"
-              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
-              value={filter.categoryName ?? row.category ?? ""}
-              disabled={row.__saving}
-              onSelect={(id, name) => setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))}
-              onClear={() => setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))}
-              onOpenPicker={() => setTecdocOpen(true)}
-            />
-          ) : row.category ? (
-            <span className="block truncate text-xs text-muted-foreground">
-              <span className="text-muted-foreground/70 md:hidden">Kategori: </span>{row.category}
-            </span>
-          ) : (
-            <span className="hidden text-xs text-muted-foreground/40 md:block">—</span>
-          ))}
+        <div className={cn("min-w-0", !(isPart && row.category) && "hidden md:block")}>
+          {isPart && (
+            <>
+              <div className="hidden md:block">
+                {linked && editable ? (
+                  <PartFilterCombobox
+                    kind="category"
+                    vehicleTypeId={vehicle!.catalogVehicleTypeId!}
+                    value={filter.categoryName ?? row.category ?? ""}
+                    disabled={row.__saving}
+                    onSelect={(id, name) => setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))}
+                    onClear={() => setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))}
+                    onOpenPicker={() => setTecdocOpen(true)}
+                  />
+                ) : row.category ? (
+                  <span className="block truncate text-xs text-muted-foreground">{row.category}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground/40">—</span>
+                )}
+              </div>
+              {row.category && (
+                <span className="block truncate text-xs text-muted-foreground md:hidden">
+                  <span className="text-muted-foreground/70">Kategori: </span>{row.category}
+                </span>
+              )}
+            </>
+          )}
         </div>
 
         {/* Miktar */}
@@ -487,6 +507,11 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
           initialSupplierName={row.brand ?? filter.supplierName ?? null}
           onSelect={(sel) => {
             onCell(row, { name: sel.name, sku: sel.articleNo, brand: sel.supplierName, category: sel.categoryName || null, categoryId: sel.categoryId || null })
+            setFilter({
+              supplierName: sel.supplierName || undefined,
+              categoryId: sel.categoryId ?? undefined,
+              categoryName: sel.categoryName || undefined,
+            })
             setTecdocOpen(false)
           }}
         />

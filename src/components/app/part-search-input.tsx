@@ -168,6 +168,7 @@ export function PartSearchInput({
       value={query}
       filter={null}
       autoHighlight
+      openOnInputClick={supplierId != null || categoryId != null}
       itemToStringValue={(a: ArticleSearchResult) => a.productName}
       onValueChange={(v: string) => {
         setQuery(v)
