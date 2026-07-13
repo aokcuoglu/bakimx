@@ -5,9 +5,11 @@ ayrıntısı için **DB.md**'ye bak; bu dosya deploy akışını anlatır.
 
 ## Mimari (gerçek durum)
 - Next.js (standalone) + PostgreSQL (Docker) **tek bir VPS**'te çalışır.
-- Reverse proxy ve TLS, **getirbakim projesinin Nginx'i** tarafından yönetilir
-  (`getirbakim-nginx`, 80/443). `getirbakim_app-network` Docker ağının **sahibi getirbakim**'dir;
-  bakimx bu ağa `external` olarak katılır. **Ortada Caddy YOKTUR.**
+- Reverse proxy ve TLS, **nötr `edge` birimi** tarafından yönetilir (`edge-nginx`,
+  80/443) — sahibi ne getirbakim ne bakimx; ikisi de ayrı startup olarak bu edge'e
+  bağlanır. Paylaşılan Docker ağı **`edge`** (external; `docker network create edge`
+  ile bir kez oluşturulur); bakimx bu ağa `proxy` anahtarıyla `bakimx-app` alias'ı
+  vererek katılır. **Ortada Caddy YOKTUR.** (Edge birimi + migrasyon: edge/README.md.)
 - Foto/görsel depolaması **Cloudflare R2** (S3 uyumlu).
 - Deploy: GitHub Actions (`.github/workflows/deploy.yml`) — `v*` tag'inde GHCR'ye build,
   VPS'e SSH ile `pull` + `up -d app`.
@@ -71,11 +73,13 @@ ayrıntısı için **DB.md**'ye bak; bu dosya deploy akışını anlatır.
        }
    }
    ```
-   Nginx'in `getirbakim_app-network`'e bağlı ve `resolver 127.0.0.11` ayarlı olduğundan emin ol
-   (zaten öyle). Sonra Nginx'i reload et.
-4. **Başlatma sırası:** Ağın sahibi getirbakim. Önce getirbakim (ve dolayısıyla ağ) ayakta olmalı,
-   sonra `cd /opt/bakimx && docker compose up -d`. Aksi halde bakimx "network getirbakim_app-network
-   not found" ile başlamaz.
+   bakimx'in routing'i artık edge biriminde (`edge/conf.d/bakimx.conf`) durur; edit
+   edip `docker exec edge-nginx nginx -s reload` ile reload et. edge-nginx'in `edge`
+   ağına bağlı ve `resolver 127.0.0.11` ayarlı olduğundan emin ol (zaten öyle).
+4. **Başlatma sırası:** `edge` ağı her iki projeden bağımsızdır. Önce ağ var olmalı
+   (`docker network create edge`; edge birimi de oluşturur), sonra `cd /opt/bakimx &&
+   docker compose up -d`. Aksi halde bakimx "network edge not found" ile başlamaz.
+   getirbakim'in ayakta olması ARTIK gerekmez.
 
 ## 5. İlk deploy
 1. Commit edilmemiş değişiklikleri **commit + push** et (yoksa eski kod deploy olur).
@@ -167,9 +171,9 @@ gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden 
 7. Yeniden deploy: küçük değişiklik + yeni tag → Actions yeşil → `up -d app --force-recreate`.
 
 ## Co-hosting (getirbakim + bakimx) — kritik notlar
-- **Ağ sahipliği:** `getirbakim_app-network`'ün sahibi getirbakim. getirbakim down/recreate olursa
-  bakimx etkilenir. Daha sağlamı: ağı her iki stack'ten bağımsız `docker network create edge` ile
-  oluşturup ikisinde de `external` referanslamak (ileride).
+- **Ağ sahipliği:** Paylaşılan ağ artık nötr `edge` (external), sahibi hiçbir stack değil.
+  getirbakim down/recreate olsa bakimx etkilenmez. (Eskiden ağ `getirbakim_app-network`
+  idi ve sahibi getirbakim'di; bu bağımlılık kaldırıldı.)
 - **İsim determinizmi:** Nginx alias `bakimx-app`'i hedefler; `COMPOSE_PROJECT_NAME=bakimx`
   backup'ın container adını da deterministik tutar.
 - **Prune:** bakimx CI artık yalnız `docker image prune -f` (dangling) yapar — getirbakim image'larını silmez.

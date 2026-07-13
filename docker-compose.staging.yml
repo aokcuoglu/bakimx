@@ -71,6 +71,9 @@ volumes:
 
 networks:
   internal:
+  # Shared neutral edge network, owned by the standalone `edge` unit — NOT by
+  # getirbakim. Created out of band: `docker network create edge`. The edge
+  # nginx proxies to `bakimx-staging-app:3000`.
   proxy:
     external: true
-    name: getirbakim_app-network
+    name: edge
