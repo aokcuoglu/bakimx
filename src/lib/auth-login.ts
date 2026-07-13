@@ -82,8 +82,8 @@ export async function verifyCredentials(email: string, password: string): Promis
   // correct password, so no enumeration risk.)
   //
   // `pending` workshops are NOT blocked here: they authenticate and land on the
-  // full-screen PlanLocked verify screen (see (app)/layout.tsx), which mints a
-  // vtoken so the owner can complete card verification and start the trial.
+  // full-screen PlanLocked verify screen (see (app)/layout.tsx), which lets the
+  // owner resend the e-mail verification link and start the trial.
   // Blocking pending at login would make that recovery path unreachable.
   if (workshop.approvalStatus === "rejected") {
     return { ok: false, error: ACCOUNT_REJECTED_MESSAGE }

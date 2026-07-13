@@ -109,7 +109,7 @@ export async function POST(request: Request) {
           city: data.city,
           address: data.address,
           email: data.email,
-          // Approval-gated trial: pending until the card is verified. The trial
+          // Approval-gated trial: pending until the e-mail is verified. The trial
           // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
           approvalStatus: "pending",
           subscriptionStatus: "trialing",

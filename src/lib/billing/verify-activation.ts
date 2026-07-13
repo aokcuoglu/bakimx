@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/db"
 import { computeTrialEnd } from "@/lib/plan"
 import { AuditLogAction } from "@/lib/audit"
-import { getAdminEmails } from "@/lib/admin"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
-import { welcomeTrialEmail, founderAlertEmail } from "@/lib/emails/system-emails"
+import { welcomeTrialEmail } from "@/lib/emails/system-emails"
 
 /**
  * E-posta doğrulaması tamamlandığında pending workshop'u active bir denemeye çevirir.
@@ -84,46 +83,4 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
   })
 
   return { ok: true }
-}
-
-/**
- * 1 TL doğrulama provizyonu başarıyla alındıktan sonra otomatik iptal (cancel)
- * BAŞARISIZ olursa founder'ı uyarır — provizyon 7-9 günde kendiliğinden düşer, akış
- * BOZULMAZ. Dedup: CommunicationLog templateKey `verify_cancel_fail:<providerOrderId>`
- * (alertHashFailureOnce / alertStuckTransactionOnce desenine göre; işlem başına en fazla
- * bir e-posta). İçerikte kart verisi YOK — yalnız providerOrderId + saat.
- */
-export async function alertVerifyCancelFailureOnce(opts: {
-  providerOrderId: string
-  workshopId: string
-  now?: Date
-}): Promise<boolean> {
-  if (!opts.providerOrderId || !opts.workshopId) return false
-  const now = opts.now ?? new Date()
-  const templateKey = `verify_cancel_fail:${opts.providerOrderId}`
-
-  const existing = await prisma.communicationLog.findFirst({
-    where: { workshopId: opts.workshopId, type: "email", status: "sent", templateKey },
-    select: { id: true },
-  })
-  if (existing) return false
-
-  const to = getAdminEmails()
-  if (to.length === 0) return false
-
-  const detail =
-    `Kart doğrulama başarılı oldu ancak 1 TL ön provizyon otomatik iptali başarısız oldu. ` +
-    `providerOrderId: ${opts.providerOrderId}, saat: ${now.toISOString()}. ` +
-    `Bloke tutar 7-9 iş günü içinde bankaca kendiliğinden düşer; kullanıcı akışı etkilenmedi. ` +
-    `Gerekirse TAMI panelinden manuel iptal edilebilir.`
-  const built = founderAlertEmail({ title: "1 TL doğrulama provizyonu iptal edilemedi", detail })
-
-  const result = await sendSystemEmail({
-    to: to.join(","),
-    subject: built.subject,
-    html: built.html,
-    workshopId: opts.workshopId,
-    templateKey,
-  })
-  return result.ok
 }
