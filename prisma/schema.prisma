@@ -1484,6 +1484,9 @@ enum VinLookupStatus {
 /// cached), so monthly quota usage == count(createdAt >= start of month).
 model VinLookup {
   vin         String          @id // normalized: uppercase, 17 chars
+  /// VIN model-önek (WMI+VDS = ilk 9 hane) — aynı modelin farklı VIN'leri tek
+  /// API çağrısını paylaşsın diye cache bu önekle dedupe edilir (bkz. lookupVin).
+  modelKey    String?
   status      VinLookupStatus
   provider    String // "rapidapi" | "mock"
   rawResponse Json? // raw provider payload, null for not_found
@@ -1492,6 +1495,7 @@ model VinLookup {
   updatedAt   DateTime        @updatedAt
 
   @@index([createdAt])
+  @@index([modelKey])
   @@map("vin_lookups")
 }
 
