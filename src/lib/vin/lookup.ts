@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getVinProvider } from "./provider"
-import { VinLookupError, isValidVin, normalizeVin } from "./types"
+import { VinLookupError, isValidVin, normalizeVin, vinModelKey } from "./types"
 
 export interface VinLookupResult {
   vin: string
@@ -34,10 +34,17 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     return { vin, status: result.status, raw: result.raw, cached: false, provider: provider.name }
   }
 
-  const cachedRow = await prisma.vinLookup.findUnique({ where: { vin } })
+  // Cache dedupe anahtarı = model-önek (WMI+VDS). Aynı modelin farklı VIN'leri
+  // aynı tecdoc-vin-check yanıtını hak eder; böylece her yeni VIN kota harcamaz.
+  // Motor-varyant seçimi resolveVinToCatalog içinde her VIN için yerelde yapılır.
+  const modelKey = vinModelKey(vin)
+  const cachedRow = await prisma.vinLookup.findFirst({
+    where: { modelKey },
+    orderBy: { createdAt: "asc" },
+  })
   if (cachedRow) {
     prisma.vinLookup
-      .update({ where: { vin }, data: { hitCount: { increment: 1 } } })
+      .update({ where: { vin: cachedRow.vin }, data: { hitCount: { increment: 1 } } })
       .catch(() => {}) // observability only — never block or fail the lookup
     return { vin, status: cachedRow.status, raw: cachedRow.rawResponse, cached: true, provider: cachedRow.provider }
   }
@@ -53,6 +60,7 @@ export async function lookupVin(input: string): Promise<VinLookupResult> {
     where: { vin }, // upsert: concurrent first-lookups of the same VIN must not crash
     create: {
       vin,
+      modelKey,
       status: result.status,
       provider: provider.name,
       rawResponse: result.raw === null ? undefined : (result.raw as object),
