@@ -4,8 +4,11 @@ import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { vehicleCreateSchema, vehicleUpdateSchema } from "@/lib/validations/vehicle"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
+import { isValidVin } from "@/lib/vin/types"
+import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -273,7 +276,7 @@ export async function linkVehicleCatalogAction(
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
-    select: { id: true },
+    select: { id: true, vin: true, vinConfirmed: true },
   })
   if (!vehicle) return { error: "Araç bulunamadı" }
 
@@ -283,16 +286,27 @@ export async function linkVehicleCatalogAction(
   const mismatch = await validateCatalogSelection(data)
   if (mismatch) return { error: mismatch }
 
+  // Katalog VIN API'sinden bağlandı → şase teyidini otomatik işaretle (elle
+  // "Teyit Et" gerekmesin). Yalnız geçerli VIN varsa ve henüz teyitli değilse.
+  const autoConfirm = isValidVin(vehicle.vin) && !vehicle.vinConfirmed
+
   await prisma.vehicle.update({
     where: { id: vehicleId },
     data: {
       catalogVehicleTypeId: data.catalogVehicleTypeId,
       ...(data.catalogBrandId != null ? { catalogBrandId: data.catalogBrandId } : {}),
       ...(data.catalogModelId != null ? { catalogModelId: data.catalogModelId } : {}),
+      ...(autoConfirm ? { vinConfirmed: true } : {}),
     },
   })
 
   await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_catalog_linked")
+  if (autoConfirm) {
+    await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_vin_confirmed")
+  }
+
+  // Arka planda yaygın bakım parçalarını cache'e doldur (response'u bloklamaz).
+  after(() => prefetchCommonVehicleParts(data.catalogVehicleTypeId))
 
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
