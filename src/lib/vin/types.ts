@@ -9,7 +9,11 @@ export function normalizeVin(input: string): string {
 }
 
 /** VIN model-öneki (WMI+VDS = ilk 9 hane). Aynı model/varyantın farklı VIN'leri
- *  bu öneki paylaşır; VIN cache dedupe anahtarıdır (bkz. lookupVin). */
+ *  bu öneki paylaşır; VIN cache dedupe anahtarıdır (bkz. lookupVin).
+ *  Not: 9. hane Kuzey Amerika VIN'lerinde araç-bazlı kontrol hanesidir; oralarda
+ *  aynı modelin VIN'leri farklı önek üretip dedupe'a girmez — güvenli düşüş
+ *  (eski VIN-başına davranış, yanlış veri yok). BakımX filosu ağırlıkla Avrupa
+ *  (9. hane tanımlayıcı) olduğundan dedupe çalışır. */
 export function vinModelKey(input: string): string {
   return normalizeVin(input).slice(0, 9)
 }

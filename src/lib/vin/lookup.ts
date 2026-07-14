@@ -12,10 +12,12 @@ export interface VinLookupResult {
 }
 
 /**
- * Cache-first VIN decode. Each VIN hits the paid provider at most once ever
- * (found/not_found are terminal facts); transport errors are NOT cached so
- * they stay retryable. Monthly billed usage == vin_lookups rows created this
- * month, checked against VIN_LOOKUP_MONTHLY_CAP before any provider call.
+ * Cache-first VIN decode, deduped by model-prefix (WMI+VDS): the FIRST VIN of a
+ * given model hits the paid provider once; later VINs sharing that prefix reuse
+ * the cached decode and hit the provider ZERO times (found/not_found are
+ * terminal facts). Transport errors are NOT cached so they stay retryable.
+ * Monthly billed usage == vin_lookups rows created this month, checked against
+ * VIN_LOOKUP_MONTHLY_CAP before any provider call.
  */
 export async function lookupVin(input: string): Promise<VinLookupResult> {
   const vin = normalizeVin(input)
