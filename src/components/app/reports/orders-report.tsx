@@ -6,13 +6,8 @@ import { StatCard, ReportHeader, BarChart, ReportTable } from "@/components/app/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
-import { ORDER_STATUS } from "@/lib/constants"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-
-function statusLabel(status: string): string {
-  return ORDER_STATUS[status as keyof typeof ORDER_STATUS]?.label ?? status
-}
 
 interface OrdersReportProps {
   stats: {
@@ -89,7 +84,7 @@ export function OrdersReport({
     o.customerName,
     o.plate,
     o.grandTotal,
-    statusLabel(o.status),
+    o.status,
     o.createdAt,
   ])
 
@@ -207,7 +202,7 @@ export function OrdersReport({
               <td className="px-4 py-2.5 text-muted-foreground">{row.customerName}</td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.plate}</td>
               <td className="px-4 py-2.5 font-semibold text-foreground">{row.grandTotal > 0 ? formatTRY(row.grandTotal) : "—"}</td>
-              <td className="px-4 py-2.5 text-muted-foreground">{statusLabel(row.status)}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.status}</td>
               <td className="px-4 py-2.5 text-muted-foreground text-xs">{formatDate(row.createdAt)}</td>
             </tr>
           )}
@@ -232,7 +227,7 @@ export function OrdersReport({
               <td className="px-4 py-2.5 text-muted-foreground">{row.customerName}</td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.plate}</td>
               <td className="px-4 py-2.5 font-semibold text-warning">{row.durationDays} gün</td>
-              <td className="px-4 py-2.5 text-muted-foreground">{statusLabel(row.status)}</td>
+              <td className="px-4 py-2.5 text-muted-foreground">{row.status}</td>
               <td className="px-4 py-2.5 text-muted-foreground text-xs">{formatDate(row.createdAt)}</td>
             </tr>
           )}
