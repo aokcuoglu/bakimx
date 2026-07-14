@@ -330,6 +330,12 @@ export async function confirmVehicleVinAction(vehicleId: string) {
 
   await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_vin_confirmed")
 
+  // Araç zaten kataloğa bağlıysa, teyit anında yaygın parçaları arka planda doldur.
+  if (vehicle.catalogVehicleTypeId) {
+    const vehicleTypeId = vehicle.catalogVehicleTypeId
+    after(() => prefetchCommonVehicleParts(vehicleTypeId))
+  }
+
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
   return { success: true as const }
