@@ -8,6 +8,12 @@ export function normalizeVin(input: string): string {
   return input.trim().toUpperCase().replace(/\s+/g, "")
 }
 
+/** VIN model-öneki (WMI+VDS = ilk 9 hane). Aynı model/varyantın farklı VIN'leri
+ *  bu öneki paylaşır; VIN cache dedupe anahtarıdır (bkz. lookupVin). */
+export function vinModelKey(input: string): string {
+  return normalizeVin(input).slice(0, 9)
+}
+
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/
 
 export function isValidVin(input: string | null | undefined): boolean {

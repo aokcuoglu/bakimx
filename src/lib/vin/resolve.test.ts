@@ -10,7 +10,7 @@ import {
   decideResolution,
   type CandidateTypeRow,
 } from "./resolve"
-import { extractMatchSections, isValidVin, normalizeVin } from "./types"
+import { extractMatchSections, isValidVin, normalizeVin, vinModelKey } from "./types"
 
 test("isValidVin: 17 chars, no I/O/Q, tolerates whitespace/lowercase", () => {
   expect(isValidVin("WF0MXXGCHMRT73173")).toBe(true)
@@ -188,4 +188,12 @@ test("extractMatchSections unwraps {array:[...]} and nested envelopes", () => {
 
   expect(extractMatchSections({ some: "thing" })).toBeNull()
   expect(extractMatchSections(null)).toBeNull()
+})
+
+test("vinModelKey: WMI+VDS (ilk 9 hane); aynı modelin farklı VIN'leri eşleşir", () => {
+  expect(vinModelKey("WBA5A1109ED608488")).toBe("WBA5A1109")
+  // aynı model, farklı seri (VIS) → aynı önek
+  expect(vinModelKey("WBA5A1109FZ111222")).toBe("WBA5A1109")
+  // normalize: boşluk/küçük harf
+  expect(vinModelKey(" wba5a1109ed608488 ")).toBe("WBA5A1109")
 })
