@@ -1,4 +1,7 @@
 import { flattenCategoryLeaves } from "./tree"
+import { getTecdocProvider } from "./provider"
+import { getVehicleCategories, getArticlesByCategory } from "./catalog"
+import { TecdocError } from "./types"
 import type { CategoryNode } from "./types"
 
 /**
@@ -59,4 +62,39 @@ export function selectPrefetchTargets(tree: CategoryNode[]): number[] {
     }
   }
   return [...ids]
+}
+
+/**
+ * Teyit sonrası arka planda (after()) çağrılır: aracın yaygın bakım kategorilerinin
+ * parçalarını TecdocArticle cache'ine doldurur, böylece parça-ekleme UI'ı (ad
+ * arama + marka/kategori) dolu cache'ten beslenir. HİÇBİR ZAMAN throw ETMEZ.
+ *
+ * - mock provider'da erken çıkar (mock persist etmez).
+ * - getArticlesByCategory cache-first + idempotent (zaten cache'liyse API atlar).
+ * - quota_exceeded'da döngü durur (kalan kotayı korur); diğer hatada kategori atlanır.
+ */
+export async function prefetchCommonVehicleParts(vehicleTypeId: number): Promise<void> {
+  try {
+    if (!Number.isInteger(vehicleTypeId) || vehicleTypeId <= 0) return
+    if (getTecdocProvider().name === "mock") return
+
+    const tree = await getVehicleCategories(vehicleTypeId)
+    const targets = selectPrefetchTargets(tree)
+
+    for (const categoryId of targets) {
+      try {
+        await getArticlesByCategory(vehicleTypeId, categoryId)
+      } catch (err) {
+        if (err instanceof TecdocError && err.code === "quota_exceeded") {
+          console.warn(`[tecdoc] prefetch durdu (kota): vehicleType=${vehicleTypeId}`)
+          return
+        }
+        // tekil kategori hatası — atla, prefetch devam etsin
+        console.warn(`[tecdoc] prefetch kategori atlandı ${categoryId}:`, err instanceof Error ? err.message : err)
+      }
+    }
+  } catch (err) {
+    // getVehicleCategories dahil her şeyi yut — arka plan görevi asla patlamamalı
+    console.warn(`[tecdoc] prefetch başarısız vehicleType=${vehicleTypeId}:`, err instanceof Error ? err.message : err)
+  }
 }
