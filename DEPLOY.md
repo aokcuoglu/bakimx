@@ -138,12 +138,12 @@ gider. Takılı kalan (`callback_received`'da donan) ödemeler admin panelinden 
   `dev.tami.com.tr/test-kartlari` ve `dev.tami.com.tr/tami-satis-islemi`.
 
 ### GO-LIVE CHECKLIST
-1. Staging'de sandbox creds ile uçtan uca 3DS testi: başarılı kart + başarısız kart + callback
+1. app-dev'de sandbox creds ile uçtan uca 3DS testi: başarılı kart + başarısız kart + callback
    replay (aynı `providerOrderId` ile ikinci POST — yan etkisiz olmalı).
 2. Prod creds ile smoke test: gerçek kart küçük tutar + TAMI portalından anında iade.
 3. Callback URL whitelist doğrulaması (sandbox ve prod ayrı ayrı).
-4. Crontab kurulu (§7); kurulumdan sonraki gün DB'de kontrol (DBeaver/psql — bkz. staging DB
-   erişim notları): `SELECT job, status, "finishedAt" FROM "CronRun" WHERE job='billing' ORDER BY
+4. Crontab kurulu (§7); kurulumdan sonraki gün DB'de kontrol (DBeaver/psql):
+   `SELECT job, status, "finishedAt" FROM "CronRun" WHERE job='billing' ORDER BY
    "startedAt" DESC LIMIT 3;` → `success` satırları görünmeli. Not: `/admin/health` şu an yalnız
    `reminders` job'ını özetler; billing görünürlüğü follow-up.
 5. Founder alert e-postası test edilmiş (hash doğrulama hatası / aktivasyon başarısız senaryosu).

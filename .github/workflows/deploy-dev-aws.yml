@@ -1,8 +1,7 @@
 name: Deploy to AWS dev (app-dev.bakimx.com)
 
-# AWS-hosted "dev" environment that replaces the Contabo `staging.app.bakimx.com`.
-# Runs in PARALLEL with staging.yml (Contabo) during cutover; once app-dev is validated,
-# staging.yml is removed and the Contabo staging stack retired (see plan / STAGING-SETUP).
+# AWS-hosted "dev" environment (app-dev.bakimx.com). Replaced the retired Contabo
+# staging.app.bakimx.com (2026-07-20). IAM/OIDC + task-def env spec: docs/aws-dev-cicd.md.
 #
 # Flow: build arm64 image → push to ECR → register a new task-def revision (image swap)
 # → DB migration gate (one-off ECS task, aborts on failure) → update the ECS service.
@@ -120,7 +119,7 @@ jobs:
           set -euo pipefail
           # Reuse the service's own subnets/SG so the migrate task reaches the private RDS
           # in-VPC (CI itself cannot). Command override runs the same migrate the Contabo
-          # staging stack runs; the entrypoint execs it (static-chunk step is app-start only).
+          # prod compose stack runs; the entrypoint execs it (static-chunk step is app-start only).
           NET=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
             --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
           SUBNETS=$(echo "$NET" | jq -r '.subnets | join(",")')

@@ -52,7 +52,7 @@ export function buildProviderWarningBanner(issues: ProviderEnvIssue[]): string {
 
 export interface StartupCheckDeps {
   getEnv?: EnvReader
-  /** True only in a production build (staging + prod). Dev is intentionally exempt. */
+  /** True only in a production build (app-dev + prod). Dev is intentionally exempt. */
   isProd?: boolean
   warn?: (msg: string) => void
   info?: (msg: string) => void

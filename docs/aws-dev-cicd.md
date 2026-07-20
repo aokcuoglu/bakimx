@@ -138,4 +138,4 @@ Kaynaklar CLI ile **aynı isimlerle** zaten var. CDK aynı isimle **oluşturmaya
 - DB TLS fix: [`src/lib/db.ts`](../src/lib/db.ts) (`DB_SSL_NO_VERIFY`)
 - Health endpoint: [`src/app/api/health/route.ts`](../src/app/api/health/route.ts)
 - DNS: `app-dev.bakimx.com` CNAME → `bakimx-dev-alb-2002771168.eu-central-1.elb.amazonaws.com` (registrar/Cloudflare, DNS-only)
-- Contabo staging emekliliği (Faz 5) bekliyor: `staging.yml`, `/opt/bakimx-staging`, nginx bloğu, cert, `middleware.ts`'teki `staging.app.bakimx.com`.
+- Contabo staging emekliliği (Faz 5): repo tarafı TAMAM (staging.yml + artefaktlar + middleware temizlendi). VPS/DNS sökümü kullanıcıda: `/opt/bakimx-staging` stack, getirbakim-nginx `staging.app.bakimx.com` bloğu, LE cert, DNS kaydı.

@@ -57,10 +57,11 @@ export const sessionOptions = {
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
     // Prod shares the session across bakimx.com (login) + app.bakimx.com via `.bakimx.com`.
-    // Staging overrides SESSION_COOKIE_DOMAIN (its own host) + SESSION_COOKIE_NAME so its
-    // cookie never collides with / overwrites prod's. These are read in the Edge middleware
-    // too, so the per-env value is baked at build time via Dockerfile build-args (the
-    // staging workflow passes them); runtime env keeps the Node routes consistent.
+    // The AWS dev env (app-dev.bakimx.com) overrides SESSION_COOKIE_DOMAIN (its own host) +
+    // SESSION_COOKIE_NAME so its cookie never collides with / overwrites prod's. These are
+    // read in the Edge middleware too, so the per-env value is baked at build time via
+    // Dockerfile build-args (deploy-dev-aws.yml passes them); runtime env keeps the Node
+    // routes consistent.
     domain:
       process.env.NODE_ENV === "production"
         ? (process.env.SESSION_COOKIE_DOMAIN || ".bakimx.com")

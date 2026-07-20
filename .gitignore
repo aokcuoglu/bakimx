@@ -41,7 +41,6 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
-!.env.staging.example
 
 # vercel
 .vercel
@@ -49,9 +48,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Local-only staging SSH target for sync-dev-to-staging.sh
-scripts/.staging-vps
 
 # Local git worktrees for isolated feature work
 .worktrees/

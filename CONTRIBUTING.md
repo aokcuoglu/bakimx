@@ -4,8 +4,8 @@ BakımX özel (private) bir üründür. Bu rehber, tutarlı ve gözden geçirile
 
 ## Dallanma modeli
 - `feature/*` — tüm geliştirme burada başlar, `dev`'e PR açılır.
-- `dev` — entegrasyon dalı. Her push otomatik **staging**'e deploy olur.
-- `main` — üretim aynası. Yalnızca staging'de doğrulanmış sürümler. Tag (`vX.Y.Z`) atıldığında **prod**'a deploy olur.
+- `dev` — entegrasyon dalı. Her push otomatik **app-dev.bakimx.com**'a (AWS) deploy olur.
+- `main` — üretim aynası. Yalnızca app-dev'de doğrulanmış sürümler. `main`'e merge edildiğinde **prod**'a (Contabo) deploy olur.
 
 Tam akış için [RELEASE.md](./RELEASE.md).
 
@@ -30,7 +30,7 @@ bunx prisma validate
 ```
 
 ## Sürüm kesme
-1. `feature/*` → `dev` merge, staging yeşil + smoke test.
+1. `feature/*` → `dev` merge, app-dev yeşil + smoke test.
 2. `dev → main` PR, diff incele, merge.
 3. `package.json` sürümünü yükselt, **`docs/releases/vX.Y.Z.md` notunu ekle**.
 4. `git tag vX.Y.Z && git push origin vX.Y.Z`.

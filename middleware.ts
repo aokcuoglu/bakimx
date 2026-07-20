@@ -33,11 +33,9 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
   const isLocal =
     host === "" || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
-  // Staging/dev serve the whole app on a single host (like local dev) — no bakimx.com /
-  // app.bakimx.com split, so app routes don't bounce to prod. Add such hosts here.
-  // app-dev.bakimx.com = AWS-hosted dev env (replaces the Contabo staging host).
-  const isSingleHost =
-    isLocal || host === "staging.app.bakimx.com" || host === "app-dev.bakimx.com"
+  // The AWS-hosted dev env (app-dev.bakimx.com) serves the whole app on a single host (like
+  // local dev) — no bakimx.com / app.bakimx.com split, so app routes don't bounce to prod.
+  const isSingleHost = isLocal || host === "app-dev.bakimx.com"
 
   // ---- API: host-agnostic ----
   if (pathname.startsWith("/api/")) {
@@ -49,7 +47,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // ---- SINGLE-HOST (local dev + staging): path-based auth, clean URLs, no host split ----
+  // ---- SINGLE-HOST (local dev + app-dev): path-based auth, clean URLs, no host split ----
   if (isSingleHost) {
     if (isPublicPage(pathname)) {
       if (pathname === "/login") {
@@ -109,7 +107,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Statik public asset'leri (özellikle BrandLogo'nun 01..04-bakimx-* logo
   // variant'ları) middleware'den muaf tut. Aksi halde kök görsel istekleri
-  // auth-gate edilip /login'e 307'lenir; bu yüzden staging/prod'da (next
+  // auth-gate edilip /login'e 307'lenir; bu yüzden app-dev/prod'da (next
   // start/standalone, dev'in aksine, middleware'i public static'lerde de
   // çalıştırır) logolar kayboluyordu — hem doğrudan erişimde hem next/image'in
   // kaynak fetch'inde. Ayrıca transactional e-postaların logosu (02-bakimx-
