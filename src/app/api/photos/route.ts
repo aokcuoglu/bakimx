@@ -33,22 +33,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Fotoğraf URL alınamadı" }, { status: 404 })
     }
 
-    if (photo.storageProvider === "mock") {
-      const response = await fetch(signedUrl)
-      if (!response.ok) {
-        return NextResponse.json({ error: "Fotoğraf alınamadı" }, { status: 500 })
-      }
-      const blob = await response.blob()
-      const headers = new Headers()
-      headers.set("Content-Type", photo.mimeType || "image/jpeg")
-      headers.set("Cache-Control", "private, max-age=300")
-      if (size === "thumb") {
-        headers.set("X-Photo-Size", "thumb")
-      }
-      return new Response(blob, { headers })
+    // Proxy the bytes through this same-origin, authenticated route instead of redirecting to
+    // the storage backend. The gallery loads images via fetch()+blob(), which cannot read a
+    // cross-origin S3 redirect without bucket CORS; proxying keeps everything same-origin and
+    // works uniformly for the mock, MinIO and AWS S3 backends.
+    const upstream = await fetch(signedUrl)
+    if (!upstream.ok || !upstream.body) {
+      return NextResponse.json({ error: "Fotoğraf alınamadı" }, { status: 502 })
     }
-
-    return NextResponse.redirect(signedUrl)
+    const headers = new Headers()
+    headers.set("Content-Type", photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
+    headers.set("Cache-Control", "private, max-age=300")
+    if (size === "thumb") {
+      headers.set("X-Photo-Size", "thumb")
+    }
+    return new Response(upstream.body, { headers })
   } catch {
     return NextResponse.json({ error: "Fotoğraf alınamadı" }, { status: 500 })
   }
