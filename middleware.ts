@@ -33,9 +33,11 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
   const isLocal =
     host === "" || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")
-  // Staging serves the whole app on a single host (like local dev) — no bakimx.com /
-  // app.bakimx.com split, so app routes don't bounce to prod. Add staging hosts here.
-  const isSingleHost = isLocal || host === "staging.app.bakimx.com"
+  // Staging/dev serve the whole app on a single host (like local dev) — no bakimx.com /
+  // app.bakimx.com split, so app routes don't bounce to prod. Add such hosts here.
+  // app-dev.bakimx.com = AWS-hosted dev env (replaces the Contabo staging host).
+  const isSingleHost =
+    isLocal || host === "staging.app.bakimx.com" || host === "app-dev.bakimx.com"
 
   // ---- API: host-agnostic ----
   if (pathname.startsWith("/api/")) {
