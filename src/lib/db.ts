@@ -59,10 +59,26 @@ const globalForPrisma = globalThis as unknown as {
 // the base PrismaClient type to keep $transaction tx-client types unchanged for
 // all existing callers, while the read-only impersonation guard still applies.
 function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL
+  const rawUrl = process.env.DATABASE_URL
     ? process.env.DATABASE_URL
     : "postgresql://placeholder:placeholder@localhost:5432/placeholder"
-  const pool = new Pool({ connectionString })
+
+  // AWS RDS presents an Amazon RDS CA that Node does not trust out of the box; the pg driver's
+  // newer default verifies the chain (sslmode=require now behaves like verify-full) and fails
+  // with "self-signed certificate in certificate chain". With DB_SSL_NO_VERIFY=true we still
+  // encrypt the connection but skip chain verification (acceptable for the private, in-VPC dev
+  // RDS). Contabo prod + local dev leave the flag unset → connection string used unchanged.
+  let connectionString = rawUrl
+  let ssl: { rejectUnauthorized: boolean } | undefined
+  if (process.env.DB_SSL_NO_VERIFY === "true") {
+    connectionString = rawUrl
+      .replace(/([?&])sslmode=[^&]*/gi, "$1")
+      .replace(/\?&/g, "?")
+      .replace(/[?&]$/g, "")
+    ssl = { rejectUnauthorized: false }
+  }
+
+  const pool = new Pool(ssl ? { connectionString, ssl } : { connectionString })
   const adapter = new PrismaPg(pool)
   return withImpersonationGuard(new PrismaClient({ adapter })) as unknown as PrismaClient
 }
