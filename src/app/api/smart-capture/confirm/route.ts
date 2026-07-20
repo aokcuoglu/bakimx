@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { revalidatePath } from "next/cache"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
@@ -9,6 +9,7 @@ import { resolveFeature } from "@/lib/features"
 import { type PlanTier } from "@/lib/plan"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { isValidVin } from "@/lib/vin/types"
+import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import type { RuhsatHints } from "@/lib/vin/types"
 import type { Customer, Prisma, Vehicle } from "@prisma/client"
 
@@ -300,6 +301,9 @@ export async function POST(request: Request) {
               },
             })
             catalogLinked = true
+            // Tip daralmasını (autoSelected != null) closure'a taşımak için yakala.
+            const linkedVehicleTypeId = resolution.autoSelected
+            after(() => prefetchCommonVehicleParts(linkedVehicleTypeId))
             await AuditLogAction(
               user.workshopId,
               user.id,

@@ -7,8 +7,6 @@ import { TamiError, TAMI_ERROR_MESSAGES, sanitizeForLog } from "@/lib/tami/error
 import { MOCK_SECRET_KEY } from "@/lib/tami/mock"
 import type { TamiCallbackHashFields } from "@/lib/tami/types"
 import { activateBillingOrder } from "@/lib/billing/activate"
-import { activateVerifiedWorkshop, alertVerifyCancelFailureOnce } from "@/lib/billing/verify-activation"
-import { createVerifyToken } from "@/lib/billing/verify-token"
 import { tamiAmountEqualsMinor, resolveClientIp } from "@/lib/billing/payment-helpers"
 import { founderAlertEmail, paymentReceiptEmail } from "@/lib/emails/system-emails"
 import { sendEmailDirect } from "@/lib/communications/sender"
@@ -40,14 +38,6 @@ function resultRedirect(request: Request, ref: string | null): Response {
   const origin = process.env.APP_URL || new URL(request.url).origin
   const url = new URL("/payment/result", origin)
   if (ref) url.searchParams.set("ref", ref)
-  return NextResponse.redirect(url, 303)
-}
-
-/** Kart doğrulama sonucu — vref token yalnız workshop'u tanıtır (sonuç DB'den okunur). */
-function verifyResultRedirect(request: Request, vtoken: string): Response {
-  const origin = process.env.APP_URL || new URL(request.url).origin
-  const url = new URL("/payment/result", origin)
-  url.searchParams.set("vref", vtoken)
   return NextResponse.redirect(url, 303)
 }
 
@@ -193,14 +183,9 @@ export async function POST(request: Request) {
   const mdStatus = raw.mdStatus ?? ""
   const successTruthy = raw.success === "true" || raw.success === "1"
 
-  // purpose dallanması — claim (tek-yönlü) ve hash doğrulaması SONRASI. Kart doğrulama
-  // denemelerinin siparişi yoktur (billingOrder null); ayrı bir yol izler.
-  if (txn.purpose === "card_verification") {
-    return handleCardVerificationCallback(request, txn, raw, now, mdStatus, successTruthy)
-  }
-
-  // Buradan sonrası purpose=purchase. purchase txn'inde billingOrder BEKLENİR;
-  // yoksa (veri tutarsızlığı) sessizce yutma — sanitize logla ve no-op result'a dön.
+  // Buradan sonrası purchase yolu (purpose=purchase). purchase txn'inde billingOrder
+  // BEKLENİR; yoksa — veri tutarsızlığı VEYA emekli card_verification akışından kalan
+  // stray bir txn (billingOrder null) — sessizce yutma: sanitize logla ve no-op result'a dön.
   if (!txn.billingOrder) {
     console.warn(
       "[payments/callback] purchase txn'inde billingOrder yok — atlanıyor:",
@@ -299,123 +284,4 @@ export async function POST(request: Request) {
 
   // 6) Her durumda 303 → result (ref DB'den; query'ye sonuç konmaz).
   return resultRedirect(request, ref)
-}
-
-/**
- * purpose=card_verification callback dalı. Satış dalıyla SİMETRİK: tutar/para birimi
- * doğrulaması (SABİT 100 kuruş) → complete3ds → BAŞARIDA (a) 1 TL bloke iptali
- * (best-effort; hata akışı BOZMAZ, dedup'lu founder alert) (b) activateVerifiedWorkshop
- * (claim-guard'lı, idempotent) (c) txn completed. Her durumda 303 → result?vref=<token>.
- * Sonuç yalnız DB'ye yazılır; vref token yalnızca workshop'u tanıtır.
- */
-async function handleCardVerificationCallback(
-  request: Request,
-  txn: { id: string; providerOrderId: string; workshopId: string; amountMinor: number; currency: string },
-  raw: Record<string, string>,
-  now: Date,
-  mdStatus: string,
-  successTruthy: boolean
-): Promise<Response> {
-  const providerOrderId = txn.providerOrderId
-  const vtoken = createVerifyToken(txn.workshopId)
-
-  // Başarısız 3DS (mdStatus != 1) → failed.
-  if (mdStatus !== "1" || !successTruthy) {
-    await prisma.paymentTransaction.update({
-      where: { id: txn.id },
-      data: {
-        status: "failed",
-        errorCode: raw.errorCode || mdStatus || "3DS_FAILED",
-        errorMessage: TAMI_ERROR_MESSAGES[raw.errorCode ?? ""] ?? TAMI_ERROR_MESSAGES.default,
-      },
-    })
-    return verifyResultRedirect(request, vtoken)
-  }
-
-  // Tutar/para birimi, çekimden ÖNCE txn snapshot'ına (SABİT 100 kuruş) karşı doğrulanır.
-  const currencyOk =
-    raw.currencyCode === txn.currency || (txn.currency === "TRY" && raw.currencyCode === "949")
-  if (!tamiAmountEqualsMinor(raw.txnAmount ?? "", txn.amountMinor) || !currencyOk) {
-    console.warn(
-      "[payments/callback] doğrulama tutar/para birimi uyuşmazlığı:",
-      sanitizeForLog({ providerOrderId, txnAmount: raw.txnAmount, currencyCode: raw.currencyCode, expectedAmountMinor: txn.amountMinor })
-    )
-    await prisma.paymentTransaction.update({
-      where: { id: txn.id },
-      data: { status: "failed", errorCode: "amount_mismatch", errorMessage: TAMI_ERROR_MESSAGES.default },
-    })
-    return verifyResultRedirect(request, vtoken)
-  }
-
-  try {
-    const completed = await getTamiClient().complete3ds(providerOrderId)
-    if (!completed.success) {
-      await prisma.paymentTransaction.update({
-        where: { id: txn.id },
-        data: {
-          status: "failed",
-          errorCode: completed.errorCode || "COMPLETE_FAILED",
-          errorMessage: completed.errorMessage || TAMI_ERROR_MESSAGES.default,
-        },
-      })
-      return verifyResultRedirect(request, vtoken)
-    }
-
-    // (a) 1 TL bloke iptali — BEST-EFFORT. Başarısızlık AKIŞI BOZMAZ: dedup'lu founder
-    //     alert + txn.errorMessage'a bilgi notu; provizyon 7-9 günde kendiliğinden düşer.
-    let cancelNote: string | null = null
-    try {
-      const cancelled = await getTamiClient().cancel({
-        orderId: providerOrderId,
-        reason: "card verification pre-auth release",
-      })
-      if (!cancelled.success) {
-        throw new TamiError({
-          code: cancelled.errorCode || "CANCEL_FAILED",
-          message: cancelled.errorMessage || "provizyon iptali başarısız",
-        })
-      }
-    } catch (cancelErr) {
-      cancelNote = "1 TL doğrulama provizyonu iptali başarısız — 7-9 günde kendiliğinden düşer."
-      console.warn(
-        "[payments/callback] doğrulama provizyon iptali başarısız:",
-        sanitizeForLog({ providerOrderId, error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr) })
-      )
-      await alertVerifyCancelFailureOnce({ providerOrderId, workshopId: txn.workshopId }).catch((err) => {
-        console.error("[payments/callback] verify cancel alert error:", err instanceof Error ? err.message : err)
-      })
-    }
-
-    // (b) Aktivasyon — claim-guard'lı + idempotent. Başarısızsa txn'i completed YAPMA
-    //     (satış dalıyla aynı bar: founder alert + callback_received'da bırak → retry telafi).
-    const activation = await activateVerifiedWorkshop(txn.workshopId)
-    if (!activation.ok) {
-      console.error("[payments/callback] doğrulama aktivasyonu başarısız:", sanitizeForLog({ providerOrderId }))
-      await alertFounders(
-        "Kart doğrulandı, aktivasyon başarısız",
-        `Workshop ${txn.workshopId} için 1 TL kart doğrulaması başarılı ancak deneme aktivasyonu başarısız oldu. Manuel kontrol gerekli (işlem: ${providerOrderId}).`
-      )
-      return verifyResultRedirect(request, vtoken)
-    }
-
-    // (c) Completed. cancelNote yalnız BİLGİ notudur (hata değil) — akış başarıyla bitti.
-    await prisma.paymentTransaction.update({
-      where: { id: txn.id },
-      data: { status: "completed", completedAt: now, errorMessage: cancelNote },
-    })
-    return verifyResultRedirect(request, vtoken)
-  } catch (err) {
-    const code = err instanceof TamiError ? err.code : "COMPLETE_ERROR"
-    const message = err instanceof TamiError ? err.message : "3DS tamamlama hatası"
-    console.error("[payments/callback] doğrulama complete3ds failed:", sanitizeForLog({ providerOrderId, code, message }))
-    await prisma.paymentTransaction
-      .update({ where: { id: txn.id }, data: { status: "failed", errorCode: code, errorMessage: message } })
-      .catch((e) =>
-        console.error(
-          "[payments/callback] txn 'failed' durumuna yazılamadı (yutulmuş hata):",
-          sanitizeForLog({ providerOrderId, error: e instanceof Error ? e.message : String(e) })
-        )
-      )
-    return verifyResultRedirect(request, vtoken)
-  }
 }

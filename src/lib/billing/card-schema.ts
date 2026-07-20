@@ -2,10 +2,10 @@ import { z } from "zod/v4"
 import { luhnCheck } from "./payment-helpers"
 
 /**
- * Kart alanları için ortak SERVER-SIDE doğrulama şeması. Satış (payments/initiate)
- * ve kart doğrulama (payments/verify/initiate) TEK bu şemayı paylaşır — güvenlik
- * bariyeri iki akışta da birebir aynıdır. Kart verisi burada YALNIZ doğrulama için
- * işlenir; hiçbir yere loglanmaz/saklanmaz (çağıran route sanitizeForLog kullanır).
+ * Kart alanları için ortak SERVER-SIDE doğrulama şeması. Satış ödemesi akışı
+ * (payments/initiate) bu şemayı kullanır — güvenlik bariyeri değişmez. Kart verisi
+ * burada YALNIZ doğrulama için işlenir; hiçbir yere loglanmaz/saklanmaz (çağıran
+ * route sanitizeForLog kullanır).
  */
 export const cardSchema = z
   .object({

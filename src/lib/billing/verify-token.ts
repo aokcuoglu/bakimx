@@ -1,10 +1,10 @@
 import { createHmac, timingSafeEqual } from "crypto"
 
 /**
- * Kayıtta kart doğrulama akışının imzalı "verify" token'ı. `/register` bir
+ * Kayıtta e-posta doğrulama akışının imzalı "verify" token'ı. `/register` bir
  * PENDING workshop yaratır ve bu token'ı üretir; token yalnızca hangi workshop'un
  * doğrulanacağını TAŞIR (ödeme sonucu ya da yetki DEĞİL — sonuç her zaman DB'den
- * okunur). Token'ı taşıyan herkes yalnız doğrulama formunu açabilir; workshop
+ * okunur). Token'ı taşıyan herkes yalnız doğrulama linkini kullanabilir; workshop
  * pending değilse initiate route hiçbir şey yapmaz.
  *
  * Biçim: `workshopId.expEpochMs.base64url(HMAC-SHA256(secret, workshopId.expEpochMs))`
@@ -13,7 +13,9 @@ import { createHmac, timingSafeEqual } from "crypto"
  * timingSafeEqual + exp kontrolü yapar; kurcalanmış/süresi geçmiş/bozuk → null.
  */
 
-const TTL_MS = 24 * 60 * 60 * 1000
+// E-posta doğrulama linki ömrü — 48 saatlik purge penceresiyle hizalı
+// (bkz. lifecycle.ts PURGE_STALE_MS). Süresi dolan link /login?verify=invalid'e düşer.
+const TTL_MS = 48 * 60 * 60 * 1000
 
 /** SESSION_SECRET — oturum katmanının (src/lib/session.ts getSessionSecret) kullandığı
  *  AYNI env değişkeni ve AYNI dev-fallback semantiği. Prod'da eksikse throw. */
@@ -22,7 +24,7 @@ function verifyTokenSecret(): string {
   if (secret && secret.trim() !== "") return secret
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "SESSION_SECRET ortam değişkeni production ortamında zorunludur (kart doğrulama token imzası)."
+      "SESSION_SECRET ortam değişkeni production ortamında zorunludur (e-posta doğrulama token imzası)."
     )
   }
   // Dev/test fallback — session.ts ile birebir aynı değer (tokenlar uyumlu kalsın).
@@ -33,7 +35,7 @@ function sign(payload: string): string {
   return createHmac("sha256", verifyTokenSecret()).update(payload).digest("base64url")
 }
 
-/** Pending bir workshop için 24 saat geçerli imzalı doğrulama token'ı üretir. */
+/** Pending bir workshop için 48 saat geçerli imzalı doğrulama token'ı üretir. */
 export function createVerifyToken(workshopId: string): string {
   const exp = Date.now() + TTL_MS
   const payload = `${workshopId}.${exp}`

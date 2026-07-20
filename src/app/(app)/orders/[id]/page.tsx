@@ -238,7 +238,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <AppShell
-      constrained
+      wide
       workshopName={workshop?.name}
       pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
     >

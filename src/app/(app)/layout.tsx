@@ -6,7 +6,6 @@ import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getPlanState } from "@/lib/plan"
-import { createVerifyToken } from "@/lib/billing/verify-token"
 import { PlanLocked } from "@/components/app/plan-locked"
 import { AppShellChrome } from "@/components/app/app-shell"
 import { ImpersonationBanner } from "@/components/app/impersonation-banner"
@@ -53,10 +52,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       where: { workshopId: user.workshopId, status: "pending_payment" },
       select: { id: true },
     })
-    // pending → kart doğrulaması bekliyor: server-side imzalı token üret, kilit
-    // ekranındaki VerifyCardPanel'i sürer. rejected dalı değişmeden kalır.
-    const verifyToken =
-      plan.lockReason === "pending" ? createVerifyToken(user.workshopId) : undefined
     return (
       <>
         {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
@@ -64,7 +59,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           reason={plan.lockReason}
           workshopName={workshop.name}
           hasPendingOrder={!!pendingOrder}
-          verifyToken={verifyToken}
         />
       </>
     )

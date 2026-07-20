@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -62,12 +62,23 @@ export function TecdocPartPicker({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   hideTrigger,
+  initialCategoryId,
+  initialCategoryName,
+  initialSupplierId,
+  initialSupplierName,
 }: {
   vehicle: PickerVehicle | undefined
   onSelect: (sel: TecdocPartSelection) => void
   open?: boolean
   onOpenChange?: (v: boolean) => void
   hideTrigger?: boolean
+  /** Satırda kategori seçiliyse açılışta doğrudan o kategorinin parçalarına atla. */
+  initialCategoryId?: number | null
+  initialCategoryName?: string | null
+  /** Satırda yalnız marka seçiliyse kategori ağacını bu markaya göre buda (best-effort). */
+  initialSupplierId?: number | null
+  /** Satırda marka seçiliyse parça listesini bu markaya ön-filtrele (temizlenebilir). */
+  initialSupplierName?: string | null
 }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const open = controlledOpen ?? uncontrolledOpen
@@ -82,21 +93,73 @@ export function TecdocPartPicker({
 
   const vehicleTypeId = vehicle?.catalogVehicleTypeId ?? null
 
-  const loadCategories = useCallback(async () => {
+  const loadCategories = useCallback(async (supplierId?: number | null) => {
     if (vehicleTypeId == null) return
     setLoading(true)
     setError("")
     try {
-      const res = await fetch(`/api/tecdoc/categories?vehicleId=${vehicleTypeId}`)
+      const base = `/api/tecdoc/categories?vehicleId=${vehicleTypeId}`
+      const res = await fetch(supplierId != null ? `${base}&supplierId=${supplierId}` : base)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Katalog yüklenemedi.")
-      setTree(data.categories as CategoryNode[])
+      let cats = (data.categories as CategoryNode[]) ?? []
+      // Marka-filtreli ağaç best-effort (yalnız daha önce keşfedilmiş kategoriler;
+      // sağlayıcıda marka→kategori ters-indeksi yok). Boş dönerse çıkmaz sokak
+      // olmasın diye tam ağaca düş.
+      if (supplierId != null && cats.length === 0) {
+        const full = await fetch(base)
+        const fullData = await full.json()
+        if (full.ok) cats = (fullData.categories as CategoryNode[]) ?? []
+      }
+      setTree(cats)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Katalog yüklenemedi.")
     } finally {
       setLoading(false)
     }
   }, [vehicleTypeId])
+
+  // Açılış davranışı (her açılışta bir kez — initedRef guard'ı). `open` controlled
+  // prop'tan (grid'in 🔍 butonu setTecdocOpen(true) ile doğrudan set eder) gelince
+  // Base UI onOpenChange'i çağırmaz → yükleme handleOpenChange'e bağlanamaz; bu
+  // yüzden open'ı doğrudan izliyoruz.
+  //  • Kategori seçiliyse: doğrudan o kategorinin parçalarına atla (marka da
+  //    seçiliyse listeyi o markaya ön-filtrele). Ağaç, geri tuşunda tembel yüklenir.
+  //  • Yalnız marka seçiliyse: kategori ağacını o markaya göre buda (best-effort;
+  //    boşsa tam ağaca düşer — loadCategories içinde).
+  //  • Hiçbiri seçili değilse: tam kök kategori ağacını yükle (mevcut davranış).
+  const initedRef = useRef(false)
+  useEffect(() => {
+    if (!open) {
+      initedRef.current = false
+      return
+    }
+    if (initedRef.current) return
+    initedRef.current = true
+    // Her açılış tamamen sıfırdan başlar — satır seçimi (kategori/marka) açılışlar
+    // arası değişmiş olabilir; bayat ağaç/breadcrumb/parça listesi taşınmasın.
+    // Marka seçiliyse parça listesini o markaya ön-filtrele (temizlenebilir).
+    // (Senkron setState — açılışta API'den veri çekmek için, fetch-on-open kalıbı.)
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setTree(null)
+    setStack([])
+    setArticles(null)
+    setFilter("")
+    setError("")
+    setSupplierFilter(initialSupplierName || "")
+    if (initialCategoryId != null) {
+      // Kategori seçili → doğrudan o kategorinin parçalarına atla. Ağaç null kalır,
+      // geri tuşunda goBack içinde tam ağaç tembel yüklenir.
+      void openLeaf({ id: initialCategoryId, name: initialCategoryName || "Kategori", children: [] })
+    } else if (initialSupplierId != null) {
+      void loadCategories(initialSupplierId) // yalnız marka → markaya budanmış ağaç
+    } else {
+      void loadCategories() // hiçbiri → tam ağaç
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // Kasıtlı olarak yalnız `open`'a tepki verir (açılış-başına-tek-sefer).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   async function openLeaf(node: CategoryNode) {
     if (vehicleTypeId == null) return
@@ -122,13 +185,17 @@ export function TecdocPartPicker({
     if (articles) {
       setArticles(null)
       setFilter("")
+      setSupplierFilter("") // yeni kategoride marka ön-filtresi taşınmasın
     }
+    // Köke (tam ağaca) dönüyorsak ve ağaç henüz yüklenmediyse (kategoriye-atla
+    // durumu ağacı atlamıştı) tembel yükle.
+    if (stack.length <= 1 && tree == null) void loadCategories()
     setStack((s) => s.slice(0, -1))
   }
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
-    if (next && tree == null) void loadCategories()
+    // Yükleme artık open'ı izleyen useEffect'te (controlled + uncontrolled ortak yol).
     if (!next) {
       setStack([])
       setArticles(null)

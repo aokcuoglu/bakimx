@@ -18,6 +18,12 @@ export function getTecdocProvider(): TecdocProvider {
   const name = (process.env.TECDOC_PROVIDER || "mock").toLowerCase().trim()
 
   if (name === "mock" || name === "") {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[TecDoc] TECDOC_PROVIDER ayarlı değil — mock sağlayıcı kullanılıyor; parça kataloğu demo veri dönecek. " +
+          "Gerçek katalog için prod .env'e TECDOC_PROVIDER=rapidapi + RAPIDAPI_KEY ekleyin."
+      )
+    }
     _provider = new MockTecdocProvider()
     return _provider
   }

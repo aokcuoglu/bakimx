@@ -22,6 +22,12 @@ export function getVinProvider(): VinProvider {
   const name = (process.env.VIN_PROVIDER || "mock").toLowerCase().trim()
 
   if (name === "mock" || name === "") {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[VIN] VIN_PROVIDER ayarlı değil — mock sağlayıcı kullanılıyor; gerçek VIN'ler \"bulunamadı\" dönecek. " +
+          "Gerçek sorgulama için prod .env'e VIN_PROVIDER=rapidapi + RAPIDAPI_KEY ekleyin."
+      )
+    }
     _provider = new MockVinProvider()
     return _provider
   }

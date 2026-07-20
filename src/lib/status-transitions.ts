@@ -105,3 +105,23 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
 export function isOrderLocked(status: OrderStatus): boolean {
   return status === "delivered" || status === "cancelled"
 }
+
+/**
+ * Intake tarafı yazma kilidi (bilgi düzenleme, foto ekleme, hasar işareti).
+ * Intake'in kendisi VEYA bağlı iş emri delivered/cancelled ise yazma kapalıdır.
+ * Bağlı order'ı olmayan intake'lerde intake statüsü tek başına belirleyicidir.
+ */
+export function isIntakeWriteLocked(intakeStatus: IntakeStatus, orderStatus?: OrderStatus | null): boolean {
+  if (intakeStatus === "delivered" || intakeStatus === "cancelled") return true
+  return orderStatus != null && isOrderLocked(orderStatus)
+}
+
+/**
+ * Tahsilat kilidi: teslim edilmiş VE tamamen ödenmiş iş emrine yeni tahsilat
+ * eklenemez (yanlışlıkla mükerrer tahsilat → overpaid'i önler). Teslim edilmiş
+ * ama borcu kalan iş emri AÇIK kalır (araç gitti, ödeme sonra senaryosu).
+ * `cancelled` reddi createCollectionAction'da ayrı mesajla zaten var.
+ */
+export function isCollectionLockedForOrder(orderStatus: OrderStatus, paymentStatus: PaymentStatus): boolean {
+  return orderStatus === "delivered" && (paymentStatus === "paid" || paymentStatus === "overpaid")
+}

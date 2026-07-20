@@ -486,7 +486,7 @@ function InfoRow({
 
 export function PaymentHistoryCard({
   orderId,
-  isCancelled,
+  collectionsLocked,
   totals,
   paidAmount,
   remainingAmount,
@@ -495,7 +495,7 @@ export function PaymentHistoryCard({
   customerName,
 }: {
   orderId: string
-  isCancelled: boolean
+  collectionsLocked: boolean
   totals: Totals
   paidAmount: number
   remainingAmount: number
@@ -513,7 +513,7 @@ export function PaymentHistoryCard({
             <Wallet className="size-4 text-muted-foreground" />
             Tahsilat Geçmişi
           </CardTitle>
-          {!isCancelled && (
+          {!collectionsLocked && (
             <Link
               href={`/cashbox/payments/new?orderId=${orderId}`}
               className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
@@ -529,7 +529,7 @@ export function PaymentHistoryCard({
           <div className="text-center py-4">
             <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
-            {!isCancelled && (
+            {!collectionsLocked && (
               <Link
                 href={`/cashbox/payments/new?orderId=${orderId}`}
                 className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
