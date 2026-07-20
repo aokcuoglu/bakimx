@@ -10,6 +10,12 @@ name: Deploy to AWS dev (app-dev.bakimx.com)
 on:
   push:
     branches: [dev]
+    # Docs/markdown-only pushes don't change the image or infra — skip the ~15 min build+deploy.
+    # (workflow_dispatch always runs, as a manual override.)
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".env*.example"
   workflow_dispatch:
 
 # OIDC: assume the AWS deploy role without long-lived keys.
