@@ -79,17 +79,25 @@ jobs:
           set -euo pipefail
           IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${GITHUB_SHA}"
           # Clone the current task def, swap only the app container image, drop read-only fields.
-          # Clone the current task def, swap the app image, and ensure DB_SSL_NO_VERIFY=true
-          # (the app's pg driver must skip RDS CA verification — see src/lib/db.ts). Injected
-          # here so it survives even if the CDK task def omits it; idempotent across re-runs.
-          # TODO(cdk-backfill): move DB_SSL_NO_VERIFY into the CDK task-def env, then drop this.
+          # Clone the current task def, swap the app image, and inject the runtime env this
+          # environment needs but the CDK task def omits:
+          #   DB_SSL_NO_VERIFY   — app pg driver must skip RDS CA verification (src/lib/db.ts)
+          #   SESSION_COOKIE_*   — isolate app-dev's session cookie from prod's .bakimx.com
+          #                        cookie (the Node routes read these at runtime; the Edge
+          #                        middleware gets them at build time via build-args above)
+          # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
           aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
             --query taskDefinition --output json \
           | jq --arg IMG "$IMAGE" --arg CN "$CONTAINER_NAME" '
               (.containerDefinitions[] | select(.name==$CN)).image = $IMG
               | (.containerDefinitions[] | select(.name==$CN)).environment |=
-                  ((. // []) | map(select(.name != "DB_SSL_NO_VERIFY"))
-                   + [{name: "DB_SSL_NO_VERIFY", value: "true"}])
+                  ((. // [])
+                   | map(select(.name != "DB_SSL_NO_VERIFY"
+                                and .name != "SESSION_COOKIE_NAME"
+                                and .name != "SESSION_COOKIE_DOMAIN"))
+                   + [{name: "DB_SSL_NO_VERIFY",     value: "true"},
+                      {name: "SESSION_COOKIE_NAME",   value: "bakimx_session_dev"},
+                      {name: "SESSION_COOKIE_DOMAIN", value: "app-dev.bakimx.com"}])
               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                     .compatibilities, .registeredAt, .registeredBy)
             ' > new-taskdef.json
