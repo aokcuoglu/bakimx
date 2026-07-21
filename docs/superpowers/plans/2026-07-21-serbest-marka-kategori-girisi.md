@@ -131,7 +131,9 @@ Bileşenin yeni arayüzü ile grid'in tüketimi birbirine bağlıdır (biri diğ
 **Files:**
 - Create: `src/components/app/part-attribute-field.tsx`
 - Delete: `src/components/app/part-filter-combobox.tsx`
-- Modify: `src/components/app/parts-labor-grid.tsx` (import satırı `16`; Marka hücresi `378-408`; Kategori hücresi `411-438`)
+- Modify: `src/components/app/parts-labor-grid.tsx` (import satırı `16`; Marka hücresi `378-408`; Kategori hücresi `410-438`)
+
+> Not: bu dosya, özellikten bağımsız kozmetik polish commit'i (`d85366d`) sonrası halindedir — salt-görünür marka/kategori span'lerinde zaten `title={row.brand}` / `title={row.category}` tooltip'i vardır. Aşağıdaki değiştirme blokları bu tooltip'i KORUR.
 
 **Interfaces:**
 - Consumes (Task 1): `freeTextCommit`, `AttrOption` from `@/components/app/part-attribute-commit`.
@@ -394,7 +396,7 @@ Mevcut `{/* Marka */}` bloğunun tamamını şununla değiştir:
                 </div>
               </div>
             ) : row.brand ? (
-              <span className="block truncate text-xs text-muted-foreground">
+              <span className="block truncate text-xs text-muted-foreground" title={row.brand}>
                 <span className="text-muted-foreground/70 md:hidden">Marka: </span>{row.brand}
               </span>
             ) : (
@@ -404,7 +406,7 @@ Mevcut `{/* Marka */}` bloğunun tamamını şununla değiştir:
         </div>
 ```
 
-- [ ] **Step 5: Kategori hücresini değiştir (`parts-labor-grid.tsx`, mevcut `411-438` bloğu)**
+- [ ] **Step 5: Kategori hücresini değiştir (`parts-labor-grid.tsx`, mevcut `410-438` bloğu)**
 
 Mevcut `{/* Kategori */}` bloğunun tamamını şununla değiştir:
 
@@ -438,7 +440,7 @@ Mevcut `{/* Kategori */}` bloğunun tamamını şununla değiştir:
                 </div>
               </div>
             ) : row.category ? (
-              <span className="block truncate text-xs text-muted-foreground">
+              <span className="block truncate text-xs text-muted-foreground" title={row.category}>
                 <span className="text-muted-foreground/70 md:hidden">Kategori: </span>{row.category}
               </span>
             ) : (
