@@ -27,7 +27,9 @@
 - **Create** `src/components/app/part-attribute-commit.test.ts` — helper için `bun test` birim testleri.
 - **Create** `src/components/app/part-attribute-field.tsx` — Autocomplete tabanlı free-form Marka/Kategori alanı (eski `part-filter-combobox.tsx`'in yerini alır).
 - **Delete** `src/components/app/part-filter-combobox.tsx` — Combobox tabanlı eski filtre (katı liste-seçim).
-- **Modify** `src/components/app/parts-labor-grid.tsx` — import değişimi + Marka/Kategori hücrelerini persist eden, unlinked'de de görünen, mobilde düzenlenebilir alanlara çevir.
+- **Modify** `src/components/app/parts-labor-grid.tsx` — import değişimi + paylaşılan `AttrCell` hücre bileşeni ekle (persist + unlinked + free-form); `DesktopPartRow` ve `MobilePartRow`'da Marka/Kategori'yi bununla değiştir (mobil düzenlenebilir).
+
+> **GÜNCELLEME (2026-07-21):** `parts-labor-grid.tsx` bu plan yazıldıktan sonra `refactor(orders): parça/işçilik grid'i shadcn Base <table>'a taşı` (commit `fd055c5`) ile yeniden yapılandırıldı. Artık paylaşılan `useRowEditor` hook'u + layout-bağımsız hücre bileşenleri (`PartField`, `QtyStepper`, `PriceField`, `DeleteButton`, `RowTecdocPicker`) + ayrı `DesktopPartRow` (gerçek `<table>` satırı) ve `MobilePartRow` (kart) var. Task 2 aşağıda BU yapıya göre yazılmıştır (eski `GridRow` yok). Branch: `feat/serbest-marka-kategori` (base `fd055c5`).
 
 ---
 
@@ -124,19 +126,22 @@ git commit -m "feat(parts): serbest marka/kategori commit karar helper'ı + test
 
 ---
 
-## Task 2: Autocomplete alanı + grid wiring (birlikte)
+## Task 2: Autocomplete alanı + grid wiring (yeni <table> yapısına göre)
 
-Bileşenin yeni arayüzü ile grid'in tüketimi birbirine bağlıdır (biri diğeri olmadan derlenmez/çalışmaz) → tek görevde, sonunda build yeşil.
+`parts-labor-grid.tsx` artık paylaşılan `useRowEditor` hook'u + layout-bağımsız hücre bileşenleri (`PartField`, `QtyStepper`, `PriceField`, `DeleteButton`, `RowTecdocPicker`) + `DesktopPartRow`/`MobilePartRow` kullanıyor. Bu görev, aynı desende **paylaşılan bir `AttrCell` hücre bileşeni** ekler (Marka/Kategori için) ve iki satır bileşeninde de kullanır → mobil düzenleme doğal olarak gelir. Bileşenin yeni arayüzü ile grid tüketimi birbirine bağlı → tek görev, sonunda build yeşil.
 
 **Files:**
 - Create: `src/components/app/part-attribute-field.tsx`
 - Delete: `src/components/app/part-filter-combobox.tsx`
-- Modify: `src/components/app/parts-labor-grid.tsx` (import satırı `16`; Marka hücresi `378-408`; Kategori hücresi `410-438`)
-
-> Not: bu dosya, özellikten bağımsız kozmetik polish commit'i (`d85366d`) sonrası halindedir — salt-görünür marka/kategori span'lerinde zaten `title={row.brand}` / `title={row.category}` tooltip'i vardır. Aşağıdaki değiştirme blokları bu tooltip'i KORUR.
+- Modify: `src/components/app/parts-labor-grid.tsx`
+  - import satırı `24` (`PartFilterCombobox` → `PartAttributeField`)
+  - yeni `AttrCell` bileşeni (mevcut `RowTecdocPicker`'dan hemen sonra, ~`489`)
+  - `DesktopPartRow` Marka hücresi (`527-545`) ve Kategori hücresi (`547-566`)
+  - `MobilePartRow` Marka/Kategori salt-görünür bloğu (`633-643`)
 
 **Interfaces:**
-- Consumes (Task 1): `freeTextCommit`, `AttrOption` from `@/components/app/part-attribute-commit`.
+- Consumes (Task 1, commit'li): `freeTextCommit`, `AttrOption` from `@/components/app/part-attribute-commit`.
+- Mevcut grid iç tipleri: `Row`, `OnCell`, `RowEditor` (= `ReturnType<typeof useRowEditor>`), `PickerVehicle`. `RowEditor` şu alanları sağlar: `isPart`, `editable`, `linked`, `filter`, `setFilter`, `setTecdocOpen`.
 - Produces:
   - `PartAttributeField` props:
     ```ts
@@ -151,6 +156,7 @@ Bileşenin yeni arayüzü ile grid'in tüketimi birbirine bağlıdır (biri diğ
       onOpenPicker?: () => void       // yalnız linked'de verilir → "Katalogda ara →"
     }
     ```
+  - `AttrCell` props: `{ kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell }`
 
 - [ ] **Step 1: Yeni bileşen dosyasını oluştur**
 
@@ -159,7 +165,7 @@ Bileşenin yeni arayüzü ile grid'in tüketimi birbirine bağlıdır (biri diğ
 ```tsx
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Autocomplete,
   AutocompleteInput,
@@ -348,7 +354,7 @@ export function PartAttributeField({
 git rm src/components/app/part-filter-combobox.tsx
 ```
 
-- [ ] **Step 3: Grid import satırını değiştir (`parts-labor-grid.tsx:16`)**
+- [ ] **Step 3: Grid import satırını değiştir (`parts-labor-grid.tsx:24`)**
 
 Değiştir:
 
@@ -362,122 +368,159 @@ Yerine:
 import { PartAttributeField } from "@/components/app/part-attribute-field"
 ```
 
-- [ ] **Step 4: Marka hücresini değiştir (`parts-labor-grid.tsx`, mevcut `378-408` bloğu)**
+- [ ] **Step 4: Paylaşılan `AttrCell` bileşenini ekle**
 
-Mevcut `{/* Marka */}` bloğunun tamamını şununla değiştir:
-
-```tsx
-        {/* Marka — md+ ve mobilde düzenlenebilir; kilitliyken salt-görünür. */}
-        <div className={cn("min-w-0", !(isPart && (editable || row.brand)) && "hidden md:block")}>
-          {isPart && (
-            editable ? (
-              <div className="flex items-center gap-2">
-                <span className="w-16 shrink-0 text-xs text-muted-foreground md:hidden">Marka</span>
-                <div className="min-w-0 flex-1">
-                  <PartAttributeField
-                    kind="brand"
-                    vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
-                    value={row.brand ?? ""}
-                    disabled={row.__saving}
-                    onSelect={(id, name) => {
-                      setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))
-                      onCell(row, { brand: name })
-                    }}
-                    onCommitFreeText={(v) => {
-                      setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
-                      onCell(row, { brand: v })
-                    }}
-                    onClear={() => {
-                      setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
-                      onCell(row, { brand: null })
-                    }}
-                    onOpenPicker={linked ? () => setTecdocOpen(true) : undefined}
-                  />
-                </div>
-              </div>
-            ) : row.brand ? (
-              <span className="block truncate text-xs text-muted-foreground" title={row.brand}>
-                <span className="text-muted-foreground/70 md:hidden">Marka: </span>{row.brand}
-              </span>
-            ) : (
-              <span className="hidden text-xs text-muted-foreground/40 md:inline">—</span>
-            )
-          )}
-        </div>
-```
-
-- [ ] **Step 5: Kategori hücresini değiştir (`parts-labor-grid.tsx`, mevcut `410-438` bloğu)**
-
-Mevcut `{/* Kategori */}` bloğunun tamamını şununla değiştir:
+`RowTecdocPicker` fonksiyonunun kapanış `}`'inden hemen SONRA (mevcut `// ── Masaüstü satırı` yorumundan ÖNCE) şu bileşeni ekle:
 
 ```tsx
-        {/* Kategori — md+ ve mobilde düzenlenebilir; kilitliyken salt-görünür. */}
-        <div className={cn("min-w-0", !(isPart && (editable || row.category)) && "hidden md:block")}>
-          {isPart && (
-            editable ? (
-              <div className="flex items-center gap-2">
-                <span className="w-16 shrink-0 text-xs text-muted-foreground md:hidden">Kategori</span>
-                <div className="min-w-0 flex-1">
-                  <PartAttributeField
-                    kind="category"
-                    vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
-                    value={row.category ?? ""}
-                    disabled={row.__saving}
-                    onSelect={(id, name) => {
-                      setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))
-                      onCell(row, { category: name, categoryId: id })
-                    }}
-                    onCommitFreeText={(v) => {
-                      setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
-                      onCell(row, { category: v, categoryId: null })
-                    }}
-                    onClear={() => {
-                      setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
-                      onCell(row, { category: null, categoryId: null })
-                    }}
-                    onOpenPicker={linked ? () => setTecdocOpen(true) : undefined}
-                  />
-                </div>
-              </div>
-            ) : row.category ? (
-              <span className="block truncate text-xs text-muted-foreground" title={row.category}>
-                <span className="text-muted-foreground/70 md:hidden">Kategori: </span>{row.category}
-              </span>
-            ) : (
-              <span className="hidden text-xs text-muted-foreground/40 md:inline">—</span>
-            )
-          )}
-        </div>
+// Marka/Kategori hücresi (masaüstü + mobil ortak). Düzenlenebilirken katalog
+// önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
+// Seçim/serbest-commit satıra persist EDER (onCell) ve katalog seçimi ayrıca
+// parça aramasını daraltan filtreyi (ed.filter) set eder.
+function AttrCell({ kind, row, ed, vehicle, onCell }: {
+  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
+}) {
+  if (!ed.isPart) return null
+  const value = kind === "brand" ? row.brand : row.category
+
+  if (!ed.editable) {
+    return value ? (
+      <span className="block truncate text-xs text-muted-foreground" title={value}>{value}</span>
+    ) : (
+      <span className="text-xs text-muted-foreground/40">—</span>
+    )
+  }
+
+  return (
+    <PartAttributeField
+      kind={kind}
+      vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+      value={value ?? ""}
+      disabled={row.__saving}
+      onSelect={(id, name) => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))
+          onCell(row, { brand: name })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))
+          onCell(row, { category: name, categoryId: id })
+        }
+      }}
+      onCommitFreeText={(v) => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
+          onCell(row, { brand: v })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
+          onCell(row, { category: v, categoryId: null })
+        }
+      }}
+      onClear={() => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
+          onCell(row, { brand: null })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
+          onCell(row, { category: null, categoryId: null })
+        }
+      }}
+      onOpenPicker={ed.linked ? () => ed.setTecdocOpen(true) : undefined}
+    />
+  )
+}
 ```
 
-- [ ] **Step 6: Typecheck**
+- [ ] **Step 5: `DesktopPartRow` Marka + Kategori hücrelerini değiştir**
+
+Mevcut `{/* Marka */}` `<TableCell>` bloğunun İÇİNİ (satır `527-545` civarı; `{ed.isPart && ( ... )}` ifadesinin tamamı) şununla değiştir:
+
+```tsx
+      {/* Marka */}
+      <TableCell className="whitespace-normal">
+        <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+      </TableCell>
+```
+
+Mevcut `{/* Kategori */}` `<TableCell>` bloğunun İÇİNİ (satır `547-566` civarı) şununla değiştir:
+
+```tsx
+      {/* Kategori */}
+      <TableCell className="whitespace-normal">
+        <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+      </TableCell>
+```
+
+- [ ] **Step 6: `MobilePartRow` Marka/Kategori bloğunu düzenlenebilir yap**
+
+Mevcut mobil salt-görünür bloğu (satır `633-643`):
+
+```tsx
+      {/* Marka / Kategori (mobilde yalnız salt-görünür metin — combobox mobilde yok) */}
+      {ed.isPart && row.brand && (
+        <p className="mt-1.5 truncate text-xs text-muted-foreground">
+          <span className="text-muted-foreground/70">Marka: </span>{row.brand}
+        </p>
+      )}
+      {ed.isPart && row.category && (
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          <span className="text-muted-foreground/70">Kategori: </span>{row.category}
+        </p>
+      )}
+```
+
+şununla değiştir (düzenlenebilirken input; kilitliyken yalnız dolu olanları etiketle gösterir):
+
+```tsx
+      {/* Marka / Kategori — mobilde de düzenlenebilir (AttrCell ortak hücre). */}
+      {ed.isPart && (ed.editable || row.brand || row.category) && (
+        <div className="mt-2 space-y-1.5">
+          {(ed.editable || row.brand) && (
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">Marka</span>
+              <div className="min-w-0 flex-1">
+                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+            </div>
+          )}
+          {(ed.editable || row.category) && (
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">Kategori</span>
+              <div className="min-w-0 flex-1">
+                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+```
+
+- [ ] **Step 7: Typecheck**
 
 Run: `bun run typecheck`
-Expected: PASS (hata yok). Özellikle `PartFilterCombobox` kalıntı importu / kullanımı kalmadığını doğrular.
+Expected: PASS. `PartFilterCombobox` kalıntı importu/kullanımı kalmadığını, `AttrCell` tiplerinin (`Row`/`OnCell`/`RowEditor`/`PickerVehicle`) tuttuğunu doğrular.
 
-- [ ] **Step 7: Lint**
+- [ ] **Step 8: Lint**
 
 Run: `bun run lint`
-Expected: PASS (yeni dosyalarda uyarı/hata yok; `set-state-in-effect` satırları eslint-disable ile bilinçli).
+Expected: PASS (yeni dosyada `set-state-in-effect` satırları bilinçli eslint-disable'lı).
 
-- [ ] **Step 8: Build**
+- [ ] **Step 9: Build**
 
 Run: `bun run build`
-Expected: PASS (client bileşen değişimi; derleme başarılı).
+Expected: PASS.
 
-- [ ] **Step 9: Manuel QA (dev sunucu)**
+- [ ] **Step 10: Manuel QA (kontrolöre/kullanıcıya bırakılır)**
 
-> Not: local dev AWS dev DB'ye bağlanır — `bun run db:tunnel` açık olmalı, ardından `bun run dev`. Bir iş emri detayında (`/orders/[id]`) "Kullanılan Parçalar & İşçilikler" bölümünde test et:
+> Otomatik değil — çalışan dev sunucu + `bun run db:tunnel` + tarayıcı gerekir. Implementer bunu ÇALIŞTIRMAZ; kontrolör/kullanıcı doğrular. Senaryolar (bir iş emri `/orders/[id]` → "Kullanılan Parçalar & İşçilikler"):
+> 1. Bağlı araç + katalog markası seç → arama daralır **ve** satırda marka görünür; yenile → durur.
+> 2. Bağlı araç + "seta" yaz → `＋ "seta" ekle` → satırda durur; yenile → durur.
+> 3. Bağlı araç + serbest kategori → `categoryId=null` gider, kaydolur.
+> 4. Bağlı OLMAYAN araç → Marka/Kategori serbest girilebilir + persist.
+> 5. Mobil (dar ekran) → (1)–(4) düzenlenebilir + persist.
+> 6. Kilitli/teslim emir → alanlar salt-görünür.
+> 7. Temizle (X) → satırda marka/kategori temizlenir.
 
-1. **Bağlı araç + katalog markası:** Marka alanına yaz, listeden bir marka seç → parça araması daraldı **ve** satırda marka göründü; sayfa yenilendiğinde marka durur.
-2. **Bağlı araç + serbest marka:** "seta" yaz → `＋ "seta" ekle` görünür → tıkla → satırda "seta" durur; yenile → durur.
-3. **Bağlı araç + serbest kategori:** kategori serbest gir → satırda durur, `categoryId` null gider (kaydolur).
-4. **Bağlı OLMAYAN araç** (TecDoc eşleşmeyen): Marka/Kategori alanları görünür ve serbest metin girişi çalışır + persist olur.
-5. **Mobil (dar ekran / responsive):** (1)–(4) mobilde de düzenlenebilir + persist.
-6. **Kilitli/teslim edilmiş emir:** alanlar disabled, salt-görünür metin.
-7. **Temizle (X):** dolu alanda X → satırda marka/kategori temizlenir (yenile sonrası boş).
-
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add src/components/app/part-attribute-field.tsx src/components/app/parts-labor-grid.tsx
