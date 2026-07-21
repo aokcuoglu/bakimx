@@ -53,6 +53,7 @@ export function CustomerVehiclePicker({
   const [ownerMode, setOwnerMode] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [comboOpen, setComboOpen] = useState(false)
+  const [modalSeed, setModalSeed] = useState<{ plate?: string; vin?: string }>({})
 
   const fixedCustomer = useMemo(
     () => (selected?.kind === "customer" ? { id: selected.customerId, label: selected.label } : undefined),
@@ -114,6 +115,8 @@ export function CustomerVehiclePicker({
   const modeResults = results.filter((r) => (mode === "customer" ? r.kind === "customer" : r.kind === "vehicle"))
 
   function switchMode(m: Mode) { setMode(m); setQuery(""); setResults([]) }
+
+  function openCreate(seed: { plate?: string; vin?: string }) { setModalSeed(seed); setModalOpen(true) }
 
   // Kameradan okunan plaka: arama kutusuna yaz (mevcut debounce'lu arama tetiklenir)
   // ve açılır listeyi aç — eşleşen araç seçilebilir, yoksa "Oluştur" yolu görünür.
@@ -244,7 +247,7 @@ export function CustomerVehiclePicker({
       {/* Belirgin başlangıç: ruhsattan yeni müşteri & araç oluştur (OCR ile ön-doldur). */}
       <button
         type="button"
-        onClick={() => setModalOpen(true)}
+        onClick={() => openCreate({})}
         className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left transition-colors hover:border-primary hover:bg-primary/10"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -292,8 +295,8 @@ export function CustomerVehiclePicker({
                   if (first && first.kind === "vehicle") { pickVehicle(first); return }
                   // Eşleşme yok: plaka modu her metinde modalı açar; VIN modu yalnız
                   // geçerli 17-hane VIN'de (kısmi girişte Enter no-op).
-                  if (mode === "vin") { if (isValidVin(query)) setModalOpen(true) }
-                  else if (query.trim()) setModalOpen(true)
+                  if (mode === "vin") { if (isValidVin(query)) openCreate({ vin: normalizeVin(query) }) }
+                  else if (query.trim()) openCreate({ plate: query.trim() })
                 }}
               />
               <ComboboxContent>
@@ -304,7 +307,7 @@ export function CustomerVehiclePicker({
                     isValidVin(query) ? (
                       <div className="flex w-full flex-wrap items-center gap-2 p-2">
                         <span className="text-xs text-muted-foreground">«{normalizeVin(query)}» yok —</span>
-                        <Button type="button" size="sm" onClick={() => setModalOpen(true)}><Plus className="size-4 mr-1" /> VIN&apos;den araç oluştur</Button>
+                        <Button type="button" size="sm" onClick={() => openCreate({ vin: normalizeVin(query) })}><Plus className="size-4 mr-1" /> VIN&apos;den araç oluştur</Button>
                       </div>
                     ) : (
                       <span className="py-2 text-sm text-muted-foreground">17 haneli VIN yazın</span>
@@ -312,7 +315,7 @@ export function CustomerVehiclePicker({
                   ) : query.trim().length >= 1 ? (
                     <div className="flex w-full flex-wrap items-center gap-2 p-2">
                       <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
-                      <Button type="button" size="sm" onClick={() => setModalOpen(true)}><Plus className="size-4 mr-1" /> Oluştur</Button>
+                      <Button type="button" size="sm" onClick={() => openCreate({ plate: query.trim() })}><Plus className="size-4 mr-1" /> Oluştur</Button>
                     </div>
                   ) : (
                     <span className="py-2 text-sm text-muted-foreground">Plaka yazın</span>
@@ -376,8 +379,8 @@ export function CustomerVehiclePicker({
       <InlineCreateModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        initialPlate={mode === "vin" ? undefined : query.trim()}
-        initialVin={mode === "vin" ? normalizeVin(query) : undefined}
+        initialPlate={modalSeed.plate}
+        initialVin={modalSeed.vin}
         onCreated={onModalCreated}
       />
       {scannerOpen && <PlateScanner onDetected={onPlateScanned} onClose={() => setScannerOpen(false)} />}

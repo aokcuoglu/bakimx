@@ -139,7 +139,7 @@ export function InlineCreateModal({
     const hasVin = isValidVin(seedVin)
     setTimeout(() => {
       setOwner(fixedCustomer ?? null)
-      setFields({ ...EMPTY_FIELDS, plate: (initialPlate || "").toUpperCase(), vin: seedVin })
+      setFields({ ...EMPTY_FIELDS, plate: (initialPlate || "").toUpperCase(), vin: hasVin ? seedVin : "" })
       setError("")
       setLoading(false)
       setOwnerSeed(null)
