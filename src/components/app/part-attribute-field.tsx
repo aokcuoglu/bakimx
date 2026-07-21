@@ -63,7 +63,7 @@ export function PartAttributeField({
   }, [value])
 
   const placeholder = kind === "brand" ? "Marka" : "Kategori"
-  const commit = freeTextCommit(query, options)
+  const commit = freeTextCommit(query, options, value)
   const linked = vehicleTypeId != null
   const showFooter = commit.show || (linked && !!onOpenPicker)
 

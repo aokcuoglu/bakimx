@@ -30,3 +30,12 @@ test("boş seçenek listesi (unlinked) → dolu query'de göster", () => {
 test("tr-I tuzağı: büyük I içeren katalog markası birebir eşleşir", () => {
   expect(freeTextCommit("ina", [{ id: 1, label: "INA" }])).toEqual({ show: false, value: "ina" })
 })
+
+test("kayıtlı serbest değere eşit query → ＋ekle gösterme (no-op önlenir)", () => {
+  expect(freeTextCommit("seta", [], "seta")).toEqual({ show: false, value: "seta" })
+  expect(freeTextCommit(" seta ", [], "seta")).toEqual({ show: false, value: "seta" })
+})
+
+test("kayıtlı değerden farklı yeni query → ＋ekle göster", () => {
+  expect(freeTextCommit("setax", [], "seta")).toEqual({ show: true, value: "setax" })
+})
