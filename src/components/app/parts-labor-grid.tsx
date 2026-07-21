@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, Pencil } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, Pencil, Tags } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira } from "@/lib/money"
@@ -23,6 +23,7 @@ import type { OrderItem } from "@/components/app/order-management-panel"
 import { PartSearchInput } from "@/components/app/part-search-input"
 import { PartFilterCombobox } from "@/components/app/part-filter-combobox"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
+import { SupplierPriceDialog } from "@/components/app/supplier-price-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -398,8 +399,40 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
           className="text-sm"
         />
       )}
+      {ed.isPart && row.name.trim() !== "" && (
+        <PartPriceCompare row={row} ed={ed} onCell={onCell} />
+      )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
     </div>
+  )
+}
+
+// Tedarikçi fiyat karşılaştırma tetikleyicisi + popup (mock veri). Yalnız parça
+// satırında VE ad doluyken PartField'de mount edilir → masaüstü <tr> ve mobil
+// kart aynı bileşeni paylaşır. Fiyat uygula → satırın Birim Fiyat'ına yazar.
+function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell: OnCell }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setOpen(true)}
+        className="shrink-0 text-muted-foreground hover:text-primary"
+        aria-label="Tedarikçi fiyatlarını karşılaştır"
+        title="Tedarikçi fiyatlarını karşılaştır"
+      >
+        <Tags className="size-4" />
+      </Button>
+      <SupplierPriceDialog
+        open={open}
+        onOpenChange={setOpen}
+        part={{ name: row.name, sku: row.sku, brand: row.brand }}
+        editable={ed.editable}
+        onApply={(priceKurus) => onCell(row, { unitPrice: priceKurus })}
+      />
+    </>
   )
 }
 
