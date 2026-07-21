@@ -50,6 +50,8 @@ export async function createServiceOrderAction(intakeFormId: string) {
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
   unit: z.string().optional(),
+  // Kalemin kaynağı: katalog akışı mı manuel mi (yalnız açıklayıcı/rozet).
+  source: z.enum(["catalog", "manual"]).optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
@@ -71,6 +73,7 @@ export async function addOrderItemAction(formData: FormData) {
     brand: formData.get("brand") as string,
     category: formData.get("category") as string,
     categoryId: formData.get("categoryId") as string,
+    source: formData.get("source") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -87,6 +90,7 @@ export async function addOrderItemAction(formData: FormData) {
     brand: raw.brand || undefined,
     category: raw.category || undefined,
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
+    source: raw.source || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -129,6 +133,7 @@ export async function addOrderItemAction(formData: FormData) {
           brand: parsed.data.brand || null,
           category: parsed.data.category || null,
           categoryId: parsed.data.categoryId ?? null,
+          source: parsed.data.source ?? null,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).

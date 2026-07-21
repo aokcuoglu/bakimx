@@ -79,7 +79,7 @@ export function PartAttributeField({
       <InputGroup>
         <AutocompleteInput
           render={
-            <InputGroupInput placeholder={placeholder} disabled={disabled} className="text-xs" />
+            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className="text-xs" />
           }
         />
         {value && !disabled && (
