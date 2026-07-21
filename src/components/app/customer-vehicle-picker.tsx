@@ -12,16 +12,18 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info } from "lucide-react"
+import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info, Barcode } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "./inline-create-modal"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { PlateScanner } from "./plate-scanner"
 import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { normalizePlate } from "@/lib/format"
+import { isValidVin, normalizeVin } from "@/lib/vin/types"
+import { searchQueryFor, type PickerSearchMode } from "@/lib/vin/search"
 
 type CustVehicle = { id: string; plate: string; brand: string; model: string }
-type Mode = "plate" | "customer"
+type Mode = PickerSearchMode // "plate" | "customer" | "vin"
 type Selected =
   | { kind: "vehicle"; customerId: string; vehicleId: string; label: string; sublabel: string }
   | { kind: "customer"; customerId: string; label: string }
@@ -51,6 +53,7 @@ export function CustomerVehiclePicker({
   const [ownerMode, setOwnerMode] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [comboOpen, setComboOpen] = useState(false)
+  const [modalSeed, setModalSeed] = useState<{ plate?: string; vin?: string }>({})
 
   const fixedCustomer = useMemo(
     () => (selected?.kind === "customer" ? { id: selected.customerId, label: selected.label } : undefined),
@@ -58,20 +61,21 @@ export function CustomerVehiclePicker({
   )
 
   useEffect(() => {
-    if (selected || query.trim().length < 1) {
+    const q = searchQueryFor(mode, query)
+    if (selected || !q) {
       const t = setTimeout(() => setResults([]), 0)
       return () => clearTimeout(t)
     }
     const t = setTimeout(() => {
       setLoading(true)
-      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(query.trim())}`)
+      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}`)
         .then((r) => r.json())
         .then((d) => setResults(Array.isArray(d?.results) ? d.results : []))
         .catch(() => setResults([]))
         .finally(() => setLoading(false))
     }, 250)
     return () => clearTimeout(t)
-  }, [query, selected])
+  }, [query, selected, mode])
 
   useEffect(() => {
     if (!value.customerId && !value.vehicleId) {
@@ -108,9 +112,11 @@ export function CustomerVehiclePicker({
     return () => { active = false }
   }, [value.vehicleId, value.customerId, selected, onChange])
 
-  const modeResults = results.filter((r) => (mode === "plate" ? r.kind === "vehicle" : r.kind === "customer"))
+  const modeResults = results.filter((r) => (mode === "customer" ? r.kind === "customer" : r.kind === "vehicle"))
 
   function switchMode(m: Mode) { setMode(m); setQuery(""); setResults([]) }
+
+  function openCreate(seed: { plate?: string; vin?: string }) { setModalSeed(seed); setModalOpen(true) }
 
   // Kameradan okunan plaka: arama kutusuna yaz (mevcut debounce'lu arama tetiklenir)
   // ve açılır listeyi aç — eşleşen araç seçilebilir, yoksa "Oluştur" yolu görünür.
@@ -241,7 +247,7 @@ export function CustomerVehiclePicker({
       {/* Belirgin başlangıç: ruhsattan yeni müşteri & araç oluştur (OCR ile ön-doldur). */}
       <button
         type="button"
-        onClick={() => setModalOpen(true)}
+        onClick={() => openCreate({})}
         className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left transition-colors hover:border-primary hover:bg-primary/10"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -259,20 +265,20 @@ export function CustomerVehiclePicker({
 
       <div className="flex items-stretch gap-2">
         <div className="flex-1">
-          {mode === "plate" ? (
+          {mode === "plate" || mode === "vin" ? (
             <Combobox
               items={modeResults}
               filter={() => true}
               itemToStringValue={(r: UnifiedResult) => r.label}
               inputValue={query}
-              onInputValueChange={(v: string) => setQuery(v)}
+              onInputValueChange={(v: string) => setQuery(mode === "vin" ? v.toUpperCase() : v)}
               open={comboOpen}
               onOpenChange={setComboOpen}
               onValueChange={(r: UnifiedResult | null) => { if (r && r.kind === "vehicle") pickVehicle(r) }}
             >
               <ComboboxInput
                 showTrigger={false}
-                placeholder="Plaka ile ara…"
+                placeholder={mode === "vin" ? "VIN ile ara…" : "Plaka ile ara…"}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return
                   // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
@@ -286,18 +292,30 @@ export function CustomerVehiclePicker({
                   e.preventDefault()
                   if (loading) return
                   const first = modeResults[0]
-                  if (first && first.kind === "vehicle") pickVehicle(first)
-                  else if (query.trim()) setModalOpen(true)
+                  if (first && first.kind === "vehicle") { pickVehicle(first); return }
+                  // Eşleşme yok: plaka modu her metinde modalı açar; VIN modu yalnız
+                  // geçerli 17-hane VIN'de (kısmi girişte Enter no-op).
+                  if (mode === "vin") { if (isValidVin(query)) openCreate({ vin: normalizeVin(query) }) }
+                  else if (query.trim()) openCreate({ plate: query.trim() })
                 }}
               />
               <ComboboxContent>
                 <ComboboxEmpty className="p-0">
                   {loading ? (
                     <span className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Aranıyor…</span>
+                  ) : mode === "vin" ? (
+                    isValidVin(query) ? (
+                      <div className="flex w-full flex-wrap items-center gap-2 p-2">
+                        <span className="text-xs text-muted-foreground">«{normalizeVin(query)}» yok —</span>
+                        <Button type="button" size="sm" onClick={() => openCreate({ vin: normalizeVin(query) })}><Plus className="size-4 mr-1" /> VIN&apos;den araç oluştur</Button>
+                      </div>
+                    ) : (
+                      <span className="py-2 text-sm text-muted-foreground">17 haneli VIN yazın</span>
+                    )
                   ) : query.trim().length >= 1 ? (
                     <div className="flex w-full flex-wrap items-center gap-2 p-2">
                       <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
-                      <Button type="button" size="sm" onClick={() => setModalOpen(true)}><Plus className="size-4 mr-1" /> Oluştur</Button>
+                      <Button type="button" size="sm" onClick={() => openCreate({ plate: query.trim() })}><Plus className="size-4 mr-1" /> Oluştur</Button>
                     </div>
                   ) : (
                     <span className="py-2 text-sm text-muted-foreground">Plaka yazın</span>
@@ -332,6 +350,18 @@ export function CustomerVehiclePicker({
             <ScanLine className="size-4" />
           </Button>
         )}
+        {/* Mod toggle: VIN ikonu — aktifse VIN modu (plaka toggle) */}
+        <Button
+          type="button"
+          variant={mode === "vin" ? "default" : "outline"}
+          size="icon"
+          className="size-11 md:size-9"
+          aria-label={mode === "vin" ? "Plaka aramaya dön" : "VIN ile ara"}
+          aria-pressed={mode === "vin"}
+          onClick={() => switchMode(mode === "vin" ? "plate" : "vin")}
+        >
+          <Barcode className="size-4" />
+        </Button>
         {/* Mod toggle: kişi ikonu — aktifse müşteri modu */}
         <Button
           type="button"
@@ -346,7 +376,13 @@ export function CustomerVehiclePicker({
         </Button>
       </div>
 
-      <InlineCreateModal open={modalOpen} onOpenChange={setModalOpen} initialPlate={query.trim()} onCreated={onModalCreated} />
+      <InlineCreateModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        initialPlate={modalSeed.plate}
+        initialVin={modalSeed.vin}
+        onCreated={onModalCreated}
+      />
       {scannerOpen && <PlateScanner onDetected={onPlateScanned} onClose={() => setScannerOpen(false)} />}
     </div>
   )
