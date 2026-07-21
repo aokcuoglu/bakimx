@@ -67,12 +67,10 @@ export function PartAttributeField({
     if (vehicleTypeId == null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOptions([])
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoaded(true)
       return
     }
     let active = true
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoaded(false)
     const url =
       kind === "brand"
