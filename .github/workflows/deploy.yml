@@ -1,9 +1,14 @@
-name: Deploy to Production
+name: Deploy to Production (Contabo — FROZEN during AWS cutover)
 
+# FROZEN for the Contabo → AWS prod migration. The `main`-push trigger is disabled
+# so merging dev → main does NOT redeploy the Contabo VPS — it stays frozen on its
+# current image as a clean rollback target while AWS prod (deploy-prod-aws.yml) takes
+# over. Kept dispatch-only for an emergency Contabo redeploy during rollback. Delete
+# this file after the DNS cutover is verified and stable. See docs/aws-prod-cicd.md §3.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  # push:
+  #   branches: [main]     # re-enable only to un-freeze Contabo (rollback); normally deleted at cutover
 
 env:
   REGISTRY: ghcr.io

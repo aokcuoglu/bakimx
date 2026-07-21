@@ -7,6 +7,10 @@ with **separate, isolated databases** (dev never touches prod data):
 - **dev → AWS** — `app-dev.bakimx.com`, ECS Fargate + RDS (eu-central-1). Migrated
   off the old Contabo `staging.app.bakimx.com` on 2026-07-20.
 - **main → Contabo VPS** — `app.bakimx.com` (+ landing `bakimx.com`), Docker Compose.
+  **Prod → AWS migration is in progress** (separate AWS account `075550799591`): the
+  infra is CDK-managed and running, and [`deploy-prod-aws.yml`](../.github/workflows/deploy-prod-aws.yml)
+  is wired but **`workflow_dispatch`-only** until DNS cutover. At cutover it flips to
+  `main`-push and `deploy.yml` (Contabo) is retired. See [aws-prod-cicd.md](./aws-prod-cicd.md).
 
 ```
 feature/* ──PR──► dev ──(push)──► 🚀 app-dev.bakimx.com   (AWS ECS, every push to dev)
@@ -78,5 +82,5 @@ returns 404 for everyone. Never put the public demo account in `ADMIN_EMAILS`.
 ## Infra references
 
 - **AWS dev:** [aws-dev-cicd.md](./aws-dev-cicd.md) — CI/CD + IAM/OIDC + task-def env (CDK backfill spec).
-- **Contabo prod:** [../DEPLOY.md](../DEPLOY.md) — VPS runbook (co-hosting, R2/S3, GHCR, DNS, TLS).
-- Planned prod → AWS migration is tracked separately; prod stays on Contabo for now.
+- **AWS prod:** [aws-prod-cicd.md](./aws-prod-cicd.md) — prod CI/CD + IAM/OIDC + cutover runbook (in progress).
+- **Contabo prod (current live):** [../DEPLOY.md](../DEPLOY.md) — VPS runbook (co-hosting, R2/S3, GHCR, DNS, TLS). Retired at cutover.

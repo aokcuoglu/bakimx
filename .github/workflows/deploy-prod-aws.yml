@@ -1,0 +1,178 @@
+name: Deploy to AWS prod (bakimx.com / app.bakimx.com)
+
+# AWS-hosted production (bakimx.com + app.bakimx.com), separate AWS account
+# (075550799591) from dev (292398627626). Mirrors deploy-dev-aws.yml. Infra is
+# CDK-managed (bakimx-prod-* stacks); IAM/OIDC + task-def env: docs/aws-prod-cicd.md.
+#
+# Flow: build arm64 image → push to ECR → register a new task-def revision (image
+# swap + runtime env inject) → DB migration gate (one-off ECS task, aborts on
+# failure) → update the ECS service.
+#
+# TRIGGER: workflow_dispatch ONLY for now. While the Contabo VPS is still live and
+# serving traffic (deploy.yml deploys `main` → VPS), this workflow is dispatched
+# manually so we can build/verify AWS prod without double-deploying. At DNS cutover
+# (docs/aws-prod-cicd.md §cutover) this flips to `on: push: branches: [main]` and
+# deploy.yml (Contabo) is retired in the same change.
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]     # enable at DNS cutover; retire deploy.yml at the same time
+  #   paths-ignore:
+  #     - "**.md"
+  #     - "docs/**"
+  #     - ".env*.example"
+
+# OIDC: assume the AWS deploy role without long-lived keys.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: aws-prod-deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REGISTRY: 075550799591.dkr.ecr.eu-central-1.amazonaws.com
+  ECR_REPOSITORY: bakimx/app
+  ECS_CLUSTER: bakimx-prod-cluster
+  ECS_SERVICE: bakimx-prod-app-svc
+  TASK_FAMILY: bakimx-prod-app
+  CONTAINER_NAME: app
+  ROLE_ARN: arn:aws:iam::075550799591:role/bakimx-prod-gha-deploy
+
+jobs:
+  deploy:
+    # Native ARM64 runner → Fargate task runtimePlatform is ARM64 (Graviton), so the image
+    # must be arm64. Native build avoids QEMU emulation. If arm64 hosted runners are not
+    # available on your GitHub plan, switch to `ubuntu-latest` and add
+    # `docker/setup-qemu-action@v3` (build-push-action already targets platforms: linux/arm64).
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build & push image to ECR (arm64)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          # Single-arch manifest (no OCI image index / provenance attestation) so Fargate
+          # can pull it — Fargate does not resolve an image index.
+          provenance: false
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:prod
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Prod cookie identity is baked into the Edge middleware at build time. These
+          # MUST be the prod values (bakimx_session / .bakimx.com) so the cookie is shared
+          # across bakimx.com (login) and app.bakimx.com — and never reuse the dev image,
+          # whose cookie name/domain (bakimx_session_dev / app-dev.bakimx.com) are baked in.
+          build-args: |
+            SESSION_SECRET=build_time_placeholder_at_least_32_chars_long__
+            SESSION_COOKIE_NAME=bakimx_session
+            SESSION_COOKIE_DOMAIN=.bakimx.com
+
+      - name: Register new task definition (swap image)
+        id: taskdef
+        run: |
+          set -euo pipefail
+          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${GITHUB_SHA}"
+          # Clone the current task def, swap the app image, and inject the runtime env this
+          # environment needs but the CDK task def omits:
+          #   DB_SSL_NO_VERIFY   — REQUIRED: prod RDS enforces SSL (rds.force_ssl=1) and its
+          #                        DATABASE_URL uses sslmode=require; the pg driver would fail
+          #                        chain verification against the Amazon RDS CA. This makes
+          #                        db.ts strip sslmode and set rejectUnauthorized:false
+          #                        (still encrypted, private in-VPC RDS). See src/lib/db.ts.
+          #   SESSION_COOKIE_*   — prod cookie identity (bakimx_session / .bakimx.com); the
+          #                        Node routes read these at runtime, the Edge middleware got
+          #                        them at build time via build-args above. Explicit for parity.
+          # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
+          aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
+            --query taskDefinition --output json \
+          | jq --arg IMG "$IMAGE" --arg CN "$CONTAINER_NAME" '
+              (.containerDefinitions[] | select(.name==$CN)).image = $IMG
+              | (.containerDefinitions[] | select(.name==$CN)).environment |=
+                  ((. // [])
+                   | map(select(.name != "DB_SSL_NO_VERIFY"
+                                and .name != "SESSION_COOKIE_NAME"
+                                and .name != "SESSION_COOKIE_DOMAIN"))
+                   + [{name: "DB_SSL_NO_VERIFY",     value: "true"},
+                      {name: "SESSION_COOKIE_NAME",   value: "bakimx_session"},
+                      {name: "SESSION_COOKIE_DOMAIN", value: ".bakimx.com"}])
+              | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                    .compatibilities, .registeredAt, .registeredBy)
+            ' > new-taskdef.json
+          NEW_TD=$(aws ecs register-task-definition \
+            --cli-input-json file://new-taskdef.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Registered: $NEW_TD"
+          echo "task_def=$NEW_TD" >> "$GITHUB_OUTPUT"
+
+      - name: DB migration gate (one-off ECS task)
+        env:
+          NEW_TD: ${{ steps.taskdef.outputs.task_def }}
+        run: |
+          set -euo pipefail
+          # Reuse the service's own subnets/SG so the migrate task reaches the private RDS
+          # in-VPC (CI itself cannot). Command override runs the same migrate the app image
+          # ships; the new task def carries DB_SSL_NO_VERIFY so migrate connects over TLS too.
+          # (A dedicated bakimx-prod-migrate task-def family also exists for manual/CDK use.)
+          NET=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
+          SUBNETS=$(echo "$NET" | jq -r '.subnets | join(",")')
+          SGS=$(echo "$NET" | jq -r '.securityGroups | join(",")')
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$NEW_TD" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=DISABLED}" \
+            --overrides '{"containerOverrides":[{"name":"'"$CONTAINER_NAME"'","command":["sh","-c","cd /migrate && node node_modules/prisma/build/index.js migrate deploy"]}]}' \
+            --started-by "gha-migrate" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migrate task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+          EXIT=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+          echo "Migrate exit code: $EXIT (stoppedReason: $REASON)"
+          if [ "$EXIT" != "0" ]; then
+            echo "::error::DB migration failed (exit=$EXIT) — aborting deploy. Check CloudWatch /ecs/bakimx-prod-app."
+            exit 1
+          fi
+
+      - name: Deploy to ECS (update service)
+        env:
+          NEW_TD: ${{ steps.taskdef.outputs.task_def }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --task-definition "$NEW_TD" --query 'service.serviceName' --output text
+          echo "Waiting for the service to reach steady state…"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          # services-stable also returns success once a circuit-breaker rollback settles on the
+          # OLD task def, so assert the PRIMARY deployment actually converged on our new one.
+          ACTIVE_TD=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].deployments[?status==`PRIMARY`].taskDefinition | [0]' --output text)
+          if [ "$ACTIVE_TD" != "$NEW_TD" ]; then
+            echo "::error::Deployment rolled back — active is $ACTIVE_TD, expected $NEW_TD. New task failed its health check (check the ALB target group + CloudWatch /ecs/bakimx-prod-app)."
+            exit 1
+          fi
+          echo "Deployed and verified: $NEW_TD"
