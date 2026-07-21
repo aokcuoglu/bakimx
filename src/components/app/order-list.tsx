@@ -121,18 +121,18 @@ export function OrderList({
                   <td className="px-4 py-2">
                     <Link
                       href={`/orders/${order.id}`}
-                      className="font-mono text-xs font-semibold text-foreground hover:text-primary transition-colors"
+                      className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
                     >
                       {order.workOrderNo}
                     </Link>
                   </td>
                   <td className="px-4 py-2">
                     {order.vehicle.id ? (
-                      <Link href={`/vehicles/${order.vehicle.id}`}>
+                      <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
                         <PlateBadge plate={order.vehicle.plate} size="sm" />
                       </Link>
                     ) : (
-                      <PlateBadge plate={order.vehicle.plate} size="sm" />
+                      <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
                     )}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
@@ -195,16 +195,16 @@ export function OrderList({
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/orders/${order.id}`}
-                    className="font-mono text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
+                    className="font-mono text-sm font-bold text-foreground hover:text-primary transition-colors"
                   >
                     {order.workOrderNo}
                   </Link>
                   {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`}>
+                    <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
                       <PlateBadge plate={order.vehicle.plate} size="sm" />
                     </Link>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} size="sm" />
+                    <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
                   )}
                 </div>
                 <Link
