@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -13,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, Pencil } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, Pencil, PackagePlus, PencilLine } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira } from "@/lib/money"
@@ -41,6 +43,14 @@ type OnCell = (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; local
 
 function toRow(i: OrderItem): Row { return { ...i } }
 
+// Composer'ın boş taslağı (tek satırlık ekleme formu için — listede birikmez).
+function emptyDraft(type: ItemType): Row {
+  return {
+    id: "composer", type, name: "", sku: null, unit: "adet",
+    quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
+  }
+}
+
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading,
 }: {
@@ -54,28 +64,21 @@ export function PartsLaborGrid({
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
+  const linked = vehicle?.catalogVehicleTypeId != null
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
-  const draftCounter = useRef(0)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
-  // rows'un en güncel kopyası — async persist callback'leri bayat closure okumasın.
-  const rowsRef = useRef<Row[]>(rows)
-  useEffect(() => { rowsRef.current = rows }, [rows])
 
-  // Sunucu items'ı senkronla ama kaydedilmemiş taslakları KORU. Runtime-only
-  // brandSupplierId (persist EDİLMEZ) önceki satırdan id ile taşınır ki
-  // marka→kategori filtresi router.refresh() sonrası da yaşasın (tam yeniden
-  // yüklemeye kadar; o noktada zaten en baştan best-effort).
+  // Sunucu items'ı yerele senkronla. Runtime-only brandSupplierId (persist
+  // EDİLMEZ) önceki satırdan id ile taşınır ki marka→kategori filtresi
+  // router.refresh() sonrası da (tam yeniden yüklemeye kadar) yaşasın.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRows((prev) => {
       const prevById = new Map(prev.map((r) => [r.id, r]))
-      return [
-        ...items.map((i) => {
-          const prevRow = prevById.get(i.id)
-          return prevRow ? { ...toRow(i), brandSupplierId: prevRow.brandSupplierId } : toRow(i)
-        }),
-        ...prev.filter((r) => r.__draft),
-      ]
+      return items.map((i) => {
+        const prevRow = prevById.get(i.id)
+        return prevRow ? { ...toRow(i), brandSupplierId: prevRow.brandSupplierId } : toRow(i)
+      })
     })
   }, [items])
 
@@ -84,74 +87,50 @@ export function PartsLaborGrid({
     return () => { Object.values(timers).forEach((t) => clearTimeout(t)) }
   }, [])
 
-  function addDraft() {
-    draftCounter.current += 1
-    const tempId = `draft-${draftCounter.current}`
-    setRows((prev) => [...prev, {
-      id: tempId, tempId, __draft: true, type: "part", name: "", sku: null, unit: "adet",
-      quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
-    }])
-  }
-
   function patchLocal(rowId: string, patch: Partial<Row>) {
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } : r)))
   }
 
-  // Taslak satırı sunucuya kaydet. onCell'den DEBOUNCE ile tetiklenir (ilk harfte değil).
-  // rowsRef'ten en güncel satırı okur; POST uçarken yapılan düzenlemeleri POST sonrası
-  // "catch-up" PATCH ile gönderir → veri kaybı olmaz. Çift-kaydet guard: __saving.
-  async function persistDraft(rowId: string) {
-    const row = rowsRef.current.find((r) => r.id === rowId)
-    if (!row || !row.__draft || row.__saving || !row.name.trim()) return
-    patchLocal(rowId, { __saving: true })
-    const snapshot = { ...row }
+  // Composer'dan gelen taslağı TEK POST ile ekle. Başarıda optimistik olarak
+  // listeye ekler + router.refresh() ile sunucudan doğrular. true dönerse
+  // composer kendini sıfırlar.
+  async function addItem(draft: Row): Promise<boolean> {
+    if (!draft.name.trim()) return false
     const fd = new FormData()
     fd.set("serviceOrderId", orderId)
-    fd.set("type", snapshot.type)
-    fd.set("name", snapshot.name)
-    if (snapshot.sku) fd.set("sku", snapshot.sku)
-    if (snapshot.unit) fd.set("unit", snapshot.unit)
-    fd.set("quantity", String(snapshot.quantity))
-    if (snapshot.unitPrice != null) fd.set("unitPrice", String(snapshot.unitPrice))
-    if (snapshot.brand) fd.set("brand", snapshot.brand)
-    if (snapshot.category) fd.set("category", snapshot.category)
-    if (snapshot.categoryId != null) fd.set("categoryId", String(snapshot.categoryId))
+    fd.set("type", draft.type)
+    fd.set("name", draft.name.trim())
+    if (draft.sku) fd.set("sku", draft.sku)
+    if (draft.unit) fd.set("unit", draft.unit)
+    fd.set("quantity", String(draft.quantity))
+    if (draft.unitPrice != null) fd.set("unitPrice", String(draft.unitPrice))
+    if (draft.brand) fd.set("brand", draft.brand)
+    if (draft.category) fd.set("category", draft.category)
+    if (draft.categoryId != null) fd.set("categoryId", String(draft.categoryId))
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: fd })
       const data = await res.json()
       if (data.success && data.id) {
         const realId: string = data.id
-        setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, id: realId, tempId: undefined, __draft: false, __saving: false } : r)))
-        // POST uçarken kullanıcı bir şey değiştirdiyse catch-up PATCH gönder (kayıp yok).
-        const latest = rowsRef.current.find((r) => r.id === rowId)
-        if (latest) {
-          const diff: Partial<OrderItem> = {}
-          if (latest.name !== snapshot.name) diff.name = latest.name
-          if (latest.sku !== snapshot.sku) diff.sku = latest.sku
-          if (latest.unit !== snapshot.unit) diff.unit = latest.unit
-          if (latest.quantity !== snapshot.quantity) diff.quantity = latest.quantity
-          if (latest.unitPrice !== snapshot.unitPrice) diff.unitPrice = latest.unitPrice
-          if (latest.brand !== snapshot.brand) diff.brand = latest.brand
-          if (latest.category !== snapshot.category) diff.category = latest.category
-          if (latest.categoryId !== snapshot.categoryId) diff.categoryId = latest.categoryId
-          if (Object.keys(diff).length > 0) { persistUpdate(realId, diff); return }
-        }
+        setRows((prev) => [
+          ...prev,
+          { ...toRow(draft), id: realId, __draft: false, brandSupplierId: draft.brandSupplierId },
+        ])
         router.refresh()
-      } else {
-        onError(data.error || "Kalem eklenemedi")
-        patchLocal(rowId, { __saving: false })
+        return true
       }
+      onError(data.error || "Kalem eklenemedi")
+      return false
     } catch {
       onError("Bir hata oluştu")
-      patchLocal(rowId, { __saving: false })
+      return false
     }
   }
 
   // Kalıcı satır hücre patch'i (debounce'lu, alan-bazlı anahtar).
   function persistUpdate(rowId: string, patch: Partial<OrderItem>, opts?: { debounce?: boolean }) {
     // Boş ad'ı sunucuya GÖNDERME: sunucu min(1) ile reddedip satırı eski adına
-    // revert ediyordu → kayıtlı satırın adı temizlenip yeniden yazılamıyordu.
-    // Ad yalnız yerelde boşaltılır; geçerli (dolu) ad yazılınca/seçilince PATCH gider.
+    // revert ediyordu. Ad yalnız yerelde boşaltılır; dolu ad yazılınca PATCH gider.
     if (patch.name !== undefined && !patch.name.trim()) return
     const send = async () => {
       const fd = new FormData()
@@ -166,9 +145,9 @@ export function PartsLaborGrid({
       try {
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
-        if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)]) }
+        if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows(items.map(toRow)) }
         else router.refresh()
-      } catch { onError("Bir hata oluştu"); setRows((prev) => [...items.map(toRow), ...prev.filter((r) => r.__draft)]) }
+      } catch { onError("Bir hata oluştu"); setRows(items.map(toRow)) }
     }
     if (opts?.debounce) {
       const key = `${rowId}:${Object.keys(patch).sort().join(",")}`
@@ -177,58 +156,18 @@ export function PartsLaborGrid({
     } else { void send() }
   }
 
-  // Bir satırdaki değişikliği uygula: taslak → local + (ad doluysa) DEBOUNCE'lu kaydet; kalıcı → PATCH.
-  // opts.localOnly: yalnız yereli günceller, kalıcılaştırmaz — katalog arama
-  // kutusuna YAZMAK için (yazarken kaydetme; kalıcılık yalnız SEÇİMde olur).
+  // Listedeki kalıcı satırın hücre değişimi: yereli güncelle + PATCH.
+  // opts.localOnly: yalnız yerel (katalog arama kutusuna YAZARKEN; kalıcılık seçimde).
   const onCell: OnCell = (row, patch, opts) => {
     patchLocal(row.id, patch)
     if (opts?.localOnly) return
-    if (row.__draft) {
-      const next = { ...row, ...patch }
-      if (next.name.trim()) {
-        const key = `draft:${row.id}`
-        const id = row.id
-        clearTimeout(saveTimers.current[key])
-        saveTimers.current[key] = setTimeout(() => persistDraft(id), 700)
-      }
-      return
-    }
     persistUpdate(row.id, patch, opts)
   }
 
-  // Parça seçimini temizle. Taslak → yalnız yerel sıfırla. Kayıtlı kalem → adı boş
-  // bırakılamayacağı (min-1) ve yerel sıfırlama refresh'te geri dolacağı için
-  // sunucudan SİL ve yerine boş taslak satır koy (satır kalır, içerik gider).
-  async function clearRow(row: Row) {
-    if (row.__draft) {
-      patchLocal(row.id, { name: "", sku: null, brand: null, category: null, categoryId: null, brandSupplierId: null })
-      return
-    }
-    try {
-      await fetch(`/api/orders/items?id=${row.id}&orderId=${orderId}`, { method: "DELETE" })
-    } catch {
-      onError("Kalem temizlenemedi")
-      return
-    }
-    draftCounter.current += 1
-    const tempId = `draft-${draftCounter.current}`
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === row.id
-          ? {
-              id: tempId, tempId, __draft: true, type: r.type, name: "", sku: null, unit: "adet",
-              quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
-            }
-          : r
-      )
-    )
-    router.refresh()
-  }
-
   async function removeRow(row: Row) {
-    if (row.__draft) { setRows((prev) => prev.filter((r) => r.id !== row.id)); return }
     try {
       await fetch(`/api/orders/items?id=${row.id}&orderId=${orderId}`, { method: "DELETE" })
+      setRows((prev) => prev.filter((r) => r.id !== row.id))
       router.refresh()
     } catch { onError("Kalem silinemedi") }
   }
@@ -237,7 +176,32 @@ export function PartsLaborGrid({
 
   return (
     <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
+          "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
+      {!locked && (
+        <Tabs defaultValue={linked ? "katalog" : "manuel"}>
+          <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
+            <TabsTrigger value="katalog" className="px-3 py-2 shrink-0">
+              <PackagePlus className="size-4" /> Katalogdan Parça
+            </TabsTrigger>
+            <TabsTrigger value="manuel" className="px-3 py-2 shrink-0">
+              <PencilLine className="size-4" /> Manuel Parça
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="katalog" className="pt-3">
+            <CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} />
+          </TabsContent>
+          <TabsContent value="manuel" className="pt-3">
+            <ManualComposer onAdd={addItem} disabled={loading} />
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {!locked && <Separator />}
+
+      {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
       {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
       <div className="hidden overflow-hidden rounded-lg border border-border md:block">
         <Table className="min-w-[64rem] table-fixed">
@@ -279,7 +243,6 @@ export function PartsLaborGrid({
                   vehicle={vehicle}
                   onCell={onCell}
                   onRemove={removeRow}
-                  onClear={clearRow}
                 />
               ))
             )}
@@ -300,24 +263,197 @@ export function PartsLaborGrid({
               vehicle={vehicle}
               onCell={onCell}
               onRemove={removeRow}
-              onClear={clearRow}
             />
           ))
         )}
       </div>
-
-      {!locked && (
-        <Button type="button" size="sm" variant="outline" onClick={addDraft} className="w-full sm:w-auto" disabled={loading}>
-          <Plus className="size-3.5 mr-1" /> Yeni satır
-        </Button>
-      )}
     </div>
     </PartAttrOptionsProvider>
   )
 }
 
+// ── Composer: küçük alan etiketi ─────────────────────────────────────────────
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("min-w-0 space-y-1", className)}>
+      <span className="block text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  )
+}
+
+// ── Katalog composer: sadece parça; canlı katalog arama + TecDoc picker ──────
+// Her başarılı eklemede nonce artıp içerik remount olur → tüm yerel state
+// (draft, arama kutusu, autocomplete) temiz sıfırlanır.
+function CatalogComposer({ vehicle, onAdd, disabled }: {
+  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+}) {
+  const [nonce, setNonce] = useState(0)
+  return (
+    <CatalogComposerBody
+      key={nonce}
+      vehicle={vehicle}
+      onAdd={onAdd}
+      disabled={disabled}
+      onAdded={() => setNonce((n) => n + 1)}
+    />
+  )
+}
+
+function CatalogComposerBody({ vehicle, onAdd, disabled, onAdded }: {
+  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+}) {
+  const [draft, setDraft] = useState<Row>(() => emptyDraft("part"))
+  const [submitting, setSubmitting] = useState(false)
+  const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
+  const ed = useRowEditor(draft, vehicle, false, onCell)
+
+  async function submit() {
+    if (!draft.name.trim() || submitting) return
+    setSubmitting(true)
+    const ok = await onAdd(draft)
+    if (ok) onAdded() // remount → sıfırla
+    else setSubmitting(false)
+  }
+
+  const clearPart = () => {
+    setDraft((d) => ({ ...d, name: "", sku: null, brand: null, category: null, categoryId: null }))
+    ed.setFilter({})
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Parça" className="sm:col-span-2 lg:col-span-1">
+          <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
+          <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Marka">
+          <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Kategori">
+          <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <div className="flex items-end gap-3">
+          <Field label="Miktar">
+            <QtyStepper row={draft} editable onCell={onCell} />
+          </Field>
+          <Field label="Birim Fiyat" className="flex-1">
+            <PriceField row={draft} ed={ed} />
+          </Field>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-3">
+        <TotalPreview lineTotal={ed.lineTotal} />
+        <Button type="button" size="sm" onClick={submit} disabled={disabled || submitting || !draft.name.trim()}>
+          {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+          Ekle
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ── Manuel composer: Tür seçici + serbest metin (katalog araması YOK) ────────
+function ManualComposer({ onAdd, disabled }: {
+  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+}) {
+  const [nonce, setNonce] = useState(0)
+  return (
+    <ManualComposerBody
+      key={nonce}
+      onAdd={onAdd}
+      disabled={disabled}
+      onAdded={() => setNonce((n) => n + 1)}
+    />
+  )
+}
+
+function ManualComposerBody({ onAdd, disabled, onAdded }: {
+  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+}) {
+  const [draft, setDraft] = useState<Row>(() => emptyDraft("part"))
+  const [submitting, setSubmitting] = useState(false)
+  const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
+  // vehicle=undefined → linked=false: katalog picker'ı kapalı, saf serbest metin
+  // (marka/kategori önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
+  const ed = useRowEditor(draft, undefined, false, onCell)
+  const isPart = draft.type === "part"
+
+  async function submit() {
+    if (!draft.name.trim() || submitting) return
+    setSubmitting(true)
+    const ok = await onAdd(draft)
+    if (ok) onAdded()
+    else setSubmitting(false)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Tür">
+          <Select
+            items={TYPE_LABELS}
+            value={draft.type}
+            onValueChange={(v) => setDraft((d) => ({ ...d, type: v as ItemType }))}
+          >
+            <SelectTrigger className="w-full min-w-0 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="part">Yedek Parça</SelectItem>
+              <SelectItem value="labor">İşçilik</SelectItem>
+              <SelectItem value="external_labor">Dış İşçilik</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label={isPart ? "Parça adı" : "İşçilik adı"} className={isPart ? undefined : "sm:col-span-2 lg:col-span-2"}>
+          <Input
+            value={draft.name}
+            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+            placeholder={isPart ? "Parça adı" : "İşçilik adı"}
+            className="text-sm"
+          />
+        </Field>
+        {isPart && (
+          <>
+            <Field label="Marka">
+              <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
+            </Field>
+            <Field label="Kategori">
+              <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
+            </Field>
+          </>
+        )}
+        <div className="flex items-end gap-3">
+          <Field label="Miktar">
+            <QtyStepper row={draft} editable onCell={onCell} />
+          </Field>
+          <Field label="Birim Fiyat" className="flex-1">
+            <PriceField row={draft} ed={ed} />
+          </Field>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-3">
+        <TotalPreview lineTotal={ed.lineTotal} />
+        <Button type="button" size="sm" onClick={submit} disabled={disabled || submitting || !draft.name.trim()}>
+          {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+          Ekle
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
+  if (lineTotal == null) return null
+  return (
+    <span className="text-sm text-muted-foreground">
+      Toplam: <span className="font-semibold tabular-nums text-foreground">{formatTRY(lineTotal)}</span>
+    </span>
+  )
+}
+
 // ── Satır-editör paylaşılan mantığı ─────────────────────────────────────────
-// Masaüstü <tr> ve mobil kart aynı state/işleyicileri bu hook'tan alır.
+// Masaüstü <tr>, mobil kart VE composer aynı state/işleyicileri bu hook'tan alır.
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
@@ -366,7 +502,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
 
 type RowEditor = ReturnType<typeof useRowEditor>
 
-// ── Layout-bağımsız hücre içerikleri (masaüstü + mobil ortak) ────────────────
+// ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
 function PartField({ row, ed, vehicle, onCell, onClear }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void
@@ -395,7 +531,6 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
         <Input
           value={row.name}
           onChange={(e) => onCell(row, { name: e.target.value }, { debounce: true })}
-          onBlur={() => { if (row.__draft && row.name.trim()) onCell(row, {}) }}
           placeholder="İşçilik adı"
           disabled={!ed.editable || row.__saving}
           className="text-sm"
@@ -463,7 +598,7 @@ function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => voi
 
 // TecDoc modal — yalnız part satırı VE araç TecDoc'ta eşleşmişse mount edilir
 // (eşleşmemişse picker VinLinkPrompt döner; 🔍 butonu zaten disabled). Portal
-// ile render olduğu için <td>/kart içine yerleştirmek güvenli.
+// ile render olduğu için <td>/kart/composer içine yerleştirmek güvenli.
 function RowTecdocPicker({ row, ed, vehicle, onCell }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
 }) {
@@ -491,10 +626,8 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
   )
 }
 
-// Marka/Kategori hücresi (masaüstü + mobil ortak). Düzenlenebilirken katalog
-// önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-// Seçim/serbest-commit satıra persist EDER (onCell) ve katalog seçimi ayrıca
-// parça aramasını daraltan filtreyi (ed.filter) set eder.
+// Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
+// katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
 function AttrCell({ kind, row, ed, vehicle, onCell }: {
   kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
 }) {
@@ -547,38 +680,26 @@ function AttrCell({ kind, row, ed, vehicle, onCell }: {
   )
 }
 
-// ── Masaüstü satırı: gerçek <tr> ─────────────────────────────────────────────
-function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
+// ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
+function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
   row: Row
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  onClear: (row: Row) => void
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
 
   return (
     <TableRow>
-      {/* Tür */}
+      {/* Tür (listede salt-görünür — tür composer'da seçilir) */}
       <TableCell>
-        {row.__draft && ed.editable ? (
-          <Select items={TYPE_LABELS} value={row.type} onValueChange={(v) => onCell(row, { type: v as ItemType })}>
-            <SelectTrigger className="w-full min-w-0 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="part">Yedek Parça</SelectItem>
-              <SelectItem value="labor">İşçilik</SelectItem>
-              <SelectItem value="external_labor">Dış İşçilik</SelectItem>
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
-        )}
+        <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
       </TableCell>
 
       {/* Parça / İşçilik */}
       <TableCell className="whitespace-normal">
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onClear} />
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </TableCell>
 
@@ -621,14 +742,13 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
   )
 }
 
-// ── Mobil satırı: kart ───────────────────────────────────────────────────────
-function MobilePartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
+// ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
+function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
   row: Row
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  onClear: (row: Row) => void
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
 
@@ -636,24 +756,13 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
     <div className="rounded-lg border border-border bg-card p-2.5">
       {/* Tür + sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
-        {row.__draft && ed.editable ? (
-          <Select items={TYPE_LABELS} value={row.type} onValueChange={(v) => onCell(row, { type: v as ItemType })}>
-            <SelectTrigger className="w-40 min-w-0 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="part">Yedek Parça</SelectItem>
-              <SelectItem value="labor">İşçilik</SelectItem>
-              <SelectItem value="external_labor">Dış İşçilik</SelectItem>
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
-        )}
+        <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>
 
       {/* Parça / İşçilik */}
       <div className="mt-2">
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onClear} />
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
