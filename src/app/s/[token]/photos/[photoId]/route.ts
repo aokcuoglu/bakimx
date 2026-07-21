@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db"
 import { getStorageProvider } from "@/lib/storage"
-import { NextResponse } from "next/server"
 import { notFound } from "next/navigation"
 
 export async function GET(
@@ -58,19 +57,16 @@ export async function GET(
       notFound()
     }
 
-    if (photo.storageProvider === "mock") {
-      const response = await fetch(signedUrl)
-      if (!response.ok) {
-        notFound()
-      }
-      const blob = await response.blob()
-      const headers = new Headers()
-      headers.set("Content-Type", photo.mimeType || "image/jpeg")
-      headers.set("Cache-Control", "public, max-age=300")
-      return new Response(blob, { headers })
+    // Proxy the bytes through this same-origin route instead of redirecting to the storage
+    // backend, so a private S3 bucket (no CORS) works uniformly with the mock/MinIO backends.
+    const upstream = await fetch(signedUrl)
+    if (!upstream.ok || !upstream.body) {
+      notFound()
     }
-
-    return NextResponse.redirect(signedUrl)
+    const headers = new Headers()
+    headers.set("Content-Type", photo.mimeType || upstream.headers.get("content-type") || "image/jpeg")
+    headers.set("Cache-Control", "public, max-age=300")
+    return new Response(upstream.body, { headers })
   } catch {
     notFound()
   }

@@ -103,7 +103,7 @@ scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
 | Yapılandırma & env | [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) |
 | Veritabanı şeması | [DB.md](./DB.md) |
 | Dağıtım (prod) | [DEPLOY.md](./DEPLOY.md) |
-| Staging kurulumu | [docs/STAGING-SETUP.md](./docs/STAGING-SETUP.md) |
+| AWS dev CI/CD | [docs/aws-dev-cicd.md](./docs/aws-dev-cicd.md) |
 | Sürüm süreci | [RELEASE.md](./RELEASE.md) |
 | Mimari | [docs/architecture/BAKIMX-ARCHITECTURE.md](./docs/architecture/BAKIMX-ARCHITECTURE.md) |
 | Sürüm notları | [CHANGELOG.md](./CHANGELOG.md) · [docs/releases/](./docs/releases/) |
@@ -114,7 +114,7 @@ scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
 
 ## Geliştirme akışı
 
-`feature/*` → `dev` → **staging** (otomatik) → doğrulama → `dev→main` PR → tag `vX.Y.Z` → **prod**
+`feature/*` → `dev` → **app-dev.bakimx.com** (AWS, otomatik) → doğrulama → `dev→main` PR → **prod** (Contabo)
 
 Detaylar: [RELEASE.md](./RELEASE.md) · [CONTRIBUTING.md](./CONTRIBUTING.md)
 

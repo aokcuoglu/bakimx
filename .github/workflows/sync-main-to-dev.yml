@@ -10,8 +10,8 @@ name: Sync main into dev
 #
 # Loop-safety: this pushes to dev, never to main, so it cannot re-trigger itself.
 # The push uses GITHUB_TOKEN, and pushes made with GITHUB_TOKEN do NOT start new
-# workflow runs — so it will NOT re-deploy staging (staging.yml) either. That's
-# intended: the merge changes no file content, so a staging rebuild is pointless.
+# workflow runs — so it will NOT re-deploy the AWS dev env (deploy-dev-aws.yml)
+# either. That's intended: the merge changes no file content, so a rebuild is pointless.
 on:
   push:
     branches: [main]
