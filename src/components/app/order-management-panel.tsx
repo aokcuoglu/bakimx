@@ -45,6 +45,8 @@ export type OrderItem = {
   brand: string | null
   category: string | null
   categoryId: number | null
+  // Kalemin nasıl eklendiği (katalog/manuel); eski satırlarda null.
+  source: "catalog" | "manual" | null
 }
 
 export type Totals = {

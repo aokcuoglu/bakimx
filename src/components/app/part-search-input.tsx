@@ -155,6 +155,7 @@ export function PartSearchInput({
           onBlur={onCommit}
           placeholder={placeholder}
           disabled={disabled}
+          title={value || undefined}
           className="text-sm"
         />
         {trailing}
@@ -187,7 +188,7 @@ export function PartSearchInput({
             }
           }}
           render={
-            <InputGroupInput placeholder={placeholder} disabled={disabled} className="text-sm" />
+            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className="text-sm" />
           }
         />
         {trailing}

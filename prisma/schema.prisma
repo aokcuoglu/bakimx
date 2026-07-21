@@ -775,6 +775,9 @@ model ServiceOrderItem {
   // TecDoc article linkage when the part was picked from the vehicle catalog
   // (no FK — external id). Enables future reorder/OEM cross-reference.
   tecdocArticleId Int?
+  // Kalemin nasıl eklendiği: katalog akışı mı serbest/manuel mi. Yalnız
+  // açıklayıcı (rozet + ileride raporlama); eski satırlarda null → rozetsiz.
+  source          OrderItemSource?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -787,6 +790,11 @@ enum OrderItemType {
   part
   labor
   external_labor
+}
+
+enum OrderItemSource {
+  catalog
+  manual
 }
 
 model Quote {
