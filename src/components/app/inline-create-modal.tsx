@@ -21,7 +21,7 @@ import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
 import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
-import { isValidVin, type VinCandidate } from "@/lib/vin/types"
+import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { normalizePlate } from "@/lib/format"
 import { findExactPlateMatch, type ExistingVehicleMatch } from "@/lib/search/exact-plate-match"
@@ -74,12 +74,14 @@ export function InlineCreateModal({
   open,
   onOpenChange,
   initialPlate,
+  initialVin,
   fixedCustomer,
   onCreated,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialPlate?: string
+  initialVin?: string
   fixedCustomer?: { id: string; label: string }
   onCreated: (result: InlineCreateResult) => void
 }) {
@@ -133,19 +135,25 @@ export function InlineCreateModal({
     const justOpened = open && !wasOpen.current
     wasOpen.current = open
     if (!justOpened) return
+    const seedVin = normalizeVin(initialVin || "")
+    const hasVin = isValidVin(seedVin)
     setTimeout(() => {
       setOwner(fixedCustomer ?? null)
-      setFields({ ...EMPTY_FIELDS, plate: (initialPlate || "").toUpperCase() })
+      setFields({ ...EMPTY_FIELDS, plate: (initialPlate || "").toUpperCase(), vin: seedVin })
       setError("")
       setLoading(false)
       setOwnerSeed(null)
       setConfidence({})
-      setShowDetails(false)
+      // VIN ile açıldıysa teknik alanlar (VIN + sonuç) görünür başlasın.
+      setShowDetails(hasVin)
       setExistingMatch(null)
       setCatalogIds({})
       vinResolve.reset()
+      // Kullanıcının niyeti "VIN'den bul" → ipuçsuz oto-decode; marka/model/motor
+      // beklemeden dolar, belirsizse VinCandidateList görünür.
+      if (hasVin) void vinResolve.resolve(seedVin, {})
     }, 0)
-  }, [open, initialPlate, fixedCustomer]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
+  }, [open, initialPlate, initialVin, fixedCustomer]) // eslint-disable-line react-hooks/exhaustive-deps -- vinResolve is stable-shaped, re-running on its identity would loop
 
   // Plaka değişince mevcut aracı ara (debounce). contains araması → client'ta
   // birebir plaka filtresi. Modal kapalıyken çalışmaz.
