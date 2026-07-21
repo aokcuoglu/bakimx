@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
+import { normalizePartSearchTerm } from "@/lib/tr-search"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
 import { dedupeBrands, normalizeArticles, normalizeCategories, normalizeSuppliers } from "./normalize"
@@ -197,23 +199,47 @@ export async function searchVehicleArticles(
   // Böngöz: filtre yoksa kısa query hiçbir şey döndürmez; filtre varsa boş
   // query'de bile o grubun parçaları listelenir (kullanıcı yazınca daralır).
   if (q.length < 2 && !hasFilter) return []
-  const rows = await prisma.tecdocArticle.findMany({
-    where: {
-      vehicleTypeId: vehicleId,
-      ...(supplierId != null ? { supplierId } : {}),
-      ...(categoryId != null ? { categoryId } : {}),
-      ...(q.length >= 2
-        ? {
-            OR: [
-              { articleNo: { contains: q, mode: "insensitive" as const } },
-              { productName: { contains: q, mode: "insensitive" as const } },
-            ],
-          }
-        : {}),
-    },
-    take: limit,
-    orderBy: { articleNo: "asc" },
-  })
+  // Ayraç-duyarsız arama: DB'de parça no "C 27 125" gibi boşluklu saklanırken
+  // kullanıcı "C27125" yazınca da eşleşsin diye kolonu da sorguyu da harf/rakama
+  // indirip karşılaştırırız. Aynı normalize hem article_no hem product_name için
+  // geçerli — yani "hava filtresi" ↔ "havafiltresi" de bulunur. Prisma where'i
+  // kolon üzerinde fonksiyon çağıramadığından bu adım $queryRaw ile yapılır;
+  // sonuç kümesi araca (vehicle_type_id) scope'lu ve LIMIT'li kaldığı için maliyet düşük.
+  const normQ = q.length >= 2 ? normalizePartSearchTerm(q) : ""
+  const conditions: Prisma.Sql[] = [Prisma.sql`vehicle_type_id = ${vehicleId}`]
+  if (supplierId != null) conditions.push(Prisma.sql`supplier_id = ${supplierId}`)
+  if (categoryId != null) conditions.push(Prisma.sql`category_id = ${categoryId}`)
+  if (normQ) {
+    const pattern = `%${normQ}%` // normQ zaten harf/rakama indirgendi → LIKE joker'i (% _) içermez
+    conditions.push(Prisma.sql`(
+      regexp_replace(lower(article_no), '[^a-z0-9]', '', 'g') LIKE ${pattern}
+      OR regexp_replace(lower(product_name), '[^a-z0-9]', '', 'g') LIKE ${pattern}
+    )`)
+  }
+  const rows = await prisma.$queryRaw<
+    Array<{
+      tecdocArticleId: number
+      articleNo: string
+      productName: string
+      supplierName: string
+      supplierId: number | null
+      imageUrl: string | null
+      categoryId: number
+    }>
+  >(Prisma.sql`
+    SELECT
+      tecdoc_article_id AS "tecdocArticleId",
+      article_no        AS "articleNo",
+      product_name      AS "productName",
+      supplier_name     AS "supplierName",
+      supplier_id       AS "supplierId",
+      image_url         AS "imageUrl",
+      category_id       AS "categoryId"
+    FROM tecdoc_articles
+    WHERE ${Prisma.join(conditions, " AND ")}
+    ORDER BY article_no ASC
+    LIMIT ${limit}
+  `)
   if (rows.length === 0) return []
   // Kategori adlarını cache'li ağaçtan çöz (id→ad). Ağaç yoksa ad boş kalır ama
   // parça sonucu yine döner.

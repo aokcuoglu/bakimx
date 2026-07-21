@@ -23,6 +23,7 @@ import type { OrderItem } from "@/components/app/order-management-panel"
 import { PartSearchInput } from "@/components/app/part-search-input"
 import { PartAttributeField } from "@/components/app/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
+import { PartAttrOptionsProvider } from "@/components/app/part-attr-options"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -235,6 +236,7 @@ export function PartsLaborGrid({
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
 
   return (
+    <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
     <div className="space-y-3">
       {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
       <div className="hidden overflow-hidden rounded-lg border border-border md:block">
@@ -310,6 +312,7 @@ export function PartsLaborGrid({
         </Button>
       )}
     </div>
+    </PartAttrOptionsProvider>
   )
 }
 

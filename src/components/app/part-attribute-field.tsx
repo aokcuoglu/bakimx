@@ -16,9 +16,8 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Plus, Search, XIcon } from "lucide-react"
-import { flattenCategoryLeaves } from "@/lib/tecdoc/tree"
 import { freeTextCommit, type AttrOption } from "@/components/app/part-attribute-commit"
-import type { CategoryLeaf, CategoryNode, PartBrandSummary } from "@/lib/tecdoc/types"
+import { usePartAttrOptions } from "@/components/app/part-attr-options"
 
 /**
  * Parça satırının Marka/Kategori alanı: katalog (cache'li TecDoc) önerisi sunar
@@ -48,8 +47,9 @@ export function PartAttributeField({
   onClear: () => void
   onOpenPicker?: () => void
 }) {
-  const [options, setOptions] = useState<AttrOption[]>([])
-  const [loaded, setLoaded] = useState(false)
+  // Seçenekler artık her hücrede ayrı fetch edilmez: grid seviyesindeki
+  // PartAttrOptionsProvider araç başına TEK sefer çeker, buradan paylaşılır.
+  const { options, loaded } = usePartAttrOptions(kind)
   const [query, setQuery] = useState(value)
 
   // Dış value (kayıtlı row.brand/category) → iç query senkronu (React↔prop).
@@ -61,39 +61,6 @@ export function PartAttributeField({
     // yalnız dış value değişimini izler
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
-
-  // Katalog seçeneklerini yükle — yalnız araç bağlıysa (kotasız cache).
-  useEffect(() => {
-    if (vehicleTypeId == null) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOptions([])
-      setLoaded(true)
-      return
-    }
-    let active = true
-    setLoaded(false)
-    const url =
-      kind === "brand"
-        ? `/api/tecdoc/brands?vehicleId=${vehicleTypeId}`
-        : `/api/tecdoc/categories?vehicleId=${vehicleTypeId}`
-    fetch(url)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!active) return
-        if (!data) { setLoaded(true); return }
-        if (kind === "brand") {
-          const brands: PartBrandSummary[] = Array.isArray(data.brands) ? data.brands : []
-          setOptions(brands.map((b) => ({ id: b.supplierId, label: b.name })))
-        } else {
-          const tree: CategoryNode[] = Array.isArray(data.categories) ? data.categories : []
-          const leaves: CategoryLeaf[] = flattenCategoryLeaves(tree)
-          setOptions(leaves.map((l) => ({ id: l.id, label: l.name, sub: l.path || undefined })))
-        }
-        setLoaded(true)
-      })
-      .catch(() => { if (active) setLoaded(true) })
-    return () => { active = false }
-  }, [kind, vehicleTypeId])
 
   const placeholder = kind === "brand" ? "Marka" : "Kategori"
   const commit = freeTextCommit(query, options)
