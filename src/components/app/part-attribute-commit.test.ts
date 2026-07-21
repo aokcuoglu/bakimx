@@ -26,3 +26,7 @@ test("kısmi eşleşme yine ＋ekle gösterir", () => {
 test("boş seçenek listesi (unlinked) → dolu query'de göster", () => {
   expect(freeTextCommit("seta", [])).toEqual({ show: true, value: "seta" })
 })
+
+test("tr-I tuzağı: büyük I içeren katalog markası birebir eşleşir", () => {
+  expect(freeTextCommit("ina", [{ id: 1, label: "INA" }])).toEqual({ show: false, value: "ina" })
+})
