@@ -222,9 +222,9 @@ export function PartsLaborGrid({
     <div className="space-y-2">
       {/* Masaüstü: geniş tablo — dar ekranda kırpmak yerine yatay kaydırır. */}
       <div className="md:overflow-x-auto md:pb-1">
-        <div className="space-y-1.5 md:min-w-[63rem]">
+        <div className="space-y-1.5 md:min-w-[69rem]">
           {/* Tablo başlığı (yalnız md+) */}
-          <div className="hidden md:grid grid-cols-[7rem_minmax(14rem,1.8fr)_8rem_10.5rem_5.5rem_6.5rem_5.5rem_2.25rem] gap-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[7rem_minmax(16rem,2fr)_9rem_11.5rem_5.5rem_6.5rem_5.5rem_2.75rem] gap-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <span>Tür</span>
             <span>Parça / İşçilik</span>
             <span>Marka</span>
@@ -316,7 +316,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
 
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 md:p-0 md:border-0 md:bg-transparent">
-      <div className="grid gap-2 md:grid-cols-[7rem_minmax(14rem,1.8fr)_8rem_10.5rem_5.5rem_6.5rem_5.5rem_2.25rem] md:items-center md:px-2 md:py-1.5 md:rounded-lg md:bg-muted">
+      <div className="grid gap-2 md:grid-cols-[7rem_minmax(16rem,2fr)_9rem_11.5rem_5.5rem_6.5rem_5.5rem_2.75rem] md:items-center md:px-2 md:py-1.5 md:rounded-lg md:bg-muted">
         {/* Tür */}
         <div className="flex min-w-0 items-center justify-between gap-2 md:block">
           {row.__draft && editable ? (
@@ -334,7 +334,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
           {/* mobilde sil butonu üst satırda */}
           {editable && (
             <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
-              className="text-muted-foreground/70 hover:text-destructive md:hidden" aria-label="Sil">
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:hidden" aria-label="Satırı sil">
               <Trash2 className="size-4" />
             </Button>
           )}
@@ -392,7 +392,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
                     onOpenPicker={() => setTecdocOpen(true)}
                   />
                 ) : row.brand ? (
-                  <span className="block truncate text-xs text-muted-foreground">{row.brand}</span>
+                  <span className="block truncate text-xs text-muted-foreground" title={row.brand}>{row.brand}</span>
                 ) : (
                   <span className="text-xs text-muted-foreground/40">—</span>
                 )}
@@ -423,7 +423,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
                     onOpenPicker={() => setTecdocOpen(true)}
                   />
                 ) : row.category ? (
-                  <span className="block truncate text-xs text-muted-foreground">{row.category}</span>
+                  <span className="block truncate text-xs text-muted-foreground" title={row.category}>{row.category}</span>
                 ) : (
                   <span className="text-xs text-muted-foreground/40">—</span>
                 )}
@@ -486,7 +486,7 @@ function GridRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
         <div className="hidden md:flex md:justify-end">
           {editable && (
             <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
-              className="text-muted-foreground/70 hover:text-destructive" aria-label="Sil">
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Satırı sil">
               <Trash2 className="size-4" />
             </Button>
           )}
