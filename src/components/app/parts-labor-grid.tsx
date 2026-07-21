@@ -21,7 +21,7 @@ import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/app/order-management-panel"
 import { PartSearchInput } from "@/components/app/part-search-input"
-import { PartFilterCombobox } from "@/components/app/part-filter-combobox"
+import { PartAttributeField } from "@/components/app/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
@@ -488,6 +488,62 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
   )
 }
 
+// Marka/Kategori hücresi (masaüstü + mobil ortak). Düzenlenebilirken katalog
+// önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
+// Seçim/serbest-commit satıra persist EDER (onCell) ve katalog seçimi ayrıca
+// parça aramasını daraltan filtreyi (ed.filter) set eder.
+function AttrCell({ kind, row, ed, vehicle, onCell }: {
+  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
+}) {
+  if (!ed.isPart) return null
+  const value = kind === "brand" ? row.brand : row.category
+
+  if (!ed.editable) {
+    return value ? (
+      <span className="block truncate text-xs text-muted-foreground" title={value}>{value}</span>
+    ) : (
+      <span className="text-xs text-muted-foreground/40">—</span>
+    )
+  }
+
+  return (
+    <PartAttributeField
+      kind={kind}
+      vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+      value={value ?? ""}
+      disabled={row.__saving}
+      onSelect={(id, name) => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))
+          onCell(row, { brand: name })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))
+          onCell(row, { category: name, categoryId: id })
+        }
+      }}
+      onCommitFreeText={(v) => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
+          onCell(row, { brand: v })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
+          onCell(row, { category: v, categoryId: null })
+        }
+      }}
+      onClear={() => {
+        if (kind === "brand") {
+          ed.setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))
+          onCell(row, { brand: null })
+        } else {
+          ed.setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))
+          onCell(row, { category: null, categoryId: null })
+        }
+      }}
+      onOpenPicker={ed.linked ? () => ed.setTecdocOpen(true) : undefined}
+    />
+  )
+}
+
 // ── Masaüstü satırı: gerçek <tr> ─────────────────────────────────────────────
 function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
   row: Row
@@ -525,44 +581,12 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
 
       {/* Marka */}
       <TableCell className="whitespace-normal">
-        {ed.isPart && (
-          ed.linked && ed.editable ? (
-            <PartFilterCombobox
-              kind="brand"
-              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
-              value={ed.filter.supplierName ?? row.brand ?? ""}
-              disabled={row.__saving}
-              onSelect={(id, name) => ed.setFilter((f) => ({ ...f, supplierId: id, supplierName: name }))}
-              onClear={() => ed.setFilter((f) => ({ ...f, supplierId: undefined, supplierName: undefined }))}
-              onOpenPicker={() => ed.setTecdocOpen(true)}
-            />
-          ) : row.brand ? (
-            <span className="block truncate text-xs text-muted-foreground" title={row.brand}>{row.brand}</span>
-          ) : (
-            <span className="text-xs text-muted-foreground/40">—</span>
-          )
-        )}
+        <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </TableCell>
 
       {/* Kategori */}
       <TableCell className="whitespace-normal">
-        {ed.isPart && (
-          ed.linked && ed.editable ? (
-            <PartFilterCombobox
-              kind="category"
-              vehicleTypeId={vehicle!.catalogVehicleTypeId!}
-              value={ed.filter.categoryName ?? row.category ?? ""}
-              disabled={row.__saving}
-              onSelect={(id, name) => ed.setFilter((f) => ({ ...f, categoryId: id, categoryName: name }))}
-              onClear={() => ed.setFilter((f) => ({ ...f, categoryId: undefined, categoryName: undefined }))}
-              onOpenPicker={() => ed.setTecdocOpen(true)}
-            />
-          ) : row.category ? (
-            <span className="block truncate text-xs text-muted-foreground" title={row.category}>{row.category}</span>
-          ) : (
-            <span className="text-xs text-muted-foreground/40">—</span>
-          )
-        )}
+        <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </TableCell>
 
       {/* Miktar */}
@@ -630,16 +654,26 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove, onClear }: {
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
-      {/* Marka / Kategori (mobilde yalnız salt-görünür metin — combobox mobilde yok) */}
-      {ed.isPart && row.brand && (
-        <p className="mt-1.5 truncate text-xs text-muted-foreground">
-          <span className="text-muted-foreground/70">Marka: </span>{row.brand}
-        </p>
-      )}
-      {ed.isPart && row.category && (
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          <span className="text-muted-foreground/70">Kategori: </span>{row.category}
-        </p>
+      {/* Marka / Kategori — mobilde de düzenlenebilir (AttrCell ortak hücre). */}
+      {ed.isPart && (ed.editable || row.brand || row.category) && (
+        <div className="mt-2 space-y-1.5">
+          {(ed.editable || row.brand) && (
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">Marka</span>
+              <div className="min-w-0 flex-1">
+                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+            </div>
+          )}
+          {(ed.editable || row.category) && (
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">Kategori</span>
+              <div className="min-w-0 flex-1">
+                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Miktar */}
