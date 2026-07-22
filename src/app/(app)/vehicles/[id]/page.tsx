@@ -20,6 +20,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           order: { include: { items: true } },
           damageMarks: true,
           photos: {
+            // Dış alım fotoğrafları araç foto geçmişine karışmaz (dahili-yalnız).
+            where: { serviceOrderItemId: null },
             select: { id: true, type: true, label: true, fileUrl: true, createdAt: true },
           },
         },

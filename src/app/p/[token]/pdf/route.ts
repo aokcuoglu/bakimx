@@ -247,6 +247,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
               order: { include: { items: true } },
               damageMarks: true,
               photos: {
+                // Dış alım (satın alma) fotoğrafları dahili-yalnız — pasaport PDF'ine sızmaz.
+                where: { serviceOrderItemId: null },
                 select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
               },
               timelineEvents: {

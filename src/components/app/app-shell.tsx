@@ -21,6 +21,7 @@ import {
   BellRing,
   Boxes,
   Truck,
+  ShoppingCart,
   Wallet,
   BarChart3,
   ChevronRight,
@@ -75,6 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Depo & Finans",
     items: [
       { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
+      { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart },
       { href: "/suppliers", label: "Tedarikçiler", icon: Truck },
       { href: "/cashbox", label: "Kasa", icon: Wallet, children: [
         { href: "/cashbox/payments", label: "Tahsilatlar", icon: Receipt },

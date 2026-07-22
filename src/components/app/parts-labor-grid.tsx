@@ -24,7 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, Pencil, PackagePlus, PencilLine, Tags, PackageCheck, Wrench } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, Pencil, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart } from "lucide-react"
+import { PurchaseDetailDialog } from "@/components/app/purchase-detail-dialog"
 import { cn } from "@/lib/utils"
 import { getMockLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
 import { formatTRY } from "@/lib/format"
@@ -254,6 +255,7 @@ export function PartsLaborGrid({
                 <DesktopPartRow
                   key={row.id}
                   row={row}
+                  orderId={orderId}
                   locked={locked}
                   vehicle={vehicle}
                   onCell={onCell}
@@ -274,6 +276,7 @@ export function PartsLaborGrid({
             <MobilePartRow
               key={row.id}
               row={row}
+              orderId={orderId}
               locked={locked}
               vehicle={vehicle}
               onCell={onCell}
@@ -723,26 +726,64 @@ function TotalField({ lineTotal }: { lineTotal: number | null }) {
   )
 }
 
-// Kalemin kaynağını gösteren küçük rozet: katalog vs manuel. Tooltip masaüstünde
-// hover, mobilde dokun(focus)-ile açılır. source=null (eski satır) → rozet yok.
+// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım. Tooltip
+// masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
 function SourceBadge({ source }: { source: OrderItem["source"] }) {
   if (!source) return null
-  const isCatalog = source === "catalog"
-  const Icon = isCatalog ? PackageCheck : PencilLine
-  const label = isCatalog ? "Katalogdan eklendi" : "Manuel eklendi"
+  const map = {
+    catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
+    manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
+    purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
+  } as const
+  const { Icon, label, cls } = map[source]
   return (
     <Tooltip>
       <TooltipTrigger
         aria-label={label}
-        className={cn(
-          "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
-          isCatalog ? "text-primary" : "text-muted-foreground",
-        )}
+        className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md", cls)}
       >
         <Icon className="size-3.5" />
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
+  )
+}
+
+// Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
+// PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
+function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setOpen(true)}
+        className="shrink-0 text-muted-foreground hover:text-primary"
+        aria-label="Satın alma detayı"
+        title="Satın alma detayı"
+      >
+        <Tags className="size-4" />
+      </Button>
+      <PurchaseDetailDialog
+        open={open}
+        onOpenChange={setOpen}
+        orderId={orderId}
+        editable={editable}
+        item={{
+          id: row.id,
+          name: row.name,
+          sku: row.sku,
+          quantity: row.quantity,
+          purchasePriceKurus: row.purchasePriceKurus ?? null,
+          supplierName: row.supplierName ?? null,
+          purchasedAt: row.purchasedAt ?? null,
+          purchasedByName: row.purchasedByName ?? null,
+          purchasePhotoId: row.purchasePhotoId ?? null,
+        }}
+      />
+    </>
   )
 }
 
@@ -841,8 +882,9 @@ function AttrCell({ kind, row, ed, vehicle, onCell }: {
 }
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove }: {
   row: Row
+  orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
@@ -857,10 +899,13 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
         <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
       </TableCell>
 
-      {/* Parça / İşçilik — kaynak rozeti + alan */}
+      {/* Parça / İşçilik — kaynak rozeti + (dış alımda) detay ikonu + alan */}
       <TableCell className="whitespace-normal">
         <div className="flex items-center gap-1.5">
           <SourceBadge source={row.source} />
+          {row.source === "purchase" && (
+            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
+          )}
           <div className="min-w-0 flex-1">
             <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
             <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
@@ -908,8 +953,9 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove }: {
   row: Row
+  orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
@@ -919,11 +965,14 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
 
   return (
     <div className="rounded-lg border border-border bg-card p-2.5">
-      {/* Tür + kaynak rozeti + sil */}
+      {/* Tür + kaynak rozeti + (dış alımda) detay ikonu + sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
           <SourceBadge source={row.source} />
+          {row.source === "purchase" && (
+            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
+          )}
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>

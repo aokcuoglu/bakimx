@@ -2,16 +2,20 @@
 
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
-import { bpsToPercent } from "@/lib/money"
+import { bpsToPercent, parseTRYToKurus } from "@/lib/money"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
-  User, Phone, Car, CheckCircle2,
+  User, Phone, Car, CheckCircle2, ShoppingCart,
 } from "lucide-react"
+import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SupplierAutocompleteField } from "@/components/app/supplier-autocomplete-field"
 import {
   ORDER_STATUS, CHECKLIST_CATEGORIES,
   PARTS_REQUEST_STATUS,
@@ -57,12 +61,12 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[]
+  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
-  photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; note: string | null; createdAt: string }[]
+  photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
   checklistItems: { id: string; category: string; description: string; isCompleted: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
   partsRequests: { id: string; partName: string; partSku: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
@@ -78,12 +82,19 @@ type TechnicianInfo = {
   role: string
 }
 
+type SupplierInfo = {
+  id: string
+  name: string
+}
+
 export function TechnicianOrderDetail({
   order,
-  technicians: _technicians,
+  technicians,
+  suppliers,
 }: {
   order: OrderData
   technicians: TechnicianInfo[]
+  suppliers: SupplierInfo[]
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -101,9 +112,14 @@ export function TechnicianOrderDetail({
   const repairItems = order.checklistItems.filter((c) => c.category === "repair")
   const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
 
-  const beforePhotos = order.photos.filter((p) => p.phase === "intake")
-  const duringPhotos = order.photos.filter((p) => p.phase === "repair_progress")
-  const afterPhotos = order.photos.filter((p) => p.phase === "delivery")
+  // Alış fotoğrafları (serviceOrderItemId != null) dahili-yalnızdır; onarım
+  // galerilerine sızmaması için hepsinden dışlanır.
+  const galleryPhotos = order.photos.filter((p) => p.serviceOrderItemId == null)
+  const beforePhotos = galleryPhotos.filter((p) => p.phase === "intake")
+  const duringPhotos = galleryPhotos.filter((p) => p.phase === "repair_progress")
+  const afterPhotos = galleryPhotos.filter((p) => p.phase === "delivery")
+
+  const purchasedItems = order.items.filter((i) => i.source === "purchase")
 
   const canStart = ["approved", "waiting_approval"].includes(order.status)
   const canHold = order.status === "in_progress"
@@ -295,6 +311,26 @@ export function TechnicianOrderDetail({
           <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
         ) : (
           <AddPartsRequestForm orderId={order.id} />
+        )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <ShoppingCart className="size-4 text-muted-foreground" />
+            Dışarıdan Alınan Parçalar
+          </h3>
+        </div>
+        <PurchasedItemsSection items={purchasedItems} />
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine parça eklenemez</p>
+        ) : (
+          <AddPurchaseButton
+            orderId={order.id}
+            suppliers={suppliers}
+            technicians={technicians}
+            defaultTechnicianId={order.assignedTechnicianId}
+          />
         )}
       </div>
 
@@ -803,6 +839,291 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
         </Button>
       </div>
     </form>
+  )
+}
+
+function PurchasedItemsSection({ items }: { items: OrderData["items"] }) {
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground/70">Henüz dışarıdan alınan parça yok.</p>
+  }
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className="flex items-start justify-between gap-2 py-2 px-3 rounded-lg bg-muted border border-border"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+              {item.supplierName ? `${item.supplierName} · ` : ""}
+              {item.quantity} adet
+              {item.purchasedAt ? ` · ${new Date(item.purchasedAt).toLocaleDateString("tr-TR")}` : ""}
+            </p>
+          </div>
+          {item.purchasePriceKurus != null && (
+            <span className="text-sm font-semibold text-foreground shrink-0">
+              {formatTRY(item.purchasePriceKurus)}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function todayTrString(): string {
+  const now = new Date()
+  const dd = String(now.getDate()).padStart(2, "0")
+  const mm = String(now.getMonth() + 1).padStart(2, "0")
+  return `${dd}.${mm}.${now.getFullYear()}`
+}
+
+function AddPurchaseButton({
+  orderId,
+  suppliers,
+  technicians,
+  defaultTechnicianId,
+}: {
+  orderId: string
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  defaultTechnicianId: string | null
+}) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [sku, setSku] = useState("")
+  const [supplierName, setSupplierName] = useState("")
+  const [supplierId, setSupplierId] = useState<string | null>(null)
+  const [quantity, setQuantity] = useState("1")
+  const [price, setPrice] = useState("")
+  const [purchasedAt, setPurchasedAt] = useState(todayTrString())
+  const [technicianId, setTechnicianId] = useState(defaultTechnicianId || "")
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function resetForm() {
+    setName("")
+    setSku("")
+    setSupplierName("")
+    setSupplierId(null)
+    setQuantity("1")
+    setPrice("")
+    setPurchasedAt(todayTrString())
+    setTechnicianId(defaultTechnicianId || "")
+    setFile(null)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+    setError(null)
+  }
+
+  function onPickFile(f: File | null) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setFile(f)
+    setPreviewUrl(f ? URL.createObjectURL(f) : null)
+  }
+
+  async function handleSubmit() {
+    setError(null)
+    if (!name.trim()) {
+      setError("Parça adı zorunludur")
+      return
+    }
+    const priceKurus = price.trim() ? parseTRYToKurus(price) : 0
+    if (priceKurus == null) {
+      setError("Geçerli bir alış fiyatı giriniz")
+      return
+    }
+
+    const fd = new FormData()
+    fd.set("serviceOrderId", orderId)
+    fd.set("name", name.trim())
+    fd.set("sku", sku.trim())
+    fd.set("quantity", quantity || "1")
+    fd.set("purchasePriceKurus", String(priceKurus))
+    fd.set("supplierName", supplierName.trim())
+    if (supplierId) fd.set("supplierId", supplierId)
+    fd.set("purchasedAt", purchasedAt)
+    if (technicianId) fd.set("purchasedById", technicianId)
+    if (file) fd.set("file", file)
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/orders/purchases", { method: "POST", body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data?.error || "Kaydedilemedi")
+        setSubmitting(false)
+        return
+      }
+      resetForm()
+      setOpen(false)
+      router.refresh()
+    } catch {
+      setError("Bağlantı hatası, lütfen tekrar deneyin")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
+      >
+        <Plus className="size-4" />
+        Parça Aldım
+      </button>
+
+      <BottomSheet
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o)
+          if (!o) resetForm()
+        }}
+        title="Dışarıdan Parça Alımı"
+        description="Aldığınız parçayı bu iş emrine kalem olarak ekleyin."
+        footer={
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="flex-1 touch-manipulation"
+              disabled={submitting || !name.trim()}
+              onClick={handleSubmit}
+            >
+              <Send className="size-3.5" />
+              {submitting ? "Kaydediliyor…" : "Kalem Olarak Ekle"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="touch-manipulation"
+              disabled={submitting}
+              onClick={() => {
+                setOpen(false)
+                resetForm()
+              }}
+            >
+              İptal
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3 py-1">
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Parça adı *</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Ön fren balatası" />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Parça no / OEM</label>
+              <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="SKU / OEM" />
+            </div>
+            <div className="w-24 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Miktar</label>
+              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Tedarikçi</label>
+            <SupplierAutocompleteField
+              suppliers={suppliers}
+              value={supplierName}
+              onChange={setSupplierName}
+              onSelectSupplier={setSupplierId}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alış fiyatı (₺)</label>
+              <Input
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alış tarihi</label>
+              <DatePicker value={purchasedAt} onChange={setPurchasedAt} />
+            </div>
+          </div>
+
+          {technicians.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
+              <Select value={technicianId} onValueChange={(v) => setTechnicianId(v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seçiniz">
+                    {(value) => technicians.find((t) => t.id === value)?.fullName || "Seçiniz"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Parça kutusu fotoğrafı</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+            />
+            {previewUrl ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 touch-manipulation"
+                  onClick={() => onPickFile(null)}
+                >
+                  <Trash2 className="size-3.5" />
+                  Kaldır
+                </Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 py-6 text-sm text-muted-foreground touch-manipulation"
+              >
+                <Camera className="size-6" />
+                Fotoğraf çek / seç
+              </button>
+            )}
+          </div>
+        </div>
+      </BottomSheet>
+    </>
   )
 }
 
