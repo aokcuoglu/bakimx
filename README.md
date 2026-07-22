@@ -4,7 +4,7 @@
 
 Müşteri kabulünden iş emri, teklif/onay, fotoğraf & hasar dokümantasyonu, tahsilat, stok ve bakım hatırlatmalarına kadar bir özel servisin günlük operasyonunu tek yerden yönetir. Çoklu işletme (multi-tenant), rol bazlı erişim ve müşteriye açık şeffaf servis paylaşımı içerir.
 
-> Durum: **v0.5.x** — üretime sertleştirilen beta. Sürüm geçmişi: [CHANGELOG.md](./CHANGELOG.md)
+> Durum: **v0.7.x** — üretimde (canlı) beta. Sürüm geçmişi: [CHANGELOG.md](./CHANGELOG.md) · [Releases](https://github.com/aokcuoglu/bakimx/releases)
 
 ---
 
@@ -35,10 +35,10 @@ Modül ve mimari diyagramları: [docs/architecture](./docs/architecture/).
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4
 - **Depolama:** S3-uyumlu — MinIO (yerel) / Cloudflare R2 (prod)
-- **OCR:** Tesseract + OpenCV (self-hosted) · DeepSeek/OpenAI vision (opsiyonel)
-- **AI Danışman:** Mock / OpenAI / DeepSeek (Premium'a gated)
+- **OCR:** Plaka — Tesseract + OpenCV (self-hosted) · Ruhsat — Claude Vision (Sonnet 5)
+- **AI Danışman:** Claude (Anthropic) — Premium'a gated
 - **Paket yöneticisi:** Bun
-- **Altyapı:** Docker (yalnızca VPS/prod) · Contabo VPS · GitHub Actions
+- **Altyapı:** AWS (ECS/ECR, CDK) · Docker (prod imajı) · GitHub Actions (CI/CD)
 
 ---
 
@@ -114,7 +114,7 @@ scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
 
 ## Geliştirme akışı
 
-`feature/*` → `dev` → **app-dev.bakimx.com** (AWS, otomatik) → doğrulama → `dev→main` PR → **prod** (Contabo)
+`feature/*` → `dev` → **app-dev.bakimx.com** (AWS, otomatik) → doğrulama → `dev→main` PR → **prod** (AWS · app.bakimx.com)
 
 Detaylar: [RELEASE.md](./RELEASE.md) · [CONTRIBUTING.md](./CONTRIBUTING.md)
 
@@ -122,4 +122,4 @@ Detaylar: [RELEASE.md](./RELEASE.md) · [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Lisans
 
-Özel ve tescilli (proprietary). Tüm hakları saklıdır © BakımX.
+Özel ve tescilli (proprietary). Tüm hakları saklıdır © 2026 BakımX. Bkz. [LICENSE](./LICENSE).
