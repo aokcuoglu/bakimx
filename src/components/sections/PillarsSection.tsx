@@ -9,6 +9,7 @@ import {
   Lock,
   Car,
 } from "lucide-react";
+import { BrandEyebrow } from "@/components/shared/brand-decor";
 
 export function PillarsSection() {
   const prefersReducedMotion = useReducedMotion();
@@ -84,11 +85,14 @@ export function PillarsSection() {
   ];
 
   return (
-    <section className="bg-brand/10 pb-16 sm:pb-20">
+    <section className="bg-brand/10 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          Servisinizin dijital operasyon merkezi
-        </h2>
+        <div className="text-center">
+          <BrandEyebrow>Operasyon merkezi</BrandEyebrow>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+            Servisinizin dijital operasyon merkezi
+          </h2>
+        </div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {pillars.map((pillar, i) => (
             <motion.div
