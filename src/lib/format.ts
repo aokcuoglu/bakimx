@@ -106,6 +106,18 @@ export function inputDateToTr(v: string): string {
 }
 
 /**
+ * GG.AA.YYYY (dd.MM.yyyy) tarih seçici değerini gerçek Date'e çevirir (yerel gün
+ * başı). Tanınmayan/eksik girdi null döner. Dış alım (purchasedAt) gibi DateTime
+ * kolonlarına yazarken kullanılır.
+ */
+export function trDateToDate(v: string | null | undefined): Date | null {
+  const iso = trDateToInput(v)
+  if (!iso) return null
+  const d = new Date(`${iso}T00:00:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/**
  * Build a displayable name for a customer. Handles corporate/individual and null fields.
  */
 export function customerDisplayName(customer: {

@@ -19,7 +19,8 @@ export async function GET(
           select: {
             workshopId: true,
             photos: {
-              where: { id: photoId },
+              // Dış alım fotoğrafı public token ile servis edilemez (dahili-yalnız).
+              where: { id: photoId, serviceOrderItemId: null },
               select: {
                 workshopId: true,
                 storageKey: true,

@@ -15,7 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ExternalLink, CheckCircle2, PackageSearch } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch } from "lucide-react"
+import { PurchaseDetailDialog } from "@/components/app/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
 import { getMockLaborCatalog, searchLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
@@ -270,6 +271,7 @@ export function PartsLaborGrid({
                 <DesktopPartRow
                   key={row.id}
                   row={row}
+                  orderId={orderId}
                   locked={locked}
                   vehicle={vehicle}
                   onCell={onCell}
@@ -291,6 +293,7 @@ export function PartsLaborGrid({
             <MobilePartRow
               key={row.id}
               row={row}
+              orderId={orderId}
               locked={locked}
               vehicle={vehicle}
               onCell={onCell}
@@ -883,26 +886,64 @@ function TypeChip({ type }: { type: ItemType }) {
   )
 }
 
-// Kalemin kaynağını gösteren küçük rozet: katalog vs manuel. Tooltip masaüstünde
-// hover, mobilde dokun(focus)-ile açılır. source=null (eski satır) → rozet yok.
+// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım. Tooltip
+// masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
 function SourceBadge({ source }: { source: OrderItem["source"] }) {
   if (!source) return null
-  const isCatalog = source === "catalog"
-  const Icon = isCatalog ? PackageCheck : PencilLine
-  const label = isCatalog ? "Katalogdan eklendi" : "Manuel eklendi"
+  const map = {
+    catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
+    manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
+    purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
+  } as const
+  const { Icon, label, cls } = map[source]
   return (
     <Tooltip>
       <TooltipTrigger
         aria-label={label}
-        className={cn(
-          "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
-          isCatalog ? "text-primary" : "text-muted-foreground",
-        )}
+        className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md", cls)}
       >
         <Icon className="size-3.5" />
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
+  )
+}
+
+// Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
+// PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
+function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setOpen(true)}
+        className="shrink-0 text-muted-foreground hover:text-primary"
+        aria-label="Satın alma detayı"
+        title="Satın alma detayı"
+      >
+        <Tags className="size-4" />
+      </Button>
+      <PurchaseDetailDialog
+        open={open}
+        onOpenChange={setOpen}
+        orderId={orderId}
+        editable={editable}
+        item={{
+          id: row.id,
+          name: row.name,
+          sku: row.sku,
+          quantity: row.quantity,
+          purchasePriceKurus: row.purchasePriceKurus ?? null,
+          supplierName: row.supplierName ?? null,
+          purchasedAt: row.purchasedAt ?? null,
+          purchasedByName: row.purchasedByName ?? null,
+          purchasePhotoId: row.purchasePhotoId ?? null,
+        }}
+      />
+    </>
   )
 }
 
@@ -1049,8 +1090,9 @@ const META_CHIP_STYLE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, saved }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
   row: Row
+  orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
@@ -1063,12 +1105,15 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, saved }: {
 
   return (
     <TableRow className={cn(GHOST_ROW, "align-middle")}>
-      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti */}
+      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti + (dış alımda) detay ikonu */}
       <TableCell className="relative py-3.5 pl-[18px]">
         <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
         <div className="flex items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
+          {row.source === "purchase" && (
+            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
+          )}
         </div>
       </TableCell>
 
@@ -1119,8 +1164,9 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove, saved }: {
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, locked, vehicle, onCell, onRemove, saved }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
   row: Row
+  orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
@@ -1136,11 +1182,14 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove, saved }: {
       {/* Sol tür aksanı */}
       <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
 
-      {/* Başlık: tür çipi + kaynak rozeti · sil */}
+      {/* Başlık: tür çipi + kaynak rozeti + (dış alımda) detay ikonu · sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
+          {row.source === "purchase" && (
+            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
+          )}
           <SavedFlash show={!!saved} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
