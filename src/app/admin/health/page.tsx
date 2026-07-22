@@ -140,7 +140,7 @@ export default async function AdminHealthPage() {
         <p className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
           <AlertTriangle className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
           <span>
-            Yalnızca bu uygulamanın kaydettiği çağrıları sayar. Hatalı çağrılar faturalanır ama cache'lenmez ve{" "}
+            Yalnızca bu uygulamanın kaydettiği çağrıları sayar. Hatalı çağrılar faturalanır ama cache&apos;lenmez ve{" "}
             <code className="font-mono">migrate reset</code> bu satırları siler — gerçek sayı için RapidAPI panosuna
             bakın. Geliştirme sırasındaki manuel denemeler burada görünmez.
           </span>

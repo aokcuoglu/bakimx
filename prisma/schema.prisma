@@ -41,43 +41,43 @@ model Workshop {
   // --- Paid subscription period (manual/havale billing v1) ---
   // Set on the first confirmed paid order. Null = legacy/admin-provisioned or
   // never-paid workshop (no period gate). currentPeriodEnd < now => locked.
-  billingCycle       BillingCycle?
-  currentPeriodEnd   DateTime?
+  billingCycle     BillingCycle?
+  currentPeriodEnd DateTime?
 
-  settings     WorkshopSettings?
-  users        User[]
-  customers    Customer[]
-  vehicles     Vehicle[]
-  intakes      VehicleIntakeForm[]
-  photos       VehiclePhoto[]
-  damageMarks  DamageMark[]
-  approvals    ApprovalRequest[]
-  shareLinks   PublicShareLink[]
-  timelineEvents IntakeTimelineEvent[]
-  orders       ServiceOrder[]
-  quotes       Quote[]
-  quoteItems   QuoteItem[]
-  appointments Appointment[]
-  reminders    MaintenanceReminder[]
-  auditLogs    AuditLog[]
-  partStockItems PartStockItem[]
-  stockMovements StockMovement[]
-  suppliers     Supplier[]
-  collections       CollectionPayment[]
-  ocrLogs           OcrLog[]
-  passportTokens     VehiclePassportToken[]
-  technicians        Technician[]
-  checklistItems     ChecklistItem[]
-  internalNotes      InternalNote[]
-  partsRequests      PartsRequest[]
-  laborSessions      LaborSession[]
+  settings               WorkshopSettings?
+  users                  User[]
+  customers              Customer[]
+  vehicles               Vehicle[]
+  intakes                VehicleIntakeForm[]
+  photos                 VehiclePhoto[]
+  damageMarks            DamageMark[]
+  approvals              ApprovalRequest[]
+  shareLinks             PublicShareLink[]
+  timelineEvents         IntakeTimelineEvent[]
+  orders                 ServiceOrder[]
+  quotes                 Quote[]
+  quoteItems             QuoteItem[]
+  appointments           Appointment[]
+  reminders              MaintenanceReminder[]
+  auditLogs              AuditLog[]
+  partStockItems         PartStockItem[]
+  stockMovements         StockMovement[]
+  suppliers              Supplier[]
+  collections            CollectionPayment[]
+  ocrLogs                OcrLog[]
+  passportTokens         VehiclePassportToken[]
+  technicians            Technician[]
+  checklistItems         ChecklistItem[]
+  internalNotes          InternalNote[]
+  partsRequests          PartsRequest[]
+  laborSessions          LaborSession[]
   communicationTemplates CommunicationTemplate[]
-  communicationLogs  CommunicationLog[]
-  calendarSyncLogs   CalendarSyncLog[]
-  reminderExecutionLogs ReminderExecutionLog[]
-  invites            Invite[]
-  billingOrders      BillingOrder[]
-  featureOverrides   WorkshopFeatureOverride[]
+  communicationLogs      CommunicationLog[]
+  calendarSyncLogs       CalendarSyncLog[]
+  reminderExecutionLogs  ReminderExecutionLog[]
+  invites                Invite[]
+  billingOrders          BillingOrder[]
+  featureOverrides       WorkshopFeatureOverride[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -111,12 +111,12 @@ model BillingOrder {
   type             BillingOrderType
   planTier         PlanTier
   billingCycle     BillingCycle
-  amountMinor      Int                // kuruş — satın alma anındaki KDV-dahil fiyat snapshot'ı
+  amountMinor      Int // kuruş — satın alma anındaki KDV-dahil fiyat snapshot'ı
   currency         String             @default("TRY")
   status           BillingOrderStatus @default(pending_payment)
   method           BillingMethod      @default(havale)
   reference        String             @unique // havale eşleştirme kodu, ör. "BX-7K3Q9"
-  billingSnapshot  Json?              // o anki ünvan/vergi no/adres → makbuz için
+  billingSnapshot  Json? // o anki ünvan/vergi no/adres → makbuz için
   note             String?
   createdAt        DateTime           @default(now())
   confirmedAt      DateTime?
@@ -158,24 +158,24 @@ enum BillingMethod {
 // purpose=card_verification denemelerinin billingOrderId'si YOKTUR (kayıtta 1 TL
 // kart doğrulaması bir siparişe değil doğrudan workshop'a bağlıdır — bkz. workshopId).
 model PaymentTransaction {
-  id              String                     @id @default(cuid())
+  id              String                    @id @default(cuid())
   billingOrderId  String?
-  billingOrder    BillingOrder?              @relation(fields: [billingOrderId], references: [id])
-  purpose         PaymentTransactionPurpose  @default(purchase)
-  workshopId      String                     // denormalize — tenant-scoped admin sorguları için
-  provider        String                     @default("tami")
-  providerOrderId String                     @unique // TAMI'ye giden orderId (2-36 kar.), deneme başına benzersiz
-  status          PaymentTransactionStatus   @default(initiated)
-  amountMinor     Int                        // kuruş snapshot
-  currency        String                     @default("TRY")
-  maskedPan       String?                    // SADECE callback'ten gelen maskeli numara
+  billingOrder    BillingOrder?             @relation(fields: [billingOrderId], references: [id])
+  purpose         PaymentTransactionPurpose @default(purchase)
+  workshopId      String // denormalize — tenant-scoped admin sorguları için
+  provider        String                    @default("tami")
+  providerOrderId String                    @unique // TAMI'ye giden orderId (2-36 kar.), deneme başına benzersiz
+  status          PaymentTransactionStatus  @default(initiated)
+  amountMinor     Int // kuruş snapshot
+  currency        String                    @default("TRY")
+  maskedPan       String? // SADECE callback'ten gelen maskeli numara
   cardBrand       String?
   errorCode       String?
   errorMessage    String?
   correlationId   String?
-  callbackPayload Json?                      // sanitize edilmiş callback gövdesi (TAMI zaten PAN/CVV dönmez)
+  callbackPayload Json? // sanitize edilmiş callback gövdesi (TAMI zaten PAN/CVV dönmez)
   // Kart verisi (PAN/CVV/expiry/holder) ASLA saklanmaz — PCI
-  createdAt       DateTime                   @default(now())
+  createdAt       DateTime                  @default(now())
   completedAt     DateTime?
 
   @@index([billingOrderId])
@@ -196,68 +196,68 @@ enum PaymentTransactionPurpose {
 }
 
 model WorkshopSettings {
-  id                    String   @id @default(cuid())
-  workshopId            String   @unique
-  workshop              Workshop @relation(fields: [workshopId], references: [id])
+  id         String   @id @default(cuid())
+  workshopId String   @unique
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
 
-  pdfLogoUrl            String?
-  publicPortalLogoUrl   String?
-  passportLogoUrl       String?
-  themeColor            String?
-  accentColor           String?
+  pdfLogoUrl          String?
+  publicPortalLogoUrl String?
+  passportLogoUrl     String?
+  themeColor          String?
+  accentColor         String?
 
-  smsProvider           String   @default("mock")
-  smsApiKey             String?
-  smsSenderName         String?
-  whatsappProvider      String   @default("mock")
-  whatsappApiKey        String?
-  whatsappPhoneNumber   String?
-  emailProvider         String   @default("mock")
-  emailApiKey           String?
-  emailFromAddress      String?
-  emailFromName         String?
+  smsProvider         String  @default("mock")
+  smsApiKey           String?
+  smsSenderName       String?
+  whatsappProvider    String  @default("mock")
+  whatsappApiKey      String?
+  whatsappPhoneNumber String?
+  emailProvider       String  @default("mock")
+  emailApiKey         String?
+  emailFromAddress    String?
+  emailFromName       String?
 
-  weekdayStart         String   @default("09:00")
-  weekdayEnd           String   @default("18:00")
-  weekdayWorkingDays   String   @default("1,2,3,4,5")
-  weekendStart         String   @default("10:00")
-  weekendEnd           String   @default("14:00")
-  weekendWorkingDays   String   @default("6")
-  holidayEnabled       Boolean  @default(false)
-  holidayDates         String?
+  weekdayStart       String  @default("09:00")
+  weekdayEnd         String  @default("18:00")
+  weekdayWorkingDays String  @default("1,2,3,4,5")
+  weekendStart       String  @default("10:00")
+  weekendEnd         String  @default("14:00")
+  weekendWorkingDays String  @default("6")
+  holidayEnabled     Boolean @default(false)
+  holidayDates       String?
 
-  defaultAppointmentDuration Int @default(60)
-  bufferDuration             Int @default(15)
-  reminderTimings             String @default("60,30")
+  defaultAppointmentDuration Int    @default(60)
+  bufferDuration             Int    @default(15)
+  reminderTimings            String @default("60,30")
 
-  workOrderTemplate     String?
-  servicePassportTemplate String?
+  workOrderTemplate         String?
+  servicePassportTemplate   String?
   collectionReceiptTemplate String?
 
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workshopId])
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
-  firstName   String?
-  lastName    String?
-  workshopId  String
-  workshop    Workshop @relation(fields: [workshopId], references: [id])
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  firstName  String?
+  lastName   String?
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
   // Team/RBAC: default `owner` is backfill-safe — existing/seed users become the
   // workshop owner with no data fixup. Invited users get their role explicitly.
-  role        UserRole @default(owner)
+  role       UserRole @default(owner)
   // Soft-disable a seat (blocks sign-in) without deleting history.
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  auditLogs   AuditLog[]
-  sentInvites Invite[] @relation("InviteCreatedBy")
+  auditLogs      AuditLog[]
+  sentInvites    Invite[]             @relation("InviteCreatedBy")
   passwordResets PasswordResetToken[]
 
   @@index([workshopId])
@@ -265,9 +265,9 @@ model User {
 
 // Workshop-scoped team roles. `staff` is the least-privileged operational role.
 enum UserRole {
-  owner   // full control incl. team management + (future) billing
+  owner // full control incl. team management + (future) billing
   manager // manage team (invite / change role of non-owners) + all operations
-  staff   // operational features only; no team management
+  staff // operational features only; no team management
 }
 
 // Token-based team invite. The raw token lives only in the e-mailed URL; we
@@ -313,40 +313,40 @@ model PasswordResetToken {
 }
 
 model Customer {
-  id            String   @id @default(cuid())
-  workshopId    String
-  workshop      Workshop @relation(fields: [workshopId], references: [id])
-  type          CustomerType @default(individual)
-  firstName     String?
-  lastName      String?
-  fullName      String?
-  companyName   String?
-  contactName   String?
-  phone         String
-  phone2        String?
-  email         String?
-  city          String?
-  district      String?
-  address       String?
-  identityNumber String?
-  taxNumber     String?
-  taxOffice     String?
-  notes         String?
-  tag           CustomerTag? @default(standard)
-  source        CustomerSource?
-  priceGroup    CustomerPriceGroup? @default(standard)
-  discountRate  Int?       @default(0) // bps (2000 = %20)
-  riskNote      String?
-  whatsappConsent Boolean  @default(false)
-  smsConsent      Boolean  @default(false)
-  emailConsent    Boolean  @default(false)
+  id              String              @id @default(cuid())
+  workshopId      String
+  workshop        Workshop            @relation(fields: [workshopId], references: [id])
+  type            CustomerType        @default(individual)
+  firstName       String?
+  lastName        String?
+  fullName        String?
+  companyName     String?
+  contactName     String?
+  phone           String
+  phone2          String?
+  email           String?
+  city            String?
+  district        String?
+  address         String?
+  identityNumber  String?
+  taxNumber       String?
+  taxOffice       String?
+  notes           String?
+  tag             CustomerTag?        @default(standard)
+  source          CustomerSource?
+  priceGroup      CustomerPriceGroup? @default(standard)
+  discountRate    Int?                @default(0) // bps (2000 = %20)
+  riskNote        String?
+  whatsappConsent Boolean             @default(false)
+  smsConsent      Boolean             @default(false)
+  emailConsent    Boolean             @default(false)
   kvkkApprovedAt  DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  vehicles Vehicle[]
-  intakes  VehicleIntakeForm[]
-  quotes   Quote[]
+  vehicles     Vehicle[]
+  intakes      VehicleIntakeForm[]
+  quotes       Quote[]
   appointments Appointment[]
   reminders    MaintenanceReminder[]
   collections  CollectionPayment[]
@@ -384,24 +384,24 @@ enum CustomerPriceGroup {
 }
 
 model Vehicle {
-  id           String   @id @default(cuid())
-  workshopId   String
-  workshop     Workshop @relation(fields: [workshopId], references: [id])
-  customerId   String
-  customer     Customer @relation(fields: [customerId], references: [id])
-  plate        String
-  brand        String
-  model        String
-  vehicleType  String?
-  modelYear    Int?
-  mileage      Int?
-  vin          String?
-  vinOcrRaw    String?
-  vinConfirmed Boolean  @default(false)
-  color        String?
-  engineNo     String?
-  fuelType     String?
-  transmission String?
+  id                    String   @id @default(cuid())
+  workshopId            String
+  workshop              Workshop @relation(fields: [workshopId], references: [id])
+  customerId            String
+  customer              Customer @relation(fields: [customerId], references: [id])
+  plate                 String
+  brand                 String
+  model                 String
+  vehicleType           String?
+  modelYear             Int?
+  mileage               Int?
+  vin                   String?
+  vinOcrRaw             String?
+  vinConfirmed          Boolean  @default(false)
+  color                 String?
+  engineNo              String?
+  fuelType              String?
+  transmission          String?
   // Ruhsat (vehicle registration) detail fields. Stored as raw strings to
   // preserve the exact ruhsat text (dates as DD.MM.YYYY, displacement/power
   // with units) and avoid OCR/manual parse fragility.
@@ -414,17 +414,17 @@ model Vehicle {
   // columns — intentionally NO foreign keys to the catalog tables, because the
   // catalog is re-importable reference data (scripts/migrate-vehicle-catalog.ts)
   // and hard FKs would block re-seeding. Consistency is validated at write time.
-  catalogBrandId       Int?
-  catalogModelId       Int?
-  catalogVehicleTypeId Int?
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  catalogBrandId        Int?
+  catalogModelId        Int?
+  catalogVehicleTypeId  Int?
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  intakes VehicleIntakeForm[]
-  quotes  Quote[]
-  appointments Appointment[]
-  reminders MaintenanceReminder[]
+  intakes        VehicleIntakeForm[]
+  quotes         Quote[]
+  appointments   Appointment[]
+  reminders      MaintenanceReminder[]
   passportTokens VehiclePassportToken[]
 
   @@unique([workshopId, plate])
@@ -452,12 +452,12 @@ model VehicleIntakeForm {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
-  photos      VehiclePhoto[]
-  damageMarks DamageMark[]
-  approvals   ApprovalRequest[]
-  shareLinks  PublicShareLink[]
+  photos         VehiclePhoto[]
+  damageMarks    DamageMark[]
+  approvals      ApprovalRequest[]
+  shareLinks     PublicShareLink[]
   timelineEvents IntakeTimelineEvent[]
-  order       ServiceOrder?
+  order          ServiceOrder?
 
   @@index([workshopId])
   @@index([customerId])
@@ -475,31 +475,37 @@ enum IntakeStatus {
 }
 
 model VehiclePhoto {
-  id              String            @id @default(cuid())
-  workshopId      String
-  workshop        Workshop          @relation(fields: [workshopId], references: [id])
-  intakeFormId    String
-  intakeForm      VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
-  serviceOrderId  String?
-  serviceOrder    ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
-  type            VehiclePhotoType
-  phase           PhotoPhase        @default(intake)
-  label           String
-  required        Boolean           @default(false)
-  fileUrl         String?
-  fileName        String?
-  mimeType        String?
-  sizeBytes       Int?
-  storageProvider String?
-  storageKey      String?
-  note            String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                 String            @id @default(cuid())
+  workshopId         String
+  workshop           Workshop          @relation(fields: [workshopId], references: [id])
+  intakeFormId       String
+  intakeForm         VehicleIntakeForm @relation(fields: [intakeFormId], references: [id])
+  serviceOrderId     String?
+  serviceOrder       ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
+  // Dış alım (ServiceOrderItem source=purchase) fotoğrafı bu FK ile bağlanır.
+  // null → normal intake/onarım fotoğrafı. Alış fotoları dahili-yalnızdır:
+  // public/paylaşım galerileri serviceOrderItemId=null ile filtreler.
+  serviceOrderItemId String?
+  serviceOrderItem   ServiceOrderItem? @relation(fields: [serviceOrderItemId], references: [id])
+  type               VehiclePhotoType
+  phase              PhotoPhase        @default(intake)
+  label              String
+  required           Boolean           @default(false)
+  fileUrl            String?
+  fileName           String?
+  mimeType           String?
+  sizeBytes          Int?
+  storageProvider    String?
+  storageKey         String?
+  note               String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@index([workshopId])
   @@index([intakeFormId])
   @@index([phase])
   @@index([serviceOrderId])
+  @@index([serviceOrderItemId])
 }
 
 enum VehiclePhotoType {
@@ -619,21 +625,22 @@ model IntakeTimelineEvent {
 }
 
 model Technician {
-  id         String          @id @default(cuid())
+  id         String         @id @default(cuid())
   workshopId String
-  workshop   Workshop        @relation(fields: [workshopId], references: [id])
+  workshop   Workshop       @relation(fields: [workshopId], references: [id])
   fullName   String
   phone      String
-  role       TechnicianRole  @default(usta)
-  isActive   Boolean         @default(true)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  role       TechnicianRole @default(usta)
+  isActive   Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
-  assignedOrders  ServiceOrder[]
-  checklistItems  ChecklistItem[]
-  internalNotes   InternalNote[]
-  partsRequests   PartsRequest[]
-  laborSessions   LaborSession[]
+  assignedOrders ServiceOrder[]
+  checklistItems ChecklistItem[]
+  internalNotes  InternalNote[]
+  partsRequests  PartsRequest[]
+  laborSessions  LaborSession[]
+  purchasedItems ServiceOrderItem[]
 
   @@index([workshopId])
   @@index([workshopId, isActive])
@@ -662,32 +669,32 @@ model ServiceOrder {
   assignedAt           DateTime?
   completedAt          DateTime?
   estimatedDeliveryAt  DateTime?
-  discountAmount       Int?              // kuruş
-  taxRate              Int?              // bps (2000 = %20)
+  discountAmount       Int? // kuruş
+  taxRate              Int? // bps (2000 = %20)
   notes                String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
-  items ServiceOrderItem[]
-  convertedFromQuote       Quote?       @relation("QuoteToServiceOrder")
-  convertedFromAppointment Appointment? @relation("AppointmentToServiceOrder")
-  collections             CollectionPayment[]
-  checklistItems          ChecklistItem[]
-  internalNotes           InternalNote[]
-  partsRequests           PartsRequest[]
-  laborSessions           LaborSession[]
-  photos                  VehiclePhoto[]
+  items                    ServiceOrderItem[]
+  convertedFromQuote       Quote?              @relation("QuoteToServiceOrder")
+  convertedFromAppointment Appointment?        @relation("AppointmentToServiceOrder")
+  collections              CollectionPayment[]
+  checklistItems           ChecklistItem[]
+  internalNotes            InternalNote[]
+  partsRequests            PartsRequest[]
+  laborSessions            LaborSession[]
+  photos                   VehiclePhoto[]
 
-  paidAmount     Int?       // kuruş
-  remainingAmount Int?      // kuruş
-  lastPaymentAt  DateTime?
+  paidAmount      Int? // kuruş
+  remainingAmount Int? // kuruş
+  lastPaymentAt   DateTime?
 
+  @@unique([workshopId, workOrderNo])
   @@index([workshopId])
   @@index([status])
   @@index([paymentStatus])
   @@index([assignedTechnicianId])
   @@index([workshopId, assignedTechnicianId])
-  @@unique([workshopId, workOrderNo])
 }
 
 enum OrderStatus {
@@ -723,25 +730,25 @@ enum CollectionStatus {
 }
 
 model CollectionPayment {
-  id                String          @id @default(cuid())
-  workshopId        String
-  workshop          Workshop        @relation(fields: [workshopId], references: [id])
-  customerId        String
-  customer          Customer        @relation(fields: [customerId], references: [id])
-  serviceOrderId    String?
-  serviceOrder      ServiceOrder?   @relation(fields: [serviceOrderId], references: [id])
-  quoteId           String?
-  amount            Int             // kuruş
-  currency          String          @default("TRY")
-  method            PaymentMethod   @default(cash)
-  status            CollectionStatus @default(completed)
-  paymentDate       DateTime        @default(now())
-  referenceNo       String?
-  note              String?
+  id                 String           @id @default(cuid())
+  workshopId         String
+  workshop           Workshop         @relation(fields: [workshopId], references: [id])
+  customerId         String
+  customer           Customer         @relation(fields: [customerId], references: [id])
+  serviceOrderId     String?
+  serviceOrder       ServiceOrder?    @relation(fields: [serviceOrderId], references: [id])
+  quoteId            String?
+  amount             Int // kuruş
+  currency           String           @default("TRY")
+  method             PaymentMethod    @default(cash)
+  status             CollectionStatus @default(completed)
+  paymentDate        DateTime         @default(now())
+  referenceNo        String?
+  note               String?
   cancellationReason String?
-  createdByUserId   String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdByUserId    String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([workshopId])
   @@index([customerId])
@@ -752,35 +759,55 @@ model CollectionPayment {
 }
 
 model ServiceOrderItem {
-  id             String       @id @default(cuid())
-  workshopId     String
-  serviceOrderId String
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
-  type           OrderItemType
-  name           String
-  sku            String?
-  unit           String?
-  quantity       Int          @default(1)
-  unitPrice      Int?         // kuruş
-  totalPrice     Int?         // kuruş
-  partId         String?
-  part           PartStockItem? @relation(fields: [partId], references: [id])
-  note           String?
+  id                 String           @id @default(cuid())
+  workshopId         String
+  serviceOrderId     String
+  serviceOrder       ServiceOrder     @relation(fields: [serviceOrderId], references: [id])
+  type               OrderItemType
+  name               String
+  sku                String?
+  unit               String?
+  quantity           Int              @default(1)
+  unitPrice          Int? // kuruş
+  totalPrice         Int? // kuruş
+  partId             String?
+  part               PartStockItem?   @relation(fields: [partId], references: [id])
+  note               String?
   // Parça markası (TecDoc supplier adı veya serbest). Eski satırlarda marka note'ta kalabilir.
-  brand           String?
+  brand              String?
   // Seçilen yaprak kategori etiketi (örn. "Yağ filtresi").
-  category        String?
+  category           String?
   // TecDoc kategori düğüm id'si (ileride filtre/rapor için); serbest metin kategoride null.
-  categoryId      Int?
+  categoryId         Int?
   // TecDoc article linkage when the part was picked from the vehicle catalog
   // (no FK — external id). Enables future reorder/OEM cross-reference.
-  tecdocArticleId Int?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  tecdocArticleId    Int?
+  // Kalemin nasıl eklendiği: katalog akışı mı serbest/manuel mi, yoksa
+  // teknisyenin dışarıdan satın aldığı (purchase) parça mı. Yalnız açıklayıcı
+  // (rozet + raporlama); eski satırlarda null → rozetsiz.
+  source             OrderItemSource?
+  // --- Dış alım (source=purchase) alanları: teknisyenin firmadan aldığı parça ---
+  // Alış maliyeti (kuruş). Satış unitPrice'ından bağımsızdır; oluşturmada
+  // unitPrice buradan otomatik doldurulur, sonrasında ayrı düzenlenebilir.
+  purchasePriceKurus Int?
+  // Tedarikçi adı serbest metin olarak DAİMA yazılır (supplierId seçilse bile)
+  // ki liste ekranı join olmadan render edebilsin.
+  supplierName       String?
+  supplierId         String?
+  supplier           Supplier?        @relation(fields: [supplierId], references: [id])
+  purchasedAt        DateTime?
+  purchasedById      String?
+  purchasedBy        Technician?      @relation(fields: [purchasedById], references: [id])
+  // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
+  photos             VehiclePhoto[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
   @@index([partId])
+  @@index([workshopId, source])
+  @@index([supplierId])
 }
 
 enum OrderItemType {
@@ -789,29 +816,35 @@ enum OrderItemType {
   external_labor
 }
 
+enum OrderItemSource {
+  catalog
+  manual
+  purchase
+}
+
 model Quote {
-  id                    String    @id @default(cuid())
-  workshopId            String
-  workshop              Workshop  @relation(fields: [workshopId], references: [id])
-  customerId            String
-  customer              Customer  @relation(fields: [customerId], references: [id])
-  vehicleId             String?
-  vehicle               Vehicle?  @relation(fields: [vehicleId], references: [id])
-  quoteNo               String?
-  status                QuoteStatus @default(draft)
-  title                 String?
-  customerRequest       String?
-  internalNote          String?
-  validUntil            DateTime?
-  estimatedLaborTotal   Int?              // kuruş
-  estimatedPartsTotal   Int?              // kuruş
-  discountAmount        Int?              // kuruş
-  taxRate               Int?              // bps (2000 = %20)
-  grandTotal            Int?              // kuruş
-  convertedServiceOrderId String? @unique
-  convertedServiceOrder ServiceOrder? @relation("QuoteToServiceOrder", fields: [convertedServiceOrderId], references: [id])
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                      String        @id @default(cuid())
+  workshopId              String
+  workshop                Workshop      @relation(fields: [workshopId], references: [id])
+  customerId              String
+  customer                Customer      @relation(fields: [customerId], references: [id])
+  vehicleId               String?
+  vehicle                 Vehicle?      @relation(fields: [vehicleId], references: [id])
+  quoteNo                 String?
+  status                  QuoteStatus   @default(draft)
+  title                   String?
+  customerRequest         String?
+  internalNote            String?
+  validUntil              DateTime?
+  estimatedLaborTotal     Int? // kuruş
+  estimatedPartsTotal     Int? // kuruş
+  discountAmount          Int? // kuruş
+  taxRate                 Int? // bps (2000 = %20)
+  grandTotal              Int? // kuruş
+  convertedServiceOrderId String?       @unique
+  convertedServiceOrder   ServiceOrder? @relation("QuoteToServiceOrder", fields: [convertedServiceOrderId], references: [id])
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   items QuoteItem[]
 
@@ -832,23 +865,23 @@ enum QuoteStatus {
 }
 
 model QuoteItem {
-  id        String            @id @default(cuid())
+  id         String         @id @default(cuid())
   workshopId String
-  workshop  Workshop          @relation(fields: [workshopId], references: [id])
-  quoteId   String
-  quote     Quote             @relation(fields: [quoteId], references: [id])
-  type      QuoteItemType
-  name      String
-  sku       String?
-  unit      String?
-  quantity  Int               @default(1)
-  unitPrice Int?              // kuruş
-  totalPrice Int?             // kuruş
-  partId    String?
-  part      PartStockItem?    @relation(fields: [partId], references: [id])
-  note      String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  workshop   Workshop       @relation(fields: [workshopId], references: [id])
+  quoteId    String
+  quote      Quote          @relation(fields: [quoteId], references: [id])
+  type       QuoteItemType
+  name       String
+  sku        String?
+  unit       String?
+  quantity   Int            @default(1)
+  unitPrice  Int? // kuruş
+  totalPrice Int? // kuruş
+  partId     String?
+  part       PartStockItem? @relation(fields: [partId], references: [id])
+  note       String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   @@index([workshopId])
   @@index([quoteId])
@@ -861,26 +894,26 @@ enum QuoteItemType {
 }
 
 model Appointment {
-  id                      String             @id @default(cuid())
-  workshopId              String
-  workshop                Workshop           @relation(fields: [workshopId], references: [id])
-  customerId              String
-  customer                Customer           @relation(fields: [customerId], references: [id])
-  vehicleId               String?
-  vehicle                 Vehicle?           @relation(fields: [vehicleId], references: [id])
-  appointmentNo           String?
-  status                  AppointmentStatus  @default(scheduled)
-  appointmentAt           DateTime
+  id                       String            @id @default(cuid())
+  workshopId               String
+  workshop                 Workshop          @relation(fields: [workshopId], references: [id])
+  customerId               String
+  customer                 Customer          @relation(fields: [customerId], references: [id])
+  vehicleId                String?
+  vehicle                  Vehicle?          @relation(fields: [vehicleId], references: [id])
+  appointmentNo            String?
+  status                   AppointmentStatus @default(scheduled)
+  appointmentAt            DateTime
   estimatedDurationMinutes Int?
-  title                   String?
-  customerRequest         String?
-  internalNote            String?
+  title                    String?
+  customerRequest          String?
+  internalNote             String?
   reminderStatus           ReminderStatus    @default(none)
   lastRemindedAt           DateTime?
-  convertedServiceOrderId  String?            @unique
-  convertedServiceOrder   ServiceOrder?      @relation("AppointmentToServiceOrder", fields: [convertedServiceOrderId], references: [id])
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  convertedServiceOrderId  String?           @unique
+  convertedServiceOrder    ServiceOrder?     @relation("AppointmentToServiceOrder", fields: [convertedServiceOrderId], references: [id])
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
 
   @@index([workshopId])
   @@index([customerId])
@@ -935,33 +968,33 @@ enum MaintenanceChannel {
 }
 
 model MaintenanceReminder {
-  id                  String                     @id @default(cuid())
-  workshopId          String
-  workshop            Workshop                   @relation(fields: [workshopId], references: [id])
-  customerId          String
-  customer            Customer                   @relation(fields: [customerId], references: [id])
-  vehicleId           String
-  vehicle             Vehicle                    @relation(fields: [vehicleId], references: [id])
-  title               String
-  type                MaintenanceReminderType    @default(other)
-  status              MaintenanceReminderStatus  @default(upcoming)
-  dueDate             DateTime?
-  dueMileage          Int?
-  currentMileage      Int?
-  lastServiceDate     DateTime?
-  lastServiceMileage  Int?
-  reminderDaysBefore  Int?
-  reminderKmBefore    Int?
-  preferredChannel    MaintenanceChannel         @default(none)
-  reminderStatus      ReminderStatus             @default(none)
-  lastRemindedAt      DateTime?
-  customerNote        String?
-  internalNote        String?
-  completedAt         DateTime?
-  completedServiceOrderId String?                @unique
+  id                      String                    @id @default(cuid())
+  workshopId              String
+  workshop                Workshop                  @relation(fields: [workshopId], references: [id])
+  customerId              String
+  customer                Customer                  @relation(fields: [customerId], references: [id])
+  vehicleId               String
+  vehicle                 Vehicle                   @relation(fields: [vehicleId], references: [id])
+  title                   String
+  type                    MaintenanceReminderType   @default(other)
+  status                  MaintenanceReminderStatus @default(upcoming)
+  dueDate                 DateTime?
+  dueMileage              Int?
+  currentMileage          Int?
+  lastServiceDate         DateTime?
+  lastServiceMileage      Int?
+  reminderDaysBefore      Int?
+  reminderKmBefore        Int?
+  preferredChannel        MaintenanceChannel        @default(none)
+  reminderStatus          ReminderStatus            @default(none)
+  lastRemindedAt          DateTime?
+  customerNote            String?
+  internalNote            String?
+  completedAt             DateTime?
+  completedServiceOrderId String?                   @unique
   createdAppointmentId    String?
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime                   @updatedAt
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 
   @@index([workshopId])
   @@index([customerId])
@@ -972,32 +1005,32 @@ model MaintenanceReminder {
 }
 
 model PartStockItem {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   workshopId       String
-  workshop         Workshop @relation(fields: [workshopId], references: [id])
+  workshop         Workshop  @relation(fields: [workshopId], references: [id])
   name             String
   sku              String?
   oemNo            String?
   brand            String?
   category         String?
   description      String?
-  unit             String   @default("adet")
-  stockQty         Int      @default(0)
-  criticalStockQty Int      @default(0)
-  purchasePrice    Int?     // kuruş
-  salePrice        Int?     // kuruş
-  currency         String   @default("TRY")
+  unit             String    @default("adet")
+  stockQty         Int       @default(0)
+  criticalStockQty Int       @default(0)
+  purchasePrice    Int? // kuruş
+  salePrice        Int? // kuruş
+  currency         String    @default("TRY")
   supplierName     String?
   supplierPhone    String?
   supplierId       String?
   supplier         Supplier? @relation(fields: [supplierId], references: [id])
   shelfLocation    String?
   barcode          String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  movements        StockMovement[]
+  movements         StockMovement[]
   serviceOrderItems ServiceOrderItem[]
   quoteItems        QuoteItem[]
 
@@ -1013,20 +1046,20 @@ model PartStockItem {
 }
 
 model StockMovement {
-  id           String   @id @default(cuid())
-  workshopId   String
-  workshop     Workshop @relation(fields: [workshopId], references: [id])
-  partId       String
-  part         PartStockItem @relation(fields: [partId], references: [id])
-  type         String
-  quantity     Int
-  previousQty  Int?
-  newQty       Int?
-  reason       String?
-  sourceType   String?
-  sourceId     String?
+  id              String        @id @default(cuid())
+  workshopId      String
+  workshop        Workshop      @relation(fields: [workshopId], references: [id])
+  partId          String
+  part            PartStockItem @relation(fields: [partId], references: [id])
+  type            String
+  quantity        Int
+  previousQty     Int?
+  newQty          Int?
+  reason          String?
+  sourceType      String?
+  sourceId        String?
   createdByUserId String?
-  createdAt    DateTime @default(now())
+  createdAt       DateTime      @default(now())
 
   @@index([workshopId])
   @@index([partId])
@@ -1052,29 +1085,30 @@ model AuditLog {
 }
 
 model Supplier {
-  id                   String   @id @default(cuid())
-  workshopId           String
-  workshop             Workshop @relation(fields: [workshopId], references: [id])
-  name                 String
-  contactPerson        String?
-  phone                String?
-  phone2               String?
-  email                String?
-  website              String?
-  city                 String?
-  address              String?
-  taxNumber            String?
-  taxOffice            String?
-  category             String?
-  paymentTermDays      Int?
-  averageDeliveryDays  Int?
-  performanceNote      String?
-  internalNote         String?
-  isActive             Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  workshopId          String
+  workshop            Workshop @relation(fields: [workshopId], references: [id])
+  name                String
+  contactPerson       String?
+  phone               String?
+  phone2              String?
+  email               String?
+  website             String?
+  city                String?
+  address             String?
+  taxNumber           String?
+  taxOffice           String?
+  category            String?
+  paymentTermDays     Int?
+  averageDeliveryDays Int?
+  performanceNote     String?
+  internalNote        String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  parts PartStockItem[]
+  parts      PartStockItem[]
+  orderItems ServiceOrderItem[]
 
   @@index([workshopId])
   @@index([name])
@@ -1085,23 +1119,23 @@ model Supplier {
 }
 
 model VehiclePassportToken {
-  id                    String    @id @default(cuid())
-  workshopId            String
-  workshop              Workshop  @relation(fields: [workshopId], references: [id])
-  vehicleId             String
-  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id])
-  token                 String    @unique
-  label                 String?
-  isActive              Boolean   @default(true)
-  expiresAt             DateTime?
-  showServiceHistory    Boolean   @default(true)
-  showWorkOrders        Boolean   @default(true)
-  showDamages           Boolean   @default(true)
-  showPhotos            Boolean   @default(true)
-  showReminders         Boolean   @default(true)
-  showPaymentStatus     Boolean   @default(false)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  workshopId         String
+  workshop           Workshop  @relation(fields: [workshopId], references: [id])
+  vehicleId          String
+  vehicle            Vehicle   @relation(fields: [vehicleId], references: [id])
+  token              String    @unique
+  label              String?
+  isActive           Boolean   @default(true)
+  expiresAt          DateTime?
+  showServiceHistory Boolean   @default(true)
+  showWorkOrders     Boolean   @default(true)
+  showDamages        Boolean   @default(true)
+  showPhotos         Boolean   @default(true)
+  showReminders      Boolean   @default(true)
+  showPaymentStatus  Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([workshopId])
   @@index([vehicleId])
@@ -1109,9 +1143,9 @@ model VehiclePassportToken {
 }
 
 model OcrLog {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   workshopId     String
-  workshop       Workshop @relation(fields: [workshopId], references: [id])
+  workshop       Workshop  @relation(fields: [workshopId], references: [id])
   /// OCR provider name: "mock", "deepseek", "openai", or "tesseract"
   ocrProvider    String
   /// Raw OCR text — sensitive, never exposed via public API
@@ -1128,8 +1162,8 @@ model OcrLog {
   /// SHA-256 (hex) of the raw uploaded image bytes — byte-hash dedup cache key.
   /// Null on legacy rows and on mock-provider scans (never cached).
   imageHash      String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([workshopId])
   @@index([workshopId, imageHash])
@@ -1139,21 +1173,21 @@ model OcrLog {
 }
 
 model ChecklistItem {
-  id              String          @id @default(cuid())
-  workshopId      String
-  workshop        Workshop        @relation(fields: [workshopId], references: [id])
-  serviceOrderId  String
-  serviceOrder    ServiceOrder    @relation(fields: [serviceOrderId], references: [id])
-  category        ChecklistCategory @default(inspection)
-  description     String
-  isCompleted     Boolean         @default(false)
-  completedById   String?
-  completedBy     Technician?     @relation(fields: [completedById], references: [id])
-  completedAt     DateTime?
-  note            String?
-  sortOrder       Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String            @id @default(cuid())
+  workshopId     String
+  workshop       Workshop          @relation(fields: [workshopId], references: [id])
+  serviceOrderId String
+  serviceOrder   ServiceOrder      @relation(fields: [serviceOrderId], references: [id])
+  category       ChecklistCategory @default(inspection)
+  description    String
+  isCompleted    Boolean           @default(false)
+  completedById  String?
+  completedBy    Technician?       @relation(fields: [completedById], references: [id])
+  completedAt    DateTime?
+  note           String?
+  sortOrder      Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -1168,17 +1202,17 @@ enum ChecklistCategory {
 }
 
 model InternalNote {
-  id              String        @id @default(cuid())
-  workshopId      String
-  workshop        Workshop      @relation(fields: [workshopId], references: [id])
-  serviceOrderId  String
-  serviceOrder    ServiceOrder  @relation(fields: [serviceOrderId], references: [id])
-  authorId        String?
-  author          Technician?   @relation(fields: [authorId], references: [id])
-  content         String
-  isPinned        Boolean       @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String       @id @default(cuid())
+  workshopId     String
+  workshop       Workshop     @relation(fields: [workshopId], references: [id])
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  authorId       String?
+  author         Technician?  @relation(fields: [authorId], references: [id])
+  content        String
+  isPinned       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -1187,20 +1221,20 @@ model InternalNote {
 }
 
 model PartsRequest {
-  id              String            @id @default(cuid())
-  workshopId      String
-  workshop        Workshop          @relation(fields: [workshopId], references: [id])
-  serviceOrderId  String
-  serviceOrder    ServiceOrder     @relation(fields: [serviceOrderId], references: [id])
-  requestedById   String?
-  requestedBy     Technician?      @relation(fields: [requestedById], references: [id])
-  partName        String
-  partSku         String?
-  quantity        Int               @default(1)
-  note            String?
-  status          PartsRequestStatus @default(requested)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id             String             @id @default(cuid())
+  workshopId     String
+  workshop       Workshop           @relation(fields: [workshopId], references: [id])
+  serviceOrderId String
+  serviceOrder   ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
+  requestedById  String?
+  requestedBy    Technician?        @relation(fields: [requestedById], references: [id])
+  partName       String
+  partSku        String?
+  quantity       Int                @default(1)
+  note           String?
+  status         PartsRequestStatus @default(requested)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -1215,19 +1249,19 @@ enum PartsRequestStatus {
 }
 
 model LaborSession {
-  id              String        @id @default(cuid())
+  id              String       @id @default(cuid())
   workshopId      String
-  workshop        Workshop      @relation(fields: [workshopId], references: [id])
+  workshop        Workshop     @relation(fields: [workshopId], references: [id])
   serviceOrderId  String
-  serviceOrder    ServiceOrder  @relation(fields: [serviceOrderId], references: [id])
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id])
   technicianId    String?
-  technician      Technician?   @relation(fields: [technicianId], references: [id])
+  technician      Technician?  @relation(fields: [technicianId], references: [id])
   startTime       DateTime
   endTime         DateTime?
   durationMinutes Int?
   note            String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -1241,14 +1275,14 @@ enum CommunicationType {
 }
 
 model CommunicationTemplate {
-  id          String             @id @default(cuid())
+  id          String            @id @default(cuid())
   workshopId  String
-  workshop    Workshop           @relation(fields: [workshopId], references: [id])
+  workshop    Workshop          @relation(fields: [workshopId], references: [id])
   templateKey String
   channel     CommunicationType
   content     String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@unique([workshopId, templateKey, channel])
   @@index([workshopId])
@@ -1283,19 +1317,19 @@ model CalendarSyncLog {
 }
 
 model ReminderExecutionLog {
-  id              String   @id @default(cuid())
-  workshopId      String
-  workshop        Workshop @relation(fields: [workshopId], references: [id])
-  jobType         String
-  entityType      String?
-  entityId        String?
-  status          String   @default("pending")
-  processedCount  Int      @default(0)
-  sentCount       Int      @default(0)
-  failedCount     Int      @default(0)
-  errorMessage    String?
-  executedAt      DateTime @default(now())
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  workshopId     String
+  workshop       Workshop @relation(fields: [workshopId], references: [id])
+  jobType        String
+  entityType     String?
+  entityId       String?
+  status         String   @default("pending")
+  processedCount Int      @default(0)
+  sentCount      Int      @default(0)
+  failedCount    Int      @default(0)
+  errorMessage   String?
+  executedAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   @@index([workshopId])
   @@index([jobType])
@@ -1304,20 +1338,20 @@ model ReminderExecutionLog {
 }
 
 model CommunicationLog {
-  id           String             @id @default(cuid())
+  id           String            @id @default(cuid())
   workshopId   String
-  workshop     Workshop           @relation(fields: [workshopId], references: [id])
+  workshop     Workshop          @relation(fields: [workshopId], references: [id])
   type         CommunicationType
   provider     String
   recipient    String
-  status       String              @default("pending")
+  status       String            @default("pending")
   templateKey  String?
   entityType   String?
   entityId     String?
   providerId   String?
   errorMessage String?
-  sentAt       DateTime           @default(now())
-  createdAt    DateTime           @default(now())
+  sentAt       DateTime          @default(now())
+  createdAt    DateTime          @default(now())
 
   @@index([workshopId])
   @@index([type])
@@ -1387,7 +1421,7 @@ model ImpersonationSession {
 }
 
 model DemoRequest {
-  id              String             @id @default(cuid())
+  id              String            @id @default(cuid())
   name            String
   businessName    String
   phone           String
@@ -1396,8 +1430,8 @@ model DemoRequest {
   notes           String?
   clientIp        String?
   status          DemoRequestStatus @default(new)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([status])
   @@index([createdAt])
@@ -1412,7 +1446,7 @@ enum DemoRequestStatus {
 }
 
 model SupportRequest {
-  id           String              @id @default(cuid())
+  id           String               @id @default(cuid())
   name         String
   businessName String
   email        String
@@ -1421,8 +1455,8 @@ model SupportRequest {
   message      String
   clientIp     String?
   status       SupportRequestStatus @default(new)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@index([status])
   @@index([createdAt])
@@ -1457,17 +1491,17 @@ model TecdocCache {
 /// One row per (vehicleTypeId, categoryId, tecdocArticleId). Populated on first
 /// API fetch; subsequent reads skip the paid RapidAPI call entirely.
 model TecdocArticle {
-  id                BigInt   @id @default(autoincrement())
-  vehicleTypeId     Int      @map("vehicle_type_id")
-  categoryId        Int      @map("category_id")
-  tecdocArticleId   Int      @map("tecdoc_article_id")
-  articleNo         String   @map("article_no")
-  productName       String   @map("product_name")
-  supplierName      String   @map("supplier_name")
-  supplierId        Int?     @map("supplier_id")
-  imageUrl          String?  @map("image_url")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id              BigInt   @id @default(autoincrement())
+  vehicleTypeId   Int      @map("vehicle_type_id")
+  categoryId      Int      @map("category_id")
+  tecdocArticleId Int      @map("tecdoc_article_id")
+  articleNo       String   @map("article_no")
+  productName     String   @map("product_name")
+  supplierName    String   @map("supplier_name")
+  supplierId      Int?     @map("supplier_id")
+  imageUrl        String?  @map("image_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@unique([vehicleTypeId, categoryId, tecdocArticleId])
   @@index([vehicleTypeId, categoryId])
@@ -1542,37 +1576,37 @@ model VehicleType {
 }
 
 model VehicleTypeDetail {
-  id                    BigInt   @id
-  vehicleTypeId         Int      @map("vehicle_type_id")
-  brakeSystem           String?  @map("brake_system")
-  carId                 Int?     @map("car_id")
-  ccmTech               Int?     @map("ccm_tech")
-  constructionType      String?  @map("construction_type")
+  id                    BigInt      @id
+  vehicleTypeId         Int         @map("vehicle_type_id")
+  brakeSystem           String?     @map("brake_system")
+  carId                 Int?        @map("car_id")
+  ccmTech               Int?        @map("ccm_tech")
+  constructionType      String?     @map("construction_type")
   cylinder              Int?
-  cylinderCapacityCcm   Int?     @map("cylinder_capacity_ccm")
-  cylinderCapacityLiter Int?     @map("cylinder_capacity_liter")
-  fuelType              String?  @map("fuel_type")
-  fuelTypeProcess       String?  @map("fuel_type_process")
-  impulsionType         String?  @map("impulsion_type")
-  manuId                Int?     @map("manu_id")
-  manuName              String?  @map("manu_name")
-  modId                 Int?     @map("mod_id")
-  modelName             String?  @map("model_name")
-  motorType             String?  @map("motor_type")
-  powerHpFrom           Int?     @map("power_hp_from")
-  powerHpTo             Int?     @map("power_hp_to")
-  powerKwFrom           Int?     @map("power_kw_from")
-  powerKwTo             Int?     @map("power_kw_to")
-  typeName              String?  @map("type_name")
-  typeNumber            Int?     @map("type_number")
+  cylinderCapacityCcm   Int?        @map("cylinder_capacity_ccm")
+  cylinderCapacityLiter Int?        @map("cylinder_capacity_liter")
+  fuelType              String?     @map("fuel_type")
+  fuelTypeProcess       String?     @map("fuel_type_process")
+  impulsionType         String?     @map("impulsion_type")
+  manuId                Int?        @map("manu_id")
+  manuName              String?     @map("manu_name")
+  modId                 Int?        @map("mod_id")
+  modelName             String?     @map("model_name")
+  motorType             String?     @map("motor_type")
+  powerHpFrom           Int?        @map("power_hp_from")
+  powerHpTo             Int?        @map("power_hp_to")
+  powerKwFrom           Int?        @map("power_kw_from")
+  powerKwTo             Int?        @map("power_kw_to")
+  typeName              String?     @map("type_name")
+  typeNumber            Int?        @map("type_number")
   valves                Int?
-  yearOfConstrFrom      String?  @map("year_of_constr_from")
-  yearOfConstrTo        String?  @map("year_of_constr_to")
-  rmiTypeId             Int?     @map("rmi_type_id")
-  motorCodes            Json?    @map("motor_codes")
-  rawPayload            Json?    @map("raw_payload")
-  createdAt             DateTime @map("created_at")
-  updatedAt             DateTime @map("updated_at")
+  yearOfConstrFrom      String?     @map("year_of_constr_from")
+  yearOfConstrTo        String?     @map("year_of_constr_to")
+  rmiTypeId             Int?        @map("rmi_type_id")
+  motorCodes            Json?       @map("motor_codes")
+  rawPayload            Json?       @map("raw_payload")
+  createdAt             DateTime    @map("created_at")
+  updatedAt             DateTime    @map("updated_at")
   type                  VehicleType @relation(fields: [vehicleTypeId], references: [id])
 
   @@index([vehicleTypeId])

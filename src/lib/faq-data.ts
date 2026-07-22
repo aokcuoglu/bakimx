@@ -54,4 +54,30 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer:
       "Hayır. BakimX tarayıcı tabanlı bir platformdur. Telefonunuzun internet tarayıcısından doğrudan erişebilirsiniz. Herhangi bir kurulum veya indirme gerekmez.",
   },
+  {
+    question: "Fiyatlandırma nasıl çalışıyor? Kullanıcı başı mı, araç başı mı?",
+    answer:
+      "Aylık sabit abonelik modeli sunuyoruz; araç veya kullanıcı sayısına göre kademeli paketlerimiz var. Detaylı fiyatlar için Fiyatlar sayfamızı inceleyin veya bizimle iletişime geçin.",
+  },
+  {
+    question:
+      "Mevcut müşterilerimin ve araçlarımın verisini içeri aktarabilir miyim?",
+    answer:
+      "Evet. Eski sisteminizden (Excel, başka bir program) veri göçü için ekibimiz size yardımcı olur. İletişime geçtiğinizde göç sürecini birlikte planlarız.",
+  },
+  {
+    question: "Verilerim güvende mi? KVKK uyumluluğu nasıl sağlanıyor?",
+    answer:
+      "Verileriniz güvenli bulut altyapısında, şifreli olarak saklanır. Açık rıza metni, aydınlatma metni ve çerez politikamız KVKK düzenlemelerine uygundur; verilerinizi talep üzerine dışa aktarabilirsiniz.",
+  },
+  {
+    question: "Kullanmak için teknik bilgi veya eğitim gerekiyor mu?",
+    answer:
+      "Hayır. BakimX tarayıcı tabanlıdır; her cihazın internet tarayıcısından, kurulum gerektirmeden aynı gün kullanmaya başlarsınız. Arayüz atölye kullanımına göre sadeleştirilmiştir.",
+  },
+  {
+    question: "İstediğim zaman aboneliği iptal edebilir miyim?",
+    answer:
+      "Evet. Taahhüt yoktur; aylık abonelik modelinde istediğiniz zaman panel üzerinden iptal edebilirsiniz. Verileriniz talep üzerine dışa aktarılır.",
+  },
 ];

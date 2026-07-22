@@ -25,6 +25,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           vehicle: true,
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
+            // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
+            // kaleminin satın-alma modalından (items.photos) erişilir.
+            where: { serviceOrderItemId: null },
             orderBy: { createdAt: "asc" },
             select: {
               id: true,
@@ -45,7 +48,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           timelineEvents: { orderBy: { createdAt: "asc" } },
         },
       },
-      items: { orderBy: { createdAt: "asc" } },
+      items: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı + alan teknisyen.
+          photos: { select: { id: true } },
+          purchasedBy: { select: { fullName: true } },
+        },
+      },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
     },
   })
@@ -110,6 +120,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       brand: i.brand,
       category: i.category,
       categoryId: i.categoryId,
+      source: i.source,
+      purchasePriceKurus: i.purchasePriceKurus,
+      supplierName: i.supplierName,
+      supplierId: i.supplierId,
+      purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
+      purchasedByName: i.purchasedBy?.fullName ?? null,
+      purchasePhotoId: i.photos[0]?.id ?? null,
     })),
     customer: {
       id: intakeForm.customer.id,

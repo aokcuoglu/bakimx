@@ -25,7 +25,7 @@ import { VinCandidateList } from "./vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 import type { ArticleSummary, CategoryNode } from "@/lib/tecdoc/types"
-import { trIncludes } from "@/lib/tr-search"
+import { partSearchIncludes, trIncludes } from "@/lib/tr-search"
 
 /** Vehicle fields the picker needs: the catalog link + VIN/hints to build it. */
 export type PickerVehicle = {
@@ -216,7 +216,9 @@ export function TecdocPartPicker({
     if (!articles) return null
     const q = filter.trim()
     let list = supplierFilter ? articles.filter((a) => a.supplierName === supplierFilter) : articles
-    if (q) list = list.filter((a) => trIncludes(a.productName, q) || trIncludes(a.articleNo, q) || trIncludes(a.supplierName, q))
+    // Parça no/ad ayraç-duyarsız eşleşir ("C27125" ↔ "C 27 125"); marka adı
+    // için harf-katlamalı trIncludes yeterli. (bkz. searchVehicleArticles server tarafı)
+    if (q) list = list.filter((a) => partSearchIncludes(a.productName, q) || partSearchIncludes(a.articleNo, q) || trIncludes(a.supplierName, q))
     return list
   }, [articles, filter, supplierFilter])
 

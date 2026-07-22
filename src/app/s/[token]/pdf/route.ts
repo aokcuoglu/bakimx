@@ -338,7 +338,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
         include: {
           customer: true,
           vehicle: true,
-          photos: { select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
+          // Dış alım (satın alma) fotoğrafları dahili-yalnızdır — müşteri PDF'ine sızmaz.
+          photos: { where: { serviceOrderItemId: null }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
           timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },

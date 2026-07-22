@@ -3,11 +3,14 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { serviceOrderItemSchema, serviceOrderItemUpdateSchema } from "@/lib/validations/order"
+import { serviceOrderItemSchema, serviceOrderItemUpdateSchema, purchaseItemCreateSchema, purchaseItemUpdateSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
+import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
+import { trDateToDate } from "@/lib/format"
+import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
 import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
@@ -50,6 +53,8 @@ export async function createServiceOrderAction(intakeFormId: string) {
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
   unit: z.string().optional(),
+  // Kalemin kaynağı: katalog akışı mı manuel mi (yalnız açıklayıcı/rozet).
+  source: z.enum(["catalog", "manual"]).optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
@@ -71,6 +76,7 @@ export async function addOrderItemAction(formData: FormData) {
     brand: formData.get("brand") as string,
     category: formData.get("category") as string,
     categoryId: formData.get("categoryId") as string,
+    source: formData.get("source") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -87,6 +93,7 @@ export async function addOrderItemAction(formData: FormData) {
     brand: raw.brand || undefined,
     category: raw.category || undefined,
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
+    source: raw.source || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -129,6 +136,7 @@ export async function addOrderItemAction(formData: FormData) {
           brand: parsed.data.brand || null,
           category: parsed.data.category || null,
           categoryId: parsed.data.categoryId ?? null,
+          source: parsed.data.source ?? null,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
@@ -171,6 +179,302 @@ export async function addOrderItemAction(formData: FormData) {
   return { success: true, id: createdItemId }
 }
 
+/**
+ * Teknisyenin dışarıdan (firmadan) satın aldığı parçayı doğrudan iş emrine kalem
+ * olarak ekler (source=purchase). Alış fiyatı/tedarikçi/tarih/alan teknisyen +
+ * parça kutusu fotoğrafı kaydedilir; satış unitPrice'ı alış fiyatından otomatik
+ * doldurulur (masa sonradan bağımsız düzenler). Stok hareketi YOKtur (partId yok).
+ *
+ * Not: fotoğraf 8MB'a kadar olabildiğinden bu action server-action body limitine
+ * takılmamak için /api/orders/purchases route'undan çağrılır (fetch + FormData).
+ */
+export async function addPurchaseItemAction(formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const serviceOrderId = formData.get("serviceOrderId") as string
+  const rawPurchasedAt = (formData.get("purchasedAt") as string) || ""
+  const file = formData.get("file") as File | null
+
+  const parsed = purchaseItemCreateSchema.safeParse({
+    name: ((formData.get("name") as string) || "").trim(),
+    sku: (formData.get("sku") as string) || undefined,
+    quantity: formData.get("quantity") ? Number(formData.get("quantity")) : 1,
+    purchasePriceKurus: formData.get("purchasePriceKurus")
+      ? Number(formData.get("purchasePriceKurus"))
+      : undefined,
+    supplierName: (formData.get("supplierName") as string) || undefined,
+    supplierId: (formData.get("supplierId") as string) || undefined,
+    purchasedById: (formData.get("purchasedById") as string) || undefined,
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, intakeFormId: true, status: true, workOrderNo: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrine kalem eklenemez" }
+
+  // İsteğe bağlı FK'ler kullanılmadan önce workshop-scope doğrulanır.
+  const supplierId = parsed.data.supplierId || null
+  if (supplierId) {
+    const supplier = await prisma.supplier.findFirst({
+      where: { id: supplierId, workshopId: user.workshopId },
+      select: { id: true },
+    })
+    if (!supplier) return { error: "Tedarikçi bulunamadı" }
+  }
+  const purchasedById = parsed.data.purchasedById || null
+  if (purchasedById) {
+    const tech = await prisma.technician.findFirst({
+      where: { id: purchasedById, workshopId: user.workshopId },
+      select: { id: true },
+    })
+    if (!tech) return { error: "Teknisyen bulunamadı" }
+  }
+
+  const purchasedAt = trDateToDate(rawPurchasedAt) ?? new Date()
+  const purchasePriceKurus = parsed.data.purchasePriceKurus
+
+  // Fotoğraf yüklemesi transaction öncesinde (addPhotoAction deseni). Alış fotosu
+  // dahili-yalnızdır; galeriler serviceOrderItemId != null ile filtreler.
+  const photoId = nanoid()
+  let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string } | null = null
+  if (file && file.size > 0 && file.name) {
+    const validation = validateUploadFile(file)
+    if (!validation.valid) return { error: validation.error }
+    try {
+      const storagePath = buildStoragePath(user.workshopId, order.intakeFormId, "purchase", photoId, file.name)
+      const provider = await getStorageProvider()
+      const result = await provider.upload(file, storagePath)
+      photoUpload = {
+        url: result.url,
+        key: result.key,
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        storageProvider: process.env.STORAGE_PROVIDER || "mock",
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Dosya yükleme hatası"
+      return { error: `Fotoğraf yüklenemedi: ${message}` }
+    }
+  }
+
+  let createdItemId: string | null = null
+  try {
+    createdItemId = await prisma.$transaction(async (tx) => {
+      const created = await tx.serviceOrderItem.create({
+        data: {
+          workshopId: user.workshopId,
+          serviceOrderId: order.id,
+          type: "part",
+          source: "purchase",
+          name: parsed.data.name,
+          sku: parsed.data.sku || null,
+          quantity: parsed.data.quantity,
+          // Satış fiyatı alıştan otomatik dolar; totalPrice null → recalc/totals.ts
+          // unitPrice×quantity kullanır.
+          unitPrice: purchasePriceKurus,
+          totalPrice: null,
+          purchasePriceKurus,
+          supplierName: parsed.data.supplierName || null,
+          supplierId,
+          purchasedAt,
+          purchasedById,
+        },
+      })
+      if (photoUpload) {
+        await tx.vehiclePhoto.create({
+          data: {
+            id: photoId,
+            workshopId: user.workshopId,
+            intakeFormId: order.intakeFormId,
+            serviceOrderId: order.id,
+            serviceOrderItemId: created.id,
+            type: "other",
+            phase: "repair_progress",
+            label: "Satın alma — parça kutusu",
+            fileUrl: photoUpload.url,
+            fileName: photoUpload.fileName,
+            mimeType: photoUpload.mimeType,
+            sizeBytes: photoUpload.sizeBytes,
+            storageProvider: photoUpload.storageProvider,
+            storageKey: photoUpload.key,
+          },
+        })
+      }
+      await recalcOrderPayment(tx, order.id, user.workshopId)
+      return created.id
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Kalem eklenemedi" }
+  }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    createdItemId,
+    "purchase_recorded",
+    JSON.stringify({
+      name: parsed.data.name,
+      quantity: parsed.data.quantity,
+      purchasePriceKurus,
+      supplierName: parsed.data.supplierName || null,
+      hasPhoto: !!photoUpload,
+    }),
+    order.id,
+  )
+
+  revalidatePath(`/orders/${order.id}`)
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath("/purchases")
+  return { success: true, id: createdItemId }
+}
+
+/**
+ * Dış alım kaleminin (source=purchase) alış metadata'sını günceller: tedarikçi,
+ * alış tarihi, alış fiyatı ve isteğe bağlı yeni parça kutusu fotoğrafı. Satış
+ * unitPrice'ına DOKUNMAZ (oluşturma sonrası bağımsızdır). Alış fiyatı iş emri
+ * toplamını etkilemez → recalc gerekmez. Kilitli emir reddedilir.
+ */
+export async function updatePurchaseItemAction(itemId: string, orderId: string, formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+    select: { id: true, source: true, serviceOrderId: true },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+  if (item.source !== "purchase") return { error: "Bu kalem bir dış alım değil" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, intakeFormId: true, status: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+
+  const has = (k: string) => formData.get(k) !== null
+  const parsed = purchaseItemUpdateSchema.safeParse({
+    purchasePriceKurus: has("purchasePriceKurus") ? Number(formData.get("purchasePriceKurus")) : undefined,
+    supplierName: has("supplierName") ? (formData.get("supplierName") as string) : undefined,
+    supplierId: has("supplierId") ? ((formData.get("supplierId") as string) || null) : undefined,
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  const data: {
+    purchasePriceKurus?: number
+    supplierName?: string | null
+    supplierId?: string | null
+    purchasedAt?: Date
+  } = {}
+  if (parsed.data.purchasePriceKurus !== undefined) data.purchasePriceKurus = parsed.data.purchasePriceKurus
+  if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
+  if (parsed.data.supplierId !== undefined) {
+    const sid = parsed.data.supplierId || null
+    if (sid) {
+      const supplier = await prisma.supplier.findFirst({
+        where: { id: sid, workshopId: user.workshopId },
+        select: { id: true },
+      })
+      if (!supplier) return { error: "Tedarikçi bulunamadı" }
+    }
+    data.supplierId = sid
+  }
+  if (has("purchasedAt")) {
+    const d = trDateToDate(formData.get("purchasedAt") as string)
+    if (d) data.purchasedAt = d
+  }
+
+  // İsteğe bağlı yeni fotoğraf: eskisini geçmiş olarak bırakır, yenisini bağlar.
+  const file = formData.get("file") as File | null
+  let photoUpload: { url: string; key: string; fileName: string; mimeType: string; sizeBytes: number; storageProvider: string; id: string } | null = null
+  if (file && file.size > 0 && file.name) {
+    const validation = validateUploadFile(file)
+    if (!validation.valid) return { error: validation.error }
+    try {
+      const newPhotoId = nanoid()
+      const storagePath = buildStoragePath(user.workshopId, order.intakeFormId, "purchase", newPhotoId, file.name)
+      const provider = await getStorageProvider()
+      const result = await provider.upload(file, storagePath)
+      photoUpload = {
+        id: newPhotoId,
+        url: result.url,
+        key: result.key,
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        storageProvider: process.env.STORAGE_PROVIDER || "mock",
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Dosya yükleme hatası"
+      return { error: `Fotoğraf yüklenemedi: ${message}` }
+    }
+  }
+
+  if (Object.keys(data).length === 0 && !photoUpload) {
+    return { error: "Güncellenecek bir alan yok" }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (Object.keys(data).length > 0) {
+        const updRes = await tx.serviceOrderItem.updateMany({
+          where: { id: itemId, workshopId: user.workshopId },
+          data,
+        })
+        if (updRes.count !== 1) throw new Error("Kalem bulunamadı")
+      }
+      if (photoUpload) {
+        await tx.vehiclePhoto.create({
+          data: {
+            id: photoUpload.id,
+            workshopId: user.workshopId,
+            intakeFormId: order.intakeFormId,
+            serviceOrderId: order.id,
+            serviceOrderItemId: itemId,
+            type: "other",
+            phase: "repair_progress",
+            label: "Satın alma — parça kutusu",
+            fileUrl: photoUpload.url,
+            fileName: photoUpload.fileName,
+            mimeType: photoUpload.mimeType,
+            sizeBytes: photoUpload.sizeBytes,
+            storageProvider: photoUpload.storageProvider,
+            storageKey: photoUpload.key,
+          },
+        })
+      }
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Kalem güncellenemedi" }
+  }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    "purchase_updated",
+    JSON.stringify({ changes: data, photoReplaced: !!photoUpload }),
+    orderId,
+  )
+
+  revalidatePath(`/orders/${orderId}`)
+  revalidatePath(`/technician/orders/${orderId}`)
+  revalidatePath("/purchases")
+  return { success: true }
+}
+
 export async function removeOrderItemAction(itemId: string, orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
   const { user } = await requireWritableWorkshop()
@@ -186,7 +490,23 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   if (!order) return { error: "Servis emri bulunamadı" }
   if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
 
+  // Dış alım kaleminin bağlı parça-kutusu fotoğraflarını topla (FK ON DELETE SET
+  // NULL olduğu için satır silinince foto yetim kalır → açıkça temizlenir).
+  const purchasePhotos =
+    item.source === "purchase"
+      ? await prisma.vehiclePhoto.findMany({
+          where: { serviceOrderItemId: itemId, workshopId: user.workshopId },
+          select: { id: true, storageKey: true },
+        })
+      : []
+
   const deleteResult = await prisma.$transaction(async (tx) => {
+    // Bağlı alış fotoğraflarının DB kayıtları (FK'yi null'a çekmeden önce sil).
+    if (purchasePhotos.length > 0) {
+      await tx.vehiclePhoto.deleteMany({
+        where: { serviceOrderItemId: itemId, workshopId: user.workshopId },
+      })
+    }
     // Önce silme (aşağıdaki iade zaten parçayı getirecek).
     const result = await tx.serviceOrderItem.deleteMany({
       where: { id: itemId, workshopId: user.workshopId },
@@ -211,17 +531,43 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
   })
   if (deleteResult.count === 0) return { error: "Kalem bulunamadı" }
 
+  // Storage nesnelerini best-effort sil — hata DB silmeyi geri almaz, yalnız loglanır.
+  if (purchasePhotos.length > 0) {
+    try {
+      const provider = await getStorageProvider()
+      await Promise.all(
+        purchasePhotos
+          .filter((p) => p.storageKey)
+          .map((p) => provider.delete(p.storageKey as string)),
+      )
+    } catch (err) {
+      await AuditLogAction(
+        user.workshopId,
+        user.id,
+        "VehiclePhoto",
+        itemId,
+        "photo_storage_delete_error",
+        JSON.stringify({ error: err instanceof Error ? err.message : "bilinmeyen", count: purchasePhotos.length }),
+        orderId,
+      )
+    }
+  }
+
   await AuditLogAction(
     user.workshopId,
     user.id,
     "ServiceOrderItem",
     itemId,
     "order_item_removed",
-    JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity }),
+    JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity, source: item.source }),
     orderId,
   )
 
   revalidatePath(`/orders/${orderId}`)
+  if (item.source === "purchase") {
+    revalidatePath(`/technician/orders/${orderId}`)
+    revalidatePath("/purchases")
+  }
   return { success: true }
 }
 

@@ -30,7 +30,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
             select: {
               id: true, type: true, label: true, required: true,
               fileUrl: true, fileName: true, mimeType: true, sizeBytes: true,
-              phase: true, serviceOrderId: true, note: true, createdAt: true,
+              phase: true, serviceOrderId: true, serviceOrderItemId: true, note: true, createdAt: true,
             },
           },
         },
@@ -63,6 +63,12 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   const allTechnicians = await prisma.technician.findMany({
     where: { workshopId: user.workshopId, isActive: true },
     orderBy: { fullName: "asc" },
+  })
+
+  const suppliers = await prisma.supplier.findMany({
+    where: { workshopId: user.workshopId, isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
   })
 
   const safeOrder = {
@@ -101,6 +107,10 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       note: i.note,
+      source: i.source,
+      purchasePriceKurus: i.purchasePriceKurus,
+      supplierName: i.supplierName,
+      purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
     })),
     customer: {
       id: order.intakeForm.customer.id,
@@ -147,6 +157,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       fileUrl: p.fileUrl,
       phase: p.phase,
       serviceOrderId: p.serviceOrderId,
+      serviceOrderItemId: p.serviceOrderItemId,
       note: p.note,
       createdAt: p.createdAt.toISOString(),
     })),
@@ -195,6 +206,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           fullName: t.fullName,
           role: t.role,
         }))}
+        suppliers={suppliers}
       />
     </AppShell>
   )

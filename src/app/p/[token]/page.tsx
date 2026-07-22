@@ -19,6 +19,8 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               order: { include: { items: true } },
               damageMarks: true,
               photos: {
+                // Dış alım (satın alma) fotoğrafları dahili-yalnız — araç pasaportuna sızmaz.
+                where: { serviceOrderItemId: null },
                 select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
               },
               timelineEvents: {

@@ -37,3 +37,35 @@ export const serviceOrderItemUpdateSchema = z.object({
   category: z.string().optional(),
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),
 })
+
+/**
+ * Teknisyenin dışarıdan aldığı parça (source=purchase) kalemi oluşturma şeması.
+ * Para değerleri kuruş; client TRY→kuruş çevirir. purchasedAt (dd.MM.yyyy) ve
+ * fotoğraf action tarafında ayrıca ele alınır.
+ */
+export const purchaseItemCreateSchema = z.object({
+  name: z.string().min(1, "Parça adı zorunludur"),
+  sku: z.string().optional(),
+  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
+  purchasePriceKurus: z.coerce
+    .number()
+    .int("Alış fiyatı kuruş (tam sayı) olmalıdır")
+    .min(0, "Alış fiyatı negatif olamaz"),
+  supplierName: z.string().optional(),
+  supplierId: z.string().optional(),
+  purchasedById: z.string().optional(),
+})
+
+/**
+ * Dış alım kalemi düzenleme şeması (masa tarafı detay modal'ı). Satış unitPrice'ı
+ * grid'deki mevcut alandan bağımsız düzenlenir; burada YER ALMAZ.
+ */
+export const purchaseItemUpdateSchema = z.object({
+  purchasePriceKurus: z.coerce
+    .number()
+    .int("Alış fiyatı kuruş (tam sayı) olmalıdır")
+    .min(0, "Alış fiyatı negatif olamaz")
+    .optional(),
+  supplierName: z.string().nullable().optional(),
+  supplierId: z.string().nullable().optional(),
+})

@@ -44,7 +44,11 @@ import {
   Wallet,
   History,
   ArrowRight,
+  Sparkles,
+  Lock,
+  Calculator,
 } from "lucide-react"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
@@ -70,6 +74,7 @@ import {
   OrderInfoCard,
   type OrderDetailData,
   type PricingMetaDraft,
+  type Totals,
 } from "@/components/app/order-management-panel"
 
 const PHOTO_PHASE_LABELS: Record<string, string> = {
@@ -161,7 +166,7 @@ export function WorkOrderDetail({
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as TabKey) || "ozet"
 
-  useOrderSync()
+  useOrderSync(order.id)
 
   function handleTabChange(key: string | null) {
     if (!key) return
@@ -201,6 +206,7 @@ export function WorkOrderDetail({
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const pendingPhotoScrollRef = useRef(false)
+  const pricingRef = useRef<HTMLDivElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   // Share
@@ -750,33 +756,57 @@ export function WorkOrderDetail({
         <TabsContent value="parca" className="space-y-5">
           <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
 
-          <PricingSummaryCard
-            totals={order.totals}
-            paymentStatus={order.paymentStatus}
-            paidAmount={order.paidAmount}
-            remainingAmount={order.remainingAmount}
-            locked={isOrderLocked(order.status as OrderStatus)}
-            editingMeta={editingMeta}
-            setEditingMeta={setEditingMeta}
-            metaDraft={metaDraft}
-            setMetaDraft={setMetaDraft}
-            saveMeta={saveMeta}
-            loading={loading}
-          />
-
-          {/* AI Danışman */}
-          {hasAiAdvisor ? (
-            <ServiceAdvisorPanel
-              intakeFormId={intake.id}
-              customerComplaint={order.intake.customerComplaint}
-              vehicleBrand={order.vehicle.brand}
-              vehicleModel={order.vehicle.model}
-              mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-              onAddItems={handleAddAiItems}
+          <div ref={pricingRef} className="scroll-mt-20">
+            <PricingSummaryCard
+              totals={order.totals}
+              paymentStatus={order.paymentStatus}
+              paidAmount={order.paidAmount}
+              remainingAmount={order.remainingAmount}
+              locked={isOrderLocked(order.status as OrderStatus)}
+              editingMeta={editingMeta}
+              setEditingMeta={setEditingMeta}
+              metaDraft={metaDraft}
+              setMetaDraft={setMetaDraft}
+              saveMeta={saveMeta}
+              loading={loading}
             />
-          ) : (
-            <AdvisorPremiumLock />
-          )}
+          </div>
+
+          {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
+              kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
+          <Accordion>
+            <AccordionItem className="border-0">
+              <AccordionTrigger className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card px-4 py-3 hover:no-underline">
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="size-4 text-primary" /> AI Öneri Al
+                  {!hasAiAdvisor && <Lock className="size-3.5 text-muted-foreground" />}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-3 pb-0">
+                {hasAiAdvisor ? (
+                  <ServiceAdvisorPanel
+                    intakeFormId={intake.id}
+                    customerComplaint={order.intake.customerComplaint}
+                    vehicleBrand={order.vehicle.brand}
+                    vehicleModel={order.vehicle.model}
+                    mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
+                    onAddItems={handleAddAiItems}
+                  />
+                ) : (
+                  <AdvisorPremiumLock />
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Mobil yapışkan toplam: kalem eklerken genel toplam hep görünür;
+              dokununca Fiyatlandırma kartına kaydırır. Alt navigasyonun (fixed,
+              <lg) üzerine oturur. */}
+          <MobileTotalsBar
+            totals={order.totals}
+            itemCount={order.items.length}
+            onJump={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          />
         </TabsContent>
 
         {/* TAHSİLAT */}
@@ -1008,5 +1038,35 @@ export function WorkOrderDetail({
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+// Mobil (<md) yapışkan Genel Toplam barı. Parça sekmesi içeriğinin SON çocuğu
+// olarak sticky durur: içerik uzunken alt navigasyonun üstünde yüzer, sekme
+// sonuna gelince doğal akış yerine oturur — içeriği hiçbir zaman örtmez.
+function MobileTotalsBar({
+  totals,
+  itemCount,
+  onJump,
+}: {
+  totals: Totals
+  itemCount: number
+  onJump: () => void
+}) {
+  if (!totals.hasAnyPrice) return null
+  return (
+    <button
+      type="button"
+      onClick={onJump}
+      aria-label="Fiyatlandırma özetine git"
+      className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex w-full items-center justify-between rounded-xl border border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur touch-manipulation md:hidden"
+    >
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Calculator className="size-4" />
+        Genel Toplam
+        <span className="text-xs text-muted-foreground/70">· {itemCount} kalem</span>
+      </span>
+      <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
+    </button>
   )
 }
