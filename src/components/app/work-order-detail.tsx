@@ -161,7 +161,7 @@ export function WorkOrderDetail({
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as TabKey) || "ozet"
 
-  useOrderSync()
+  useOrderSync(order.id)
 
   function handleTabChange(key: string | null) {
     if (!key) return
