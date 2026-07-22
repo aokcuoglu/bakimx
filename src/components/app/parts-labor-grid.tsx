@@ -688,8 +688,11 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-function PartField({ row, ed, vehicle, onCell, onClear }: {
-  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void
+// bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
+// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
+// bare=false (tüm ikonlar + tedarikçi karşılaştırma açık).
+function PartField({ row, ed, vehicle, onCell, onClear, bare }: {
+  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
@@ -706,8 +709,8 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
           onSelectArticle={ed.fillFromArticle}
           onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
           onClear={() => { onClear(row); ed.setFilter({}) }}
-          showClear={ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
-          onSearchClick={() => ed.setTecdocOpen(true)}
+          showClear={!bare && ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
+          onSearchClick={bare ? undefined : () => ed.setTecdocOpen(true)}
           searchDisabled={vehicle?.catalogVehicleTypeId == null}
           searchTitle={vehicle?.catalogVehicleTypeId == null ? "Araç TecDoc'ta eşleşmedi" : "TecDoc kataloğundan seç"}
         />
@@ -720,7 +723,7 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
           className="text-sm"
         />
       )}
-      {ed.isPart && row.name.trim() !== "" && (
+      {!bare && ed.isPart && row.name.trim() !== "" && (
         <PartPriceCompare row={row} ed={ed} onCell={onCell} />
       )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
@@ -891,8 +894,8 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
 
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, vehicle, onCell }: {
-  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
+function AttrCell({ kind, row, ed, vehicle, onCell, bare }: {
+  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
 }) {
   if (!ed.isPart) return null
   const value = kind === "brand" ? row.brand : row.category
@@ -939,7 +942,8 @@ function AttrCell({ kind, row, ed, vehicle, onCell }: {
           onCell(row, { category: null, categoryId: null })
         }
       }}
-      onOpenPicker={ed.linked ? () => ed.setTecdocOpen(true) : undefined}
+      onOpenPicker={bare || !ed.linked ? undefined : () => ed.setTecdocOpen(true)}
+      hideClear={bare}
     />
   )
 }
@@ -1001,12 +1005,12 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
       {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
+          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
           {showMeta && (
             <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
-              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
-              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
+              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
             </div>
           )}
         </div>
@@ -1074,15 +1078,15 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
       {showMeta && (
         <div className={cn("mt-2 flex flex-wrap gap-1.5", META_CHIP_STYLE)}>
-          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
-          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
         </div>
       )}
 

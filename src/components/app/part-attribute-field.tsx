@@ -37,6 +37,7 @@ export function PartAttributeField({
   onCommitFreeText,
   onClear,
   onOpenPicker,
+  hideClear,
 }: {
   kind: "brand" | "category"
   vehicleTypeId: number | null
@@ -46,6 +47,8 @@ export function PartAttributeField({
   onCommitFreeText: (value: string) => void
   onClear: () => void
   onOpenPicker?: () => void
+  /** Liste satırlarında (statik görünüm) temizle X'ini gizle. */
+  hideClear?: boolean
 }) {
   // Seçenekler artık her hücrede ayrı fetch edilmez: grid seviyesindeki
   // PartAttrOptionsProvider araç başına TEK sefer çeker, buradan paylaşılır.
@@ -82,7 +85,7 @@ export function PartAttributeField({
             <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className="text-xs" />
           }
         />
-        {value && !disabled && (
+        {value && !disabled && !hideClear && (
           <InputGroupAddon align="inline-end">
             <InputGroupButton
               size="icon-xs"
