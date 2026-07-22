@@ -303,28 +303,40 @@ function Field({ label, children, className }: { label: string; children: React.
   )
 }
 
-// ── Composer ortak footer: Miktar + Birim Fiyat (tek hizalı blok) + Toplam +
-// Ekle. Alanlar açıklayıcı grid'in DIŞINDA sabit bir satırda tutulur → miktar/
-// fiyat artık alan sayısına göre alt satıra kaymaz (eski layout hatası).
+// Composer'ın belirgin birincil "Ekle" CTA'sı. Masaüstünde satır-içi (auto);
+// mobilde tam genişlik → dokunma hedefi büyük, aksiyon net.
+function AddButton({ draft, onSubmit, submitting, disabled }: {
+  draft: Row; onSubmit: () => void; submitting: boolean; disabled: boolean
+}) {
+  return (
+    <Button type="button" size="default" onClick={onSubmit}
+      disabled={disabled || submitting || !draft.name.trim()}
+      className="w-full sm:w-auto">
+      {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+      Ekle
+    </Button>
+  )
+}
+
+// ── Composer ortak footer (Katalog/Manuel parça composer'ları): Miktar + Birim
+// Fiyat + Toplam + Ekle. Grid'in DIŞINDA sabit satır → miktar/fiyat alan sayısına
+// göre kaymaz. Mobilde dikey yığılır ve Ekle tam genişlik olur.
 function ComposerFooter({ draft, ed, onCell, onSubmit, submitting, disabled }: {
   draft: Row; ed: RowEditor; onCell: OnCell; onSubmit: () => void; submitting: boolean; disabled: boolean
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
       <div className="flex items-end gap-3">
         <Field label="Miktar">
           <QtyStepper row={draft} editable onCell={onCell} />
         </Field>
         <Field label="Birim Fiyat">
-          <PriceField row={draft} ed={ed} />
+          <PriceField row={draft} ed={ed} wide />
         </Field>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <TotalPreview lineTotal={ed.lineTotal} />
-        <Button type="button" size="sm" onClick={onSubmit} disabled={disabled || submitting || !draft.name.trim()}>
-          {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
-          Ekle
-        </Button>
+        <AddButton draft={draft} onSubmit={onSubmit} submitting={submitting} disabled={disabled} />
       </div>
     </div>
   )
@@ -455,25 +467,36 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
     else setSubmitting(false)
   }
 
+  // Tek-satır inline composer (md+): [ad — esner] · Miktar · Birim Fiyat · Toplam ·
+  // Ekle. Mobilde doğal olarak sarar (ad tam genişlik, sonra kontroller, Ekle CTA).
   return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label={isExternal ? "Dış İşçilik" : "İşçilik"} className="sm:col-span-2 lg:col-span-4">
-          {isExternal ? (
-            <Input
-              value={draft.name}
-              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-              placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
-              title={draft.name || undefined}
-              disabled={disabled}
-              className="text-sm"
-            />
-          ) : (
-            <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} />
-          )}
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <Field label={isExternal ? "Dış İşçilik" : "İşçilik"} className="sm:flex-1 sm:min-w-[16rem]">
+        {isExternal ? (
+          <Input
+            value={draft.name}
+            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+            placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
+            title={draft.name || undefined}
+            disabled={disabled}
+            className="text-sm"
+          />
+        ) : (
+          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} />
+        )}
+      </Field>
+      <div className="flex items-end gap-3">
+        <Field label="Miktar">
+          <QtyStepper row={draft} editable onCell={onCell} />
+        </Field>
+        <Field label="Birim Fiyat">
+          <PriceField row={draft} ed={ed} wide />
         </Field>
       </div>
-      <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
+      <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center sm:gap-3">
+        <TotalPreview lineTotal={ed.lineTotal} />
+        <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
+      </div>
     </div>
   )
 }
@@ -743,19 +766,22 @@ function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; on
   )
 }
 
-function PriceField({ row, ed }: { row: Row; ed: RowEditor }) {
+// wide: composer/mobil'de sabit geniş genişlik (dar/sıkışık görünmesin). Masaüstü
+// tablo hücresinde (dar kolon) varsayılan kompakt genişlik korunur.
+function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean }) {
   if (ed.editingPrice) {
     return (
       <Input type="number" min="0" step="0.01" autoFocus value={ed.priceDraft}
         onChange={(e) => ed.setPriceDraft(e.target.value)} onBlur={ed.commitPrice}
         onKeyDown={(e) => { if (e.key === "Enter") ed.commitPrice(); if (e.key === "Escape") ed.setEditingPrice(false) }}
-        className="h-8 w-24 text-xs" />
+        className={cn("h-9 text-sm", wide ? "w-32" : "w-24")} />
     )
   }
   return (
     <Button type="button" variant="outline" disabled={!ed.editable}
-      onClick={() => ed.editable && ed.startPrice()} className="gap-1 font-normal">
-      <Pencil className="size-3 text-muted-foreground" />
+      onClick={() => ed.editable && ed.startPrice()}
+      className={cn("gap-1 font-normal tabular-nums", wide && "h-9 w-32 justify-start")}>
+      <Pencil className="size-3 shrink-0 text-muted-foreground" />
       <span className={cn("tabular-nums", row.unitPrice == null && "text-muted-foreground")}>
         {row.unitPrice != null ? formatTRY(row.unitPrice) : "Fiyat"}
       </span>
@@ -767,6 +793,22 @@ function TotalField({ lineTotal }: { lineTotal: number | null }) {
   return (
     <span className={cn("text-sm font-semibold tabular-nums", lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground")}>
       {lineTotal != null ? formatTRY(lineTotal) : "—"}
+    </span>
+  )
+}
+
+// Tür çipi: tarama kolaylığı için tipe göre renkli ikon+etiket rozeti (mobil kart
+// başlığı). Parça=lacivert, İşçilik=amber, Dış İşçilik=mor.
+function TypeChip({ type }: { type: ItemType }) {
+  const cfg: Record<ItemType, { Icon: typeof Wrench; cls: string }> = {
+    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary" },
+    labor: { Icon: Wrench, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    external_labor: { Icon: ExternalLink, cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+  }
+  const { Icon, cls } = cfg[type]
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium", cls)}>
+      <Icon className="size-3.5" /> {TYPE_LABELS[type]}
     </span>
   )
 }
@@ -966,25 +1008,25 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
   const ed = useRowEditor(row, vehicle, locked, onCell)
 
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5">
-      {/* Tür + kaynak rozeti + sil */}
+    <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+      {/* Başlık: tür çipi + kaynak rozeti · sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
+          <TypeChip type={row.type as ItemType} />
           <SourceBadge source={row.source} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>
 
-      {/* Parça / İşçilik */}
-      <div className="mt-2">
+      {/* Parça / İşçilik adı (öne çıkan) */}
+      <div className="mt-2.5">
         <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
-      {/* Marka / Kategori — mobilde de düzenlenebilir (AttrCell ortak hücre). */}
+      {/* Marka / Kategori — yalnız parça & düzenlenebilir/dolu (AttrCell ortak hücre). */}
       {ed.isPart && (ed.editable || row.brand || row.category) && (
-        <div className="mt-2 space-y-1.5">
+        <div className="mt-2.5 space-y-1.5">
           {(ed.editable || row.brand) && (
             <div className="flex items-center gap-2">
               <span className="w-16 shrink-0 text-xs text-muted-foreground">Marka</span>
@@ -1004,22 +1046,14 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
         </div>
       )}
 
-      {/* Miktar */}
-      <div className="mt-2.5 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Miktar</span>
+      {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
+      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
-      </div>
-
-      {/* Birim Fiyat */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Birim Fiyat</span>
-        <PriceField row={row} ed={ed} />
-      </div>
-
-      {/* Toplam */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Toplam</span>
-        <TotalField lineTotal={ed.lineTotal} />
+        <div className="ml-auto flex items-center gap-2">
+          <PriceField row={row} ed={ed} />
+          <span className="text-sm text-muted-foreground">=</span>
+          <TotalField lineTotal={ed.lineTotal} />
+        </div>
       </div>
     </div>
   )
