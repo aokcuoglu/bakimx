@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/sections/HeroSection";
 import { PartnersStrip } from "@/components/sections/PartnersStrip";
 import { PillarsSection } from "@/components/sections/PillarsSection";
 import { RuhsatDemoSection } from "@/components/sections/RuhsatDemoSection";
+import { MetricsBand } from "@/components/sections/MetricsBand";
 import { FeatureShowcaseSection } from "@/components/sections/FeatureShowcaseSection";
 import { StandOutSection } from "@/components/sections/StandOutSection";
 import { SegmentsSection } from "@/components/sections/SegmentsSection";
@@ -24,6 +25,7 @@ export default function Home() {
         <PartnersStrip />
         <PillarsSection />
         <RuhsatDemoSection />
+        <MetricsBand />
         <FeatureShowcaseSection />
         <StandOutSection />
         <SegmentsSection />
