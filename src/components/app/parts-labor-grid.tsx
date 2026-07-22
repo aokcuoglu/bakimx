@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -553,10 +552,9 @@ function ManualComposerBody({ onAdd, disabled, onAdded }: {
   const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "manual"))
   const [submitting, setSubmitting] = useState(false)
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  // vehicle=undefined → linked=false: katalog picker'ı kapalı, saf serbest metin
-  // (marka/kategori önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
+  // vehicle=undefined → katalog picker kapalı, saf serbest metin (marka/kategori
+  // önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
   const ed = useRowEditor(draft, undefined, false, onCell)
-  const isPart = draft.type === "part"
 
   async function submit() {
     if (!draft.name.trim() || submitting) return
@@ -569,39 +567,21 @@ function ManualComposerBody({ onAdd, disabled, onAdded }: {
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Tür">
-          <Select
-            items={TYPE_LABELS}
-            value={draft.type}
-            onValueChange={(v) => setDraft((d) => ({ ...d, type: v as ItemType }))}
-          >
-            <SelectTrigger className="w-full min-w-0 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="part">Yedek Parça</SelectItem>
-              <SelectItem value="labor">İşçilik</SelectItem>
-              <SelectItem value="external_labor">Dış İşçilik</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label={isPart ? "Parça adı" : "İşçilik adı"} className={isPart ? undefined : "sm:col-span-2 lg:col-span-3"}>
+        <Field label="Parça adı" className="sm:col-span-2">
           <Input
             value={draft.name}
             onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder={isPart ? "Parça adı" : "İşçilik adı"}
+            placeholder="Parça adı"
             title={draft.name || undefined}
             className="text-sm"
           />
         </Field>
-        {isPart && (
-          <>
-            <Field label="Marka">
-              <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
-            </Field>
-            <Field label="Kategori">
-              <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
-            </Field>
-          </>
-        )}
+        <Field label="Marka">
+          <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
+        </Field>
+        <Field label="Kategori">
+          <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
+        </Field>
       </div>
       <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
     </div>
