@@ -285,12 +285,14 @@ export function PricingSummaryCard({
           </div>
         ) : (
           <>
-            <SummaryRow label="İndirim" value={totals.discountAmount > 0 ? formatTRY(totals.discountAmount) : "—"} muted={totals.discountAmount === 0} />
-            <SummaryRow
-              label={`KDV (${orderTaxRateDisplay(totals)})`}
-              value={totals.taxAmount > 0 ? formatTRY(totals.taxAmount) : "—"}
-              muted={totals.taxAmount === 0}
-            />
+            {/* İndirim/KDV satırları yalnız değer varken görünür; ikisi de sıfırken
+                alttaki "+ İndirim / KDV ekle" butonu tek giriş noktasıdır. */}
+            {totals.discountAmount > 0 && (
+              <SummaryRow label="İndirim" value={formatTRY(totals.discountAmount)} />
+            )}
+            {totals.taxAmount > 0 && (
+              <SummaryRow label={`KDV (${orderTaxRateDisplay(totals)})`} value={formatTRY(totals.taxAmount)} />
+            )}
             <div className="border-t pt-2 mt-2">
               <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
             </div>
@@ -312,6 +314,15 @@ export function PricingSummaryCard({
                 İptal
               </Button>
             </div>
+          ) : totals.discountAmount === 0 && totals.taxAmount === 0 ? (
+            <Button
+              variant="ghost"
+              onClick={() => setEditingMeta(true)}
+              size="sm"
+              className="w-full text-primary hover:text-primary"
+            >
+              <Plus className="size-3.5 mr-1" /> İndirim / KDV ekle
+            </Button>
           ) : (
             <Button
               variant="outline"
@@ -319,7 +330,7 @@ export function PricingSummaryCard({
               size="sm"
               className="w-full"
             >
-              <Pencil className="size-3.5 mr-1" /> İskonto & KDV
+              <Pencil className="size-3.5 mr-1" /> İndirim & KDV Düzenle
             </Button>
           )}
         </div>

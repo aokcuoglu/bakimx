@@ -4,18 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox"
 import {
   Table,
   TableBody,
@@ -24,10 +15,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, Pencil, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/app/purchase-detail-dialog"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
-import { getMockLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
+import { getMockLaborCatalog, searchLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
+import {
+  Autocomplete,
+  AutocompleteInput,
+  AutocompleteContent,
+  AutocompleteList,
+  AutocompleteItem,
+  AutocompleteEmpty,
+} from "@/components/ui/autocomplete"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira } from "@/lib/money"
 import { isOrderLocked } from "@/lib/status-transitions"
@@ -82,6 +82,17 @@ export function PartsLaborGrid({
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
+  // Sessiz otosave'i görünür kılan geçici "✓ Kaydedildi" işareti: başarılı
+  // PATCH sonrası ilgili satırda 2 sn gösterilir (tecrübesiz kullanıcı için
+  // "değişikliğim kaydoldu mu?" belirsizliğini kaldırır).
+  const [savedRowId, setSavedRowId] = useState<string | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function flashSaved(rowId: string) {
+    setSavedRowId(rowId)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSavedRowId(null), 2000)
+  }
+
   // Sunucu items'ı yerele senkronla. Runtime-only brandSupplierId (persist
   // EDİLMEZ) önceki satırdan id ile taşınır ki marka→kategori filtresi
   // router.refresh() sonrası da (tam yeniden yüklemeye kadar) yaşasın.
@@ -98,7 +109,10 @@ export function PartsLaborGrid({
 
   useEffect(() => {
     const timers = saveTimers.current
-    return () => { Object.values(timers).forEach((t) => clearTimeout(t)) }
+    return () => {
+      Object.values(timers).forEach((t) => clearTimeout(t))
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+    }
   }, [])
 
   function patchLocal(rowId: string, patch: Partial<Row>) {
@@ -161,7 +175,7 @@ export function PartsLaborGrid({
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
         if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows(items.map(toRow)) }
-        else router.refresh()
+        else { flashSaved(rowId); router.refresh() }
       } catch { onError("Bir hata oluştu"); setRows(items.map(toRow)) }
     }
     if (opts?.debounce) {
@@ -199,18 +213,24 @@ export function PartsLaborGrid({
         <Tabs defaultValue={linked ? "katalog" : "manuel"}>
           <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
             <TabsTrigger value="katalog" className="px-3 py-2 shrink-0">
-              <PackagePlus className="size-4" /> Katalogdan Parça
+              <PackagePlus className="size-4" /> Araca Uygun Parça
             </TabsTrigger>
             <TabsTrigger value="manuel" className="px-3 py-2 shrink-0">
-              <PencilLine className="size-4" /> Manuel Parça
+              <PencilLine className="size-4" /> Elle Parça Yaz
+            </TabsTrigger>
+            <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
+              <Wrench className="size-4" /> İşçilik
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="katalog" className="pt-3">
-            <CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} />
+          <TabsContent value="katalog" className="pt-4">
+            <ComposerCard><CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} /></ComposerCard>
           </TabsContent>
-          <TabsContent value="manuel" className="pt-3">
-            <ManualComposer onAdd={addItem} disabled={loading} />
+          <TabsContent value="manuel" className="pt-4">
+            <ComposerCard><ManualComposer onAdd={addItem} disabled={loading} /></ComposerCard>
+          </TabsContent>
+          <TabsContent value="iscilik" className="pt-4">
+            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} /></ComposerCard>
           </TabsContent>
         </Tabs>
       )}
@@ -220,23 +240,19 @@ export function PartsLaborGrid({
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
       {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
       <div className="hidden overflow-hidden rounded-lg border border-border md:block">
-        <Table className="min-w-[64rem] table-fixed">
+        <Table className="min-w-[52rem] table-fixed">
           <colgroup>
-            <col className="w-28" />{/* Tür */}
-            <col />{/* Parça / İşçilik (kalan alan) */}
-            <col className="w-36" />{/* Marka */}
-            <col className="w-44" />{/* Kategori */}
+            <col className="w-40" />{/* Tür */}
+            <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
             <col className="w-24" />{/* Miktar */}
-            <col className="w-28" />{/* Birim Fiyat */}
-            <col className="w-24" />{/* Toplam */}
+            <col className="w-36" />{/* Birim Fiyat */}
+            <col className="w-28" />{/* Toplam */}
             <col className="w-12" />{/* Sil */}
           </colgroup>
-          <TableHeader className="bg-muted">
-            <TableRow className="hover:bg-muted">
-              <TableHead className={headCls}>Tür</TableHead>
+          <TableHeader className="bg-muted/60">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
-              <TableHead className={headCls}>Marka</TableHead>
-              <TableHead className={headCls}>Kategori</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
               <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
               <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
@@ -246,8 +262,8 @@ export function PartsLaborGrid({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8} className="py-6 text-center text-sm text-muted-foreground">
-                  Henüz kalem eklenmedi
+                <TableCell colSpan={6}>
+                  <EmptyItemsHint linked={linked} locked={locked} />
                 </TableCell>
               </TableRow>
             ) : (
@@ -260,6 +276,7 @@ export function PartsLaborGrid({
                   vehicle={vehicle}
                   onCell={onCell}
                   onRemove={removeRow}
+                  saved={savedRowId === row.id}
                 />
               ))
             )}
@@ -270,7 +287,7 @@ export function PartsLaborGrid({
       {/* Mobil (<md): kart düzeni (mobil-first). */}
       <div className="space-y-2 md:hidden">
         {rows.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Henüz kalem eklenmedi</p>
+          <EmptyItemsHint linked={linked} locked={locked} />
         ) : (
           rows.map((row) => (
             <MobilePartRow
@@ -281,6 +298,7 @@ export function PartsLaborGrid({
               vehicle={vehicle}
               onCell={onCell}
               onRemove={removeRow}
+              saved={savedRowId === row.id}
             />
           ))
         )}
@@ -288,6 +306,19 @@ export function PartsLaborGrid({
     </div>
     </TooltipProvider>
     </PartAttrOptionsProvider>
+  )
+}
+
+// ── Composer "ekleme kartı" kabuğu: composer'ı listeden görsel olarak ayıran,
+// hafif marka-tintli, "Yeni kalem ekle" etiketli belirgin alan.
+function ComposerCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative rounded-xl border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4 pt-5">
+      <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+        Yeni kalem ekle
+      </span>
+      {children}
+    </div>
   )
 }
 
@@ -301,85 +332,52 @@ function Field({ label, children, className }: { label: string; children: React.
   )
 }
 
-// ── Composer ortak footer: Miktar + Birim Fiyat (tek hizalı blok) + Toplam +
-// Ekle. Alanlar açıklayıcı grid'in DIŞINDA sabit bir satırda tutulur → miktar/
-// fiyat artık alan sayısına göre alt satıra kaymaz (eski layout hatası).
+// Composer'ın belirgin birincil "Ekle" CTA'sı. Masaüstünde satır-içi (auto);
+// mobilde tam genişlik → dokunma hedefi büyük, aksiyon net.
+function AddButton({ draft, onSubmit, submitting, disabled }: {
+  draft: Row; onSubmit: () => void; submitting: boolean; disabled: boolean
+}) {
+  return (
+    <Button type="button" size="default" onClick={onSubmit}
+      disabled={disabled || submitting || !draft.name.trim()}
+      className="w-full sm:w-auto">
+      {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+      Ekle
+    </Button>
+  )
+}
+
+// ── Composer ortak footer (Katalog/Manuel parça composer'ları): Miktar + Birim
+// Fiyat + Toplam + Ekle. Grid'in DIŞINDA sabit satır → miktar/fiyat alan sayısına
+// göre kaymaz. Mobilde dikey yığılır ve Ekle tam genişlik olur.
 function ComposerFooter({ draft, ed, onCell, onSubmit, submitting, disabled }: {
   draft: Row; ed: RowEditor; onCell: OnCell; onSubmit: () => void; submitting: boolean; disabled: boolean
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
       <div className="flex items-end gap-3">
         <Field label="Miktar">
           <QtyStepper row={draft} editable onCell={onCell} />
         </Field>
         <Field label="Birim Fiyat">
-          <PriceField row={draft} ed={ed} />
+          <PriceField row={draft} ed={ed} wide />
         </Field>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <TotalPreview lineTotal={ed.lineTotal} />
-        <Button type="button" size="sm" onClick={onSubmit} disabled={disabled || submitting || !draft.name.trim()}>
-          {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
-          Ekle
-        </Button>
+        <AddButton draft={draft} onSubmit={onSubmit} submitting={submitting} disabled={disabled} />
       </div>
     </div>
   )
 }
 
-// ── Katalog'dan işçilik: ön-tanımlı (mock) işçilik listesinden aranabilir seçim.
-// Seçince ad + önerilen birim fiyat dolar (fiyat sonra footer'dan düzenlenebilir).
-function LaborCatalogField({ draft, onCell, disabled }: {
-  draft: Row; onCell: OnCell; disabled: boolean
+// İki-düğmeli segment: İşçilik composer'ında İç / Dış işçilik modu.
+function LaborModeToggle({ mode, onChange, disabled }: {
+  mode: "labor" | "external_labor"; onChange: (m: "labor" | "external_labor") => void; disabled: boolean
 }) {
-  // Sabit referans: controlled Combobox value'sunun item kimliğiyle eşleşmesi için.
-  const items = useMemo(() => getMockLaborCatalog(), [])
-  const selected = items.find((e) => e.name === draft.name) ?? null
-  return (
-    <Combobox
-      items={items}
-      value={selected}
-      onValueChange={(entry: LaborCatalogEntry | null) => {
-        if (entry) onCell(draft, { name: entry.name, unitPrice: entry.defaultPriceKurus })
-        else onCell(draft, { name: "", unitPrice: null })
-      }}
-      itemToStringValue={(e: LaborCatalogEntry) => e.name}
-      disabled={disabled}
-    >
-      <ComboboxInput
-        placeholder="İşçilik ara veya seç"
-        disabled={disabled}
-        showClear={!!draft.name}
-        title={draft.name || undefined}
-        className="w-full text-sm"
-      />
-      <ComboboxContent>
-        <ComboboxEmpty>İşçilik bulunamadı</ComboboxEmpty>
-        <ComboboxList>
-          {(e: LaborCatalogEntry) => (
-            <ComboboxItem key={e.id} value={e}>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{e.name}</span>
-                <span className="block text-[11px] text-muted-foreground">
-                  {e.category} · {formatTRY(e.defaultPriceKurus)}
-                </span>
-              </span>
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  )
-}
-
-// İki-düğmeli segment: Katalog composer'ında Parça / İşçilik modu.
-function CatalogModeToggle({ mode, onChange, disabled }: {
-  mode: "part" | "labor"; onChange: (m: "part" | "labor") => void; disabled: boolean
-}) {
-  const opts: Array<{ value: "part" | "labor"; label: string; Icon: typeof PackagePlus }> = [
-    { value: "part", label: "Parça", Icon: PackagePlus },
-    { value: "labor", label: "İşçilik", Icon: Wrench },
+  const opts: Array<{ value: "labor" | "external_labor"; label: string; Icon: typeof Wrench }> = [
+    { value: "labor", label: "İç İşçilik", Icon: Wrench },
+    { value: "external_labor", label: "Dış İşçilik", Icon: ExternalLink },
   ]
   return (
     <div className="inline-flex rounded-lg border border-input bg-muted/40 p-0.5">
@@ -400,21 +398,76 @@ function CatalogModeToggle({ mode, onChange, disabled }: {
   )
 }
 
-// ── Katalog composer: Parça (canlı TecDoc arama) VEYA İşçilik (ön-tanımlı mock).
+// İç işçilik ad alanı: serbest-metin Autocomplete + mock katalog önerileri.
+// Yazdıkça searchLaborCatalog önerir; öneri seçilince ad+önerilen fiyat dolar;
+// serbest metin de yazılabilir (kendi işçilik kalemi — fiyat elle girilir).
+function LaborAutocompleteField({ draft, onCell, disabled }: {
+  draft: Row; onCell: OnCell; disabled: boolean
+}) {
+  const items = useMemo(() => searchLaborCatalog(draft.name), [draft.name])
+  return (
+    <Autocomplete
+      items={items}
+      value={draft.name}
+      filter={null}
+      autoHighlight
+      openOnInputClick
+      itemToStringValue={(e: LaborCatalogEntry) => e.name}
+      onValueChange={(v: string) => {
+        // Ad, tanımlı (mock) bir işçiliğe birebir eşleşiyorsa önerilen fiyatı taşı;
+        // eşleşme bozulunca/temizlenince fiyatı da düşür ki seçili katalog fiyatı
+        // özel/serbest kaleme sızmasın (spec: temizlenince unitPrice=null).
+        const match = getMockLaborCatalog().find((e) => e.name === v)
+        onCell(draft, { name: v, unitPrice: match ? match.defaultPriceKurus : null })
+      }}
+    >
+      <AutocompleteInput
+        render={
+          <Input
+            placeholder="İşçilik ara veya kendi kalemini yaz"
+            disabled={disabled}
+            title={draft.name || undefined}
+            className="text-sm"
+          />
+        }
+      />
+      <AutocompleteContent>
+        <AutocompleteEmpty>Tanımlı işçilik yok — kendi kaleminizi yazabilirsiniz</AutocompleteEmpty>
+        <AutocompleteList>
+          {(e: LaborCatalogEntry) => (
+            <AutocompleteItem
+              key={e.id}
+              value={e}
+              onClick={() => onCell(draft, { name: e.name, unitPrice: e.defaultPriceKurus })}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{e.name}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {e.category} · {formatTRY(e.defaultPriceKurus)}
+                </span>
+              </span>
+            </AutocompleteItem>
+          )}
+        </AutocompleteList>
+      </AutocompleteContent>
+    </Autocomplete>
+  )
+}
+
+// ── İşçilik composer: İç (mock öneri + serbest) / Dış (serbest) işçilik.
 // mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
-// (draft, arama kutusu, autocomplete) temiz sıfırlanır. Kaynak = "catalog".
-function CatalogComposer({ vehicle, onAdd, disabled }: {
-  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+// (draft, arama kutusu) temiz sıfırlanır.
+function LaborComposer({ onAdd, disabled }: {
+  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
 }) {
   const [nonce, setNonce] = useState(0)
-  const [mode, setMode] = useState<"part" | "labor">("part")
+  const [mode, setMode] = useState<"labor" | "external_labor">("labor")
   return (
     <div className="space-y-3">
-      <CatalogModeToggle mode={mode} onChange={setMode} disabled={disabled} />
-      <CatalogComposerBody
+      <LaborModeToggle mode={mode} onChange={setMode} disabled={disabled} />
+      <LaborComposerBody
         key={`${mode}-${nonce}`}
         mode={mode}
-        vehicle={vehicle}
         onAdd={onAdd}
         disabled={disabled}
         onAdded={() => setNonce((n) => n + 1)}
@@ -423,15 +476,85 @@ function CatalogComposer({ vehicle, onAdd, disabled }: {
   )
 }
 
-function CatalogComposerBody({ mode, vehicle, onAdd, disabled, onAdded }: {
-  mode: "part" | "labor"; vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
+  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
 }) {
-  const isLabor = mode === "labor"
-  const [draft, setDraft] = useState<Row>(() => emptyDraft(isLabor ? "labor" : "part", "catalog"))
+  const [draft, setDraft] = useState<Row>(() => emptyDraft(mode, "manual"))
   const [submitting, setSubmitting] = useState(false)
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  // İşçilik modunda araç bağı yok (katalog parça araması kapalı; isPart=false).
-  const ed = useRowEditor(draft, isLabor ? undefined : vehicle, false, onCell)
+  // İşçilikte araç bağı yok; useRowEditor yalnız fiyat/toplam mantığı için.
+  const ed = useRowEditor(draft, undefined, false, onCell)
+  const isExternal = mode === "external_labor"
+
+  async function submit() {
+    if (!draft.name.trim() || submitting) return
+    setSubmitting(true)
+    // Tanımlı (mock) işçilik adına birebir eşleşme → catalog rozeti; değilse manuel.
+    const isDefined = mode === "labor" && getMockLaborCatalog().some((e) => e.name === draft.name.trim())
+    const ok = await onAdd({ ...draft, source: isDefined ? "catalog" : "manual" })
+    if (ok) onAdded()
+    else setSubmitting(false)
+  }
+
+  // Tek-satır inline composer (md+): [ad — esner] · Miktar · Birim Fiyat · Toplam ·
+  // Ekle. Mobilde doğal olarak sarar (ad tam genişlik, sonra kontroller, Ekle CTA).
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <Field label={isExternal ? "Dış İşçilik" : "İşçilik"} className="sm:flex-1 sm:min-w-[16rem]">
+        {isExternal ? (
+          <Input
+            value={draft.name}
+            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+            placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
+            title={draft.name || undefined}
+            disabled={disabled}
+            className="text-sm"
+          />
+        ) : (
+          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} />
+        )}
+      </Field>
+      <div className="flex items-end gap-3">
+        <Field label="Miktar">
+          <QtyStepper row={draft} editable onCell={onCell} />
+        </Field>
+        <Field label="Birim Fiyat">
+          <PriceField row={draft} ed={ed} wide />
+        </Field>
+      </div>
+      <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center sm:gap-3">
+        <TotalPreview lineTotal={ed.lineTotal} />
+        <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
+      </div>
+    </div>
+  )
+}
+
+// ── Katalog composer: Parça (canlı TecDoc arama). nonce anahtarıyla remount →
+// her eklemede yerel state (draft, arama kutusu, autocomplete) temiz sıfırlanır.
+// Kaynak = "catalog".
+function CatalogComposer({ vehicle, onAdd, disabled }: {
+  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+}) {
+  const [nonce, setNonce] = useState(0)
+  return (
+    <CatalogComposerBody
+      key={nonce}
+      vehicle={vehicle}
+      onAdd={onAdd}
+      disabled={disabled}
+      onAdded={() => setNonce((n) => n + 1)}
+    />
+  )
+}
+
+function CatalogComposerBody({ vehicle, onAdd, disabled, onAdded }: {
+  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+}) {
+  const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "catalog"))
+  const [submitting, setSubmitting] = useState(false)
+  const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
+  const ed = useRowEditor(draft, vehicle, false, onCell)
 
   async function submit() {
     if (!draft.name.trim() || submitting) return
@@ -448,32 +571,32 @@ function CatalogComposerBody({ mode, vehicle, onAdd, disabled, onAdded }: {
 
   return (
     <div className="space-y-3">
+      {/* Araç katalogla eşleşmemişse sessiz-disabled yerine açık yönlendirme. */}
+      {vehicle?.catalogVehicleTypeId == null && (
+        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+          Araç katalogla eşleşmediği için arama sınırlı — parçayı{" "}
+          <span className="font-semibold text-foreground">Elle Parça Yaz</span> sekmesinden ekleyebilirsiniz.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {isLabor ? (
-          <Field label="İşçilik" className="sm:col-span-2 lg:col-span-4">
-            <LaborCatalogField draft={draft} onCell={onCell} disabled={disabled} />
-          </Field>
-        ) : (
-          <>
-            <Field label="Parça" className="sm:col-span-2 lg:col-span-2">
-              <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
-              <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-            <Field label="Marka">
-              <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-            <Field label="Kategori">
-              <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-          </>
-        )}
+        <Field label="Parça" className="sm:col-span-2 lg:col-span-2">
+          <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
+          <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Marka">
+          <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Kategori">
+          <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
       </div>
       <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
     </div>
   )
 }
 
-// ── Manuel composer: Tür seçici + serbest metin (katalog araması YOK).
+// ── Manuel composer: serbest metin parça girişi (katalog araması YOK). İşçilik
+// artık ayrı "İşçilik" sekmesinde; bu sekme yalnız parça ekler.
 // Kaynak = "manual".
 function ManualComposer({ onAdd, disabled }: {
   onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
@@ -495,10 +618,9 @@ function ManualComposerBody({ onAdd, disabled, onAdded }: {
   const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "manual"))
   const [submitting, setSubmitting] = useState(false)
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  // vehicle=undefined → linked=false: katalog picker'ı kapalı, saf serbest metin
-  // (marka/kategori önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
+  // vehicle=undefined → katalog picker kapalı, saf serbest metin (marka/kategori
+  // önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
   const ed = useRowEditor(draft, undefined, false, onCell)
-  const isPart = draft.type === "part"
 
   async function submit() {
     if (!draft.name.trim() || submitting) return
@@ -511,41 +633,40 @@ function ManualComposerBody({ onAdd, disabled, onAdded }: {
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Tür">
-          <Select
-            items={TYPE_LABELS}
-            value={draft.type}
-            onValueChange={(v) => setDraft((d) => ({ ...d, type: v as ItemType }))}
-          >
-            <SelectTrigger className="w-full min-w-0 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="part">Yedek Parça</SelectItem>
-              <SelectItem value="labor">İşçilik</SelectItem>
-              <SelectItem value="external_labor">Dış İşçilik</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label={isPart ? "Parça adı" : "İşçilik adı"} className={isPart ? undefined : "sm:col-span-2 lg:col-span-3"}>
+        <Field label="Parça adı" className="sm:col-span-2">
           <Input
             value={draft.name}
             onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder={isPart ? "Parça adı" : "İşçilik adı"}
+            placeholder="Parça adı (ör. ön fren balatası)"
             title={draft.name || undefined}
             className="text-sm"
           />
         </Field>
-        {isPart && (
-          <>
-            <Field label="Marka">
-              <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
-            </Field>
-            <Field label="Kategori">
-              <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
-            </Field>
-          </>
-        )}
+        <Field label="Marka">
+          <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
+        </Field>
+        <Field label="Kategori">
+          <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
+        </Field>
       </div>
       <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
+    </div>
+  )
+}
+
+// Boş liste: pasif "kalem yok" metni yerine tecrübesiz kullanıcıyı doğru
+// sekmeye yönlendiren boş durum (masaüstü tablo hücresi + mobil aynı bileşen).
+function EmptyItemsHint({ linked, locked }: { linked: boolean; locked: boolean }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 py-8 text-center">
+      <PackageSearch className="size-8 text-muted-foreground/40" />
+      <p className="text-sm font-medium text-foreground">Henüz parça veya işçilik eklenmedi</p>
+      {!locked && (
+        <p className="text-xs text-muted-foreground">
+          Yukarıdan <span className="font-semibold text-foreground">{linked ? "Araca Uygun Parça" : "Elle Parça Yaz"}</span>{" "}
+          sekmesiyle arayarak başlayın
+        </p>
+      )}
     </div>
   )
 }
@@ -611,8 +732,11 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-function PartField({ row, ed, vehicle, onCell, onClear }: {
-  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void
+// bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
+// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
+// bare=false (tüm ikonlar + tedarikçi karşılaştırma açık).
+function PartField({ row, ed, vehicle, onCell, onClear, bare }: {
+  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
@@ -624,13 +748,13 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
           supplierId={ed.filter.supplierId ?? null}
           categoryId={ed.filter.categoryId ?? null}
           disabled={!ed.editable || row.__saving}
-          placeholder="Parça no veya adı"
+          placeholder="Parça ara (ör. yağ filtresi)"
           onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
           onSelectArticle={ed.fillFromArticle}
           onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
           onClear={() => { onClear(row); ed.setFilter({}) }}
-          showClear={ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
-          onSearchClick={() => ed.setTecdocOpen(true)}
+          showClear={!bare && ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
+          onSearchClick={bare ? undefined : () => ed.setTecdocOpen(true)}
           searchDisabled={vehicle?.catalogVehicleTypeId == null}
           searchTitle={vehicle?.catalogVehicleTypeId == null ? "Araç TecDoc'ta eşleşmedi" : "TecDoc kataloğundan seç"}
         />
@@ -643,7 +767,7 @@ function PartField({ row, ed, vehicle, onCell, onClear }: {
           className="text-sm"
         />
       )}
-      {ed.isPart && row.name.trim() !== "" && (
+      {!bare && ed.isPart && row.name.trim() !== "" && (
         <PartPriceCompare row={row} ed={ed} onCell={onCell} />
       )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
@@ -658,16 +782,19 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
   const [open, setOpen] = useState(false)
   return (
     <>
+      {/* Yazılı buton: gizli-ikon yerine keşfedilebilir aksiyon (yalnız composer'da
+          render edilir; liste satırları bare modda bu bileşeni hiç göstermez). */}
       <Button
         type="button"
-        variant="ghost"
-        size="icon-sm"
+        variant="outline"
+        size="sm"
+        data-slot="price-compare"
         onClick={() => setOpen(true)}
-        className="shrink-0 text-muted-foreground hover:text-primary"
+        className="shrink-0 gap-1.5 font-normal text-muted-foreground hover:text-primary"
         aria-label="Tedarikçi fiyatlarını karşılaştır"
         title="Tedarikçi fiyatlarını karşılaştır"
       >
-        <Tags className="size-4" />
+        <Tags className="size-4" /> Fiyat Karşılaştır
       </Button>
       <SupplierPriceDialog
         open={open}
@@ -682,7 +809,7 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div className="inline-flex h-8 items-center rounded-lg border border-input bg-background">
+    <div data-slot="qty-stepper" className="inline-flex h-9 items-center rounded-lg border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -698,30 +825,63 @@ function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; on
   )
 }
 
-function PriceField({ row, ed }: { row: Row; ed: RowEditor }) {
-  if (ed.editingPrice) {
+// wide: composer/mobil'de sabit geniş genişlik (dar/sıkışık görünmesin). Masaüstü
+// tablo hücresinde (dar kolon) varsayılan kompakt genişlik korunur.
+// Kalem-butonuna basıp açma deseni yerine HER ZAMAN yazılabilir ₺ alanı —
+// tecrübesiz kullanıcı fiyatın düzenlenebilir olduğunu görür. Odaklanınca lira
+// taslağına geçer, blur/Enter'da kuruşa çevrilip commit edilir (useRowEditor).
+function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean }) {
+  if (!ed.editable) {
     return (
-      <Input type="number" min="0" step="0.01" autoFocus value={ed.priceDraft}
-        onChange={(e) => ed.setPriceDraft(e.target.value)} onBlur={ed.commitPrice}
-        onKeyDown={(e) => { if (e.key === "Enter") ed.commitPrice(); if (e.key === "Escape") ed.setEditingPrice(false) }}
-        className="h-8 w-24 text-xs" />
+      <span data-slot="price-field" className={cn("text-sm tabular-nums", row.unitPrice == null && "text-muted-foreground/70")}>
+        {row.unitPrice != null ? formatTRY(row.unitPrice) : "—"}
+      </span>
     )
   }
   return (
-    <Button type="button" variant="outline" disabled={!ed.editable}
-      onClick={() => ed.editable && ed.startPrice()} className="gap-1 font-normal">
-      <Pencil className="size-3 text-muted-foreground" />
-      <span className={cn("tabular-nums", row.unitPrice == null && "text-muted-foreground")}>
-        {row.unitPrice != null ? formatTRY(row.unitPrice) : "Fiyat"}
-      </span>
-    </Button>
+    <InputGroup data-slot="price-field" className={cn("h-9", wide ? "w-32" : "w-28")}>
+      <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
+      <InputGroupInput
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        placeholder="Fiyat"
+        className="text-sm tabular-nums"
+        value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? String(kurusToLira(row.unitPrice)) : ""}
+        onFocus={() => { if (!ed.editingPrice) ed.startPrice() }}
+        onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
+        onBlur={ed.commitPrice}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+      />
+    </InputGroup>
   )
 }
 
-function TotalField({ lineTotal }: { lineTotal: number | null }) {
+function TotalField({ lineTotal, strong }: { lineTotal: number | null; strong?: boolean }) {
   return (
-    <span className={cn("text-sm font-semibold tabular-nums", lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground")}>
+    <span className={cn(
+      "tabular-nums",
+      strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
+      lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
+    )}>
       {lineTotal != null ? formatTRY(lineTotal) : "—"}
+    </span>
+  )
+}
+
+// Tür çipi: tarama kolaylığı için tipe göre renkli ikon+etiket rozeti (mobil kart
+// başlığı). Parça=lacivert, İşçilik=amber, Dış İşçilik=mor.
+function TypeChip({ type }: { type: ItemType }) {
+  const cfg: Record<ItemType, { Icon: typeof Wrench; cls: string }> = {
+    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary" },
+    labor: { Icon: Wrench, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    external_labor: { Icon: ExternalLink, cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+  }
+  const { Icon, cls } = cfg[type]
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium", cls)}>
+      <Icon className="size-3.5" /> {TYPE_LABELS[type]}
     </span>
   )
 }
@@ -787,6 +947,22 @@ function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: s
   )
 }
 
+// Başarılı otosave sonrası 2 sn'lik onay işareti. Masaüstünde dar kolonlara
+// sığması için iconOnly, mobil kart başlığında metinli sürüm.
+function SavedFlash({ show, iconOnly }: { show: boolean; iconOnly?: boolean }) {
+  if (!show) return null
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success"
+      title="Kaydedildi"
+      aria-live="polite"
+    >
+      <CheckCircle2 className="size-3.5" />
+      {!iconOnly && "Kaydedildi"}
+    </span>
+  )
+}
+
 function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => void }) {
   return (
     <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
@@ -828,8 +1004,8 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
 
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, vehicle, onCell }: {
-  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
+function AttrCell({ kind, row, ed, vehicle, onCell, bare }: {
+  kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
 }) {
   if (!ed.isPart) return null
   const value = kind === "brand" ? row.brand : row.category
@@ -876,75 +1052,110 @@ function AttrCell({ kind, row, ed, vehicle, onCell }: {
           onCell(row, { category: null, categoryId: null })
         }
       }}
-      onOpenPicker={ed.linked ? () => ed.setTecdocOpen(true) : undefined}
+      onOpenPicker={bare || !ed.linked ? undefined : () => ed.setTecdocOpen(true)}
+      hideClear={bare}
     />
   )
 }
 
+// Satır tipine göre sol aksan şeridi rengi (ilk hücrede, mutlak-konumlu bar —
+// border-collapse'tan bağımsız her zaman görünür).
+const ROW_ACCENT: Record<ItemType, string> = {
+  part: "bg-primary",
+  labor: "bg-amber-500",
+  external_labor: "bg-violet-500",
+}
+
+// ── Hayalet-satır: liste hücrelerindeki form kontrolleri düz metin gibi okunur;
+// satır hover / focus-within olunca kenarlık belirir, aksiyonlar görünür.
+// (Yalnız masaüstü <tr>'ye uygulanır; composer/mobil etkilenmez.)
+const GHOST_ROW = cn(
+  "group transition-colors hover:bg-muted/40",
+  "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent dark:[&_[data-slot=input-group]]:bg-transparent",
+  "[&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent dark:[&_[data-slot=input]]:bg-transparent",
+  "[&_[data-slot=qty-stepper]]:border-transparent [&_[data-slot=qty-stepper]]:bg-transparent",
+  "[&_[data-slot=price-field]]:border-transparent",
+  "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:border-input hover:[&_[data-slot=price-field]]:border-input",
+  "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
+  "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
+)
+
+// Marka/Kategori "çip" görünümü (adın altında): hayalet-şeffaf yerine hafif gri
+// dolgulu kompakt çip; odakta kenarlık belirir. !important → GHOST_ROW'un genel
+// input-group şeffaflığını bu alanlarda ezer. Hem masaüstü hem mobil kullanır.
+const META_CHIP_STYLE = cn(
+  "[&_[data-slot=input-group]]:!h-8 [&_[data-slot=input-group]]:!rounded-md",
+  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
+  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
+)
+
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
+  saved?: boolean
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
+  const type = row.type as ItemType
+  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <TableRow>
-      {/* Tür (listede salt-görünür — tür composer'da seçilir) */}
-      <TableCell>
-        <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
-      </TableCell>
-
-      {/* Parça / İşçilik — kaynak rozeti + (dış alımda) detay ikonu + alan */}
-      <TableCell className="whitespace-normal">
+    <TableRow className={cn(GHOST_ROW, "align-middle")}>
+      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti + (dış alımda) detay ikonu */}
+      <TableCell className="relative py-3.5 pl-[18px]">
+        <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
         <div className="flex items-center gap-1.5">
+          <TypeChip type={type} />
           <SourceBadge source={row.source} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
-          <div className="min-w-0 flex-1">
-            <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
-            <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-          </div>
         </div>
       </TableCell>
 
-      {/* Marka */}
-      <TableCell className="whitespace-normal">
-        <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-      </TableCell>
-
-      {/* Kategori */}
-      <TableCell className="whitespace-normal">
-        <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+      {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
+      <TableCell className="whitespace-normal py-3.5">
+        <div className="min-w-0">
+          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
+          <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+          {showMeta && (
+            <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
+              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+            </div>
+          )}
+        </div>
       </TableCell>
 
       {/* Miktar */}
-      <TableCell>
+      <TableCell className="py-3.5">
         <div className="flex justify-center">
           <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
         </div>
       </TableCell>
 
       {/* Birim Fiyat */}
-      <TableCell>
+      <TableCell className="py-3.5">
         <div className="flex justify-end">
-          <PriceField row={row} ed={ed} />
+          <PriceField row={row} ed={ed} wide />
         </div>
       </TableCell>
 
-      {/* Toplam */}
-      <TableCell className="text-right">
-        <TotalField lineTotal={ed.lineTotal} />
+      {/* Toplam (vurgulu) + otosave onayı */}
+      <TableCell className="py-3.5">
+        <div className="flex items-center justify-end gap-1.5">
+          <SavedFlash show={!!saved} iconOnly />
+          <TotalField lineTotal={ed.lineTotal} strong />
+        </div>
       </TableCell>
 
-      {/* Sil */}
-      <TableCell>
-        <div className="flex justify-end">
+      {/* Sil (yalnız hover'da belirir) */}
+      <TableCell className="py-3.5">
+        <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
         </div>
       </TableCell>
@@ -953,74 +1164,64 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove }: {
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
+  saved?: boolean
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
+  const type = row.type as ItemType
+  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5">
-      {/* Tür + kaynak rozeti + (dış alımda) detay ikonu + sil */}
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3 pl-4 shadow-sm">
+      {/* Sol tür aksanı */}
+      <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
+
+      {/* Başlık: tür çipi + kaynak rozeti + (dış alımda) detay ikonu · sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
+          <TypeChip type={type} />
           <SourceBadge source={row.source} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
+          <SavedFlash show={!!saved} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>
 
-      {/* Parça / İşçilik */}
-      <div className="mt-2">
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
+      {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
+      <div className={cn(
+        "mt-2",
+        "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
+        "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
+        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
+      )}>
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
-      {/* Marka / Kategori — mobilde de düzenlenebilir (AttrCell ortak hücre). */}
-      {ed.isPart && (ed.editable || row.brand || row.category) && (
-        <div className="mt-2 space-y-1.5">
-          {(ed.editable || row.brand) && (
-            <div className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-xs text-muted-foreground">Marka</span>
-              <div className="min-w-0 flex-1">
-                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
-            </div>
-          )}
-          {(ed.editable || row.category) && (
-            <div className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-xs text-muted-foreground">Kategori</span>
-              <div className="min-w-0 flex-1">
-                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
-            </div>
-          )}
+      {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
+      {showMeta && (
+        <div className={cn("mt-2 flex flex-wrap gap-1.5", META_CHIP_STYLE)}>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
         </div>
       )}
 
-      {/* Miktar */}
-      <div className="mt-2.5 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Miktar</span>
+      {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
+      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
-      </div>
-
-      {/* Birim Fiyat */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Birim Fiyat</span>
-        <PriceField row={row} ed={ed} />
-      </div>
-
-      {/* Toplam */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Toplam</span>
-        <TotalField lineTotal={ed.lineTotal} />
+        <div className="ml-auto flex items-center gap-2">
+          <PriceField row={row} ed={ed} />
+          <span className="text-sm text-muted-foreground">=</span>
+          <TotalField lineTotal={ed.lineTotal} strong />
+        </div>
       </div>
     </div>
   )
