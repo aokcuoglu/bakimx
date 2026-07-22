@@ -2,6 +2,7 @@
   "name": "bakimx",
   "version": "0.7.0",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
