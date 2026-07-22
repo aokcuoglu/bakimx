@@ -9,6 +9,7 @@ import {
   Smartphone,
   Sparkles,
 } from "lucide-react";
+import { BrandEyebrow } from "@/components/shared/brand-decor";
 
 const differentiators = [
   {
@@ -53,19 +54,20 @@ export function StandOutSection() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section id="neden" className="scroll-mt-24 bg-navy-light py-16 text-white sm:py-24">
+    <section id="neden" className="scroll-mt-24 bg-muted/30 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+          <BrandEyebrow>Neden BakimX</BrandEyebrow>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Bizi diğer programlardan ayıran ne?
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-white/70">
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             Klasik servis programları kayıt tutar. BakimX, işin sahada nasıl
             aktığını bilir: kamerayla kabul, kanıtla teslim, müşteriyle şeffaf
             iletişim.
           </p>
         </div>
-        <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {differentiators.map(({ icon: Icon, title, description }, i) => (
             <motion.div
               key={title}
@@ -73,13 +75,13 @@ export function StandOutSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
-              className="flex flex-col items-start"
+              className="flex flex-col items-start rounded-xl border bg-card p-6"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/10">
-                <Icon className="h-5 w-5 text-brand" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand/10">
+                <Icon className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mt-4 text-base font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {description}
               </p>
             </motion.div>

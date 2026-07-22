@@ -124,7 +124,7 @@ export function FeatureShowcaseSection() {
                 transition={{ duration: 0.5, delay: 0.15 }}
                 className="max-w-xl"
               >
-                <p className="text-sm font-semibold uppercase tracking-wider text-primary">
+                <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-primary">
                   {feature.kicker}
                 </p>
                 <h3 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">

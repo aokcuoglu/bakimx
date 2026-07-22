@@ -39,7 +39,7 @@ export function PartnersStrip() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+          className="text-center font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
         >
           Güçlü iş ortakları ve altyapıyla çalışıyoruz
         </motion.p>

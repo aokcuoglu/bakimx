@@ -1,85 +1,149 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, ScanLine } from "lucide-react";
-import { HeroLeadForm } from "@/components/sections/HeroLeadForm";
+import {
+  ShieldCheck,
+  Zap,
+  CalendarCheck,
+  ArrowRight,
+  CheckCircle2,
+  ScanLine,
+} from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { BrowserFrame } from "@/components/sections/DeviceFrame";
 
-const valueItems = [
-  "Ruhsatı okutun, araç ve müşteri saniyede kaydolsun",
-  "İş emri, fotoğraf kanıtı, teklif ve tahsilat tek ekranda",
-  "Müşteriniz aracını canlı takip linkinden izlesin",
+const trustBadges = [
+  { icon: ShieldCheck, label: "KVKK uyumlu" },
+  { icon: Zap, label: "Kurulumsuz" },
+  { icon: CalendarCheck, label: "7 gün ücretsiz" },
 ];
-
-function Highlight({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-md bg-card px-2 shadow-sm box-decoration-clone">
-      {children}
-    </span>
-  );
-}
 
 export function HeroSection() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section className="relative overflow-hidden bg-brand/10 pt-10 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-          <div className="flex max-w-xl flex-col gap-6 lg:pt-6">
-            <motion.h1
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
+    <section className="relative overflow-hidden bg-gradient-to-b from-brand/10 via-background to-background pt-10 pb-16 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 right-[-8%] h-[440px] w-[440px] rounded-full bg-brand/10 blur-3xl"
+      />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+          {/* Sol: mesaj + CTA */}
+          <div className="flex max-w-xl flex-col gap-6">
+            <motion.span
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-3xl font-bold leading-snug tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-[1.25]"
+              transition={{ duration: 0.4 }}
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-primary"
             >
-              Aracı <Highlight>saniyede</Highlight> kabul edin, servisi{" "}
-              <Highlight>kağıtsız</Highlight> yönetin
-            </motion.h1>
-            <motion.p
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              Erken üyelere özel başlangıç fiyatları
+            </motion.span>
+
+            <motion.h1
               initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-              className="text-base leading-relaxed text-foreground/80 sm:text-lg"
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
             >
-              BakimX, oto servisinizin tüm operasyonunu tek panelde toplar: araç
-              kabulden iş emrine, fotoğraflı kanıttan teklife ve tahsilata.
-              Ruhsatı okutun, gerisini sistem doldursun.
-            </motion.p>
-            <motion.ul
+              Aracı <span className="text-primary">saniyede</span> kabul edin,
+              servisi <span className="text-primary">kağıtsız</span> yönetin
+            </motion.h1>
+
+            <motion.p
               initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="space-y-2.5"
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
-              {valueItems.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-sm sm:text-base">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <span>{item}</span>
+              Ruhsatı okutun; araç, müşteri ve şasi bilgisi otomatik dolsun. İş
+              emri, fotoğraf kanıtı, teklif ve tahsilat tek panelde — müşteriniz
+              aracını canlı takip linkinden izlesin.
+            </motion.p>
+
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="flex flex-col gap-3 sm:flex-row sm:items-center"
+            >
+              <Link
+                href="/register"
+                className={buttonVariants({
+                  size: "lg",
+                  className: "gap-2 px-7 text-base shadow-lg shadow-primary/25",
+                })}
+              >
+                7 Gün Ücretsiz Dene
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="#demo-form"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "lg",
+                  className: "border-primary/25 px-7 text-base",
+                })}
+              >
+                Demo İste
+              </a>
+            </motion.div>
+
+            <motion.ul
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+              className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1"
+            >
+              {trustBadges.map(({ icon: Icon, label }) => (
+                <li
+                  key={label}
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"
+                >
+                  <Icon className="h-4 w-4 text-primary" />
+                  {label}
                 </li>
               ))}
             </motion.ul>
-            <motion.div
-              initial={prefersReducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.55 }}
-            >
-              <a
-                href="#ruhsat-demo"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-              >
-                <ScanLine className="h-4 w-4" />
-                Ruhsat okumayı canlı deneyin
-              </a>
-            </motion.div>
           </div>
 
+          {/* Sağ: ürün ekranı + yüzen doğrulama rozeti */}
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="w-full lg:max-w-md lg:justify-self-end"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative mx-auto w-full max-w-2xl lg:mx-0"
           >
-            <HeroLeadForm />
+            <BrowserFrame>
+              <Image
+                src="/landing/screens/order-detail.png"
+                alt="BakimX iş emri detay ekranı"
+                width={1440}
+                height={900}
+                priority
+                sizes="(min-width: 1024px) 620px, 100vw"
+                className="w-full"
+              />
+            </BrowserFrame>
+
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.55 }}
+              className="absolute -bottom-4 -left-3 hidden rounded-lg border bg-card p-3 shadow-xl sm:block"
+            >
+              <div className="flex items-center gap-2">
+                <ScanLine className="h-4 w-4 text-primary" />
+                <span className="font-mono text-sm font-semibold">34 ABC 123</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Ruhsattan dolduruldu
+                </span>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
