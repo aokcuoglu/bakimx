@@ -9,14 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox"
-import {
   Table,
   TableBody,
   TableCell,
@@ -339,78 +331,6 @@ function ComposerFooter({ draft, ed, onCell, onSubmit, submitting, disabled }: {
   )
 }
 
-// ── Katalog'dan işçilik: ön-tanımlı (mock) işçilik listesinden aranabilir seçim.
-// Seçince ad + önerilen birim fiyat dolar (fiyat sonra footer'dan düzenlenebilir).
-function LaborCatalogField({ draft, onCell, disabled }: {
-  draft: Row; onCell: OnCell; disabled: boolean
-}) {
-  // Sabit referans: controlled Combobox value'sunun item kimliğiyle eşleşmesi için.
-  const items = useMemo(() => getMockLaborCatalog(), [])
-  const selected = items.find((e) => e.name === draft.name) ?? null
-  return (
-    <Combobox
-      items={items}
-      value={selected}
-      onValueChange={(entry: LaborCatalogEntry | null) => {
-        if (entry) onCell(draft, { name: entry.name, unitPrice: entry.defaultPriceKurus })
-        else onCell(draft, { name: "", unitPrice: null })
-      }}
-      itemToStringValue={(e: LaborCatalogEntry) => e.name}
-      disabled={disabled}
-    >
-      <ComboboxInput
-        placeholder="İşçilik ara veya seç"
-        disabled={disabled}
-        showClear={!!draft.name}
-        title={draft.name || undefined}
-        className="w-full text-sm"
-      />
-      <ComboboxContent>
-        <ComboboxEmpty>İşçilik bulunamadı</ComboboxEmpty>
-        <ComboboxList>
-          {(e: LaborCatalogEntry) => (
-            <ComboboxItem key={e.id} value={e}>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{e.name}</span>
-                <span className="block text-[11px] text-muted-foreground">
-                  {e.category} · {formatTRY(e.defaultPriceKurus)}
-                </span>
-              </span>
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  )
-}
-
-// İki-düğmeli segment: Katalog composer'ında Parça / İşçilik modu.
-function CatalogModeToggle({ mode, onChange, disabled }: {
-  mode: "part" | "labor"; onChange: (m: "part" | "labor") => void; disabled: boolean
-}) {
-  const opts: Array<{ value: "part" | "labor"; label: string; Icon: typeof PackagePlus }> = [
-    { value: "part", label: "Parça", Icon: PackagePlus },
-    { value: "labor", label: "İşçilik", Icon: Wrench },
-  ]
-  return (
-    <div className="inline-flex rounded-lg border border-input bg-muted/40 p-0.5">
-      {opts.map(({ value, label, Icon }) => (
-        <Button
-          key={value}
-          type="button"
-          size="sm"
-          variant={mode === value ? "default" : "ghost"}
-          disabled={disabled}
-          onClick={() => onChange(value)}
-          className={cn("gap-1.5", mode !== value && "text-muted-foreground")}
-        >
-          <Icon className="size-3.5" /> {label}
-        </Button>
-      ))}
-    </div>
-  )
-}
-
 // İki-düğmeli segment: İşçilik composer'ında İç / Dış işçilik modu.
 function LaborModeToggle({ mode, onChange, disabled }: {
   mode: "labor" | "external_labor"; onChange: (m: "labor" | "external_labor") => void; disabled: boolean
@@ -553,38 +473,31 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
   )
 }
 
-// ── Katalog composer: Parça (canlı TecDoc arama) VEYA İşçilik (ön-tanımlı mock).
-// mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
-// (draft, arama kutusu, autocomplete) temiz sıfırlanır. Kaynak = "catalog".
+// ── Katalog composer: Parça (canlı TecDoc arama). nonce anahtarıyla remount →
+// her eklemede yerel state (draft, arama kutusu, autocomplete) temiz sıfırlanır.
+// Kaynak = "catalog".
 function CatalogComposer({ vehicle, onAdd, disabled }: {
   vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
 }) {
   const [nonce, setNonce] = useState(0)
-  const [mode, setMode] = useState<"part" | "labor">("part")
   return (
-    <div className="space-y-3">
-      <CatalogModeToggle mode={mode} onChange={setMode} disabled={disabled} />
-      <CatalogComposerBody
-        key={`${mode}-${nonce}`}
-        mode={mode}
-        vehicle={vehicle}
-        onAdd={onAdd}
-        disabled={disabled}
-        onAdded={() => setNonce((n) => n + 1)}
-      />
-    </div>
+    <CatalogComposerBody
+      key={nonce}
+      vehicle={vehicle}
+      onAdd={onAdd}
+      disabled={disabled}
+      onAdded={() => setNonce((n) => n + 1)}
+    />
   )
 }
 
-function CatalogComposerBody({ mode, vehicle, onAdd, disabled, onAdded }: {
-  mode: "part" | "labor"; vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+function CatalogComposerBody({ vehicle, onAdd, disabled, onAdded }: {
+  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
 }) {
-  const isLabor = mode === "labor"
-  const [draft, setDraft] = useState<Row>(() => emptyDraft(isLabor ? "labor" : "part", "catalog"))
+  const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "catalog"))
   const [submitting, setSubmitting] = useState(false)
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  // İşçilik modunda araç bağı yok (katalog parça araması kapalı; isPart=false).
-  const ed = useRowEditor(draft, isLabor ? undefined : vehicle, false, onCell)
+  const ed = useRowEditor(draft, vehicle, false, onCell)
 
   async function submit() {
     if (!draft.name.trim() || submitting) return
@@ -602,24 +515,16 @@ function CatalogComposerBody({ mode, vehicle, onAdd, disabled, onAdded }: {
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {isLabor ? (
-          <Field label="İşçilik" className="sm:col-span-2 lg:col-span-4">
-            <LaborCatalogField draft={draft} onCell={onCell} disabled={disabled} />
-          </Field>
-        ) : (
-          <>
-            <Field label="Parça" className="sm:col-span-2 lg:col-span-2">
-              <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
-              <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-            <Field label="Marka">
-              <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-            <Field label="Kategori">
-              <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-            </Field>
-          </>
-        )}
+        <Field label="Parça" className="sm:col-span-2 lg:col-span-2">
+          <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
+          <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Marka">
+          <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
+        <Field label="Kategori">
+          <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
+        </Field>
       </div>
       <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
     </div>
