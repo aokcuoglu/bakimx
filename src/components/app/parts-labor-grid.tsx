@@ -207,14 +207,14 @@ export function PartsLaborGrid({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="katalog" className="pt-3">
-            <CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} />
+          <TabsContent value="katalog" className="pt-4">
+            <ComposerCard><CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} /></ComposerCard>
           </TabsContent>
-          <TabsContent value="manuel" className="pt-3">
-            <ManualComposer onAdd={addItem} disabled={loading} />
+          <TabsContent value="manuel" className="pt-4">
+            <ComposerCard><ManualComposer onAdd={addItem} disabled={loading} /></ComposerCard>
           </TabsContent>
-          <TabsContent value="iscilik" className="pt-3">
-            <LaborComposer onAdd={addItem} disabled={loading} />
+          <TabsContent value="iscilik" className="pt-4">
+            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} /></ComposerCard>
           </TabsContent>
         </Tabs>
       )}
@@ -224,23 +224,19 @@ export function PartsLaborGrid({
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
       {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
       <div className="hidden overflow-hidden rounded-lg border border-border md:block">
-        <Table className="min-w-[64rem] table-fixed">
+        <Table className="min-w-[52rem] table-fixed">
           <colgroup>
-            <col className="w-28" />{/* Tür */}
-            <col />{/* Parça / İşçilik (kalan alan) */}
-            <col className="w-36" />{/* Marka */}
-            <col className="w-44" />{/* Kategori */}
+            <col className="w-40" />{/* Tür */}
+            <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
             <col className="w-24" />{/* Miktar */}
-            <col className="w-28" />{/* Birim Fiyat */}
-            <col className="w-24" />{/* Toplam */}
+            <col className="w-36" />{/* Birim Fiyat */}
+            <col className="w-28" />{/* Toplam */}
             <col className="w-12" />{/* Sil */}
           </colgroup>
-          <TableHeader className="bg-muted">
-            <TableRow className="hover:bg-muted">
-              <TableHead className={headCls}>Tür</TableHead>
+          <TableHeader className="bg-muted/60">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
-              <TableHead className={headCls}>Marka</TableHead>
-              <TableHead className={headCls}>Kategori</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
               <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
               <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
@@ -250,7 +246,7 @@ export function PartsLaborGrid({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8} className="py-6 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
                   Henüz kalem eklenmedi
                 </TableCell>
               </TableRow>
@@ -290,6 +286,19 @@ export function PartsLaborGrid({
     </div>
     </TooltipProvider>
     </PartAttrOptionsProvider>
+  )
+}
+
+// ── Composer "ekleme kartı" kabuğu: composer'ı listeden görsel olarak ayıran,
+// hafif marka-tintli, "Yeni kalem ekle" etiketli belirgin alan.
+function ComposerCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative rounded-xl border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4 pt-5">
+      <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+        Yeni kalem ekle
+      </span>
+      {children}
+    </div>
   )
 }
 
@@ -730,8 +739,9 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
         type="button"
         variant="ghost"
         size="icon-sm"
+        data-slot="price-compare"
         onClick={() => setOpen(true)}
-        className="shrink-0 text-muted-foreground hover:text-primary"
+        className="shrink-0 text-muted-foreground transition-opacity hover:text-primary"
         aria-label="Tedarikçi fiyatlarını karşılaştır"
         title="Tedarikçi fiyatlarını karşılaştır"
       >
@@ -750,7 +760,7 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
 
 function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
   return (
-    <div className="inline-flex h-8 items-center rounded-lg border border-input bg-background">
+    <div data-slot="qty-stepper" className="inline-flex h-9 items-center rounded-lg border border-input bg-background transition-colors">
       <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none" aria-label="Azalt"
         disabled={!editable || row.quantity <= 1}
         onClick={() => onCell(row, { quantity: row.quantity - 1 }, { debounce: true })}>
@@ -778,9 +788,9 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
     )
   }
   return (
-    <Button type="button" variant="outline" disabled={!ed.editable}
+    <Button type="button" variant="outline" disabled={!ed.editable} data-slot="price-field"
       onClick={() => ed.editable && ed.startPrice()}
-      className={cn("gap-1 font-normal tabular-nums", wide && "h-9 w-32 justify-start")}>
+      className={cn("h-9 gap-1 font-normal tabular-nums transition-colors", wide && "w-32 justify-start")}>
       <Pencil className="size-3 shrink-0 text-muted-foreground" />
       <span className={cn("tabular-nums", row.unitPrice == null && "text-muted-foreground")}>
         {row.unitPrice != null ? formatTRY(row.unitPrice) : "Fiyat"}
@@ -789,9 +799,13 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
   )
 }
 
-function TotalField({ lineTotal }: { lineTotal: number | null }) {
+function TotalField({ lineTotal, strong }: { lineTotal: number | null; strong?: boolean }) {
   return (
-    <span className={cn("text-sm font-semibold tabular-nums", lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground")}>
+    <span className={cn(
+      "tabular-nums",
+      strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
+      lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
+    )}>
       {lineTotal != null ? formatTRY(lineTotal) : "—"}
     </span>
   )
@@ -930,6 +944,28 @@ function AttrCell({ kind, row, ed, vehicle, onCell }: {
   )
 }
 
+// Satır tipine göre sol aksan şeridi rengi (ilk hücrede, mutlak-konumlu bar —
+// border-collapse'tan bağımsız her zaman görünür).
+const ROW_ACCENT: Record<ItemType, string> = {
+  part: "bg-primary",
+  labor: "bg-amber-500",
+  external_labor: "bg-violet-500",
+}
+
+// ── Hayalet-satır: liste hücrelerindeki form kontrolleri düz metin gibi okunur;
+// satır hover / focus-within olunca kenarlık belirir, aksiyonlar görünür.
+// (Yalnız masaüstü <tr>'ye uygulanır; composer/mobil etkilenmez.)
+const GHOST_ROW = cn(
+  "group transition-colors hover:bg-muted/40",
+  "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent dark:[&_[data-slot=input-group]]:bg-transparent",
+  "[&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent dark:[&_[data-slot=input]]:bg-transparent",
+  "[&_[data-slot=qty-stepper]]:border-transparent [&_[data-slot=qty-stepper]]:bg-transparent",
+  "[&_[data-slot=price-field]]:border-transparent",
+  "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:border-input hover:[&_[data-slot=price-field]]:border-input",
+  "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
+  "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
+)
+
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
 function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
   row: Row
@@ -939,57 +975,60 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
   onRemove: (row: Row) => void
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
+  const type = row.type as ItemType
+  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <TableRow>
-      {/* Tür (listede salt-görünür — tür composer'da seçilir) */}
-      <TableCell>
-        <span className="text-xs font-medium text-muted-foreground">{TYPE_LABELS[row.type as ItemType] ?? row.type}</span>
-      </TableCell>
-
-      {/* Parça / İşçilik — kaynak rozeti + alan */}
-      <TableCell className="whitespace-normal">
+    <TableRow className={cn(GHOST_ROW, "align-middle")}>
+      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti */}
+      <TableCell className="relative py-3.5 pl-[18px]">
+        <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
         <div className="flex items-center gap-1.5">
+          <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          <div className="min-w-0 flex-1">
-            <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
-            <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-          </div>
         </div>
       </TableCell>
 
-      {/* Marka */}
-      <TableCell className="whitespace-normal">
-        <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-      </TableCell>
-
-      {/* Kategori */}
-      <TableCell className="whitespace-normal">
-        <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+      {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
+      <TableCell className="whitespace-normal py-3.5">
+        <div className="min-w-0">
+          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
+          <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+          {showMeta && (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <div className="min-w-0 max-w-[12rem] flex-1">
+                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+              <div className="min-w-0 max-w-[12rem] flex-1">
+                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+              </div>
+            </div>
+          )}
+        </div>
       </TableCell>
 
       {/* Miktar */}
-      <TableCell>
+      <TableCell className="py-3.5">
         <div className="flex justify-center">
           <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
         </div>
       </TableCell>
 
       {/* Birim Fiyat */}
-      <TableCell>
+      <TableCell className="py-3.5">
         <div className="flex justify-end">
-          <PriceField row={row} ed={ed} />
+          <PriceField row={row} ed={ed} wide />
         </div>
       </TableCell>
 
-      {/* Toplam */}
-      <TableCell className="text-right">
-        <TotalField lineTotal={ed.lineTotal} />
+      {/* Toplam (vurgulu) */}
+      <TableCell className="py-3.5 text-right">
+        <TotalField lineTotal={ed.lineTotal} strong />
       </TableCell>
 
-      {/* Sil */}
-      <TableCell>
-        <div className="flex justify-end">
+      {/* Sil (yalnız hover'da belirir) */}
+      <TableCell className="py-3.5">
+        <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
         </div>
       </TableCell>
