@@ -966,6 +966,15 @@ const GHOST_ROW = cn(
   "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
 )
 
+// Marka/Kategori "çip" görünümü (adın altında): hayalet-şeffaf yerine hafif gri
+// dolgulu kompakt çip; odakta kenarlık belirir. !important → GHOST_ROW'un genel
+// input-group şeffaflığını bu alanlarda ezer. Hem masaüstü hem mobil kullanır.
+const META_CHIP_STYLE = cn(
+  "[&_[data-slot=input-group]]:!h-8 [&_[data-slot=input-group]]:!rounded-md",
+  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
+  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
+)
+
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
 function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
   row: Row
@@ -995,13 +1004,9 @@ function DesktopPartRow({ row, locked, vehicle, onCell, onRemove }: {
           <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
           {showMeta && (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <div className="min-w-0 max-w-[12rem] flex-1">
-                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
-              <div className="min-w-0 max-w-[12rem] flex-1">
-                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
+            <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
+              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
+              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
             </div>
           )}
         </div>
@@ -1045,43 +1050,39 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
   onRemove: (row: Row) => void
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
+  const type = row.type as ItemType
+  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3 pl-4 shadow-sm">
+      {/* Sol tür aksanı */}
+      <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
+
       {/* Başlık: tür çipi + kaynak rozeti · sil */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <TypeChip type={row.type as ItemType} />
+          <TypeChip type={type} />
           <SourceBadge source={row.source} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>
 
-      {/* Parça / İşçilik adı (öne çıkan) */}
-      <div className="mt-2.5">
+      {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
+      <div className={cn(
+        "mt-2",
+        "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
+        "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
+        "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
+      )}>
         <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
       </div>
 
-      {/* Marka / Kategori — yalnız parça & düzenlenebilir/dolu (AttrCell ortak hücre). */}
-      {ed.isPart && (ed.editable || row.brand || row.category) && (
-        <div className="mt-2.5 space-y-1.5">
-          {(ed.editable || row.brand) && (
-            <div className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-xs text-muted-foreground">Marka</span>
-              <div className="min-w-0 flex-1">
-                <AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
-            </div>
-          )}
-          {(ed.editable || row.category) && (
-            <div className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-xs text-muted-foreground">Kategori</span>
-              <div className="min-w-0 flex-1">
-                <AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
-              </div>
-            </div>
-          )}
+      {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
+      {showMeta && (
+        <div className={cn("mt-2 flex flex-wrap gap-1.5", META_CHIP_STYLE)}>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
+          <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} /></div>
         </div>
       )}
 
@@ -1091,7 +1092,7 @@ function MobilePartRow({ row, locked, vehicle, onCell, onRemove }: {
         <div className="ml-auto flex items-center gap-2">
           <PriceField row={row} ed={ed} />
           <span className="text-sm text-muted-foreground">=</span>
-          <TotalField lineTotal={ed.lineTotal} />
+          <TotalField lineTotal={ed.lineTotal} strong />
         </div>
       </div>
     </div>
