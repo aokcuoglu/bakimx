@@ -372,7 +372,13 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
       autoHighlight
       openOnInputClick
       itemToStringValue={(e: LaborCatalogEntry) => e.name}
-      onValueChange={(v: string) => onCell(draft, { name: v })}
+      onValueChange={(v: string) => {
+        // Ad, tanımlı (mock) bir işçiliğe birebir eşleşiyorsa önerilen fiyatı taşı;
+        // eşleşme bozulunca/temizlenince fiyatı da düşür ki seçili katalog fiyatı
+        // özel/serbest kaleme sızmasın (spec: temizlenince unitPrice=null).
+        const match = getMockLaborCatalog().find((e) => e.name === v)
+        onCell(draft, { name: v, unitPrice: match ? match.defaultPriceKurus : null })
+      }}
     >
       <AutocompleteInput
         render={
@@ -530,7 +536,8 @@ function CatalogComposerBody({ vehicle, onAdd, disabled, onAdded }: {
   )
 }
 
-// ── Manuel composer: Tür seçici + serbest metin (katalog araması YOK).
+// ── Manuel composer: serbest metin parça girişi (katalog araması YOK). İşçilik
+// artık ayrı "İşçilik" sekmesinde; bu sekme yalnız parça ekler.
 // Kaynak = "manual".
 function ManualComposer({ onAdd, disabled }: {
   onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
