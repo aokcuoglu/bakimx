@@ -514,13 +514,16 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
   const [tecdocOpen, setTecdocOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
   const linked = vehicle?.catalogVehicleTypeId != null
 
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
   async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
-    if (submitting || !partial.name?.trim()) return false
+    if (submittingRef.current || !partial.name?.trim()) return false
+    submittingRef.current = true
     setSubmitting(true)
     const ok = await onAdd({ ...emptyDraft("part", partial.source), ...partial, name: partial.name.trim() })
+    submittingRef.current = false
     setSubmitting(false)
     if (ok) { setName(""); setFilter({}) }
     return ok
@@ -541,7 +544,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
         vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
         supplierId={filter.supplierId ?? null}
         categoryId={filter.categoryId ?? null}
-        disabled={disabled || submitting}
+        disabled={disabled}
         placeholder="Parça ara veya ekle…"
         onNameChange={setName}
         onSelectArticle={(a) =>
