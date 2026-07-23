@@ -38,6 +38,7 @@ import { PartAttributeField } from "@/components/app/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-part-picker"
 import { PartAttrOptionsProvider } from "@/components/app/part-attr-options"
 import { SupplierPriceDialog } from "@/components/app/supplier-price-dialog"
+import { ManualPartDialog, type ManualPartDraft } from "@/components/app/manual-part-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -78,7 +79,6 @@ export function PartsLaborGrid({
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
-  const linked = vehicle?.catalogVehicleTypeId != null
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
@@ -210,24 +210,20 @@ export function PartsLaborGrid({
       {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
           "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
       {!locked && (
-        <Tabs defaultValue={linked ? "katalog" : "manuel"}>
+        <Tabs defaultValue="parca">
           <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
-            <TabsTrigger value="katalog" className="px-3 py-2 shrink-0">
-              <PackagePlus className="size-4" /> Araca Uygun Parça
-            </TabsTrigger>
-            <TabsTrigger value="manuel" className="px-3 py-2 shrink-0">
-              <PencilLine className="size-4" /> Elle Parça Yaz
+            <TabsTrigger value="parca" className="px-3 py-2 shrink-0">
+              <PackagePlus className="size-4" /> Parça
             </TabsTrigger>
             <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
               <Wrench className="size-4" /> İşçilik
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="katalog" className="pt-4">
-            <ComposerCard><CatalogComposer vehicle={vehicle} onAdd={addItem} disabled={loading} /></ComposerCard>
-          </TabsContent>
-          <TabsContent value="manuel" className="pt-4">
-            <ComposerCard><ManualComposer onAdd={addItem} disabled={loading} /></ComposerCard>
+          <TabsContent value="parca" className="pt-4">
+            <ComposerCard>
+              <UnifiedPartComposer vehicle={vehicle} onAdd={addItem} disabled={loading} />
+            </ComposerCard>
           </TabsContent>
           <TabsContent value="iscilik" className="pt-4">
             <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} /></ComposerCard>
@@ -263,7 +259,7 @@ export function PartsLaborGrid({
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={6}>
-                  <EmptyItemsHint linked={linked} locked={locked} />
+                  <EmptyItemsHint locked={locked} />
                 </TableCell>
               </TableRow>
             ) : (
@@ -287,7 +283,7 @@ export function PartsLaborGrid({
       {/* Mobil (<md): kart düzeni (mobil-first). */}
       <div className="space-y-2 md:hidden">
         {rows.length === 0 ? (
-          <EmptyItemsHint linked={linked} locked={locked} />
+          <EmptyItemsHint locked={locked} />
         ) : (
           rows.map((row) => (
             <MobilePartRow
@@ -344,30 +340,6 @@ function AddButton({ draft, onSubmit, submitting, disabled }: {
       {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
       Ekle
     </Button>
-  )
-}
-
-// ── Composer ortak footer (Katalog/Manuel parça composer'ları): Miktar + Birim
-// Fiyat + Toplam + Ekle. Grid'in DIŞINDA sabit satır → miktar/fiyat alan sayısına
-// göre kaymaz. Mobilde dikey yığılır ve Ekle tam genişlik olur.
-function ComposerFooter({ draft, ed, onCell, onSubmit, submitting, disabled }: {
-  draft: Row; ed: RowEditor; onCell: OnCell; onSubmit: () => void; submitting: boolean; disabled: boolean
-}) {
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-      <div className="flex items-end gap-3">
-        <Field label="Miktar">
-          <QtyStepper row={draft} editable onCell={onCell} />
-        </Field>
-        <Field label="Birim Fiyat">
-          <PriceField row={draft} ed={ed} wide />
-        </Field>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-        <TotalPreview lineTotal={ed.lineTotal} />
-        <AddButton draft={draft} onSubmit={onSubmit} submitting={submitting} disabled={disabled} />
-      </div>
-    </div>
   )
 }
 
@@ -530,141 +502,124 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
   )
 }
 
-// ── Katalog composer: Parça (canlı TecDoc arama). nonce anahtarıyla remount →
-// her eklemede yerel state (draft, arama kutusu, autocomplete) temiz sıfırlanır.
-// Kaynak = "catalog".
-function CatalogComposer({ vehicle, onAdd, disabled }: {
+// ── Birleşik parça composer: saf Odoo-tarzı arama kutusu. Katalog eşleşmesi
+// seçme / Oluştur "X" / Oluştur & Düzenle — hepsi doğrudan addItem çağırır.
+// Satır anında listeye düşer; miktar/fiyat/marka/kategori satır-içinde düzenlenir.
+// Başarılı eklemeden sonra kutu temizlenir + odak korunur (kontrollü value="").
+function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
   vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
 }) {
-  const [nonce, setNonce] = useState(0)
-  return (
-    <CatalogComposerBody
-      key={nonce}
-      vehicle={vehicle}
-      onAdd={onAdd}
-      disabled={disabled}
-      onAdded={() => setNonce((n) => n + 1)}
-    />
-  )
-}
-
-function CatalogComposerBody({ vehicle, onAdd, disabled, onAdded }: {
-  vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
-}) {
-  const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "catalog"))
+  const [name, setName] = useState("")
+  const [filter, setFilter] = useState<PartFilter>({})
+  const [tecdocOpen, setTecdocOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  const ed = useRowEditor(draft, vehicle, false, onCell)
+  const linked = vehicle?.catalogVehicleTypeId != null
 
-  async function submit() {
-    if (!draft.name.trim() || submitting) return
+  // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
+  async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
+    if (submitting || !partial.name?.trim()) return false
     setSubmitting(true)
-    const ok = await onAdd(draft)
-    if (ok) onAdded() // remount → sıfırla
-    else setSubmitting(false)
-  }
-
-  const clearPart = () => {
-    setDraft((d) => ({ ...d, name: "", sku: null, brand: null, category: null, categoryId: null }))
-    ed.setFilter({})
+    const ok = await onAdd({ ...emptyDraft("part", partial.source), ...partial, name: partial.name.trim() })
+    setSubmitting(false)
+    if (ok) { setName(""); setFilter({}) }
+    return ok
   }
 
   return (
     <div className="space-y-3">
-      {/* Araç katalogla eşleşmemişse sessiz-disabled yerine açık yönlendirme. */}
-      {vehicle?.catalogVehicleTypeId == null && (
+      {!linked && (
         <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          Araç katalogla eşleşmediği için arama sınırlı — parçayı{" "}
-          <span className="font-semibold text-foreground">Elle Parça Yaz</span> sekmesinden ekleyebilirsiniz.
+          Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
+          <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
         </p>
       )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Parça" className="sm:col-span-2 lg:col-span-2">
-          <PartField row={draft} ed={ed} vehicle={vehicle} onCell={onCell} onClear={clearPart} />
-          <RowTecdocPicker row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-        </Field>
-        <Field label="Marka">
-          <AttrCell kind="brand" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-        </Field>
-        <Field label="Kategori">
-          <AttrCell kind="category" row={draft} ed={ed} vehicle={vehicle} onCell={onCell} />
-        </Field>
-      </div>
-      <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
-    </div>
-  )
-}
 
-// ── Manuel composer: serbest metin parça girişi (katalog araması YOK). İşçilik
-// artık ayrı "İşçilik" sekmesinde; bu sekme yalnız parça ekler.
-// Kaynak = "manual".
-function ManualComposer({ onAdd, disabled }: {
-  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
-}) {
-  const [nonce, setNonce] = useState(0)
-  return (
-    <ManualComposerBody
-      key={nonce}
-      onAdd={onAdd}
-      disabled={disabled}
-      onAdded={() => setNonce((n) => n + 1)}
-    />
-  )
-}
+      <PartSearchInput
+        value={name}
+        sku={null}
+        vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+        supplierId={filter.supplierId ?? null}
+        categoryId={filter.categoryId ?? null}
+        disabled={disabled || submitting}
+        placeholder="Parça ara veya ekle…"
+        onNameChange={setName}
+        onSelectArticle={(a) =>
+          void add({
+            source: "catalog",
+            name: a.productName,
+            sku: a.articleNo,
+            brand: a.supplierName || null,
+            category: a.categoryName || null,
+            categoryId: a.categoryId || null,
+          })
+        }
+        onCommit={() => { if (name.trim()) void add({ source: "manual", name }) }}
+        onClear={() => { setName(""); setFilter({}) }}
+        showClear={!!name}
+        onSearchClick={linked ? () => setTecdocOpen(true) : undefined}
+        searchDisabled={!linked}
+        searchTitle={linked ? "TecDoc kataloğundan seç" : "Araç TecDoc'ta eşleşmedi"}
+        showCreate
+        onCreate={(text) => void add({ source: "manual", name: text })}
+        onCreateEdit={(text) => { setName(text); setDialogOpen(true) }}
+      />
 
-function ManualComposerBody({ onAdd, disabled, onAdded }: {
-  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
-}) {
-  const [draft, setDraft] = useState<Row>(() => emptyDraft("part", "manual"))
-  const [submitting, setSubmitting] = useState(false)
-  const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
-  // vehicle=undefined → katalog picker kapalı, saf serbest metin (marka/kategori
-  // önerileri context'ten hâlâ gelir — araç bağlıysa yardımcı olur).
-  const ed = useRowEditor(draft, undefined, false, onCell)
+      {/* Tam TecDoc katalog picker (🔍) — yalnız araç kataloğa bağlıysa. */}
+      {linked && (
+        <TecdocPartPicker
+          vehicle={vehicle}
+          hideTrigger
+          open={tecdocOpen}
+          onOpenChange={setTecdocOpen}
+          onSelect={(sel) => {
+            void add({
+              source: "catalog",
+              name: sel.name,
+              sku: sel.articleNo,
+              brand: sel.supplierName,
+              category: sel.categoryName || null,
+              categoryId: sel.categoryId || null,
+            })
+            setTecdocOpen(false)
+          }}
+        />
+      )}
 
-  async function submit() {
-    if (!draft.name.trim() || submitting) return
-    setSubmitting(true)
-    const ok = await onAdd(draft)
-    if (ok) onAdded()
-    else setSubmitting(false)
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Parça adı" className="sm:col-span-2">
-          <Input
-            value={draft.name}
-            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder="Parça adı (ör. ön fren balatası)"
-            title={draft.name || undefined}
-            className="text-sm"
-          />
-        </Field>
-        <Field label="Marka">
-          <AttrCell kind="brand" row={draft} ed={ed} onCell={onCell} />
-        </Field>
-        <Field label="Kategori">
-          <AttrCell kind="category" row={draft} ed={ed} onCell={onCell} />
-        </Field>
-      </div>
-      <ComposerFooter draft={draft} ed={ed} onCell={onCell} onSubmit={submit} submitting={submitting} disabled={disabled} />
+      {/* Oluştur & Düzenle modalı. */}
+      <ManualPartDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        initialName={name}
+        vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
+        submitting={submitting}
+        onSubmit={(d: ManualPartDraft) => {
+          void add({
+            source: "manual",
+            name: d.name,
+            brand: d.brand,
+            category: d.category,
+            categoryId: d.categoryId,
+            quantity: d.quantity,
+            unitPrice: d.unitPrice,
+          }).then((ok) => { if (ok) setDialogOpen(false) })
+        }}
+      />
     </div>
   )
 }
 
 // Boş liste: pasif "kalem yok" metni yerine tecrübesiz kullanıcıyı doğru
 // sekmeye yönlendiren boş durum (masaüstü tablo hücresi + mobil aynı bileşen).
-function EmptyItemsHint({ linked, locked }: { linked: boolean; locked: boolean }) {
+function EmptyItemsHint({ locked }: { locked: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1.5 py-8 text-center">
       <PackageSearch className="size-8 text-muted-foreground/40" />
       <p className="text-sm font-medium text-foreground">Henüz parça veya işçilik eklenmedi</p>
       {!locked && (
         <p className="text-xs text-muted-foreground">
-          Yukarıdan <span className="font-semibold text-foreground">{linked ? "Araca Uygun Parça" : "Elle Parça Yaz"}</span>{" "}
-          sekmesiyle arayarak başlayın
+          Yukarıdaki <span className="font-semibold text-foreground">Parça</span> kutusundan arayarak veya
+          {" "}<span className="font-semibold text-foreground">Oluştur</span> ile ekleyerek başlayın
         </p>
       )}
     </div>
