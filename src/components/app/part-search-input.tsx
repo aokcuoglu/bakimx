@@ -192,33 +192,37 @@ export function PartSearchInput({
 
   // Araç kataloğa bağlı değil → arama yok, düz metin girişi + (composer'da) create aksiyonları.
   if (vehicleTypeId == null) {
-    return (
-      <div className="space-y-1.5">
-        <InputGroup>
-          {skuChip}
-          <InputGroupInput
-            value={value}
-            onChange={(e) => onNameChange(e.target.value)}
-            // Composer (showCreate): blur ekleme YAPMAZ (odak kaybında istenmeyen ekleme
-            // olmasın). Liste satırı (bare): blur'da serbest metni kalıcılaştırır.
-            onBlur={showCreate ? undefined : onCommit}
-            onKeyDown={
-              showCreate
-                ? (e) => {
-                    if (e.key === "Enter" && value.trim()) {
-                      e.preventDefault()
-                      onCreate?.(value)
-                    }
+    const inputGroup = (
+      <InputGroup>
+        {skuChip}
+        <InputGroupInput
+          value={value}
+          onChange={(e) => onNameChange(e.target.value)}
+          // Composer (showCreate): blur ekleme YAPMAZ (odak kaybında istenmeyen ekleme
+          // olmasın). Liste satırı (bare): blur'da serbest metni kalıcılaştırır.
+          onBlur={showCreate ? undefined : onCommit}
+          onKeyDown={
+            showCreate
+              ? (e) => {
+                  if (e.key === "Enter" && value.trim()) {
+                    e.preventDefault()
+                    onCreate?.(value.trim())
                   }
-                : undefined
-            }
-            placeholder={placeholder}
-            disabled={disabled}
-            title={value || undefined}
-            className="text-sm"
-          />
-          {trailing}
-        </InputGroup>
+                }
+              : undefined
+          }
+          placeholder={placeholder}
+          disabled={disabled}
+          title={value || undefined}
+          className="text-sm"
+        />
+        {trailing}
+      </InputGroup>
+    )
+    if (!showCreate) return inputGroup
+    return (
+      <div className="w-full min-w-0 space-y-1.5">
+        {inputGroup}
         {renderCreateActions(value)}
       </div>
     )
