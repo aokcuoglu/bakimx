@@ -34,6 +34,10 @@ import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { partNameWithBrand } from "@/lib/ocr/part-box-result"
+import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
+import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 
 type OrderData = {
   id: string
@@ -905,6 +909,9 @@ function AddPurchaseButton({
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [ocrResult, setOcrResult] = useState<Pick<PartBoxOcrResult, "partName" | "brand" | "partNumbers"> | null>(null)
+  const [ocrError, setOcrError] = useState<string | null>(null)
 
   function resetForm() {
     setName("")
@@ -919,12 +926,42 @@ function AddPurchaseButton({
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(null)
     setError(null)
+    setOcrLoading(false)
+    setOcrResult(null)
+    setOcrError(null)
   }
 
   function onPickFile(f: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setFile(f)
     setPreviewUrl(f ? URL.createObjectURL(f) : null)
+    setOcrResult(null)
+    setOcrError(null)
+    if (f) void runPartBoxOcr(f)
+  }
+
+  async function runPartBoxOcr(f: File) {
+    setOcrLoading(true)
+    setOcrError(null)
+    try {
+      const fd = new FormData()
+      fd.set("image", f)
+      const res = await fetch("/api/parts/ocr", { method: "POST", body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setOcrError(data?.error || "Kutu okunamadı, alanları elle girebilirsiniz.")
+        return
+      }
+      setOcrResult({
+        partName: data.result.partName,
+        brand: data.result.brand,
+        partNumbers: data.result.partNumbers ?? [],
+      })
+    } catch {
+      setOcrError("Kutu okunamadı, alanları elle girebilirsiniz.")
+    } finally {
+      setOcrLoading(false)
+    }
   }
 
   async function handleSubmit() {
@@ -1121,6 +1158,75 @@ function AddPurchaseButton({
               </button>
             )}
           </div>
+
+          {ocrLoading && (
+            <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 py-6">
+              <BrandSpinner size={36} label="Kutu okunuyor…" />
+            </div>
+          )}
+
+          {ocrError && !ocrLoading && (
+            <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
+              {ocrError}
+            </p>
+          )}
+
+          {ocrResult && !ocrLoading && (
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+              <p className="text-xs font-medium text-primary">Kutudan okunan öneriler</p>
+
+              {ocrResult.partName.value && (
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Parça adı</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setName(ocrResult.partName.value)}
+                      className="rounded-full border border-border bg-background px-2.5 py-1 text-xs hover:border-primary hover:text-primary touch-manipulation"
+                    >
+                      {ocrResult.partName.value}
+                    </button>
+                    {ocrResult.brand.value && (
+                      <button
+                        type="button"
+                        onClick={() => setName(partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value))}
+                        className="rounded-full border border-border bg-background px-2.5 py-1 text-xs hover:border-primary hover:text-primary touch-manipulation"
+                      >
+                        {partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value)}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {ocrResult.partNumbers.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Parça no (birini seçin)</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ocrResult.partNumbers.map((pn: PartNumberSuggestion) => {
+                      const low = pn.confidence != null && pn.confidence < LOW_CONFIDENCE_THRESHOLD
+                      return (
+                        <button
+                          key={pn.value}
+                          type="button"
+                          onClick={() => setSku(pn.value)}
+                          className={
+                            "rounded-full border px-2.5 py-1 text-xs touch-manipulation hover:border-primary hover:text-primary " +
+                            (low ? "border-amber-300 bg-amber-50 text-amber-700" : "border-border bg-background")
+                          }
+                          title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
+                        >
+                          <span className="text-muted-foreground">{pn.label}</span>
+                          <span className="mx-1 text-border">·</span>
+                          {pn.value}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </BottomSheet>
     </>

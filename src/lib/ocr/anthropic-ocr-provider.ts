@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
-import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence } from "./types"
+import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence, PartBoxOcrResult } from "./types"
 import { RegistrationFieldsSchema, toRegistrationResult } from "./registration-result"
+import { PartBoxFieldsSchema, toPartBoxResult } from "./part-box-result"
 import { z } from "zod"
 
 /**
@@ -102,6 +103,51 @@ const SYSTEM_PROMPT =
   "Emin olmadığın alanları uncertainFields dizisine ekle. Sonucu yalnızca " +
   `${TOOL_NAME} aracını çağırarak döndür.`
 
+const PARTBOX_TOOL_NAME = "kaydet_parca_kutusu_alanlari"
+
+const PARTBOX_TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    partName: {
+      type: "string",
+      description:
+        "Parçanın Türkçe adı/tipi, ör. 'Yağ filtresi', 'Ön fren balatası'. Kutuda İngilizce yazıyorsa " +
+        "(OIL FILTER) Türkçe'ye çevir. Emin değilsen kutudaki orijinal ifadeyi bırak.",
+    },
+    brand: { type: "string", description: "Üretici/marka adı, ör. SETA, BOSCH, MANN. Yoksa boş bırak." },
+    partNumbers: {
+      type: "array",
+      description:
+        "Kutu üzerinde okunan TÜM parça/kod numaraları. Her numara ayrı bir öğe. " +
+        "OEM NO, marka kodu (ör. SETA CODE), çapraz referanslar (MANN NO, BOSCH NO) ayrı ayrı listelenir.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          value: { type: "string", description: "Numaranın kendisi, ör. 04152-YZZA6" },
+          label: { type: "string", description: "Numaranın kaynağı/etiketi, ör. OEM NO, SETA CODE, MANN NO" },
+          confidence: { type: "number", description: "0-1 arası okuma güveni (opsiyonel)" },
+        },
+        required: ["value", "label"],
+      },
+    },
+    uncertainFields: {
+      type: "array",
+      description: "Emin olmadığın alan adları ('partName' / 'brand'). Netse boş bırak.",
+      items: { type: "string", enum: ["partName", "brand"] },
+    },
+  },
+  required: ["partName", "brand", "partNumbers", "uncertainFields"],
+}
+
+const PARTBOX_SYSTEM_PROMPT =
+  "Sen bir otomotiv yedek parça kutusu okuma uzmanısın. Görseldeki parçanın adını/tipini, marka " +
+  "adını ve kutu üzerindeki TÜM kod/numara alanlarını (OEM NO, marka kodu, MANN/BOSCH gibi çapraz " +
+  "referanslar) çıkar. Bilgi UYDURMA; okunamayan alanı boş bırak. Her numarayı, kaynağını belirten " +
+  "bir etiketle (label) birlikte ayrı öğe olarak ver. Parça adını Türkçe yaz; emin değilsen kutudaki " +
+  `orijinal ifadeyi koru. Sonucu yalnızca ${PARTBOX_TOOL_NAME} aracını çağırarak döndür.`
+
 // Anthropic'in kabul ettiği görüntü MIME türleri; diğerleri jpeg'e çekilir (normalize zaten jpeg üretir).
 const SUPPORTED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"])
 
@@ -172,5 +218,53 @@ export class AnthropicOcrProvider implements OcrProvider {
     }
 
     return { ...base, provider: "anthropic" }
+  }
+
+  async extractPartBox(imageBuffer: Buffer, mimeType: string): Promise<PartBoxOcrResult> {
+    const mediaType = SUPPORTED_MEDIA_TYPES.has(mimeType) ? mimeType : "image/jpeg"
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 1024,
+      system: PARTBOX_SYSTEM_PROMPT,
+      tools: [
+        {
+          name: PARTBOX_TOOL_NAME,
+          description: "Parça kutusundan çıkarılan alanları yapılandırılmış olarak kaydet.",
+          input_schema: PARTBOX_TOOL_INPUT_SCHEMA,
+        },
+      ],
+      tool_choice: { type: "tool", name: PARTBOX_TOOL_NAME },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: imageBuffer.toString("base64"),
+              },
+            },
+            {
+              type: "text",
+              text: "Bu parça kutusundaki parça adını, markayı ve tüm numaraları çıkar.",
+            },
+          ],
+        },
+      ],
+    })
+
+    const toolUse = response.content.find(
+      (block): block is Anthropic.ToolUseBlock =>
+        block.type === "tool_use" && block.name === PARTBOX_TOOL_NAME
+    )
+    if (!toolUse) {
+      throw new Error("Claude parça kutusu alanlarını oluşturamadı. Lütfen daha net bir fotoğrafla tekrar deneyin.")
+    }
+
+    const fields = PartBoxFieldsSchema.parse(toolUse.input)
+    return toPartBoxResult(fields, "anthropic")
   }
 }

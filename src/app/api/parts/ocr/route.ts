@@ -8,6 +8,10 @@ import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 
+// Part-box dedup'ı ruhsat dedup'ından ayrı tutmak için imageHash'e namespace öneki koyulur:
+// aynı görsel iki akışa da yüklenirse cache'ler karışmaz (part-box JSON'u ruhsat JSON'una benzemez).
+const PARTBOX_HASH_PREFIX = "partbox:"
+
 export async function POST(request: Request) {
   try {
     const { user, workshop } = await getCurrentUserWithWorkshop()
@@ -18,11 +22,18 @@ export async function POST(request: Request) {
     if (parsed instanceof NextResponse) return parsed
     const { imageBuffer, mimeType } = parsed
 
-    const imageHash = hashImageBuffer(imageBuffer)
     const provider = await getOcrProvider()
+    if (typeof provider.extractPartBox !== "function") {
+      return NextResponse.json(
+        { error: "Aktif OCR sağlayıcısı parça kutusu okumayı desteklemiyor." },
+        { status: 400 }
+      )
+    }
 
-    // Byte-hash dedup: aynı görsel daha önce (aynı provider ile) okunduysa
-    // provider'ı hiç çağırmadan cache'ten dön. Mock asla cache'lenmez.
+    const imageHash = PARTBOX_HASH_PREFIX + hashImageBuffer(imageBuffer)
+
+    // Byte-hash dedup: aynı kutu görseli daha önce (aynı provider ile) okunduysa provider'ı çağırma.
+    // Mock asla cache'lenmez.
     const cachedLog =
       provider.name === "mock"
         ? null
@@ -36,74 +47,47 @@ export async function POST(request: Request) {
             orderBy: { createdAt: "desc" },
           })
 
-    // Vision OCR için rengi koru (gri tonlama yalnız Tesseract/plaka içindir).
-    // Preview UI için cache hit'te de normalize yaparız (ucuz kısım); yalnız OCR atlanır.
-    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType, { grayscale: false })
-
     if (cachedLog) {
-      // Extraction'ı önceki satırdan aynen al; bu tarama için YENİ bir OcrLog aç
-      // (her taramanın kendi confirmedJson slotu olmalı, confirm akışı bozulmasın).
-      const cachedFields = JSON.parse(cachedLog.extractedJson as string) as Record<
-        string,
-        { value: string; confidence?: number }
-      >
-
+      const cachedFields = JSON.parse(cachedLog.extractedJson as string) as Record<string, unknown>
       const cachedOcrLog = await prisma.ocrLog.create({
         data: {
           workshopId: user.workshopId,
           ocrProvider: provider.name,
-          rawText: cachedLog.rawText,
           extractedJson: cachedLog.extractedJson,
           imageHash,
           userId: user.id,
         },
       })
-
       await AuditLogAction(
         user.workshopId,
         user.id,
         "OcrLog",
         cachedOcrLog.id,
         "ocr_capture",
-        JSON.stringify({ provider: provider.name, cacheHit: true, sourceOcrLogId: cachedLog.id })
+        JSON.stringify({ provider: provider.name, kind: "partbox", cacheHit: true, sourceOcrLogId: cachedLog.id })
       )
-
       return NextResponse.json({
         result: { ...cachedFields, provider: provider.name },
         ocrLogId: cachedOcrLog.id,
         provider: provider.name,
-        previewDataUrl: normalizedImage.previewDataUrl,
       })
     }
 
-    const result = await provider.extractRegistration(
-      normalizedImage.buffer,
-      normalizedImage.mimeType
-    )
+    // Kutu görselinde renk bilgi taşır (mavi zemin/logo) → grayscale KAPALI (vision modu).
+    const normalizedImage = await normalizeRegistrationImage(imageBuffer, mimeType, { grayscale: false })
+
+    const result = await provider.extractPartBox(normalizedImage.buffer, normalizedImage.mimeType)
 
     const extractedJson = JSON.stringify({
-      plate: result.plate,
-      vin: result.vin,
-      ownerName: result.ownerName,
-      ownerSurname: result.ownerSurname,
+      partName: result.partName,
       brand: result.brand,
-      model: result.model,
-      vehicleType: result.vehicleType,
-      modelYear: result.modelYear,
-      engineNo: result.engineNo,
-      registrationDate: result.registrationDate,
-      commercialName: result.commercialName,
-      fuelType: result.fuelType,
-      engineDisplacement: result.engineDisplacement,
-      enginePower: result.enginePower,
-      inspectionValidUntil: result.inspectionValidUntil,
+      partNumbers: result.partNumbers,
     })
 
     const ocrLog = await prisma.ocrLog.create({
       data: {
         workshopId: user.workshopId,
         ocrProvider: provider.name,
-        rawText: result.rawText,
         extractedJson,
         imageHash: provider.name === "mock" ? null : imageHash,
         userId: user.id,
@@ -116,20 +100,22 @@ export async function POST(request: Request) {
       "OcrLog",
       ocrLog.id,
       "ocr_capture",
-      JSON.stringify({ provider: provider.name })
+      JSON.stringify({ provider: provider.name, kind: "partbox" })
     )
 
-    const { rawText: _, ...publicResult } = result
-
     return NextResponse.json({
-      result: publicResult,
+      result: {
+        partName: result.partName,
+        brand: result.brand,
+        partNumbers: result.partNumbers,
+        provider: result.provider,
+      },
       ocrLogId: ocrLog.id,
       provider: provider.name,
-      previewDataUrl: normalizedImage.previewDataUrl,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Bir hata oluştu"
-    console.error("[OCR ERROR]", err)
+    console.error("[PART OCR ERROR]", err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

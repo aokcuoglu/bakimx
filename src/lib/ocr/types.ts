@@ -39,7 +39,22 @@ export interface RegistrationOcrResult {
   provider: OcrProviderName
 }
 
+export interface PartNumberSuggestion {
+  value: string
+  label: string
+  confidence?: number
+}
+
+export interface PartBoxOcrResult {
+  partName: OcrFieldConfidence
+  brand: OcrFieldConfidence
+  partNumbers: PartNumberSuggestion[]
+  rawText: string
+  provider: OcrProviderName
+}
+
 export interface OcrProvider {
   readonly name: OcrProviderName
   extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult>
+  extractPartBox?(imageBuffer: Buffer, mimeType: string): Promise<PartBoxOcrResult>
 }
