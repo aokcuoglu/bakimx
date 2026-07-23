@@ -56,17 +56,12 @@ export function ManualPartDialog({
   // Her açılışta formu ön-dolu ad ile temiz başlat.
   useEffect(() => {
     if (!open) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- açılışta formu ön-dolu ad ile sıfırla
     setName(initialName)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBrand(null)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCategory(null)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCategoryId(null)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuantity(1)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPriceDraft("")
   }, [open, initialName])
 
