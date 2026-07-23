@@ -416,16 +416,201 @@ git commit -m "feat(ocr): Anthropic provider parça kutusu çıkarımı"
 
 ---
 
-### Task 4: `/api/parts/ocr` route'u
+### Task 4: Paylaşılan OCR görsel-ayrıştırma yardımcısı
+
+**Files:**
+- Create: `src/lib/ocr/parse-image-request.ts`
+- Test: `src/lib/ocr/parse-image-request.test.ts`
+- Modify: `src/app/api/smart-capture/ocr/route.ts` (kopya bloğu yardımcıyla değiştir)
+
+**Interfaces:**
+- Produces: `parseOcrImageRequest(request: Request): Promise<{ imageBuffer: Buffer; mimeType: string } | NextResponse>` — multipart `image` veya JSON `{ imageDataUrl, mimeType }` ayrıştırır; hata durumunda hazır `NextResponse` döner.
+
+> Neden: yeni `/api/parts/ocr` ile mevcut `smart-capture/ocr` aynı görsel-ayrıştırma mantığını paylaşır. Kopyalamak yerine tek yardımcıya çıkarılır (DRY). Yardımcı saf/test edilebilir olduğu için TDD uygulanır. Mevcut ruhsat route'unun davranışı BİREBİR korunur (aynı hata mesajları/status'lar).
+
+- [ ] **Step 1: Başarısız testi yaz**
+
+`src/lib/ocr/parse-image-request.test.ts`:
+
+```ts
+import { test, expect } from "bun:test"
+import { NextResponse } from "next/server"
+import { parseOcrImageRequest } from "./parse-image-request"
+
+test("parseOcrImageRequest: multipart 'image' → buffer + mimeType", async () => {
+  const fd = new FormData()
+  fd.set("image", new File([Buffer.from("hello")], "box.jpg", { type: "image/jpeg" }))
+  const req = new Request("http://x/api", { method: "POST", body: fd })
+  const out = await parseOcrImageRequest(req)
+  expect(out instanceof NextResponse).toBe(false)
+  if (out instanceof NextResponse) throw new Error("beklenmedik NextResponse")
+  expect(out.mimeType).toBe("image/jpeg")
+  expect(out.imageBuffer.toString()).toBe("hello")
+})
+
+test("parseOcrImageRequest: JSON data URL → buffer + mimeType", async () => {
+  const b64 = Buffer.from("world").toString("base64")
+  const req = new Request("http://x/api", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ imageDataUrl: `data:image/png;base64,${b64}`, mimeType: "image/png" }),
+  })
+  const out = await parseOcrImageRequest(req)
+  if (out instanceof NextResponse) throw new Error("beklenmedik NextResponse")
+  expect(out.mimeType).toBe("image/png")
+  expect(out.imageBuffer.toString()).toBe("world")
+})
+
+test("parseOcrImageRequest: multipart 'image' eksikse 400", async () => {
+  const req = new Request("http://x/api", { method: "POST", body: new FormData() })
+  const out = await parseOcrImageRequest(req)
+  expect(out instanceof NextResponse).toBe(true)
+  if (out instanceof NextResponse) expect(out.status).toBe(400)
+})
+
+test("parseOcrImageRequest: desteklenmeyen MIME → 400", async () => {
+  const req = new Request("http://x/api", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ imageDataUrl: "data:image/gif;base64,AAAA", mimeType: "image/gif" }),
+  })
+  const out = await parseOcrImageRequest(req)
+  if (!(out instanceof NextResponse)) throw new Error("NextResponse bekleniyordu")
+  expect(out.status).toBe(400)
+})
+```
+
+- [ ] **Step 2: Testi çalıştır, başarısız olduğunu doğrula**
+
+Run: `bun test src/lib/ocr/parse-image-request.test.ts`
+Expected: FAIL — `Cannot find module './parse-image-request'`
+
+- [ ] **Step 3: Yardımcıyı yaz**
+
+`src/lib/ocr/parse-image-request.ts`:
+
+```ts
+import { NextResponse } from "next/server"
+import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "./types"
+
+export type ParsedOcrImage = { imageBuffer: Buffer; mimeType: string }
+
+// Ortak OCR görsel ayrıştırma: multipart 'image' veya JSON { imageDataUrl, mimeType }.
+// Başarıda { imageBuffer, mimeType }, hata durumunda hazır bir NextResponse döner.
+export async function parseOcrImageRequest(request: Request): Promise<ParsedOcrImage | NextResponse> {
+  const contentLength = request.headers.get("content-length")
+  if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `İstek gövdesi çok büyük. Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
+      { status: 413 }
+    )
+  }
+
+  const contentType = request.headers.get("content-type") || ""
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const file = formData.get("image")
+    if (!file || !(file instanceof File)) {
+      return NextResponse.json(
+        { error: "Görsel dosyası zorunludur. 'image' alanıyla multipart/form-data gönderin." },
+        { status: 400 }
+      )
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      return NextResponse.json(
+        { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
+        { status: 413 }
+      )
+    }
+    let mimeType = file.type || "image/jpeg"
+    if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
+      if (/\.hei[cf]$/i.test(file.name)) {
+        mimeType = "image/heic"
+      } else {
+        return NextResponse.json(
+          { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
+          { status: 400 }
+        )
+      }
+    }
+    const imageBuffer = Buffer.from(await file.arrayBuffer())
+    return { imageBuffer, mimeType }
+  }
+
+  const body = await request.json()
+  const { imageDataUrl, mimeType: bodyMimeType } = body
+  if (!imageDataUrl || !bodyMimeType) {
+    return NextResponse.json({ error: "Görsel verisi ve MIME tipi zorunludur" }, { status: 400 })
+  }
+  if (!SUPPORTED_IMAGE_MIME_TYPES.has(bodyMimeType)) {
+    return NextResponse.json(
+      { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
+      { status: 400 }
+    )
+  }
+  const base64Match = imageDataUrl.match(/^data:[^;]+;base64,(.+)$/)
+  if (!base64Match) {
+    return NextResponse.json({ error: "Geçersiz görsel formatı. Geçerli bir data URL gönderin." }, { status: 400 })
+  }
+  const imageBuffer = Buffer.from(base64Match[1], "base64")
+  if (imageBuffer.byteLength > MAX_IMAGE_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
+      { status: 413 }
+    )
+  }
+  return { imageBuffer, mimeType: bodyMimeType }
+}
+```
+
+- [ ] **Step 4: Testi çalıştır, geçtiğini doğrula**
+
+Run: `bun test src/lib/ocr/parse-image-request.test.ts`
+Expected: PASS (4 test)
+
+- [ ] **Step 5: `smart-capture/ocr/route.ts`'i yardımcıyı kullanacak şekilde refactor et**
+
+`src/app/api/smart-capture/ocr/route.ts` — import bloğuna ekle:
+
+```ts
+import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
+```
+
+Ve mevcut görsel-ayrıştırma bloğunu (`const contentLength = ...` satırından, JSON dalının kapanışına — yani `const imageHash = hashImageBuffer(imageBuffer)` satırından ÖNCEsine kadar olan tüm blok) şununla değiştir:
+
+```ts
+    const parsed = await parseOcrImageRequest(request)
+    if (parsed instanceof NextResponse) return parsed
+    const { imageBuffer, mimeType } = parsed
+```
+
+Not: `MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES` importları artık bu route'ta kullanılmıyorsa kaldır (lint uyarısını önlemek için). `MAX_IMAGE_SIZE_BYTES` başka yerde kullanılıyorsa bırak.
+
+- [ ] **Step 6: Ruhsat route'unun bozulmadığını doğrula**
+
+Run: `bun run typecheck && bun test src/lib/ocr/`
+Expected: Hata yok; tüm OCR testleri PASS. (Manuel: ruhsat OCR akışı Task 7 QA'de smoke-test edilir.)
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/lib/ocr/parse-image-request.ts src/lib/ocr/parse-image-request.test.ts src/app/api/smart-capture/ocr/route.ts
+git commit -m "refactor(ocr): görsel-ayrıştırmayı paylaşılan yardımcıya çıkar"
+```
+
+---
+
+### Task 5: `/api/parts/ocr` route'u
 
 **Files:**
 - Create: `src/app/api/parts/ocr/route.ts`
 
 **Interfaces:**
-- Consumes: `getOcrProvider()`, `provider.extractPartBox` (Task 2/3), `hashImageBuffer`, `normalizeRegistrationImage`, `PartBoxOcrResult`
+- Consumes: `parseOcrImageRequest` (Task 4), `getOcrProvider()`, `provider.extractPartBox` (Task 2/3), `hashImageBuffer`, `normalizeRegistrationImage`, `PartBoxOcrResult`
 - Produces: `POST /api/parts/ocr` — multipart `image` (veya JSON `{ imageDataUrl, mimeType }`) alır, `{ result: { partName, brand, partNumbers, provider }, ocrLogId, provider }` döner. `rawText` istemciye dönmez.
 
-> Not: Route birim testi yok (codebase route'larında test yok — bkz. `smart-capture/ocr`). Doğrulama: typecheck + manuel QA (Task 6). Route, `smart-capture/ocr/route.ts` desenini bilerek yakından takip eder (aynı auth/limit/dedup davranışı).
+> Not: Route birim testi yok (codebase route'larında test yok — bkz. `smart-capture/ocr`). Doğrulama: typecheck + manuel QA (Task 7). Auth/dedup davranışı `smart-capture/ocr` ile aynıdır.
 
 - [ ] **Step 1: Route dosyasını oluştur**
 
@@ -438,9 +623,9 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
+import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "@/lib/ocr/types"
 
 // Part-box dedup'ı ruhsat dedup'ından ayrı tutmak için imageHash'e namespace öneki koyulur:
 // aynı görsel iki akışa da yüklenirse cache'ler karışmaz (part-box JSON'u ruhsat JSON'una benzemez).
@@ -452,70 +637,9 @@ export async function POST(request: Request) {
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
 
-    const contentLength = request.headers.get("content-length")
-    if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: `İstek gövdesi çok büyük. Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-        { status: 413 }
-      )
-    }
-
-    const contentType = request.headers.get("content-type") || ""
-    let imageBuffer: Buffer
-    let mimeType: string
-
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData()
-      const file = formData.get("image")
-      if (!file || !(file instanceof File)) {
-        return NextResponse.json(
-          { error: "Görsel dosyası zorunludur. 'image' alanıyla multipart/form-data gönderin." },
-          { status: 400 }
-        )
-      }
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        return NextResponse.json(
-          { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-          { status: 413 }
-        )
-      }
-      mimeType = file.type || "image/jpeg"
-      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
-        if (/\.hei[cf]$/i.test(file.name)) {
-          mimeType = "image/heic"
-        } else {
-          return NextResponse.json(
-            { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
-            { status: 400 }
-          )
-        }
-      }
-      imageBuffer = Buffer.from(await file.arrayBuffer())
-    } else {
-      const body = await request.json()
-      const { imageDataUrl, mimeType: bodyMimeType } = body
-      if (!imageDataUrl || !bodyMimeType) {
-        return NextResponse.json({ error: "Görsel verisi ve MIME tipi zorunludur" }, { status: 400 })
-      }
-      mimeType = bodyMimeType
-      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
-        return NextResponse.json(
-          { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
-          { status: 400 }
-        )
-      }
-      const base64Match = imageDataUrl.match(/^data:[^;]+;base64,(.+)$/)
-      if (!base64Match) {
-        return NextResponse.json({ error: "Geçersiz görsel formatı. Geçerli bir data URL gönderin." }, { status: 400 })
-      }
-      imageBuffer = Buffer.from(base64Match[1], "base64")
-      if (imageBuffer.byteLength > MAX_IMAGE_SIZE_BYTES) {
-        return NextResponse.json(
-          { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-          { status: 413 }
-        )
-      }
-    }
+    const parsed = await parseOcrImageRequest(request)
+    if (parsed instanceof NextResponse) return parsed
+    const { imageBuffer, mimeType } = parsed
 
     const provider = await getOcrProvider()
     if (typeof provider.extractPartBox !== "function") {
@@ -630,16 +754,16 @@ git commit -m "feat(ocr): /api/parts/ocr route + dedup + OcrLog"
 
 ---
 
-### Task 5: `AddPurchaseButton` öneri UI'ı
+### Task 6: `AddPurchaseButton` öneri UI'ı
 
 **Files:**
 - Modify: `src/components/app/technician-order-detail.tsx` (`AddPurchaseButton`, ~882-1128)
 
 **Interfaces:**
-- Consumes: `POST /api/parts/ocr` (Task 4), `partNameWithBrand` (Task 1), `PartBoxOcrResult` tipi, `BrandSpinner`
+- Consumes: `POST /api/parts/ocr` (Task 5), `partNameWithBrand` (Task 1), `PartBoxOcrResult` tipi, `BrandSpinner`
 - Produces: (UI davranışı) fotoğraf seçilince otomatik OCR, öneri çipleri.
 
-> Not: UI birim testi yok (codebase deseni); doğrulama typecheck + lint + dev mock manuel QA (Task 6).
+> Not: UI birim testi yok (codebase deseni); doğrulama typecheck + lint + dev mock manuel QA (Task 7).
 
 - [ ] **Step 1: Import'ları ekle**
 
@@ -802,14 +926,14 @@ git commit -m "feat(ocr): Parça Aldım modalına kutu OCR öneri UI"
 
 ---
 
-### Task 6: Doğrulama + manuel QA
+### Task 7: Doğrulama + manuel QA
 
 **Files:** (yok — yalnız doğrulama)
 
 - [ ] **Step 1: Tüm testler**
 
 Run: `bun test src/lib/ocr/`
-Expected: Task 1 + Task 2 testleri PASS.
+Expected: Task 1 + Task 2 + Task 4 testleri PASS (mevcut `image-hash` testi dahil).
 
 - [ ] **Step 2: Lint + typecheck + build**
 
@@ -840,6 +964,7 @@ Expected: Hata yok.
 
 ## Self-Review Notu
 
-- **Spec kapsamı**: provider katmanı (Task 1-3), route + dedup/OcrLog (Task 4), öneri UI (Task 5), güvenlik/tenant izolasyonu (Task 4 auth), test (Task 1-2 + Task 6). Marka için şema kolonu yok — `partNameWithBrand` ile birleştirme (Task 1/5). Tümü karşılandı.
+- **Spec kapsamı**: provider katmanı (Task 1-3), paylaşılan görsel-ayrıştırma yardımcısı + ruhsat route refactor (Task 4), parça route + dedup/OcrLog (Task 5), öneri UI (Task 6), güvenlik/tenant izolasyonu (Task 5 auth), test (Task 1-2 + Task 4 + Task 7). Marka için şema kolonu yok — `partNameWithBrand` ile birleştirme (Task 1/6). Tümü karşılandı.
 - **Şema değişikliği yok** — `OcrLog` mevcut kolonlarıyla (`imageHash` öneki dahil) kullanılır.
-- **Tip tutarlılığı**: `PartBoxOcrResult` / `PartNumberSuggestion` Task 1'de tanımlanır, Task 2-5'te aynı isimle tüketilir. `extractPartBox` imzası Task 1 (interface) = Task 2/3 (impl) = Task 4 (çağrı).
+- **DRY**: görsel-ayrıştırma tek yardımcıya (`parseOcrImageRequest`, Task 4) çıkarıldı; hem parça hem ruhsat route'u kullanır (kopya yok).
+- **Tip tutarlılığı**: `PartBoxOcrResult` / `PartNumberSuggestion` Task 1'de tanımlanır, Task 2-6'da aynı isimle tüketilir. `extractPartBox` imzası Task 1 (interface) = Task 2/3 (impl) = Task 5 (çağrı). `parseOcrImageRequest` imzası Task 4 (tanım) = Task 5 (çağrı).
