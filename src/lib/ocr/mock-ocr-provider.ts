@@ -1,4 +1,4 @@
-import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence } from "./types"
+import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence, PartBoxOcrResult } from "./types"
 
 function field(value: string, confidence?: number): OcrFieldConfidence {
   return { value, confidence }
@@ -33,12 +33,28 @@ Araç Sahibi: Mehmet Yılmaz
 Tescil Tarihi: 15.03.2021`,
 }
 
+const MOCK_PARTBOX_DATA: Omit<PartBoxOcrResult, "provider"> = {
+  partName: field("Yağ filtresi", 0.9),
+  brand: field("SETA", 0.88),
+  partNumbers: [
+    { value: "STO-539", label: "SETA CODE", confidence: 0.9 },
+    { value: "04152-YZZA6", label: "OEM NO", confidence: 0.86 },
+    { value: "HU 6006 Z", label: "MANN NO", confidence: 0.6 },
+  ],
+  rawText: "",
+}
+
 export class MockOcrProvider implements OcrProvider {
   readonly name = "mock" as const
 
   async extractRegistration(_imageBuffer: Buffer, _mimeType: string): Promise<RegistrationOcrResult> {
     await new Promise((resolve) => setTimeout(resolve, 1500))
     return { ...MOCK_REGISTRATION_DATA, provider: "mock" }
+  }
+
+  async extractPartBox(_imageBuffer: Buffer, _mimeType: string): Promise<PartBoxOcrResult> {
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    return { ...MOCK_PARTBOX_DATA, provider: "mock" }
   }
 }
 
