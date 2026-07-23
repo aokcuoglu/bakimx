@@ -4,9 +4,9 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
+import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { MAX_IMAGE_SIZE_BYTES, MAX_BODY_SIZE_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from "@/lib/ocr/types"
 
 export async function POST(request: Request) {
   try {
@@ -14,81 +14,9 @@ export async function POST(request: Request) {
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
 
-    const contentLength = request.headers.get("content-length")
-    if (contentLength && Number(contentLength) > MAX_BODY_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: `İstek gövdesi çok büyük. Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-        { status: 413 }
-      )
-    }
-
-    const contentType = request.headers.get("content-type") || ""
-    let imageBuffer: Buffer
-    let mimeType: string
-
-    if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData()
-      const file = formData.get("image")
-      if (!file || !(file instanceof File)) {
-        return NextResponse.json(
-          { error: "Görsel dosyası zorunludur. 'image' alanıyla multipart/form-data gönderin." },
-          { status: 400 }
-        )
-      }
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        return NextResponse.json(
-          { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-          { status: 413 }
-        )
-      }
-      mimeType = file.type || "image/jpeg"
-      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
-        if (/\.hei[cf]$/i.test(file.name)) {
-          mimeType = "image/heic"
-        } else {
-          return NextResponse.json(
-            { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
-            { status: 400 }
-          )
-        }
-      }
-      const arrayBuffer = await file.arrayBuffer()
-      imageBuffer = Buffer.from(arrayBuffer)
-    } else {
-      const body = await request.json()
-      const { imageDataUrl, mimeType: bodyMimeType } = body
-
-      if (!imageDataUrl || !bodyMimeType) {
-        return NextResponse.json(
-          { error: "Görsel verisi ve MIME tipi zorunludur" },
-          { status: 400 }
-        )
-      }
-
-      mimeType = bodyMimeType
-      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
-        return NextResponse.json(
-          { error: "Desteklenmeyen görsel biçimi. JPEG, PNG, WebP veya HEIC yükleyin." },
-          { status: 400 }
-        )
-      }
-
-      const base64Match = imageDataUrl.match(/^data:[^;]+;base64,(.+)$/)
-      if (!base64Match) {
-        return NextResponse.json(
-          { error: "Geçersiz görsel formatı. Geçerli bir data URL gönderin." },
-          { status: 400 }
-        )
-      }
-
-      imageBuffer = Buffer.from(base64Match[1], "base64")
-      if (imageBuffer.byteLength > MAX_IMAGE_SIZE_BYTES) {
-        return NextResponse.json(
-          { error: `Görsel ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB'dan küçük olmalıdır.` },
-          { status: 413 }
-        )
-      }
-    }
+    const parsed = await parseOcrImageRequest(request)
+    if (parsed instanceof NextResponse) return parsed
+    const { imageBuffer, mimeType } = parsed
 
     const imageHash = hashImageBuffer(imageBuffer)
     const provider = await getOcrProvider()
