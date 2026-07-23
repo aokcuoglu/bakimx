@@ -36,6 +36,7 @@ export function PartAttributeField({
   onSelect,
   onCommitFreeText,
   onClear,
+  onQueryChange,
   onOpenPicker,
   hideClear,
 }: {
@@ -46,6 +47,9 @@ export function PartAttributeField({
   onSelect: (id: number, name: string) => void
   onCommitFreeText: (value: string) => void
   onClear: () => void
+  /** Yazılan (henüz commit EDİLMEMİŞ) serbest metni dışarı bildirir — tüketici
+   *  submit'te bunu flush edebilir (ör. modal "Ekle"). Liste satırları geçmez. */
+  onQueryChange?: (value: string) => void
   onOpenPicker?: () => void
   /** Liste satırlarında (statik görünüm) temizle X'ini gizle. */
   hideClear?: boolean
@@ -77,7 +81,7 @@ export function PartAttributeField({
       autoHighlight
       openOnInputClick
       itemToStringValue={(o: AttrOption) => o.label}
-      onValueChange={(v: string) => setQuery(v)}
+      onValueChange={(v: string) => { setQuery(v); onQueryChange?.(v) }}
     >
       <InputGroup>
         <AutocompleteInput

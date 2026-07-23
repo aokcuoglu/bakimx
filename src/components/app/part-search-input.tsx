@@ -15,7 +15,8 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { PackageSearch, Search, XIcon } from "lucide-react"
+import { PackageSearch, Search, XIcon, Plus, PencilLine } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 /**
@@ -41,6 +42,9 @@ export function PartSearchInput({
   onSearchClick,
   searchDisabled,
   searchTitle,
+  showCreate,
+  onCreate,
+  onCreateEdit,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -64,7 +68,49 @@ export function PartSearchInput({
   onSearchClick?: () => void
   searchDisabled?: boolean
   searchTitle?: string
+  /** Composer'da (bare DEĞİL): dropdown'da her zaman görünen "Oluştur/Oluştur & Düzenle" aksiyonları. */
+  showCreate?: boolean
+  onCreate?: (name: string) => void
+  onCreateEdit?: (name: string) => void
 }) {
+  // Composer'da dropdown/altında her zaman görünen Odoo-tarzı create aksiyonları.
+  // bare (liste satırı) kullanımında showCreate geçilmez → hiç render edilmez.
+  // (Düz fonksiyon olarak çağrılır — JSX component tag'i DEĞİL — render sırasında
+  // component tanımlamaktan kaçınmak için; react-hooks/static-components.)
+  function renderCreateActions(text: string) {
+    const t = text.trim()
+    if (!showCreate || !t) return null
+    return (
+      <div className="flex flex-col gap-0.5 border-t border-border p-1">
+        {onCreate && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 justify-start gap-2 font-normal"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onCreate(t)}
+          >
+            <Plus className="size-4 text-primary" />
+            <span>Oluştur <span className="font-semibold">“{t}”</span></span>
+          </Button>
+        )}
+        {onCreateEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 justify-start gap-2 font-normal text-muted-foreground"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onCreateEdit(t)}
+          >
+            <PencilLine className="size-4" />
+            Oluştur &amp; Düzenle…
+          </Button>
+        )}
+      </div>
+    )
+  }
   const canClear = !!(onClear && showClear && !disabled)
   // Input'un arkasındaki butonlar: 🔍 (katalog picker) + X (temizle).
   const trailing =
@@ -144,15 +190,27 @@ export function PartSearchInput({
     }
   }, [query, vehicleTypeId, supplierId, categoryId])
 
-  // Araç kataloğa bağlı değil → arama yok, düz metin girişi (mevcut davranış) + clear.
+  // Araç kataloğa bağlı değil → arama yok, düz metin girişi + (composer'da) create aksiyonları.
   if (vehicleTypeId == null) {
-    return (
+    const inputGroup = (
       <InputGroup>
         {skuChip}
         <InputGroupInput
           value={value}
           onChange={(e) => onNameChange(e.target.value)}
-          onBlur={onCommit}
+          // Composer (showCreate): blur ekleme YAPMAZ (odak kaybında istenmeyen ekleme
+          // olmasın). Liste satırı (bare): blur'da serbest metni kalıcılaştırır.
+          onBlur={showCreate ? undefined : onCommit}
+          onKeyDown={
+            showCreate
+              ? (e) => {
+                  if (e.key === "Enter" && value.trim()) {
+                    e.preventDefault()
+                    onCreate?.(value.trim())
+                  }
+                }
+              : undefined
+          }
           placeholder={placeholder}
           disabled={disabled}
           title={value || undefined}
@@ -160,6 +218,13 @@ export function PartSearchInput({
         />
         {trailing}
       </InputGroup>
+    )
+    if (!showCreate) return inputGroup
+    return (
+      <div className="w-full min-w-0 space-y-1.5">
+        {inputGroup}
+        {renderCreateActions(value)}
+      </div>
     )
   }
 
@@ -193,55 +258,58 @@ export function PartSearchInput({
         />
         {trailing}
       </InputGroup>
-      {(query.trim().length >= 2 || supplierId != null || categoryId != null) && (
-      <AutocompleteContent>
-        <AutocompleteEmpty className="flex-col gap-1.5">
-          <span>Eşleşen parça yok</span>
-          {onSearchClick && !searchDisabled && (
-            <InputGroupButton
-              size="sm"
-              variant="outline"
-              // Input blur'ı popup'ı onClick'ten önce kapatmasın diye focus'u koru.
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onSearchClick}
-            >
-              <Search />
-              Katalogdan getir
-            </InputGroupButton>
-          )}
-        </AutocompleteEmpty>
-        <AutocompleteList>
-          {(a: ArticleSearchResult) => (
-            <AutocompleteItem
-              key={a.tecdocArticleId}
-              value={a}
-              onClick={() => onSelectArticle(a)}
-            >
-              {a.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={a.imageUrl}
-                  alt=""
-                  loading="lazy"
-                  className="size-8 shrink-0 rounded object-contain bg-white border border-border/60"
-                />
-              ) : (
-                <span className="size-8 shrink-0 rounded bg-muted flex items-center justify-center">
-                  <PackageSearch className="size-4 text-muted-foreground/50" />
+      {((showCreate ? query.trim().length >= 1 : query.trim().length >= 2) ||
+        supplierId != null ||
+        categoryId != null) && (
+        <AutocompleteContent>
+          <AutocompleteEmpty className="flex-col gap-1.5">
+            <span>Eşleşen parça yok</span>
+            {onSearchClick && !searchDisabled && (
+              <InputGroupButton
+                size="sm"
+                variant="outline"
+                // Input blur'ı popup'ı onClick'ten önce kapatmasın diye focus'u koru.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onSearchClick}
+              >
+                <Search />
+                Katalogdan getir
+              </InputGroupButton>
+            )}
+          </AutocompleteEmpty>
+          <AutocompleteList>
+            {(a: ArticleSearchResult) => (
+              <AutocompleteItem
+                key={a.tecdocArticleId}
+                value={a}
+                onClick={() => onSelectArticle(a)}
+              >
+                {a.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    className="size-8 shrink-0 rounded object-contain bg-white border border-border/60"
+                  />
+                ) : (
+                  <span className="size-8 shrink-0 rounded bg-muted flex items-center justify-center">
+                    <PackageSearch className="size-4 text-muted-foreground/50" />
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{a.productName}</span>
+                  <span className="block text-xs text-muted-foreground truncate">
+                    <span className="font-mono">{a.articleNo}</span>
+                    {a.supplierName && <> · {a.supplierName}</>}
+                    {a.categoryName && <> · {a.categoryName}</>}
+                  </span>
                 </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{a.productName}</span>
-                <span className="block text-xs text-muted-foreground truncate">
-                  <span className="font-mono">{a.articleNo}</span>
-                  {a.supplierName && <> · {a.supplierName}</>}
-                  {a.categoryName && <> · {a.categoryName}</>}
-                </span>
-              </span>
-            </AutocompleteItem>
-          )}
-        </AutocompleteList>
-      </AutocompleteContent>
+              </AutocompleteItem>
+            )}
+          </AutocompleteList>
+          {renderCreateActions(query)}
+        </AutocompleteContent>
       )}
     </Autocomplete>
   )
