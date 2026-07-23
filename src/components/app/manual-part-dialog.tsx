@@ -47,9 +47,13 @@ export function ManualPartDialog({
   onSubmit: (d: ManualPartDraft) => void
 }) {
   const [name, setName] = useState(initialName)
-  const [brand, setBrand] = useState<string | null>(null)
-  const [category, setCategory] = useState<string | null>(null)
+  // Marka/Kategori serbest metni: yazılan metin (henüz commit edilmemiş de olsa)
+  // doğrudan kaydedilsin diye alanın kendi metnini izleriz. Katalog önerisi
+  // seçilirse kategoriId + seçilen etiket saklanır; metin etikettten sapınca id düşer.
+  const [brandText, setBrandText] = useState("")
+  const [categoryText, setCategoryText] = useState("")
   const [categoryId, setCategoryId] = useState<number | null>(null)
+  const [categorySelLabel, setCategorySelLabel] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [priceDraft, setPriceDraft] = useState("")
 
@@ -58,9 +62,10 @@ export function ManualPartDialog({
     if (!open) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- açılışta formu ön-dolu ad ile sıfırla
     setName(initialName)
-    setBrand(null)
-    setCategory(null)
+    setBrandText("")
+    setCategoryText("")
     setCategoryId(null)
+    setCategorySelLabel(null)
     setQuantity(1)
     setPriceDraft("")
   }, [open, initialName])
@@ -69,7 +74,11 @@ export function ManualPartDialog({
     if (!name.trim() || submitting) return
     const lira = Number(priceDraft)
     const unitPrice = priceDraft && !Number.isNaN(lira) && lira >= 0 ? liraToKurus(lira) : null
-    onSubmit({ name: name.trim(), brand, category, categoryId, quantity, unitPrice })
+    const brand = brandText.trim() || null
+    const category = categoryText.trim() || null
+    // categoryId yalnız metin, seçilen katalog etiketiyle hâlâ birebir eşleşiyorsa geçerli.
+    const finalCategoryId = category && category === categorySelLabel ? categoryId : null
+    onSubmit({ name: name.trim(), brand, category, categoryId: finalCategoryId, quantity, unitPrice })
   }
 
   return (
@@ -97,10 +106,11 @@ export function ManualPartDialog({
               <PartAttributeField
                 kind="brand"
                 vehicleTypeId={vehicleTypeId}
-                value={brand ?? ""}
-                onSelect={(_id, n) => setBrand(n)}
-                onCommitFreeText={(v) => setBrand(v || null)}
-                onClear={() => setBrand(null)}
+                value={brandText}
+                onSelect={(_id, n) => setBrandText(n)}
+                onCommitFreeText={(v) => setBrandText(v)}
+                onClear={() => setBrandText("")}
+                onQueryChange={setBrandText}
               />
             </div>
             <div className="space-y-1">
@@ -108,10 +118,11 @@ export function ManualPartDialog({
               <PartAttributeField
                 kind="category"
                 vehicleTypeId={vehicleTypeId}
-                value={category ?? ""}
-                onSelect={(id, n) => { setCategory(n); setCategoryId(id) }}
-                onCommitFreeText={(v) => { setCategory(v || null); setCategoryId(null) }}
-                onClear={() => { setCategory(null); setCategoryId(null) }}
+                value={categoryText}
+                onSelect={(id, n) => { setCategoryText(n); setCategoryId(id); setCategorySelLabel(n) }}
+                onCommitFreeText={(v) => { setCategoryText(v); setCategoryId(null); setCategorySelLabel(null) }}
+                onClear={() => { setCategoryText(""); setCategoryId(null); setCategorySelLabel(null) }}
+                onQueryChange={setCategoryText}
               />
             </div>
           </div>
