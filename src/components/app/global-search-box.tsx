@@ -91,7 +91,7 @@ export function GlobalSearch({ className }: { className?: string }) {
         <AutocompleteContent>
           {loading ? (
             <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground">
-              <BrandSpinner className="size-4" />
+              <BrandSpinner size={16} />
               <span>Aranıyor…</span>
             </div>
           ) : (
