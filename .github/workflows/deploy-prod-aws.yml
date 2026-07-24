@@ -158,6 +158,39 @@ jobs:
             exit 1
           fi
 
+      - name: Vehicle-catalog seed (one-off ECS task, non-blocking)
+        env:
+          NEW_TD: ${{ steps.taskdef.outputs.task_def }}
+        run: |
+          set -euo pipefail
+          # Seed the GLOBAL vehicle catalog (vehicle_brands/models/types/type_details) from the
+          # committed gz fixtures baked into the image at /migrate/prisma/data/vehicle-catalog.
+          # Runs after the migrate gate so the tables exist; idempotent (createMany skipDuplicates),
+          # so it is a near-noop once populated. Deliberately NON-BLOCKING: an empty catalog only
+          # degrades the brand/model picker to free-text entry, which must never abort a deploy.
+          NET=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
+          SUBNETS=$(echo "$NET" | jq -r '.subnets | join(",")')
+          SGS=$(echo "$NET" | jq -r '.securityGroups | join(",")')
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$NEW_TD" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=DISABLED}" \
+            --overrides '{"containerOverrides":[{"name":"'"$CONTAINER_NAME"'","command":["sh","-c","cd /migrate && node node_modules/tsx/dist/cli.mjs scripts/migrate-vehicle-catalog.ts --from-file"]}]}' \
+            --started-by "gha-catalog-seed" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Catalog-seed task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+          EXIT=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+          echo "Catalog-seed exit code: $EXIT (stoppedReason: $REASON)"
+          if [ "$EXIT" != "0" ]; then
+            echo "::warning::Vehicle-catalog seed failed (exit=$EXIT) — deploy continues; brand/model picker falls back to free-text. Check CloudWatch /ecs/bakimx-prod-app."
+          fi
+
       - name: Deploy to ECS (update service)
         env:
           NEW_TD: ${{ steps.taskdef.outputs.task_def }}
