@@ -77,12 +77,13 @@ export function GlobalSearch({ className }: { className?: string }) {
               <InputGroupInput
                 type="search"
                 placeholder="Plaka veya müşteri ara"
+                aria-label="Plaka veya müşteri ara"
                 className="text-sm"
               />
             }
           />
           <InputGroupAddon align="inline-start">
-            <Search className="size-4 text-muted-foreground/70" />
+            <Search aria-hidden className="size-4 text-muted-foreground/70" />
           </InputGroupAddon>
         </InputGroup>
       </div>
@@ -102,7 +103,10 @@ export function GlobalSearch({ className }: { className?: string }) {
                   <AutocompleteItem
                     key={r.kind === "vehicle" ? `v-${r.vehicleId}` : `c-${r.customerId}`}
                     value={r}
-                    onClick={() => select(r)}
+                    onClick={(e) => {
+                      e.preventBaseUIHandler()
+                      select(r)
+                    }}
                   >
                     {r.kind === "vehicle" ? (
                       <Car className="size-4 text-primary" />
