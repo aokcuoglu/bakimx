@@ -90,7 +90,9 @@ export function DetailHeader({
               <span className="truncate">{customerLabel}</span>
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Dar ekranda rozet sayısı arttıkça (durum + ödeme + atanan usta)
+              tek satıra sığmayabilir; taşma yerine alt satıra sarsın. */}
+          <div className="flex flex-wrap items-center gap-2 max-w-full sm:shrink-0">
             {badges}
             {hasActions && (
               <div className="flex flex-wrap items-center gap-2">

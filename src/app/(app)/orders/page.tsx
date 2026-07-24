@@ -13,11 +13,13 @@ import { StandaloneServiceAdvisor } from "@/components/app/standalone-service-ad
 import { AdvisorPremiumLock } from "@/components/app/advisor-premium-lock"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
+import { getAssignableTechnicians } from "@/lib/technician/queries"
+import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
 
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; payment?: string }>
+  searchParams: Promise<{ q?: string; status?: string; payment?: string; technician?: string }>
 }) {
   const params = await searchParams
   const q = (params.q || "").trim()
@@ -27,12 +29,21 @@ export default async function OrdersPage({
   const { user, workshop } = await getAppData()
   const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
 
+  // Usta filtresi, atölyenin kendi usta listesine karşı doğrulanır; client'tan
+  // gelen ham id doğrudan sorguya girmez.
+  const technicians = await getAssignableTechnicians(user.workshopId)
+  const technicianFilter = resolveTechnicianFilter(
+    params.technician,
+    technicians.map((t) => t.id)
+  )
+
   const [orders, statusGroups] = await Promise.all([
     prisma.serviceOrder.findMany({
       where: {
         workshopId: user.workshopId,
         ...(status ? { status: status as import("@prisma/client").OrderStatus } : {}),
         ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
+        ...technicianFilter.where,
         ...(q
           ? {
               OR: [
@@ -58,6 +69,8 @@ export default async function OrdersPage({
       _count: { _all: true },
     }),
   ])
+
+  const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value)
 
   const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
   const activeStatuses = ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"]
@@ -143,9 +156,12 @@ export default async function OrdersPage({
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          {/* Mobilde üç filtre + buton tek satıra sığmıyordu (buton kırpılıyordu);
+              dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra dönüyor. */}
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <FilterSelect
               name="status"
+              className="w-full sm:w-auto"
               defaultValue={status}
               placeholder="Tüm Durumlar"
               options={[
@@ -162,6 +178,7 @@ export default async function OrdersPage({
             />
             <FilterSelect
               name="payment"
+              className="w-full sm:w-auto"
               defaultValue={payment}
               placeholder="Tüm Ödemeler"
               options={[
@@ -171,7 +188,18 @@ export default async function OrdersPage({
                 { value: "paid", label: "Ödendi" },
               ]}
             />
-            <Button variant="outline" size="default" type="submit">
+            <FilterSelect
+              name="technician"
+              className="w-full sm:w-auto"
+              defaultValue={technicianFilter.value}
+              placeholder="Tüm Ustalar"
+              options={[
+                { value: "", label: "Tüm Ustalar" },
+                { value: UNASSIGNED_TECHNICIAN, label: "Atanmamış" },
+                ...technicians.map((t) => ({ value: t.id, label: t.fullName })),
+              ]}
+            />
+            <Button variant="outline" size="default" type="submit" className="w-full sm:w-auto">
               <Filter className="size-4" />
               Filtrele
             </Button>
@@ -183,18 +211,20 @@ export default async function OrdersPage({
           kpis={kpis}
           activeStatus={status}
           activePayment={payment}
+          activeTechnician={technicianFilter.value}
+          technicians={technicians}
         />
 
         {orders.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <ClipboardList className="size-14 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-base font-medium">
-              {q || status || payment
+              {hasAnyFilter
                 ? "Filtrelere uyan iş emri bulunamadı"
                 : "Henüz iş emri yok"}
             </p>
             <p className="text-sm mt-1">
-              {q || status || payment
+              {hasAnyFilter
                 ? "Farklı bir filtre deneyin"
                 : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
             </p>

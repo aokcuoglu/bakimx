@@ -190,6 +190,54 @@ export async function getTechnicians(workshopId: string) {
   })
 }
 
+export interface AssignableTechnician {
+  id: string
+  fullName: string
+  role: string
+  /** Teslim/iptal dışındaki, o an üzerinde olan iş sayısı — atama sırasında yük göstergesi. */
+  activeJobs: number
+}
+
+/**
+ * Atama arayüzünün beslendiği liste: aktif ustalar + üzerlerindeki iş yükü.
+ * `getTechnicians`ten ayrı tutuldu çünkü burada sayım maliyeti var ve
+ * dönen şekil UI'a özgü (client'a serialize edilebilir sade alanlar).
+ */
+export async function getAssignableTechnicians(workshopId: string): Promise<AssignableTechnician[]> {
+  const technicians = await prisma.technician.findMany({
+    where: { workshopId, isActive: true },
+    select: {
+      id: true,
+      fullName: true,
+      role: true,
+      _count: {
+        select: {
+          assignedOrders: { where: { status: { notIn: NOT_DELIVERED_CANCELLED } } },
+        },
+      },
+    },
+    orderBy: { fullName: "asc" },
+  })
+
+  return technicians.map((t) => ({
+    id: t.id,
+    fullName: t.fullName,
+    role: t.role,
+    activeJobs: t._count.assignedOrders,
+  }))
+}
+
+/** Ustası olmayan aktif iş emri sayısı — dağıtım görünürlüğü için. */
+export async function getUnassignedOrderCount(workshopId: string): Promise<number> {
+  return prisma.serviceOrder.count({
+    where: {
+      workshopId,
+      assignedTechnicianId: null,
+      status: { notIn: NOT_DELIVERED_CANCELLED },
+    },
+  })
+}
+
 export async function getManagerTechnicianOverview(workshopId: string) {
   const technicians = await prisma.technician.findMany({
     where: { workshopId, isActive: true },
