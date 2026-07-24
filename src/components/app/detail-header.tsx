@@ -17,9 +17,9 @@ export type DetailHeaderAction = {
 /**
  * Shared detail-page header for İş Emri (order) and Araç Kabul (intake).
  * Single row: back + plate + vehicle/customer meta + status badges + actions.
- * Desktop keeps actions in the header; mobile mirrors them in a sticky bottom
- * bar (sits above the app bottom nav). Badges are provided by the caller so
- * each page keeps its own status dictionary while sharing the pill visuals.
+ * Actions render inline in the header on every breakpoint (no sticky bottom
+ * bar). Badges are provided by the caller so each page keeps its own status
+ * dictionary while sharing the pill visuals.
  */
 export function DetailHeader({
   plate,
@@ -43,7 +43,6 @@ export function DetailHeader({
   const TONE_ORDER: Record<DetailHeaderAction["tone"], number> = { danger: 0, secondary: 1, primary: 2 }
   const orderedActions = [...actions].sort((a, b) => TONE_ORDER[a.tone] - TONE_ORDER[b.tone])
   const hasActions = orderedActions.length > 0
-  const hasStretchable = orderedActions.some((a) => a.tone !== "danger")
 
   const renderButtons = (opts: { size: "default" | "lg"; stretch?: boolean }) =>
     orderedActions.map((a) => {
@@ -69,8 +68,7 @@ export function DetailHeader({
     })
 
   return (
-    <>
-      <div className="flex items-start gap-3 sm:items-center">
+    <div className="flex items-start gap-3 sm:items-center">
         <button
           onClick={onBack}
           className="p-2.5 hover:bg-muted rounded-lg touch-manipulation shrink-0"
@@ -92,24 +90,15 @@ export function DetailHeader({
               <span className="truncate">{customerLabel}</span>
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {badges}
             {hasActions && (
-              <div className="hidden lg:flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {renderButtons({ size: "default" })}
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Mobile sticky action bar — sits above the bottom nav (bottom-16) */}
-      {hasActions && (
-        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border px-4 py-3 safe-area-bottom flex items-center gap-2">
-          {renderButtons({ size: "lg", stretch: true })}
-          {!hasStretchable && <span className="flex-1" />}
-        </div>
-      )}
-    </>
   )
 }

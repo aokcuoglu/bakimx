@@ -466,14 +466,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
               </CardContent>
             </Card>
 
-            <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-background border-t border-border px-4 py-3 safe-area-bottom">
-              <Button type="submit" disabled={loading} size="lg" className="w-full">
-                {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
-                Tahsilatı Kaydet
-              </Button>
-            </div>
-
-            <div className="hidden lg:block">
+            <div>
               <Button type="submit" disabled={loading} size="lg" className="w-full">
                 {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />}
                 Tahsilatı Kaydet
