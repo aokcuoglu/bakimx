@@ -477,7 +477,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
             </CardContent>
           </Card>
 
-          <div className="flex gap-3 pb-24 lg:pb-0">
+          <div className="flex gap-3">
             <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
               {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
               {isEdit ? "Güncelle" : "Parça Oluştur"}
@@ -488,18 +488,6 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
               </Button>
             </Link>
           </div>
-        </div>
-
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border p-3 safe-area-bottom flex gap-2">
-          <Button type="submit" disabled={pending} className="flex-1">
-            {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {isEdit ? "Güncelle" : "Parça Oluştur"}
-          </Button>
-          <Link href={isEdit ? `/parts/${part?.id}` : "/parts"} className="flex-1">
-            <Button type="button" variant="outline" className="w-full">
-              İptal
-            </Button>
-          </Link>
         </div>
       </form>
     </Form>

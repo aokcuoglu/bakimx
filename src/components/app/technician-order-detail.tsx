@@ -422,7 +422,7 @@ export function TechnicianOrderDetail({
         </div>
       )}
 
-      <div className="sticky bottom-0 z-20 bg-white border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex gap-2 sm:justify-center">
+      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 flex gap-2 sm:justify-center">
         {canStart && (
           <Button
             size="lg"

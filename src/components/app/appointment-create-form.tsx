@@ -386,7 +386,7 @@ export function AppointmentCreateForm({
           </CardContent>
         </Card>
 
-        <div className="flex flex-col sm:flex-row gap-3 pb-24 lg:pb-0">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button type="submit" disabled={pending} size="lg" className="flex-1">
             {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
             {pending ? "Kaydediliyor..." : "Randevu Kaydet"}
@@ -401,22 +401,6 @@ export function AppointmentCreateForm({
           </Button>
         </div>
       </form>
-
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-bottom flex gap-2">
-        <Button type="submit" disabled={pending} size="lg" className="flex-1" onClick={() => form.handleSubmit(onSubmit)()}>
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
-          {pending ? "Kaydediliyor..." : "Kaydet"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => router.back()}
-          className="flex-1"
-        >
-          İptal
-        </Button>
-      </div>
     </Form>
   )
 }

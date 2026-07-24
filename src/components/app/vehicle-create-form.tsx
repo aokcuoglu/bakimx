@@ -666,22 +666,12 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
               </CardContent>
             </Card>
 
-            <div className="hidden sm:flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2">
               <Button type="submit" form="vehicle-form" disabled={loading} className="gap-2">
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 {isEdit ? "Aracı Güncelle" : "Araç Kaydet"}
               </Button>
               <Button type="button" variant="outline" onClick={handleCancel}>
-                İptal
-              </Button>
-            </div>
-
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-bottom flex gap-2">
-              <Button type="submit" form="vehicle-form" disabled={loading} className="flex-1 gap-2">
-                {loading && <Loader2 className="size-4 animate-spin" />}
-                {isEdit ? "Güncelle" : "Kaydet"}
-              </Button>
-              <Button type="button" variant="outline" onClick={handleCancel} className="flex-1">
                 İptal
               </Button>
             </div>
