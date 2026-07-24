@@ -38,6 +38,7 @@ export function TechnicianAssign({
   technicians,
   locked = false,
   size = "md",
+  variant = "pill",
   className,
 }: {
   orderId: string
@@ -46,6 +47,12 @@ export function TechnicianAssign({
   technicians: AssignableTechnician[]
   locked?: boolean
   size?: "sm" | "md"
+  /**
+   * `pill` — rozet görünümü (liste kartı, "İş Emri Bilgileri" kartı).
+   * `meta` — başlığın kimlik satırı; araç/müşteri satırlarıyla aynı dil,
+   *          rozet ağırlığı taşımaz ki durum rozetleriyle yarışmasın.
+   */
+  variant?: "pill" | "meta"
   className?: string
 }) {
   const router = useRouter()
@@ -58,23 +65,35 @@ export function TechnicianAssign({
     [technicians, query]
   )
 
-  const pill = cn(
-    "inline-flex max-w-[12rem] items-center gap-1.5 rounded-full border font-medium transition-colors touch-manipulation disabled:opacity-60",
-    size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
-    assignedTechnicianName
-      ? "border-primary/20 bg-primary/10 text-foreground"
-      : "border-dashed border-border bg-transparent text-muted-foreground",
-    !locked && "hover:border-primary/40 hover:bg-primary/15",
-    className
-  )
+  const isMeta = variant === "meta"
+
+  const trigger = isMeta
+    ? cn(
+        "inline-flex max-w-[12rem] items-center gap-1 min-w-0 text-sm text-muted-foreground transition-colors touch-manipulation disabled:opacity-60",
+        !locked && "hover:text-primary",
+        // Noktalı alt çizgi "buraya dokunulabilir" demek; kilitli emirde
+        // hiçbir şey yapılamadığı için vaat edilmemeli.
+        !locked && !assignedTechnicianName && "underline decoration-dotted underline-offset-4",
+        className
+      )
+    : cn(
+        "inline-flex max-w-[12rem] items-center gap-1.5 rounded-full border font-medium transition-colors touch-manipulation disabled:opacity-60",
+        size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
+        assignedTechnicianName
+          ? "border-primary/20 bg-primary/10 text-foreground"
+          : "border-dashed border-border bg-transparent text-muted-foreground",
+        !locked && "hover:border-primary/40 hover:bg-primary/15",
+        className
+      )
 
   const label = assignedTechnicianName ?? "Usta ata"
   const Icon = assignedTechnicianName ? HardHat : UserPlus
+  const iconSize = isMeta ? "size-3.5" : size === "sm" ? "size-3" : "size-3.5"
 
   if (locked) {
     return (
-      <span className={cn(pill, "cursor-default")}>
-        <Icon className={cn("shrink-0", size === "sm" ? "size-3" : "size-3.5")} />
+      <span className={cn(trigger, "cursor-default")}>
+        <Icon className={cn("shrink-0", iconSize)} />
         <span className="truncate">{assignedTechnicianName ?? "Usta atanmadı"}</span>
       </span>
     )
@@ -121,14 +140,14 @@ export function TechnicianAssign({
       trigger={
         <button
           type="button"
-          className={pill}
+          className={trigger}
           aria-label={
             assignedTechnicianName
               ? `Atanan usta: ${assignedTechnicianName} — değiştir`
               : "Usta ata"
           }
         >
-          <Icon className={cn("shrink-0", size === "sm" ? "size-3" : "size-3.5")} />
+          <Icon className={cn("shrink-0", iconSize)} />
           <span className="truncate">{label}</span>
         </button>
       }
