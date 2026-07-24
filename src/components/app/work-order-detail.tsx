@@ -459,19 +459,22 @@ export function WorkOrderDetail({
         plate={order.vehicle.plate}
         vehicleLabel={`${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`}
         customerLabel={customerName}
+        meta={
+          /* Atanan usta bir *durum* değil, işin kime ait olduğu bilgisi —
+             bu yüzden müşteri satırının yanında, rozetlerle yarışmadan durur. */
+          <TechnicianAssign
+            orderId={order.id}
+            assignedTechnicianId={order.assignedTechnicianId}
+            assignedTechnicianName={order.assignedTechnicianName}
+            technicians={technicians ?? []}
+            locked={orderLocked}
+            variant="meta"
+          />
+        }
         badges={
           <>
             <StatusBadge status={order.status} size="lg" />
             <PaymentBadge status={order.paymentStatus} size="lg" />
-            {/* Atanan usta ilk ekranda görünür olsun — Özet sekmesinin dibine
-                inmeye gerek kalmadan kimin üstünde olduğu okunur ve atanır. */}
-            <TechnicianAssign
-              orderId={order.id}
-              assignedTechnicianId={order.assignedTechnicianId}
-              assignedTechnicianName={order.assignedTechnicianName}
-              technicians={technicians ?? []}
-              locked={orderLocked}
-            />
           </>
         }
         actions={headerActions}
