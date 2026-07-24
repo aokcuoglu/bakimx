@@ -76,6 +76,7 @@ import {
   type PricingMetaDraft,
   type Totals,
 } from "@/components/app/order-management-panel"
+import { TechnicianAssign, type AssignableTechnician } from "@/components/app/technician-assign"
 
 const PHOTO_PHASE_LABELS: Record<string, string> = {
   intake: "Kabul (Intake)",
@@ -158,7 +159,7 @@ export function WorkOrderDetail({
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
-  technicians?: { id: string; fullName: string; role: string }[]
+  technicians?: AssignableTechnician[]
   hasAiAdvisor: boolean
   activity?: OrderActivityEntry[]
 }) {
@@ -458,6 +459,18 @@ export function WorkOrderDetail({
         plate={order.vehicle.plate}
         vehicleLabel={`${order.vehicle.brand} ${order.vehicle.model}${order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}`}
         customerLabel={customerName}
+        meta={
+          /* Atanan usta bir *durum* değil, işin kime ait olduğu bilgisi —
+             bu yüzden müşteri satırının yanında, rozetlerle yarışmadan durur. */
+          <TechnicianAssign
+            orderId={order.id}
+            assignedTechnicianId={order.assignedTechnicianId}
+            assignedTechnicianName={order.assignedTechnicianName}
+            technicians={technicians ?? []}
+            locked={orderLocked}
+            variant="meta"
+          />
+        }
         badges={
           <>
             <StatusBadge status={order.status} size="lg" />

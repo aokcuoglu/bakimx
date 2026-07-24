@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { HardHat, Wrench, Clock, AlertTriangle } from "lucide-react"
+import { HardHat, Wrench, Clock, AlertTriangle, ChevronRight } from "lucide-react"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
 
 type TechnicianRow = {
@@ -16,7 +16,14 @@ type TechnicianRow = {
   completedToday: number
 }
 
-export function TechnicianStatusWidget({ technicians }: { technicians: TechnicianRow[] }) {
+export function TechnicianStatusWidget({
+  technicians,
+  unassignedCount = 0,
+}: {
+  technicians: TechnicianRow[]
+  /** Ustası olmayan aktif iş sayısı — dağıtım bekleyen iş kuyruğu. */
+  unassignedCount?: number
+}) {
   if (technicians.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-5">
@@ -49,11 +56,28 @@ export function TechnicianStatusWidget({ technicians }: { technicians: Technicia
         </Link>
       </div>
 
-      <div className="space-y-3">
+      {unassignedCount > 0 && (
+        <Link
+          href="/orders?technician=none"
+          className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 transition-colors hover:bg-warning/15"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <AlertTriangle className="size-4 text-warning" />
+            Atanmamış iş
+          </span>
+          <span className="text-sm font-semibold text-foreground">{unassignedCount}</span>
+        </Link>
+      )}
+
+      <div className="space-y-1">
         {technicians.map((t) => {
           const roleInfo = (TECHNICIAN_ROLES as Record<string, { label: string; color: string }>)[t.role]
           return (
-            <div key={t.id} className="flex items-start gap-3 py-2">
+            <Link
+              key={t.id}
+              href={`/orders?technician=${t.id}`}
+              className="-mx-2 flex items-start gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
+            >
               <div className="size-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
                 <HardHat className="size-4" />
               </div>
@@ -83,7 +107,8 @@ export function TechnicianStatusWidget({ technicians }: { technicians: Technicia
                   )}
                 </div>
               </div>
-            </div>
+              <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground/50" />
+            </Link>
           )
         })}
       </div>

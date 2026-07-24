@@ -8,7 +8,7 @@ import { WorkOrderDetail } from "@/components/app/work-order-detail"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
-import { getTechnicians } from "@/lib/technician/queries"
+import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -245,7 +245,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     },
   }
 
-  const technicians = await getTechnicians(user.workshopId)
+  const technicians = await getAssignableTechnicians(user.workshopId)
 
   const activity = await getOrderActivity({
     workshopId: user.workshopId,
@@ -262,7 +262,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <WorkOrderDetail
         intake={intakeProp}
         order={safeOrder}
-        technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, role: t.role }))}
+        technicians={technicians}
         hasAiAdvisor={hasAiAdvisor}
         activity={activity}
       />

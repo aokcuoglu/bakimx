@@ -488,7 +488,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
           </aside>
         </div>
 
-        <div className="sticky bottom-0 sm:bottom-0 left-0 right-0 bg-card border-t border-border p-4 -mx-4 sm:-mx-6 sm:px-6 flex items-center justify-between gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:shadow-none lg:border-t lg:border-border lg:bg-transparent lg:p-0 lg:-mx-0">
+        <div className="mt-2 flex items-center justify-between gap-3 border-t border-border pt-4">
           <Button nativeButton={false} variant="outline" render={<Link href="/reminders" />}>
             İptal
           </Button>

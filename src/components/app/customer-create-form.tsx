@@ -712,17 +712,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
           </aside>
         </div>
 
-        <div className="lg:hidden sticky bottom-0 left-0 right-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-white border-t border-border flex items-center justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
-            İptal
-          </Button>
-          <Button type="submit" disabled={pending} className="gap-1.5">
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {mode === "edit" ? "Güncelle" : "Müşteri Kaydet"}
-          </Button>
-        </div>
-
-        <div className="hidden lg:flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
             İptal
           </Button>

@@ -13,25 +13,25 @@ const metrics = [
     icon: Zap,
     title: "Dakikada kabul",
     description:
-      "Ruhsati telefon kamerasiyla okutun; arac ve musteri 60 saniyede hazir.",
+      "Ruhsatı telefon kamerasıyla okutun; araç ve müşteri 60 saniyede hazır.",
   },
   {
     icon: FileX,
-    title: "Sifir kagit form",
+    title: "Sıfır kağıt form",
     description:
-      "Is emri, fotograf, teklif, tahsilat — her sey dijital ve degistirilemez.",
+      "İş emri, fotoğraf, teklif, tahsilat — her şey dijital ve değiştirilemez.",
   },
   {
     icon: TrendingUp,
-    title: "Cok daha hizli is emri",
+    title: "Çok daha hızlı iş emri",
     description:
-      "Kabulden teslimate kadar manuel adimlari ortadan kaldirir.",
+      "Kabulden teslimata kadar manuel adımları ortadan kaldırır.",
   },
   {
     icon: Smartphone,
-    title: "7/24 musteri takibi",
+    title: "7/24 müşteri takibi",
     description:
-      "Her musteri kendi aracini telefonundan canli izler.",
+      "Her müşteri kendi aracını telefonundan canlı izler.",
   },
 ];
 
@@ -52,11 +52,11 @@ export function MetricsBand() {
             Rakamlarla BakimX
           </p>
           <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-            Operasyonunuz artik olculebilir
+            Operasyonunuz artık ölçülebilir
           </h2>
           <p className="mt-3 text-sm sm:text-base text-white/70 leading-relaxed">
-            Manuel kabul, kagit form ve telefondan sms ile takip yerine BakimX&apos;in
-            dijital is akisini kullanin.
+            Manuel kabul, kağıt form ve telefondan SMS ile takip yerine BakimX&apos;in
+            dijital iş akışını kullanın.
           </p>
         </motion.div>
 

@@ -709,7 +709,7 @@ export function QuoteCreateForm() {
           </aside>
         </div>
 
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-bottom flex gap-2">
+        <div className="lg:hidden mt-4 border-t border-border pt-4 flex gap-2">
           <Button
             type="submit"
             disabled={pending}

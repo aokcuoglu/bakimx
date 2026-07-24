@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
+import { GlobalSearch } from "@/components/app/global-search-box"
 import {
   LayoutDashboard,
   Car,
@@ -13,7 +14,6 @@ import {
   LogOut,
   Menu,
   X,
-  Search,
   Bell,
   Plus,
   FileText,
@@ -35,7 +35,6 @@ import {
   Receipt,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState } from "react"
-import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -195,24 +194,15 @@ export function AppShellChrome({
   initialSidebarCollapsed?: boolean
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
   const [sidebarCollapsed, setSidebarCollapsed] = useState(initialSidebarCollapsed)
-  const [searchValue, setSearchValue] = useState("")
 
   function toggleSidebar() {
     const next = !sidebarCollapsed
     setSidebarCollapsed(next)
     writeSidebarCollapsedCookie(next)
-  }
-
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const value = searchValue.trim()
-    if (!value) return
-    router.push(`/parts?q=${encodeURIComponent(value)}`)
   }
 
   const desktopSidebarWidth = sidebarCollapsed ? "lg:w-16" : "lg:w-64"
@@ -268,18 +258,7 @@ export function AppShellChrome({
               )}
 
               {showGlobalSearch && (
-                <form onSubmit={handleSearch} className="flex-1 sm:max-w-md sm:mx-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
-                    <Input
-                      type="search"
-                      value={searchValue}
-                      onChange={(e) => setSearchValue(e.target.value)}
-                      placeholder="Plaka, müşteri, iş emri ara"
-                      className="pl-9"
-                    />
-                  </div>
-                </form>
+                <GlobalSearch className="flex-1 sm:max-w-md sm:mx-4" />
               )}
 
               {!showGlobalSearch && <div className="flex-1" />}

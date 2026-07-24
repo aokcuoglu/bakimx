@@ -5,7 +5,10 @@ import Link from "next/link"
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/app/status-badge"
 import { ActionsMenu, MobileActionsMenu } from "@/components/app/actions-menu"
 import { StatCard } from "@/components/shared/stat-card"
+import { TechnicianAssign, type AssignableTechnician } from "@/components/app/technician-assign"
 import { formatTRY } from "@/lib/format"
+import { isOrderLocked } from "@/lib/status-transitions"
+import type { OrderStatus } from "@prisma/client"
 
 type OrderRow = {
   id: string
@@ -13,6 +16,8 @@ type OrderRow = {
   status: string
   paymentStatus: string
   technicianName: string | null
+  assignedTechnicianId: string | null
+  assignedTechnicianName: string | null
   estimatedDeliveryAt: string | null
   createdAt: string
   grandTotal: number
@@ -60,11 +65,15 @@ export function OrderList({
   kpis,
   activeStatus,
   activePayment,
+  activeTechnician = "",
+  technicians = [],
 }: {
   orders: OrderRow[]
   kpis: KPIs
   activeStatus: string
   activePayment: string
+  activeTechnician?: string
+  technicians?: AssignableTechnician[]
 }) {
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-primary/10 text-primary border-primary/20" },
@@ -74,16 +83,19 @@ export function OrderList({
     { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive border-destructive/20" },
   ]
 
-  const paymentParam = activePayment ? `&payment=${activePayment}` : ""
+  // KPI kartına tıklamak yalnız durumu değiştirmeli; diğer aktif filtreler korunur.
+  const keptFilters = [
+    activePayment ? `payment=${activePayment}` : "",
+    activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
+  ].filter(Boolean)
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {kpiConfigs.map((cfg) => {
           const isActive = activeStatus === cfg.filterValue
-          const href = isActive
-            ? `/orders${paymentParam ? `?payment=${activePayment}` : ""}`
-            : `/orders?status=${cfg.filterValue}${paymentParam}`
+          const parts = isActive ? keptFilters : [`status=${cfg.filterValue}`, ...keptFilters]
+          const href = parts.length > 0 ? `/orders?${parts.join("&")}` : "/orders"
           return (
             <StatCard
               key={cfg.key}
@@ -152,7 +164,14 @@ export function OrderList({
                     <div className="text-[11px] leading-tight text-muted-foreground">{order.customer.phone}</div>
                   </td>
                   <td className="px-4 py-2 text-foreground">
-                    {order.technicianName || <span className="text-muted-foreground/70">—</span>}
+                    <TechnicianAssign
+                      orderId={order.id}
+                      assignedTechnicianId={order.assignedTechnicianId}
+                      assignedTechnicianName={order.assignedTechnicianName}
+                      technicians={technicians}
+                      locked={isOrderLocked(order.status as OrderStatus)}
+                      size="sm"
+                    />
                   </td>
                   <td className="px-4 py-2">
                     <StatusBadge status={order.status} />
@@ -225,6 +244,15 @@ export function OrderList({
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <StatusBadge status={order.status} />
               <PaymentBadge status={order.paymentStatus} />
+              {/* Mobil kartta usta hiç görünmüyordu; rozet hem bilgi hem atama tetikleyicisi. */}
+              <TechnicianAssign
+                orderId={order.id}
+                assignedTechnicianId={order.assignedTechnicianId}
+                assignedTechnicianName={order.assignedTechnicianName}
+                technicians={technicians}
+                locked={isOrderLocked(order.status as OrderStatus)}
+                size="sm"
+              />
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <div className="text-muted-foreground">

@@ -17,7 +17,7 @@ import {
 import { getDueSoonReminders, getOverdueReminders } from "@/lib/reminders/queries"
 import { getCriticalStockItems } from "@/lib/parts/queries"
 import { getCriticalStockSuppliers } from "@/lib/suppliers/queries"
-import { getManagerTechnicianOverview } from "@/lib/technician/queries"
+import { getManagerTechnicianOverview, getUnassignedOrderCount } from "@/lib/technician/queries"
 import { getDashboardWidgetData } from "@/lib/reports/queries"
 import { getRecommendations } from "@/lib/analytics/queries"
 import { KpiCards } from "@/components/app/dashboard/kpi-cards"
@@ -58,6 +58,7 @@ export default async function DashboardPage() {
     technicianOverview,
      reportWidgetData,
      operationalAlerts,
+    unassignedOrderCount,
   ] = await Promise.all([
     getDashboardStats(user.workshopId),
     getActiveWorkOrders(user.workshopId, 10),
@@ -75,6 +76,7 @@ export default async function DashboardPage() {
     getManagerTechnicianOverview(user.workshopId),
     getDashboardWidgetData(user.workshopId),
     getRecommendations(user.workshopId),
+    getUnassignedOrderCount(user.workshopId),
   ])
 
   return (
@@ -146,7 +148,7 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <RecentCustomers customers={recentCustomers} />
-          <TechnicianStatusWidget technicians={technicianOverview} />
+          <TechnicianStatusWidget technicians={technicianOverview} unassignedCount={unassignedOrderCount} />
         </div>
       </div>
     </AppShell>
