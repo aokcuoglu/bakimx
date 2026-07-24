@@ -1,6 +1,5 @@
 "use client"
 
-import { useTransition } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +15,6 @@ import { formatDate, formatDateTime } from "@/lib/utils-client"
 import {
   Plus,
   Wrench,
-  User,
   Calendar,
   Loader2,
   Pencil,
@@ -31,6 +29,7 @@ import { SendReminderButton } from "@/components/app/send-reminder-button"
 import { PartsLaborGrid } from "@/components/app/parts-labor-grid"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { TechnicianAssign, type AssignableTechnician } from "@/components/app/technician-assign"
 
 export type OrderItem = {
   id: string
@@ -382,24 +381,9 @@ export function OrderInfoCard({
   technicians,
 }: {
   order: OrderDetailData
-  technicians?: { id: string; fullName: string; role: string }[]
+  technicians?: AssignableTechnician[]
 }) {
   const locked = isOrderLocked(order.status as OrderStatus)
-  const [isPending, startTransition] = useTransition()
-  const handleAssign = (technicianId: string) => {
-    startTransition(async () => {
-      const { assignTechnicianAction } = await import("@/app/(app)/technician/actions")
-      await assignTechnicianAction(order.id, technicianId)
-      window.location.reload()
-    })
-  }
-  const handleUnassign = () => {
-    startTransition(async () => {
-      const { unassignTechnicianAction } = await import("@/app/(app)/technician/actions")
-      await unassignTechnicianAction(order.id)
-      window.location.reload()
-    })
-  }
 
   return (
     <Card>
@@ -422,48 +406,15 @@ export function OrderInfoCard({
         )}
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Atanan Usta</span>
-          <div className="flex items-center gap-2">
-            {order.assignedTechnicianName ? (
-              <>
-                <span className="text-sm text-foreground flex items-center gap-1.5">
-                  <User className="size-3.5 text-muted-foreground/70" />
-                  {order.assignedTechnicianName}
-                </span>
-                {!locked && (
-                  <button
-                    onClick={handleUnassign}
-                    disabled={isPending}
-                    className="text-[11px] text-foreground hover:text-foreground/80 underline disabled:opacity-50"
-                  >
-                    Kaldır
-                  </button>
-                )}
-              </>
-            ) : (
-              <span className="text-sm text-muted-foreground/70">—</span>
-            )}
-          </div>
+          {/* Atama tek bir yerden yürür (technician-assign); burada yalnız tetikleyici durur. */}
+          <TechnicianAssign
+            orderId={order.id}
+            assignedTechnicianId={order.assignedTechnicianId}
+            assignedTechnicianName={order.assignedTechnicianName}
+            technicians={technicians ?? []}
+            locked={locked}
+          />
         </div>
-        {!locked && technicians && technicians.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {technicians.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => handleAssign(t.id)}
-                disabled={isPending || t.id === order.assignedTechnicianId}
-                className={cn(
-                  "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors touch-manipulation disabled:opacity-50",
-                  t.id === order.assignedTechnicianId
-                    ? "bg-primary/10 text-foreground border border-primary/20"
-                    : "bg-muted text-muted-foreground border border-border hover:bg-primary/10 hover:border-primary/20"
-                )}
-              >
-                <User className="size-3" />
-                {t.fullName}
-              </button>
-            ))}
-          </div>
-        )}
         {order.technicianName && order.technicianName !== order.assignedTechnicianName && (
           <InfoRow label="Teknisyen (eski)" value={order.technicianName} />
         )}
