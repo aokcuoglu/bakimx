@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>
-          <Link href="/workshop" className="hover:text-foreground">Ayarlar</Link>
+          <Link href="/settings?tab=profile" className="hover:text-foreground">Ayarlar</Link>
           <span className="mx-2">/</span>
           <span className="text-foreground font-medium">Bildirim Ayarları</span>
         </div>

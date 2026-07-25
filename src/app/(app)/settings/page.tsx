@@ -81,7 +81,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
 
   // Team data — scoped to this tenant.
-  const [members, invites] = await Promise.all([
+  const [members, invites, technicians] = await Promise.all([
     prisma.user.findMany({
       where: { workshopId: user.workshopId },
       select: { id: true, email: true, firstName: true, lastName: true, role: true, isActive: true },
@@ -92,6 +92,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       select: { id: true, email: true, role: true, expiresAt: true },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.technician.findMany({
+      where: { workshopId: user.workshopId },
+      orderBy: [{ isActive: "desc" }, { fullName: "asc" }],
+    }),
   ])
 
   const serializedInvites = invites.map((i) => ({
@@ -99,6 +103,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     email: i.email,
     role: i.role,
     expiresAt: i.expiresAt.toISOString(),
+  }))
+
+  const serializedTechnicians = technicians.map((t) => ({
+    id: t.id,
+    fullName: t.fullName,
+    phone: t.phone,
+    role: t.role,
+    isActive: t.isActive,
+    createdAt: t.createdAt.toISOString(),
   }))
 
   const seatUsage = await getSeatUsage(user.workshopId)
@@ -118,6 +131,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           user={serializedUser}
           members={members}
           invites={serializedInvites}
+          technicians={serializedTechnicians}
           seatUsed={seatUsage.used}
           seatLimit={seatLimit}
         />
