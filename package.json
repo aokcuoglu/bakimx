@@ -23,6 +23,7 @@
     "db:seed-catalog": "bunx tsx scripts/migrate-vehicle-catalog.ts",
     "db:find-dupe-phones": "bunx tsx scripts/find-duplicate-phones.ts",
     "db:merge-customers": "bunx tsx scripts/merge-duplicate-customers.ts",
+    "db:backfill-articles": "bunx tsx scripts/backfill-tecdoc-articles.ts",
     "db:studio": "prisma studio",
     "workshop": "bun scripts/workshop-admin.ts",
     "test": "bun test",

@@ -91,47 +91,62 @@ export async function getArticlesByCategory(vehicleId: number, categoryId: numbe
 
   // Persist normalized rows so the next read comes from DB directly. Mock data
   // must NOT be persisted (it would shadow real data after switching providers).
-  // Wrapped in a single transaction so a mid-batch failure rolls back all rows
-  // (avoids partial writes leaving the table in an inconsistent state).
   if (provider.name !== "mock" && articles.length > 0) {
     try {
-      await prisma.$transaction(
-        articles.map((a) =>
-          prisma.tecdocArticle.upsert({
-            where: {
-              vehicleTypeId_categoryId_tecdocArticleId: {
-                vehicleTypeId: vehicleId,
-                categoryId,
-                tecdocArticleId: a.tecdocArticleId,
-              },
-            },
-            create: {
-              vehicleTypeId: vehicleId,
-              categoryId,
-              tecdocArticleId: a.tecdocArticleId,
-              articleNo: a.articleNo,
-              productName: a.productName,
-              supplierName: a.supplierName,
-              supplierId: a.supplierId,
-              imageUrl: a.imageUrl,
-            },
-            update: {
-              articleNo: a.articleNo,
-              productName: a.productName,
-              supplierName: a.supplierName,
-              supplierId: a.supplierId,
-              imageUrl: a.imageUrl,
-            },
-          })
-        )
-      )
+      await persistArticles(vehicleId, categoryId, articles)
     } catch (err) {
       // DB write failure must not block the user from seeing API data.
-      console.error("[tecdoc] article persist failed", err)
+      console.error(
+        `[tecdoc] article persist failed (vehicle=${vehicleId} category=${categoryId} count=${articles.length})`,
+        err
+      )
     }
   }
 
   return articles
+}
+
+/** Tek INSERT'e sığdırılacak satır sayısı (7 kolon × 1000 = 7000 bind parametresi,
+ *  PG'nin 65535 sınırının çok altında). */
+const PERSIST_CHUNK = 1000
+
+/**
+ * Normalize edilmiş makaleleri `tecdoc_articles`'a yazar.
+ *
+ * `createMany` (chunk başına TEK statement) kullanılır — satır-başına `upsert` ile
+ * kurulan `$transaction([...])` batch'i, dizi formunda `timeout` seçeneği
+ * OLMADIĞI için 5 sn'lik varsayılan sınıra takılıp TÜM batch'i geri alıyordu
+ * (P2028); 199 satırlık bir kategori uzak DB gecikmesinde 5.6 sn sürüyor ve
+ * hiçbir satır yazılmıyordu (bkz. "silecek süpürgesi" bulunamaması). Her chunk
+ * kendi başına atomiktir ve `skipDuplicates` eşzamanlı ilk-getirmelerde çakışmayı
+ * yutar. Güncelleme dalına gerek yok: çağıran zaten satır varsa DB'den döner.
+ */
+export async function persistArticles(
+  vehicleId: number,
+  categoryId: number,
+  articles: ArticleSummary[]
+): Promise<number> {
+  // Sağlayıcı aynı makaleyi iki kez döndürebilir; unique anahtar (araç, kategori,
+  // makale) olduğu için chunk içi tekrarları baştan eleriz.
+  const unique = [...new Map(articles.map((a) => [a.tecdocArticleId, a])).values()]
+  let written = 0
+  for (let i = 0; i < unique.length; i += PERSIST_CHUNK) {
+    const res = await prisma.tecdocArticle.createMany({
+      data: unique.slice(i, i + PERSIST_CHUNK).map((a) => ({
+        vehicleTypeId: vehicleId,
+        categoryId,
+        tecdocArticleId: a.tecdocArticleId,
+        articleNo: a.articleNo,
+        productName: a.productName,
+        supplierName: a.supplierName,
+        supplierId: a.supplierId,
+        imageUrl: a.imageUrl,
+      })),
+      skipDuplicates: true,
+    })
+    written += res.count
+  }
+  return written
 }
 
 /**
