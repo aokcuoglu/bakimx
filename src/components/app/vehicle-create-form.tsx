@@ -25,7 +25,7 @@ import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTyp
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku } from "./ruhsattan-oku"
-import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { VinResolveButton, VinCandidateList, VinLockedNotice, useVinResolve } from "./vin-resolve"
 import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
 
@@ -421,6 +421,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     <AlertDescription>{vinResolve.error}</AlertDescription>
                   </Alert>
                 )}
+                {vinResolve.locked && <VinLockedNotice />}
                 {vinResolve.candidates.length > 0 && (
                   <VinCandidateList
                     candidates={vinResolve.candidates}
