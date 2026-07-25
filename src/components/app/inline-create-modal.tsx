@@ -276,6 +276,9 @@ export function InlineCreateModal({
       vf.set("enginePower", fields.enginePower)
       vf.set("firstRegistrationDate", fields.firstRegistrationDate)
       vf.set("inspectionValidUntil", fields.inspectionValidUntil)
+      // Geçerli 17-haneli VIN (ruhsat taraması / VIN-arama / elle) → şase teyit edildi.
+      // smart-capture (vin.length===17) + linkVehicleCatalog (isValidVin) ile aynı konvansiyon.
+      if (isValidVin(fields.vin)) vf.set("vinConfirmed", "on")
       if (catalogIds.brandId) vf.set("catalogBrandId", String(catalogIds.brandId))
       if (catalogIds.modelId) vf.set("catalogModelId", String(catalogIds.modelId))
       if (catalogIds.vehicleTypeId) vf.set("catalogVehicleTypeId", String(catalogIds.vehicleTypeId))
