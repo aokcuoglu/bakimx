@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
+import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
@@ -356,4 +358,33 @@ export async function searchPartsCatalogAction(query: string) {
     orderBy: { name: "asc" },
     take: 20,
   })
+}
+
+/**
+ * Parça sekmesi güvenlik ağı: araç kataloğa bağlı ama parça cache'i boşsa
+ * (ör. kayıt anını kaçırmış mevcut araçlar) yaygın bakım parçalarını arka
+ * planda (after) doldurur. Kota + mock guard'ları prefetch içinde. Tenant
+ * izolasyonu: workshopId requireAuth()'tan; client'ın vehicleId'si workshop'a
+ * ait mi doğrulanır, catalogVehicleTypeId client'tan ALINMAZ (DB'den okunur).
+ */
+export async function ensureVehiclePartsPrefetched(
+  vehicleId: string
+): Promise<{ status: "cached" | "started" | "skipped" }> {
+  const user = await requireAuth()
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, workshopId: user.workshopId },
+    select: { catalogVehicleTypeId: true },
+  })
+  if (!vehicle?.catalogVehicleTypeId) return { status: "skipped" }
+
+  const vehicleTypeId = vehicle.catalogVehicleTypeId
+  const existing = await prisma.tecdocArticle.findFirst({
+    where: { vehicleTypeId },
+    select: { id: true },
+  })
+  if (existing) return { status: "cached" }
+
+  after(() => prefetchCommonVehicleParts(vehicleTypeId))
+  return { status: "started" }
 }
