@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { normalizePartSearchTerm } from "@/lib/tr-search"
+import { FOLD_FROM, FOLD_TO, normalizePartSearchTerm } from "@/lib/tr-search"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
 import { dedupeBrands, normalizeArticles, normalizeCategories, normalizeSuppliers } from "./normalize"
@@ -217,18 +217,24 @@ export async function searchVehicleArticles(
   // Ayraç-duyarsız arama: DB'de parça no "C 27 125" gibi boşluklu saklanırken
   // kullanıcı "C27125" yazınca da eşleşsin diye kolonu da sorguyu da harf/rakama
   // indirip karşılaştırırız. Aynı normalize hem article_no hem product_name için
-  // geçerli — yani "hava filtresi" ↔ "havafiltresi" de bulunur. Prisma where'i
-  // kolon üzerinde fonksiyon çağıramadığından bu adım $queryRaw ile yapılır;
-  // sonuç kümesi araca (vehicle_type_id) scope'lu ve LIMIT'li kaldığı için maliyet düşük.
+  // geçerli — yani "hava filtresi" ↔ "havafiltresi" de bulunur. `translate` adımı
+  // Türkçe/aksanlı harfleri ASCII'ye katlar (süpürge→supurge); onsuz [^a-z0-9]
+  // süzgeci ü/ö/ş'yi silip ASCII klavyeyle yazan kullanıcıyı sonuçsuz bırakıyordu.
+  // Katlama tablosu JS ile ORTAK (FOLD_FROM/FOLD_TO) — iki uç birebir aynı anahtarı
+  // üretmeli. Prisma where'i kolon üzerinde fonksiyon çağıramadığından bu adım
+  // $queryRaw ile yapılır; sonuç kümesi araca (vehicle_type_id) scope'lu ve
+  // LIMIT'li kaldığı için maliyet düşük.
   const normQ = q.length >= 2 ? normalizePartSearchTerm(q) : ""
   const conditions: Prisma.Sql[] = [Prisma.sql`vehicle_type_id = ${vehicleId}`]
   if (supplierId != null) conditions.push(Prisma.sql`supplier_id = ${supplierId}`)
   if (categoryId != null) conditions.push(Prisma.sql`category_id = ${categoryId}`)
   if (normQ) {
     const pattern = `%${normQ}%` // normQ zaten harf/rakama indirgendi → LIKE joker'i (% _) içermez
+    const fold = (col: Prisma.Sql) =>
+      Prisma.sql`regexp_replace(translate(lower(${col}), ${FOLD_FROM}, ${FOLD_TO}), '[^a-z0-9]', '', 'g')`
     conditions.push(Prisma.sql`(
-      regexp_replace(lower(article_no), '[^a-z0-9]', '', 'g') LIKE ${pattern}
-      OR regexp_replace(lower(product_name), '[^a-z0-9]', '', 'g') LIKE ${pattern}
+      ${fold(Prisma.raw("article_no"))} LIKE ${pattern}
+      OR ${fold(Prisma.raw("product_name"))} LIKE ${pattern}
     )`)
   }
   const rows = await prisma.$queryRaw<
