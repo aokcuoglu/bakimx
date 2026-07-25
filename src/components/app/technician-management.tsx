@@ -10,7 +10,7 @@ import { formatPhoneTR } from "@/lib/format"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-type TechnicianRow = {
+export type TechnicianRow = {
   id: string
   fullName: string
   phone: string

@@ -10,6 +10,7 @@ import { AppointmentRulesForm } from "@/components/app/settings/appointment-rule
 import { PdfTemplatesForm } from "@/components/app/settings/pdf-templates-form"
 import { SecurityInfo } from "@/components/app/settings/security-info"
 import { TeamManagement, type TeamMember, type PendingInvite } from "@/components/app/settings/team-management"
+import { TechnicianManagement, type TechnicianRow } from "@/components/app/technician-management"
 import type { UserRole } from "@prisma/client"
 import {
   Building2,
@@ -96,6 +97,7 @@ export function SettingsTabs({
   user,
   members,
   invites,
+  technicians,
   seatUsed,
   seatLimit,
 }: {
@@ -105,6 +107,7 @@ export function SettingsTabs({
   user: UserData
   members: TeamMember[]
   invites: PendingInvite[]
+  technicians: TechnicianRow[]
   seatUsed: number
   seatLimit: number
 }) {
@@ -146,15 +149,18 @@ export function SettingsTabs({
         <TabsContent value="appointment-rules"><AppointmentRulesForm settings={settings} /></TabsContent>
         <TabsContent value="pdf-templates"><PdfTemplatesForm settings={settings} /></TabsContent>
         <TabsContent value="team">
-          <TeamManagement
-            members={members}
-            invites={invites}
-            currentUserId={user.id}
-            currentUserRole={user.role}
-            canManage={canManageTeam}
-            seatUsed={seatUsed}
-            seatLimit={seatLimit}
-          />
+          <div className="space-y-5 sm:space-y-6">
+            <TeamManagement
+              members={members}
+              invites={invites}
+              currentUserId={user.id}
+              currentUserRole={user.role}
+              canManage={canManageTeam}
+              seatUsed={seatUsed}
+              seatLimit={seatLimit}
+            />
+            <TechnicianManagement technicians={technicians} />
+          </div>
         </TabsContent>
         <TabsContent value="security"><SecurityInfo workshop={workshop} user={user} /></TabsContent>
       </Tabs>
