@@ -40,6 +40,7 @@ import { PartAttrOptionsProvider } from "@/components/app/part-attr-options"
 import { SupplierPriceDialog } from "@/components/app/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/app/manual-part-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
@@ -516,6 +517,29 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
   const [submitting, setSubmitting] = useState(false)
   const submittingRef = useRef(false)
   const linked = vehicle?.catalogVehicleTypeId != null
+  const [prefetching, setPrefetching] = useState(false)
+  const prefetchStartedRef = useRef(false)
+
+  // Güvenlik ağı: araç katalog-bağlı ama parça cache'i boşsa arka planda
+  // doldur. Mount başına EN FAZLA bir kez (StrictMode çift-invoke'a karşı ref).
+  useEffect(() => {
+    if (!linked || !vehicle?.id || prefetchStartedRef.current) return
+    prefetchStartedRef.current = true
+    let hideTimer: ReturnType<typeof setTimeout> | undefined
+    void ensureVehiclePartsPrefetched(vehicle.id)
+      .then((res) => {
+        if (res.status === "started") {
+          setPrefetching(true)
+          // Not yalnız bilgilendirme; debounce'lı arama sonuçları getirir.
+          // ~12sn sonra gizle (prefetch'in tamamlanması için makul üst sınır).
+          hideTimer = setTimeout(() => setPrefetching(false), 12000)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      if (hideTimer) clearTimeout(hideTimer)
+    }
+  }, [linked, vehicle?.id])
 
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
   async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
@@ -567,6 +591,13 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
         onCreate={(text) => void add({ source: "manual", name: text })}
         onCreateEdit={(text) => { setName(text); setDialogOpen(true) }}
       />
+
+      {prefetching && (
+        <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Araca uygun parçalar hazırlanıyor…
+        </p>
+      )}
 
       {/* Tam TecDoc katalog picker (🔍) — yalnız araç kataloğa bağlıysa. */}
       {linked && (

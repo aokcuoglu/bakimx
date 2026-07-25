@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import categoriesFixture from "./fixtures/categories-v2.json"
 import { normalizeCategories } from "./normalize"
-import { selectPrefetchTargets } from "./prefetch"
+import { selectPrefetchTargets, eagerPrefetchTarget } from "./prefetch"
 
 test("selectPrefetchTargets: bakım kategorilerini seçer (fren balatası 100030 dahil)", () => {
   const tree = normalizeCategories(categoriesFixture)
@@ -21,4 +21,21 @@ test("selectPrefetchTargets: bakım kategorilerini seçer (fren balatası 100030
 
 test("selectPrefetchTargets: boş ağaç → boş", () => {
   expect(selectPrefetchTargets([])).toEqual([])
+})
+
+test("eagerPrefetchTarget: katalog-bağlı + VIN teyitli → vehicleTypeId döner", () => {
+  expect(eagerPrefetchTarget({ catalogVehicleTypeId: 12345, vinConfirmed: true })).toBe(12345)
+})
+
+test("eagerPrefetchTarget: VIN teyitsiz → null", () => {
+  expect(eagerPrefetchTarget({ catalogVehicleTypeId: 12345, vinConfirmed: false })).toBeNull()
+})
+
+test("eagerPrefetchTarget: katalog bağlı değil → null", () => {
+  expect(eagerPrefetchTarget({ catalogVehicleTypeId: null, vinConfirmed: true })).toBeNull()
+})
+
+test("eagerPrefetchTarget: eksik/undefined alanlar → null", () => {
+  expect(eagerPrefetchTarget({})).toBeNull()
+  expect(eagerPrefetchTarget({ catalogVehicleTypeId: 0, vinConfirmed: true })).toBeNull()
 })

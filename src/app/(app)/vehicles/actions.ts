@@ -8,7 +8,7 @@ import { after } from "next/server"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin } from "@/lib/vin/types"
-import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
+import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -129,6 +129,14 @@ export async function createVehicleAction(formData: FormData) {
     })
 
     await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicle.id, "vehicle_created")
+
+    const prefetchId = eagerPrefetchTarget({
+      catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
+      vinConfirmed: parsed.data.vinConfirmed ?? false,
+    })
+    if (prefetchId != null) {
+      after(() => prefetchCommonVehicleParts(prefetchId))
+    }
 
     revalidatePath("/vehicles")
     return { success: true, id: vehicle.id }
@@ -256,6 +264,14 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   })
 
   await AuditLogAction(user.workshopId, user.id, "Vehicle", vehicleId, "vehicle_updated")
+
+  const prefetchId = eagerPrefetchTarget({
+    catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
+    vinConfirmed: parsed.data.vinConfirmed ?? false,
+  })
+  if (prefetchId != null) {
+    after(() => prefetchCommonVehicleParts(prefetchId))
+  }
 
   revalidatePath("/vehicles")
   revalidatePath(`/vehicles/${vehicleId}`)
