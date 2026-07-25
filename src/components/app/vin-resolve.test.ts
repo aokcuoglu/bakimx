@@ -92,5 +92,5 @@ test("network failure falls back to the generic retry message", async () => {
 })
 
 test("VIN_RESOLVE_IDLE is the zero state", () => {
-  expect(VIN_RESOLVE_IDLE).toEqual({ loading: false, error: "", notice: "", candidates: [] })
+  expect(VIN_RESOLVE_IDLE).toEqual({ loading: false, error: "", notice: "", candidates: [], locked: false })
 })
