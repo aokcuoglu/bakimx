@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { normalizePartSearchTerm } from "@/lib/tr-search"
+import { FOLD_FROM, FOLD_TO, normalizePartSearchTerm } from "@/lib/tr-search"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
 import { dedupeBrands, normalizeArticles, normalizeCategories, normalizeSuppliers } from "./normalize"
@@ -91,47 +91,62 @@ export async function getArticlesByCategory(vehicleId: number, categoryId: numbe
 
   // Persist normalized rows so the next read comes from DB directly. Mock data
   // must NOT be persisted (it would shadow real data after switching providers).
-  // Wrapped in a single transaction so a mid-batch failure rolls back all rows
-  // (avoids partial writes leaving the table in an inconsistent state).
   if (provider.name !== "mock" && articles.length > 0) {
     try {
-      await prisma.$transaction(
-        articles.map((a) =>
-          prisma.tecdocArticle.upsert({
-            where: {
-              vehicleTypeId_categoryId_tecdocArticleId: {
-                vehicleTypeId: vehicleId,
-                categoryId,
-                tecdocArticleId: a.tecdocArticleId,
-              },
-            },
-            create: {
-              vehicleTypeId: vehicleId,
-              categoryId,
-              tecdocArticleId: a.tecdocArticleId,
-              articleNo: a.articleNo,
-              productName: a.productName,
-              supplierName: a.supplierName,
-              supplierId: a.supplierId,
-              imageUrl: a.imageUrl,
-            },
-            update: {
-              articleNo: a.articleNo,
-              productName: a.productName,
-              supplierName: a.supplierName,
-              supplierId: a.supplierId,
-              imageUrl: a.imageUrl,
-            },
-          })
-        )
-      )
+      await persistArticles(vehicleId, categoryId, articles)
     } catch (err) {
       // DB write failure must not block the user from seeing API data.
-      console.error("[tecdoc] article persist failed", err)
+      console.error(
+        `[tecdoc] article persist failed (vehicle=${vehicleId} category=${categoryId} count=${articles.length})`,
+        err
+      )
     }
   }
 
   return articles
+}
+
+/** Tek INSERT'e sığdırılacak satır sayısı (7 kolon × 1000 = 7000 bind parametresi,
+ *  PG'nin 65535 sınırının çok altında). */
+const PERSIST_CHUNK = 1000
+
+/**
+ * Normalize edilmiş makaleleri `tecdoc_articles`'a yazar.
+ *
+ * `createMany` (chunk başına TEK statement) kullanılır — satır-başına `upsert` ile
+ * kurulan `$transaction([...])` batch'i, dizi formunda `timeout` seçeneği
+ * OLMADIĞI için 5 sn'lik varsayılan sınıra takılıp TÜM batch'i geri alıyordu
+ * (P2028); 199 satırlık bir kategori uzak DB gecikmesinde 5.6 sn sürüyor ve
+ * hiçbir satır yazılmıyordu (bkz. "silecek süpürgesi" bulunamaması). Her chunk
+ * kendi başına atomiktir ve `skipDuplicates` eşzamanlı ilk-getirmelerde çakışmayı
+ * yutar. Güncelleme dalına gerek yok: çağıran zaten satır varsa DB'den döner.
+ */
+export async function persistArticles(
+  vehicleId: number,
+  categoryId: number,
+  articles: ArticleSummary[]
+): Promise<number> {
+  // Sağlayıcı aynı makaleyi iki kez döndürebilir; unique anahtar (araç, kategori,
+  // makale) olduğu için chunk içi tekrarları baştan eleriz.
+  const unique = [...new Map(articles.map((a) => [a.tecdocArticleId, a])).values()]
+  let written = 0
+  for (let i = 0; i < unique.length; i += PERSIST_CHUNK) {
+    const res = await prisma.tecdocArticle.createMany({
+      data: unique.slice(i, i + PERSIST_CHUNK).map((a) => ({
+        vehicleTypeId: vehicleId,
+        categoryId,
+        tecdocArticleId: a.tecdocArticleId,
+        articleNo: a.articleNo,
+        productName: a.productName,
+        supplierName: a.supplierName,
+        supplierId: a.supplierId,
+        imageUrl: a.imageUrl,
+      })),
+      skipDuplicates: true,
+    })
+    written += res.count
+  }
+  return written
 }
 
 /**
@@ -202,18 +217,24 @@ export async function searchVehicleArticles(
   // Ayraç-duyarsız arama: DB'de parça no "C 27 125" gibi boşluklu saklanırken
   // kullanıcı "C27125" yazınca da eşleşsin diye kolonu da sorguyu da harf/rakama
   // indirip karşılaştırırız. Aynı normalize hem article_no hem product_name için
-  // geçerli — yani "hava filtresi" ↔ "havafiltresi" de bulunur. Prisma where'i
-  // kolon üzerinde fonksiyon çağıramadığından bu adım $queryRaw ile yapılır;
-  // sonuç kümesi araca (vehicle_type_id) scope'lu ve LIMIT'li kaldığı için maliyet düşük.
+  // geçerli — yani "hava filtresi" ↔ "havafiltresi" de bulunur. `translate` adımı
+  // Türkçe/aksanlı harfleri ASCII'ye katlar (süpürge→supurge); onsuz [^a-z0-9]
+  // süzgeci ü/ö/ş'yi silip ASCII klavyeyle yazan kullanıcıyı sonuçsuz bırakıyordu.
+  // Katlama tablosu JS ile ORTAK (FOLD_FROM/FOLD_TO) — iki uç birebir aynı anahtarı
+  // üretmeli. Prisma where'i kolon üzerinde fonksiyon çağıramadığından bu adım
+  // $queryRaw ile yapılır; sonuç kümesi araca (vehicle_type_id) scope'lu ve
+  // LIMIT'li kaldığı için maliyet düşük.
   const normQ = q.length >= 2 ? normalizePartSearchTerm(q) : ""
   const conditions: Prisma.Sql[] = [Prisma.sql`vehicle_type_id = ${vehicleId}`]
   if (supplierId != null) conditions.push(Prisma.sql`supplier_id = ${supplierId}`)
   if (categoryId != null) conditions.push(Prisma.sql`category_id = ${categoryId}`)
   if (normQ) {
     const pattern = `%${normQ}%` // normQ zaten harf/rakama indirgendi → LIKE joker'i (% _) içermez
+    const fold = (col: Prisma.Sql) =>
+      Prisma.sql`regexp_replace(translate(lower(${col}), ${FOLD_FROM}, ${FOLD_TO}), '[^a-z0-9]', '', 'g')`
     conditions.push(Prisma.sql`(
-      regexp_replace(lower(article_no), '[^a-z0-9]', '', 'g') LIKE ${pattern}
-      OR regexp_replace(lower(product_name), '[^a-z0-9]', '', 'g') LIKE ${pattern}
+      ${fold(Prisma.raw("article_no"))} LIKE ${pattern}
+      OR ${fold(Prisma.raw("product_name"))} LIKE ${pattern}
     )`)
   }
   const rows = await prisma.$queryRaw<
