@@ -525,19 +525,18 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
   useEffect(() => {
     if (!linked || !vehicle?.id || prefetchStartedRef.current) return
     prefetchStartedRef.current = true
-    let cancelled = false
     let hideTimer: ReturnType<typeof setTimeout> | undefined
-    void ensureVehiclePartsPrefetched(vehicle.id).then((res) => {
-      if (cancelled) return
-      if (res.status === "started") {
-        setPrefetching(true)
-        // Not yalnız bilgilendirme; debounce'lı arama sonuçları getirir.
-        // ~12sn sonra gizle (prefetch'in tamamlanması için makul üst sınır).
-        hideTimer = setTimeout(() => setPrefetching(false), 12000)
-      }
-    })
+    void ensureVehiclePartsPrefetched(vehicle.id)
+      .then((res) => {
+        if (res.status === "started") {
+          setPrefetching(true)
+          // Not yalnız bilgilendirme; debounce'lı arama sonuçları getirir.
+          // ~12sn sonra gizle (prefetch'in tamamlanması için makul üst sınır).
+          hideTimer = setTimeout(() => setPrefetching(false), 12000)
+        }
+      })
+      .catch(() => {})
     return () => {
-      cancelled = true
       if (hideTimer) clearTimeout(hideTimer)
     }
   }, [linked, vehicle?.id])
