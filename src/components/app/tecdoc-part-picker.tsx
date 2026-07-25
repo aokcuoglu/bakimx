@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { ChevronLeft, ChevronRight, Loader2, PackageSearch, ScanLine } from "lucide-react"
-import { VinCandidateList } from "./vin-resolve"
+import { VinCandidateList, VinLockedNotice } from "./vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 import type { ArticleSummary, CategoryNode } from "@/lib/tecdoc/types"
@@ -379,6 +379,7 @@ function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  const [locked, setLocked] = useState(false)
   const [candidates, setCandidates] = useState<VinCandidate[]>([])
 
   const hasVin = isValidVin(vehicle.vin ?? "")
@@ -407,6 +408,7 @@ function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
     setLoading(true)
     setError("")
     setNotice("")
+    setLocked(false)
     setCandidates([])
     try {
       const res = await fetch("/api/vin/resolve", {
@@ -425,7 +427,8 @@ function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || "VIN sorgulanamadı.")
+        if (res.status === 403 && data.code === "feature_locked") setLocked(true)
+        else setError(data.error || "VIN sorgulanamadı.")
         setLoading(false)
         return
       }
@@ -479,6 +482,7 @@ function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
       </div>
       {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
+      {locked && <VinLockedNotice />}
       {candidates.length > 0 && (
         <VinCandidateList
           candidates={candidates}

@@ -20,7 +20,7 @@ import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "./customer-search-or-create"
 import { VehicleBrandModelPicker } from "./vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "./ruhsattan-oku"
-import { VinResolveButton, VinCandidateList, useVinResolve } from "./vin-resolve"
+import { VinResolveButton, VinCandidateList, VinLockedNotice, useVinResolve } from "./vin-resolve"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { normalizePlate } from "@/lib/format"
@@ -451,6 +451,7 @@ export function InlineCreateModal({
                 )}
                 {vinResolve.notice && <p className="text-xs text-muted-foreground">{vinResolve.notice}</p>}
                 {vinResolve.error && <p className="text-xs text-destructive">{vinResolve.error}</p>}
+                {vinResolve.locked && <VinLockedNotice />}
                 {vinResolve.candidates.length > 0 && (
                   <VinCandidateList
                     candidates={vinResolve.candidates}

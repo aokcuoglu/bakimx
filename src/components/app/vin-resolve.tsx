@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Loader2, ScanLine, Check, BadgeCheck } from "lucide-react"
+import Link from "next/link"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Loader2, ScanLine, Check, BadgeCheck, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { isValidVin, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 
@@ -13,9 +14,11 @@ export type VinResolveState = {
   error: string
   notice: string
   candidates: VinCandidate[]
+  /** API returned 403 feature_locked → show the upgrade upsell instead of a raw error. */
+  locked: boolean
 }
 
-export const VIN_RESOLVE_IDLE: VinResolveState = { loading: false, error: "", notice: "", candidates: [] }
+export const VIN_RESOLVE_IDLE: VinResolveState = { loading: false, error: "", notice: "", candidates: [], locked: false }
 
 export interface VinResolveCallbacks {
   /** A brand-only or brand+model TecDoc hit. Always followed by onCandidate when a single engine variant auto-selects. */
@@ -44,6 +47,9 @@ export async function performVinResolve(
     })
     const data = await res.json()
     if (!res.ok) {
+      if (res.status === 403 && data.code === "feature_locked") {
+        return { ...VIN_RESOLVE_IDLE, locked: true }
+      }
       return { ...VIN_RESOLVE_IDLE, error: data.error || "VIN sorgulanamadı." }
     }
     const result = data as VinResolution
@@ -116,6 +122,25 @@ export function VinResolveButton({
       {loading ? <Loader2 className="size-4 animate-spin" /> : <ScanLine className="size-4" />}
       VIN&apos;den getir
     </Button>
+  )
+}
+
+/**
+ * Shown when /api/vin/resolve returns 403 feature_locked — VIN'den araç tanıma
+ * is a Pro+ capability. Compact inline upsell (mobile-first) reused by every
+ * VinResolveButton consumer so the message is consistent everywhere.
+ */
+export function VinLockedNotice() {
+  return (
+    <div className="rounded-md border border-border bg-muted/40 p-2.5 space-y-2 text-sm">
+      <p className="flex items-start gap-1.5 text-muted-foreground">
+        <Lock className="size-3.5 mt-0.5 shrink-0" />
+        <span>VIN&apos;den otomatik araç tanıma Pro ve üzeri paketlere özeldir.</span>
+      </p>
+      <Link href="/checkout?tier=pro&cycle=monthly" className={cn(buttonVariants({ size: "sm" }), "w-full")}>
+        Pro&apos;ya yükselt
+      </Link>
+    </div>
   )
 }
 
