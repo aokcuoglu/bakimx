@@ -45,6 +45,8 @@ export function PartSearchInput({
   showCreate,
   onCreate,
   onCreateEdit,
+  refreshSignal,
+  onResultsCount,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -72,6 +74,10 @@ export function PartSearchInput({
   showCreate?: boolean
   onCreate?: (name: string) => void
   onCreateEdit?: (name: string) => void
+  /** Dışarıdan yeniden-arama sinyali: değeri değişince mevcut query yeniden sorgulanır (prefetch dolarken UI'ı tazelemek için). */
+  refreshSignal?: number
+  /** Her arama sonucu güncellemesinde sonuç sayısını bildirir (prefetch poll'unu erken durdurmak için). */
+  onResultsCount?: (count: number) => void
 }) {
   // Composer'da dropdown/altında her zaman görünen Odoo-tarzı create aksiyonları.
   // bare (liste satırı) kullanımında showCreate geçilmez → hiç render edilmez.
@@ -145,6 +151,13 @@ export function PartSearchInput({
   // Dış `value` (kayıtlı ad / otomatik-doldur / seçim) query'yi güncellesin ama
   // arama TETİKLEMESİN — yoksa doldurulan ad tekrar aranıp liste geri açılır.
   const skipNextSearch = useRef(false)
+  // onResultsCount'u ref'te tut: arama effect'inin deps'ini kirletmesin (çağıran
+  // memoize etmese bile her render'da yeniden-fetch tetiklenmesin). Ref render'da
+  // değil effect'te güncellenir (React Compiler render'da ref yazmayı yasaklar).
+  const onResultsCountRef = useRef(onResultsCount)
+  useEffect(() => {
+    onResultsCountRef.current = onResultsCount
+  }, [onResultsCount])
 
   useEffect(() => {
     // Dış value'yu iç query'ye senkronla (React↔prop senkronu; kaçınılmaz setState).
@@ -168,6 +181,7 @@ export function PartSearchInput({
     if (q.length < 2 && !hasFilter) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([])
+      onResultsCountRef.current?.(0)
       return
     }
     let active = true
@@ -179,7 +193,11 @@ export function PartSearchInput({
         if (categoryId != null) qs.set("categoryId", String(categoryId))
         const res = await fetch(`/api/tecdoc/articles/search?${qs.toString()}`)
         const data = await res.json()
-        if (active && res.ok) setResults(Array.isArray(data.articles) ? data.articles : [])
+        if (active && res.ok) {
+          const arr = Array.isArray(data.articles) ? data.articles : []
+          setResults(arr)
+          onResultsCountRef.current?.(arr.length)
+        }
       } catch {
         /* arama hatası sessiz — serbest metin girişi çalışmaya devam eder */
       }
@@ -188,7 +206,8 @@ export function PartSearchInput({
       active = false
       clearTimeout(t)
     }
-  }, [query, vehicleTypeId, supplierId, categoryId])
+    // refreshSignal: prefetch dolarken dışarıdan tetiklenen yeniden-arama sinyali.
+  }, [query, vehicleTypeId, supplierId, categoryId, refreshSignal])
 
   // Araç kataloğa bağlı değil → arama yok, düz metin girişi + (composer'da) create aksiyonları.
   if (vehicleTypeId == null) {
