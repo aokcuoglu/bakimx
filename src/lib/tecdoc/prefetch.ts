@@ -65,6 +65,23 @@ export function selectPrefetchTargets(tree: CategoryNode[]): number[] {
 }
 
 /**
+ * Kayıt/güncelleme anında eager prefetch yapılmalı mı? Kullanıcı beklentisi:
+ * "VIN teyit edildi ise" parçalar hazır olsun. Katalog-bağlı DEĞİLSE ya da VIN
+ * teyitli DEĞİLSE null döner (o araçlar Parça sekmesi güvenlik ağıyla dolar,
+ * boşuna RapidAPI kotası harcanmaz). SAF — I/O yok, test edilebilir.
+ */
+export function eagerPrefetchTarget(v: {
+  catalogVehicleTypeId?: number | null
+  vinConfirmed?: boolean | null
+}): number | null {
+  const id = v.catalogVehicleTypeId
+  if (v.vinConfirmed === true && typeof id === "number" && Number.isInteger(id) && id > 0) {
+    return id
+  }
+  return null
+}
+
+/**
  * Teyit sonrası arka planda (after()) çağrılır: aracın yaygın bakım kategorilerinin
  * parçalarını TecdocArticle cache'ine doldurur, böylece parça-ekleme UI'ı (ad
  * arama + marka/kategori) dolu cache'ten beslenir. HİÇBİR ZAMAN throw ETMEZ.
