@@ -82,7 +82,6 @@ export async function createIntakeAction(formData: FormData) {
     description: "İş emri oluşturuldu",
   })
 
-  revalidatePath("/intakes")
   revalidatePath("/orders")
   return { success: true, id: intake.id, orderId: order.id }
 }
@@ -214,8 +213,8 @@ export async function updateIntakeDetailsAction(
     description: `İş emri bilgileri düzenlendi (${changes.join(", ")})`,
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
-  revalidatePath("/intakes")
+  // Not: sunucu tarafı revalidate gerekmiyor — çağıran (work-order-detail.tsx)
+  // başarıdan sonra router.refresh() yapıyor.
   return { success: true }
 }
 
@@ -308,7 +307,8 @@ export async function addPhotoAction(formData: FormData) {
     description: `${type} fotoğrafı yüklendi`,
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
+  // Çağıranlar kendi tazelemesini yapıyor: work-order-detail.tsx router.refresh(),
+  // photo-annotate.tsx yüklenen kareyi iyimser yerel state'e ekliyor.
   return { success: true, id: photo.id }
 }
 
