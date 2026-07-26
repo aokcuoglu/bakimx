@@ -43,7 +43,12 @@ const TABLES: TableSpec[] = [
     query: "SELECT id::text AS id, vehicle_type_id, brake_system, car_id, ccm_tech, construction_type, cylinder, cylinder_capacity_ccm, cylinder_capacity_liter, fuel_type, fuel_type_process, impulsion_type, manu_id, manu_name, mod_id, model_name, motor_type, power_hp_from, power_hp_to, power_kw_from, power_kw_to, type_name, type_number, valves, year_of_constr_from, year_of_constr_to, rmi_type_id, motor_codes, raw_payload, created_at::text AS created_at, updated_at::text AS updated_at FROM v0.vtype_details" },
 ]
 
-const BATCH = 2000
+// Prisma's client engine holds on to memory across createMany calls, so peak RSS tracks the
+// batch size. Measured locally over the real fixtures (37.9k wide type_details rows):
+// batch 2000 → 1662 MB, batch 500 → 1179 MB, batch 100 → 675 MB, all at the same ~13 s runtime.
+// 500 buys ~500 MB of headroom for free; the deploy workflows size the one-off seed task to
+// 2048 MB to cover the rest (a 512 MB task was OOM-killed at exit 137).
+const BATCH = 500
 
 // Stream one gz fixture straight into createMany batches. Nothing but the current batch is
 // held in memory — buffering whole files is what OOM-killed the 512 MB seed task (exit 137).

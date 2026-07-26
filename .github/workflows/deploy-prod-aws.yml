@@ -176,6 +176,12 @@ jobs:
           # Runs after the migrate gate so the tables exist; idempotent (createMany skipDuplicates),
           # so it is a near-noop once populated. Deliberately NON-BLOCKING: an empty catalog only
           # degrades the brand/model picker to free-text entry, which must never abort a deploy.
+          #
+          # Task-level cpu/memory are overridden for this one-off run: the service task is sized
+          # 512/1024 for a Next.js server, but seeding 37.9k wide type_details rows through Prisma
+          # peaks around 1.2 GB (the engine holds memory across createMany calls), and a 512 MB dev
+          # task was OOM-killed — "OutOfMemoryError: container killed due to memory usage", exit 137.
+          # 512/2048 is a valid Fargate combo and costs ~nothing for a ~3 min task.
           NET=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
             --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
           SUBNETS=$(echo "$NET" | jq -r '.subnets | join(",")')
@@ -185,18 +191,22 @@ jobs:
             --task-definition "$NEW_TD" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SGS],assignPublicIp=DISABLED}" \
-            --overrides '{"containerOverrides":[{"name":"'"$CONTAINER_NAME"'","command":["sh","-c","cd /migrate && node node_modules/tsx/dist/cli.mjs scripts/migrate-vehicle-catalog.ts --from-file"]}]}' \
+            --overrides '{"cpu":"512","memory":"2048","containerOverrides":[{"name":"'"$CONTAINER_NAME"'","command":["sh","-c","cd /migrate && node node_modules/tsx/dist/cli.mjs scripts/migrate-vehicle-catalog.ts --from-file"]}]}' \
             --started-by "gha-catalog-seed" \
             --query 'tasks[0].taskArn' --output text)
           echo "Catalog-seed task: $TASK_ARN"
           aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
           EXIT=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
             --query 'tasks[0].containers[0].exitCode' --output text)
+          # stoppedReason is the generic task-level message ("Essential container in task exited");
+          # the container-level reason is the one that names OOM kills, so print both.
           REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
             --query 'tasks[0].stoppedReason' --output text)
-          echo "Catalog-seed exit code: $EXIT (stoppedReason: $REASON)"
+          CONTAINER_REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].reason' --output text)
+          echo "Catalog-seed exit code: $EXIT (stoppedReason: $REASON | container: $CONTAINER_REASON)"
           if [ "$EXIT" != "0" ]; then
-            echo "::warning::Vehicle-catalog seed failed (exit=$EXIT) — deploy continues; brand/model picker falls back to free-text. Check CloudWatch /ecs/bakimx-prod-app."
+            echo "::warning::Vehicle-catalog seed failed (exit=$EXIT, $CONTAINER_REASON) — deploy continues; brand/model picker falls back to free-text. Check CloudWatch /ecs/bakimx-prod-app."
           fi
 
       - name: Deploy to ECS (update service)
