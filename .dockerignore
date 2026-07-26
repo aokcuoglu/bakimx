@@ -5,7 +5,16 @@ node_modules
 !.env.example
 *.md
 docs
-.husky
-.prettier*
-.eslint*
 coverage
+
+# Local tooling artifacts — these are gitignored but Docker still sends them in the
+# build context unless excluded here. .claude/worktrees alone can be gigabytes.
+.claude
+.opencode
+.playwright-mcp
+.superpowers
+.worktrees
+.vscode
+.idea
+.DS_Store
+*.tsbuildinfo

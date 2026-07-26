@@ -2,13 +2,12 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
-import { intakeCreateSchema, intakeUpdateSchema, damageMarkSchema } from "@/lib/validations/intake"
+import { intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { isIntakeStatus, canTransitionIntake, isOrderStatus, canTransitionOrder, isIntakeWriteLocked } from "@/lib/status-transitions"
-import type { IntakeStatus, OrderStatus } from "@prisma/client"
+import { isIntakeWriteLocked } from "@/lib/status-transitions"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 
@@ -83,7 +82,6 @@ export async function createIntakeAction(formData: FormData) {
     description: "İş emri oluşturuldu",
   })
 
-  revalidatePath("/intakes")
   revalidatePath("/orders")
   return { success: true, id: intake.id, orderId: order.id }
 }
@@ -215,81 +213,16 @@ export async function updateIntakeDetailsAction(
     description: `İş emri bilgileri düzenlendi (${changes.join(", ")})`,
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
-  revalidatePath("/intakes")
+  // Not: sunucu tarafı revalidate gerekmiyor — çağıran (work-order-detail.tsx)
+  // başarıdan sonra router.refresh() yapıyor.
   return { success: true }
 }
 
-export async function addDamageMarkAction(formData: FormData) {
-  const user = await requireAuth()
-
-  const raw = {
-    intakeFormId: formData.get("intakeFormId") as string,
-    zone: formData.get("zone") as string,
-    damageType: formData.get("damageType") as string,
-    severity: formData.get("severity") as string,
-    note: formData.get("note") as string,
-    photoUrl: formData.get("photoUrl") as string,
-  }
-
-  const parsed = damageMarkSchema.safeParse({
-    zone: raw.zone,
-    damageType: raw.damageType,
-    severity: raw.severity,
-    note: raw.note || undefined,
-    photoUrl: raw.photoUrl || undefined,
-  })
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || "Geçersiz hasar bilgisi" }
-  }
-
-  const intake = await prisma.vehicleIntakeForm.findFirst({
-    where: { id: raw.intakeFormId, workshopId: user.workshopId },
-    include: { order: { select: { status: true } } },
-  })
-  if (!intake) return { error: "Kabul formu bulunamadı" }
-  if (isIntakeWriteLocked(intake.status, intake.order?.status)) {
-    return { error: "Teslim edilmiş veya iptal edilmiş iş emrine hasar işareti eklenemez" }
-  }
-
-  const mark = await prisma.damageMark.create({
-    data: {
-      workshopId: user.workshopId,
-      intakeFormId: raw.intakeFormId,
-      zone: parsed.data.zone,
-      damageType: parsed.data.damageType,
-      severity: parsed.data.severity,
-      note: parsed.data.note || null,
-      photoUrl: parsed.data.photoUrl || null,
-    },
-  })
-
-  await addTimelineEvent({
-    workshopId: user.workshopId,
-    intakeFormId: raw.intakeFormId,
-    eventType: "damage_marks_added",
-    description: `Hasar kaydı: ${parsed.data.zone} - ${parsed.data.damageType}`,
-  })
-
-  await AuditLogAction(
-    user.workshopId,
-    user.id,
-    "DamageMark",
-    mark.id,
-    "damage_mark_added",
-    JSON.stringify({ zone: parsed.data.zone, damageType: parsed.data.damageType, severity: parsed.data.severity }),
-  )
-
-  revalidatePath(`/intakes/${raw.intakeFormId}`)
-  return { success: true, id: mark.id }
-}
-
-export async function removeDamageMarkAction(_markId: string, _intakeFormId: string) {
-  // Delil bütünlüğü: kabul sırasında kaydedilen hasar işaretleri silinemez.
-  // İş emri metni düzenlenebilir (updateIntakeDetailsAction) ama kanıt kalıcıdır.
-  await requireAuth()
-  return { error: "Hasar kaydı silinemez. Kabul kanıtları kalıcıdır." }
-}
+// DamageMark yazma yolu (ekle/sil) kaldırıldı: SVG hasar haritası Faz C'de akıştan
+// çıkarıldı ve yerini PhotoAnnotate aldı; tek çağrı noktası olan /api/intakes/damage
+// rotasının da hiçbir tüketicisi kalmamıştı. Mevcut DamageMark KAYITLARI okunmaya
+// devam ediyor (araç detayı/pasaportu, iş emri, teknisyen, /s/[token] ve PDF) —
+// delil bütünlüğü gereği kalıcıdırlar.
 
 export async function addPhotoAction(formData: FormData) {
   const user = await requireAuth()
@@ -374,7 +307,8 @@ export async function addPhotoAction(formData: FormData) {
     description: `${type} fotoğrafı yüklendi`,
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
+  // Çağıranlar kendi tazelemesini yapıyor: work-order-detail.tsx router.refresh(),
+  // photo-annotate.tsx yüklenen kareyi iyimser yerel state'e ekliyor.
   return { success: true, id: photo.id }
 }
 
@@ -392,52 +326,7 @@ export async function removePhotoAction(_photoId: string, _intakeFormId: string)
   return { error: "Fotoğraf silinemez. Kabul kanıtları kalıcıdır." }
 }
 
-export async function updateIntakeStatusAction(intakeFormId: string, status: string) {
-  const user = await requireAuth()
-
-  if (!isIntakeStatus(status)) return { error: "Geçersiz durum" }
-
-  const intake = await prisma.vehicleIntakeForm.findFirst({
-    where: { id: intakeFormId, workshopId: user.workshopId },
-  })
-  if (!intake) return { error: "Kabul formu bulunamadı" }
-
-  // `approved` is a legacy status no longer produced by any flow; block any attempt
-  // to set it (or make an illegal jump) via the generic action.
-  if (!canTransitionIntake(intake.status as IntakeStatus, status)) {
-    return {
-      error:
-        status === "approved"
-          ? "Bu durum artık kullanılmıyor"
-          : "Bu durum geçişine izin verilmiyor",
-    }
-  }
-
-  const updateResult = await prisma.vehicleIntakeForm.updateMany({
-    where: { id: intakeFormId, workshopId: user.workshopId },
-    data: { status },
-  })
-  if (updateResult.count === 0) return { error: "Kabul formu bulunamadı" }
-
-  // Intake + work order are presented as one unified flow (see /orders list);
-  // keep the linked ServiceOrder's status mirrored so it doesn't show stale on the orders page.
-  if (isOrderStatus(status)) {
-    const order = await prisma.serviceOrder.findFirst({
-      where: { intakeFormId, workshopId: user.workshopId },
-    })
-    if (order && canTransitionOrder(order.status as OrderStatus, status)) {
-      await prisma.serviceOrder.updateMany({
-        where: { id: order.id, workshopId: user.workshopId },
-        data: { status },
-      })
-      revalidatePath(`/orders/${order.id}`)
-    }
-  }
-
-  await AuditLogAction(user.workshopId, user.id, "VehicleIntakeForm", intakeFormId, `status_changed_to_${status}`)
-
-  revalidatePath(`/intakes/${intakeFormId}`)
-  revalidatePath("/intakes")
-  revalidatePath("/orders")
-  return { success: true }
-}
+// Kabul tarafından durum değiştirme kaldırıldı: tek çağrı noktası olan
+// /api/intakes/[id]/status rotasının tüketicisi yoktu. Birleşik akışta durum
+// değişimi iş emri tarafından yürüyor — /api/orders/[id]/status →
+// updateOrderStatusAction (work-order-detail.tsx), o da kabul formunu aynalıyor.

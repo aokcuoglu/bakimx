@@ -1,0 +1,289 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
+import { ChevronDown, Loader2, Plus, User } from "lucide-react"
+import type { UnifiedResult } from "@/lib/search/unified-results"
+import { formatPhoneTR, toTrUpper } from "@/lib/format"
+import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
+import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
+
+type CustomerHit = Extract<UnifiedResult, { kind: "customer" }>
+const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
+
+export function CustomerSearchOrCreate({
+  onSelected,
+  autoFocus,
+  initialName,
+  initialType,
+  initialCompanyName,
+  initialFirstName,
+  initialLastName,
+  autoCreate,
+}: {
+  onSelected: (customerId: string, label: string) => void
+  autoFocus?: boolean
+  /** Pre-fills the "new customer" name (e.g. owner read from a ruhsat scan). */
+  initialName?: string
+  /** Pre-selects individual vs corporate in the create form (e.g. ruhsat corporate owner). */
+  initialType?: "individual" | "corporate"
+  /** Pre-fills the corporate company name. */
+  initialCompanyName?: string
+  /** Pre-fills the individual first/last name (overrides splitting initialName). */
+  initialFirstName?: string
+  initialLastName?: string
+  /** When true and a seed name arrives, open the create form directly (skip search). */
+  autoCreate?: boolean
+}) {
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<CustomerHit[]>([])
+  const [loading, setLoading] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [type, setType] = useState<"individual" | "corporate">("individual")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  // Optional TC / tax / address fields, hidden behind a collapsible section.
+  const [showExtra, setShowExtra] = useState(false)
+  const [identityNumber, setIdentityNumber] = useState("")
+  const [taxNumber, setTaxNumber] = useState("")
+  const [taxOffice, setTaxOffice] = useState("")
+  const [city, setCity] = useState("")
+  const [district, setDistrict] = useState("")
+  const [address, setAddress] = useState("")
+  // When the entered phone already belongs to a customer, offer to select them
+  // instead of creating a duplicate (a phone belongs to a single customer).
+  const [duplicate, setDuplicate] = useState<{ id: string; label: string } | null>(null)
+
+  useEffect(() => {
+    if (creating || query.trim().length < 1) {
+      const t = setTimeout(() => { setResults([]); setLoading(false) }, 0)
+      return () => clearTimeout(t)
+    }
+    let active = true
+    const t = setTimeout(() => {
+      setLoading(true)
+      fetch(`${SEARCH_ENDPOINT}?q=${encodeURIComponent(query.trim())}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (!active) return
+          const list: UnifiedResult[] = Array.isArray(d?.results) ? d.results : []
+          setResults(list.filter((x): x is CustomerHit => x.kind === "customer"))
+        })
+        .catch(() => { if (active) setResults([]) })
+        .finally(() => { if (active) setLoading(false) })
+    }, 250)
+    return () => { active = false; clearTimeout(t) }
+  }, [query, creating])
+
+  function openCreate() {
+    const t = initialType ?? "individual"
+    setType(t)
+    if (t === "corporate") {
+      setCompanyName(initialCompanyName || query.trim() || initialName || "")
+      setFirstName("")
+      setLastName("")
+    } else if (initialFirstName || initialLastName) {
+      setFirstName(toTrUpper(initialFirstName || ""))
+      setLastName(toTrUpper(initialLastName || ""))
+      setCompanyName("")
+    } else {
+      const parts = (query.trim() || initialName || "").trim().split(/\s+/)
+      setFirstName(toTrUpper(parts[0] || ""))
+      setLastName(toTrUpper(parts.slice(1).join(" ")))
+      setCompanyName("")
+    }
+    setPhone("")
+    setBusy(false)
+    setError("")
+    setDuplicate(null)
+    setShowExtra(false)
+    setIdentityNumber("")
+    setTaxNumber("")
+    setTaxOffice("")
+    setCity("")
+    setDistrict("")
+    setAddress("")
+    setCreating(true)
+  }
+
+  // OCR sahip tespit edince (autoCreate) oluşturma formunu doğru tip+isimle doğrudan aç.
+  // Her yeni seed için bir kez; kullanıcı Vazgeç derse aynı seed'e tekrar açılmaz.
+  const autoSeededRef = useRef("")
+  useEffect(() => {
+    const seed = (initialCompanyName || initialName || "").trim()
+    if (autoCreate && seed && autoSeededRef.current !== seed) {
+      autoSeededRef.current = seed
+      openCreate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCreate, initialName, initialCompanyName])
+
+  async function handleCreate() {
+    setError("")
+    setDuplicate(null)
+    if (!phone.trim()) { setError("Telefon zorunludur"); return }
+    if (type === "individual" && !firstName.trim()) { setError("Ad zorunludur"); return }
+    if (type === "corporate" && !companyName.trim()) { setError("Şirket adı zorunludur"); return }
+    setBusy(true)
+    try {
+      const cf = new FormData()
+      cf.set("type", type)
+      // Send fullName so the server's superRefine accepts an individual with no
+      // surname (Soyad is optional in this minimal form); firstName/lastName are
+      // still stored structurally server-side.
+      if (type === "individual") { cf.set("firstName", firstName); cf.set("lastName", lastName); cf.set("fullName", [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")) }
+      else { cf.set("companyName", companyName) }
+      cf.set("phone", phone)
+      // Optional fields — send only what's relevant to the selected type so a
+      // stale value (e.g. a TC typed before switching to corporate) never leaks.
+      if (type === "individual") { if (identityNumber.trim()) cf.set("identityNumber", identityNumber.trim()) }
+      else { if (taxNumber.trim()) cf.set("taxNumber", taxNumber.trim()); if (taxOffice.trim()) cf.set("taxOffice", taxOffice.trim()) }
+      if (city.trim()) cf.set("city", city.trim())
+      if (district.trim()) cf.set("district", district.trim())
+      if (address.trim()) cf.set("address", address.trim())
+      const res = await fetch("/api/customers", { method: "POST", body: cf })
+      const data = await res.json() as { success?: boolean; id?: string; error?: string; existingCustomer?: { id: string; label: string } }
+      if (data?.existingCustomer) { setDuplicate(data.existingCustomer); setError(data.error || ""); setBusy(false); return }
+      if (!data?.success || !data.id) { setError(data?.error || "Müşteri oluşturulamadı"); setBusy(false); return }
+      const label = type === "corporate" ? companyName.trim() : [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
+      setBusy(false)
+      onSelected(data.id, label)
+    } catch {
+      setError("Bir hata oluştu"); setBusy(false)
+    }
+  }
+
+  if (creating) {
+    return (
+      <div className="space-y-3 rounded-lg border border-border p-3">
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant={type === "individual" ? "default" : "outline"} className="flex-1" onClick={() => setType("individual")}>Bireysel</Button>
+          <Button type="button" size="sm" variant={type === "corporate" ? "default" : "outline"} className="flex-1" onClick={() => setType("corporate")}>Kurumsal</Button>
+        </div>
+        {type === "individual" ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1"><Label>Ad *</Label><Input autoFocus value={firstName} onChange={(e) => setFirstName(toTrUpper(e.target.value))} /></div>
+            <div className="space-y-1"><Label>Soyad</Label><Input value={lastName} onChange={(e) => setLastName(toTrUpper(e.target.value))} /></div>
+          </div>
+        ) : (
+          <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
+        )}
+        <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicate(null); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
+        <button
+          type="button"
+          onClick={() => setShowExtra((s) => !s)}
+          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/50"
+        >
+          <span>Ek bilgiler (opsiyonel)</span>
+          <ChevronDown className={`size-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
+        </button>
+
+        {showExtra && (
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <TaxIdentityFields
+              identityNumber={identityNumber}
+              taxNumber={taxNumber}
+              taxOffice={taxOffice}
+              onIdentityChange={setIdentityNumber}
+              onTaxNumberChange={setTaxNumber}
+              onTaxOfficeChange={setTaxOffice}
+            />
+            <CityDistrictFields
+              city={city}
+              district={district}
+              onCityChange={setCity}
+              onDistrictChange={setDistrict}
+            />
+            <div className="space-y-1.5">
+              <Label>Adres</Label>
+              <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Mahalle / Sokak / No" />
+            </div>
+          </div>
+        )}
+        {duplicate ? (
+          <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
+            <p className="text-sm text-foreground">Bu telefon <span className="font-medium">{duplicate.label}</span> adlı müşteriye ait.</p>
+            <Button type="button" size="sm" className="w-full" onClick={() => onSelected(duplicate.id, duplicate.label)}><User className="size-4 mr-1" /> Bu müşteriyi seç</Button>
+          </div>
+        ) : error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError("") }}>Vazgeç</Button>
+          <Button type="button" size="sm" onClick={handleCreate} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Müşteriyi oluştur"}</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Combobox
+      items={results}
+      filter={() => true}
+      itemToStringValue={(r: CustomerHit) => r.label}
+      onInputValueChange={(v: string) => setQuery(v)}
+      onValueChange={(r: CustomerHit | null) => { if (r) onSelected(r.customerId, r.label) }}
+    >
+      <ComboboxInput
+        autoFocus={autoFocus}
+        placeholder="Müşteri adı veya telefon ile ara…"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return
+          // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
+          // Base UI onu normal şekilde seçsin.
+          if (e.currentTarget.getAttribute("aria-activedescendant")) return
+          // Doğrudan input'ta Enter: Base UI'nın Enter'da popup'ı kapatıp
+          // input'u (boş) seçili değere geri döndürme davranışını durdur ve
+          // kararı biz verelim — eşleşen ilk müşteri varsa onu seç, yoksa
+          // "Yeni müşteri" oluşturma formunu (yazılan adla) aç.
+          e.preventBaseUIHandler()
+          e.preventDefault()
+          if (loading || query.trim().length < 1) return
+          const first = results[0]
+          if (first) onSelected(first.customerId, first.label)
+          else openCreate()
+        }}
+      />
+      <ComboboxContent>
+        <ComboboxEmpty className="p-0">
+          {loading ? (
+            <span className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Aranıyor…</span>
+          ) : query.trim().length >= 1 ? (
+            <div className="flex w-full items-center gap-2 p-2">
+              <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
+              <Button type="button" size="sm" onClick={openCreate}><Plus className="size-4 mr-1" /> Yeni müşteri</Button>
+            </div>
+          ) : (
+            <span className="py-2 text-sm text-muted-foreground">Aramak için yazın</span>
+          )}
+        </ComboboxEmpty>
+        <ComboboxList>
+          {(r: CustomerHit) => (
+            <ComboboxItem key={r.customerId} value={r}>
+              <Item size="sm" className="w-full p-0">
+                <ItemMedia><User className="size-4 text-muted-foreground" /></ItemMedia>
+                <ItemContent className="gap-0.5"><ItemTitle>{r.label}</ItemTitle><ItemDescription>{r.sublabel}</ItemDescription></ItemContent>
+              </Item>
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  )
+}

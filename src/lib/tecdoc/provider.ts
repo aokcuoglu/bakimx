@@ -8,6 +8,10 @@ export interface TecdocProvider {
   getCategories(vehicleId: number): Promise<unknown>
   getArticles(vehicleId: number, categoryId: number): Promise<unknown>
   getSuppliers(): Promise<unknown>
+  /** Parça detayı: özellikler + OEM + EAN + görsel + uyumlu araçlar (tek çağrı). */
+  getArticleDetail(articleId: number): Promise<unknown>
+  /** Muadil / çapraz referans listesi — yalnız kullanıcı bölümü açınca çağrılır. */
+  getArticleCrossRefs(articleId: number): Promise<unknown>
 }
 
 let _provider: TecdocProvider | null = null

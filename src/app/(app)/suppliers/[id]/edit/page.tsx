@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { SupplierForm } from "@/components/app/supplier-form"
+import { AppShell } from "@/components/layout/app-shell"
+import { SupplierForm } from "@/components/suppliers/supplier-form"
 import { getSupplierById } from "@/lib/suppliers/queries"
 import { notFound } from "next/navigation"
 

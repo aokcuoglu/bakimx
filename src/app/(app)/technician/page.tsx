@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
-import { TechnicianDashboard } from "@/components/app/technician-dashboard"
+import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
 import { getTechnicianDashboardStats, getTechnicianOrders } from "@/lib/technician/queries"
 
 export const dynamic = "force-dynamic"

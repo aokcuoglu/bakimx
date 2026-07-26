@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
-import { IntakeWizard } from "@/components/app/intake-wizard"
+import { IntakeWizard } from "@/components/intake/intake-wizard"
 import Link from "next/link"
 
 export default async function NewOrderPage({

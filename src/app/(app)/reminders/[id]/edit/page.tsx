@@ -1,10 +1,10 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { ReminderCreateForm } from "@/components/app/reminder-create-form"
+import { ReminderCreateForm } from "@/components/reminders/reminder-create-form"
 
 export default async function EditReminderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

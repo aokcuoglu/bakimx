@@ -45,18 +45,6 @@ export const intakeUpdateSchema = z.object({
   mileageAtIntake: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
 })
 
-export const damageMarkSchema = z.object({
-  zone: z.string().min(1, "Bölge seçimi zorunludur"),
-  damageType: z.enum(["scratch", "dent", "broken", "cracked", "paint_damage", "missing_part", "other"], {
-    error: "Geçerli bir hasar tipi seçiniz",
-  }),
-  severity: z.enum(["light", "medium", "heavy"], {
-    error: "Geçerli bir şiddet seviyesi seçiniz",
-  }),
-  note: z.string().optional(),
-  photoUrl: z.string().optional(),
-})
-
 export const otpVerifySchema = z.object({
   otpCode: z.string().min(4, "Doğrulama kodu gerekli").max(6, "Doğrulama kodu en fazla 6 haneli olmalıdır"),
 })

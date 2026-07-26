@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReportsLayout } from "@/components/app/reports/reports-layout"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReportsLayout } from "@/components/reports/reports-layout"
 import { BarChart3 } from "lucide-react"
 
 export default async function ReportsPage() {

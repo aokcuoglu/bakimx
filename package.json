@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -40,7 +40,6 @@
     "@hookform/resolvers": "^5.4.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
-    "@react-pdf/renderer": "^4.5.1",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

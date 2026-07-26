@@ -12,7 +12,7 @@ import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
-import { isOrderStatus, isPaymentStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
+import { isOrderStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
@@ -601,6 +601,9 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     categoryId: has("categoryId")
       ? ((formData.get("categoryId") as string) === "" ? null : Number(formData.get("categoryId")))
       : undefined,
+    tecdocArticleId: has("tecdocArticleId")
+      ? ((formData.get("tecdocArticleId") as string) === "" ? null : Number(formData.get("tecdocArticleId")))
+      : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -619,6 +622,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     brand?: string | null
     category?: string | null
     categoryId?: number | null
+    tecdocArticleId?: number | null
     totalPrice?: number | null
   } = {}
   if (parsed.data.name !== undefined) data.name = parsed.data.name
@@ -630,6 +634,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+  if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
 
   // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat
   // totalPrice satır totalini/genel toplamı yanlış gösterir — null'a çekip
@@ -775,30 +780,6 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
       console.error("[notifyPaymentReminder] Ödeme hatırlatma bildirimi gönderilemedi:", e)
     }
   }
-
-  revalidatePath(`/orders/${orderId}`)
-  revalidatePath("/orders")
-  return { success: true }
-}
-
-export async function updateOrderPaymentStatusAction(orderId: string, paymentStatus: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
-
-  if (!isPaymentStatus(paymentStatus)) return { error: "Geçersiz ödeme durumu" }
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Servis emri bulunamadı" }
-
-  const updateResult = await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: { paymentStatus },
-  })
-  if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
-
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_payment_changed_to_${paymentStatus}`, undefined, orderId)
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath("/orders")

@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { CommunicationLogList } from "@/components/app/communication-log-list"
+import { AppShell } from "@/components/layout/app-shell"
+import { CommunicationLogList } from "@/components/communications/communication-log-list"
 import { getCommunicationLogs, getCommunicationStats } from "./actions"
 import Link from "next/link"
 

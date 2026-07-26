@@ -6,9 +6,9 @@ import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getPlanState } from "@/lib/plan"
-import { PlanLocked } from "@/components/app/plan-locked"
-import { AppShellChrome } from "@/components/app/app-shell"
-import { ImpersonationBanner } from "@/components/app/impersonation-banner"
+import { PlanLocked } from "@/components/billing/plan-locked"
+import { AppShellChrome } from "@/components/layout/app-shell"
+import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 
 export const metadata: Metadata = {
   title: "İş Yeri Paneli",

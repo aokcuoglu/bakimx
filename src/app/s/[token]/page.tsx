@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { PublicSharePage } from "@/components/app/public-share-page"
+import { PublicSharePage } from "@/components/intake/public-share-page"
 import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 

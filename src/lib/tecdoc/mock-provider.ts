@@ -2,6 +2,8 @@ import type { TecdocProvider } from "./provider"
 import categoriesFixture from "./fixtures/categories-v2.json"
 import articlesFixture from "./fixtures/articles.json"
 import suppliersFixture from "./fixtures/suppliers.json"
+import articleDetailFixture from "./fixtures/article-detail.json"
+import articleCrossRefsFixture from "./fixtures/article-cross-refs.json"
 
 /** Real probed payloads for the mock-VIN car (FOCUS IV, vehicleId 134068).
  *  Categories are served for ANY vehicleId so dev QA works with any car;
@@ -26,5 +28,16 @@ export class MockTecdocProvider implements TecdocProvider {
     // provider.name === "mock" ise cache'ye yazmaz (mock→rapidapi geçişinde
     // gerçek veri gelir). ~40 popüler marka örneği (tam liste RapidAPI'de 1264).
     return suppliersFixture
+  }
+
+  /** Gerçek probe payload'ının kırpılmış hâli (articleId 7858423, Yağ filtresi);
+   *  hangi articleId istenirse istensin aynı örnek döner — mock'un amacı
+   *  sağlayıcısız yerel QA, gerçek veri değil. */
+  async getArticleDetail(_articleId: number): Promise<unknown> {
+    return articleDetailFixture
+  }
+
+  async getArticleCrossRefs(_articleId: number): Promise<unknown> {
+    return articleCrossRefsFixture
   }
 }

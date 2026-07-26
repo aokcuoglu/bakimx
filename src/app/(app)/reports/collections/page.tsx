@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReportsLayout } from "@/components/app/reports/reports-layout"
-import { CollectionsReport } from "@/components/app/reports/collections-report"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReportsLayout } from "@/components/reports/reports-layout"
+import { CollectionsReport } from "@/components/reports/collections-report"
 import { getCollectionReportStats, getDailyCollectionAmounts, getMonthlyCollectionAmounts } from "@/lib/reports/queries"
 
 export default async function CollectionsReportPage({

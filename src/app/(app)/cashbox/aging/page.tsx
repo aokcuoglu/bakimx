@@ -1,5 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { getReceivableAging } from "@/lib/cashbox/queries"
 import Link from "next/link"
 import { formatTRY } from "@/lib/format"

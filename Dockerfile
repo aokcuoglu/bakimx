@@ -77,11 +77,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts /migrate/prisma.
 # Vehicle-catalog seed, run as a second one-shot task after `migrate deploy` so a fresh
 # DB self-heals its global reference tables (vehicle_brands/models/types/type_details)
 # from the committed gz fixtures under /migrate/prisma/data/vehicle-catalog. Idempotent
-# (createMany skipDuplicates). row-mappers.ts is a type-only import at runtime, so the
-# script needs no other src/. tsx is present in the full builder node_modules. Run via:
+# (createMany skipDuplicates). tsx is present in the full builder node_modules. Run via:
 #   node node_modules/tsx/dist/cli.mjs scripts/migrate-vehicle-catalog.ts --from-file
+# The script needs exactly three src/ files: row-mappers.ts (row shaping), ndjson-stream.ts
+# (batched streaming reader — buffering whole fixtures OOM-killed the 512 MB task) and
+# pg-connection.ts (the DB_SSL_NO_VERIFY / RDS TLS workaround — without it the task dies with
+# "self-signed certificate in certificate chain"). Keep these in sync with the imports.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-vehicle-catalog.ts /migrate/scripts/migrate-vehicle-catalog.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/catalog/row-mappers.ts /migrate/src/lib/catalog/row-mappers.ts
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/catalog/ndjson-stream.ts /migrate/src/lib/catalog/ndjson-stream.ts
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/pg-connection.ts /migrate/src/lib/pg-connection.ts
 
 USER nextjs
 

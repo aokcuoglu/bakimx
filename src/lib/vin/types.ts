@@ -1,9 +1,6 @@
 import { z } from "zod"
 
-/**
- * VIN normalization + validation. 17 chars, no I/O/Q (ISO 3779) — same rule as
- * the OCR extractor (ocr-service/extractor.py _clean_vin).
- */
+/** VIN normalization + validation. 17 chars, no I/O/Q (ISO 3779). */
 export function normalizeVin(input: string): string {
   return input.trim().toUpperCase().replace(/\s+/g, "")
 }

@@ -1,10 +1,10 @@
 import { getAppData } from "@/app/(app)/data"
 import { type PlanTier } from "@/lib/plan"
 import { resolveFeature } from "@/lib/features"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { WorkOrderDetail } from "@/components/app/work-order-detail"
+import { WorkOrderDetail } from "@/components/orders/work-order-detail"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
@@ -120,6 +120,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       brand: i.brand,
       category: i.category,
       categoryId: i.categoryId,
+      // Katalogdan seçilmiş kalemlerde dolu → satırda "Parça detayı" (ⓘ) açar.
+      tecdocArticleId: i.tecdocArticleId,
       source: i.source,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,

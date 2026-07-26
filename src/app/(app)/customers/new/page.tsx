@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { CustomerCreateForm } from "@/components/app/customer-create-form"
+import { AppShell } from "@/components/layout/app-shell"
+import { CustomerCreateForm } from "@/components/customers/customer-create-form"
 import Link from "next/link"
 
 export default async function NewCustomerPage({

@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReportsLayout } from "@/components/app/reports/reports-layout"
-import { OrdersReport } from "@/components/app/reports/orders-report"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReportsLayout } from "@/components/reports/reports-layout"
+import { OrdersReport } from "@/components/reports/orders-report"
 import { ORDER_STATUS } from "@/lib/constants"
 import {
   getOrdersReportStats,

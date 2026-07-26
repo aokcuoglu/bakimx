@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { SmartCaptureRegistration } from "@/components/app/smart-capture-registration"
+import { AppShell } from "@/components/layout/app-shell"
+import { SmartCaptureRegistration } from "@/components/intake/smart-capture-registration"
 import Link from "next/link"
 import { ArrowLeft, ScanLine } from "lucide-react"
 

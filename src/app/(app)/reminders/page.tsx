@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReminderList } from "@/components/app/reminder-list"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReminderList } from "@/components/reminders/reminder-list"
 import { getRemindersList } from "@/lib/reminders/queries"
 import { prisma } from "@/lib/db"
 

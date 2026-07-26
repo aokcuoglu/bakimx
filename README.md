@@ -55,7 +55,7 @@ bun install
 docker compose -f docker-compose.local.yml up -d
 
 # 3) Ortamı hazırla
-cp .env.example .env.local   # değerleri docs/CONFIGURATION.md'ye göre düzenle
+cp .env.example .env.local   # değerleri docs/configuration.md'ye göre düzenle
 
 # 4) Veritabanı (migration + demo veri)
 bun run db:migrate
@@ -65,7 +65,7 @@ bun run db:seed
 bun run dev   # http://localhost:3000
 ```
 
-Demo giriş bilgileri, tüm ortam değişkenleri (OCR, AI, SMS/WhatsApp/e-posta, cron, takvim, depolama) ve yerel altyapı komutları için **[docs/CONFIGURATION.md](./docs/CONFIGURATION.md)**.
+Demo giriş bilgileri, tüm ortam değişkenleri (OCR, AI, SMS/WhatsApp/e-posta, cron, takvim, depolama) ve yerel altyapı komutları için **[docs/configuration.md](./docs/configuration.md)**.
 
 ### Sık kullanılan komutlar
 ```bash
@@ -87,12 +87,32 @@ src/app/(app)      Korumalı uygulama (intake, orders, quotes, cashbox, inventor
 src/app/(auth)     Giriş / şifremi unuttum
 src/app/admin      Back-office (workshops, billing, flags, audit, health, leads)
 src/app/api        API rotaları (auth, cron, billing, advisor, ...)
-src/components      UI bileşenleri (app, billing, auth, ...)
-src/lib             Domain mantığı (auth, status-transitions, intake, passport, rate-limit, ...)
-prisma              schema.prisma · migrations · seed
-docs                Dokümantasyon (bkz. docs/README.md)
-scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
+src/components     UI bileşenleri — aşağıya bak
+src/lib            Domain mantığı (auth, status-transitions, intake, passport, rate-limit, ...)
+src/hooks          Paylaşılan React hook'ları
+src/middleware.ts  Kimlik/rota koruması
+prisma             schema.prisma · migrations · seed
+docs               Dokümantasyon (bkz. docs/README.md)
+scripts            Veritabanı ve operasyon yardımcı scriptleri
 ```
+
+`src/components` domaine göre bölünmüştür — `src/lib`'deki domain klasörleriyle
+aynı adları kullanır, böylece bir özelliğin UI'ı ve mantığı yan yana bulunur:
+
+```
+ui/            shadcn/Base UI primitifleri — domain mantığı İÇERMEZ
+layout/        uygulama kabuğu (app-shell, global arama, impersonation banner)
+shared/        3+ domainde kullanılan jenerik parçalar (status-badge, actions-menu, forms/)
+
+orders/  intake/  customers/  vehicles/  parts/  suppliers/  purchases/
+cashbox/  quotes/  reminders/  appointments/  technician/  settings/
+dashboard/  reports/  analytics/  communications/  advisor/  billing/
+
+auth/  sections/ (landing)  site-assistant/  legal/
+```
+
+**Kural:** bir bileşen tek bir domain tarafından kullanılıyorsa o domainin
+klasöründe durur; üç veya daha fazla domain kullanıyorsa `shared/`'a taşınır.
 
 ---
 
@@ -100,12 +120,12 @@ scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
 
 | Konu | Doküman |
 |---|---|
-| Yapılandırma & env | [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) |
-| Veritabanı şeması | [DB.md](./DB.md) |
-| Dağıtım (prod) | [DEPLOY.md](./DEPLOY.md) |
-| AWS dev CI/CD | [docs/aws-dev-cicd.md](./docs/aws-dev-cicd.md) |
-| Sürüm süreci | [RELEASE.md](./RELEASE.md) |
-| Mimari | [docs/architecture/BAKIMX-ARCHITECTURE.md](./docs/architecture/BAKIMX-ARCHITECTURE.md) |
+| Tüm dokümantasyon | [docs/README.md](./docs/README.md) |
+| Yapılandırma & env | [docs/configuration.md](./docs/configuration.md) |
+| Veritabanı & migration | [docs/database.md](./docs/database.md) |
+| Dallanma, deploy & sürüm | [docs/releasing.md](./docs/releasing.md) |
+| AWS altyapı (prod/dev) | [docs/deployment/](./docs/deployment/) |
+| Mimari | [docs/architecture/overview.md](./docs/architecture/overview.md) |
 | Sürüm notları | [CHANGELOG.md](./CHANGELOG.md) · [docs/releases/](./docs/releases/) |
 | Katkı rehberi | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | Güvenlik | [SECURITY.md](./SECURITY.md) |
@@ -116,7 +136,7 @@ scripts             Operasyon/dağıtım/OCR yardımcı scriptleri
 
 `feature/*` → `dev` → **app-dev.bakimx.com** (AWS, otomatik) → doğrulama → `dev→main` PR → **prod** (AWS · app.bakimx.com)
 
-Detaylar: [RELEASE.md](./RELEASE.md) · [CONTRIBUTING.md](./CONTRIBUTING.md)
+Detaylar: [docs/releasing.md](./docs/releasing.md) · [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ---
 

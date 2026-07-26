@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { PublicVehiclePassportPage } from "@/components/app/public-vehicle-passport"
+import { PublicVehiclePassportPage } from "@/components/vehicles/public-vehicle-passport"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
 
 export const dynamic = "force-dynamic"

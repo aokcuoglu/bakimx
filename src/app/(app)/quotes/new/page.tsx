@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
-import { QuoteCreateForm } from "@/components/app/quote-create-form"
+import { QuoteCreateForm } from "@/components/quotes/quote-create-form"
 
 export default async function NewQuotePage() {
   const { workshop } = await getAppData()

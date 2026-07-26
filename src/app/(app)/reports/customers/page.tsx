@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReportsLayout } from "@/components/app/reports/reports-layout"
-import { CustomersReport } from "@/components/app/reports/customers-report"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReportsLayout } from "@/components/reports/reports-layout"
+import { CustomersReport } from "@/components/reports/customers-report"
 import { getCustomerReportStats, getTopCustomersBySpend, getMostVisitedCustomers } from "@/lib/reports/queries"
 
 export default async function CustomersReportPage({
