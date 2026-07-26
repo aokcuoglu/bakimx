@@ -6,6 +6,7 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import { mapBrand, mapModel, mapType, mapTypeDetail, type RawRow } from "../src/lib/catalog/row-mappers"
+import { buildPoolConfig } from "../src/lib/pg-connection"
 
 // Mirror prisma/seed.ts: load .env.local before reading DATABASE_URL.
 if (typeof process.loadEnvFile === "function") {
@@ -18,7 +19,10 @@ if (typeof process.loadEnvFile === "function") {
 const DATA_DIR = path.join(__dirname, "..", "prisma", "data", "vehicle-catalog")
 const SOURCE_URL = process.env.CATALOG_SOURCE_URL || "postgresql://postgres@localhost:54322/getirbakim"
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+// buildPoolConfig applies the RDS TLS workaround (DB_SSL_NO_VERIFY) exactly like src/lib/db.ts.
+// Without it this script died in the deploy pipeline's one-off ECS task with
+// "self-signed certificate in certificate chain" (P1011) on the first createMany.
+const pool = new Pool(buildPoolConfig(process.env.DATABASE_URL ?? ""))
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) })
 
 type TableSpec = {
