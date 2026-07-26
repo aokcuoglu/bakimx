@@ -171,13 +171,13 @@ export function TechnicianAssign({
           <HardHat className="mx-auto mb-3 size-10 text-muted-foreground/40" />
           <p className="text-sm font-medium text-foreground">Henüz usta kaydı yok</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Atama yapabilmek için önce iş yeri profilinize usta ekleyin.
+            Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
           </p>
           <Button
             nativeButton={false}
             size="lg"
             className="mt-4"
-            render={<Link href="/workshop" />}
+            render={<Link href="/settings?tab=team" />}
           >
             <UserPlus className="size-4" />
             Usta Ekle

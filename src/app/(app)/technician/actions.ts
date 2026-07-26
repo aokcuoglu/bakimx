@@ -518,7 +518,7 @@ export async function createTechnicianAction(formData: FormData) {
 
   await AuditLogAction(user.workshopId, user.id, "Technician", technician.id, "technician_created")
 
-  revalidatePath("/workshop")
+  revalidatePath("/settings")
   revalidatePath("/technician")
   return { success: true, id: technician.id }
 }
@@ -537,7 +537,7 @@ export async function toggleTechnicianActiveAction(technicianId: string) {
     data: { isActive: !technician.isActive },
   })
 
-  revalidatePath("/workshop")
+  revalidatePath("/settings")
   revalidatePath("/technician")
   return { success: true }
 }

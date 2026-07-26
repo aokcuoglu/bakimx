@@ -41,6 +41,14 @@ test("aiAdvisor is gated to the premium tier", () => {
   expect(hasFeature("starter", "aiAdvisor")).toBe(false)
 })
 
+// VIN'den araç tanıma (rapidapi) is a Pro+ capability: billed external lookups,
+// so starter is locked out while trial (pro) and premium keep access.
+test("vinLookup is gated to the pro tier and above", () => {
+  expect(hasFeature("starter", "vinLookup")).toBe(false)
+  expect(hasFeature("pro", "vinLookup")).toBe(true)
+  expect(hasFeature("premium", "vinLookup")).toBe(true)
+})
+
 test("all premium-gated features are locked below the premium tier", () => {
   const premiumOnly = ["eInvoice", "aiAdvisor", "multiBranch", "rbac"] as const
   for (const feature of premiumOnly) {

@@ -74,7 +74,7 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
-  vinLookup: "starter",
+  vinLookup: "pro",
   partsCatalog: "starter",
 }
 

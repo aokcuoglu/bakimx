@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,6 +40,7 @@ import { PartAttrOptionsProvider } from "@/components/app/part-attr-options"
 import { SupplierPriceDialog } from "@/components/app/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/app/manual-part-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
@@ -516,6 +517,52 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
   const [submitting, setSubmitting] = useState(false)
   const submittingRef = useRef(false)
   const linked = vehicle?.catalogVehicleTypeId != null
+  const [prefetching, setPrefetching] = useState(false)
+  // Prefetch dolarken mevcut aramayı periyodik yeniden tetikleyen sinyal:
+  // değeri her artışında PartSearchInput aynı query'yi yeniden sorgular.
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const prefetchStartedRef = useRef(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = undefined
+    }
+    setPrefetching(false)
+  }, [])
+
+  // Güvenlik ağı: araç katalog-bağlı ama parça cache'i boşsa arka planda
+  // doldur. Mount başına EN FAZLA bir kez (StrictMode çift-invoke'a karşı ref).
+  useEffect(() => {
+    if (!linked || !vehicle?.id || prefetchStartedRef.current) return
+    prefetchStartedRef.current = true
+    void ensureVehiclePartsPrefetched(vehicle.id)
+      .then((res) => {
+        if (res.status !== "started") return
+        setPrefetching(true)
+        // Prefetch ~20-40sn sürebilir ve arama YALNIZ query değişince çalışır;
+        // bu yüzden mevcut aramayı ~3sn'de bir yeniden tetikle (refreshSignal),
+        // veri düştükçe sonuçlar kendiliğinden belirsin. Sonuç gelince
+        // (onResultsCount) ya da ~40sn üst sınırda dur.
+        let ticks = 0
+        pollRef.current = setInterval(() => {
+          ticks += 1
+          setRefreshSignal((n) => n + 1)
+          if (ticks >= 13) stopPolling() // 13 × 3sn ≈ 40sn üst sınır
+        }, 3000)
+      })
+      .catch(() => {})
+    return () => stopPolling()
+  }, [linked, vehicle?.id, stopPolling])
+
+  // Arama sonucu geldiğinde prefetch poll'unu erken durdur + notu gizle.
+  const handleResultsCount = useCallback(
+    (count: number) => {
+      if (count > 0) stopPolling()
+    },
+    [stopPolling],
+  )
 
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
   async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
@@ -566,7 +613,16 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
         showCreate
         onCreate={(text) => void add({ source: "manual", name: text })}
         onCreateEdit={(text) => { setName(text); setDialogOpen(true) }}
+        refreshSignal={refreshSignal}
+        onResultsCount={handleResultsCount}
       />
+
+      {prefetching && (
+        <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Araca uygun parçalar hazırlanıyor…
+        </p>
+      )}
 
       {/* Tam TecDoc katalog picker (🔍) — yalnız araç kataloğa bağlıysa. */}
       {linked && (
