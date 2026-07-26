@@ -3,7 +3,23 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [RELEASE.md](./RELEASE.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.7.0 yayınlandı, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.9.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.9.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.9.0 | Parça veri boru hattı onarımı, prefetch tetikleme, deterministik Docker build | [v0.9.0](./docs/releases/v0.9.0.md) |
+
+Öne çıkanlar: katalog parçaları **veritabanına yazılamıyordu** (5 sn transaction sınırı → sessiz rollback) — `createMany` ile düzeltildi + backfill script'i; parça araması Türkçe harflerde eşleşmiyordu; **prefetch tetikleme** araç kaydı anına ve Parça sekmesine genişledi; teknisyen yönetimi Ayarlar → Ekip'e taşındı; VIN'den araç tanıma **Pro pakete bağlandı**; Docker build'i lockfile'ı hiç uygulamıyordu → `bun install --frozen-lockfile`. Migration yok.
+
+## 0.8.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.8.0 | İş emri kullanılabilirliği: birleşik parça composer, usta atama, üç katmanlı başlık | [v0.8.0](./docs/releases/v0.8.0.md) |
+
+Öne çıkanlar: parça ekleme tek arama kutusuna indi + parça kutusu fotoğrafından OCR önerisi; **ustaya atama görünür hale geldi** (liste filtresi + mobil kart dahil); iş emri başlığı kimlik/durum/aksiyon olarak üç katmana ayrıldı; üst çubukta canlı global araç/müşteri araması; mobil sticky dip CTA barları kaldırıldı; araç kataloğu her deploy'da kendini seed'liyor. Migration yok.
 
 ## 0.7.x
 
