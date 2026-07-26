@@ -3,15 +3,19 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [RELEASE.md](./RELEASE.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.9.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.9.2 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
 
 ## 0.9.x
 
 | Sürüm | Başlık | Not |
 |---|---|---|
+| 0.9.2 | Katalog seed pipeline'ı onarıldı (TLS → bellek → task boyutu) + ölü kod temizliği | [v0.9.2](./docs/releases/v0.9.2.md) |
+| 0.9.1 | Parça araması marka ve kategori adını da kapsıyor | [v0.9.1](./docs/releases/v0.9.1.md) |
 | 0.9.0 | Parça veri boru hattı onarımı, prefetch tetikleme, deterministik Docker build | [v0.9.0](./docs/releases/v0.9.0.md) |
 
-Öne çıkanlar: katalog parçaları **veritabanına yazılamıyordu** (5 sn transaction sınırı → sessiz rollback) — `createMany` ile düzeltildi + backfill script'i; parça araması Türkçe harflerde eşleşmiyordu; **prefetch tetikleme** araç kaydı anına ve Parça sekmesine genişledi; teknisyen yönetimi Ayarlar → Ekip'e taşındı; VIN'den araç tanıma **Pro pakete bağlandı**; Docker build'i lockfile'ı hiç uygulamıyordu → `bun install --frozen-lockfile`. Migration yok.
+0.9.2 öne çıkanlar: her deploy'da koşan **araç kataloğu seed adımı, eklendiği 2026-07-24'ten beri hem prod hem dev'de sessizce başarısızdı** (non-blocking olduğu için yalnız bir uyarı satırı bırakıyordu). Üst üste üç kusur çıktı ve her biri bir öncekini çözünce göründü: RDS TLS doğrulaması (`self-signed certificate in certificate chain`, P1011) → fixture'ların tamamının belleğe alınması → 512 MB'lık one-off task'ın OOM ile öldürülmesi (exit 137). Katalog prod'a elle yüklendiği için kullanıcıya yansımıyordu; bozuk olan **kendi kendini iyileştirme**ydi. Ayrıca büyük bir temizlik: erişilemeyen bileşenler, **6 ulaşılamaz API rotası** (auth'lu ama ölü saldırı yüzeyi, dördü mutasyon yapıyordu), emekli PaddleOCR sidecar'ı ve hiç devreye alınmamış `@react-pdf/renderer` hattı (paket bağımlılıklardan düştü). Migration yok.
+
+0.9.0 öne çıkanlar: katalog parçaları **veritabanına yazılamıyordu** (5 sn transaction sınırı → sessiz rollback) — `createMany` ile düzeltildi + backfill script'i; parça araması Türkçe harflerde eşleşmiyordu; **prefetch tetikleme** araç kaydı anına ve Parça sekmesine genişledi; teknisyen yönetimi Ayarlar → Ekip'e taşındı; VIN'den araç tanıma **Pro pakete bağlandı**; Docker build'i lockfile'ı hiç uygulamıyordu → `bun install --frozen-lockfile`. Migration yok.
 
 ## 0.8.x
 
