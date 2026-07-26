@@ -407,7 +407,7 @@ export async function sweepStalePaymentArtifacts(): Promise<LifecycleSweepResult
  *  eski register akışı hâlâ bu tarihten sonra pending kayıt yaratabilir); o
  *  yüzden gerçek deploy anı `TRIAL_PURGE_CUTOFF` (ISO tarih) env'i ile
  *  ezilebilir — aksi hâlde eski akıştan gelen gerçek başvurular 48s sonra
- *  silinebilir (bkz. DEPLOY.md GO-LIVE). */
+ *  silinebilir. */
 const PURGE_LEGACY_CUTOFF_FALLBACK = new Date("2026-07-07T00:00:00Z")
 
 /**

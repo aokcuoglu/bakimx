@@ -203,9 +203,10 @@ recommended for media recovery.
   both point at the in-network `db:5432` container; the example config also documents a Supabase
   pooler URL as an alternative (`pgbouncer=true` on 6543, direct on 5432).
 - **Migrations:** Prisma Migrate with a **squashed `0_init` baseline** that creates the full schema
-  from empty. **Migrations do NOT run automatically** on deploy — they are applied manually/by script
-  (`prisma migrate deploy`) **after** the new image is live, with a backup taken first. `db push` is
-  prohibited in production. (Full runbook: `DB.md`.)
+  from empty. Migrations run **automatically as a deploy gate** — a one-off ECS task executes
+  `prisma migrate deploy` **before** the service is updated, so a failed migration aborts the deploy
+  instead of shipping a mismatched schema. `db push` is prohibited outside local prototyping.
+  (Full runbook: [`docs/database.md`](../database.md).)
 - **Multi-tenancy:** enforced in application code — `workshopId` is derived from the authenticated
   session (never trusted from a client parameter) and applied to every query; tables are indexed on
   `workshopId`.
@@ -286,18 +287,28 @@ system cron (`*/15`) to dispatch due maintenance reminders.
 
 ## 11. CI/CD & deployment pipeline
 
-1. Developer pushes a **`v*` git tag** (or runs `workflow_dispatch`).
-2. **GitHub Actions** builds the Docker image with Buildx (GHA layer cache) and pushes multi-tag
-   (`semver`, `sha`, `latest`) to **GHCR** (`ghcr.io/aokcuoglu/app`).
-3. The deploy job **SSHes into the VPS** (`appleboy/ssh-action`) and runs
-   `docker compose pull app && docker compose up -d app --force-recreate`, then **prunes dangling
-   images only** (never a full `system prune` — it would delete the co-hosted `getirbakim` stack's
-   images/networks).
-4. **Database migrations are applied manually/by script afterward** (`scripts/db-migrate-prod.sh` →
-   backup + `prisma migrate deploy`). They are intentionally **not** part of the automated deploy.
+Two environments on **AWS ECS Fargate + RDS**, in separate AWS accounts, both fully automated:
 
-> A staging environment + an automated migration gate are in flight (release-pipeline work) but the
-> live pipeline today is the single-VPS, tag-triggered flow above.
+| Branch | Environment | Workflow |
+| --- | --- | --- |
+| `dev` | `app-dev.bakimx.com` | `deploy-dev-aws.yml` |
+| `main` | `bakimx.com` + `app.bakimx.com` | `deploy-prod-aws.yml` |
+
+1. Push to `dev`/`main` (docs-only commits are skipped via `paths-ignore`).
+2. **GitHub Actions** assumes an AWS role via **OIDC** (no long-lived keys), builds the arm64 image
+   with Buildx and pushes it to **ECR** (`bakimx/app`, tags `dev`/`prod` + `sha-<commit>`).
+3. A new **ECS task-definition revision** is registered (image swap + the runtime env the CDK task
+   def omits).
+4. **DB migration gate:** a one-off `ecs run-task` runs `prisma migrate deploy` **before** the
+   service is updated. A failed migration aborts the deploy and leaves the running app untouched.
+5. Vehicle-catalog seed (non-blocking one-off task), then `update-service`, then an assertion that
+   the rollout actually converged on the new task def.
+
+Rollback is an ECS task-def revert — each revision pins a `sha-…` image. Version tags (`vX.Y.Z`)
+only create a GitHub Release; they never deploy. Full runbook: [`docs/releasing.md`](../releasing.md).
+
+> The project ran on a single Contabo VPS (tag-triggered SSH + `docker compose`, manual migrations)
+> until the 2026-07-21 DNS cutover. That path was removed in 2026-07 and will not return.
 
 ---
 

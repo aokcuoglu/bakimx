@@ -1,7 +1,7 @@
 name: Deploy to AWS dev (app-dev.bakimx.com)
 
 # AWS-hosted "dev" environment (app-dev.bakimx.com). Replaced the retired Contabo
-# staging.app.bakimx.com (2026-07-20). IAM/OIDC + task-def env spec: docs/aws-dev-cicd.md.
+# staging.app.bakimx.com (2026-07-20). IAM/OIDC + task-def env spec: docs/deployment/aws-dev.md.
 #
 # Flow: build arm64 image → push to ECR → register a new task-def revision (image swap)
 # → DB migration gate (one-off ECS task, aborts on failure) → update the ECS service.

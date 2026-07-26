@@ -66,7 +66,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Architecture
 - **Application** runs on host via `bun run dev` — NOT in a Docker container
 - **Dev infrastructure** (PostgreSQL, MinIO) runs in OrbStack/Docker via `docker-compose.local.yml`
-- Production uses `Dockerfile` + `docker-compose.yml` (app container + DB)
+- Production uses `Dockerfile` (image built in CI, run on AWS ECS Fargate; DB is RDS)
 - No application Docker image for local dev
 
 ## Important

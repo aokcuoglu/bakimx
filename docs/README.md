@@ -1,24 +1,43 @@
-# BakımX Dokümantasyon
+# BakımX dokümantasyonu
 
-Bu klasör projenin tüm teknik dokümantasyonunu barındırır. Başlangıç için kök `README.md`'ye bakın.
+Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 
-## İçindekiler
+## Rehberler
 
 | Konu | Doküman |
 |---|---|
-| Yapılandırma & ortam değişkenleri | [CONFIGURATION.md](./CONFIGURATION.md) |
-| Veritabanı şeması & modeller | [../DB.md](../DB.md) |
-| Üretim dağıtımı (VPS) | [../DEPLOY.md](../DEPLOY.md) · [DEPLOYMENT.md](./DEPLOYMENT.md) |
-| AWS dev CI/CD (app-dev.bakimx.com) | [aws-dev-cicd.md](./aws-dev-cicd.md) |
-| Sürüm/release süreci | [../RELEASE.md](../RELEASE.md) · [RELEASE-FLOW.md](./RELEASE-FLOW.md) |
-| Mimari genel bakış | [architecture/BAKIMX-ARCHITECTURE.md](./architecture/BAKIMX-ARCHITECTURE.md) |
-| Mimari analiz (TR) | [MIMARI-ANALIZ.md](./MIMARI-ANALIZ.md) |
-| Teknik analiz raporu | [ANALYSIS.md](./ANALYSIS.md) |
-| Sürüm notları (changelog) | [releases/](./releases/) · [../CHANGELOG.md](../CHANGELOG.md) |
-| QA senaryoları | [QA/](./QA/) |
-| Ajan/otomasyon kuralları | [../AGENTS.md](../AGENTS.md) · [../CLAUDE.md](../CLAUDE.md) |
+| Yapılandırma & ortam değişkenleri | [configuration.md](./configuration.md) |
+| Veritabanı, migration & yedekleme | [database.md](./database.md) |
+| Dallanma, deploy & sürüm çıkarma | [releasing.md](./releasing.md) |
 
-## Katkı ve süreç
+## Altyapı
+
+| Ortam | Doküman |
+|---|---|
+| AWS prod (`bakimx.com`, `app.bakimx.com`) | [deployment/aws-prod.md](./deployment/aws-prod.md) |
+| AWS dev (`app-dev.bakimx.com`) | [deployment/aws-dev.md](./deployment/aws-dev.md) |
+
+## Mimari
+
+| Konu | Doküman |
+|---|---|
+| Genel bakış (EN) | [architecture/overview.md](./architecture/overview.md) |
+| Mimari analiz (TR) | [architecture/mimari-analiz.md](./architecture/mimari-analiz.md) |
+| Teknik analiz raporu | [architecture/analysis.md](./architecture/analysis.md) |
+| Diyagramlar | [architecture/](./architecture/) — `.mmd` kaynak + `.png`/`.svg` çıktı |
+
+## Kayıtlar
+
+| Konu | Klasör |
+|---|---|
+| Sürüm notları | [releases/](./releases/) · özet: [../CHANGELOG.md](../CHANGELOG.md) |
+| Manuel QA senaryoları | [qa/](./qa/) |
+| Marka kimliği | [brand/](./brand/) |
+| Plan & tasarım arşivi | [superpowers/](./superpowers/) |
+
+## Süreç
+
 - Katkı rehberi: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - Güvenlik bildirimi: [../SECURITY.md](../SECURITY.md)
-- Dallanma & release: `feature/*` → `dev` → **app-dev.bakimx.com (AWS)** → `main` → **app.bakimx.com (prod, Contabo)**
+- Ajan/otomasyon kuralları: [../CLAUDE.md](../CLAUDE.md) · [../AGENTS.md](../AGENTS.md)
+- Dallanma & release: `feature/*` → `dev` → **app-dev.bakimx.com** → `main` → **app.bakimx.com** (ikisi de AWS ECS)

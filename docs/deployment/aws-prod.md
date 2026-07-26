@@ -1,6 +1,6 @@
 # AWS prod CI/CD — CDK backfill spec + cutover runbook
 
-**Amaç.** `bakimx.com` (landing) + `app.bakimx.com` (uygulama) için AWS prod ortamı ve CI/CD. Prod, dev'den (`292398627626`) **ayrı bir AWS hesabında** (`075550799591`, multi-account izolasyon) yaşar ve altyapısı **CDK ile** kuruludur (`bakimx-prod-foundation/secrets/data/compute/cron/observability` stack'leri). Workflow: [`.github/workflows/deploy-prod-aws.yml`](../.github/workflows/deploy-prod-aws.yml), `deploy-dev-aws.yml`'nin prod muadili.
+**Amaç.** `bakimx.com` (landing) + `app.bakimx.com` (uygulama) için AWS prod ortamı ve CI/CD. Prod, dev'den (`292398627626`) **ayrı bir AWS hesabında** (`075550799591`, multi-account izolasyon) yaşar ve altyapısı **CDK ile** kuruludur (`bakimx-prod-foundation/secrets/data/compute/cron/observability` stack'leri). Workflow: [`.github/workflows/deploy-prod-aws.yml`](../../.github/workflows/deploy-prod-aws.yml), `deploy-dev-aws.yml`'nin prod muadili.
 
 Account `075550799591`, region `eu-central-1`. Repo `aokcuoglu/bakimx`.
 
@@ -123,8 +123,8 @@ Prod AWS ayakta ve CI/CD bağlandıktan sonra canlıya geçiş sırası:
 - Login → `Set-Cookie bakimx_session; Domain=.bakimx.com`.
 
 ## İlgili
-- Workflow: [`.github/workflows/deploy-prod-aws.yml`](../.github/workflows/deploy-prod-aws.yml)
+- Workflow: [`.github/workflows/deploy-prod-aws.yml`](../../.github/workflows/deploy-prod-aws.yml)
 - Dev muadili: [`docs/aws-dev-cicd.md`](./aws-dev-cicd.md)
-- DB TLS: [`src/lib/db.ts`](../src/lib/db.ts) (`DB_SSL_NO_VERIFY`)
-- Health: [`src/app/api/health/route.ts`](../src/app/api/health/route.ts)
+- DB TLS: [`src/lib/db.ts`](../../src/lib/db.ts) (`DB_SSL_NO_VERIFY`)
+- Health: [`src/app/api/health/route.ts`](../../src/app/api/health/route.ts)
 - DNS: `bakimx.com`/`www`/`app.bakimx.com` → `bakimx-prod-alb-891302269.eu-central-1.elb.amazonaws.com` (Cloudflare, DNS-only); ACM `bakimx.com` + `*.bakimx.com` ISSUED.
