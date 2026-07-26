@@ -601,6 +601,9 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     categoryId: has("categoryId")
       ? ((formData.get("categoryId") as string) === "" ? null : Number(formData.get("categoryId")))
       : undefined,
+    tecdocArticleId: has("tecdocArticleId")
+      ? ((formData.get("tecdocArticleId") as string) === "" ? null : Number(formData.get("tecdocArticleId")))
+      : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -619,6 +622,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     brand?: string | null
     category?: string | null
     categoryId?: number | null
+    tecdocArticleId?: number | null
     totalPrice?: number | null
   } = {}
   if (parsed.data.name !== undefined) data.name = parsed.data.name
@@ -630,6 +634,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+  if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
 
   // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat
   // totalPrice satır totalini/genel toplamı yanlış gösterir — null'a çekip

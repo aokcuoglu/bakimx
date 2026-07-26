@@ -3,8 +3,26 @@ import { prisma } from "@/lib/db"
 import { FOLD_FROM, FOLD_TO, normalizePartSearchTerm } from "@/lib/tr-search"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
-import { dedupeBrands, normalizeArticles, normalizeCategories, normalizeSuppliers } from "./normalize"
-import { TecdocError, TYPE_ID, LANG_ID, type ArticleSummary, type CategoryNode, type PartBrandSummary } from "./types"
+import {
+  dedupeBrands,
+  normalizeArticleDetail,
+  normalizeArticles,
+  normalizeCategories,
+  normalizeCrossRefs,
+  normalizeSuppliers,
+} from "./normalize"
+import {
+  TecdocError,
+  TYPE_ID,
+  LANG_ID,
+  COUNTRY_FILTER_ID,
+  type ArticleCompatibility,
+  type ArticleCrossRef,
+  type ArticleDetail,
+  type ArticleSummary,
+  type CategoryNode,
+  type PartBrandSummary,
+} from "./types"
 
 /**
  * Cache-first TecDoc reads, mirroring src/lib/vin/lookup.ts: each (endpoint,
@@ -147,6 +165,68 @@ export async function persistArticles(
     written += res.count
   }
   return written
+}
+
+/**
+ * Parça detayı — özellikler, OEM numaraları, EAN, görsel ve uyumlu araç listesi
+ * TEK faturalı çağrıdan gelir (bkz. rapidapi-provider.getArticleDetail probe
+ * notu). Cache kalıcı: aynı parça ömür boyu bir kez faturalanır.
+ *
+ * Dönen `compatibleCars` 300+ kayıt olabilir — istemciye gönderilmez, yalnız
+ * getArticleCompatibility içinde eşleşme aramak için kullanılır.
+ */
+export async function getArticleDetail(articleId: number): Promise<ArticleDetail> {
+  if (!Number.isInteger(articleId) || articleId <= 0) {
+    throw new TecdocError("invalid_params", "Geçersiz parça kimliği.")
+  }
+  const provider = getTecdocProvider()
+  const raw = await cachedFetch(
+    `article-detail:${articleId}:${COUNTRY_FILTER_ID}:${LANG_ID}`,
+    "article-detail",
+    provider.name,
+    () => provider.getArticleDetail(articleId)
+  )
+  return normalizeArticleDetail(raw, articleId)
+}
+
+/** Muadil / çapraz referanslar — ayrı (tembel) çağrı, kullanıcı bölümü açınca. */
+export async function getArticleCrossRefs(articleId: number): Promise<ArticleCrossRef[]> {
+  if (!Number.isInteger(articleId) || articleId <= 0) {
+    throw new TecdocError("invalid_params", "Geçersiz parça kimliği.")
+  }
+  const provider = getTecdocProvider()
+  const raw = await cachedFetch(
+    `article-xref:${articleId}:${LANG_ID}`,
+    "article-xref",
+    provider.name,
+    () => provider.getArticleCrossRefs(articleId)
+  )
+  return normalizeCrossRefs(raw)
+}
+
+/**
+ * Parça bu araca uyuyor mu?
+ *
+ * İki kaynak: (1) parçanın kendi uyumlu-araç listesi — otoriter ve eşleşen
+ * kayıt "neden uygun" cevabını da verir (motor + üretim aralığı); (2) yerel
+ * `tecdoc_articles` linkage'ı — parça zaten bu araç için listelenmişse.
+ *
+ * DÜRÜSTLÜK: hiçbiri tutmuyorsa "uygun DEĞİL" denmez, `unknown` döner. Yerel
+ * katalog kapsamı best-effort (yalnız gezilmiş/prefetch'lenmiş kategoriler) ve
+ * TR ülke filtresi bazı varyantları eliyor — negatif iddia yanlış olur.
+ */
+export async function getArticleCompatibility(
+  vehicleTypeId: number,
+  detail: ArticleDetail
+): Promise<ArticleCompatibility> {
+  const fitment = detail.compatibleCars.find((c) => c.vehicleId === vehicleTypeId) ?? null
+  if (fitment) return { status: "linked", fitment }
+
+  const linked = await prisma.tecdocArticle.findFirst({
+    where: { vehicleTypeId, tecdocArticleId: detail.tecdocArticleId },
+    select: { id: true },
+  })
+  return { status: linked ? "linked" : "unknown", fitment: null }
 }
 
 /**

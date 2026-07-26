@@ -1,0 +1,139 @@
+{
+  "article": {
+    "articleId": 7858423,
+    "articleNo": "L40594",
+    "articleProductName": "Yağ filtresi",
+    "supplierName": "1A FIRST AUTOMOTIVE",
+    "supplierId": 4814,
+    "articleMediaType": "JPEG",
+    "articleMediaFileName": "412b867272af13afeefddb27d858f5bee680ce8a.webp",
+    "articleInfo": {
+      "articleId": 7858423,
+      "articleNo": "L40594",
+      "supplierId": 4814,
+      "supplierName": "1A FIRST AUTOMOTIVE",
+      "isAccessory": 0,
+      "articleProductName": "Yağ filtresi"
+    },
+    "allSpecifications": [
+      {
+        "criteriaName": "Yükseklik [mm]",
+        "criteriaValue": "87"
+      },
+      {
+        "criteriaName": "Dişli ölçüsü",
+        "criteriaValue": "M20X1,5"
+      },
+      {
+        "criteriaName": "Dış çap [mm]",
+        "criteriaValue": "68"
+      },
+      {
+        "criteriaName": "Filtre tipi",
+        "criteriaValue": "Vidalı filtre"
+      },
+      {
+        "criteriaName": "İç çap 1 [mm]",
+        "criteriaValue": "63"
+      },
+      {
+        "criteriaName": "İç çap 2 [mm]",
+        "criteriaValue": "54"
+      }
+    ],
+    "eanNo": {
+      "eanNumbers": "8033977007781"
+    },
+    "oemNo": [
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "04154-PR3-E00"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15200-PH1-004"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15220-PH1-014"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15400-611-003"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15400-679-003"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15400-679-004"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15400-679-013"
+      },
+      {
+        "oemBrand": "HONDA",
+        "oemDisplayNo": "15400-679-023"
+      }
+    ],
+    "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/4814/412b867272af13afeefddb27d858f5bee680ce8a.webp",
+    "compatibleCars": [
+      {
+        "vehicleId": 129947,
+        "modelId": 14943,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC X Sedan (FC_)",
+        "typeEngineName": "1.6 i-VTEC (FC5)",
+        "constructionIntervalStart": "2016-09-01",
+        "constructionIntervalEnd": "2022-12-01"
+      },
+      {
+        "vehicleId": 4114,
+        "modelId": 1256,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC IV Hatchback (EC, ED, EE, EF)",
+        "typeEngineName": "1.4 L (EC9)",
+        "constructionIntervalStart": "1987-10-01",
+        "constructionIntervalEnd": "1991-12-01"
+      },
+      {
+        "vehicleId": 4115,
+        "modelId": 1250,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC IV Sedan (ED, EF)",
+        "typeEngineName": "1.4 L (ED2)",
+        "constructionIntervalStart": "1987-10-01",
+        "constructionIntervalEnd": "1989-12-01"
+      },
+      {
+        "vehicleId": 4125,
+        "modelId": 1250,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC IV Sedan (ED, EF)",
+        "typeEngineName": "1.6 i 16V (ED4)",
+        "constructionIntervalStart": "1987-11-01",
+        "constructionIntervalEnd": "1991-09-01"
+      },
+      {
+        "vehicleId": 4128,
+        "modelId": 1256,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC IV Hatchback (EC, ED, EE, EF)",
+        "typeEngineName": "1.6 i 16V (ED7)",
+        "constructionIntervalStart": "1987-10-01",
+        "constructionIntervalEnd": "1991-09-01"
+      },
+      {
+        "vehicleId": 4129,
+        "modelId": 1256,
+        "manufacturerName": "HONDA",
+        "modelName": "CIVIC IV Hatchback (EC, ED, EE, EF)",
+        "typeEngineName": "1.3 16V Cat (EC8)",
+        "constructionIntervalStart": "1989-09-01",
+        "constructionIntervalEnd": "1991-09-01"
+      }
+    ]
+  }
+}

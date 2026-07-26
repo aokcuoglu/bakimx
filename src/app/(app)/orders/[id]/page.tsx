@@ -120,6 +120,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       brand: i.brand,
       category: i.category,
       categoryId: i.categoryId,
+      // Katalogdan seçilmiş kalemlerde dolu → satırda "Parça detayı" (ⓘ) açar.
+      tecdocArticleId: i.tecdocArticleId,
       source: i.source,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,

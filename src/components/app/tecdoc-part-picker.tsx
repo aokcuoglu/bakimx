@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { ChevronLeft, ChevronRight, Loader2, PackageSearch, ScanLine } from "lucide-react"
+import { ChevronLeft, ChevronRight, Info, Loader2, PackageSearch, ScanLine } from "lucide-react"
 import { VinCandidateList, VinLockedNotice } from "./vin-resolve"
 import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
 import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
@@ -66,6 +66,7 @@ export function TecdocPartPicker({
   initialCategoryName,
   initialSupplierId,
   initialSupplierName,
+  onShowDetail,
 }: {
   vehicle: PickerVehicle | undefined
   onSelect: (sel: TecdocPartSelection) => void
@@ -79,6 +80,8 @@ export function TecdocPartPicker({
   initialSupplierId?: number | null
   /** Satırda marka seçiliyse parça listesini bu markaya ön-filtrele (temizlenebilir). */
   initialSupplierName?: string | null
+  /** Verilirse parça satırında ⓘ çıkar → detay modalını açar (parçayı SEÇMEDEN). */
+  onShowDetail?: (a: ArticleSummary) => void
 }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const open = controlledOpen ?? uncontrolledOpen
@@ -314,39 +317,56 @@ export function TecdocPartPicker({
                   )}
                 </div>
                 {filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => (
-                  <button
+                  // Satır bir div: seçim butonu ile ⓘ butonu KARDEŞ olmalı (iç
+                  // içe buton geçersiz HTML).
+                  <div
                     key={a.tecdocArticleId}
-                    type="button"
-                    onClick={() => {
-                      const cat = stack[stack.length - 1]
-                      onSelect({
-                        name: a.productName,
-                        articleNo: a.articleNo,
-                        tecdocArticleId: a.tecdocArticleId,
-                        supplierName: a.supplierName,
-                        categoryName: cat?.name ?? "",
-                        categoryId: cat?.id ?? 0,
-                      })
-                      handleOpenChange(false)
-                    }}
-                    className="w-full min-h-11 flex items-center gap-3 px-3 py-2 text-left border-b border-border/60 hover:bg-muted"
+                    className="flex items-center border-b border-border/60 hover:bg-muted"
                   >
-                    {a.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.imageUrl} alt="" loading="lazy" className="size-10 shrink-0 rounded object-contain bg-white border border-border/60" />
-                    ) : (
-                      <span className="size-10 shrink-0 rounded bg-muted flex items-center justify-center">
-                        <PackageSearch className="size-4 text-muted-foreground/50" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cat = stack[stack.length - 1]
+                        onSelect({
+                          name: a.productName,
+                          articleNo: a.articleNo,
+                          tecdocArticleId: a.tecdocArticleId,
+                          supplierName: a.supplierName,
+                          categoryName: cat?.name ?? "",
+                          categoryId: cat?.id ?? 0,
+                        })
+                        handleOpenChange(false)
+                      }}
+                      className="min-h-11 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+                    >
+                      {a.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.imageUrl} alt="" loading="lazy" className="size-10 shrink-0 rounded object-contain bg-white border border-border/60" />
+                      ) : (
+                        <span className="size-10 shrink-0 rounded bg-muted flex items-center justify-center">
+                          <PackageSearch className="size-4 text-muted-foreground/50" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm text-foreground truncate">{a.productName}</span>
+                        <span className="block text-xs text-muted-foreground truncate">
+                          <span className="font-mono">{a.articleNo}</span>
+                          {a.supplierName && <> · {a.supplierName}</>}
+                        </span>
                       </span>
+                    </button>
+                    {onShowDetail && (
+                      <button
+                        type="button"
+                        aria-label="Parça detayı"
+                        title="Özellikler, görsel ve uygunluk"
+                        onClick={() => onShowDetail(a)}
+                        className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                      >
+                        <Info className="size-4" />
+                      </button>
                     )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm text-foreground truncate">{a.productName}</span>
-                      <span className="block text-xs text-muted-foreground truncate">
-                        <span className="font-mono">{a.articleNo}</span>
-                        {a.supplierName && <> · {a.supplierName}</>}
-                      </span>
-                    </span>
-                  </button>
+                  </div>
                 ))}
                 {filteredArticles.length === 0 && (
                   <p className="px-4 py-6 text-center text-sm text-muted-foreground">
