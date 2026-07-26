@@ -1,8 +1,8 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { CustomerDetail } from "@/components/app/customer-detail"
+import { CustomerDetail } from "@/components/customers/customer-detail"
 import { getCustomerReminders } from "@/lib/reminders/queries"
 
 export default async function CustomerDetailPage({

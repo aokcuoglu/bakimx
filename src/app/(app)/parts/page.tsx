@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { PartsList } from "@/components/app/parts-list"
+import { AppShell } from "@/components/layout/app-shell"
+import { PartsList } from "@/components/parts/parts-list"
 import { prisma } from "@/lib/db"
 import { getPartKPIs } from "@/lib/parts/queries"
 import { getUniqueBrandsAction, getUniqueCategoriesAction } from "./actions"

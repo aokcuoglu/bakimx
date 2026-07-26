@@ -1,11 +1,11 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { Plus, CalendarClock, Search, CalendarDays } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { AppointmentList } from "@/components/app/appointment-list"
+import { AppointmentList } from "@/components/appointments/appointment-list"
 import { formatAppointmentNo } from "@/lib/work-order-number"
 import { cn } from "@/lib/utils"
 

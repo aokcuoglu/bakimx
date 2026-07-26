@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { PartForm } from "@/components/app/part-form"
+import { AppShell } from "@/components/layout/app-shell"
+import { PartForm } from "@/components/parts/part-form"
 import { getActiveSuppliersForSelect } from "@/lib/suppliers/queries"
 
 export default async function NewPartPage() {

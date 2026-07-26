@@ -1,12 +1,12 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { getCashboxStats, getRecentCollections, getOpenReceivables, getPaymentMethodBreakdown, getCashboxDailyCollections } from "@/lib/cashbox/queries"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { formatTRY } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
-import { PrintButton } from "@/components/app/print-button"
-import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/app/status-badge"
+import { PrintButton } from "@/components/shared/print-button"
+import { PaymentMethodBadge, CollectionStatusBadge } from "@/components/shared/status-badge"
 import {
   Wallet,
   TrendingUp,

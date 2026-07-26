@@ -87,7 +87,7 @@ src/app/(app)      Korumalı uygulama (intake, orders, quotes, cashbox, inventor
 src/app/(auth)     Giriş / şifremi unuttum
 src/app/admin      Back-office (workshops, billing, flags, audit, health, leads)
 src/app/api        API rotaları (auth, cron, billing, advisor, ...)
-src/components     UI bileşenleri — domain klasörleri + ui/ (shadcn) + shared/
+src/components     UI bileşenleri — aşağıya bak
 src/lib            Domain mantığı (auth, status-transitions, intake, passport, rate-limit, ...)
 src/hooks          Paylaşılan React hook'ları
 src/middleware.ts  Kimlik/rota koruması
@@ -95,6 +95,24 @@ prisma             schema.prisma · migrations · seed
 docs               Dokümantasyon (bkz. docs/README.md)
 scripts            Veritabanı ve operasyon yardımcı scriptleri
 ```
+
+`src/components` domaine göre bölünmüştür — `src/lib`'deki domain klasörleriyle
+aynı adları kullanır, böylece bir özelliğin UI'ı ve mantığı yan yana bulunur:
+
+```
+ui/            shadcn/Base UI primitifleri — domain mantığı İÇERMEZ
+layout/        uygulama kabuğu (app-shell, global arama, impersonation banner)
+shared/        3+ domainde kullanılan jenerik parçalar (status-badge, actions-menu, forms/)
+
+orders/  intake/  customers/  vehicles/  parts/  suppliers/  purchases/
+cashbox/  quotes/  reminders/  appointments/  technician/  settings/
+dashboard/  reports/  analytics/  communications/  advisor/  billing/
+
+auth/  sections/ (landing)  site-assistant/  legal/
+```
+
+**Kural:** bir bileşen tek bir domain tarafından kullanılıyorsa o domainin
+klasöründe durur; üç veya daha fazla domain kullanıyorsa `shared/`'a taşınır.
 
 ---
 

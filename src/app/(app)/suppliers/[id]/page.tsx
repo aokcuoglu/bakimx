@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { SupplierDetail } from "@/components/app/supplier-detail"
+import { AppShell } from "@/components/layout/app-shell"
+import { SupplierDetail } from "@/components/suppliers/supplier-detail"
 import { getSupplierById, getSupplierCriticalParts } from "@/lib/suppliers/queries"
 import { notFound } from "next/navigation"
 

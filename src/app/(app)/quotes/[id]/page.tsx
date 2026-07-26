@@ -1,8 +1,8 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { QuoteDetail } from "@/components/app/quote-detail"
+import { QuoteDetail } from "@/components/quotes/quote-detail"
 import { formatQuoteNo } from "@/lib/work-order-number"
 
 export default async function QuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {

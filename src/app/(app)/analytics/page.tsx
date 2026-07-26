@@ -1,13 +1,13 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { RecommendationsList } from "@/components/app/analytics/recommendations-list"
-import { HealthScoreCard, HealthMetricCards } from "@/components/app/analytics/health-score-card"
-import { DelayedJobsTable } from "@/components/app/analytics/delayed-jobs-table"
-import { TechnicianAnalyticsSection } from "@/components/app/analytics/technician-analytics"
-import { CustomerAnalyticsSection } from "@/components/app/analytics/customer-analytics"
-import { PartsAnalyticsSection } from "@/components/app/analytics/parts-analytics"
-import { RevenueAnalyticsSection } from "@/components/app/analytics/revenue-analytics"
-import { ServiceAnalyticsSection } from "@/components/app/analytics/service-analytics"
+import { AppShell } from "@/components/layout/app-shell"
+import { RecommendationsList } from "@/components/analytics/recommendations-list"
+import { HealthScoreCard, HealthMetricCards } from "@/components/analytics/health-score-card"
+import { DelayedJobsTable } from "@/components/analytics/delayed-jobs-table"
+import { TechnicianAnalyticsSection } from "@/components/analytics/technician-analytics"
+import { CustomerAnalyticsSection } from "@/components/analytics/customer-analytics"
+import { PartsAnalyticsSection } from "@/components/analytics/parts-analytics"
+import { RevenueAnalyticsSection } from "@/components/analytics/revenue-analytics"
+import { ServiceAnalyticsSection } from "@/components/analytics/service-analytics"
 import {
   getOperationsHealth,
   getDelayedJobs,
