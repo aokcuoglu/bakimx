@@ -6,16 +6,16 @@ with **separate, isolated databases** (dev never touches prod data):
 
 - **dev → AWS** — `app-dev.bakimx.com`, ECS Fargate + RDS (eu-central-1). Migrated
   off the old Contabo `staging.app.bakimx.com` on 2026-07-20.
-- **main → Contabo VPS** — `app.bakimx.com` (+ landing `bakimx.com`), Docker Compose.
-  **Prod → AWS migration is in progress** (separate AWS account `075550799591`): the
-  infra is CDK-managed and running, and [`deploy-prod-aws.yml`](../.github/workflows/deploy-prod-aws.yml)
-  is wired but **`workflow_dispatch`-only** until DNS cutover. At cutover it flips to
-  `main`-push and `deploy.yml` (Contabo) is retired. See [aws-prod-cicd.md](./aws-prod-cicd.md).
+- **main → AWS** — `app.bakimx.com` (+ landing `bakimx.com`), ECS Fargate + RDS, in a
+  **separate AWS account** (`075550799591`). DNS cutover off Contabo: 2026-07-21;
+  [`deploy-prod-aws.yml`](../.github/workflows/deploy-prod-aws.yml) runs on every push to
+  `main` since 2026-07-26 (before that it was dispatch-only). See [aws-prod-cicd.md](./aws-prod-cicd.md).
+  The Contabo VPS stays frozen as a rollback target — rollback is a DNS flip, not a redeploy.
 
 ```
 feature/* ──PR──► dev ──(push)──► 🚀 app-dev.bakimx.com   (AWS ECS, every push to dev)
                    │
-                   └──PR──► main ──(merge)──► 🚀 app.bakimx.com  (Contabo VPS, every push to main)
+                   └──PR──► main ──(merge)──► 🚀 app.bakimx.com  (AWS ECS, every push to main)
 ```
 
 ## Branches
@@ -23,7 +23,7 @@ feature/* ──PR──► dev ──(push)──► 🚀 app-dev.bakimx.com   
 | Branch      | Purpose                         | Deploys to           | Trigger                                  |
 | ----------- | ------------------------------- | -------------------- | ---------------------------------------- |
 | `dev`       | Integration / QA                | app-dev.bakimx.com (AWS) | push → `.github/workflows/deploy-dev-aws.yml` |
-| `main`      | Production (protected, PR-only) | app.bakimx.com (Contabo) | push → `.github/workflows/deploy.yml`    |
+| `main`      | Production (protected, PR-only) | app.bakimx.com (AWS) | push → `.github/workflows/deploy-prod-aws.yml` |
 | `feature/*` | One change in progress          | —                    | open a PR into `dev`                     |
 
 `sync-main-to-dev.yml` replays each `main` merge back onto `dev` so dev never
@@ -49,29 +49,31 @@ revision (image swap) → **DB migration gate** (one-off `ecs run-task` running
 assert the rollout converged on the new task def (fail on circuit-breaker
 rollback). See [aws-dev-cicd.md](./aws-dev-cicd.md) for the IAM/OIDC/env details.
 
-### main → Contabo VPS (`deploy.yml`)
-SSH to the VPS and run, against `/opt/bakimx`:
-```
-docker compose pull app          # fetch the freshly built image (ghcr.io/aokcuoglu/app:latest)
-docker compose run --rm migrate  # apply pending Prisma migrations (aborts deploy on failure)
-docker compose up -d app --force-recreate
-```
-Migrations run **before** the app is recreated; `set -e` aborts on failure so a
-bad migration leaves the running app untouched (no downtime, no half-migrated DB).
+### main → AWS prod (`deploy-prod-aws.yml`)
+Identical flow to dev, against the prod account (`075550799591`), cluster
+`bakimx-prod-cluster` / service `bakimx-prod-app-svc`. Migrations run in the same
+one-off-task gate **before** the service is updated, so a failed migration aborts the
+deploy and leaves the running app untouched. Docs-only commits are skipped via
+`paths-ignore`; `workflow_dispatch` is kept for manual re-runs and rollbacks.
+
+The Contabo `deploy.yml` (SSH + `docker compose`) stays in the repo but is **frozen
+dispatch-only** — its `push: [main]` trigger is commented out, so it cannot fire
+alongside the AWS deploy. It is the emergency redeploy path for a VPS rollback; delete
+it once the VPS is decommissioned.
 
 ## Images & rollback
 
 - **dev (AWS):** ECR `bakimx/app`, tags `dev` + `sha-<commit>`. Rollback: point
   the ECS service at the last-good task-def revision (each carries a pinned
   `sha-…` image) via `aws ecs update-service --task-definition …`.
-- **prod (Contabo):** GHCR `ghcr.io/aokcuoglu/app`, `:latest` + `:sha-<commit>`.
-  Rollback: repoint prod to a known-good sha and recreate:
-  ```
-  cd /opt/bakimx
-  docker compose up -d app --force-recreate   # after editing image to …/app:sha-<good>
-  ```
-- Version tags (`vX.Y.Z`) are optional record-keeping only — they no longer
-  trigger a deploy. Deploys are driven by pushes to `dev`/`main`.
+- **prod (AWS):** ECR `bakimx/app` in account `075550799591`, same tagging. Rollback:
+  point the ECS service at the last-good task-def revision, exactly as on dev.
+- **prod (Contabo, frozen):** GHCR `ghcr.io/aokcuoglu/app`. Only relevant for a full
+  infra rollback — flip the three Cloudflare records back to the VPS IP; the frozen
+  stack still serves its last image. `deploy.yml` remains dispatch-only for an
+  emergency VPS redeploy after such a rollback.
+- Version tags (`vX.Y.Z`) are optional record-keeping only — they only create a GitHub
+  Release (`release.yml`) and never deploy. Deploys are driven by pushes to `dev`/`main`.
 
 ## Admin console access
 
@@ -82,5 +84,5 @@ returns 404 for everyone. Never put the public demo account in `ADMIN_EMAILS`.
 ## Infra references
 
 - **AWS dev:** [aws-dev-cicd.md](./aws-dev-cicd.md) — CI/CD + IAM/OIDC + task-def env (CDK backfill spec).
-- **AWS prod:** [aws-prod-cicd.md](./aws-prod-cicd.md) — prod CI/CD + IAM/OIDC + cutover runbook (in progress).
-- **Contabo prod (current live):** [../DEPLOY.md](../DEPLOY.md) — VPS runbook (co-hosting, R2/S3, GHCR, DNS, TLS). Retired at cutover.
+- **AWS prod:** [aws-prod-cicd.md](./aws-prod-cicd.md) — prod CI/CD + IAM/OIDC + cutover runbook (cutover done 2026-07-21).
+- **Contabo prod (frozen rollback target):** [../DEPLOY.md](../DEPLOY.md) — VPS runbook (co-hosting, R2/S3, GHCR, DNS, TLS). No longer the live path.
