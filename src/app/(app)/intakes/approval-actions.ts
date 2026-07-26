@@ -6,7 +6,6 @@
 
 import { prisma } from "@/lib/db"
 import { requireWritableWorkshop } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
 
@@ -37,6 +36,6 @@ export async function generateShareLinkAction(intakeFormId: string) {
 
   await AuditLogAction(user.workshopId, user.id, "PublicShareLink", shareLink.id, "share_link_generated")
 
-  revalidatePath(`/intakes/${intakeFormId}`)
+  // Çağıran (work-order-detail.tsx) başarıdan sonra router.refresh() yapıyor.
   return { success: true, token }
 }

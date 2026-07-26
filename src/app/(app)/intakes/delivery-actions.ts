@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/db"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { PlanWriteLockedError } from "@/lib/plan"
-import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isOtpExpired } from "@/lib/intake/otp"
@@ -80,7 +79,6 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
     description: "Teslim onay kodu gönderildi",
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
   return { success: true as const, otpCode: isDemoSms() ? otpCode : undefined }
 }
 
@@ -157,6 +155,6 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
     description: "Müşteri OTP ile aracı teslim aldı",
   })
 
-  revalidatePath(`/intakes/${intakeFormId}`)
+  // Çağıran (work-order-detail.tsx) başarıdan sonra router.refresh() yapıyor.
   return { success: true as const }
 }

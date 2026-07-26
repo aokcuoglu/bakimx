@@ -30,7 +30,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       data: { isActive },
     })
 
-    revalidatePath(`/intakes/${id}`)
+    // Yalnız public paylaşım sayfası tazelenir; personel tarafını çağıran
+    // (work-order-detail.tsx) router.refresh() ile kendisi yeniliyor.
     revalidatePath(`/s/${link.token}`)
 
     return NextResponse.json({ success: true, isActive })
