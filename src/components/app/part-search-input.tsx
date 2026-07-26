@@ -21,7 +21,8 @@ import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
 /**
  * "Parça adı" alanı: serbest metin + (araç kataloğa bağlıysa) cache'lenmiş
- * parçalarda ad/numara ile canlı arama. Yazarken free-text `onNameChange` ile
+ * parçalarda numara/ad/marka/kategori ile canlı arama (boşlukla ayrılan terimler
+ * AND'lenir — bkz. searchVehicleArticles). Yazarken free-text `onNameChange` ile
  * korunur (katalogda olmayan ad da yazılabilir); bir öneri seçilince
  * `onSelectArticle` ile satır doldurulur. autoHighlight → Enter ilk sonucu seçer.
  * Araç kataloğa bağlı değilse düz Input gibi davranır.
