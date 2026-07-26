@@ -1,7 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { ReportsLayout } from "@/components/app/reports/reports-layout"
-import { TechniciansReport } from "@/components/app/reports/technicians-report"
+import { AppShell } from "@/components/layout/app-shell"
+import { ReportsLayout } from "@/components/reports/reports-layout"
+import { TechniciansReport } from "@/components/reports/technicians-report"
 import { getTechnicianReportStats, getTechnicianPerformance } from "@/lib/reports/queries"
 import { TECHNICIAN_ROLES } from "@/lib/constants"
 

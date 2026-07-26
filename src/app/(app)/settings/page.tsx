@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
 import { getWorkshopSettings } from "./actions"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { SettingsTabs } from "./settings-tabs"
 import { prisma } from "@/lib/db"
 import { getSeatUsage } from "@/lib/rbac"

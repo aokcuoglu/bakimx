@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { SuppliersList } from "@/components/app/suppliers-list"
+import { AppShell } from "@/components/layout/app-shell"
+import { SuppliersList } from "@/components/suppliers/suppliers-list"
 import { prisma } from "@/lib/db"
 import { getSupplierKPIs } from "@/lib/suppliers/queries"
 

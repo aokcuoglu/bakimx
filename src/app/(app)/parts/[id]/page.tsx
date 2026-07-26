@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { PartDetail } from "@/components/app/part-detail"
+import { AppShell } from "@/components/layout/app-shell"
+import { PartDetail } from "@/components/parts/part-detail"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 

@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { CalendarView } from "@/components/app/calendar-view"
+import { AppShell } from "@/components/layout/app-shell"
+import { CalendarView } from "@/components/appointments/calendar-view"
 import { getCalendarEvents } from "@/lib/calendar/queries"
 import Link from "next/link"
 

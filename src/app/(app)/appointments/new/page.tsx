@@ -1,9 +1,9 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { AppointmentCreateForm } from "@/components/app/appointment-create-form"
+import { AppointmentCreateForm } from "@/components/appointments/appointment-create-form"
 
 export default async function NewAppointmentPage() {
   const { user, workshop } = await getAppData()

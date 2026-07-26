@@ -1,15 +1,15 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { CustomerTypeBadge, CustomerTagBadge } from "@/components/app/customer-badges"
+import { CustomerTypeBadge, CustomerTagBadge } from "@/components/customers/customer-badges"
 import { formatTRY } from "@/lib/format"
 import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
 import { cn } from "@/lib/utils"
-import { FilterSelect } from "@/components/app/filter-select"
+import { FilterSelect } from "@/components/shared/filter-select"
 
 type SP = { q?: string; type?: string }
 

@@ -1,8 +1,8 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { ReminderDetail } from "@/components/app/reminder-detail"
+import { ReminderDetail } from "@/components/reminders/reminder-detail"
 
 export default async function ReminderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

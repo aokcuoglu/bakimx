@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { CollectionCreateForm } from "@/components/app/collection-create-form"
+import { AppShell } from "@/components/layout/app-shell"
+import { CollectionCreateForm } from "@/components/cashbox/collection-create-form"
 import { prisma } from "@/lib/db"
 
 export default async function NewPaymentPage({ searchParams }: { searchParams: Promise<{ customerId?: string; orderId?: string }> }) {

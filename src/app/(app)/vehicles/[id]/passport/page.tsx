@@ -1,10 +1,10 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { calculateOrderTotals } from "@/lib/totals"
 import { getVehicleReminders } from "@/lib/reminders/queries"
-import { VehiclePassport } from "@/components/app/vehicle-passport"
+import { VehiclePassport } from "@/components/vehicles/vehicle-passport"
 
 export const dynamic = "force-dynamic"
 

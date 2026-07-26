@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { splitHeaderActions } from "@/lib/orders/header-actions"
-import { NEXT_STATUSES } from "@/components/app/order-management-panel"
+import { NEXT_STATUSES } from "@/components/orders/order-management-panel"
 
 type Tone = "primary" | "secondary" | "danger"
 

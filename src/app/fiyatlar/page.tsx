@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Header } from "@/components/sections/Header"
 import { Footer } from "@/components/sections/Footer"
-import { PlanPackages } from "@/components/app/plan-packages"
+import { PlanPackages } from "@/components/billing/plan-packages"
 
 export const metadata = { title: "Fiyatlar" }
 

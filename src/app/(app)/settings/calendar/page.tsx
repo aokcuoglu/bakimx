@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { CalendarSettings } from "@/components/app/calendar-settings"
+import { AppShell } from "@/components/layout/app-shell"
+import { CalendarSettings } from "@/components/settings/calendar-settings"
 import { getCalendarSettings } from "./actions"
 import Link from "next/link"
 

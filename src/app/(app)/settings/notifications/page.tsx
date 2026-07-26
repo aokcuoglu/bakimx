@@ -1,6 +1,6 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
-import { NotificationSettings } from "@/components/app/notification-settings"
+import { AppShell } from "@/components/layout/app-shell"
+import { NotificationSettings } from "@/components/settings/notification-settings"
 import { getNotificationTemplates, getCommunicationProviders } from "./actions"
 import Link from "next/link"
 

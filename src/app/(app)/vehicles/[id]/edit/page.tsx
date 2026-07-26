@@ -1,9 +1,9 @@
 import { getAppData } from "@/app/(app)/data"
-import { AppShell } from "@/components/app/app-shell"
+import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
-import { VehicleCreateForm } from "@/components/app/vehicle-create-form"
-import { VehicleIdentity } from "@/components/app/vehicle-identity"
+import { VehicleCreateForm } from "@/components/vehicles/vehicle-create-form"
+import { VehicleIdentity } from "@/components/vehicles/vehicle-identity"
 import Link from "next/link"
 
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
