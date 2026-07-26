@@ -3,9 +3,10 @@ import { searchVehicleArticles } from "@/lib/tecdoc/catalog"
 import { tecdocRouteGuard, tecdocErrorResponse, parsePositiveInt } from "@/lib/tecdoc/api-helpers"
 
 /**
- * Ad VEYA parça-numarasıyla arama — bu araç için cache'lenmiş parçalarda (DB-only,
- * kotasız). Sağlayıcıda numara-arama ucu olmadığı için best-effort: yalnız daha
- * önce göz atılmış kategorilerdeki parçaları bulur (bkz. searchVehicleArticles).
+ * Parça numarası, adı, MARKASI veya kategori adıyla arama — bu araç için cache'lenmiş
+ * parçalarda (DB-only, kotasız). Boşlukla ayrılan terimler AND'lenir ("bbr filtre").
+ * Sağlayıcıda numara-arama ucu olmadığı için best-effort: yalnız daha önce göz
+ * atılmış kategorilerdeki parçaları bulur (bkz. searchVehicleArticles).
  */
 export async function GET(request: Request) {
   const guard = await tecdocRouteGuard()
