@@ -80,7 +80,7 @@
 - **Communications (SMS/WhatsApp/Email)** — provider abstraction complete (NetGSM/Resend/WhatsApp Business), but **mock is default**; real-send path unproven in production
 - **OCR smart capture** — ruhsat extraction works; real providers (DeepSeek/OpenAI/Tesseract) selectable but not the default; accuracy unvalidated
 - **AI Service Advisor** — suggestion-only, confirm-mandatory; mock default; **now server-gated to Premium** (`hasFeature("aiAdvisor")`→403 in both advisor routes + UI upsell lock, v0.5.11)
-- **Subscription & billing** — plan tiers, trial window, seat limits, upgrade-request flow present in DB+UI (v0.5.10); manual/havale activation plus TAMI virtual POS card payment (3DS, see DEPLOY.md §8) — not iyzico
+- **Subscription & billing** — plan tiers, trial window, seat limits, upgrade-request flow present in DB+UI (v0.5.10); manual/havale activation plus TAMI virtual POS card payment (3DS) — not iyzico
 - **Calendar sync** — Google Calendar provider scaffolded, automation scheduler present; OAuth/real sync not productionized
 - **Maintenance reminders** — records + channel preferences stored; **no guaranteed real dispatch**
 - **Technician workspace** — functional but newer, least-hardened surface

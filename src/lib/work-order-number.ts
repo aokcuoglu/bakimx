@@ -50,7 +50,7 @@ export function generateWorkOrderNo(): string {
  * depth and to surface a friendly error before hitting a P2002. Postgres treats
  * NULL workOrderNo values as distinct, so legacy null rows are unaffected; any
  * pre-existing non-null duplicates must be cleaned before baselining an existing
- * database (see docs/DEPLOYMENT.md).
+ * database (see docs/database.md).
  */
 export async function generateUniqueWorkOrderNo(
   isTaken: (candidate: string) => Promise<boolean>,

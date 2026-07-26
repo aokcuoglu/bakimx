@@ -6,7 +6,7 @@ BakimX is a Next.js auto repair workshop SaaS project.
 - Target users: auto repair workshops, mostly mobile-first usage.
 - Brand direction: blue/navy professional automotive SaaS style.
 - Local development must avoid Docker on MacBook.
-- Docker is only for VPS/production later.
+- Docker is only for the production image (built in CI, run on AWS ECS).
 - Self-serve signup is an approval-gated trial application: `/register` creates a workshop in `pending` status with no access until an admin approves (no instant public provisioning). There is no instant public register flow.
 - Forgot password should guide users to company contact/support.
 - Current MVP focus: intake, customer, vehicle, work order, photo checklist, damage marking, public service summary, PDF/WhatsApp output.

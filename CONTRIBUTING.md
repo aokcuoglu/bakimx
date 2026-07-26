@@ -7,7 +7,7 @@ BakımX özel (private) bir üründür. Bu rehber, tutarlı ve gözden geçirile
 - `dev` — entegrasyon dalı. Her push otomatik **app-dev.bakimx.com**'a (AWS) deploy olur.
 - `main` — üretim aynası. Yalnızca app-dev'de doğrulanmış sürümler. `main`'e merge edildiğinde **prod**'a (Contabo) deploy olur.
 
-Tam akış için [RELEASE.md](./RELEASE.md).
+Tam akış için [docs/releasing.md](./docs/releasing.md).
 
 ## Commit mesajları
 Conventional Commits kullanılır: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`, `build:`, `ci:`, `security:`. Kapsam ekleyin: `feat(billing): ...`.

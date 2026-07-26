@@ -2,7 +2,7 @@ name: Deploy to AWS prod (bakimx.com / app.bakimx.com)
 
 # AWS-hosted production (bakimx.com + app.bakimx.com), separate AWS account
 # (075550799591) from dev (292398627626). Mirrors deploy-dev-aws.yml. Infra is
-# CDK-managed (bakimx-prod-* stacks); IAM/OIDC + task-def env: docs/aws-prod-cicd.md.
+# CDK-managed (bakimx-prod-* stacks); IAM/OIDC + task-def env: docs/deployment/aws-prod.md.
 #
 # Flow: build arm64 image → push to ECR → register a new task-def revision (image
 # swap + runtime env inject) → DB migration gate (one-off ECS task, aborts on
@@ -13,11 +13,9 @@ name: Deploy to AWS prod (bakimx.com / app.bakimx.com)
 # was dispatch-only, which meant a merge to `main` shipped nothing until someone
 # remembered to press the button — the failure mode this trigger removes.
 #
-# No double-deploy risk: the Contabo deploy.yml is frozen dispatch-only (its `push: [main]`
-# trigger is commented out), so it cannot fire alongside this one. It is kept as the
-# emergency redeploy path for a VPS rollback and should be deleted once the VPS is
-# decommissioned. Note that rollback itself is a DNS flip (3 Cloudflare records → VPS IP);
-# the frozen stack still serves its last image, so no redeploy is normally needed.
+# This is the only prod deploy path. The old Contabo VPS workflow (deploy.yml) was
+# deleted in 2026-07 — BakımX no longer runs on that host and will not return to it.
+# Rollback is an ECS task-def revert (see docs/releasing.md), not a DNS flip.
 #
 # paths-ignore keeps docs/release-note-only commits from burning an 11-minute deploy.
 # NOTE: a version bump touches package.json, so release commits DO deploy — intended.

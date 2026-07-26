@@ -1,7 +1,7 @@
 name: Sync main into dev
 
 # After every release (a push to main — normally a dev->main PR merge, see
-# deploy.yml), realign dev with main's merge commits so dev never shows
+# deploy-prod-aws.yml), realign dev with main's merge commits so dev never shows
 # "N commits behind main" and never misses a fix committed straight to main.
 #
 # In the normal case this is content-neutral: main's content already lives in

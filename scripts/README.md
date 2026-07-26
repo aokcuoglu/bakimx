@@ -27,10 +27,9 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | Script | npm script | Ne yapar |
 | --- | --- | --- |
 | `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı |
-| `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `RELEASE.md`) |
+| `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `docs/releasing.md`) |
 
-## Contabo (arşiv)
-
-`provision-vps.sh`, `restore-db.sh`, `db-migrate-prod.sh` — AWS'e geçişten
-(2026-07-21) önceki VPS kurulumuna ait. Contabo yığını rollback hedefi olarak
-donduruldu; ayrıntı `DEPLOY.md` ve `DB.md`'de.
+> Contabo VPS dönemine ait script'ler (`provision-vps.sh`, `restore-db.sh`,
+> `db-migrate-prod.sh`) 2026-07'de kaldırıldı — BakımX AWS ECS üzerinde çalışıyor
+> ve o host'a dönmeyecek. Migration'lar deploy'da otomatik uygulanıyor
+> (bkz. [`docs/database.md`](../docs/database.md)).
