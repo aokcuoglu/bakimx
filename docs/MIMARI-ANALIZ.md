@@ -32,7 +32,7 @@
 | Doğrulama | **Zod + react-hook-form** | Kullanıcı girdilerini sunucuda ve formda kurallara göre denetleme |
 | Dosya depolama | **AWS S3 SDK → Cloudflare R2** | Fotoğrafların bulut depoda saklanması (S3 uyumlu) |
 | OCR | **tesseract.js** (+ OpenAI/DeepSeek opsiyonel) | Ruhsat fotoğrafından metin okuma |
-| PDF | **@react-pdf/renderer** | Müşteriye sunulan çıktıların PDF/yazdırma hâli |
+| PDF | **Yazdırmaya hazır HTML** (`/p/[token]/pdf`, `/s/[token]/pdf`) | Müşteriye sunulan çıktıların PDF/yazdırma hâli |
 | Diğer | **nanoid, qrcode.react, heic-convert** | Güvenli token üretimi, QR kod, iPhone HEIC fotoğraf dönüşümü |
 | Paket yöneticisi | **Bun** (Node 18+ uyumlu) | Bağımlılık kurulumu ve script çalıştırma |
 

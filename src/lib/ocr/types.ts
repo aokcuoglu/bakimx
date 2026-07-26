@@ -11,7 +11,10 @@ export const SUPPORTED_IMAGE_MIME_TYPES = new Set([
 export const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024
 export const MAX_BODY_SIZE_BYTES = 12 * 1024 * 1024
 
-export type OcrProviderName = "mock" | "openai" | "anthropic" | "paddle" | "hybrid"
+// "paddle" ve "hybrid" 2026-07-05'te emekli edildi (PaddleOCR sidecar kaldırıldı).
+// Eski OcrLog satırlarında bu değerler DB'de kalmış olabilir; onları yalnız
+// gösteren yerler ham değere düşer (bkz. smart-capture-registration.tsx).
+export type OcrProviderName = "mock" | "openai" | "anthropic"
 
 export interface OcrFieldConfidence {
   value: string
