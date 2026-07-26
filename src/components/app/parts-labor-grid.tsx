@@ -592,7 +592,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
         supplierId={filter.supplierId ?? null}
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
-        placeholder="Parça ara veya ekle…"
+        placeholder="Parça no, adı veya marka ara…"
         onNameChange={setName}
         onSelectArticle={(a) =>
           void add({
