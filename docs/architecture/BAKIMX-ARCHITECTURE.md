@@ -61,7 +61,7 @@ These are the natural candidates for the AWS build-out (see §12).
 | Auth / sessions | `iron-session` 8 (stateless, encrypted cookie) + `bcryptjs` password hashing |
 | IDs / tokens | `cuid` (primary keys), `nanoid` (public tokens) |
 | Object storage SDK | `@aws-sdk/client-s3` v3 + `@aws-sdk/s3-request-presigner` |
-| PDF generation | `@react-pdf/renderer` (server-rendered customer output) |
+| PDF generation | Print-ready HTML routes (`/p/[token]/pdf`, `/s/[token]/pdf`) — the browser's print-to-PDF does the rendering; `@react-pdf/renderer` was retired in 2026-07 |
 | Image handling | `sharp` + `heic-convert` (iOS HEIC → web), client-side **OpenCV.js + jscanify** (vendored) for live registration-document scanning |
 | OCR | `tesseract.js` (optional local OCR) + remote vision OCR (OpenAI / DeepSeek) |
 
