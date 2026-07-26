@@ -62,17 +62,17 @@ OCR_PROVIDER=mock
 # ANTHROPIC_API_KEY=sk-ant-...
 # OCR_MODEL=claude-sonnet-5   # varsayılan; ucuz/hızlı için claude-haiku-4-5
 
-# Alternatif sağlayıcılar
-# OCR_PROVIDER=paddle    # yerel PaddleOCR sidecar (ocr-service/, ayrı container) + OCR_SERVICE_URL
-# OCR_PROVIDER=hybrid    # paddle birincil + Claude fallback (ANTHROPIC_API_KEY)
+# Alternatif sağlayıcı
 # OCR_PROVIDER=openai    # OPENAI_API_KEY + OCR_MODEL=gpt-4o
 ```
+
+> `paddle` ve `hybrid` sağlayıcıları 2026-07'de, dayandıkları PaddleOCR Python
+> sidecar'ı (`ocr-service/`) ile birlikte emekli edildi. Bu değerlerden birine
+> ayarlı bir ortam kalmışsa uygulama açık bir hata ile durur.
 
 **OCR davranışı:**
 - `OCR_PROVIDER` ayarlanmazsa veya `mock` ise: sabit demo verisi döndürülür, API anahtarı gerekmez
 - `OCR_PROVIDER=anthropic` (MVP): Claude Vision ile doğrudan görüntüden yapılandırılmış çıkarım; `ANTHROPIC_API_KEY` zorunlu, `OCR_MODEL` varsayılanı `claude-sonnet-5`
-- `OCR_PROVIDER=paddle`: yerel PaddleOCR sidecar (ocr-service/, ayrı Python container); `OCR_SERVICE_URL` (varsayılan http://127.0.0.1:8000)
-- `OCR_PROVIDER=hybrid`: PaddleOCR birincil + düşük güvenli alanlarda Claude fallback; `ANTHROPIC_API_KEY` zorunlu
 - `OCR_PROVIDER=openai`: OpenAI vision OCR; `OPENAI_API_KEY` zorunlu, `OPENAI_OCR_MODEL` veya `OCR_MODEL` zorunlu
 - `OCR_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
 - Eksik API anahtarı durumunda açık Türkçe hata mesajı gösterilir; sahte veri üretilmez
