@@ -3,17 +3,27 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 FROM base AS deps
+# Install with bun, not npm. `bun.lock` is the only committed lockfile and npm cannot
+# read it — and `--frozen-lockfile` is not an npm flag, so the previous
+# `npm install --frozen-lockfile` silently re-resolved every `^` range against the live
+# registry on each build. That made the image non-deterministic: an unchanged repo built
+# green at 16:49 and then failed at 17:02 on 2026-07-25 with an ERESOLVE peer conflict
+# (`@hookform/resolvers` floated 5.4.0 -> 5.4.3, which wants `valibot@^1.0.0`).
+# package.json also uses bun-only fields — `patchedDependencies` (the Next dev-crash
+# patch) and `trustedDependencies` — which npm ignores outright.
+#
+# Pin the bun image so the toolchain is versioned like everything else; copying just the
+# binary keeps the node:22-alpine base (Next standalone + the /migrate Prisma tree both
+# run on node at runtime).
+COPY --from=oven/bun:1.3.13-alpine /usr/local/bin/bun /usr/local/bin/bun
 # Copy the Prisma schema alongside the manifest: package.json's `postinstall` runs
 # `prisma generate`, which needs prisma/schema.prisma present at install time. Without
 # this the install aborts with "Could not find Prisma Schema" and the build fails.
+# `patches/` is required too — bun resolves `patchedDependencies` during install.
 COPY package.json bun.lock ./
+COPY patches ./patches
 COPY prisma ./prisma
-RUN \
-  if [ -f bun.lock ]; then \
-    npm install --frozen-lockfile; \
-  else \
-    npm install; \
-  fi
+RUN bun install --frozen-lockfile
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
