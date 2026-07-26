@@ -15,7 +15,7 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { PackageSearch, Search, XIcon, Plus, PencilLine } from "lucide-react"
+import { Info, PackageSearch, Search, XIcon, Plus, PencilLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 
@@ -48,6 +48,7 @@ export function PartSearchInput({
   onCreateEdit,
   refreshSignal,
   onResultsCount,
+  onShowDetail,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -79,6 +80,8 @@ export function PartSearchInput({
   refreshSignal?: number
   /** Her arama sonucu güncellemesinde sonuç sayısını bildirir (prefetch poll'unu erken durdurmak için). */
   onResultsCount?: (count: number) => void
+  /** Verilirse sonuç satırında ⓘ çıkar → parça detay modalını açar (satırı SEÇMEDEN). */
+  onShowDetail?: (a: ArticleSearchResult) => void
 }) {
   // Composer'da dropdown/altında her zaman görünen Odoo-tarzı create aksiyonları.
   // bare (liste satırı) kullanımında showCreate geçilmez → hiç render edilmez.
@@ -325,6 +328,27 @@ export function PartSearchInput({
                     {a.categoryName && <> · {a.categoryName}</>}
                   </span>
                 </span>
+                {onShowDetail && (
+                  <button
+                    type="button"
+                    aria-label="Parça detayı"
+                    title="Özellikler, görsel ve uygunluk"
+                    // Satır seçimini TETİKLEMEMELİ: mouseDown input'u blur edip
+                    // popup'ı kapatırdı, click ise Autocomplete'in kendi seçim
+                    // handler'ına baloncuklanırdı.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      // stopPropagation yeter: buton düz bir DOM child, Base UI'ın
+                      // seçim handler'ı AutocompleteItem üzerinde ve baloncuklanma
+                      // ile tetikleniyor.
+                      e.stopPropagation()
+                      onShowDetail(a)
+                    }}
+                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <Info className="size-4" />
+                  </button>
+                )}
               </AutocompleteItem>
             )}
           </AutocompleteList>

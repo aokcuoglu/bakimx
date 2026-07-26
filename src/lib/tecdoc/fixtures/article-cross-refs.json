@@ -1,0 +1,85 @@
+{
+  "countArticles": 8,
+  "articles": [
+    {
+      "articleId": null,
+      "articleNo": "0 451 103 364",
+      "supplierName": "1A FIRST AUTOMOTIVE",
+      "supplierId": 4814,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "412b867272af13afeefddb27d858f5bee680ce8a.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/4814/412b867272af13afeefddb27d858f5bee680ce8a.webp"
+    },
+    {
+      "articleId": 64050,
+      "articleNo": "0 986 452 041",
+      "supplierName": "BOSCH",
+      "supplierId": 30,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPG",
+      "articleMediaFileName": "d9ef7036bc5df814eeea0a119e61f0b7d865b61a.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/30/d9ef7036bc5df814eeea0a119e61f0b7d865b61a.webp"
+    },
+    {
+      "articleId": 64049,
+      "articleNo": "0986452036",
+      "supplierName": "BOSCH",
+      "supplierId": 30,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "06c8197b26abd1bbb675179779d0f1a9a4b0b29e.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/30/06c8197b26abd1bbb675179779d0f1a9a4b0b29e.webp"
+    },
+    {
+      "articleId": 777255,
+      "articleNo": "10-01-198",
+      "supplierName": "ASHIKA",
+      "supplierId": 257,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "229b8d8a0c3673dc743f5a56bf8c66eda90eb7e7.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/257/229b8d8a0c3673dc743f5a56bf8c66eda90eb7e7.webp"
+    },
+    {
+      "articleId": 778195,
+      "articleNo": "10-03-316",
+      "supplierName": "ASHIKA",
+      "supplierId": 257,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "c91f351d11f5b3b76e9e9733f176b483924057b1.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/257/c91f351d11f5b3b76e9e9733f176b483924057b1.webp"
+    },
+    {
+      "articleId": 778340,
+      "articleNo": "10-04-406",
+      "supplierName": "ASHIKA",
+      "supplierId": 257,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "1f4ba8a6aba998538e0d844d523925aeb7aee770.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/257/1f4ba8a6aba998538e0d844d523925aeb7aee770.webp"
+    },
+    {
+      "articleId": 778343,
+      "articleNo": "10-04-410",
+      "supplierName": "ASHIKA",
+      "supplierId": 257,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "10b78338e20f242bbed5a51c11978b86053bce34.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/257/10b78338e20f242bbed5a51c11978b86053bce34.webp"
+    },
+    {
+      "articleId": 778346,
+      "articleNo": "10-04-498",
+      "supplierName": "ASHIKA",
+      "supplierId": 257,
+      "articleProductName": "Yağ filtresi",
+      "articleMediaType": "JPEG",
+      "articleMediaFileName": "63914809b38a544639ee417ff8b4cfc360b53d61.webp",
+      "s3image": "https://fsn1.your-objectstorage.com/tecdoc2025/media_files/images/257/63914809b38a544639ee417ff8b4cfc360b53d61.webp"
+    }
+  ]
+}

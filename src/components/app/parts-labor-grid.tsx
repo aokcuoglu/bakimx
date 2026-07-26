@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/app/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -39,6 +39,7 @@ import { TecdocPartPicker, type PickerVehicle } from "@/components/app/tecdoc-pa
 import { PartAttrOptionsProvider } from "@/components/app/part-attr-options"
 import { SupplierPriceDialog } from "@/components/app/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/app/manual-part-dialog"
+import { PartDetailDialog, type PartDetailTarget } from "@/components/app/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
@@ -54,6 +55,28 @@ type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string;
 type PartFilter = { supplierId?: number; supplierName?: string; categoryId?: number; categoryName?: string }
 
 type OnCell = (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; localOnly?: boolean }) => void
+
+/**
+ * Parça detay modalı açma isteği. Modal TEK örnek olarak PartsLaborGrid'de durur
+ * (Autocomplete popup'ının içinde Dialog render etmek odak/portal çakışması
+ * yaratıyor); açan taraf hedefi ve — seçim bağlamındaysa — seçme eylemini verir.
+ */
+type DetailRequest = { target: PartDetailTarget; onSelect?: () => void }
+type OnShowDetail = (req: DetailRequest) => void
+
+/** Katalog parçası (arama sonucu / picker satırı) → modal hedefi. */
+function toDetailTarget(
+  a: { tecdocArticleId: number; productName: string; articleNo: string; supplierName: string },
+  vehicle?: PickerVehicle
+): PartDetailTarget {
+  return {
+    tecdocArticleId: a.tecdocArticleId,
+    productName: a.productName,
+    articleNo: a.articleNo,
+    supplierName: a.supplierName,
+    vehicleTypeId: vehicle?.catalogVehicleTypeId ?? null,
+  }
+}
 
 function toRow(i: OrderItem): Row { return { ...i } }
 
@@ -81,6 +104,8 @@ export function PartsLaborGrid({
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
+  // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
+  const [detail, setDetail] = useState<DetailRequest | null>(null)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   // Sessiz otosave'i görünür kılan geçici "✓ Kaydedildi" işareti: başarılı
@@ -136,6 +161,8 @@ export function PartsLaborGrid({
     if (draft.brand) fd.set("brand", draft.brand)
     if (draft.category) fd.set("category", draft.category)
     if (draft.categoryId != null) fd.set("categoryId", String(draft.categoryId))
+    // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
+    if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: fd })
@@ -170,6 +197,8 @@ export function PartsLaborGrid({
       if (patch.category !== undefined) fd.set("category", patch.category ?? "")
       if (patch.categoryId !== undefined) fd.set("categoryId", patch.categoryId != null ? String(patch.categoryId) : "")
       if (patch.sku !== undefined) fd.set("sku", patch.sku ?? "")
+      if (patch.tecdocArticleId !== undefined)
+        fd.set("tecdocArticleId", patch.tecdocArticleId != null ? String(patch.tecdocArticleId) : "")
       if (patch.name !== undefined) fd.set("name", patch.name)
       if (patch.unit !== undefined) fd.set("unit", patch.unit ?? "")
       try {
@@ -223,7 +252,7 @@ export function PartsLaborGrid({
 
           <TabsContent value="parca" className="pt-4">
             <ComposerCard>
-              <UnifiedPartComposer vehicle={vehicle} onAdd={addItem} disabled={loading} />
+              <UnifiedPartComposer vehicle={vehicle} onAdd={addItem} disabled={loading} onShowDetail={setDetail} />
             </ComposerCard>
           </TabsContent>
           <TabsContent value="iscilik" className="pt-4">
@@ -274,6 +303,7 @@ export function PartsLaborGrid({
                   onCell={onCell}
                   onRemove={removeRow}
                   saved={savedRowId === row.id}
+                  onShowDetail={setDetail}
                 />
               ))
             )}
@@ -296,10 +326,19 @@ export function PartsLaborGrid({
               onCell={onCell}
               onRemove={removeRow}
               saved={savedRowId === row.id}
+              onShowDetail={setDetail}
             />
           ))
         )}
       </div>
+
+      {/* Parça detayı — TEK örnek; arama dropdown'ı, katalog picker'ı ve kalem
+          satırları buraya `setDetail` ile istek gönderir. */}
+      <PartDetailDialog
+        target={detail?.target ?? null}
+        onOpenChange={(open) => { if (!open) setDetail(null) }}
+        onSelect={detail?.onSelect}
+      />
     </div>
     </TooltipProvider>
     </PartAttrOptionsProvider>
@@ -507,8 +546,9 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
 // seçme / Oluştur "X" / Oluştur & Düzenle — hepsi doğrudan addItem çağırır.
 // Satır anında listeye düşer; miktar/fiyat/marka/kategori satır-içinde düzenlenir.
 // Başarılı eklemeden sonra kutu temizlenir + odak korunur (kontrollü value="").
-function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
+function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   vehicle?: PickerVehicle; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+  onShowDetail: OnShowDetail
 }) {
   const [name, setName] = useState("")
   const [filter, setFilter] = useState<PartFilter>({})
@@ -564,6 +604,19 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
     [stopPolling],
   )
 
+  /** Arama sonucu → kalem taslağı; hem satır seçimi hem detay modalı kullanır. */
+  function catalogDraft(a: ArticleSearchResult): Partial<Row> & { source: "catalog" } {
+    return {
+      source: "catalog",
+      name: a.productName,
+      sku: a.articleNo,
+      brand: a.supplierName || null,
+      category: a.categoryName || null,
+      categoryId: a.categoryId || null,
+      tecdocArticleId: a.tecdocArticleId,
+    }
+  }
+
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
   async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
     if (submittingRef.current || !partial.name?.trim()) return false
@@ -594,15 +647,9 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
         disabled={disabled}
         placeholder="Parça no, adı veya marka ara…"
         onNameChange={setName}
-        onSelectArticle={(a) =>
-          void add({
-            source: "catalog",
-            name: a.productName,
-            sku: a.articleNo,
-            brand: a.supplierName || null,
-            category: a.categoryName || null,
-            categoryId: a.categoryId || null,
-          })
+        onSelectArticle={(a) => void add(catalogDraft(a))}
+        onShowDetail={(a) =>
+          onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
         onCommit={() => { if (name.trim()) void add({ source: "manual", name }) }}
         onClear={() => { setName(""); setFilter({}) }}
@@ -639,9 +686,26 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled }: {
               brand: sel.supplierName,
               category: sel.categoryName || null,
               categoryId: sel.categoryId || null,
+              tecdocArticleId: sel.tecdocArticleId,
             })
             setTecdocOpen(false)
           }}
+          onShowDetail={(a) =>
+            onShowDetail({
+              target: toDetailTarget(a, vehicle),
+              onSelect: () => {
+                void add({
+                  source: "catalog",
+                  name: a.productName,
+                  sku: a.articleNo,
+                  brand: a.supplierName,
+                  categoryId: null,
+                  tecdocArticleId: a.tecdocArticleId,
+                })
+                setTecdocOpen(false)
+              },
+            })
+          }
         />
       )}
 
@@ -713,6 +777,8 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
       brand: a.supplierName || null,
       category: a.categoryName || null,
       categoryId: a.categoryId || null,
+      // Katalog bağlantısı satıra da yazılır → satırdaki ⓘ detayı açabilsin.
+      tecdocArticleId: a.tecdocArticleId,
     })
     setFilter({
       supplierId: a.supplierId ?? undefined,
@@ -749,8 +815,9 @@ type RowEditor = ReturnType<typeof useRowEditor>
 // bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
 // gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
 // bare=false (tüm ikonlar + tedarikçi karşılaştırma açık).
-function PartField({ row, ed, vehicle, onCell, onClear, bare }: {
+function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
+  onShowDetail: OnShowDetail
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
@@ -765,6 +832,9 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare }: {
           placeholder="Parça ara (ör. yağ filtresi)"
           onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
           onSelectArticle={ed.fillFromArticle}
+          onShowDetail={(a) =>
+            onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => ed.fillFromArticle(a) })
+          }
           onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
           onClear={() => { onClear(row); ed.setFilter({}) }}
           showClear={!bare && ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
@@ -780,6 +850,29 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare }: {
           disabled={!ed.editable || row.__saving}
           className="text-sm"
         />
+      )}
+      {/* Katalog bağlantılı kalem → özellik/görsel/uygunluk detayı. Eklemeden
+          sonra da erişilebilir olmalı (usta parçayı takarken ölçüye bakıyor). */}
+      {ed.isPart && row.tecdocArticleId != null && (
+        <button
+          type="button"
+          aria-label="Parça detayı"
+          title="Özellikler, görsel ve uygunluk"
+          onClick={() =>
+            onShowDetail({
+              target: {
+                tecdocArticleId: row.tecdocArticleId!,
+                productName: row.name,
+                articleNo: row.sku ?? "",
+                supplierName: row.brand ?? "",
+                vehicleTypeId: vehicle?.catalogVehicleTypeId ?? null,
+              },
+            })
+          }
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Info className="size-4" />
+        </button>
       )}
       {!bare && ed.isPart && row.name.trim() !== "" && (
         <PartPriceCompare row={row} ed={ed} onCell={onCell} />
@@ -989,8 +1082,8 @@ function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => voi
 // TecDoc modal — yalnız part satırı VE araç TecDoc'ta eşleşmişse mount edilir
 // (eşleşmemişse picker VinLinkPrompt döner; 🔍 butonu zaten disabled). Portal
 // ile render olduğu için <td>/kart/composer içine yerleştirmek güvenli.
-function RowTecdocPicker({ row, ed, vehicle, onCell }: {
-  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
+function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
+  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onShowDetail: OnShowDetail
 }) {
   if (!(ed.isPart && ed.editable && vehicle?.catalogVehicleTypeId != null)) return null
   return (
@@ -1004,7 +1097,7 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
       initialSupplierId={row.brandSupplierId ?? ed.filter.supplierId ?? null}
       initialSupplierName={row.brand ?? ed.filter.supplierName ?? null}
       onSelect={(sel) => {
-        onCell(row, { name: sel.name, sku: sel.articleNo, brand: sel.supplierName, category: sel.categoryName || null, categoryId: sel.categoryId || null })
+        onCell(row, { name: sel.name, sku: sel.articleNo, brand: sel.supplierName, category: sel.categoryName || null, categoryId: sel.categoryId || null, tecdocArticleId: sel.tecdocArticleId })
         ed.setFilter({
           supplierName: sel.supplierName || undefined,
           categoryId: sel.categoryId ?? undefined,
@@ -1012,6 +1105,20 @@ function RowTecdocPicker({ row, ed, vehicle, onCell }: {
         })
         ed.setTecdocOpen(false)
       }}
+      onShowDetail={(a) =>
+        onShowDetail({
+          target: toDetailTarget(a, vehicle),
+          onSelect: () => {
+            onCell(row, {
+              name: a.productName,
+              sku: a.articleNo,
+              brand: a.supplierName,
+              tecdocArticleId: a.tecdocArticleId,
+            })
+            ed.setTecdocOpen(false)
+          },
+        })
+      }
     />
   )
 }
@@ -1104,7 +1211,7 @@ const META_CHIP_STYLE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
@@ -1112,6 +1219,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
   onCell: OnCell
   onRemove: (row: Row) => void
   saved?: boolean
+  onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
   const type = row.type as ItemType
@@ -1134,8 +1242,8 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
       {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
-          <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
+          <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
             <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
               <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
@@ -1178,7 +1286,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
@@ -1186,6 +1294,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved 
   onCell: OnCell
   onRemove: (row: Row) => void
   saved?: boolean
+  onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
   const type = row.type as ItemType
@@ -1216,8 +1325,8 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved 
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare />
-        <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} />
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
+        <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}

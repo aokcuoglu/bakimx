@@ -36,6 +36,8 @@ export const serviceOrderItemUpdateSchema = z.object({
   brand: z.string().optional(),
   category: z.string().optional(),
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),
+  // Katalogdan parça seçilince kurulur / serbest metne dönülünce (boş string) temizlenir.
+  tecdocArticleId: z.coerce.number().int("TecDoc parça no tam sayı olmalıdır").positive().nullable().optional(),
 })
 
 /**

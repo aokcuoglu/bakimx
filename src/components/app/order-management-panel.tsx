@@ -44,6 +44,8 @@ export type OrderItem = {
   brand: string | null
   category: string | null
   categoryId: number | null
+  // TecDoc katalog bağlantısı — doluysa satırda parça detayı (ⓘ) açılabilir.
+  tecdocArticleId?: number | null
   // Kalemin nasıl eklendiği (katalog/manuel/dış alım); eski satırlarda null.
   source: "catalog" | "manual" | "purchase" | null
   // Dış alım (source=purchase) alanları; diğer kalemlerde/draft'ta bulunmaz.
