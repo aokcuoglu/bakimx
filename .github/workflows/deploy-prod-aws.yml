@@ -8,20 +8,28 @@ name: Deploy to AWS prod (bakimx.com / app.bakimx.com)
 # swap + runtime env inject) → DB migration gate (one-off ECS task, aborts on
 # failure) → update the ECS service.
 #
-# TRIGGER: workflow_dispatch ONLY for now. While the Contabo VPS is still live and
-# serving traffic (deploy.yml deploys `main` → VPS), this workflow is dispatched
-# manually so we can build/verify AWS prod without double-deploying. At DNS cutover
-# (docs/aws-prod-cicd.md §cutover) this flips to `on: push: branches: [main]` and
-# deploy.yml (Contabo) is retired in the same change.
+# TRIGGER: every push to `main` (i.e. every dev→main PR merge) plus manual dispatch.
+# Enabled 2026-07-26, after the DNS cutover (2026-07-21) proved stable. Until then this
+# was dispatch-only, which meant a merge to `main` shipped nothing until someone
+# remembered to press the button — the failure mode this trigger removes.
+#
+# No double-deploy risk: the Contabo deploy.yml is frozen dispatch-only (its `push: [main]`
+# trigger is commented out), so it cannot fire alongside this one. It is kept as the
+# emergency redeploy path for a VPS rollback and should be deleted once the VPS is
+# decommissioned. Note that rollback itself is a DNS flip (3 Cloudflare records → VPS IP);
+# the frozen stack still serves its last image, so no redeploy is normally needed.
+#
+# paths-ignore keeps docs/release-note-only commits from burning an 11-minute deploy.
+# NOTE: a version bump touches package.json, so release commits DO deploy — intended.
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".env*.example"
   workflow_dispatch:
-  # push:
-  #   branches: [main]     # enable at DNS cutover; retire deploy.yml at the same time
-  #   paths-ignore:
-  #     - "**.md"
-  #     - "docs/**"
-  #     - ".env*.example"
 
 # OIDC: assume the AWS deploy role without long-lived keys.
 permissions:
