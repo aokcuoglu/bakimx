@@ -763,6 +763,12 @@ function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
+  // Katalogdan (TecDoc) seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve
+  // marka katalog verisidir — elle değiştirilirse satır artık gerçek parçayı
+  // göstermez (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret
+  // eder). Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
+  // (updateOrderItemAction). tecdocArticleId YALNIZ katalog seçiminde dolar.
+  const identityLocked = isPart && row.tecdocArticleId != null
   const linked = vehicle?.catalogVehicleTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
@@ -802,7 +808,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   }
 
   return {
-    isPart, editable, linked, filter, setFilter,
+    isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
     tecdocOpen, setTecdocOpen, fillFromArticle, lineTotal, startPrice, commitPrice,
   }
@@ -811,6 +817,25 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
 type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
+
+// Katalog parçasının salt-okunur kimliği: [parça no] + ad. Düzenlenebilir alan
+// yerine düz metin — kullanıcı katalog verisini bozamaz, satır yine tam okunur.
+// (Yanlış parça eklendiyse satır silinip yeniden aranarak eklenir.)
+function CatalogIdentity({ row }: { row: Row }) {
+  return (
+    <div
+      className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
+      title="Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+    >
+      {row.sku && (
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">
+          {row.sku}
+        </span>
+      )}
+      <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-foreground">{row.name}</span>
+    </div>
+  )
+}
 
 // bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
 // gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
@@ -821,7 +846,9 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      {ed.isPart ? (
+      {ed.isPart && ed.identityLocked ? (
+        <CatalogIdentity row={row} />
+      ) : ed.isPart ? (
         <PartSearchInput
           value={row.name}
           sku={row.sku}
@@ -1135,6 +1162,21 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare }: {
     // Salt-görünür (kilitli emir): truncate YERİNE sar → mobil/masaüstü tam metin.
     return value ? (
       <span className="block whitespace-normal break-words text-xs text-muted-foreground" title={value}>{value}</span>
+    ) : (
+      <span className="text-xs text-muted-foreground/40">—</span>
+    )
+  }
+
+  // Katalog parçasının MARKASI da kimliğin parçası → düzenlenemez (kategori
+  // düzenlenebilir kalır: atölye kendi gruplamasını yapabiliyor).
+  if (kind === "brand" && ed.identityLocked) {
+    return value ? (
+      <span
+        className="inline-flex h-8 max-w-full items-center rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground"
+        title={`${value} — katalog markası, değiştirilemez`}
+      >
+        <span className="truncate">{value}</span>
+      </span>
     ) : (
       <span className="text-xs text-muted-foreground/40">—</span>
     )

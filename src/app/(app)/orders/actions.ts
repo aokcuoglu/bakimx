@@ -611,6 +611,23 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
 
+  // Katalogdan (TecDoc) eklenen parçanın kimliği — ad, parça no, marka — katalog
+  // verisidir ve değiştirilemez; aksi halde satır ⓘ detayda/fiyat karşılaştırmada
+  // başka bir parçayı gösterirdi. UI bu alanları salt-okunur render eder; burada
+  // sunucu tarafında da zorlanır. İstisna: satır komple BAŞKA bir katalog
+  // parçasıyla değiştiriliyorsa (yeni tecdocArticleId) kimlik birlikte değişir.
+  if (item.type === "part" && item.tecdocArticleId != null) {
+    const replacingArticle =
+      parsed.data.tecdocArticleId != null && parsed.data.tecdocArticleId !== item.tecdocArticleId
+    const changesIdentity =
+      (parsed.data.name !== undefined && parsed.data.name !== item.name) ||
+      (parsed.data.sku !== undefined && (parsed.data.sku || null) !== item.sku) ||
+      (parsed.data.brand !== undefined && (parsed.data.brand || null) !== item.brand)
+    if (!replacingArticle && changesIdentity) {
+      return { error: "Katalogdan eklenen parçanın adı, kodu ve markası değiştirilemez" }
+    }
+  }
+
   // Boş string gönderilen serbest-metin alanları null'a çevrilir (temizleme).
   const data: {
     name?: string
