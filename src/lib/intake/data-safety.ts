@@ -5,6 +5,7 @@ export type SafeIntakeData = {
   status: string
   statusLabel: string
   mileageAtIntake: number | null
+  fuelLevelAtIntake: number | null
   customerComplaint: string
   approvedAt: Date | null
   createdAt: Date
@@ -48,6 +49,7 @@ export function sanitizeIntakeForPublic(
   intake: {
     status: string
     mileageAtIntake: number | null
+    fuelLevelAtIntake: number | null
     customerComplaint: string
     internalNote?: string | null
     approvedAt: Date | null
@@ -152,6 +154,7 @@ export function sanitizeIntakeForPublic(
     status: intake.status,
     statusLabel,
     mileageAtIntake: intake.mileageAtIntake,
+    fuelLevelAtIntake: intake.fuelLevelAtIntake,
     customerComplaint: intake.customerComplaint,
     approvedAt: intake.approvedAt,
     createdAt: intake.createdAt,
