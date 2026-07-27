@@ -56,8 +56,13 @@ export function FuelGauge({
           strokeLinecap="round"
         />
         <circle cx="50" cy="50" r="4" fill="currentColor" />
-        <text x="4" y="61" fontSize="11" className="fill-muted-foreground">E</text>
-        <text x="86" y="61" fontSize="11" className="fill-muted-foreground">F</text>
+        {/* sm boyutta (56px) 11px'lik metin ~6px'e iner — okunmuyor, o yüzden gizli. */}
+        {size === "md" && (
+          <>
+            <text x="4" y="61" fontSize="11" className="fill-muted-foreground">E</text>
+            <text x="86" y="61" fontSize="11" className="fill-muted-foreground">F</text>
+          </>
+        )}
       </svg>
       {showLabel && (
         <span className={cn("text-xs font-medium", low ? "text-destructive" : "text-foreground")}>
@@ -82,7 +87,8 @@ export function FuelLevelPicker({
   disabled?: boolean
 }) {
   return (
-    <div className="space-y-2">
+    // Geniş kartlarda (iş emri düzenleme) 5 buton sayfa boyunca yayılmasın.
+    <div className="max-w-sm space-y-2">
       <div className="flex justify-center">
         <FuelGauge
           value={value ?? 0}
@@ -100,7 +106,13 @@ export function FuelLevelPicker({
         className="w-full"
       >
         {FUEL_LEVELS.map((level) => (
-          <ToggleGroupItem key={level} value={String(level)} className="flex-1">
+          <ToggleGroupItem
+            key={level}
+            value={String(level)}
+            // Varsayılan `aria-pressed:bg-muted` seçimi zor okunuyor; veri girişi
+            // olduğu için seçili kademe dolgu renkle net ayrışsın.
+            className="flex-1 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+          >
             {formatFuelLevel(level)}
           </ToggleGroupItem>
         ))}
