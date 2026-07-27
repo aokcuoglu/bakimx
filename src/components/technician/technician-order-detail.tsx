@@ -570,7 +570,7 @@ function ChecklistSection({
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
             </div>
-            {!locked && (
+            {!locked && !item.isRequired && (
               <button
                 type="button"
                 onClick={() => {

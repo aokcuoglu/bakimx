@@ -24,9 +24,11 @@ export interface OrderItemRow {
 export function OrderItemsChecklist({
   items,
   locked,
+  onError,
 }: {
   items: OrderItemRow[]
   locked: boolean
+  onError?: (msg: string) => void
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -39,20 +41,21 @@ export function OrderItemsChecklist({
 
   return (
     <div className="space-y-4">
-      <ItemGroup title="Parçalar" items={parts} locked={locked} isPending={isPending} startTransition={startTransition} />
-      <ItemGroup title="İşçilik" items={labor} locked={locked} isPending={isPending} startTransition={startTransition} />
+      <ItemGroup title="Parçalar" items={parts} locked={locked} isPending={isPending} startTransition={startTransition} onError={onError} />
+      <ItemGroup title="İşçilik" items={labor} locked={locked} isPending={isPending} startTransition={startTransition} onError={onError} />
     </div>
   )
 }
 
 function ItemGroup({
-  title, items, locked, isPending, startTransition,
+  title, items, locked, isPending, startTransition, onError,
 }: {
   title: string
   items: OrderItemRow[]
   locked: boolean
   isPending: boolean
   startTransition: (cb: () => void) => void
+  onError?: (msg: string) => void
 }) {
   if (items.length === 0) return null
   const done = items.filter((i) => i.completedAt).length
@@ -73,7 +76,8 @@ function ItemGroup({
               disabled={isPending || locked}
               onClick={() => {
                 startTransition(async () => {
-                  await toggleOrderItemCompletedAction(item.id, !isDone)
+                  const res = await toggleOrderItemCompletedAction(item.id, !isDone)
+                  if (res && "error" in res && res.error) onError?.(res.error)
                 })
               }}
               className="w-full min-h-11 flex items-start gap-2 py-2.5 px-2 rounded-lg text-left touch-manipulation hover:bg-muted disabled:opacity-60"
