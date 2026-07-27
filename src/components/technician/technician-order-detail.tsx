@@ -827,7 +827,13 @@ function AddPartsRequestForm({ orderId, vehicleTypeId }: { orderId: string; vehi
         <Input
           type="text"
           value={partSku}
-          onChange={(e) => setPartSku(e.target.value)}
+          onChange={(e) => {
+            setPartSku(e.target.value)
+            // Elle düzenlenen SKU önceki katalog seçimiyle uyuşmayabilir —
+            // Parça adı alanındaki koruyucunun ikizi (bkz. onNameChange).
+            setTecdocArticleId(null)
+            setBrand("")
+          }}
           placeholder="SKU / OEM No"
         />
         <Input
