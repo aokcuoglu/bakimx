@@ -70,7 +70,7 @@ export function PartsRequestPanel({
                 {!locked && req.status === "requested" && (
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     disabled={isPending}
                     onClick={() => {
                       startTransition(async () => {
