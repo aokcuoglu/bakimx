@@ -32,6 +32,8 @@ import {
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { PartSearchInput } from "@/components/parts/part-search-input"
+import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -76,13 +78,13 @@ type OrderData = {
   }
   items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
-  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null }
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
   checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
-  partsRequests: { id: string; partName: string; partSku: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
+  partsRequests: { id: string; partName: string; partSku: string | null; brand: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
   paidAmount: number
   remainingAmount: number
@@ -329,7 +331,7 @@ export function TechnicianOrderDetail({
         {locked ? (
           <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
         ) : (
-          <AddPartsRequestForm orderId={order.id} />
+          <AddPartsRequestForm orderId={order.id} vehicleTypeId={order.vehicle.catalogVehicleTypeId} />
         )}
       </div>
 
@@ -721,6 +723,7 @@ function PartsRequestSection({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{req.partName}</span>
                 {req.partSku && <span className="text-xs text-muted-foreground">({req.partSku})</span>}
+                {req.brand && <span className="text-xs text-muted-foreground">{req.brand}</span>}
                 <span className="text-xs text-muted-foreground">×{req.quantity}</span>
               </div>
               {req.note && <p className="text-xs text-muted-foreground mt-0.5">{req.note}</p>}
@@ -754,10 +757,12 @@ function PartsRequestSection({
   )
 }
 
-function AddPartsRequestForm({ orderId }: { orderId: string }) {
+function AddPartsRequestForm({ orderId, vehicleTypeId }: { orderId: string; vehicleTypeId: number | null }) {
   const [show, setShow] = useState(false)
   const [partName, setPartName] = useState("")
   const [partSku, setPartSku] = useState("")
+  const [brand, setBrand] = useState("")
+  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState("1")
   const [note, setNote] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -781,12 +786,16 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
         fd.set("serviceOrderId", orderId)
         fd.set("partName", partName)
         fd.set("partSku", partSku)
+        fd.set("brand", brand)
+        fd.set("tecdocArticleId", tecdocArticleId != null ? String(tecdocArticleId) : "")
         fd.set("quantity", quantity)
         fd.set("note", note)
         startTransition(async () => {
           await createPartsRequestAction(fd)
           setPartName("")
           setPartSku("")
+          setBrand("")
+          setTecdocArticleId(null)
           setQuantity("1")
           setNote("")
           setShow(false)
@@ -794,12 +803,25 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
       }}
       className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
     >
-      <Input
-        type="text"
+      <PartSearchInput
         value={partName}
-        onChange={(e) => setPartName(e.target.value)}
+        sku={partSku || null}
+        vehicleTypeId={vehicleTypeId}
         placeholder="Parça adı *"
-        required
+        onNameChange={(name) => {
+          setPartName(name)
+          // Serbest yazmaya dönülürse önceki katalog seçimi geçersizdir.
+          setTecdocArticleId(null)
+          setBrand("")
+        }}
+        onSelectArticle={(a: ArticleSearchResult) => {
+          setPartName(a.productName)
+          setPartSku(a.articleNo ?? "")
+          setBrand(a.supplierName ?? "")
+          setTecdocArticleId(a.tecdocArticleId ?? null)
+        }}
+        showClear={!!partName}
+        onClear={() => { setPartName(""); setPartSku(""); setBrand(""); setTecdocArticleId(null) }}
       />
       <div className="flex gap-2">
         <Input

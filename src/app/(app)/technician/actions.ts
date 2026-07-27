@@ -403,6 +403,8 @@ export async function createPartsRequestAction(formData: FormData) {
     partSku: (formData.get("partSku") as string) || "",
     quantity: formData.get("quantity") as string,
     note: (formData.get("note") as string) || "",
+    brand: (formData.get("brand") as string) || "",
+    tecdocArticleId: (formData.get("tecdocArticleId") as string) || "",
   }
 
   const parsed = partsRequestSchema.safeParse(raw)
@@ -424,6 +426,8 @@ export async function createPartsRequestAction(formData: FormData) {
       partSku: parsed.data.partSku || null,
       quantity: parsed.data.quantity,
       note: parsed.data.note || null,
+      brand: parsed.data.brand || null,
+      tecdocArticleId: parsed.data.tecdocArticleId ?? null,
       status: "requested",
     },
   })

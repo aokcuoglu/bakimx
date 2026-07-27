@@ -135,6 +135,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       color: order.intakeForm.vehicle.color,
       fuelType: order.intakeForm.vehicle.fuelType,
       transmission: order.intakeForm.vehicle.transmission,
+      catalogVehicleTypeId: order.intakeForm.vehicle.catalogVehicleTypeId,
     },
     intake: {
       id: order.intakeForm.id,
@@ -182,6 +183,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       id: p.id,
       partName: p.partName,
       partSku: p.partSku,
+      brand: p.brand,
       quantity: p.quantity,
       note: p.note,
       status: p.status,
