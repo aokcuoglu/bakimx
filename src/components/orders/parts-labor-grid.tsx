@@ -1257,10 +1257,13 @@ const GHOST_ROW = cn(
 // Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
 // altında ikincil meta olarak okunmalı → 11px, muted. !important → GHOST_ROW'un
 // genel input-group kurallarını bu alanlarda ezer.
+// NOT: alan-içi input `[&_input]` ile hedeflenir. `[data-slot=input-group-control]`
+// seçicisiyle yazılan kurallar Tailwind çıktısında hiç üretilmiyordu (tipografi
+// sessizce uygulanmıyordu) — bu yüzden bilerek input etiketi kullanılıyor.
 const META_FIELD_BASE = cn(
   "[&_[data-slot=input-group]]:!rounded-md",
-  "[&_[data-slot=input-group-control]]:!text-[11px] [&_[data-slot=input-group-control]]:!text-muted-foreground",
-  "focus-within:[&_[data-slot=input-group-control]]:!text-foreground",
+  "[&_input]:!text-[11px] [&_input]:!text-muted-foreground",
+  "focus-within:[&_input]:!text-foreground",
 )
 
 // Masaüstü: hayalet meta — kutu yok, adın altında düz metin gibi hizalı okunur
@@ -1270,9 +1273,12 @@ const META_FIELD_DESKTOP = cn(
   META_FIELD_BASE,
   "[&_[data-slot=input-group]]:!h-7",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
-  "[&_[data-slot=input-group-control]]:!px-0",
-  "group-hover:[&_[data-slot=input-group]]:!bg-muted/60 group-hover:[&_[data-slot=input-group-control]]:!px-2",
-  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background focus-within:[&_[data-slot=input-group-control]]:!px-2",
+  // Zemin ANINDA gelsin: input ve input-group'un kendi `transition-colors`ı
+  // (150 ms) hover'da "geç beliriyor" hissi veriyordu. Dolgu zaten her durumda
+  // px-2.5 (Input tabanı) → hover'da metin kaymaz, yalnız zemin belirir.
+  "[&_[data-slot=input-group]]:!transition-none [&_input]:!transition-none",
+  "group-hover:[&_[data-slot=input-group]]:!bg-muted/60",
+  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )
 
 // Mobil: hover yok → alanların düzenlenebilir olduğu ancak dolgu ile belli olur;
