@@ -331,7 +331,7 @@ function DesktopTable({
               <th className="px-4 py-3 text-right font-semibold">İş Emri</th>
               <th className="px-4 py-3 text-right font-semibold">Toplam İşlem</th>
               <th className="px-4 py-3 text-left font-semibold">Kayıt Tarihi</th>
-              <th className="px-4 py-3 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
+              <th className="px-4 py-3 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -346,20 +346,23 @@ function DesktopTable({
                         initialsFor(row)
                       )}
                     </div>
-                    <div className="min-w-0">
+                    {/* max-w olmadan truncate devreye girmiyordu: uzun kurumsal
+                        unvan kolonu şişirip sağdaki kolonları ekran dışına itiyordu. */}
+                    <div className="min-w-0 max-w-[18rem]">
                       <Link
                         href={`/customers/${row.id}`}
+                        title={nameFor(row)}
                         className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate block"
                       >
                         {nameFor(row)}
                       </Link>
                       {row.email ? (
-                        <div className="text-xs text-muted-foreground truncate">{row.email}</div>
+                        <div className="text-xs text-muted-foreground truncate" title={row.email}>{row.email}</div>
                       ) : null}
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                <td className="px-4 py-3 text-foreground whitespace-nowrap tabular-nums">
                   <a
                     href={`tel:${row.phone}`}
                     className="inline-flex items-center gap-1.5 hover:text-primary"
@@ -382,7 +385,9 @@ function DesktopTable({
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {formatDate(row.createdAt)}
                 </td>
-                <td className="px-4 py-3 sticky right-0 bg-card group-hover:bg-muted/60">
+                {/* Sticky kolon zemini opak: yarı saydam hover rengi altından
+                    kayan içeriği sızdırıyordu. */}
+                <td className="px-4 py-3 sticky right-0 border-l border-border bg-card group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]">
                   <div className="flex items-center justify-end">
                     <ActionsMenu
                       viewHref={`/customers/${row.id}`}
