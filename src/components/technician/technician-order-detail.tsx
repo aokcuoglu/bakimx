@@ -136,7 +136,11 @@ export function TechnicianOrderDetail({
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
 
-  const canStart = ["approved", "waiting_approval"].includes(order.status)
+  // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
+  // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
+  // ve "Beklemeye Al" sonrası işi teknisyenin kendi ekranından sürdürebilmesi gerek.
+  // Kabul kontrolü kapısı startWorkAction'da; buton yalnız görünürlüğü sağlar.
+  const canStart = ["draft", "waiting_approval", "approved", "waiting_parts"].includes(order.status)
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
   const locked = isOrderLocked(order.status as OrderStatus)
