@@ -79,6 +79,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
       id: i.id,
       status: i.status,
       mileageAtIntake: i.mileageAtIntake,
+      fuelLevelAtIntake: i.fuelLevelAtIntake,
       customerComplaint: i.customerComplaint,
       internalNote: i.internalNote,
       createdAt: i.createdAt.toISOString(),

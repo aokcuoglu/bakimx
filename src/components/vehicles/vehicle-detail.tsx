@@ -41,6 +41,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
 import { formatTRY } from "@/lib/format"
+import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import {
   DAMAGE_TYPES,
@@ -86,6 +87,7 @@ type VehicleData = {
     id: string
     status: string
     mileageAtIntake: number | null
+    fuelLevelAtIntake: number | null
     customerComplaint: string
     internalNote: string | null
     createdAt: string
@@ -318,7 +320,12 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                           <StatusBadge status={i.order.status} />
                           <PaymentBadge status={i.order.paymentStatus} />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          {i.fuelLevelAtIntake != null && (
+                            <FuelGauge value={i.fuelLevelAtIntake} size="sm" showLabel={false} className="shrink-0" />
+                          )}
+                          <p className="text-xs text-muted-foreground truncate">{i.customerComplaint}</p>
+                        </div>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-foreground">

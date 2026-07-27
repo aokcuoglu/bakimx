@@ -38,6 +38,7 @@ export type SafePassportWorkOrder = {
   paymentStatusLabel: string | null
   customerComplaint: string
   createdAt: Date
+  fuelLevelAtIntake: number | null
   items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[]
   grandTotal: number | null
 }
@@ -113,6 +114,7 @@ export function sanitizePassportForPublic(
     intakes: Array<{
       status: string
       mileageAtIntake: number | null
+      fuelLevelAtIntake: number | null
       customerComplaint: string
       internalNote?: string | null
       createdAt: Date
@@ -225,6 +227,8 @@ export function sanitizePassportForPublic(
           }))
 
           return {
+            // Yakıt seviyesi iş emrinde değil kabul formunda tutuluyor.
+            fuelLevelAtIntake: i.fuelLevelAtIntake,
             workOrderNo: order.workOrderNo,
             status: order.status,
             statusLabel: ORDER_STATUS[order.status as keyof typeof ORDER_STATUS]?.label || order.status,
