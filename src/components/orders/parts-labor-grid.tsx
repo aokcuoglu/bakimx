@@ -1017,15 +1017,18 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
 }
 
 /** Teknisyen kalemi yaptıysa görünen salt-okunur rozet (ofis işaretleyemez). */
-function DoneBadge({ completedAt }: { completedAt?: string | null }) {
+function DoneBadge({ completedAt, className }: { completedAt?: string | null; className?: string }) {
   if (!completedAt) return null
+  // Tür kolonu dar; damga ad kolonunun altında kendi satırında durur (çipler arasına
+  // sıkışınca satır kayıyordu). Zaman damgası ofisin "ne zaman bitti" sorusunu karşılar.
+  const stamp = new Date(completedAt).toLocaleString("tr-TR", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  })
   return (
-    <span
-      title={`Yapıldı · ${new Date(completedAt).toLocaleDateString("tr-TR")}`}
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-success/10 text-success"
-    >
-      <Check className="size-3" />
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success", className)}>
+      <Check className="size-3 shrink-0" />
       Yapıldı
+      <span className="font-normal text-muted-foreground">· {stamp}</span>
     </span>
   )
 }
@@ -1247,7 +1250,6 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
         <div className="flex items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          <DoneBadge completedAt={row.completedAt} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
@@ -1265,6 +1267,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
               <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
             </div>
           )}
+          <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
         </div>
       </TableCell>
 
@@ -1325,7 +1328,6 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          <DoneBadge completedAt={row.completedAt} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
@@ -1343,6 +1345,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
       )}>
         <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
+        <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
