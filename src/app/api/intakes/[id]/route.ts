@@ -22,6 +22,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       customerComplaint: body.customerComplaint,
       internalNote: body.internalNote,
       mileageAtIntake: body.mileageAtIntake,
+      fuelLevelAtIntake: body.fuelLevelAtIntake,
     })
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })

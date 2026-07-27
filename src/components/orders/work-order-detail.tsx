@@ -65,6 +65,8 @@ import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
+import { FuelGauge, FuelLevelPicker } from "@/components/intake/fuel-gauge"
+import { formatFuelLevel } from "@/lib/fuel-level"
 import { ApprovalTimeline } from "@/components/intake/approval-timeline"
 import { OrderActivityLog } from "@/components/orders/order-activity-log"
 import { useOrderSync } from "@/hooks/use-order-sync"
@@ -130,6 +132,7 @@ type IntakeDetailProps = {
   id: string
   status: string
   mileageAtIntake: number | null
+  fuelLevelAtIntake: number | null
   customerComplaint: string
   internalNote: string | null
   approvedAt: Date | null
@@ -201,6 +204,7 @@ export function WorkOrderDetail({
   const [editComplaint, setEditComplaint] = useState("")
   const [editNote, setEditNote] = useState("")
   const [editMileage, setEditMileage] = useState("")
+  const [editFuelLevel, setEditFuelLevel] = useState<number | null>(null)
 
   // Photos
   const photosRef = useRef<HTMLDivElement>(null)
@@ -278,6 +282,7 @@ export function WorkOrderDetail({
     setEditComplaint(order.intake.customerComplaint)
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
+    setEditFuelLevel(order.intake.fuelLevelAtIntake ?? null)
     setError("")
     setEditingInfo(true)
   }
@@ -289,7 +294,12 @@ export function WorkOrderDetail({
       const res = await fetch(`/api/intakes/${intake.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerComplaint: editComplaint, internalNote: editNote, mileageAtIntake: editMileage }),
+        body: JSON.stringify({
+          customerComplaint: editComplaint,
+          internalNote: editNote,
+          mileageAtIntake: editMileage,
+          fuelLevelAtIntake: editFuelLevel,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -623,8 +633,14 @@ export function WorkOrderDetail({
                     {order.vehicle.plate} · {order.vehicle.brand} {order.vehicle.model}
                     {order.vehicle.modelYear ? ` (${order.vehicle.modelYear})` : ""}
                   </p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     {order.intake.mileageAtIntake != null && <span>Giriş KM: {order.intake.mileageAtIntake.toLocaleString("tr-TR")}</span>}
+                    {order.intake.fuelLevelAtIntake != null && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <FuelGauge value={order.intake.fuelLevelAtIntake} size="sm" showLabel={false} />
+                        Yakıt: {formatFuelLevel(order.intake.fuelLevelAtIntake)}
+                      </span>
+                    )}
                     {order.vehicle.mileage != null && <span>Kayıtlı: {order.vehicle.mileage.toLocaleString("tr-TR")} km</span>}
                     {order.vehicle.vin && <span className="font-mono">VIN: {order.vehicle.vin}</span>}
                   </div>
@@ -666,6 +682,12 @@ export function WorkOrderDetail({
                   <div>
                     <Label>Kilometre (kabul anı)</Label>
                     <Input type="number" inputMode="numeric" min="0" value={editMileage} onChange={(e) => setEditMileage(e.target.value)} placeholder="Örn. 125000" />
+                  </div>
+                  <div>
+                    <Label>Yakıt seviyesi (kabul anı)</Label>
+                    <div className="pt-1">
+                      <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
                   <div className="flex gap-2 pt-1">

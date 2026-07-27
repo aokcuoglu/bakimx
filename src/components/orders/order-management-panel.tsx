@@ -110,6 +110,7 @@ export type OrderDetailData = {
     id: string
     status: string
     mileageAtIntake: number | null
+    fuelLevelAtIntake: number | null
     customerComplaint: string
     internalNote: string | null
     createdAt: string

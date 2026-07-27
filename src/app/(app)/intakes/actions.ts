@@ -135,7 +135,7 @@ export async function getIntakesAction() {
 
 export async function updateIntakeDetailsAction(
   intakeFormId: string,
-  input: { customerComplaint: string; internalNote?: string; mileageAtIntake?: string },
+  input: { customerComplaint: string; internalNote?: string; mileageAtIntake?: string; fuelLevelAtIntake?: number | null },
 ) {
   const user = await requireAuth()
 
@@ -156,6 +156,10 @@ export async function updateIntakeDetailsAction(
   const newComplaint = parsed.data.customerComplaint
   const newNote = parsed.data.internalNote?.trim() || null
   const newMileage = parsed.data.mileageAtIntake || null
+  // Alan hiç gönderilmediyse (undefined) mevcut değer korunur; açıkça null
+  // gönderildiyse seçim kaldırılmış demektir. 0 ("E") geçerli değerdir.
+  const newFuel =
+    parsed.data.fuelLevelAtIntake === undefined ? intake.fuelLevelAtIntake : parsed.data.fuelLevelAtIntake
 
   // Km geriye gidemez: yeni km aracın son kayıtlı km'sinden düşük olamaz.
   if (newMileage != null && intake.vehicle.mileage != null && newMileage < intake.vehicle.mileage) {
@@ -167,6 +171,7 @@ export async function updateIntakeDetailsAction(
   if (intake.customerComplaint !== newComplaint) changes.push("müşteri şikayeti")
   if ((intake.internalNote ?? null) !== newNote) changes.push("iç not")
   if ((intake.mileageAtIntake ?? null) !== newMileage) changes.push("kilometre")
+  if ((intake.fuelLevelAtIntake ?? null) !== newFuel) changes.push("yakıt seviyesi")
 
   if (changes.length === 0) return { success: true }
 
@@ -177,6 +182,7 @@ export async function updateIntakeDetailsAction(
         customerComplaint: newComplaint,
         internalNote: newNote,
         mileageAtIntake: newMileage,
+        fuelLevelAtIntake: newFuel,
       },
     })
     // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
@@ -200,11 +206,13 @@ export async function updateIntakeDetailsAction(
         customerComplaint: intake.customerComplaint,
         internalNote: intake.internalNote,
         mileageAtIntake: intake.mileageAtIntake,
+        fuelLevelAtIntake: intake.fuelLevelAtIntake,
       },
       after: {
         customerComplaint: newComplaint,
         internalNote: newNote,
         mileageAtIntake: newMileage,
+        fuelLevelAtIntake: newFuel,
       },
     }),
   )
