@@ -86,6 +86,7 @@ export const PHOTO_TYPES = {
   left_side: { label: "Sol yan", required: true },
   right_side: { label: "Sağ yan", required: true },
   dashboard_mileage: { label: "Kilometre", required: true },
+  fuel_gauge: { label: "Yakıt göstergesi", required: true },
   registration_front: { label: "Ruhsat ön", required: false },
   registration_back: { label: "Ruhsat arka", required: false },
   vin_area: { label: "VIN alanı", required: false },

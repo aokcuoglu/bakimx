@@ -445,6 +445,11 @@ model VehicleIntakeForm {
   vehicle             Vehicle      @relation(fields: [vehicleId], references: [id])
   status              IntakeStatus @default(draft)
   mileageAtIntake     Int?
+  /// Kabulde ölçülen yakıt seviyesi. Yüzde olarak saklanır ama yalnızca çeyrek
+  /// kademelere izin verilir (0/25/50/75/100); sunum katmanı "1/4", "1/2" gibi
+  /// kesirlere çevirir. null = ölçülmedi. Yüzde seçilmesinin sebebi ileride
+  /// 1/8 kademeye geçilirse şema değişikliği gerekmemesi.
+  fuelLevelAtIntake   Int?
   customerComplaint   String
   internalNote        String?
   approvalTextVersion String?
@@ -514,6 +519,7 @@ enum VehiclePhotoType {
   left_side
   right_side
   dashboard_mileage
+  fuel_gauge
   registration_front
   registration_back
   vin_area
