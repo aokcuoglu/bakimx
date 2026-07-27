@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, MessageCircle, Share2, FileText, FileDown, Clock, BarChart3, Eye } from "lucide-react"
 import { INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { formatFuelLevel } from "@/lib/fuel-level"
+import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/totals"
 import { ApprovalTimeline } from "@/components/intake/approval-timeline"
@@ -17,6 +19,7 @@ type SafeIntakeData = {
   status: string
   statusLabel: string
   mileageAtIntake: number | null
+  fuelLevelAtIntake: number | null
   customerComplaint: string
   approvedAt: Date | null
   createdAt: Date
@@ -258,6 +261,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   <p className="text-muted-foreground">
                     Kilometre: {formatMileage(intakeForm.mileageAtIntake)}
                   </p>
+                )}
+                {intakeForm.fuelLevelAtIntake != null && (
+                  <div className="text-muted-foreground mt-1 flex items-center gap-2">
+                    <FuelGauge value={intakeForm.fuelLevelAtIntake} size="sm" showLabel={false} />
+                    <span>Kabulde yakıt: {formatFuelLevel(intakeForm.fuelLevelAtIntake)}</span>
+                  </div>
                 )}
                 {intakeForm.vehicle.vin && (
                   <p className="text-muted-foreground/60 text-xs font-mono mt-0.5">VIN: {intakeForm.vehicle.vin}</p>

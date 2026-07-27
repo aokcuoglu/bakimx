@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, PHOTO_TYPES, INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-safety"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
@@ -282,6 +283,7 @@ async function generatePdfHtml(data: {
         <div style="font-weight:700;">${intakeForm.vehicle.plate}</div>
         <div style="font-size:9px;color:#666;">${intakeForm.vehicle.brand} ${intakeForm.vehicle.model}${intakeForm.vehicle.modelYear ? ` • ${intakeForm.vehicle.modelYear}` : ""}</div>
         ${intakeForm.mileageAtIntake != null ? `<div style="font-size:9px;color:#666;">Kilometre: ${formatMileage(intakeForm.mileageAtIntake)}</div>` : ""}
+        ${intakeForm.fuelLevelAtIntake != null ? `<div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#666;margin-top:2px;">${fuelGaugeSvgMarkup(intakeForm.fuelLevelAtIntake, 44)}<span>Kabulde yakıt: ${formatFuelLevel(intakeForm.fuelLevelAtIntake)}</span></div>` : ""}
         ${intakeForm.vehicle.vin ? `<div style="font-size:8px;color:#999;font-family:monospace;">VIN: ${intakeForm.vehicle.vin}</div>` : ""}
       </div>
     </div>

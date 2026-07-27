@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { sanitizePassportForPublic, escapePassportForHtml } from "@/lib/passport/data-safety"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import { VEHICLE_ZONES, fuelTypeLabel } from "@/lib/constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { escapeHtml } from "@/lib/html-escape"
@@ -61,7 +62,7 @@ async function generatePassportPdfHtml(data: {
           <div><span style="font-family:monospace;font-size:9px;font-weight:600;color:#666;">${wo.workOrderNo || "—"}</span> <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid ${primaryColor};color:${primaryColor};">${wo.statusLabel}</span>${wo.paymentStatusLabel && visibility.showPaymentStatus ? ` <span style="font-size:9px;padding:1px 6px;border-radius:10px;border:1px solid #999;color:#666;">${wo.paymentStatusLabel}</span>` : ""}</div>
           <span style="font-size:9px;color:#999;">${fmtDate(wo.createdAt)}</span>
         </div>
-        <div style="font-size:10px;color:#333;margin-bottom:4px;">${wo.customerComplaint}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#333;margin-bottom:4px;">${wo.fuelLevelAtIntake != null ? `${fuelGaugeSvgMarkup(wo.fuelLevelAtIntake, 36)}<span style="color:#666;">Yakıt: ${formatFuelLevel(wo.fuelLevelAtIntake)}</span>` : ""}<span>${wo.customerComplaint}</span></div>
         ${wo.items.length > 0 ? `<div style="border-top:1px solid #f1f5f9;padding-top:4px;margin-top:4px;">${itemsHtml}</div>` : ""}
         ${wo.grandTotal && wo.grandTotal > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;border-top:2px solid ${primaryColor};padding-top:4px;margin-top:4px;"><span>Toplam</span><span>${formatTRY(wo.grandTotal)}</span></div>` : ""}
       </div>`
@@ -315,6 +316,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       intakes: vehicle.intakes.map((i) => ({
         status: i.status,
         mileageAtIntake: i.mileageAtIntake,
+        fuelLevelAtIntake: i.fuelLevelAtIntake,
         customerComplaint: i.customerComplaint,
         createdAt: i.createdAt,
         timelineEvents: i.timelineEvents.map((e) => ({

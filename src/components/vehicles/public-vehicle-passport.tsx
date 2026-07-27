@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { ORDER_STATUS, PAYMENT_STATUS, MAINTENANCE_REMINDER_STATUS, vehicleTypeLabel, fuelTypeLabel, transmissionLabel } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
+import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generatePassportWhatsAppText } from "@/lib/passport/data-safety"
 import { BrandLogo } from "@/components/shared/brand-logo"
 
@@ -61,6 +62,7 @@ type SafePassportWorkOrder = {
   paymentStatusLabel: string | null
   customerComplaint: string
   createdAt: string
+  fuelLevelAtIntake: number | null
   items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[]
   grandTotal: number | null
 }
@@ -304,7 +306,12 @@ export function PublicVehiclePassportPage({
                     </div>
                     <span className="text-xs text-muted-foreground/70">{fmtDate(wo.createdAt)}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{wo.customerComplaint}</p>
+                  <div className="mb-2 flex items-center gap-2">
+                    {wo.fuelLevelAtIntake != null && (
+                      <FuelGauge value={wo.fuelLevelAtIntake} size="sm" showLabel={false} className="shrink-0" />
+                    )}
+                    <p className="text-sm text-muted-foreground">{wo.customerComplaint}</p>
+                  </div>
                   {wo.items.length > 0 && (
                     <div className="space-y-1">
                       {wo.items.map((item, i) => (

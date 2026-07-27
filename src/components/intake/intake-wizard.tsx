@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
 import { CustomerVehiclePicker } from "@/components/intake/customer-vehicle-picker"
+import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 
 type Customer = {
@@ -92,6 +93,7 @@ export function IntakeWizard({
       newModel: "",
       newMileage: "",
       mileageAtIntake: "",
+      fuelLevelAtIntake: "",
       customerComplaint: "",
       internalNote: "",
       termsAccepted: false,
@@ -199,6 +201,7 @@ export function IntakeWizard({
       formData.set("vehicleId", values.selectedVehicleId)
       formData.set("customerComplaint", values.customerComplaint)
       formData.set("mileageAtIntake", values.mileageAtIntake)
+      formData.set("fuelLevelAtIntake", values.fuelLevelAtIntake)
       formData.set("internalNote", values.internalNote)
 
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
@@ -318,6 +321,25 @@ export function IntakeWizard({
                           Son kayıtlı: {vehicleInfo.mileage.toLocaleString("tr-TR")} km
                         </p>
                       ) : null}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fuelLevelAtIntake"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Yakıt Seviyesi</FormLabel>
+                      <FormControl>
+                        <FuelLevelPicker
+                          value={field.value === "" ? null : Number(field.value)}
+                          onChange={(v) => field.onChange(v == null ? "" : String(v))}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Gösterge panelindeki ibreyi işaretleyin. Fotoğrafı bir sonraki adımda ekleyeceksiniz.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
