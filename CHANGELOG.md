@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.10.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.11.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.11.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.11.0 | Teknisyen iş takibi, fiyatsız kalemle teslim engeli, katalog parça kimliği kilidi | [v0.11.0](./docs/releases/v0.11.0.md) |
+
+Öne çıkanlar: **teknisyen ile ofis arasındaki döngü kapandı** — kontrol listesi teknisyene atama anında sistem şablonundan otomatik üretiliyor ve zorunlu maddeler işe başlama + tamamlama kapılarına bağlandı; iş emrindeki her parça/işçilik kalemi "yapıldı" olarak işaretlenebiliyor (`ServiceOrderItem`'da tek gerçek kaynak); parça talebi artık araca-uygun TecDoc katalogundan seçiliyor ve ofisteki yeni **Parça Talepleri paneli** talebi tek tıkla kaleme çeviriyor (`convertedAt` ile kalıcı gate). **Para bütünlüğü:** fiyatı hiç girilmemiş kalem varken araç teslim edilemiyor artık — teslimden sonra iş emri kilitlendiği için o tutar kalıcı eksik kalıyordu; **0 TL geçerli fiyattır** ve engellemez. Katalogdan seçilen parçanın ad/kod/marka/kategori bilgisi kilitlendi. Güvenlik: `parts_request_converted` olayı genel paylaşım ve pasaporttan gizlendi. Arayüz: toast'lar mobil alt navigasyonun üstüne alındı (46px örtüşme). Geliştirici tarafında SSM tüneli artık kendini onarıyor (keepalive + süpervizör; düşen tünel uygulama hatası gibi görünüyordu). **Migration VAR** (iki migration, 8 kolon + 2 indeks + 1 FK).
 
 ## 0.10.x
 
