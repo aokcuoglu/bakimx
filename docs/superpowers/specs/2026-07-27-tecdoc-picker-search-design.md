@@ -92,11 +92,11 @@ ayrıştırma:
 
 ```ts
 export interface CategoryMatch {
-  id: number
-  name: string
-  /** Üst kategori yolu (" / " ayraçlı, düğümün kendi adı hariç). Kökte "". */
+  node: CategoryNode
+  /** Kökten düğüme giden üst düğümler (düğümün kendisi hariç). */
+  ancestors: CategoryNode[]
+  /** Görüntülenecek yol (" / " ayraçlı, düğümün kendi adı hariç). Kökte "". */
   path: string
-  hasChildren: boolean
 }
 export function searchCategoryTree(
   nodes: CategoryNode[],
@@ -104,6 +104,10 @@ export function searchCategoryTree(
   limit?: number,
 ): CategoryMatch[]
 ```
+
+`node` + `ancestors` taşınır (düz `id/name` yerine): kategori sonucuna basınca
+breadcrumb yığını atalardan **yeniden kurulur**, böylece "geri" doğru üst
+kategoriye döner ve alt düğümler drill-down'a devam eder.
 
 - Ağacın **tüm** düğümleri (yalnız yapraklar değil) taranır — kullanıcı üst
   kategori adını da yazabilir.
@@ -131,6 +135,14 @@ davranışı değişmez. Modal 50 ister.
 - Global aramaya geçişte `tree == null` ise (açılışta doğrudan kategoriye
   atlanmış olabilir) `loadCategories()` tembel yüklenir.
 - Kapsam çipi kaldırılınca `articles`, `stack`, `supplierFilter` temizlenir.
+
+### Uygulama sırasında çıkan ek düzeltme
+
+Kategori içi marka `Select`'i tetikleyicide **ham değeri** basıyordu ("Tüm markalar"
+yerine `all`) — bilinen Base UI `Select.Value` tuzağı. Aynı dosyada olduğu ve tam
+da bu akışın marka filtresi olduğu için render-fn ile düzeltildi. Ayrıca marka
+seçici artık yalnız **birden çok** marka varken gösteriliyor (tek markalı
+kategoride anlamsız kontrol).
 
 ## Kapsam dışı (YAGNI)
 
