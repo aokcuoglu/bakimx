@@ -1,4 +1,5 @@
 import { z } from "zod/v4"
+import { isFuelLevel } from "@/lib/fuel-level"
 
 export const intakeSchema = z.object({
   // Step 1: Customer selection
@@ -16,6 +17,7 @@ export const intakeSchema = z.object({
 
   // Step 3: Intake details
   mileageAtIntake: z.string().optional().default(""),
+  fuelLevelAtIntake: z.string().optional().default(""),
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional().default(""),
 
@@ -35,6 +37,13 @@ export const intakeCreateSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçimi zorunludur"),
   vehicleId: z.string().min(1, "Araç seçimi zorunludur"),
   mileageAtIntake: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
+  // DİKKAT: 0 ("E") geçerli bir seviye — km'de kullanılan `|| null` kalıbı burada
+  // kullanılamaz. Boş string coerce edilmeden önce undefined'a çevrilir, aksi
+  // halde Number("") === 0 olur ve "boş" ile "E" birbirine karışır.
+  fuelLevelAtIntake: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.coerce.number().refine(isFuelLevel, "Geçersiz yakıt seviyesi").optional(),
+  ),
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional(),
 })
@@ -43,6 +52,11 @@ export const intakeUpdateSchema = z.object({
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional(),
   mileageAtIntake: z.coerce.number().int("Geçerli bir kilometre değeri giriniz").min(0, "Kilometre negatif olamaz").optional(),
+  // null = kullanıcı seçimi kaldırdı; alan hiç gönderilmemişse (undefined)
+  // mevcut değer korunur (bkz. updateIntakeDetailsAction).
+  fuelLevelAtIntake: z
+    .union([z.null(), z.coerce.number().refine(isFuelLevel, "Geçersiz yakıt seviyesi")])
+    .optional(),
 })
 
 export const otpVerifySchema = z.object({

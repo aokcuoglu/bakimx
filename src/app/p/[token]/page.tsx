@@ -64,6 +64,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
   const intakesRaw = vehicle.intakes.map((i) => ({
     status: i.status,
     mileageAtIntake: i.mileageAtIntake,
+    fuelLevelAtIntake: i.fuelLevelAtIntake,
     customerComplaint: i.customerComplaint,
     createdAt: i.createdAt,
     timelineEvents: i.timelineEvents.map((e) => ({

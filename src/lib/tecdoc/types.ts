@@ -36,6 +36,18 @@ export interface CategoryLeaf {
   path: string
 }
 
+/**
+ * Kategori arama sonucu — parça seçicinin "KATEGORİLER" bölümünü doldurur.
+ * `ancestors` kökten düğüme giden üst düğümler (düğümün kendisi hariç); seçilince
+ * breadcrumb yığını buradan yeniden kurulur, böylece "geri" doğru üst kategoriye
+ * döner. `path` aynı yolun görüntülenecek metni (" / " ayraçlı, kökte "").
+ */
+export interface CategoryMatch {
+  node: CategoryNode
+  ancestors: CategoryNode[]
+  path: string
+}
+
 /** Normalized article row shown in the picker. */
 export interface ArticleSummary {
   tecdocArticleId: number

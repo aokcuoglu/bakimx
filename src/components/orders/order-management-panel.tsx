@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,7 @@ import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
+import { CollectionQuickModal } from "@/components/cashbox/collection-quick-modal"
 
 export type OrderItem = {
   id: string
@@ -108,6 +110,7 @@ export type OrderDetailData = {
     id: string
     status: string
     mileageAtIntake: number | null
+    fuelLevelAtIntake: number | null
     customerComplaint: string
     internalNote: string | null
     createdAt: string
@@ -481,6 +484,7 @@ export function PaymentHistoryCard({
   customerName: string
 }) {
   const cancelledCollections = collections.filter((c) => c.status === "cancelled")
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false)
 
   return (
     <Card>
@@ -491,13 +495,10 @@ export function PaymentHistoryCard({
             Tahsilat Geçmişi
           </CardTitle>
           {!collectionsLocked && (
-            <Link
-              href={`/cashbox/payments/new?orderId=${orderId}`}
-              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors touch-manipulation"
-            >
-              <Plus className="size-3" />
+            <Button size="sm" onClick={() => setCollectionModalOpen(true)}>
+              <Plus className="size-3.5 mr-1" />
               Tahsilat Ekle
-            </Link>
+            </Button>
           )}
         </div>
       </CardHeader>
@@ -507,12 +508,13 @@ export function PaymentHistoryCard({
             <Wallet className="size-8 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">Henüz tahsilat kaydı yok</p>
             {!collectionsLocked && (
-              <Link
-                href={`/cashbox/payments/new?orderId=${orderId}`}
-                className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium"
+              <Button
+                variant="link"
+                className="mt-2 h-auto p-0 text-sm font-medium"
+                onClick={() => setCollectionModalOpen(true)}
               >
-                <Plus className="size-3.5" /> İlk tahsilatı ekle
-              </Link>
+                <Plus className="size-3.5 mr-1" /> İlk tahsilatı ekle
+              </Button>
             )}
           </div>
         ) : (
@@ -580,6 +582,18 @@ export function PaymentHistoryCard({
           </div>
         )}
       </CardContent>
+
+      {!collectionsLocked && (
+        <CollectionQuickModal
+          open={collectionModalOpen}
+          onOpenChange={setCollectionModalOpen}
+          orderId={orderId}
+          customerId={customerId}
+          grandTotal={totals.grandTotal}
+          paidAmount={paidAmount}
+          remainingAmount={remainingAmount}
+        />
+      )}
     </Card>
   )
 }
