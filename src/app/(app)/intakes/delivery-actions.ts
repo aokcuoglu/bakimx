@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/db"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { PlanWriteLockedError } from "@/lib/plan"
+import { PlanWriteLockedError, getPlanState } from "@/lib/plan"
+import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isOtpExpired } from "@/lib/intake/otp"
@@ -21,12 +22,37 @@ function isDemoSms(): boolean {
   return process.env.NODE_ENV !== "production" || (process.env.SMS_PROVIDER ?? "mock") === "mock"
 }
 
+/**
+ * Teslim öncesi fiyat guard'ı: iş emrinde fiyatı hiç girilmemiş kalem varsa hata
+ * metni, yoksa null döner (bkz. `@/lib/orders/pricing-guard`).
+ *
+ * Salt-okunur (plan kilitli) dükkân MUAFTIR: kalem düzenleyemediği için fiyatı da
+ * giremez, guard uygulanırsa araç içeride rehin kalırdı — bu, aşağıdaki teslim
+ * muafiyetinin aynı gerekçesi.
+ */
+async function checkDeliveryPricing(
+  workshopId: string,
+  intakeFormId: string,
+  workshop: Parameters<typeof getPlanState>[0],
+): Promise<string | null> {
+  if (!getPlanState(workshop).canWrite) return null
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { intakeFormId, workshopId },
+    select: { items: { select: { id: true, name: true, unitPrice: true }, orderBy: { createdAt: "asc" } } },
+  })
+  if (!order) return null
+
+  const unpriced = findUnpricedItems(order.items)
+  return unpriced.length > 0 ? unpricedItemsMessage(unpriced) : null
+}
+
 // Salt-okunur kilit MUAFİYETİ (ürün kararı 2026-07-06): süresi dolan dükkân,
 // içerideki aracı müşteriye OTP ile TESLİM EDEBİLMELİ — araç ödeme duvarına
 // rehin kalmasın. Bu yüzden iki OTP aksiyonu requireWritableWorkshop yerine
 // getCurrentUserWithWorkshop kullanır (bilinçli; Task 7 sweep'ine geri alma değil).
 export async function requestDeliveryOtpAction(intakeFormId: string) {
-  const { user } = await getCurrentUserWithWorkshop()
+  const { user, workshop } = await getCurrentUserWithWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -34,6 +60,10 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
+
+  // Fiyat eksikse SMS hiç gitmesin — müşteri boşuna kod beklemesin.
+  const pricingError = await checkDeliveryPricing(user.workshopId, intakeFormId, workshop)
+  if (pricingError) return { error: pricingError }
 
   const sendKey = `delivery-otp-send:${intakeFormId}`
   if (!checkRateLimit(sendKey).allowed) return { error: "Çok sık kod istendi, lütfen biraz sonra tekrar deneyin" }
@@ -83,13 +113,17 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
 }
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {
-  const { user } = await getCurrentUserWithWorkshop()
+  const { user, workshop } = await getCurrentUserWithWorkshop()
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
   })
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
+
+  // Kod istendikten sonra bir kalemin fiyatı silinmiş olabilir; teslim anında tekrar bak.
+  const pricingError = await checkDeliveryPricing(user.workshopId, intakeFormId, workshop)
+  if (pricingError) return { error: pricingError }
 
   const verifyKey = `delivery-otp-verify:${intakeFormId}`
   if (!checkRateLimit(verifyKey).allowed) return { error: "Çok fazla deneme, lütfen biraz sonra tekrar deneyin" }
