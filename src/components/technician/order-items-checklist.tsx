@@ -76,7 +76,7 @@ function ItemGroup({
                   await toggleOrderItemCompletedAction(item.id, !isDone)
                 })
               }}
-              className="w-full flex items-start gap-2 py-2.5 px-2 rounded-lg text-left touch-manipulation hover:bg-muted disabled:opacity-60"
+              className="w-full min-h-11 flex items-start gap-2 py-2.5 px-2 rounded-lg text-left touch-manipulation hover:bg-muted disabled:opacity-60"
             >
               {isDone
                 ? <CheckSquare className="size-5 shrink-0 text-success" />
