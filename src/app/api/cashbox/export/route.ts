@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       const nameFor = (c: typeof receivables[number]["customer"]) =>
         c.type === "corporate" ? c.companyName || "—" : c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "—"
 
-      const statusLabels: Record<string, string> = { unpaid: "Ödenmedi", partial: "Kısmi", paid: "Ödendi", overpaid: "Fazla Ödeme", cancelled: "İptal" }
+      const statusLabels: Record<string, string> = { unpaid: "Ödenmedi", partial: "Kısmi ödeme", paid: "Ödendi", overpaid: "Fazla Ödeme", cancelled: "İptal" }
 
       const headers = ["İş Emri No", "Müşteri", "Telefon", "Araç", "Toplam", "Ödenen", "Kalan", "Ödeme Durumu", "Oluşturma Tarihi"]
       const csvRows = receivables.map((r) => [

@@ -60,7 +60,7 @@ export const ORDER_STATUS = {
 
 export const PAYMENT_STATUS = {
   unpaid: { label: "Ödenmedi", color: "bg-destructive/10 text-foreground border-destructive/20" },
-  partial: { label: "Kısmi", color: "bg-warning/10 text-foreground border-warning/20" },
+  partial: { label: "Kısmi ödeme", color: "bg-warning/10 text-foreground border-warning/20" },
   paid: { label: "Ödendi", color: "bg-success/10 text-foreground border-success/20" },
   overpaid: { label: "Fazla Ödeme", color: "bg-primary/10 text-foreground border-primary/20" },
   cancelled: { label: "İptal", color: "bg-muted text-foreground border-border" },
