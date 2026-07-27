@@ -37,7 +37,7 @@
 **Değişecek:**
 - `prisma/schema.prisma` — 7 kolon + 1 adlandırılmış relation
 - `src/app/(app)/technician/actions.ts` — seed bağlama, kapılar, silme koruması, kalem toggle, talep alanları
-- `src/app/(app)/orders/actions.ts` — talebi kaleme çevirme (dosya yoksa teknisyen actions'a eklenir, bkz. Görev 9)
+- `src/app/(app)/orders/actions.ts` — talebi kaleme çevirme (dosya yoksa teknisyen actions'a eklenir, bkz. Task 9)
 - `src/lib/validations/technician.ts` — `partsRequestSchema` genişletme
 - `src/app/(app)/technician/orders/[id]/page.tsx` — `catalogVehicleTypeId`, kalem `completedAt`, talep `brand`
 - `src/components/technician/technician-order-detail.tsx` — kalem bölümü, kapı görünürlüğü, talep formu
@@ -48,7 +48,7 @@
 
 ---
 
-### Görev 1: Şema + migration
+### Task 1: Şema + migration
 
 **Files:**
 - Modify: `prisma/schema.prisma` (`ChecklistItem` ~1175, `ServiceOrderItem` ~761, `PartsRequest` ~1222, `Technician` ~627)
@@ -147,14 +147,14 @@ git commit -m "feat(db): teknisyen iş takibi kolonları — zorunlu kontrol mad
 
 ---
 
-### Görev 2: Kontrol listesi şablonu (TDD)
+### Task 2: Kontrol listesi şablonu (TDD)
 
 **Files:**
 - Create: `src/lib/technician/checklist-template.ts`
 - Test: `src/lib/technician/checklist-template.test.ts`
 
 **Interfaces:**
-- Consumes: Görev 1'in `templateKey` alanı.
+- Consumes: Task 1'in `templateKey` alanı.
 - Produces:
   - `CHECKLIST_TEMPLATE: ChecklistTemplateItem[]`
   - `interface ChecklistTemplateItem { key: string; category: ChecklistCategory; description: string }`
@@ -291,14 +291,14 @@ git commit -m "feat(technician): jenerik kontrol listesi şablonu + idempotent e
 
 ---
 
-### Görev 3: Seed'i atamaya bağla + zorunlu madde silme koruması
+### Task 3: Seed'i atamaya bağla + zorunlu madde silme koruması
 
 **Files:**
 - Create: `src/lib/technician/checklist-seed.ts`
 - Modify: `src/app/(app)/technician/actions.ts` (`assignTechnicianAction` 13-50, `deleteChecklistItemAction` 277-298)
 
 **Interfaces:**
-- Consumes: `CHECKLIST_TEMPLATE`, `missingTemplateItems`, `templateSortOrder` (Görev 2).
+- Consumes: `CHECKLIST_TEMPLATE`, `missingTemplateItems`, `templateSortOrder` (Task 2).
 - Produces: `seedChecklistFromTemplate(tx, workshopId, serviceOrderId): Promise<number>` — eklenen madde sayısını döner.
 
 - [ ] **Step 1: Seed yardımcısını yaz**
@@ -413,7 +413,7 @@ git commit -m "feat(technician): atamada jenerik kontrol listesi seed'i + zorunl
 
 ---
 
-### Görev 4: Kapı hesapları (TDD)
+### Task 4: Kapı hesapları (TDD)
 
 **Files:**
 - Create: `src/lib/technician/gates.ts`
@@ -577,13 +577,13 @@ git commit -m "feat(technician): zorunluluk kapılarının saf hesabı + hata me
 
 ---
 
-### Görev 5: Kapıları server action'lara uygula
+### Task 5: Kapıları server action'lara uygula
 
 **Files:**
 - Modify: `src/app/(app)/technician/actions.ts` (`startWorkAction` 85-116, `completeWorkAction` 151-185)
 
 **Interfaces:**
-- Consumes: Görev 4'ün tüm dışa açık fonksiyonları.
+- Consumes: Task 4'ün tüm dışa açık fonksiyonları.
 - Produces: `startWorkAction`/`completeWorkAction` artık `{ error: string }` ile bloklayabilir — UI aynı şekli zaten işliyor.
 
 - [ ] **Step 1: `startWorkAction`'a kontrol kapısını ekle**
@@ -656,7 +656,7 @@ git commit -m "feat(technician): işe başlama ve tamamlama kapıları — zorun
 
 ---
 
-### Görev 6: Kalem tamamlama action'ı
+### Task 6: Kalem tamamlama action'ı
 
 **Files:**
 - Modify: `src/app/(app)/technician/actions.ts` (dosya sonuna)
@@ -743,7 +743,7 @@ git commit -m "feat(technician): iş kalemi yapıldı/yapılmadı action'ı + ch
 
 ---
 
-### Görev 7: Teknisyen UI — "Yapılacak İşler" bölümü
+### Task 7: Teknisyen UI — "Yapılacak İşler" bölümü
 
 **Files:**
 - Create: `src/components/technician/order-items-checklist.tsx`
@@ -751,7 +751,7 @@ git commit -m "feat(technician): iş kalemi yapıldı/yapılmadı action'ı + ch
 - Modify: `src/app/(app)/technician/orders/[id]/page.tsx` (`items` serileştirme ~110)
 
 **Interfaces:**
-- Consumes: `toggleOrderItemCompletedAction` (Görev 6).
+- Consumes: `toggleOrderItemCompletedAction` (Task 6).
 - Produces: `<OrderItemsChecklist items={OrderItemRow[]} locked={boolean} />`, `OrderItemRow = { id, type, name, quantity, unitPrice, totalPrice, note, completedAt }`.
 
 - [ ] **Step 1: Sunucudan `completedAt` gönder**
@@ -924,13 +924,13 @@ git commit -m "feat(technician): iş kalemleri yapıldı takibi — Yapılacak �
 
 ---
 
-### Görev 8: Teknisyen UI — kapı görünürlüğü
+### Task 8: Teknisyen UI — kapı görünürlüğü
 
 **Files:**
 - Modify: `src/components/technician/technician-order-detail.tsx` (aksiyon butonları 424-465)
 
 **Interfaces:**
-- Consumes: Görev 4'ün saf fonksiyonları (istemcide de çalışır, Prisma import'u yok).
+- Consumes: Task 4'ün saf fonksiyonları (istemcide de çalışır, Prisma import'u yok).
 
 - [ ] **Step 1: Eksik sayılarını hesapla**
 
@@ -1006,7 +1006,7 @@ git commit -m "feat(technician): kapı durumunu butonlarda göster — eksik mad
 
 ---
 
-### Görev 9: Parça talebi → katalog araması
+### Task 9: Parça talebi → katalog araması
 
 **Files:**
 - Modify: `src/lib/validations/technician.ts` (`partsRequestSchema` 17-23)
@@ -1198,7 +1198,7 @@ git commit -m "feat(technician): parça talebi araç kataloğuna bağlandı — 
 
 ---
 
-### Görev 10: Ofis — Parça Talepleri paneli + kaleme çevirme
+### Task 10: Ofis — Parça Talepleri paneli + kaleme çevirme
 
 **Files:**
 - Create: `src/components/orders/parts-request-panel.tsx`
@@ -1207,7 +1207,7 @@ git commit -m "feat(technician): parça talebi araç kataloğuna bağlandı — 
 - Modify: `src/components/orders/work-order-detail.tsx` ("parca" sekmesi, satır 769)
 
 **Interfaces:**
-- Consumes: `PartsRequest` alanları (Görev 1, 9).
+- Consumes: `PartsRequest` alanları (Task 1, 9).
 - Produces: `convertPartsRequestToOrderItemAction(requestId: string): Promise<{ success: true } | { error: string }>`; `<PartsRequestPanel requests={...} locked={boolean} />` — `requests` şekli `{ id, partName, partSku, brand, quantity, note, status, createdAt, requestedByName }[]`.
 
 - [ ] **Step 1: Çevirme action'ını yaz**
@@ -1309,7 +1309,7 @@ Serileştirmeye (`items` map'inin altına, aynı nesne içinde):
     })),
 ```
 
-Ayrıca kalem serileştirmesine (Görev 11'deki rozet için gerekli) ekle:
+Ayrıca kalem serileştirmesine (Task 11'deki rozet için gerekli) ekle:
 
 ```ts
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,
@@ -1459,14 +1459,14 @@ git commit -m "feat(orders): ofis parça talepleri paneli + tek tıkla iş emri 
 
 ---
 
-### Görev 11: Ofis kalem tablosunda "Yapıldı" rozeti
+### Task 11: Ofis kalem tablosunda "Yapıldı" rozeti
 
 **Files:**
 - Modify: `src/components/orders/order-management-panel.tsx` (`OrderItem` tipi 34-58)
 - Modify: `src/components/orders/parts-labor-grid.tsx` (`SourceBadge` civarı ~998, masaüstü satır ~1236, mobil kart ~1313)
 
 **Interfaces:**
-- Consumes: Görev 10 Step 2'de eklenen `completedAt` serileştirmesi.
+- Consumes: Task 10 Step 2'de eklenen `completedAt` serileştirmesi.
 
 - [ ] **Step 1: Tipi genişlet**
 
@@ -1527,7 +1527,7 @@ git commit -m "feat(orders): kalem tablosunda teknisyen tamamlama rozeti"
 
 ---
 
-### Görev 12: Bütün doğrulama + PR
+### Task 12: Bütün doğrulama + PR
 
 **Files:** (yalnız doğrulama; kod değişikliği yalnız çıkan hataları düzeltmek için)
 
