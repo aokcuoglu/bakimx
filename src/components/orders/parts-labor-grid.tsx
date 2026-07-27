@@ -869,7 +869,7 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
               },
             })
           }
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:size-8"
         >
           <Info className="size-4" />
         </button>
@@ -1125,18 +1125,29 @@ function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
 
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, vehicle, onCell, bare }: {
+function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
   kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
+  /** Masaüstü satırı: kilitli emirde de tek satırda kalsın (uzun metin kısalır,
+   *  tam hali title'da). Mobil kartta sarma korunur → tam metin görünür. */
+  oneLine?: boolean
 }) {
   if (!ed.isPart) return null
   const value = kind === "brand" ? row.brand : row.category
 
   if (!ed.editable) {
-    // Salt-görünür (kilitli emir): truncate YERİNE sar → mobil/masaüstü tam metin.
+    // Salt-görünür (kilitli emir): mobilde sarar, masaüstü satırında kısalır.
     return value ? (
-      <span className="block whitespace-normal break-words text-xs text-muted-foreground" title={value}>{value}</span>
+      <span
+        className={cn(
+          "block text-[11px] text-muted-foreground",
+          oneLine ? "truncate" : "whitespace-normal break-words",
+        )}
+        title={value}
+      >
+        {value}
+      </span>
     ) : (
-      <span className="text-xs text-muted-foreground/40">—</span>
+      <span className="text-[11px] text-muted-foreground/40">—</span>
     )
   }
 
@@ -1201,11 +1212,32 @@ const GHOST_ROW = cn(
   "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
 )
 
-// Marka/Kategori "çip" görünümü (adın altında): hayalet-şeffaf yerine hafif gri
-// dolgulu kompakt çip; odakta kenarlık belirir. !important → GHOST_ROW'un genel
-// input-group şeffaflığını bu alanlarda ezer. Hem masaüstü hem mobil kullanır.
-const META_CHIP_STYLE = cn(
-  "[&_[data-slot=input-group]]:!h-8 [&_[data-slot=input-group]]:!rounded-md",
+// Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
+// altında ikincil meta olarak okunmalı → 11px, muted. !important → GHOST_ROW'un
+// genel input-group kurallarını bu alanlarda ezer.
+const META_FIELD_BASE = cn(
+  "[&_[data-slot=input-group]]:!rounded-md",
+  "[&_[data-slot=input-group-control]]:!text-[11px] [&_[data-slot=input-group-control]]:!text-muted-foreground",
+  "focus-within:[&_[data-slot=input-group-control]]:!text-foreground",
+)
+
+// Masaüstü: hayalet meta — kutu yok, adın altında düz metin gibi hizalı okunur
+// ("MARKA · Kategori"). Satır hover / odakta gri dolgu + kenarlık belirir →
+// düzenlenebilir olduğu anlaşılır, ama boştayken satırı şişirmez.
+const META_FIELD_DESKTOP = cn(
+  META_FIELD_BASE,
+  "[&_[data-slot=input-group]]:!h-7",
+  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
+  "[&_[data-slot=input-group-control]]:!px-0",
+  "group-hover:[&_[data-slot=input-group]]:!bg-muted/60 group-hover:[&_[data-slot=input-group-control]]:!px-2",
+  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background focus-within:[&_[data-slot=input-group-control]]:!px-2",
+)
+
+// Mobil: hover yok → alanların düzenlenebilir olduğu ancak dolgu ile belli olur;
+// bu yüzden kart içinde hafif gri çip görünümü korunur.
+const META_FIELD_MOBILE = cn(
+  META_FIELD_BASE,
+  "[&_[data-slot=input-group]]:!h-8",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
   "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )
@@ -1245,9 +1277,12 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
           <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
-            <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
-              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
-              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+            // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
+            // iki eşit sütun (kolon daraldığında alt alta sarıp satırı uzatmasın).
+            <div className={cn("mt-0.5 flex items-center gap-1", META_FIELD_DESKTOP)}>
+              <div className="min-w-0 flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
+              <span aria-hidden className="shrink-0 text-[11px] text-muted-foreground/40">·</span>
+              <div className="min-w-0 flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
             </div>
           )}
         </div>
@@ -1331,7 +1366,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
       {showMeta && (
-        <div className={cn("mt-2 flex flex-wrap gap-1.5", META_CHIP_STYLE)}>
+        <div className={cn("mt-1.5 flex flex-wrap gap-1.5", META_FIELD_MOBILE)}>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
         </div>
