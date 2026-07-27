@@ -7,6 +7,10 @@ import { missingTemplateItems, templateSortOrder } from "./checklist-template"
  * İdempotent: var olan `templateKey`ler atlanır — yeniden atama veya usta
  * değişikliği madde çoğaltmaz, işaretlenmiş maddeleri sıfırlamaz.
  * Satır-başına upsert yerine tek `createMany` (transaction süresi kritik).
+ * `(serviceOrderId, templateKey)` üzerindeki DB unique kısıtı eşzamanlı iki
+ * atamaya karşı son savunma hattı — `skipDuplicates` bu durumda sessizce
+ * atlar, gerçek eklenen sayıyı `.count`'tan döndürürüz (read-then-write
+ * `missing.length` yarışta sapabilir).
  */
 export async function seedChecklistFromTemplate(
   tx: Prisma.TransactionClient,
@@ -23,7 +27,7 @@ export async function seedChecklistFromTemplate(
   )
   if (missing.length === 0) return 0
 
-  await tx.checklistItem.createMany({
+  const result = await tx.checklistItem.createMany({
     data: missing.map((t) => ({
       workshopId,
       serviceOrderId,
@@ -33,7 +37,8 @@ export async function seedChecklistFromTemplate(
       templateKey: t.key,
       sortOrder: templateSortOrder(t.key),
     })),
+    skipDuplicates: true,
   })
 
-  return missing.length
+  return result.count
 }
