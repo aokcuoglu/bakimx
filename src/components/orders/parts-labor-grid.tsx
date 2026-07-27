@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -1016,6 +1016,20 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
   )
 }
 
+/** Teknisyen kalemi yaptıysa görünen salt-okunur rozet (ofis işaretleyemez). */
+function DoneBadge({ completedAt }: { completedAt?: string | null }) {
+  if (!completedAt) return null
+  return (
+    <span
+      title={`Yapıldı · ${new Date(completedAt).toLocaleDateString("tr-TR")}`}
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-success/10 text-success"
+    >
+      <Check className="size-3" />
+      Yapıldı
+    </span>
+  )
+}
+
 // Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
 // PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
 function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
@@ -1233,6 +1247,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
         <div className="flex items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
+          <DoneBadge completedAt={row.completedAt} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
@@ -1310,6 +1325,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
+          <DoneBadge completedAt={row.completedAt} />
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
