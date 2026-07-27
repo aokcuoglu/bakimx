@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -767,7 +768,11 @@ export function WorkOrderDetail({
 
         {/* PARÇA & İŞÇİLİK */}
         <TabsContent value="parca" className="space-y-5">
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
+          {/* Kalem hataları sayfa-üstü banner yerine TOAST: grid satırları uzun
+              listede ekranın çok altında kalıyor, banner viewport dışında kalıp
+              görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
+              Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} />
 
           <div ref={pricingRef} className="scroll-mt-20">
             <PricingSummaryCard
