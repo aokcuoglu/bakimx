@@ -55,7 +55,14 @@ next-env.d.ts
 # Postman collections may embed live API keys (e.g. RapidAPI) — keep out of git
 docs/*.postman_collection.json
 
-# Ad-hoc UI probe/debug screenshots at repo root (anchored so public/ assets stay tracked)
-/probe-*.png
-/before-enter.png
-/after-enter.png
+# Manuel QA / debug sırasında kök dizine düşen tarayıcı çıktıları: ekran
+# görüntüleri ve erişilebilirlik-ağacı dökümleri (Playwright browser_snapshot).
+# Canlı dev verisi (müşteri adı, telefon, plaka) içerebilir — kazara
+# commit'lenmesinler. Hepsi kök-sabitli (/) → public/ altındaki gerçek varlıklar
+# ve .github/workflows/*.yml etkilenmez.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.yml
+!/docker-compose*.yml

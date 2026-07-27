@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,6 +48,7 @@ import {
   Sparkles,
   Lock,
   Calculator,
+  TriangleAlert,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
@@ -56,6 +58,7 @@ import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/mone
 import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
+import { findUnpricedItems } from "@/lib/orders/pricing-guard"
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
@@ -412,6 +415,11 @@ export function WorkOrderDetail({
         `${order.customer.firstName ?? ""} ${order.customer.lastName ?? ""}`.trim() ||
         "Müşteri"
 
+  // Teslimden sonra kalemler kilitlenir, fiyat bir daha girilemez; bu yüzden
+  // fiyatsız kalem varken teslim aksiyonu kapalı (asıl engel sunucuda).
+  const unpricedItems = findUnpricedItems(order.items)
+  const deliveryBlocked = unpricedItems.length > 0
+
   // Header aksiyonları eski orders akışı (order durum makinesi). Teslim adımı
   // OTP akışını tetikler (müşteri onaylı teslim); verify hem intake hem order'ı
   // delivered yapar.
@@ -422,6 +430,7 @@ export function WorkOrderDetail({
     onClick: a.key === "delivered" ? handleRequestDeliveryOtp : () => changeStatus(a.key),
     tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
     icon: ORDER_ACTION_ICONS[a.key],
+    disabled: a.key === "delivered" && deliveryBlocked,
   }))
 
   const damagePhotos = intake.photos.filter((p) => p.type === "damage_detail")
@@ -487,6 +496,26 @@ export function WorkOrderDetail({
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
           <Info className="size-4 text-destructive shrink-0 mt-0.5" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
+          gerekçe ve çıkış yolu burada. Yalnız teslim adımında gösterilir —
+          önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
+      {deliveryBlocked && order.status === "ready_for_delivery" && (
+        <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
+          <TriangleAlert className="size-4 text-warning shrink-0 mt-0.5" />
+          <div className="min-w-0 space-y-1">
+            <p className="font-medium">{unpricedItems.length} kalemin fiyatı girilmemiş.</p>
+            <p className="text-muted-foreground truncate">
+              {unpricedItems.slice(0, 2).map((i) => i.name).join(", ")}
+              {unpricedItems.length > 2 && `, +${unpricedItems.length - 2}`}
+            </p>
+            <p className="text-muted-foreground text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
+            <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
+              Parça sekmesinde tamamla
+            </Button>
+          </div>
         </div>
       )}
 
@@ -771,10 +800,14 @@ export function WorkOrderDetail({
           <PartsRequestPanel
             requests={order.partsRequests}
             locked={isOrderLocked(order.status as OrderStatus)}
-            onError={setError}
+            onError={(msg) => toast.error(msg)}
           />
 
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
+          {/* Kalem hataları sayfa-üstü banner yerine TOAST: grid satırları uzun
+              listede ekranın çok altında kalıyor, banner viewport dışında kalıp
+              görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
+              Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} />
 
           <div ref={pricingRef} className="scroll-mt-20">
             <PricingSummaryCard

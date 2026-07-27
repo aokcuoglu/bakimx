@@ -184,7 +184,7 @@ export default async function OrdersPage({
               options={[
                 { value: "", label: "Tüm Ödemeler" },
                 { value: "unpaid", label: "Ödenmedi" },
-                { value: "partial", label: "Kısmi" },
+                { value: "partial", label: "Kısmi ödeme" },
                 { value: "paid", label: "Ödendi" },
               ]}
             />

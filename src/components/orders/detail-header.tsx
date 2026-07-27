@@ -20,6 +20,12 @@ export type DetailHeaderAction = {
   onClick: () => void
   tone: "primary" | "secondary" | "danger"
   icon?: ComponentType<{ className?: string }>
+  /**
+   * Aksiyon şu an yapılamıyor (ör. teslim için eksik fiyat). Gerekçe başlıkta
+   * değil, başlığın altındaki uyarı şeridinde anlatılır — başlık üç katmanını
+   * korur, açıklama metni taşımaz.
+   */
+  disabled?: boolean
 }
 
 /**
@@ -101,7 +107,7 @@ export function DetailHeader({
                     size="default"
                     variant="default"
                     onClick={primary.onClick}
-                    disabled={loading}
+                    disabled={loading || primary.disabled}
                   >
                     {loading ? (
                       <Loader2 className="size-4 animate-spin" />
@@ -132,7 +138,7 @@ export function DetailHeader({
                             {needsSeparator && <DropdownMenuSeparator />}
                             <DropdownMenuItem
                               onClick={a.onClick}
-                              disabled={loading}
+                              disabled={loading || a.disabled}
                               className={cn(
                                 "gap-2",
                                 isDanger && "text-destructive data-highlighted:text-destructive"
