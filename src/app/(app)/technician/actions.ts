@@ -6,6 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
+import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
@@ -25,16 +26,21 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
   })
   if (!technician) return { error: "Teknisyen bulunamadı" }
 
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: {
-      assignedTechnicianId: technicianId,
-      assignedAt: new Date(),
-      technicianName: technician.fullName,
-    },
+  const seededCount = await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId },
+      data: {
+        assignedTechnicianId: technicianId,
+        assignedAt: new Date(),
+        technicianName: technician.fullName,
+      },
+    })
+    // Jenerik kontrol maddeleri atama anında oluşur; idempotent olduğu için
+    // yeniden atamada tekrar eklenmez.
+    return seedChecklistFromTemplate(tx, user.workshopId, orderId)
   })
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "technician_assigned", JSON.stringify({ technicianId, technicianName: technician.fullName }))
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "technician_assigned", JSON.stringify({ technicianId, technicianName: technician.fullName, checklistSeeded: seededCount }))
 
   await addTimelineEvent({
     workshopId: user.workshopId,
@@ -46,6 +52,7 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
   revalidatePath(`/orders/${orderId}`)
   revalidatePath("/orders")
   revalidatePath("/technician")
+  revalidatePath(`/technician/orders/${orderId}`)
   return { success: true }
 }
 
@@ -282,6 +289,7 @@ export async function deleteChecklistItemAction(itemId: string) {
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
+  if (item.isRequired) return { error: "Zorunlu kontrol maddesi silinemez" }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: item.serviceOrderId, workshopId: user.workshopId },
