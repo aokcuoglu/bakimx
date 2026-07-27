@@ -39,6 +39,7 @@ export type TimelineEventType =
   | "internal_note_added"
   | "labor_session_started"
   | "labor_session_stopped"
+  | "parts_request_converted"
 
 export async function getTimelineForIntake(intakeFormId: string) {
   return prisma.intakeTimelineEvent.findMany({
