@@ -122,9 +122,9 @@ export function OrderList({
                 <th className="px-4 py-2 text-left font-semibold">Durum</th>
                 <th className="px-4 py-2 text-left font-semibold">Ödeme</th>
                 <th className="px-4 py-2 text-right font-semibold">Toplam</th>
-                <th className="px-4 py-2 text-left font-semibold">Giriş</th>
-                <th className="px-4 py-2 text-left font-semibold">Tahmini Teslim</th>
-                <th className="px-4 py-2 text-right font-semibold sticky right-0 bg-muted">İşlem</th>
+                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Giriş</th>
+                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Tahmini Teslim</th>
+                <th className="px-4 py-2 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -147,21 +147,32 @@ export function OrderList({
                       <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
                     )}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                    {order.vehicle.brand} {order.vehicle.model}
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                    {/* Uzun marka/model tabloyu genişletmesin: kolon sabit tavana kırpılır. */}
+                    <span className="block max-w-[11rem] truncate" title={`${order.vehicle.brand} ${order.vehicle.model}`}>
+                      {order.vehicle.brand} {order.vehicle.model}
+                    </span>
                   </td>
-                  <td className="px-4 py-2 min-w-[13rem]">
-                    {order.customer.id ? (
-                      <Link
-                        href={`/customers/${order.customer.id}`}
-                        className="text-foreground font-medium hover:text-primary transition-colors block whitespace-nowrap"
-                      >
-                        {customerName(order.customer)}
-                      </Link>
-                    ) : (
-                      <div className="text-foreground font-medium whitespace-nowrap">{customerName(order.customer)}</div>
-                    )}
-                    <div className="text-[11px] leading-tight text-muted-foreground">{order.customer.phone}</div>
+                  <td className="px-4 py-2">
+                    {/* Kurumsal unvanlar çok uzun olabiliyor; tam ad title ile erişilebilir kalır. */}
+                    <div className="min-w-[11rem] max-w-[15rem]">
+                      {order.customer.id ? (
+                        <Link
+                          href={`/customers/${order.customer.id}`}
+                          title={customerName(order.customer)}
+                          className="text-foreground font-medium hover:text-primary transition-colors block truncate"
+                        >
+                          {customerName(order.customer)}
+                        </Link>
+                      ) : (
+                        <div className="text-foreground font-medium truncate" title={customerName(order.customer)}>
+                          {customerName(order.customer)}
+                        </div>
+                      )}
+                      <div className="text-[11px] leading-tight text-muted-foreground tabular-nums truncate">
+                        {order.customer.phone}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-foreground">
                     <TechnicianAssign
@@ -179,16 +190,18 @@ export function OrderList({
                   <td className="px-4 py-2">
                     <PaymentBadge status={order.paymentStatus} />
                   </td>
-                  <td className="px-4 py-2 text-right font-semibold text-foreground">
+                  <td className="px-4 py-2 text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
                     {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                  <td className="px-4 py-2 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                     {formatDate(order.createdAt)}
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                  <td className="px-4 py-2 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                     {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground/70">—</span>}
                   </td>
-                  <td className="px-4 py-2 sticky right-0 bg-card group-hover:bg-muted/60">
+                  {/* Sticky kolonun zemini opak kalmalı: yarı saydam hover rengiyle
+                      altından kayan içerik sızıp aksiyon butonuyla üst üste biniyordu. */}
+                  <td className="px-4 py-2 sticky right-0 border-l border-border bg-card group-hover:bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]">
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/orders/${order.id}`}
