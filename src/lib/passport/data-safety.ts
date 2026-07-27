@@ -190,7 +190,7 @@ export function sanitizePassportForPublic(
     ? data.intakes.flatMap((intake) =>
         (intake.timelineEvents || [])
           .filter((e) => {
-            const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped"]
+            const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped", "parts_request_converted"]
             return !internalEventTypes.includes(e.eventType)
           })
           .map((e) => ({

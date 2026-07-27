@@ -13,6 +13,7 @@ import {
   User, Phone, Car, CheckCircle2, ShoppingCart,
 } from "lucide-react"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
@@ -31,6 +32,8 @@ import {
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { PartSearchInput } from "@/components/parts/part-search-input"
+import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -38,6 +41,14 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
 import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import {
+  countBlockingChecklist,
+  countIncompleteItems,
+  startWorkBlockMessage,
+  completeWorkBlockMessage,
+  START_GATE_CATEGORIES,
+  COMPLETE_GATE_CATEGORIES,
+} from "@/lib/technician/gates"
 
 type OrderData = {
   id: string
@@ -65,15 +76,15 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null }[]
+  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
-  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null }
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
-  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
+  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
-  partsRequests: { id: string; partName: string; partSku: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
+  partsRequests: { id: string; partName: string; partSku: string | null; brand: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
   paidAmount: number
   remainingAmount: number
@@ -125,10 +136,20 @@ export function TechnicianOrderDetail({
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
 
-  const canStart = ["approved", "waiting_approval"].includes(order.status)
+  // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
+  // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
+  // ve "Beklemeye Al" sonrası işi teknisyenin kendi ekranından sürdürebilmesi gerek.
+  // Kabul kontrolü kapısı startWorkAction'da; buton yalnız görünürlüğü sağlar.
+  const canStart = ["draft", "waiting_approval", "approved", "waiting_parts"].includes(order.status)
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
   const locked = isOrderLocked(order.status as OrderStatus)
+
+  const startMissing = countBlockingChecklist(order.checklistItems, START_GATE_CATEGORIES)
+  const completeChecklistMissing = countBlockingChecklist(order.checklistItems, COMPLETE_GATE_CATEGORIES)
+  const completeItemsMissing = countIncompleteItems(order.items)
+  const startBlockedMessage = startWorkBlockMessage(startMissing)
+  const completeBlockedMessage = completeWorkBlockMessage(completeChecklistMissing, completeItemsMissing)
 
   function handleStartWork() {
     startTransition(async () => {
@@ -314,7 +335,7 @@ export function TechnicianOrderDetail({
         {locked ? (
           <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
         ) : (
-          <AddPartsRequestForm orderId={order.id} />
+          <AddPartsRequestForm orderId={order.id} vehicleTypeId={order.vehicle.catalogVehicleTypeId} />
         )}
       </div>
 
@@ -352,58 +373,35 @@ export function TechnicianOrderDetail({
         )}
       </div>
 
-      {order.items.length > 0 && (
-        <div className="rounded-lg border border-border bg-white p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">İş Kalemleri</h3>
-          <div className="space-y-2">
-            {order.items.map((item) => (
-              <div key={item.id} className={cn(
-                "flex items-start justify-between gap-3 py-2 px-3 rounded-lg",
-                item.type === "part" ? "bg-primary/10" : "bg-primary/10"
-              )}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{item.name}</span>
-                    <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                      item.type === "part" ? "bg-primary/20 text-foreground" : "bg-primary/20 text-foreground"
-                    )}>
-                      {item.type === "part" ? "Parça" : item.type === "external_labor" ? "Dış İşçilik" : "İşçilik"}
-                    </span>
-                  </div>
-                  {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-medium text-foreground">
-                    {item.totalPrice != null ? formatTRY(item.totalPrice) : item.unitPrice ? formatTRY(item.unitPrice * item.quantity) : "—"}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1">×{item.quantity}</span>
-                </div>
+      <div className="rounded-lg border border-border bg-white p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">
+          Yapılacak İşler
+          <span className="ml-2 text-xs font-normal text-muted-foreground/70">
+            {order.items.filter((i) => i.completedAt).length}/{order.items.length}
+          </span>
+        </h3>
+        <OrderItemsChecklist items={order.items} locked={locked} />
+        {order.totals.hasAnyPrice && (
+          <div className="mt-3 pt-3 border-t border-border space-y-1">
+            {order.totals.discountAmount > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>İndirim</span>
+                <span>-{formatTRY(order.totals.discountAmount)}</span>
               </div>
-            ))}
-          </div>
-          {order.totals.hasAnyPrice && (
-            <div className="mt-3 pt-3 border-t border-border space-y-1">
-              {order.totals.discountAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>İndirim</span>
-                  <span>-{formatTRY(order.totals.discountAmount)}</span>
-                </div>
-              )}
-              {order.totals.taxAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
-                  <span>{formatTRY(order.totals.taxAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-semibold text-foreground">
-                <span>Toplam</span>
-                <span>{formatTRY(order.totals.grandTotal)}</span>
+            )}
+            {order.totals.taxAmount > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
+                <span>{formatTRY(order.totals.taxAmount)}</span>
               </div>
+            )}
+            <div className="flex justify-between text-sm font-semibold text-foreground">
+              <span>Toplam</span>
+              <span>{formatTRY(order.totals.grandTotal)}</span>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {order.damageMarks.length > 0 && (
         <div className="rounded-lg border border-border bg-white p-4">
@@ -422,46 +420,54 @@ export function TechnicianOrderDetail({
         </div>
       )}
 
-      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 flex gap-2 sm:justify-center">
-        {canStart && (
-          <Button
-            size="lg"
-            onClick={handleStartWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <Play className="size-5" />
-            İşe Başla
-          </Button>
+      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 space-y-2">
+        <div className="flex gap-2 sm:justify-center">
+          {canStart && (
+            <Button
+              size="lg"
+              onClick={handleStartWork}
+              disabled={isPending || !!startBlockedMessage}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <Play className="size-5" />
+              {order.status === "waiting_parts" ? "İşe Devam Et" : "İşe Başla"}
+            </Button>
+          )}
+          {canHold && (
+            <Button
+              variant="warning"
+              size="lg"
+              onClick={handleHoldWork}
+              disabled={isPending}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <Pause className="size-5" />
+              Beklemeye Al
+            </Button>
+          )}
+          {canComplete && (
+            <Button
+              variant="success"
+              size="lg"
+              onClick={handleCompleteWork}
+              disabled={isPending || !!completeBlockedMessage}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <CheckCircle2 className="size-5" />
+              Tamamla
+            </Button>
+          )}
+          {!canStart && !canHold && !canComplete && (
+            <div className="flex-1 text-center text-sm text-muted-foreground py-2">
+              Bu iş emri için şu anda işlem yapılamaz
+            </div>
+          )}
+        </div>
+        {canStart && startBlockedMessage && (
+          <p className="text-xs text-warning-foreground text-center">{startBlockedMessage}</p>
         )}
-        {canHold && (
-          <Button
-            variant="warning"
-            size="lg"
-            onClick={handleHoldWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <Pause className="size-5" />
-            Beklemeye Al
-          </Button>
-        )}
-        {canComplete && (
-          <Button
-            variant="success"
-            size="lg"
-            onClick={handleCompleteWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <CheckCircle2 className="size-5" />
-            Tamamla
-          </Button>
-        )}
-        {!canStart && !canHold && !canComplete && (
-          <div className="flex-1 text-center text-sm text-muted-foreground py-2">
-            Bu iş emri için şu anda işlem yapılamaz
-          </div>
+        {canComplete && completeBlockedMessage && (
+          <p className="text-xs text-warning-foreground text-center">{completeBlockedMessage}</p>
         )}
       </div>
     </div>
@@ -568,7 +574,7 @@ function ChecklistSection({
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
             </div>
-            {!locked && (
+            {!locked && !item.isRequired && (
               <button
                 type="button"
                 onClick={() => {
@@ -721,6 +727,7 @@ function PartsRequestSection({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{req.partName}</span>
                 {req.partSku && <span className="text-xs text-muted-foreground">({req.partSku})</span>}
+                {req.brand && <span className="text-xs text-muted-foreground">{req.brand}</span>}
                 <span className="text-xs text-muted-foreground">×{req.quantity}</span>
               </div>
               {req.note && <p className="text-xs text-muted-foreground mt-0.5">{req.note}</p>}
@@ -754,10 +761,12 @@ function PartsRequestSection({
   )
 }
 
-function AddPartsRequestForm({ orderId }: { orderId: string }) {
+function AddPartsRequestForm({ orderId, vehicleTypeId }: { orderId: string; vehicleTypeId: number | null }) {
   const [show, setShow] = useState(false)
   const [partName, setPartName] = useState("")
   const [partSku, setPartSku] = useState("")
+  const [brand, setBrand] = useState("")
+  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState("1")
   const [note, setNote] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -781,12 +790,16 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
         fd.set("serviceOrderId", orderId)
         fd.set("partName", partName)
         fd.set("partSku", partSku)
+        fd.set("brand", brand)
+        fd.set("tecdocArticleId", tecdocArticleId != null ? String(tecdocArticleId) : "")
         fd.set("quantity", quantity)
         fd.set("note", note)
         startTransition(async () => {
           await createPartsRequestAction(fd)
           setPartName("")
           setPartSku("")
+          setBrand("")
+          setTecdocArticleId(null)
           setQuantity("1")
           setNote("")
           setShow(false)
@@ -794,18 +807,37 @@ function AddPartsRequestForm({ orderId }: { orderId: string }) {
       }}
       className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
     >
-      <Input
-        type="text"
+      <PartSearchInput
         value={partName}
-        onChange={(e) => setPartName(e.target.value)}
+        sku={partSku || null}
+        vehicleTypeId={vehicleTypeId}
         placeholder="Parça adı *"
-        required
+        onNameChange={(name) => {
+          setPartName(name)
+          // Serbest yazmaya dönülürse önceki katalog seçimi geçersizdir.
+          setTecdocArticleId(null)
+          setBrand("")
+        }}
+        onSelectArticle={(a: ArticleSearchResult) => {
+          setPartName(a.productName)
+          setPartSku(a.articleNo ?? "")
+          setBrand(a.supplierName ?? "")
+          setTecdocArticleId(a.tecdocArticleId ?? null)
+        }}
+        showClear={!!partName}
+        onClear={() => { setPartName(""); setPartSku(""); setBrand(""); setTecdocArticleId(null) }}
       />
       <div className="flex gap-2">
         <Input
           type="text"
           value={partSku}
-          onChange={(e) => setPartSku(e.target.value)}
+          onChange={(e) => {
+            setPartSku(e.target.value)
+            // Elle düzenlenen SKU önceki katalog seçimiyle uyuşmayabilir —
+            // Parça adı alanındaki koruyucunun ikizi (bkz. onNameChange).
+            setTecdocArticleId(null)
+            setBrand("")
+          }}
           placeholder="SKU / OEM No"
         />
         <Input

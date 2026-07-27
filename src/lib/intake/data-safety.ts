@@ -137,7 +137,7 @@ export function sanitizeIntakeForPublic(
 
   // Internal-only events must never appear in the public share (mirrors the
   // passport sanitizer): internal notes and labor-session start/stop events.
-  const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped"]
+  const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped", "parts_request_converted"]
   const timeline = (visibility.showTimeline !== false && intake.timelineEvents)
     ? intake.timelineEvents
         .filter((e) => !internalEventTypes.includes(e.eventType))

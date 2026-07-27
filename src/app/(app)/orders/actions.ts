@@ -6,6 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema, serviceOrderItemUpdateSchema, purchaseItemCreateSchema, purchaseItemUpdateSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
+import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -611,6 +612,33 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
 
+  // Katalogdan (TecDoc) eklenen parçanın kimliği — ad, parça no, marka, kategori —
+  // katalog verisidir ve değiştirilemez; aksi halde satır ⓘ detayda/fiyat
+  // karşılaştırmada başka bir parçayı gösterirdi. UI bu alanları salt-okunur
+  // render eder; burada sunucu tarafında da zorlanır. İstisna: satır komple BAŞKA
+  // bir katalog parçasıyla değiştiriliyorsa (yeni tecdocArticleId) kimlik birlikte
+  // değişir.
+  if (item.type === "part" && item.tecdocArticleId != null) {
+    const replacingArticle =
+      parsed.data.tecdocArticleId != null && parsed.data.tecdocArticleId !== item.tecdocArticleId
+    // Katalogdan DOLU gelen alan değiştirilemez/silinemez; katalogda boş kalan
+    // alan (bazı kayıtlarda kategori/marka gelmiyor) doldurulabilir — orada
+    // bozulacak katalog verisi yok. UI da aynı kuralı uyguluyor (AttrCell).
+    const overwrites = (next: string | undefined, current: string | null) =>
+      next !== undefined && current != null && (next || null) !== current
+    const changesIdentity =
+      (parsed.data.name !== undefined && parsed.data.name !== item.name) ||
+      overwrites(parsed.data.sku, item.sku) ||
+      overwrites(parsed.data.brand, item.brand) ||
+      overwrites(parsed.data.category, item.category) ||
+      (parsed.data.categoryId !== undefined &&
+        item.categoryId != null &&
+        (parsed.data.categoryId ?? null) !== item.categoryId)
+    if (!replacingArticle && changesIdentity) {
+      return { error: "Katalogdan eklenen parçanın adı, kodu, markası ve kategorisi değiştirilemez" }
+    }
+  }
+
   // Boş string gönderilen serbest-metin alanları null'a çevrilir (temizleme).
   const data: {
     name?: string
@@ -710,6 +738,19 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 
   if (!canTransitionOrder(order.status as OrderStatus, status)) {
     return { error: "Bu durum geçişine izin verilmiyor" }
+  }
+
+  // Teslimden sonra kalemler kilitlenir, fiyat bir daha girilemez: fiyatsız kalemle
+  // teslime izin verme. OTP akışı bunu zaten önce kontrol eder; burası OTP dışı
+  // her yolu (doğrudan action/API çağrısı) kapatan son savunma.
+  if (status === "delivered") {
+    const items = await prisma.serviceOrderItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { id: true, name: true, unitPrice: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const unpriced = findUnpricedItems(items)
+    if (unpriced.length > 0) return { error: unpricedItemsMessage(unpriced) }
   }
 
   const updateResult = await prisma.serviceOrder.updateMany({

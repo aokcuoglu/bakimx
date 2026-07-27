@@ -20,4 +20,11 @@ export const partsRequestSchema = z.object({
   partSku: z.string().optional().or(z.literal("")),
   quantity: z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır").default(1),
   note: z.string().optional().or(z.literal("")),
+  /** Katalogdan seçildiyse parça markası; serbest metin talebinde boş. */
+  brand: z.string().max(120).optional().or(z.literal("")),
+  /** Katalogdan seçildiyse TecDoc article id; boş string → undefined. */
+  tecdocArticleId: z
+    .union([z.literal(""), z.coerce.number().int().positive()])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
 })

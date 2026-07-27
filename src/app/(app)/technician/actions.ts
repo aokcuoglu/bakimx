@@ -6,6 +6,15 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
+import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
+import {
+  countBlockingChecklist,
+  countIncompleteItems,
+  startWorkBlockMessage,
+  completeWorkBlockMessage,
+  START_GATE_CATEGORIES,
+  COMPLETE_GATE_CATEGORIES,
+} from "@/lib/technician/gates"
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
@@ -25,16 +34,21 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
   })
   if (!technician) return { error: "Teknisyen bulunamadı" }
 
-  await prisma.serviceOrder.updateMany({
-    where: { id: orderId, workshopId: user.workshopId },
-    data: {
-      assignedTechnicianId: technicianId,
-      assignedAt: new Date(),
-      technicianName: technician.fullName,
-    },
+  const seededCount = await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId },
+      data: {
+        assignedTechnicianId: technicianId,
+        assignedAt: new Date(),
+        technicianName: technician.fullName,
+      },
+    })
+    // Jenerik kontrol maddeleri atama anında oluşur; idempotent olduğu için
+    // yeniden atamada tekrar eklenmez.
+    return seedChecklistFromTemplate(tx, user.workshopId, orderId)
   })
 
-  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "technician_assigned", JSON.stringify({ technicianId, technicianName: technician.fullName }))
+  await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, "technician_assigned", JSON.stringify({ technicianId, technicianName: technician.fullName, checklistSeeded: seededCount }))
 
   await addTimelineEvent({
     workshopId: user.workshopId,
@@ -46,6 +60,7 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
   revalidatePath(`/orders/${orderId}`)
   revalidatePath("/orders")
   revalidatePath("/technician")
+  revalidatePath(`/technician/orders/${orderId}`)
   return { success: true }
 }
 
@@ -93,6 +108,13 @@ export async function startWorkAction(orderId: string) {
   if (!canTransitionOrder(order.status as OrderStatus, "in_progress")) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
+
+  const checklist = await prisma.checklistItem.findMany({
+    where: { serviceOrderId: orderId, workshopId: user.workshopId },
+    select: { category: true, isCompleted: true, isRequired: true },
+  })
+  const startBlock = startWorkBlockMessage(countBlockingChecklist(checklist, START_GATE_CATEGORIES))
+  if (startBlock) return { error: startBlock }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -159,6 +181,22 @@ export async function completeWorkAction(orderId: string) {
   if (!canTransitionOrder(order.status as OrderStatus, "ready_for_delivery")) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
+
+  const [checklist, items] = await Promise.all([
+    prisma.checklistItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { category: true, isCompleted: true, isRequired: true },
+    }),
+    prisma.serviceOrderItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { completedAt: true },
+    }),
+  ])
+  const completeBlock = completeWorkBlockMessage(
+    countBlockingChecklist(checklist, COMPLETE_GATE_CATEGORIES),
+    countIncompleteItems(items)
+  )
+  if (completeBlock) return { error: completeBlock }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
@@ -234,6 +272,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: item.serviceOrderId, workshopId: user.workshopId },
+    select: { status: true, assignedTechnicianId: true },
   })
   if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
@@ -242,7 +281,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
     data: {
       isCompleted: checked,
       completedAt: checked ? new Date() : null,
-      completedById: checked ? null : null,
+      completedById: checked ? (order?.assignedTechnicianId ?? null) : null,
     },
   })
 
@@ -282,6 +321,7 @@ export async function deleteChecklistItemAction(itemId: string) {
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
+  if (item.isRequired) return { error: "Zorunlu kontrol maddesi silinemez" }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: item.serviceOrderId, workshopId: user.workshopId },
@@ -363,6 +403,8 @@ export async function createPartsRequestAction(formData: FormData) {
     partSku: (formData.get("partSku") as string) || "",
     quantity: formData.get("quantity") as string,
     note: (formData.get("note") as string) || "",
+    brand: (formData.get("brand") as string) || "",
+    tecdocArticleId: (formData.get("tecdocArticleId") as string) || "",
   }
 
   const parsed = partsRequestSchema.safeParse(raw)
@@ -384,6 +426,8 @@ export async function createPartsRequestAction(formData: FormData) {
       partSku: parsed.data.partSku || null,
       quantity: parsed.data.quantity,
       note: parsed.data.note || null,
+      brand: parsed.data.brand || null,
+      tecdocArticleId: parsed.data.tecdocArticleId ?? null,
       status: "requested",
     },
   })
@@ -539,5 +583,132 @@ export async function toggleTechnicianActiveAction(technicianId: string) {
 
   revalidatePath("/settings")
   revalidatePath("/technician")
+  return { success: true }
+}
+
+/**
+ * İş emri kalemini (parça/işçilik) "yapıldı" işaretler veya işareti kaldırır.
+ *
+ * Attribution: Technician↔User ilişkisi olmadığı için `completedById` iş emrinin
+ * ATANMIŞ ustasıdır; eylemi yapan gerçek kullanıcı AuditLog'a yazılır.
+ */
+export async function toggleOrderItemCompletedAction(itemId: string, done: boolean) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+    select: { id: true, name: true, serviceOrderId: true },
+  })
+  if (!item) return { error: "İş kalemi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, assignedTechnicianId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  await prisma.serviceOrderItem.updateMany({
+    where: { id: itemId, workshopId: user.workshopId },
+    data: {
+      completedAt: done ? new Date() : null,
+      completedById: done ? order.assignedTechnicianId : null,
+    },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    done ? "order_item_completed" : "order_item_uncompleted",
+    JSON.stringify({ orderId: item.serviceOrderId, name: item.name })
+  )
+
+  revalidatePath(`/technician/orders/${item.serviceOrderId}`)
+  revalidatePath(`/orders/${item.serviceOrderId}`)
+  return { success: true }
+}
+
+/**
+ * Teknisyenin parça talebini iş emri kalemine çevirir (ofis aksiyonu).
+ * Fiyat alanları boş bırakılır — ofis kalem satırında girer.
+ *
+ * `convertedAt` bu dönüşümün tek gerçek kaynağıdır — `status` teknisyen
+ * tarafındaki fiziksel teslimat akışını (requested→prepared→delivered) izlemeye
+ * devam eder ve bu action'dan bağımsız ilerleyebilir. Talep zaten `prepared`
+ * veya `delivered` olsa da (teknisyen "Hazırlandı"ya basmış olsa da) çevrilebilir;
+ * yalnız daha önce çevrilmiş (convertedAt dolu) talep tekrar çevrilemez.
+ */
+export async function convertPartsRequestToOrderItemAction(requestId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const request = await prisma.partsRequest.findFirst({
+    where: { id: requestId, workshopId: user.workshopId },
+  })
+  if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.convertedAt) return { error: "Bu talep zaten kaleme eklendi" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const converted = await prisma.$transaction(async (tx) => {
+    // `convertedAt`i önce koşullu güncelle: iki eşzamanlı çağrı yarışırsa yalnız
+    // biri `count > 0` görür, kalem yalnız o durumda oluşturulur (çift kalem önlenir).
+    const updated = await tx.partsRequest.updateMany({
+      where: { id: requestId, workshopId: user.workshopId, convertedAt: null },
+      data: { convertedAt: new Date() },
+    })
+    if (updated.count === 0) return false
+
+    // Durum hâlâ "requested" ise "prepared"a çek; teknisyen zaten ilerletmişse
+    // (prepared/delivered) geri almadan olduğu gibi bırak.
+    await tx.partsRequest.updateMany({
+      where: { id: requestId, workshopId: user.workshopId, status: "requested" },
+      data: { status: "prepared" },
+    })
+
+    await tx.serviceOrderItem.create({
+      data: {
+        workshopId: user.workshopId,
+        serviceOrderId: request.serviceOrderId,
+        type: "part",
+        name: request.partName,
+        sku: request.partSku,
+        brand: request.brand,
+        quantity: request.quantity,
+        note: request.note,
+        tecdocArticleId: request.tecdocArticleId,
+        source: request.tecdocArticleId ? "catalog" : "manual",
+      },
+    })
+    return true
+  })
+  if (!converted) return { error: "Bu talep zaten kaleme eklendi" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "PartsRequest",
+    requestId,
+    "parts_request_converted",
+    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName })
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "parts_request_converted",
+    description: `Parça talebi kaleme eklendi: ${request.partName}`,
+  })
+
+  revalidatePath(`/orders/${request.serviceOrderId}`)
+  revalidatePath(`/technician/orders/${request.serviceOrderId}`)
   return { success: true }
 }

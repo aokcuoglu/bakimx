@@ -143,6 +143,19 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     case "work_completed":
       return { category: "tech", label: "Çalışma tamamlandı" }
 
+    case "order_item_completed": {
+      const name = String(meta.name ?? "Kalem")
+      return { category: "tech", label: `${name} yapıldı olarak işaretlendi` }
+    }
+    case "order_item_uncompleted": {
+      const name = String(meta.name ?? "Kalem")
+      return { category: "tech", label: `${name} yapıldı işareti kaldırıldı` }
+    }
+    case "parts_request_converted": {
+      const name = String(meta.partName ?? "Parça")
+      return { category: "part", label: `Parça talebi kaleme eklendi: ${name}` }
+    }
+
     default:
       return null
   }
@@ -163,11 +176,12 @@ export async function getOrderActivity({
   orderId: string
   intakeFormId: string
 }): Promise<OrderActivityEntry[]> {
-  const [items, photos, damageMarks, collections] = await Promise.all([
+  const [items, photos, damageMarks, collections, partsRequests] = await Promise.all([
     prisma.serviceOrderItem.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),
     prisma.vehiclePhoto.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.damageMark.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.collectionPayment.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),
+    prisma.partsRequest.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),
   ])
 
   const or: Prisma.AuditLogWhereInput[] = [
@@ -178,6 +192,7 @@ export async function getOrderActivity({
   if (collections.length) or.push({ entityType: "CollectionPayment", entityId: { in: collections.map((c) => c.id) } })
   if (photos.length) or.push({ entityType: "VehiclePhoto", entityId: { in: photos.map((p) => p.id) } })
   if (damageMarks.length) or.push({ entityType: "DamageMark", entityId: { in: damageMarks.map((d) => d.id) } })
+  if (partsRequests.length) or.push({ entityType: "PartsRequest", entityId: { in: partsRequests.map((p) => p.id) } })
 
   const rows = await prisma.auditLog.findMany({
     where: { workshopId, OR: or },

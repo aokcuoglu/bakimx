@@ -641,6 +641,7 @@ model Technician {
   partsRequests  PartsRequest[]
   laborSessions  LaborSession[]
   purchasedItems ServiceOrderItem[]
+  completedItems ServiceOrderItem[] @relation("ItemCompletedBy")
 
   @@index([workshopId])
   @@index([workshopId, isActive])
@@ -798,6 +799,14 @@ model ServiceOrderItem {
   purchasedAt        DateTime?
   purchasedById      String?
   purchasedBy        Technician?      @relation(fields: [purchasedById], references: [id])
+  // --- Teknisyen tamamlama takibi ---
+  // Dolu ⇒ kalem sahada yapıldı. Ofis buradan işaretlemez, yalnız görür.
+  completedAt        DateTime?
+  // Atanmış usta (Technician↔User bağı yok); gerçek kullanıcı AuditLog'a düşer.
+  completedById      String?
+  completedBy        Technician?      @relation("ItemCompletedBy", fields: [completedById], references: [id])
+  // Şu an yazılmıyor/okunmuyor — kalem bazlı teknisyen notu UI'ı için rezerve.
+  completionNote     String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
   photos             VehiclePhoto[]
   createdAt          DateTime         @default(now())
@@ -808,6 +817,7 @@ model ServiceOrderItem {
   @@index([partId])
   @@index([workshopId, source])
   @@index([supplierId])
+  @@index([serviceOrderId, completedAt])
 }
 
 enum OrderItemType {
@@ -1186,6 +1196,11 @@ model ChecklistItem {
   completedAt    DateTime?
   note           String?
   sortOrder      Int               @default(0)
+  /// Sistem şablonundan gelen madde mi — teknisyen silemez, kapılarda zorunlu sayılır.
+  isRequired     Boolean           @default(false)
+  /// Şablon maddesinin sabit anahtarı (örn. "inspection.mileage_fuel").
+  /// Dolu ⇒ şablondan geldi; seed'in idempotent olmasını sağlar. Serbest maddede null.
+  templateKey    String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -1193,6 +1208,10 @@ model ChecklistItem {
   @@index([serviceOrderId])
   @@index([category])
   @@index([isCompleted])
+  /// Aynı iş emrine aynı şablon maddesi ikinci kez seed edilemez (eşzamanlı
+  /// atama yarışına karşı DB seviyesi koruma). Postgres'te templateKey NULL
+  /// olan serbest maddeler bu kısıtla çakışmaz (NULL != NULL).
+  @@unique([serviceOrderId, templateKey])
 }
 
 enum ChecklistCategory {
@@ -1230,9 +1249,18 @@ model PartsRequest {
   requestedBy    Technician?        @relation(fields: [requestedById], references: [id])
   partName       String
   partSku        String?
+  /// Katalogdan seçildiyse parça markası (TecDoc supplier adı); serbest metinde null.
+  brand          String?
+  /// Katalogdan seçildiyse TecDoc article id — ofis talebi kalemlerken taşınır.
+  tecdocArticleId Int?
   quantity       Int                @default(1)
   note           String?
   status         PartsRequestStatus @default(requested)
+  /// Dolu ⇒ ofis bu talebi iş emri kalemine çevirdi (kalıcı, geri alınmaz).
+  /// `status` fiziksel teslimat akışını (requested→prepared→delivered) izlemeye
+  /// devam eder; convertedAt ondan bağımsız, "kaleme çevrildi mi" sorusuna
+  /// tek doğru kaynaktır — status tekrar "requested"a dönemeyeceği için ayrı alan gerekir.
+  convertedAt    DateTime?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 

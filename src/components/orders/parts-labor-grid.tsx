@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -763,6 +763,12 @@ function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
+  // Katalogdan (TecDoc) seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve
+  // marka katalog verisidir — elle değiştirilirse satır artık gerçek parçayı
+  // göstermez (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret
+  // eder). Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
+  // (updateOrderItemAction). tecdocArticleId YALNIZ katalog seçiminde dolar.
+  const identityLocked = isPart && row.tecdocArticleId != null
   const linked = vehicle?.catalogVehicleTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
@@ -802,7 +808,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   }
 
   return {
-    isPart, editable, linked, filter, setFilter,
+    isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
     tecdocOpen, setTecdocOpen, fillFromArticle, lineTotal, startPrice, commitPrice,
   }
@@ -812,16 +818,38 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-// bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
-// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
-// bare=false (tüm ikonlar + tedarikçi karşılaştırma açık).
+// Katalog parçasının salt-okunur kimliği: [parça no] + ad. Düzenlenebilir alan
+// yerine düz metin — kullanıcı katalog verisini bozamaz, satır yine tam okunur.
+// (Yanlış parça eklendiyse satır silinip yeniden aranarak eklenir.)
+function CatalogIdentity({ row }: { row: Row }) {
+  return (
+    <div
+      className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
+      title="Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+    >
+      {row.sku && (
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">
+          {row.sku}
+        </span>
+      )}
+      <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-foreground">{row.name}</span>
+    </div>
+  )
+}
+
+// bare: liste satırlarında (statik görünüm) — katalog arama/temizle ikonları
+// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Satır-içi
+// aksiyonlar (parça detayı ⓘ, tedarikçi fiyat karşılaştırma) bare'den bağımsız
+// her zaman görünür.
 function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
   onShowDetail: OnShowDetail
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      {ed.isPart ? (
+      {ed.isPart && ed.identityLocked ? (
+        <CatalogIdentity row={row} />
+      ) : ed.isPart ? (
         <PartSearchInput
           value={row.name}
           sku={row.sku}
@@ -869,12 +897,12 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
               },
             })
           }
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:size-8"
         >
           <Info className="size-4" />
         </button>
       )}
-      {!bare && ed.isPart && row.name.trim() !== "" && (
+      {ed.isPart && row.name.trim() !== "" && (
         <PartPriceCompare row={row} ed={ed} onCell={onCell} />
       )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
@@ -889,20 +917,19 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
   const [open, setOpen] = useState(false)
   return (
     <>
-      {/* Yazılı buton: gizli-ikon yerine keşfedilebilir aksiyon (yalnız composer'da
-          render edilir; liste satırları bare modda bu bileşeni hiç göstermez). */}
-      <Button
+      {/* İkon buton: liste satırının statik görünümünü bozmadan, "Parça detayı"
+          (ⓘ) ile aynı ölçü/stilde ikinci satır-içi aksiyon. Mobilde de dokunma
+          hedefi 36px kalsın diye size-9. */}
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         data-slot="price-compare"
         onClick={() => setOpen(true)}
-        className="shrink-0 gap-1.5 font-normal text-muted-foreground hover:text-primary"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         aria-label="Tedarikçi fiyatlarını karşılaştır"
         title="Tedarikçi fiyatlarını karşılaştır"
       >
-        <Tags className="size-4" /> Fiyat Karşılaştır
-      </Button>
+        <Tags className="size-4" />
+      </button>
       <SupplierPriceDialog
         open={open}
         onOpenChange={setOpen}
@@ -1016,6 +1043,23 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
   )
 }
 
+/** Teknisyen kalemi yaptıysa görünen salt-okunur rozet (ofis işaretleyemez). */
+function DoneBadge({ completedAt, className }: { completedAt?: string | null; className?: string }) {
+  if (!completedAt) return null
+  // Tür kolonu dar; damga ad kolonunun altında kendi satırında durur (çipler arasına
+  // sıkışınca satır kayıyordu). Zaman damgası ofisin "ne zaman bitti" sorusunu karşılar.
+  const stamp = new Date(completedAt).toLocaleString("tr-TR", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  })
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success", className)}>
+      <Check className="size-3 shrink-0" />
+      Yapıldı
+      <span className="font-normal text-muted-foreground">· {stamp}</span>
+    </span>
+  )
+}
+
 // Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
 // PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
 function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
@@ -1123,20 +1167,49 @@ function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
   )
 }
 
+// Marka/Kategori için salt-görünür gösterim (kilitli emir + katalog kilidi ortak):
+// düzenlenebilir alanların gri çip/hayalet kutusu YERİNE düz metin → kullanıcı
+// tıklanacak bir kutu aramaz. oneLine: masaüstü satırında kısalt, mobilde sar.
+function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine?: boolean; title?: string }) {
+  if (!value) return <span className="text-[11px] text-muted-foreground/40">—</span>
+  return (
+    <span
+      className={cn(
+        "block text-[11px] text-muted-foreground",
+        oneLine ? "truncate" : "whitespace-normal break-words",
+      )}
+      title={title ?? value}
+    >
+      {value}
+    </span>
+  )
+}
+
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
-function AttrCell({ kind, row, ed, vehicle, onCell, bare }: {
+function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
   kind: "brand" | "category"; row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; bare?: boolean
+  /** Masaüstü satırı: kilitli emirde de tek satırda kalsın (uzun metin kısalır,
+   *  tam hali title'da). Mobil kartta sarma korunur → tam metin görünür. */
+  oneLine?: boolean
 }) {
   if (!ed.isPart) return null
   const value = kind === "brand" ? row.brand : row.category
 
-  if (!ed.editable) {
-    // Salt-görünür (kilitli emir): truncate YERİNE sar → mobil/masaüstü tam metin.
-    return value ? (
-      <span className="block whitespace-normal break-words text-xs text-muted-foreground" title={value}>{value}</span>
-    ) : (
-      <span className="text-xs text-muted-foreground/40">—</span>
+  // Salt-görünür (kilitli emir): mobilde sarar, masaüstü satırında kısalır.
+  if (!ed.editable) return <AttrReadOnly value={value} oneLine={oneLine} />
+
+  // Katalog parçasının MARKASI ve KATEGORİSİ de kimliğin parçası → düzenlenemez;
+  // katalog verisi elle bozulunca satır artık gerçek parçayı temsil etmiyor.
+  // Katalogdan BOŞ gelen alan (bazı kayıtlarda kategori/marka yok) düzenlenebilir
+  // kalır: orada bozulacak katalog verisi yok, atölye eksiği tamamlayabilsin.
+  if (ed.identityLocked && value) {
+    return (
+      <AttrReadOnly
+        value={value}
+        oneLine={oneLine}
+        title={`${value} — katalogdan geldi, değiştirilemez`}
+      />
     )
   }
 
@@ -1198,14 +1271,40 @@ const GHOST_ROW = cn(
   "[&_[data-slot=price-field]]:border-transparent",
   "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:border-input hover:[&_[data-slot=price-field]]:border-input",
   "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
-  "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
 )
 
-// Marka/Kategori "çip" görünümü (adın altında): hayalet-şeffaf yerine hafif gri
-// dolgulu kompakt çip; odakta kenarlık belirir. !important → GHOST_ROW'un genel
-// input-group şeffaflığını bu alanlarda ezer. Hem masaüstü hem mobil kullanır.
-const META_CHIP_STYLE = cn(
-  "[&_[data-slot=input-group]]:!h-8 [&_[data-slot=input-group]]:!rounded-md",
+// Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
+// altında ikincil meta olarak okunmalı → 11px, muted. !important → GHOST_ROW'un
+// genel input-group kurallarını bu alanlarda ezer.
+// NOT: alan-içi input `[&_input]` ile hedeflenir. `[data-slot=input-group-control]`
+// seçicisiyle yazılan kurallar Tailwind çıktısında hiç üretilmiyordu (tipografi
+// sessizce uygulanmıyordu) — bu yüzden bilerek input etiketi kullanılıyor.
+const META_FIELD_BASE = cn(
+  "[&_[data-slot=input-group]]:!rounded-md",
+  "[&_input]:!text-[11px] [&_input]:!text-muted-foreground",
+  "focus-within:[&_input]:!text-foreground",
+)
+
+// Masaüstü: hayalet meta — kutu yok, adın altında düz metin gibi hizalı okunur
+// ("MARKA · Kategori"). Satır hover / odakta gri dolgu + kenarlık belirir →
+// düzenlenebilir olduğu anlaşılır, ama boştayken satırı şişirmez.
+const META_FIELD_DESKTOP = cn(
+  META_FIELD_BASE,
+  "[&_[data-slot=input-group]]:!h-7",
+  "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-transparent",
+  // Zemin ANINDA gelsin: input ve input-group'un kendi `transition-colors`ı
+  // (150 ms) hover'da "geç beliriyor" hissi veriyordu. Dolgu zaten her durumda
+  // px-2.5 (Input tabanı) → hover'da metin kaymaz, yalnız zemin belirir.
+  "[&_[data-slot=input-group]]:!transition-none [&_input]:!transition-none",
+  "group-hover:[&_[data-slot=input-group]]:!bg-muted/60",
+  "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
+)
+
+// Mobil: hover yok → alanların düzenlenebilir olduğu ancak dolgu ile belli olur;
+// bu yüzden kart içinde hafif gri çip görünümü korunur.
+const META_FIELD_MOBILE = cn(
+  META_FIELD_BASE,
+  "[&_[data-slot=input-group]]:!h-8",
   "[&_[data-slot=input-group]]:!border-transparent [&_[data-slot=input-group]]:!bg-muted/60",
   "focus-within:[&_[data-slot=input-group]]:!border-input focus-within:[&_[data-slot=input-group]]:!bg-background",
 )
@@ -1245,11 +1344,15 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
           <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
-            <div className={cn("mt-1.5 flex flex-wrap items-center gap-1.5", META_CHIP_STYLE)}>
-              <div className="w-40"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
-              <div className="w-40"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
+            // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
+            // iki eşit sütun (kolon daraldığında alt alta sarıp satırı uzatmasın).
+            <div className={cn("mt-0.5 flex items-center gap-1", META_FIELD_DESKTOP)}>
+              <div className="min-w-0 flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
+              <span aria-hidden className="shrink-0 text-[11px] text-muted-foreground/40">·</span>
+              <div className="min-w-0 flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
             </div>
           )}
+          <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
         </div>
       </TableCell>
 
@@ -1327,11 +1430,12 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
       )}>
         <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
+        <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
       {showMeta && (
-        <div className={cn("mt-2 flex flex-wrap gap-1.5", META_CHIP_STYLE)}>
+        <div className={cn("mt-1.5 flex flex-wrap gap-1.5", META_FIELD_MOBILE)}>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
         </div>

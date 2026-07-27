@@ -111,6 +111,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
+      completedAt: i.completedAt ? i.completedAt.toISOString() : null,
     })),
     customer: {
       id: order.intakeForm.customer.id,
@@ -134,6 +135,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       color: order.intakeForm.vehicle.color,
       fuelType: order.intakeForm.vehicle.fuelType,
       transmission: order.intakeForm.vehicle.transmission,
+      catalogVehicleTypeId: order.intakeForm.vehicle.catalogVehicleTypeId,
     },
     intake: {
       id: order.intakeForm.id,
@@ -166,6 +168,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       category: c.category,
       description: c.description,
       isCompleted: c.isCompleted,
+      isRequired: c.isRequired,
       completedAt: c.completedAt ? c.completedAt.toISOString() : null,
       note: c.note,
       sortOrder: c.sortOrder,
@@ -180,6 +183,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       id: p.id,
       partName: p.partName,
       partSku: p.partSku,
+      brand: p.brand,
       quantity: p.quantity,
       note: p.note,
       status: p.status,
