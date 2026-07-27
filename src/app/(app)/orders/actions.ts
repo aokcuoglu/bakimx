@@ -6,6 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { serviceOrderItemSchema, serviceOrderItemUpdateSchema, purchaseItemCreateSchema, purchaseItemUpdateSchema } from "@/lib/validations/order"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
+import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -737,6 +738,19 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
 
   if (!canTransitionOrder(order.status as OrderStatus, status)) {
     return { error: "Bu durum geçişine izin verilmiyor" }
+  }
+
+  // Teslimden sonra kalemler kilitlenir, fiyat bir daha girilemez: fiyatsız kalemle
+  // teslime izin verme. OTP akışı bunu zaten önce kontrol eder; burası OTP dışı
+  // her yolu (doğrudan action/API çağrısı) kapatan son savunma.
+  if (status === "delivered") {
+    const items = await prisma.serviceOrderItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { id: true, name: true, unitPrice: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const unpriced = findUnpricedItems(items)
+    if (unpriced.length > 0) return { error: unpricedItemsMessage(unpriced) }
   }
 
   const updateResult = await prisma.serviceOrder.updateMany({
