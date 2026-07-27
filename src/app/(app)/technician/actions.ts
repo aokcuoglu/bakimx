@@ -630,3 +630,73 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
   revalidatePath(`/orders/${item.serviceOrderId}`)
   return { success: true }
 }
+
+/**
+ * Teknisyenin parça talebini iş emri kalemine çevirir (ofis aksiyonu).
+ * Fiyat alanları boş bırakılır — ofis kalem satırında girer.
+ * Çift tıklamaya karşı: yalnız `requested` durumundaki talep çevrilebilir.
+ */
+export async function convertPartsRequestToOrderItemAction(requestId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const request = await prisma.partsRequest.findFirst({
+    where: { id: requestId, workshopId: user.workshopId },
+  })
+  if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.status !== "requested") return { error: "Bu talep zaten işlendi" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const converted = await prisma.$transaction(async (tx) => {
+    // Durumu önce koşullu güncelle: iki eşzamanlı çağrı yarışırsa yalnız biri
+    // `count > 0` görür, kalem yalnız o durumda oluşturulur (çift kalem önlenir).
+    const updated = await tx.partsRequest.updateMany({
+      where: { id: requestId, workshopId: user.workshopId, status: "requested" },
+      data: { status: "prepared" },
+    })
+    if (updated.count === 0) return false
+
+    await tx.serviceOrderItem.create({
+      data: {
+        workshopId: user.workshopId,
+        serviceOrderId: request.serviceOrderId,
+        type: "part",
+        name: request.partName,
+        sku: request.partSku,
+        brand: request.brand,
+        quantity: request.quantity,
+        note: request.note,
+        tecdocArticleId: request.tecdocArticleId,
+        source: request.tecdocArticleId ? "catalog" : "manual",
+      },
+    })
+    return true
+  })
+  if (!converted) return { error: "Bu talep zaten işlendi" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "PartsRequest",
+    requestId,
+    "parts_request_converted",
+    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName })
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "parts_request_converted",
+    description: `Parça talebi kaleme eklendi: ${request.partName}`,
+  })
+
+  revalidatePath(`/orders/${request.serviceOrderId}`)
+  revalidatePath(`/technician/orders/${request.serviceOrderId}`)
+  return { success: true }
+}

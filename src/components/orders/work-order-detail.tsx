@@ -77,6 +77,7 @@ import {
   type Totals,
 } from "@/components/orders/order-management-panel"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
+import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 
 const PHOTO_PHASE_LABELS: Record<string, string> = {
   intake: "Kabul (Intake)",
@@ -767,6 +768,12 @@ export function WorkOrderDetail({
 
         {/* PARÇA & İŞÇİLİK */}
         <TabsContent value="parca" className="space-y-5">
+          <PartsRequestPanel
+            requests={order.partsRequests}
+            locked={isOrderLocked(order.status as OrderStatus)}
+            onError={setError}
+          />
+
           <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={setError} onLoading={setLoading} loading={loading} />
 
           <div ref={pricingRef} className="scroll-mt-20">
