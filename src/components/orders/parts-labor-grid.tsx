@@ -837,9 +837,10 @@ function CatalogIdentity({ row }: { row: Row }) {
   )
 }
 
-// bare: liste satırlarında (statik görünüm) — arama/temizle/etiket ikonları
-// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Composer'da
-// bare=false (tüm ikonlar + tedarikçi karşılaştırma açık).
+// bare: liste satırlarında (statik görünüm) — katalog arama/temizle ikonları
+// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Satır-içi
+// aksiyonlar (parça detayı ⓘ, tedarikçi fiyat karşılaştırma) bare'den bağımsız
+// her zaman görünür.
 function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
   onShowDetail: OnShowDetail
@@ -901,7 +902,7 @@ function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
           <Info className="size-4" />
         </button>
       )}
-      {!bare && ed.isPart && row.name.trim() !== "" && (
+      {ed.isPart && row.name.trim() !== "" && (
         <PartPriceCompare row={row} ed={ed} onCell={onCell} />
       )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
@@ -916,20 +917,19 @@ function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell
   const [open, setOpen] = useState(false)
   return (
     <>
-      {/* Yazılı buton: gizli-ikon yerine keşfedilebilir aksiyon (yalnız composer'da
-          render edilir; liste satırları bare modda bu bileşeni hiç göstermez). */}
-      <Button
+      {/* İkon buton: liste satırının statik görünümünü bozmadan, "Parça detayı"
+          (ⓘ) ile aynı ölçü/stilde ikinci satır-içi aksiyon. Mobilde de dokunma
+          hedefi 36px kalsın diye size-9. */}
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         data-slot="price-compare"
         onClick={() => setOpen(true)}
-        className="shrink-0 gap-1.5 font-normal text-muted-foreground hover:text-primary"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         aria-label="Tedarikçi fiyatlarını karşılaştır"
         title="Tedarikçi fiyatlarını karşılaştır"
       >
-        <Tags className="size-4" /> Fiyat Karşılaştır
-      </Button>
+        <Tags className="size-4" />
+      </button>
       <SupplierPriceDialog
         open={open}
         onOpenChange={setOpen}
@@ -1251,7 +1251,6 @@ const GHOST_ROW = cn(
   "[&_[data-slot=price-field]]:border-transparent",
   "hover:[&_[data-slot=input-group]]:border-input hover:[&_[data-slot=input]]:border-input hover:[&_[data-slot=qty-stepper]]:border-input hover:[&_[data-slot=price-field]]:border-input",
   "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=qty-stepper]]:border-input focus-within:[&_[data-slot=price-field]]:border-input",
-  "[&_[data-slot=price-compare]]:opacity-0 hover:[&_[data-slot=price-compare]]:opacity-100 focus-within:[&_[data-slot=price-compare]]:opacity-100",
 )
 
 // Marka/Kategori alanlarının ortak kompakt ölçüsü/tipografisi: ad satırının
