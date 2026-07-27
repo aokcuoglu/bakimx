@@ -1150,6 +1150,24 @@ function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
   )
 }
 
+// Marka/Kategori için salt-görünür gösterim (kilitli emir + katalog kilidi ortak):
+// düzenlenebilir alanların gri çip/hayalet kutusu YERİNE düz metin → kullanıcı
+// tıklanacak bir kutu aramaz. oneLine: masaüstü satırında kısalt, mobilde sar.
+function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine?: boolean; title?: string }) {
+  if (!value) return <span className="text-[11px] text-muted-foreground/40">—</span>
+  return (
+    <span
+      className={cn(
+        "block text-[11px] text-muted-foreground",
+        oneLine ? "truncate" : "whitespace-normal break-words",
+      )}
+      title={title ?? value}
+    >
+      {value}
+    </span>
+  )
+}
+
 // Marka/Kategori hücresi (masaüstü + mobil + composer ortak). Düzenlenebilirken
 // katalog önerili + serbest-metin Autocomplete; kilitliyken salt-görünür etiket.
 function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
@@ -1161,35 +1179,20 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
   if (!ed.isPart) return null
   const value = kind === "brand" ? row.brand : row.category
 
-  if (!ed.editable) {
-    // Salt-görünür (kilitli emir): mobilde sarar, masaüstü satırında kısalır.
-    return value ? (
-      <span
-        className={cn(
-          "block text-[11px] text-muted-foreground",
-          oneLine ? "truncate" : "whitespace-normal break-words",
-        )}
-        title={value}
-      >
-        {value}
-      </span>
-    ) : (
-      <span className="text-[11px] text-muted-foreground/40">—</span>
-    )
-  }
+  // Salt-görünür (kilitli emir): mobilde sarar, masaüstü satırında kısalır.
+  if (!ed.editable) return <AttrReadOnly value={value} oneLine={oneLine} />
 
-  // Katalog parçasının MARKASI da kimliğin parçası → düzenlenemez (kategori
-  // düzenlenebilir kalır: atölye kendi gruplamasını yapabiliyor).
-  if (kind === "brand" && ed.identityLocked) {
-    return value ? (
-      <span
-        className="inline-flex h-8 max-w-full items-center rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground"
-        title={`${value} — katalog markası, değiştirilemez`}
-      >
-        <span className="truncate">{value}</span>
-      </span>
-    ) : (
-      <span className="text-xs text-muted-foreground/40">—</span>
+  // Katalog parçasının MARKASI ve KATEGORİSİ de kimliğin parçası → düzenlenemez;
+  // katalog verisi elle bozulunca satır artık gerçek parçayı temsil etmiyor.
+  // Katalogdan BOŞ gelen alan (bazı kayıtlarda kategori/marka yok) düzenlenebilir
+  // kalır: orada bozulacak katalog verisi yok, atölye eksiği tamamlayabilsin.
+  if (ed.identityLocked && value) {
+    return (
+      <AttrReadOnly
+        value={value}
+        oneLine={oneLine}
+        title={`${value} — katalogdan geldi, değiştirilemez`}
+      />
     )
   }
 
