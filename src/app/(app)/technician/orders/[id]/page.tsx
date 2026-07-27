@@ -111,6 +111,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
+      completedAt: i.completedAt ? i.completedAt.toISOString() : null,
     })),
     customer: {
       id: order.intakeForm.customer.id,

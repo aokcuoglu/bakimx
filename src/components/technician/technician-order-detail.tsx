@@ -13,6 +13,7 @@ import {
   User, Phone, Car, CheckCircle2, ShoppingCart,
 } from "lucide-react"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
@@ -65,7 +66,7 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null }[]
+  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
   vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
@@ -352,58 +353,35 @@ export function TechnicianOrderDetail({
         )}
       </div>
 
-      {order.items.length > 0 && (
-        <div className="rounded-lg border border-border bg-white p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">İş Kalemleri</h3>
-          <div className="space-y-2">
-            {order.items.map((item) => (
-              <div key={item.id} className={cn(
-                "flex items-start justify-between gap-3 py-2 px-3 rounded-lg",
-                item.type === "part" ? "bg-primary/10" : "bg-primary/10"
-              )}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{item.name}</span>
-                    <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                      item.type === "part" ? "bg-primary/20 text-foreground" : "bg-primary/20 text-foreground"
-                    )}>
-                      {item.type === "part" ? "Parça" : item.type === "external_labor" ? "Dış İşçilik" : "İşçilik"}
-                    </span>
-                  </div>
-                  {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-medium text-foreground">
-                    {item.totalPrice != null ? formatTRY(item.totalPrice) : item.unitPrice ? formatTRY(item.unitPrice * item.quantity) : "—"}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1">×{item.quantity}</span>
-                </div>
+      <div className="rounded-lg border border-border bg-white p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">
+          Yapılacak İşler
+          <span className="ml-2 text-xs font-normal text-muted-foreground/70">
+            {order.items.filter((i) => i.completedAt).length}/{order.items.length}
+          </span>
+        </h3>
+        <OrderItemsChecklist items={order.items} locked={locked} />
+        {order.totals.hasAnyPrice && (
+          <div className="mt-3 pt-3 border-t border-border space-y-1">
+            {order.totals.discountAmount > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>İndirim</span>
+                <span>-{formatTRY(order.totals.discountAmount)}</span>
               </div>
-            ))}
-          </div>
-          {order.totals.hasAnyPrice && (
-            <div className="mt-3 pt-3 border-t border-border space-y-1">
-              {order.totals.discountAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>İndirim</span>
-                  <span>-{formatTRY(order.totals.discountAmount)}</span>
-                </div>
-              )}
-              {order.totals.taxAmount > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
-                  <span>{formatTRY(order.totals.taxAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-semibold text-foreground">
-                <span>Toplam</span>
-                <span>{formatTRY(order.totals.grandTotal)}</span>
+            )}
+            {order.totals.taxAmount > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
+                <span>{formatTRY(order.totals.taxAmount)}</span>
               </div>
+            )}
+            <div className="flex justify-between text-sm font-semibold text-foreground">
+              <span>Toplam</span>
+              <span>{formatTRY(order.totals.grandTotal)}</span>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {order.damageMarks.length > 0 && (
         <div className="rounded-lg border border-border bg-white p-4">
