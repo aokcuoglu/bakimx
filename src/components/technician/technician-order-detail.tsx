@@ -430,7 +430,7 @@ export function TechnicianOrderDetail({
               className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
             >
               <Play className="size-5" />
-              İşe Başla
+              {order.status === "waiting_parts" ? "İşe Devam Et" : "İşe Başla"}
             </Button>
           )}
           {canHold && (
