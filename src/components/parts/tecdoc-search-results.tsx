@@ -1,0 +1,189 @@
+"use client"
+
+import { useMemo } from "react"
+import { ChevronRight, Search } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { TecdocArticleRow } from "./tecdoc-article-row"
+import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
+
+/**
+ * Parça seçicinin global arama sonuçları: KATEGORİLER (ağaçtan, client-side) +
+ * PARÇALAR (DB araması) + sonuç kümesinden türetilen marka çipleri.
+ *
+ * Marka çipleri istemci tarafında süzer; API çağrısı markaya göre daraltılmaz —
+ * daraltılsaydı çip listesi kendi kendini yok ederdi (yalnız seçili marka kalırdı).
+ */
+export function TecdocSearchResults({
+  query,
+  categories,
+  categoryOverflow,
+  articles,
+  searching,
+  brandFilter,
+  onBrandFilterChange,
+  onCategorySelect,
+  onArticleSelect,
+  onShowDetail,
+}: {
+  query: string
+  categories: CategoryMatch[]
+  /** searchCategoryTree limitinin dışında kalan eşleşme sayısı (0 ise not gösterilmez). */
+  categoryOverflow: number
+  /** null: arama henüz tamamlanmadı (ilk yükleme). */
+  articles: ArticleSearchResult[] | null
+  searching: boolean
+  brandFilter: string
+  onBrandFilterChange: (v: string) => void
+  onCategorySelect: (c: CategoryMatch) => void
+  onArticleSelect: (a: ArticleSearchResult) => void
+  onShowDetail?: (a: ArticleSummary) => void
+}) {
+  const brands = useMemo(() => {
+    if (!articles) return []
+    const counts = new Map<string, number>()
+    for (const a of articles) {
+      if (!a.supplierName) continue
+      counts.set(a.supplierName, (counts.get(a.supplierName) ?? 0) + 1)
+    }
+    // Çok parçalı marka önce; eşitlikte tr alfabetik.
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((x, y) => y.count - x.count || x.name.localeCompare(y.name, "tr"))
+  }, [articles])
+
+  const visibleArticles = useMemo(() => {
+    if (!articles) return null
+    return brandFilter ? articles.filter((a) => a.supplierName === brandFilter) : articles
+  }, [articles, brandFilter])
+
+  const nothingFound = categories.length === 0 && visibleArticles != null && visibleArticles.length === 0
+
+  return (
+    <div>
+      {categories.length > 0 && (
+        <section>
+          <SectionHeading>Kategoriler ({categories.length + categoryOverflow})</SectionHeading>
+          {categories.map((c) => (
+            <button
+              key={`${c.node.id}-${c.path}`}
+              type="button"
+              onClick={() => onCategorySelect(c)}
+              className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left border-b border-border/60 hover:bg-muted"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm truncate">{c.node.name}</span>
+                {c.path && (
+                  <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
+                )}
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+            </button>
+          ))}
+          {categoryOverflow > 0 && (
+            <p className="px-4 py-2 text-xs text-muted-foreground">
+              +{categoryOverflow} kategori daha — aramayı daraltın.
+            </p>
+          )}
+        </section>
+      )}
+
+      {searching && visibleArticles == null && (
+        <div className="flex justify-center py-8">
+          <BrandSpinner />
+        </div>
+      )}
+
+      {visibleArticles != null && visibleArticles.length > 0 && (
+        <section>
+          <SectionHeading>
+            Parçalar ({visibleArticles.length}
+            {searching ? "…" : ""})
+          </SectionHeading>
+          {brands.length > 1 && (
+            <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+              <BrandChip active={!brandFilter} onClick={() => onBrandFilterChange("")}>
+                Tüm markalar
+              </BrandChip>
+              {brands.map((b) => (
+                <BrandChip
+                  key={b.name}
+                  active={brandFilter === b.name}
+                  onClick={() => onBrandFilterChange(brandFilter === b.name ? "" : b.name)}
+                >
+                  {b.name} <span className="text-muted-foreground">{b.count}</span>
+                </BrandChip>
+              ))}
+            </div>
+          )}
+          {visibleArticles.map((a) => (
+            <TecdocArticleRow
+              key={a.tecdocArticleId}
+              article={a}
+              context={a.categoryName || null}
+              onSelect={() => onArticleSelect(a)}
+              onShowDetail={onShowDetail}
+            />
+          ))}
+        </section>
+      )}
+
+      {!searching && nothingFound && (
+        <div className="px-4 py-8 text-center space-y-2">
+          <Search className="size-5 mx-auto text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">
+            &ldquo;{query}&rdquo; için sonuç bulunamadı.
+          </p>
+          <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
+            Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır. Aradığınız parçayı
+            kategorilerden ilerleyerek getirebilirsiniz.
+          </p>
+        </div>
+      )}
+
+      {/* Kategori eşleşmesi var ama hiç parça yok: kullanıcı çıkmaz sokakta
+          kalmasın diye aynı kapsam notunu daha kısa göster. */}
+      {!searching && categories.length > 0 && visibleArticles != null && visibleArticles.length === 0 && (
+        <p className="px-4 py-3 text-xs text-muted-foreground">
+          Bu aramayla eşleşen kayıtlı parça yok — yukarıdaki kategoriye girerek parçaları
+          getirebilirsiniz.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="px-4 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {children}
+    </h3>
+  )
+}
+
+function BrandChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex min-h-8 max-w-[12rem] items-center gap-1 truncate rounded-full border px-2.5 text-xs font-medium transition-colors touch-manipulation",
+        active
+          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground/70"
+          : "border-border bg-background text-foreground hover:bg-muted",
+      )}
+    >
+      {children}
+    </button>
+  )
+}

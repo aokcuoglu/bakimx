@@ -1,10 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -20,11 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { ChevronLeft, ChevronRight, Info, Loader2, PackageSearch, ScanLine } from "lucide-react"
-import { VinCandidateList, VinLockedNotice } from "@/components/vehicles/vin-resolve"
-import { linkVehicleCatalogAction } from "@/app/(app)/vehicles/actions"
-import { isValidVin, type VinCandidate, type VinResolution } from "@/lib/vin/types"
-import type { ArticleSummary, CategoryNode } from "@/lib/tecdoc/types"
+import { ChevronLeft, ChevronRight, PackageSearch, Search, X } from "lucide-react"
+import { TecdocArticleRow } from "./tecdoc-article-row"
+import { TecdocSearchResults } from "./tecdoc-search-results"
+import { VinLinkPrompt } from "./vin-link-prompt"
+import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { ArticleSummary, CategoryMatch, CategoryNode } from "@/lib/tecdoc/types"
+import { CATEGORY_MATCH_LIMIT, searchCategoryTree } from "@/lib/tecdoc/tree"
 import { partSearchIncludes, trIncludes } from "@/lib/tr-search"
 
 /** Vehicle fields the picker needs: the catalog link + VIN/hints to build it. */
@@ -50,9 +50,23 @@ export type TecdocPartSelection = {
 
 /** Render cap for huge categories (the API has no pagination). */
 const MAX_VISIBLE_ARTICLES = 100
+/** Global aramada istenen parça sayısı (server 50'ye kırpar). */
+const SEARCH_LIMIT = 50
+/** Global arama için gereken en az karakter (server tarafıyla aynı eşik). */
+const MIN_SEARCH_LEN = 2
 
 /**
- * TecDoc vehicle-parts picker: category drill-down → article list → onSelect.
+ * TecDoc vehicle-parts picker: category drill-down → article list → onSelect,
+ * ARTI her seviyeden çalışan birleşik arama (kategori/alt kategori adı + parça
+ * no/ad + marka).
+ *
+ * Arama iki kipte çalışır:
+ *  • Kategori içindeyken (parça listesi yüklü): yüklü listeyi client-side süzer —
+ *    ek istek yok. Kapsam çipiyle global aramaya çıkılır.
+ *  • Kök/ara seviyede: kategori eşleşmeleri client'taki ağaçtan, parça eşleşmeleri
+ *    /api/tecdoc/articles/search'ten (DB-only, kotasız → yalnız daha önce
+ *    getirilmiş parçaları bulur; bu yüzden kategori eşleşmeleri hep gösterilir).
+ *
  * Depends only on the normalized CategoryNode/ArticleSummary shapes served by
  * /api/tecdoc/* — raw provider payloads never reach the client.
  */
@@ -89,12 +103,20 @@ export function TecdocPartPicker({
   const [tree, setTree] = useState<CategoryNode[] | null>(null)
   const [stack, setStack] = useState<CategoryNode[]>([]) // drill-down breadcrumb
   const [articles, setArticles] = useState<ArticleSummary[] | null>(null)
-  const [filter, setFilter] = useState("")
+  const [query, setQuery] = useState("")
   const [supplierFilter, setSupplierFilter] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  // Global arama durumu (yalnız kategori dışındayken kullanılır).
+  const [searchResults, setSearchResults] = useState<ArticleSearchResult[] | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [searchBrand, setSearchBrand] = useState("")
 
   const vehicleTypeId = vehicle?.catalogVehicleTypeId ?? null
+  /** Parça listesi yüklü → arama o kategoriye kapsamlı. */
+  const inCategory = articles != null
+  const trimmedQuery = query.trim()
+  const globalSearch = !inCategory && trimmedQuery.length >= MIN_SEARCH_LEN
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
     if (vehicleTypeId == null) return
@@ -140,16 +162,19 @@ export function TecdocPartPicker({
     if (initedRef.current) return
     initedRef.current = true
     // Her açılış tamamen sıfırdan başlar — satır seçimi (kategori/marka) açılışlar
-    // arası değişmiş olabilir; bayat ağaç/breadcrumb/parça listesi taşınmasın.
+    // arası değişmiş olabilir; bayat ağaç/breadcrumb/parça listesi/arama taşınmasın.
     // Marka seçiliyse parça listesini o markaya ön-filtrele (temizlenebilir).
     // (Senkron setState — açılışta API'den veri çekmek için, fetch-on-open kalıbı.)
     /* eslint-disable react-hooks/set-state-in-effect */
     setTree(null)
     setStack([])
     setArticles(null)
-    setFilter("")
+    setQuery("")
     setError("")
+    setSearchResults(null)
+    setSearching(false)
     setSupplierFilter(initialSupplierName || "")
+    setSearchBrand(initialSupplierName || "")
     if (initialCategoryId != null) {
       // Kategori seçili → doğrudan o kategorinin parçalarına atla. Ağaç null kalır,
       // geri tuşunda goBack içinde tam ağaç tembel yüklenir.
@@ -164,12 +189,56 @@ export function TecdocPartPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
+  // Global arama: DB'de cache'li parçalarda ara (kotasız, sağlayıcıya gitmez).
+  // Debounce 300 ms — part-search-input ile aynı kalıp. Kategori içindeyken
+  // çalışmaz (orada yüklü liste client-side süzülür).
+  useEffect(() => {
+    if (!open || vehicleTypeId == null || !globalSearch) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSearching(false)
+      return
+    }
+    let active = true
+    const t = setTimeout(async () => {
+      // Spinner debounce'tan SONRA açılır: her tuş vuruşunda yanıp sönmesin ve
+      // effect gövdesinde senkron setState olmasın.
+      setSearching(true)
+      try {
+        const qs = new URLSearchParams({
+          vehicleId: String(vehicleTypeId),
+          q: trimmedQuery,
+          limit: String(SEARCH_LIMIT),
+        })
+        const res = await fetch(`/api/tecdoc/articles/search?${qs.toString()}`)
+        const data = await res.json()
+        if (!active) return
+        const list: ArticleSearchResult[] = res.ok && Array.isArray(data.articles) ? data.articles : []
+        setSearchResults(list)
+        // Ön-seçili marka bu sonuç kümesinde yoksa çipi bırak — aksi halde liste
+        // sebepsiz boş görünürdü.
+        setSearchBrand((b) => (b && !list.some((a) => a.supplierName === b) ? "" : b))
+      } catch {
+        if (active) setSearchResults([]) // arama hatası sessiz — modal kullanılabilir kalır
+      } finally {
+        if (active) setSearching(false)
+      }
+    }, 300)
+    return () => {
+      active = false
+      clearTimeout(t)
+    }
+  }, [open, vehicleTypeId, globalSearch, trimmedQuery])
+
+  // NOT: Kategori eşleşmeleri client'taki ağaçtan gelir. Ağaç, "kategoriye atla"
+  // açılışında atlandığı için null olabilir; tembel yüklemesi goBack/clearScope/
+  // "Tekrar dene" yollarında yapılır (global aramaya ancak bunlardan biriyle
+  // geçilir) — bunun için ayrı bir effect'e gerek yok.
   async function openLeaf(node: CategoryNode) {
     if (vehicleTypeId == null) return
     setStack((s) => [...s, node])
     setLoading(true)
     setError("")
-    setFilter("")
+    setQuery("")
     try {
       const res = await fetch(`/api/tecdoc/articles?vehicleId=${vehicleTypeId}&categoryId=${node.id}`)
       const data = await res.json()
@@ -187,7 +256,7 @@ export function TecdocPartPicker({
     setError("")
     if (articles) {
       setArticles(null)
-      setFilter("")
+      setQuery("")
       setSupplierFilter("") // yeni kategoride marka ön-filtresi taşınmasın
     }
     // Köke (tam ağaca) dönüyorsak ve ağaç henüz yüklenmediyse (kategoriye-atla
@@ -196,15 +265,55 @@ export function TecdocPartPicker({
     setStack((s) => s.slice(0, -1))
   }
 
+  /** Kapsam çipi ×: kategoriden çık ama yazılan sorguyu KORU → global aramaya geç. */
+  function clearScope() {
+    setArticles(null)
+    setStack([])
+    setSupplierFilter("")
+    setError("")
+    if (tree == null) void loadCategories()
+  }
+
+  /** Arama sonucundaki kategoriye gir: breadcrumb atalardan yeniden kurulur. */
+  function openCategoryMatch(match: CategoryMatch) {
+    setSearchResults(null)
+    setSearchBrand("")
+    setError("")
+    if (match.node.children.length > 0) {
+      setQuery("") // ağaç görünümüne dön
+      setStack([...match.ancestors, match.node])
+    } else {
+      // openLeaf düğümü yığına kendisi iter (ve sorguyu temizler) → önce yalnız
+      // ataları kur.
+      setStack(match.ancestors)
+      void openLeaf(match.node)
+    }
+  }
+
+  function selectArticle(a: ArticleSummary, categoryId: number, categoryName: string) {
+    onSelect({
+      name: a.productName,
+      articleNo: a.articleNo,
+      tecdocArticleId: a.tecdocArticleId,
+      supplierName: a.supplierName,
+      categoryName,
+      categoryId,
+    })
+    handleOpenChange(false)
+  }
+
   function handleOpenChange(next: boolean) {
     setOpen(next)
     // Yükleme artık open'ı izleyen useEffect'te (controlled + uncontrolled ortak yol).
     if (!next) {
       setStack([])
       setArticles(null)
-      setFilter("")
+      setQuery("")
       setSupplierFilter("")
       setError("")
+      setSearchResults(null)
+      setSearchBrand("")
+      setSearching(false)
     }
   }
 
@@ -217,13 +326,24 @@ export function TecdocPartPicker({
 
   const filteredArticles = useMemo(() => {
     if (!articles) return null
-    const q = filter.trim()
+    const q = query.trim()
     let list = supplierFilter ? articles.filter((a) => a.supplierName === supplierFilter) : articles
     // Parça no/ad ayraç-duyarsız eşleşir ("C27125" ↔ "C 27 125"); marka adı
     // için harf-katlamalı trIncludes yeterli. (bkz. searchVehicleArticles server tarafı)
     if (q) list = list.filter((a) => partSearchIncludes(a.productName, q) || partSearchIncludes(a.articleNo, q) || trIncludes(a.supplierName, q))
     return list
-  }, [articles, filter, supplierFilter])
+  }, [articles, query, supplierFilter])
+
+  // Kategori eşleşmeleri: gösterilen limitin ÜSTÜNDE bir tavanla arayıp keseriz ki
+  // "+n kategori daha" notu gerçek toplamı verebilsin.
+  const categoryMatches = useMemo(() => {
+    if (!globalSearch || !tree) return { visible: [] as CategoryMatch[], overflow: 0 }
+    const all = searchCategoryTree(tree, trimmedQuery, 200)
+    return {
+      visible: all.slice(0, CATEGORY_MATCH_LIMIT),
+      overflow: Math.max(0, all.length - CATEGORY_MATCH_LIMIT),
+    }
+  }, [globalSearch, tree, trimmedQuery])
 
   if (!vehicle) return null
 
@@ -231,6 +351,11 @@ export function TecdocPartPicker({
     if (hideTrigger) return null
     return <VinLinkPrompt vehicle={vehicle} />
   }
+
+  const scopeName = inCategory ? stack[stack.length - 1]?.name : null
+  const searchPlaceholder = inCategory
+    ? `${articles.length} parça içinde ara...`
+    : "Kategori, parça veya marka ara..."
 
   return (
     <>
@@ -243,7 +368,7 @@ export function TecdocPartPicker({
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="p-0 gap-0 sm:max-w-md max-h-[85vh] flex flex-col">
-          <DialogHeader className="border-b px-4 py-3">
+          <DialogHeader className="border-b px-4 py-3 gap-0">
             <div className="flex items-center gap-2 pr-8">
               {(stack.length > 0 || articles) && (
                 <button type="button" onClick={goBack} className="p-1 -ml-1 text-muted-foreground hover:text-foreground" aria-label="Geri">
@@ -256,21 +381,51 @@ export function TecdocPartPicker({
                 </DialogTitle>
                 <DialogDescription className="text-xs truncate">
                   {stack.length === 0
-                    ? "Kategori seçin"
+                    ? "Kategori seçin veya arayın"
                     : stack.map((n) => n.name).join(" / ")}
                 </DialogDescription>
               </div>
             </div>
+            {/* Arama her seviyede erişilebilir — parçanın hangi kategoride olduğunu
+                bilmeyen kullanıcı ağaçta dolaşmak zorunda kalmasın. */}
+            <div className="mt-3 space-y-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  aria-label="Kategori, parça veya marka ara"
+                  className="pl-8"
+                />
+              </div>
+              {scopeName && (
+                <span className="inline-flex min-h-7 max-w-full items-center gap-1 rounded-full border border-border bg-muted/60 pl-2.5 pr-1 text-xs text-muted-foreground">
+                  <span className="truncate">{scopeName} içinde</span>
+                  <button
+                    type="button"
+                    onClick={clearScope}
+                    aria-label="Kategori kapsamını kaldır, tüm araçta ara"
+                    title="Tüm araçta ara"
+                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-muted-foreground/20 hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
-            {loading && (
+            {/* Global aramada ağaç arka planda yüklenebilir — tam ekran spinner
+                arama sonuçlarını gizlemesin. */}
+            {loading && !globalSearch && (
               <div className="flex justify-center py-10">
                 <BrandSpinner />
               </div>
             )}
 
-            {!loading && error && (
+            {!loading && error && !globalSearch && (
               <div className="px-4 py-6 text-center text-sm text-muted-foreground space-y-2">
                 <p>{error}</p>
                 <Button type="button" size="sm" variant="outline" onClick={() => (articles == null && stack.length === 0 ? loadCategories() : setError(""))}>
@@ -279,7 +434,22 @@ export function TecdocPartPicker({
               </div>
             )}
 
-            {!loading && !error && articles == null && (
+            {globalSearch && (
+              <TecdocSearchResults
+                query={trimmedQuery}
+                categories={categoryMatches.visible}
+                categoryOverflow={categoryMatches.overflow}
+                articles={searchResults}
+                searching={searching}
+                brandFilter={searchBrand}
+                onBrandFilterChange={setSearchBrand}
+                onCategorySelect={openCategoryMatch}
+                onArticleSelect={(a) => selectArticle(a, a.categoryId, a.categoryName)}
+                onShowDetail={onShowDetail}
+              />
+            )}
+
+            {!globalSearch && !loading && !error && articles == null && (
               <div>
                 {currentNodes.map((node) => (
                   <button
@@ -298,80 +468,45 @@ export function TecdocPartPicker({
               </div>
             )}
 
-            {!loading && !error && filteredArticles && (
+            {!globalSearch && !loading && !error && filteredArticles && (
               <div>
-                <div className="sticky top-0 bg-popover px-3 py-2 border-b">
-                  <Input
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    placeholder={`${articles!.length} parça içinde ara...`}
-                  />
-                  {supplierOptions.length > 0 && (
+                {supplierOptions.length > 1 && (
+                  <div className="sticky top-0 z-10 bg-popover px-3 py-2 border-b">
                     <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v && v !== "all" ? v : "")}>
-                      <SelectTrigger className="h-9 mt-2"><SelectValue placeholder="Tüm markalar" /></SelectTrigger>
+                      <SelectTrigger className="h-9">
+                        {/* Base UI Select.Value HAM değeri basar → "all" seçiliyken
+                            tetikleyicide "all" yazıyordu; etiketi render-fn ile veriyoruz. */}
+                        <SelectValue>
+                          {(v: string | null) => (v && v !== "all" ? v : "Tüm markalar")}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tüm markalar</SelectItem>
                         {supplierOptions.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
-                {filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => (
-                  // Satır bir div: seçim butonu ile ⓘ butonu KARDEŞ olmalı (iç
-                  // içe buton geçersiz HTML).
-                  <div
-                    key={a.tecdocArticleId}
-                    className="flex items-center border-b border-border/60 hover:bg-muted"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cat = stack[stack.length - 1]
-                        onSelect({
-                          name: a.productName,
-                          articleNo: a.articleNo,
-                          tecdocArticleId: a.tecdocArticleId,
-                          supplierName: a.supplierName,
-                          categoryName: cat?.name ?? "",
-                          categoryId: cat?.id ?? 0,
-                        })
-                        handleOpenChange(false)
-                      }}
-                      className="min-h-11 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
-                    >
-                      {a.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={a.imageUrl} alt="" loading="lazy" className="size-10 shrink-0 rounded object-contain bg-white border border-border/60" />
-                      ) : (
-                        <span className="size-10 shrink-0 rounded bg-muted flex items-center justify-center">
-                          <PackageSearch className="size-4 text-muted-foreground/50" />
-                        </span>
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm text-foreground truncate">{a.productName}</span>
-                        <span className="block text-xs text-muted-foreground truncate">
-                          <span className="font-mono">{a.articleNo}</span>
-                          {a.supplierName && <> · {a.supplierName}</>}
-                        </span>
-                      </span>
-                    </button>
-                    {onShowDetail && (
-                      <button
-                        type="button"
-                        aria-label="Parça detayı"
-                        title="Özellikler, görsel ve uygunluk"
-                        onClick={() => onShowDetail(a)}
-                        className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                      >
-                        <Info className="size-4" />
-                      </button>
+                  </div>
+                )}
+                {filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => {
+                  const cat = stack[stack.length - 1]
+                  return (
+                    <TecdocArticleRow
+                      key={a.tecdocArticleId}
+                      article={a}
+                      onSelect={() => selectArticle(a, cat?.id ?? 0, cat?.name ?? "")}
+                      onShowDetail={onShowDetail}
+                    />
+                  )
+                })}
+                {filteredArticles.length === 0 && (
+                  <div className="px-4 py-6 text-center text-sm text-muted-foreground space-y-2">
+                    <p>{query ? "Aramanızla eşleşen parça yok." : "Bu kategoride araca uygun parça bulunamadı."}</p>
+                    {query && (
+                      <Button type="button" size="sm" variant="outline" onClick={clearScope}>
+                        Tüm araçta ara
+                      </Button>
                     )}
                   </div>
-                ))}
-                {filteredArticles.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    {filter ? "Aramanızla eşleşen parça yok." : "Bu kategoride araca uygun parça bulunamadı."}
-                  </p>
                 )}
                 {filteredArticles.length > MAX_VISIBLE_ARTICLES && (
                   <p className="px-4 py-3 text-center text-xs text-muted-foreground">
@@ -384,133 +519,5 @@ export function TecdocPartPicker({
         </DialogContent>
       </Dialog>
     </>
-  )
-}
-
-/**
- * Shown on the Parça sekmesi when the vehicle has no catalogVehicleTypeId yet.
- * "VIN'den bağla" resolves the VIN against the local catalog and writes the
- * chosen engine variant back to the vehicle — no detour to the edit form. A
- * confident match links straight away; several variants surface a tappable
- * list; router.refresh() re-runs the page so the picker flips to the catalog.
- */
-function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
-  const [locked, setLocked] = useState(false)
-  const [candidates, setCandidates] = useState<VinCandidate[]>([])
-
-  const hasVin = isValidVin(vehicle.vin ?? "")
-
-  async function link(c: { vehicleTypeId: number; brandId: number; modelId: number }) {
-    setLoading(true)
-    setError("")
-    const res = await linkVehicleCatalogAction(vehicle.id, {
-      catalogVehicleTypeId: c.vehicleTypeId,
-      catalogBrandId: c.brandId,
-      catalogModelId: c.modelId,
-    })
-    if (res.error) {
-      setError(res.error)
-      setLoading(false)
-      return
-    }
-    // Server data now carries catalogVehicleTypeId → the picker re-renders with
-    // the "Araca Uygun Parçalar" button. Stay loading through the refresh.
-    router.refresh()
-  }
-
-  async function resolve() {
-    const vin = vehicle.vin ?? ""
-    if (!isValidVin(vin)) return
-    setLoading(true)
-    setError("")
-    setNotice("")
-    setLocked(false)
-    setCandidates([])
-    try {
-      const res = await fetch("/api/vin/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vin,
-          hints: {
-            engineDisplacement: vehicle.engineDisplacement || undefined,
-            enginePower: vehicle.enginePower || undefined,
-            fuelType: vehicle.fuelType || undefined,
-            firstRegistrationDate: vehicle.firstRegistrationDate || undefined,
-            modelYear: vehicle.modelYear ?? undefined,
-          },
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        if (res.status === 403 && data.code === "feature_locked") setLocked(true)
-        else setError(data.error || "VIN sorgulanamadı.")
-        setLoading(false)
-        return
-      }
-      const result = data as VinResolution
-      if (result.status === "not_found") {
-        setNotice("VIN katalogda bulunamadı — Araç düzenle sayfasından marka/model seçin.")
-        setLoading(false)
-        return
-      }
-      const auto =
-        result.status === "resolved" && result.autoSelected != null
-          ? result.candidates.find((c) => c.vehicleTypeId === result.autoSelected)
-          : undefined
-      if (auto) {
-        // Confident single match — link() keeps loading=true through the refresh.
-        await link({ vehicleTypeId: auto.vehicleTypeId, brandId: auto.brandId, modelId: auto.modelId })
-        return
-      }
-      if (result.candidates.length > 0) {
-        setCandidates(result.candidates)
-        setLoading(false)
-        return
-      }
-      // Brand/model matched but no engine variant → nothing to link parts to.
-      setNotice("Marka/model tanındı ama motor varyantı belirlenemedi — Araç düzenle sayfasından motoru seçin.")
-      setLoading(false)
-    } catch {
-      setError("VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        Araç henüz kataloğa bağlı değil. Şase (VIN) numarasından araca uygun parçaları getirmek için{" "}
-        <span className="font-medium text-foreground">VIN&apos;den bağla</span>&apos;ya basın
-        {hasVin ? "." : " — önce Araç düzenle sayfasından geçerli bir şase numarası girin."}
-      </p>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Button type="button" size="sm" variant="outline" disabled={!hasVin || loading} onClick={resolve} className="gap-1.5">
-          {loading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanLine className="size-3.5" />}
-          VIN&apos;den bağla
-        </Button>
-        <Link
-          href={`/vehicles/${vehicle.id}/edit`}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          Araç bilgilerini düzenle
-        </Link>
-      </div>
-      {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      {locked && <VinLockedNotice />}
-      {candidates.length > 0 && (
-        <VinCandidateList
-          candidates={candidates}
-          selectedId={null}
-          onSelect={(c) => link({ vehicleTypeId: c.vehicleTypeId, brandId: c.brandId, modelId: c.modelId })}
-          onDismiss={() => setCandidates([])}
-        />
-      )}
-    </div>
   )
 }
