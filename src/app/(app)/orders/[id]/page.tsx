@@ -145,6 +145,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       status: p.status,
       createdAt: p.createdAt.toISOString(),
       requestedByName: p.requestedBy?.fullName ?? null,
+      convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
     })),
     customer: {
       id: intakeForm.customer.id,

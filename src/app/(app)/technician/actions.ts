@@ -634,7 +634,12 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
 /**
  * Teknisyenin parça talebini iş emri kalemine çevirir (ofis aksiyonu).
  * Fiyat alanları boş bırakılır — ofis kalem satırında girer.
- * Çift tıklamaya karşı: yalnız `requested` durumundaki talep çevrilebilir.
+ *
+ * `convertedAt` bu dönüşümün tek gerçek kaynağıdır — `status` teknisyen
+ * tarafındaki fiziksel teslimat akışını (requested→prepared→delivered) izlemeye
+ * devam eder ve bu action'dan bağımsız ilerleyebilir. Talep zaten `prepared`
+ * veya `delivered` olsa da (teknisyen "Hazırlandı"ya basmış olsa da) çevrilebilir;
+ * yalnız daha önce çevrilmiş (convertedAt dolu) talep tekrar çevrilemez.
  */
 export async function convertPartsRequestToOrderItemAction(requestId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -644,7 +649,7 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
     where: { id: requestId, workshopId: user.workshopId },
   })
   if (!request) return { error: "Parça talebi bulunamadı" }
-  if (request.status !== "requested") return { error: "Bu talep zaten işlendi" }
+  if (request.convertedAt) return { error: "Bu talep zaten kaleme eklendi" }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: request.serviceOrderId, workshopId: user.workshopId },
@@ -654,13 +659,20 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
   if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
   const converted = await prisma.$transaction(async (tx) => {
-    // Durumu önce koşullu güncelle: iki eşzamanlı çağrı yarışırsa yalnız biri
-    // `count > 0` görür, kalem yalnız o durumda oluşturulur (çift kalem önlenir).
+    // `convertedAt`i önce koşullu güncelle: iki eşzamanlı çağrı yarışırsa yalnız
+    // biri `count > 0` görür, kalem yalnız o durumda oluşturulur (çift kalem önlenir).
     const updated = await tx.partsRequest.updateMany({
+      where: { id: requestId, workshopId: user.workshopId, convertedAt: null },
+      data: { convertedAt: new Date() },
+    })
+    if (updated.count === 0) return false
+
+    // Durum hâlâ "requested" ise "prepared"a çek; teknisyen zaten ilerletmişse
+    // (prepared/delivered) geri almadan olduğu gibi bırak.
+    await tx.partsRequest.updateMany({
       where: { id: requestId, workshopId: user.workshopId, status: "requested" },
       data: { status: "prepared" },
     })
-    if (updated.count === 0) return false
 
     await tx.serviceOrderItem.create({
       data: {
@@ -678,7 +690,7 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
     })
     return true
   })
-  if (!converted) return { error: "Bu talep zaten işlendi" }
+  if (!converted) return { error: "Bu talep zaten kaleme eklendi" }
 
   await AuditLogAction(
     user.workshopId,

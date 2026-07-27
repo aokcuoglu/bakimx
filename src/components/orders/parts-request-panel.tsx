@@ -17,6 +17,7 @@ export interface PartsRequestRow {
   status: string
   createdAt: string
   requestedByName: string | null
+  convertedAt: string | null
 }
 
 /**
@@ -67,7 +68,11 @@ export function PartsRequestPanel({
                 <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", status?.color)}>
                   {status?.label || req.status}
                 </span>
-                {!locked && req.status === "requested" && (
+                {req.convertedAt ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border bg-success/10 text-foreground border-success/20">
+                    Kaleme eklendi
+                  </span>
+                ) : !locked && (
                   <Button
                     variant="outline"
                     size="lg"
