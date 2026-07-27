@@ -39,6 +39,14 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
 import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import {
+  countBlockingChecklist,
+  countIncompleteItems,
+  startWorkBlockMessage,
+  completeWorkBlockMessage,
+  START_GATE_CATEGORIES,
+  COMPLETE_GATE_CATEGORIES,
+} from "@/lib/technician/gates"
 
 type OrderData = {
   id: string
@@ -72,7 +80,7 @@ type OrderData = {
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
-  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
+  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
   partsRequests: { id: string; partName: string; partSku: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
@@ -130,6 +138,12 @@ export function TechnicianOrderDetail({
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
   const locked = isOrderLocked(order.status as OrderStatus)
+
+  const startMissing = countBlockingChecklist(order.checklistItems, START_GATE_CATEGORIES)
+  const completeChecklistMissing = countBlockingChecklist(order.checklistItems, COMPLETE_GATE_CATEGORIES)
+  const completeItemsMissing = countIncompleteItems(order.items)
+  const startBlockedMessage = startWorkBlockMessage(startMissing)
+  const completeBlockedMessage = completeWorkBlockMessage(completeChecklistMissing, completeItemsMissing)
 
   function handleStartWork() {
     startTransition(async () => {
@@ -400,46 +414,54 @@ export function TechnicianOrderDetail({
         </div>
       )}
 
-      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 flex gap-2 sm:justify-center">
-        {canStart && (
-          <Button
-            size="lg"
-            onClick={handleStartWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <Play className="size-5" />
-            İşe Başla
-          </Button>
+      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 space-y-2">
+        <div className="flex gap-2 sm:justify-center">
+          {canStart && (
+            <Button
+              size="lg"
+              onClick={handleStartWork}
+              disabled={isPending || !!startBlockedMessage}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <Play className="size-5" />
+              İşe Başla
+            </Button>
+          )}
+          {canHold && (
+            <Button
+              variant="warning"
+              size="lg"
+              onClick={handleHoldWork}
+              disabled={isPending}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <Pause className="size-5" />
+              Beklemeye Al
+            </Button>
+          )}
+          {canComplete && (
+            <Button
+              variant="success"
+              size="lg"
+              onClick={handleCompleteWork}
+              disabled={isPending || !!completeBlockedMessage}
+              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
+            >
+              <CheckCircle2 className="size-5" />
+              Tamamla
+            </Button>
+          )}
+          {!canStart && !canHold && !canComplete && (
+            <div className="flex-1 text-center text-sm text-muted-foreground py-2">
+              Bu iş emri için şu anda işlem yapılamaz
+            </div>
+          )}
+        </div>
+        {canStart && startBlockedMessage && (
+          <p className="text-xs text-warning-foreground text-center">{startBlockedMessage}</p>
         )}
-        {canHold && (
-          <Button
-            variant="warning"
-            size="lg"
-            onClick={handleHoldWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <Pause className="size-5" />
-            Beklemeye Al
-          </Button>
-        )}
-        {canComplete && (
-          <Button
-            variant="success"
-            size="lg"
-            onClick={handleCompleteWork}
-            disabled={isPending}
-            className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-          >
-            <CheckCircle2 className="size-5" />
-            Tamamla
-          </Button>
-        )}
-        {!canStart && !canHold && !canComplete && (
-          <div className="flex-1 text-center text-sm text-muted-foreground py-2">
-            Bu iş emri için şu anda işlem yapılamaz
-          </div>
+        {canComplete && completeBlockedMessage && (
+          <p className="text-xs text-warning-foreground text-center">{completeBlockedMessage}</p>
         )}
       </div>
     </div>

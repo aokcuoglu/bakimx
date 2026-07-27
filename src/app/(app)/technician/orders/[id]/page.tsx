@@ -167,6 +167,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       category: c.category,
       description: c.description,
       isCompleted: c.isCompleted,
+      isRequired: c.isRequired,
       completedAt: c.completedAt ? c.completedAt.toISOString() : null,
       note: c.note,
       sortOrder: c.sortOrder,
