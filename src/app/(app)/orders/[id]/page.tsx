@@ -57,6 +57,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         },
       },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
+      partsRequests: {
+        orderBy: { createdAt: "desc" },
+        include: { requestedBy: { select: { fullName: true } } },
+      },
     },
   })
 
@@ -129,6 +133,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
       purchasedByName: i.purchasedBy?.fullName ?? null,
       purchasePhotoId: i.photos[0]?.id ?? null,
+      completedAt: i.completedAt ? i.completedAt.toISOString() : null,
+    })),
+    partsRequests: order.partsRequests.map((p) => ({
+      id: p.id,
+      partName: p.partName,
+      partSku: p.partSku,
+      brand: p.brand,
+      quantity: p.quantity,
+      note: p.note,
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+      requestedByName: p.requestedBy?.fullName ?? null,
+      convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
     })),
     customer: {
       id: intakeForm.customer.id,

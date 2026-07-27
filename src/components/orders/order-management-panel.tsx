@@ -30,6 +30,7 @@ import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
+import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
 
 export type OrderItem = {
   id: string
@@ -55,6 +56,8 @@ export type OrderItem = {
   purchasedAt?: string | null
   purchasedByName?: string | null
   purchasePhotoId?: string | null
+  // Dolu ⇒ kalem sahada teknisyen tarafından "yapıldı" işaretlenmiş.
+  completedAt?: string | null
 }
 
 export type Totals = {
@@ -88,6 +91,7 @@ export type OrderDetailData = {
   taxRate: number | null
   totals: Totals
   items: OrderItem[]
+  partsRequests: PartsRequestRow[]
   customer: {
     id: string
     firstName: string | null

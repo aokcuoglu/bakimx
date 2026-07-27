@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -1043,6 +1043,23 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
   )
 }
 
+/** Teknisyen kalemi yaptıysa görünen salt-okunur rozet (ofis işaretleyemez). */
+function DoneBadge({ completedAt, className }: { completedAt?: string | null; className?: string }) {
+  if (!completedAt) return null
+  // Tür kolonu dar; damga ad kolonunun altında kendi satırında durur (çipler arasına
+  // sıkışınca satır kayıyordu). Zaman damgası ofisin "ne zaman bitti" sorusunu karşılar.
+  const stamp = new Date(completedAt).toLocaleString("tr-TR", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  })
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success", className)}>
+      <Check className="size-3 shrink-0" />
+      Yapıldı
+      <span className="font-normal text-muted-foreground">· {stamp}</span>
+    </span>
+  )
+}
+
 // Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
 // PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
 function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
@@ -1335,6 +1352,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
               <div className="min-w-0 flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare oneLine /></div>
             </div>
           )}
+          <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
         </div>
       </TableCell>
 
@@ -1412,6 +1430,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
       )}>
         <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
+        <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
