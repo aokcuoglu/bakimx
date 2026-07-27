@@ -18,6 +18,7 @@ export async function createIntakeAction(formData: FormData) {
     customerId: formData.get("customerId") as string,
     vehicleId: formData.get("vehicleId") as string,
     mileageAtIntake: formData.get("mileageAtIntake") as string,
+    fuelLevelAtIntake: formData.get("fuelLevelAtIntake") as string,
     customerComplaint: formData.get("customerComplaint") as string,
     internalNote: formData.get("internalNote") as string,
   }
@@ -50,6 +51,8 @@ export async function createIntakeAction(formData: FormData) {
         customerId: parsed.data.customerId,
         vehicleId: parsed.data.vehicleId,
         mileageAtIntake: parsed.data.mileageAtIntake || null,
+        // `?? null` bilinçli: 0 ("E") geçerli bir seviye, `||` onu null'a çevirirdi.
+        fuelLevelAtIntake: parsed.data.fuelLevelAtIntake ?? null,
         customerComplaint: parsed.data.customerComplaint,
         internalNote: parsed.data.internalNote || null,
       },
