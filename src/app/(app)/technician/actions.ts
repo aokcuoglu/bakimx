@@ -7,6 +7,14 @@ import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
 import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
+import {
+  countBlockingChecklist,
+  countIncompleteItems,
+  startWorkBlockMessage,
+  completeWorkBlockMessage,
+  START_GATE_CATEGORIES,
+  COMPLETE_GATE_CATEGORIES,
+} from "@/lib/technician/gates"
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
@@ -101,6 +109,13 @@ export async function startWorkAction(orderId: string) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
 
+  const checklist = await prisma.checklistItem.findMany({
+    where: { serviceOrderId: orderId, workshopId: user.workshopId },
+    select: { category: true, isCompleted: true, isRequired: true },
+  })
+  const startBlock = startWorkBlockMessage(countBlockingChecklist(checklist, START_GATE_CATEGORIES))
+  if (startBlock) return { error: startBlock }
+
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
     data: { status: "in_progress" },
@@ -166,6 +181,22 @@ export async function completeWorkAction(orderId: string) {
   if (!canTransitionOrder(order.status as OrderStatus, "ready_for_delivery")) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
+
+  const [checklist, items] = await Promise.all([
+    prisma.checklistItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { category: true, isCompleted: true, isRequired: true },
+    }),
+    prisma.serviceOrderItem.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { completedAt: true },
+    }),
+  ])
+  const completeBlock = completeWorkBlockMessage(
+    countBlockingChecklist(checklist, COMPLETE_GATE_CATEGORIES),
+    countIncompleteItems(items)
+  )
+  if (completeBlock) return { error: completeBlock }
 
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
