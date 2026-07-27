@@ -272,6 +272,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: item.serviceOrderId, workshopId: user.workshopId },
+    select: { status: true, assignedTechnicianId: true },
   })
   if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
@@ -280,7 +281,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
     data: {
       isCompleted: checked,
       completedAt: checked ? new Date() : null,
-      completedById: checked ? null : null,
+      completedById: checked ? (order?.assignedTechnicianId ?? null) : null,
     },
   })
 
@@ -578,5 +579,50 @@ export async function toggleTechnicianActiveAction(technicianId: string) {
 
   revalidatePath("/settings")
   revalidatePath("/technician")
+  return { success: true }
+}
+
+/**
+ * İş emri kalemini (parça/işçilik) "yapıldı" işaretler veya işareti kaldırır.
+ *
+ * Attribution: Technician↔User ilişkisi olmadığı için `completedById` iş emrinin
+ * ATANMIŞ ustasıdır; eylemi yapan gerçek kullanıcı AuditLog'a yazılır.
+ */
+export async function toggleOrderItemCompletedAction(itemId: string, done: boolean) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop()
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+    select: { id: true, name: true, serviceOrderId: true },
+  })
+  if (!item) return { error: "İş kalemi bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, assignedTechnicianId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  await prisma.serviceOrderItem.updateMany({
+    where: { id: itemId, workshopId: user.workshopId },
+    data: {
+      completedAt: done ? new Date() : null,
+      completedById: done ? order.assignedTechnicianId : null,
+    },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrderItem",
+    itemId,
+    done ? "order_item_completed" : "order_item_uncompleted",
+    JSON.stringify({ orderId: item.serviceOrderId, name: item.name })
+  )
+
+  revalidatePath(`/technician/orders/${item.serviceOrderId}`)
+  revalidatePath(`/orders/${item.serviceOrderId}`)
   return { success: true }
 }
