@@ -109,3 +109,14 @@ ile ilerleyin; `migrate dev` kullanmayın.
 **Prisma `ECONNREFUSED localhost:5432`** — Yerel Postgres ayakta değil:
 `docker compose -f docker-compose.local.yml up -d`. AWS dev DB'sine bağlanıyorsanız
 tünelin (`bun run db:tunnel`, port **5433**) açık olduğundan emin olun.
+
+**Beklenmeyen 500'ler / `Connection terminated unexpectedly` / `ECONNREFUSED
+localhost:5433`** — Neredeyse her zaman tünel kopmasıdır, uygulama hatası değil.
+SSM oturumu boşta kalınca (AWS varsayılanı 20 dk), dev deploy'u ECS task'ını
+değiştirince veya laptop uyuyunca düşer. `bun run db:tunnel` artık **kendi kendini
+onarır**: 5 dakikada bir keepalive paketi göndererek boşta-kapanmayı önler, oturum
+yine de düşerse ECS task'ını yeniden çözüp saniyeler içinde bağlanır. Yani tüneli
+elle yeniden başlatmanız gerekmez; kod hatası aramadan önce yalnızca terminaldeki
+tünel çıktısına bakın (`lsof -nP -iTCP:5433 -sTCP:LISTEN` boşsa tünel gerçekten
+kapalıdır). Tünel tekrar tekrar "Could not resolve target" diyorsa AWS SSO oturumu
+bitmiştir: `aws sso login --profile bakimx-dev`.

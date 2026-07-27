@@ -71,6 +71,28 @@
   padding-right: env(safe-area-inset-right);
 }
 
+/* Toast'lar mobil alt navigasyonun üstünde dursun. app-shell'deki alt nav
+   `lg:hidden` (yani <1024px'te görünür) ve 62px + safe-area yüksekliğinde;
+   sonner varsayılan offset'iyle toast bu barı örtüyor, ~4 sn boyunca
+   navigasyonu kapatıyordu.
+   GOTCHA: sonner offset'leri Toaster elementine INLINE style olarak basıyor
+   (--offset-bottom vb.), bu yüzden class/utility ile ezilemiyor — !important
+   şart. Aynı sebeple `mobileOffset` prop'u da tek başına yetmez: o yalnız
+   <600px'e uygulanır, alt nav ise 1024px'e kadar duruyor. */
+[data-sonner-toaster] {
+  /* <600px: sonner mobil offset'i kullanır */
+  --mobile-offset-bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+  /* 600–1023px: masaüstü offset'i kullanılır ama alt nav hâlâ ekranda */
+  --offset-bottom: calc(86px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (min-width: 1024px) {
+  /* lg ve üzeri: alt nav gizli, varsayılan boşluğa dön */
+  [data-sonner-toaster] {
+    --offset-bottom: 24px !important;
+  }
+}
+
 :root {
   --background: oklch(0.98 0.002 250);
   --foreground: oklch(0.20 0.04 260);
