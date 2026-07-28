@@ -11,8 +11,18 @@ import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  // Liste ekranındaki "Düzenle" aksiyonu buraya ?edit=1 ile gelir; sekme
+  // değişince URL ?tab=... ile yeniden yazıldığı için parametre kendiliğinden düşer.
+  searchParams: Promise<{ edit?: string }>
+}) {
   const { id } = await params
+  const sp = await searchParams
+  const editInitially = sp.edit === "1"
   const { user, workshop } = await getAppData()
   const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
 
@@ -276,7 +286,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <AppShell
-      wide
       workshopName={workshop?.name}
       pageTitle={`İş Emri ${safeOrder.workOrderNo}`}
     >
@@ -286,6 +295,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         technicians={technicians}
         hasAiAdvisor={hasAiAdvisor}
         activity={activity}
+        editInitially={editInitially}
       />
     </AppShell>
   )

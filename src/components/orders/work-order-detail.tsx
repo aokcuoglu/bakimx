@@ -163,12 +163,16 @@ export function WorkOrderDetail({
   technicians,
   hasAiAdvisor,
   activity = [],
+  editInitially = false,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
   technicians?: AssignableTechnician[]
   hasAiAdvisor: boolean
   activity?: OrderActivityEntry[]
+  // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
+  // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
+  editInitially?: boolean
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -199,12 +203,20 @@ export function WorkOrderDetail({
   })
 
   // Intake info edit (complaint/note/mileage)
-  const [editingInfo, setEditingInfo] = useState(false)
+  // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
+  // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
+  const openInfoEditor = editInitially && !orderLocked
+  const [editingInfo, setEditingInfo] = useState(openInfoEditor)
   const [savingInfo, setSavingInfo] = useState(false)
-  const [editComplaint, setEditComplaint] = useState("")
-  const [editNote, setEditNote] = useState("")
-  const [editMileage, setEditMileage] = useState("")
-  const [editFuelLevel, setEditFuelLevel] = useState<number | null>(null)
+  const [editComplaint, setEditComplaint] = useState(openInfoEditor ? order.intake.customerComplaint : "")
+  const [editNote, setEditNote] = useState(openInfoEditor ? order.intake.internalNote ?? "" : "")
+  const [editMileage, setEditMileage] = useState(
+    openInfoEditor && order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : ""
+  )
+  const [editFuelLevel, setEditFuelLevel] = useState<number | null>(
+    openInfoEditor ? order.intake.fuelLevelAtIntake ?? null : null
+  )
+  const infoCardRef = useRef<HTMLDivElement>(null)
 
   // Photos
   const photosRef = useRef<HTMLDivElement>(null)
@@ -235,6 +247,13 @@ export function WorkOrderDetail({
       photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
   }, [activeTab])
+
+  // Listeden "Düzenle" ile gelindiğinde kart sayfanın alt kısmında kalıyor;
+  // özellikle mobilde kullanıcı düzenleme alanını göremiyor.
+  useEffect(() => {
+    if (!openInfoEditor) return
+    infoCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [openInfoEditor])
 
   async function changeStatus(newStatus: string) {
     setLoading(true)
@@ -654,7 +673,7 @@ export function WorkOrderDetail({
           </Card>
 
           {/* Şikayet & Notlar (düzenlenebilir) */}
-          <Card>
+          <Card ref={infoCardRef}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>

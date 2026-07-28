@@ -214,7 +214,12 @@ export function OrderList({
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/orders/${order.id}`}
-                        editHref={`/orders/${order.id}?edit=1`}
+                        // Teslim/iptal edilmiş emirde düzenleme kapalı → aksiyonu hiç gösterme.
+                        editHref={
+                          isOrderLocked(order.status as OrderStatus)
+                            ? undefined
+                            : `/orders/${order.id}?edit=1`
+                        }
                       />
                     </div>
                   </td>
@@ -260,7 +265,11 @@ export function OrderList({
               </div>
               <MobileActionsMenu
                 viewHref={`/orders/${order.id}`}
-                editHref={`/orders/${order.id}?edit=1`}
+                editHref={
+                  isOrderLocked(order.status as OrderStatus)
+                    ? undefined
+                    : `/orders/${order.id}?edit=1`
+                }
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">

@@ -130,7 +130,6 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/quotes/${quote.id}`}
-                        editHref={`/quotes/${quote.id}?edit=1`}
                         workOrderHref={quote.vehicle
                           ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
                           : `/orders/new?customerId=${quote.customer.id}`
@@ -180,7 +179,6 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
               </div>
               <MobileActionsMenu
                 viewHref={`/quotes/${quote.id}`}
-                editHref={`/quotes/${quote.id}?edit=1`}
                 workOrderHref={quote.vehicle
                   ? `/orders/new?vehicleId=${quote.vehicle.id}&customerId=${quote.customer.id}`
                   : `/orders/new?customerId=${quote.customer.id}`
