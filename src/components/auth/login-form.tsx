@@ -17,9 +17,16 @@ const formVariants = {
 // On success, send the user to the app (app.bakimx.com in prod). The app origin is
 // derived from the current host (no build-time env needed); a validated ?redirect
 // param (set by middleware when bouncing an unauth app request to login) wins.
-function resolveLoginRedirect(): string {
+//
+// `forcedPath`: sunucunun dayattığı hedef (planı bitmiş workshop → /checkout).
+// ?redirect parametresini KASITLI olarak ezer — kilitli oturum istediği app
+// sayfasına giremez, denemesi anlamsız bir çıkış turuna yol açar.
+function resolveLoginRedirect(forcedPath?: string | null): string {
   const h = window.location.hostname
   const appOrigin = h === "bakimx.com" || h === "www.bakimx.com" ? "https://app.bakimx.com" : ""
+  if (forcedPath && forcedPath.startsWith("/") && !forcedPath.startsWith("//")) {
+    return appOrigin ? `${appOrigin}${forcedPath}` : forcedPath
+  }
   const param = new URLSearchParams(window.location.search).get("redirect")
   if (param) {
     try {
@@ -32,8 +39,20 @@ function resolveLoginRedirect(): string {
   return appOrigin ? `${appOrigin}/dashboard` : "/dashboard"
 }
 
-export function LoginForm() {
+// /login?expired=<lockReason> — planı bittiği için oturumu kapatılan kullanıcıya
+// neden çıkarıldığını söyleyen bilgi notu (bkz. api/auth/logout GET).
+const EXPIRED_NOTICE: Record<string, string> = {
+  trial_expired:
+    "Deneme süreniz doldu. Devam etmek için giriş yapın ve size uygun paketi seçin.",
+  subscription_expired:
+    "Aboneliğiniz sona erdi. Devam etmek için giriş yapın ve paketinizi yenileyin.",
+  subscription_inactive:
+    "Aboneliğiniz aktif değil. Devam etmek için giriş yapın ve paketinizi yenileyin.",
+}
+
+export function LoginForm({ expiredReason }: { expiredReason?: string | null }) {
   const router = useRouter()
+  const expiredNotice = expiredReason ? EXPIRED_NOTICE[expiredReason] : undefined
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -64,7 +83,7 @@ export function LoginForm() {
       })
       const data = await res.json()
       if (data.success) {
-        const dest = new URL(resolveLoginRedirect(), window.location.origin)
+        const dest = new URL(resolveLoginRedirect(data.redirect), window.location.origin)
         if (dest.origin === window.location.origin) {
           router.push(dest.pathname + dest.search)
         } else {
@@ -97,6 +116,11 @@ export function LoginForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {expiredNotice && !error && (
+          <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-sm">
+            {expiredNotice}
+          </div>
+        )}
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {error}
