@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getPlanState } from "@/lib/plan"
+import { getPlanState, isPlanExpiredLock } from "@/lib/plan"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
@@ -40,6 +40,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const plan = getPlanState(workshop)
+
+  // Paywall: deneme/abonelik süresi bitmiş bir oturum uygulamayı hiç göremez.
+  // Login'e atıyoruz; `?expired=` gören middleware oturum cookie'sini siler
+  // (Server Component'te cookie yazılamaz) ve girişten sonra kullanıcı /checkout'a
+  // düşer (bkz. lib/auth-login.ts + api/auth/login/route.ts).
+  // İSTİSNA — impersonation: bu yönlendirme KURUCUNUN oturumunu kapatırdı, o yüzden
+  // kilitli tenant'ı incelerken aşağıdaki salt-okunur mod korunur.
+  if (isPlanExpiredLock(plan.lockReason) && !impersonation) {
+    redirect(`/login?expired=${plan.lockReason}`)
+  }
+
   const cookieStore = await cookies()
   const initialSidebarCollapsed = cookieStore.get("sidebar-state")?.value === "collapsed"
 
@@ -64,28 +75,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // Read-only lock: plan/trial expired. App stays visible but every mutation is
-  // blocked centrally (requireWritableWorkshop / assertWriteAccess). A persistent,
-  // non-dismissable banner drives the workshop to /checkout to recover.
+  // Salt-okunur bant: buraya artık yalnızca kurucu impersonation'ı düşebilir —
+  // gerçek kullanıcı yukarıda çıkışa yönlendirildi. Kurucu kilitli tenant'ı
+  // inceleyebilsin diye veri görünür kalır; yazma işlemleri sunucu tarafında
+  // (requireWritableWorkshop / assertWriteAccess) zaten bloklu.
   const readOnlyLocked = !plan.canWrite
   const readOnlyMessage =
     plan.lockReason === "trial_expired"
-      ? "Deneme süreniz doldu. Verileriniz görüntülenebilir ancak değişiklik yapmak için bir paket satın alın."
-      : "Aboneliğiniz sona erdi. Verileriniz görüntülenebilir ancak değişiklik yapmak için aboneliğinizi yenileyin."
-  const readOnlyCta = plan.lockReason === "trial_expired" ? "Paket Satın Al" : "Yenile"
+      ? "Bu iş yerinin deneme süresi doldu — plan kilidi nedeniyle salt-okunur."
+      : "Bu iş yerinin aboneliği sona erdi — plan kilidi nedeniyle salt-okunur."
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
       {readOnlyLocked && (
-        <div className="bg-destructive text-destructive-foreground text-xs sm:text-sm px-4 py-2 flex flex-wrap items-center justify-center gap-2 text-center">
-          <span>{readOnlyMessage}</span>
-          <Link
-            href="/checkout"
-            className="font-semibold underline underline-offset-2 whitespace-nowrap"
-          >
-            {readOnlyCta}
-          </Link>
+        <div className="bg-destructive text-destructive-foreground text-xs sm:text-sm px-4 py-2 text-center">
+          {readOnlyMessage}
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (

@@ -5,6 +5,7 @@ import {
   verifyCredentials,
   loginRateLimit,
   clientIpFromHeaders,
+  PLAN_EXPIRED_LOGIN_REDIRECT,
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
 
@@ -46,7 +47,12 @@ export async function POST(request: Request) {
     session.workshopId = result.workshopId
     await session.save()
 
-    return NextResponse.json({ success: true })
+    // Planı bitmiş workshop'lar uygulamaya değil satın alma akışına gider; app
+    // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).
+    return NextResponse.json({
+      success: true,
+      redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+    })
   } catch (error) {
     console.error("Login handler error:", error)
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
