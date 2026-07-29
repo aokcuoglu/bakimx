@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.11.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.12.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.12.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.12.0 | Deneme/abonelik bitişi artık paywall: oturum kapanıyor, giriş `/checkout`'a düşüyor | [v0.12.0](./docs/releases/v0.12.0.md) |
+
+Öne çıkanlar: **süresi bitmiş plan artık salt-okunur mod değil, gerçek bir paywall** — eskiden kullanıcı kırmızı bantla panelde dolaşmaya devam ediyordu ("Verileriniz görüntülenebilir"), artık oturumu kapatılıyor ve girişten sonra doğrudan `/checkout`'a düşüyor. Kapsam üç durum: `trial_expired` + `subscription_expired` + `subscription_inactive` (`isPlanExpiredLock`). Çıkış **middleware'de** yapılıyor çünkü bir Server Component cookie yazamaz; bu aynı zamanda RSC soft-navigation'ı da kapsar ve yeni bir `GET` çıkış yüzeyi açmaz. İki döngü koruması: cookie temizlenmezse `/login → /dashboard → /login` sonsuzlaşıyordu, ve `/checkout`'un bekleyen siparişte `/billing`'e (yani `(app)` grubuna) yönlendirmesi kilitli iş yerinde döngü demekti — kilitliyse bekleyen sipariş satır içi gösteriliyor. Kurucu **impersonation muaf** (yoksa admin'in kendi oturumu düşer). Sunucu tarafı yazma kilidi (`assertWriteAccess`) aynen duruyor. Düzeltme: iş emri/teklif/randevu listelerindeki "Düzenle" aksiyonu gerçekten düzenlemeyi açıyor. **Migration YOK.**
 
 ## 0.11.x
 
