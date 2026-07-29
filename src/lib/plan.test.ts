@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test"
-import { hasFeature, getPlanState, assertWriteAccess, PlanWriteLockedError } from "@/lib/plan"
+import {
+  hasFeature,
+  getPlanState,
+  assertWriteAccess,
+  isPlanExpiredLock,
+  PlanWriteLockedError,
+  PLAN_EXPIRED_LOCK_REASONS,
+} from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
   return {
@@ -161,4 +168,28 @@ test("assertWriteAccess throws the suspended message for a rejected workshop", (
     expect((e as PlanWriteLockedError).lockReason).toBe("rejected")
     expect((e as Error).message).toBe("Hesabınız askıya alınmış. Destek ile iletişime geçin.")
   }
+})
+
+test("isPlanExpiredLock covers every pay-to-continue lock reason", () => {
+  const trial = getPlanState(
+    wsFields({ subscriptionStatus: "trialing", trialEndsAt: new Date(Date.now() - 1000) })
+  )
+  const subExpired = getPlanState(wsFields({ currentPeriodEnd: new Date(Date.now() - 1000) }))
+  const inactive = getPlanState(wsFields({ subscriptionStatus: "past_due" }))
+
+  expect(isPlanExpiredLock(trial.lockReason)).toBe(true)
+  expect(isPlanExpiredLock(subExpired.lockReason)).toBe(true)
+  expect(isPlanExpiredLock(inactive.lockReason)).toBe(true)
+  expect(PLAN_EXPIRED_LOCK_REASONS.length).toBe(3)
+})
+
+test("isPlanExpiredLock excludes the approval gate and unlocked plans", () => {
+  const pending = getPlanState(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
+  const rejected = getPlanState(wsFields({ approvalStatus: "rejected" }))
+
+  expect(isPlanExpiredLock(pending.lockReason)).toBe(false)
+  expect(isPlanExpiredLock(rejected.lockReason)).toBe(false)
+  expect(isPlanExpiredLock(getPlanState(wsFields()).lockReason)).toBe(false)
+  expect(isPlanExpiredLock(null)).toBe(false)
+  expect(isPlanExpiredLock("1")).toBe(false)
 })

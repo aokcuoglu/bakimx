@@ -174,7 +174,6 @@ export function AppointmentList({
                     <div className="flex items-center justify-end">
                       <ActionsMenu
                         viewHref={`/appointments/${a.id}`}
-                        editHref={`/appointments/${a.id}?edit=1`}
                         workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
                       />
                     </div>
@@ -227,7 +226,6 @@ export function AppointmentList({
               </div>
               <MobileActionsMenu
                 viewHref={`/appointments/${a.id}`}
-                editHref={`/appointments/${a.id}?edit=1`}
                 workOrderHref={a.vehicle ? `/orders/new?vehicleId=${a.vehicle.id}&customerId=${a.customer.id}` : `/orders/new?customerId=${a.customer.id}`}
               />
             </div>

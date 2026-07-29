@@ -7,6 +7,7 @@ import {
   verifyCredentials,
   loginRateLimit,
   clientIpFromHeaders,
+  PLAN_EXPIRED_LOGIN_REDIRECT,
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
 import { redirect } from "next/navigation"
@@ -46,7 +47,11 @@ export async function loginAction(formData: FormData) {
   session.workshopId = result.workshopId
   await session.save()
 
-  return { success: true }
+  // API rotasıyla aynı sözleşme: planı bitmişse hedef /checkout.
+  return {
+    success: true,
+    redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+  }
 }
 
 export async function logoutAction() {

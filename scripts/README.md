@@ -21,6 +21,7 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | `find-duplicate-phones.ts` | `bun run db:find-dupe-phones` | Çakışan müşteri telefonlarını listeler |
 | `merge-duplicate-customers.ts` | `bun run db:merge-customers` | Yinelenen müşterileri birleştirir |
 | `local-reset.sh` | — | Yerel DB'yi sıfırlar (yalnız geliştirme) |
+| `prod-reset.ts` | `bun run db:prod-reset` | Kiracı verisini siler, katalog/cache tablolarını korur (varsayılan rapor modu; `--confirm` ile uygular) |
 
 ## Operasyon
 

@@ -20,7 +20,11 @@ import type { Workshop } from "@prisma/client"
  *    pending session could otherwise call actions/APIs directly with its
  *    cookie and use the app without ever verifying a card.
  *  - `hasAccess` + PlanLocked ((app)/layout.tsx) is the UX layer: full-screen
- *    lock for pending/rejected, read-only banner for plan-expiry reasons.
+ *    lock for pending/rejected. Plan-EXPIRY reasons (see
+ *    {@link isPlanExpiredLock}) are a hard paywall instead: (app)/layout.tsx
+ *    signs the session out and login lands the workshop on /checkout. The old
+ *    read-only mode (data visible, writes blocked) now only survives for
+ *    founder impersonation, so a locked tenant can still be inspected.
  *
  * Per-feature gating:
  *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
@@ -61,6 +65,27 @@ export type LockReason =
   | "subscription_inactive"
   | "subscription_expired"
   | null
+
+/**
+ * Lock reasons that mean "the workshop has to pay to continue" — as opposed to
+ * the approval gate (`pending`/`rejected`), which is recovered by verifying a
+ * card or contacting support. These three are enforced as a hard paywall:
+ * (app)/layout.tsx signs the session out (GET /api/auth/logout) and the next
+ * login is redirected to /checkout instead of /dashboard.
+ */
+export const PLAN_EXPIRED_LOCK_REASONS = [
+  "trial_expired",
+  "subscription_expired",
+  "subscription_inactive",
+] as const
+
+export type PlanExpiredLockReason = (typeof PLAN_EXPIRED_LOCK_REASONS)[number]
+
+export function isPlanExpiredLock(
+  reason: LockReason | string | null | undefined
+): reason is PlanExpiredLockReason {
+  return PLAN_EXPIRED_LOCK_REASONS.includes(reason as PlanExpiredLockReason)
+}
 
 const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 

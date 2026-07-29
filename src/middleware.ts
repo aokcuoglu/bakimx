@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { isPlanExpiredLock } from "@/lib/plan"
+import { getSession, sessionOptions } from "@/lib/session"
 import type { NextRequest } from "next/server"
 
 // Two subdomains, one container (nginx preserves Host):
@@ -28,6 +29,28 @@ function isPublicPage(pathname: string): boolean {
   return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIX.some((p) => pathname.startsWith(p))
 }
 
+/**
+ * Plan paywall çıkışı. (app)/layout.tsx, deneme/abonelik süresi bitmiş bir
+ * oturumu `/login?expired=<lockReason>`'a yönlendirir; oturum cookie'sini burada
+ * siliyoruz çünkü bir Server Component cookie yazamaz. Middleware hem tam sayfa
+ * hem RSC (soft navigation) isteklerinde çalıştığı için tek güvenilir nokta.
+ *
+ * Cookie temizlenmezse /login → (oturum görülür) → /dashboard → (plan kilidi) →
+ * /login sonsuz döngüsü oluşur; bu yüzden `expired` parametresi varken oturumlu
+ * kullanıcıyı /dashboard'a geri YOLLAMIYORUZ.
+ */
+function isExpiredLogout(request: NextRequest): boolean {
+  return isPlanExpiredLock(request.nextUrl.searchParams.get("expired"))
+}
+
+function clearSession(response: NextResponse): NextResponse {
+  response.cookies.set(sessionOptions.cookieName, "", {
+    ...sessionOptions.cookieOptions,
+    maxAge: 0,
+  })
+  return response
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase()
@@ -52,7 +75,10 @@ export async function middleware(request: NextRequest) {
     if (isPublicPage(pathname)) {
       if (pathname === "/login") {
         const session = await getSession()
-        if (session?.userId) return NextResponse.redirect(new URL("/dashboard", request.url))
+        if (session?.userId) {
+          if (isExpiredLogout(request)) return clearSession(NextResponse.next())
+          return NextResponse.redirect(new URL("/dashboard", request.url))
+        }
       }
       return NextResponse.next()
     }
@@ -96,7 +122,10 @@ export async function middleware(request: NextRequest) {
   if (isPublicPage(pathname)) {
     if (pathname === "/login") {
       const session = await getSession()
-      if (session?.userId) return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+      if (session?.userId) {
+        if (isExpiredLogout(request)) return clearSession(NextResponse.next())
+        return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+      }
     }
     return NextResponse.next()
   }

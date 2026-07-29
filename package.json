@@ -1,6 +1,6 @@
 {
   "name": "bakimx",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -24,6 +24,7 @@
     "db:find-dupe-phones": "bunx tsx scripts/find-duplicate-phones.ts",
     "db:merge-customers": "bunx tsx scripts/merge-duplicate-customers.ts",
     "db:backfill-articles": "bunx tsx scripts/backfill-tecdoc-articles.ts",
+    "db:prod-reset": "bunx tsx scripts/prod-reset.ts",
     "db:studio": "prisma studio",
     "workshop": "bun scripts/workshop-admin.ts",
     "test": "bun test",

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { getPlanState, isPlanExpiredLock, type PlanExpiredLockReason } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
 
 /**
@@ -30,8 +31,23 @@ const LOGIN_MAX_ATTEMPTS = 8
 const LOGIN_WINDOW_MS = 60_000
 
 export type LoginResult =
-  | { ok: true; userId: string; workshopId: string }
+  | {
+      ok: true
+      userId: string
+      workshopId: string
+      /**
+       * Giriş başarılı ama planı bitmiş (deneme/abonelik) workshop'lar için
+       * dolu gelir. Çağıran taraf kullanıcıyı /dashboard yerine /checkout'a
+       * yönlendirir — uygulama rotaları bu durumda oturumu zaten kapatır
+       * (bkz. (app)/layout.tsx). `pending` KAPSAM DIŞI: onlar kart doğrulama
+       * ekranına (PlanLocked) düşmeye devam eder.
+       */
+      planExpiredReason: PlanExpiredLockReason | null
+    }
   | { ok: false; error: string }
+
+/** Planı bitmiş workshop'ların girişten sonra yönlendirileceği sayfa. */
+export const PLAN_EXPIRED_LOGIN_REDIRECT = "/checkout"
 
 /**
  * Extract a best-effort client IP from request headers for rate-limit keying.
@@ -72,7 +88,15 @@ export async function verifyCredentials(email: string, password: string): Promis
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: user.workshopId },
-    select: { id: true, approvalStatus: true },
+    select: {
+      id: true,
+      approvalStatus: true,
+      // Plan alanları: giriş sonrası hedefi belirlemek için (paywall → /checkout).
+      planTier: true,
+      subscriptionStatus: true,
+      trialEndsAt: true,
+      currentPeriodEnd: true,
+    },
   })
   if (!workshop) {
     return { ok: false, error: NO_WORKSHOP_MESSAGE }
@@ -89,5 +113,14 @@ export async function verifyCredentials(email: string, password: string): Promis
     return { ok: false, error: ACCOUNT_REJECTED_MESSAGE }
   }
 
-  return { ok: true, userId: user.id, workshopId: user.workshopId }
+  // Deneme/abonelik bitmişse oturum yine açılır (ödeme yapabilmesi için) ama
+  // kullanıcı uygulama yerine /checkout'a yönlendirilir.
+  const { lockReason } = getPlanState(workshop)
+
+  return {
+    ok: true,
+    userId: user.id,
+    workshopId: user.workshopId,
+    planExpiredReason: isPlanExpiredLock(lockReason) ? lockReason : null,
+  }
 }
