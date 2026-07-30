@@ -1,7 +1,7 @@
 name: "✨ Özellik Talebi"
 description: "Yeni bir özellik veya geliştirme talebi oluşturun"
 title: "[Özellik] "
-labels: ["özellik"]
+labels: ["özellik", "enhancement"]
 body:
   - type: textarea
     id: amac
