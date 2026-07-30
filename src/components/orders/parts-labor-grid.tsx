@@ -36,6 +36,7 @@ import type { OrderItem } from "@/components/orders/order-management-panel"
 import { PartSearchInput } from "@/components/parts/part-search-input"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/parts/tecdoc-part-picker"
+import { VinLinkPrompt } from "@/components/parts/vin-link-prompt"
 import { PartAttrOptionsProvider } from "@/components/parts/part-attr-options"
 import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
@@ -632,10 +633,16 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   return (
     <div className="space-y-3">
       {!linked && (
-        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
-          <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
-        </p>
+        // Bağlama yolu burada da dursun: aksi hâlde katalogsuz araçta kullanıcı
+        // "sınırlı" uyarısıyla baş başa kalıyor (VinLinkPrompt yalnız
+        // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
+        <div className="space-y-2 rounded-lg bg-muted/60 px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
+            <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
+          </p>
+          {vehicle && <VinLinkPrompt vehicle={vehicle} />}
+        </div>
       )}
 
       <PartSearchInput
