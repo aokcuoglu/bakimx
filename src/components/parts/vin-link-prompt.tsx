@@ -95,8 +95,9 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
         setLoading(false)
         return
       }
-      // Brand/model matched but no engine variant → nothing to link parts to.
-      setNotice("Marka/model tanındı ama motor varyantı belirlenemedi — Araç düzenle sayfasından motoru seçin.")
+      // Brand/model matched but the catalog carries no engine variant for that
+      // model → nothing to link parts to (there is no manual variant picker).
+      setNotice("Marka/model tanındı ama katalogda bu modele ait motor varyantı bulunamadı.")
       setLoading(false)
     } catch {
       setError("VIN sorgulama sırasında bir hata oluştu. Lütfen tekrar deneyin.")

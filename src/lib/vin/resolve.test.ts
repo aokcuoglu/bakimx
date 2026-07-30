@@ -8,6 +8,7 @@ import {
   scoreCandidates,
   filterByHints,
   decideResolution,
+  resolveModelLevelCandidates,
   type CandidateTypeRow,
 } from "./resolve"
 import { extractMatchSections, isValidVin, normalizeVin, vinModelKey } from "./types"
@@ -167,6 +168,46 @@ test("filterByHints: FOCUS ruhsat narrows to the single 158634 → resolved", ()
   expect(filtered).toHaveLength(1)
   expect(filtered[0].vehicleTypeId).toBe(158634)
   expect(decideResolution(filtered)).toEqual({ status: "resolved", autoSelected: 158634 })
+})
+
+// The real FIAT TIPO case: tecdoc-vin-check returns manufacturer + THREE models
+// (Saloon / Hatchback / Estate) and `matchingVehicles: []`, so the engine
+// variants can only come from the local catalog snapshot.
+const TIPO_SALOON: CandidateTypeRow[] = [
+  { id: 117867, name: "1.4 (356SXA1B)", cc: 1368, fuelType: "Petrol", hp: 95, kwt: 70, yearFrom: "2015-10", yearTo: null, modelId: 14915, modelName: "TIPO Saloon (356_, 357_)", brandId: 35, brandName: "FIAT" },
+  { id: 117869, name: "1.3 D (356SXB1A)", cc: 1248, fuelType: "Diesel", hp: 95, kwt: 70, yearFrom: "2015-10", yearTo: "2020-10", modelId: 14915, modelName: "TIPO Saloon (356_, 357_)", brandId: 35, brandName: "FIAT" },
+  { id: 146860, name: "1.6 Multijet (357SXG1)", cc: 1598, fuelType: "Diesel", hp: 131, kwt: 96, yearFrom: "2020-11", yearTo: null, modelId: 14915, modelName: "TIPO Saloon (356_, 357_)", brandId: 35, brandName: "FIAT" },
+]
+const TIPO_HATCHBACK: CandidateTypeRow[] = TIPO_SALOON.map((r) => ({
+  ...r, id: r.id + 100000, modelId: 36526, modelName: "TIPO Hatchback (356_, 357_)",
+}))
+
+test("resolveModelLevelCandidates: tek model → dizel/yıl ipuçlarıyla sıralanır", () => {
+  const { candidates, status } = resolveModelLevelCandidates(TIPO_SALOON, { fuelType: "DİZEL", modelYear: 2022 })
+  // Yakıt filtresi benzinliyi eler; 2020-11–aralığı 1.6 Multijet'i başa alır.
+  expect(candidates.map((c) => c.vehicleTypeId)).toEqual([146860, 117869])
+  expect(candidates[0].label).toBe("1.6 Multijet (357SXG1) • 96 kW / 131 HP • 2020-11–…")
+  // fuel(2) + year(2) = 4 → eşik altı, kullanıcı seçer
+  expect(status).toBe("ambiguous")
+})
+
+test("resolveModelLevelCandidates: cc+kW tam tutuyorsa tek modelde otomatik bağlar", () => {
+  const { status, autoSelected } = resolveModelLevelCandidates(TIPO_SALOON, {
+    engineDisplacement: "1598", enginePower: "96 kW", fuelType: "DİZEL", modelYear: 2022,
+  })
+  expect(status).toBe("resolved")
+  expect(autoSelected).toBe(146860)
+})
+
+test("resolveModelLevelCandidates: adaylar birden çok kasa tipine yayılıyorsa asla otomatik seçme", () => {
+  const rows = [...TIPO_SALOON, ...TIPO_HATCHBACK]
+  const { candidates, status, autoSelected } = resolveModelLevelCandidates(rows, {
+    engineDisplacement: "1598", enginePower: "96 kW", fuelType: "DİZEL", modelYear: 2022,
+  })
+  expect(status).toBe("ambiguous")
+  expect(autoSelected).toBeNull()
+  // Kasa tipi VIN'den türetilemez → etiket model adını taşımalı
+  expect(candidates[0].label.startsWith("TIPO ")).toBe(true)
 })
 
 test("extractMatchSections unwraps {array:[...]} and nested envelopes", () => {

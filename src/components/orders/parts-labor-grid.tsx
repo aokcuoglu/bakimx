@@ -36,6 +36,7 @@ import type { OrderItem } from "@/components/orders/order-management-panel"
 import { PartSearchInput } from "@/components/parts/part-search-input"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/parts/tecdoc-part-picker"
+import { VinLinkPrompt } from "@/components/parts/vin-link-prompt"
 import { PartAttrOptionsProvider } from "@/components/parts/part-attr-options"
 import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
@@ -632,10 +633,16 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   return (
     <div className="space-y-3">
       {!linked && (
-        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
-          <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
-        </p>
+        // Bağlama yolu burada da dursun: aksi hâlde katalogsuz araçta kullanıcı
+        // "sınırlı" uyarısıyla baş başa kalıyor (VinLinkPrompt yalnız
+        // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
+        <div className="space-y-2 rounded-lg bg-muted/60 px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
+            <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
+          </p>
+          {vehicle && <VinLinkPrompt vehicle={vehicle} />}
+        </div>
       )}
 
       <PartSearchInput
@@ -775,25 +782,6 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   const [tecdocOpen, setTecdocOpen] = useState(false)
   const [filter, setFilter] = useState<PartFilter>({})
 
-  // Katalog parçasından satırı doldur: ad/SKU/marka/kategori tek seferde.
-  function fillFromArticle(a: ArticleSearchResult) {
-    onCell(row, {
-      name: a.productName,
-      sku: a.articleNo,
-      brand: a.supplierName || null,
-      category: a.categoryName || null,
-      categoryId: a.categoryId || null,
-      // Katalog bağlantısı satıra da yazılır → satırdaki ⓘ detayı açabilsin.
-      tecdocArticleId: a.tecdocArticleId,
-    })
-    setFilter({
-      supplierId: a.supplierId ?? undefined,
-      supplierName: a.supplierName || undefined,
-      categoryId: a.categoryId ?? undefined,
-      categoryName: a.categoryName || undefined,
-    })
-  }
-
   const lineTotal = row.totalPrice != null && row.totalPrice > 0
     ? row.totalPrice
     : (row.unitPrice != null && row.unitPrice > 0 ? row.unitPrice * row.quantity : null)
@@ -810,7 +798,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   return {
     isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
-    tecdocOpen, setTecdocOpen, fillFromArticle, lineTotal, startPrice, commitPrice,
+    tecdocOpen, setTecdocOpen, lineTotal, startPrice, commitPrice,
   }
 }
 
@@ -818,14 +806,20 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-// Katalog parçasının salt-okunur kimliği: [parça no] + ad. Düzenlenebilir alan
-// yerine düz metin — kullanıcı katalog verisini bozamaz, satır yine tam okunur.
-// (Yanlış parça eklendiyse satır silinip yeniden aranarak eklenir.)
-function CatalogIdentity({ row }: { row: Row }) {
+// Liste satırındaki parçanın salt-okunur kimliği: [parça no] + ad.
+// Katalog parçasında veri katalogdan gelir → bozulmamalı. Manuel/dış alım
+// kaleminde ise alan düzenlenebilir GÖRÜNÜP kaydedilmiyordu (katalog aramalı
+// Autocomplete yalnız "sonuç yok + Enter" ile commit ediyor; blur'da yazılan ad
+// sessizce eski haline dönüyordu) → yanıltıcı affordance kaldırıldı.
+// Her iki durumda da ad hatalıysa satır silinip yeniden eklenir.
+function PartIdentity({ row }: { row: Row }) {
+  const title = row.tecdocArticleId != null
+    ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+    : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
   return (
     <div
       className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
-      title="Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+      title={title}
     >
       {row.sku && (
         <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">
@@ -837,39 +831,18 @@ function CatalogIdentity({ row }: { row: Row }) {
   )
 }
 
-// bare: liste satırlarında (statik görünüm) — katalog arama/temizle ikonları
-// gizlenir; alan yine düzenlenebilir kalır (yazınca öneri gelir). Satır-içi
-// aksiyonlar (parça detayı ⓘ, tedarikçi fiyat karşılaştırma) bare'den bağımsız
-// her zaman görünür.
-function PartField({ row, ed, vehicle, onCell, onClear, bare, onShowDetail }: {
-  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onClear: (row: Row) => void; bare?: boolean
+// Liste satırının ad hücresi. Parçada ad SALT-OKUNUR (bkz. PartIdentity);
+// işçilikte serbest metin olarak düzenlenebilir (debounce'lu otosave çalışıyor).
+// Satır-içi aksiyonlar (parça detayı ⓘ, tedarikçi fiyat karşılaştırma) her
+// durumda görünür.
+function PartField({ row, ed, vehicle, onCell, onShowDetail }: {
+  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
   onShowDetail: OnShowDetail
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      {ed.isPart && ed.identityLocked ? (
-        <CatalogIdentity row={row} />
-      ) : ed.isPart ? (
-        <PartSearchInput
-          value={row.name}
-          sku={row.sku}
-          vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
-          supplierId={ed.filter.supplierId ?? null}
-          categoryId={ed.filter.categoryId ?? null}
-          disabled={!ed.editable || row.__saving}
-          placeholder="Parça ara (ör. yağ filtresi)"
-          onNameChange={(name) => onCell(row, { name }, { localOnly: true })}
-          onSelectArticle={ed.fillFromArticle}
-          onShowDetail={(a) =>
-            onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => ed.fillFromArticle(a) })
-          }
-          onCommit={() => { if (row.name.trim()) onCell(row, { name: row.name }) }}
-          onClear={() => { onClear(row); ed.setFilter({}) }}
-          showClear={!bare && ed.editable && !!(row.name || row.sku || row.brand || row.category || row.categoryId)}
-          onSearchClick={bare ? undefined : () => ed.setTecdocOpen(true)}
-          searchDisabled={vehicle?.catalogVehicleTypeId == null}
-          searchTitle={vehicle?.catalogVehicleTypeId == null ? "Araç TecDoc'ta eşleşmedi" : "TecDoc kataloğundan seç"}
-        />
+      {ed.isPart ? (
+        <PartIdentity row={row} />
       ) : (
         <Input
           value={row.name}
@@ -1341,7 +1314,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
       {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
+          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
             // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
@@ -1428,7 +1401,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onClear={onRemove} bare onShowDetail={onShowDetail} />
+        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
       </div>
