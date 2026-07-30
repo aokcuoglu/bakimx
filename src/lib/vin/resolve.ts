@@ -69,8 +69,11 @@ const KW_TOLERANCE = 3
 /** "resolved" needs at least two strong signals (e.g. cc + kW). */
 const RESOLVE_MIN_SCORE = 6
 
-function buildLabel(row: CandidateTypeRow): string {
-  const parts = [row.name]
+/** `withModel` prefixes the model name — needed when the candidates span several
+ *  models (a VIN that matches Saloon/Hatchback/Estate at once), otherwise the
+ *  picker would show the same "1.6 Multijet" row three times. */
+function buildLabel(row: CandidateTypeRow, withModel = false): string {
+  const parts = [withModel ? `${row.modelName} ${row.name}`.trim() : row.name]
   const power = [row.kwt != null ? `${row.kwt} kW` : null, row.hp != null ? `${row.hp} HP` : null]
     .filter(Boolean)
     .join(" / ")
@@ -84,7 +87,7 @@ function buildLabel(row: CandidateTypeRow): string {
  * neither help nor hurt; a hint present on both sides but out of tolerance
  * penalizes. Returns candidates sorted by score desc (id asc as tiebreak).
  */
-export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints): VinCandidate[] {
+export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints, withModel = false): VinCandidate[] {
   const hintCc = parseCc(hints.engineDisplacement)
   const hintKw = parseKw(hints.enginePower)
   const hintFuel = mapRuhsatFuel(hints.fuelType)
@@ -117,7 +120,7 @@ export function scoreCandidates(rows: CandidateTypeRow[], hints: RuhsatHints): V
         brandId: row.brandId,
         brandName: row.brandName,
         modelName: row.modelName,
-        label: buildLabel(row),
+        label: buildLabel(row, withModel),
         name: row.name,
         cc: row.cc,
         kwt: row.kwt,
@@ -165,6 +168,62 @@ export function decideResolution(candidates: VinCandidate[]): { status: "resolve
 
 const MAX_CANDIDATES = 10
 
+/** Local snapshot row (VehicleType joined w/ model+brand) → scoring input. */
+type LocalTypeRow = {
+  id: number
+  name: string
+  cc: number | null
+  fuelType: string | null
+  hp: number | null
+  kwt: number | null
+  yearFrom: string | null
+  yearTo: string | null
+  model: { id: number; name: string; brand: { id: number; name: string } }
+}
+
+function localTypeToRow(t: LocalTypeRow): CandidateTypeRow {
+  return {
+    id: t.id,
+    name: t.name,
+    cc: t.cc,
+    fuelType: t.fuelType,
+    hp: t.hp,
+    kwt: t.kwt,
+    yearFrom: t.yearFrom,
+    yearTo: t.yearTo,
+    modelId: t.model.id,
+    modelName: t.model.name,
+    brandId: t.model.brand.id,
+    brandName: t.model.brand.name,
+  }
+}
+
+/**
+ * Model-level-only VIN match: TecDoc recognizes the model but serves no
+ * vehicle-level row for this VIN (common for TR-market VINs — e.g. FIAT TIPO
+ * returns three models and `matchingVehicles: []`). Without this fallback the
+ * vehicle is saved brand/model-only, `catalogVehicleTypeId` stays null and the
+ * parts catalog is unreachable for it forever — there is no manual engine-variant
+ * picker anywhere in the app.
+ *
+ * The local snapshot carries every engine variant of those models and its ids
+ * ARE TecDoc ids, so the variants are legitimate link targets. They go through
+ * the same scoring/filtering as provider matches; the body type (Saloon vs.
+ * Hatchback vs. Estate) is NOT derivable from the VIN, so whenever candidates
+ * span several models the user always picks — never auto-select.
+ */
+export function resolveModelLevelCandidates(
+  rows: CandidateTypeRow[],
+  hints: RuhsatHints
+): { candidates: VinCandidate[]; status: "resolved" | "ambiguous"; autoSelected: number | null } {
+  const multiModel = new Set(rows.map((r) => r.modelId)).size > 1
+  const scored = scoreCandidates(rows, hints, multiModel)
+  const candidates = filterByHints(scored, hints).slice(0, MAX_CANDIDATES)
+  const spansModels = new Set(candidates.map((c) => c.modelId)).size > 1
+  const decided = spansModels ? { status: "ambiguous" as const, autoSelected: null } : decideResolution(candidates)
+  return { candidates, ...decided }
+}
+
 /**
  * VIN → local catalog resolution. Cache-first lookup (see lookupVin), then the
  * provider's TecDoc ids are joined directly to the local catalog — local ids
@@ -183,8 +242,40 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
 
   const providerVehicles = sections.matchingVehicles
   if (providerVehicles.length === 0) {
-    // No vehicle-level match — fall back to model/brand so the form can still
-    // fill in brand/model text (no vehicleTypeId → parts stay unlinkable).
+    // No vehicle-level match — offer the matched models' engine variants from
+    // the local snapshot so the vehicle is still linkable (see
+    // resolveModelLevelCandidates).
+    const matchedModelIds = [...new Set(sections.matchingModels.map((m) => m.modelId))]
+    const modelVariants = matchedModelIds.length
+      ? await prisma.vehicleType.findMany({
+          where: { modelId: { in: matchedModelIds } },
+          include: { model: { include: { brand: true } } },
+        })
+      : []
+    if (modelVariants.length > 0) {
+      const { candidates, status, autoSelected } = resolveModelLevelCandidates(
+        modelVariants.map(localTypeToRow),
+        hints
+      )
+      // Brand/model text: the auto-selected variant when there is one. Otherwise
+      // fill only what every candidate agrees on — the brand always does, the
+      // model only when a single body type survived.
+      const anchor = candidates.find((c) => c.vehicleTypeId === autoSelected) ?? candidates[0]
+      const oneBrand = new Set(candidates.map((c) => c.brandId)).size === 1
+      const oneModel = new Set(candidates.map((c) => c.modelId)).size === 1
+      return {
+        status,
+        brand: autoSelected != null || oneBrand ? { id: anchor.brandId, name: anchor.brandName } : null,
+        model: autoSelected != null || oneModel ? { id: anchor.modelId, name: anchor.modelName } : null,
+        autoSelected,
+        candidates,
+        cached: lookup.cached,
+      }
+    }
+
+    // The local snapshot carries no variant for these models — fall back to
+    // model/brand so the form can still fill in the text (no vehicleTypeId →
+    // parts stay unlinkable).
     const modelMatch = sections.matchingModels[0]
     if (modelMatch) {
       const model = await prisma.vehicleModel.findUnique({
