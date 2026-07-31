@@ -10,6 +10,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
+import { getLaborCatalog } from "@/lib/labor/queries"
 
 export default async function OrderDetailPage({
   params,
@@ -284,6 +285,8 @@ export default async function OrderDetailPage({
     intakeFormId: intakeForm.id,
   })
 
+  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
+
   return (
     <AppShell
       workshopName={workshop?.name}
@@ -296,6 +299,7 @@ export default async function OrderDetailPage({
         hasAiAdvisor={hasAiAdvisor}
         activity={activity}
         editInitially={editInitially}
+        laborCatalog={laborCatalog}
       />
     </AppShell>
   )

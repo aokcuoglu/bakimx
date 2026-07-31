@@ -19,7 +19,8 @@ import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageChe
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
-import { getMockLaborCatalog, searchLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
+import { searchLaborItems } from "@/lib/labor/search"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 import {
   Autocomplete,
   AutocompleteInput,
@@ -92,7 +93,7 @@ function emptyDraft(type: ItemType, source: "catalog" | "manual"): Row {
 }
 
 export function PartsLaborGrid({
-  orderId, status, items, vehicle, onError, loading,
+  orderId, status, items, vehicle, onError, loading, laborCatalog,
 }: {
   orderId: string
   status: string
@@ -101,6 +102,7 @@ export function PartsLaborGrid({
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
+  laborCatalog: LaborCatalogRow[]
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -257,7 +259,7 @@ export function PartsLaborGrid({
             </ComposerCard>
           </TabsContent>
           <TabsContent value="iscilik" className="pt-4">
-            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} /></ComposerCard>
+            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} catalog={laborCatalog} /></ComposerCard>
           </TabsContent>
         </Tabs>
       )}
@@ -411,13 +413,13 @@ function LaborModeToggle({ mode, onChange, disabled }: {
   )
 }
 
-// İç işçilik ad alanı: serbest-metin Autocomplete + mock katalog önerileri.
-// Yazdıkça searchLaborCatalog önerir; öneri seçilince ad+önerilen fiyat dolar;
-// serbest metin de yazılabilir (kendi işçilik kalemi — fiyat elle girilir).
-function LaborAutocompleteField({ draft, onCell, disabled }: {
-  draft: Row; onCell: OnCell; disabled: boolean
+// İç işçilik ad alanı: serbest-metin Autocomplete + atölyenin kendi işçilik
+// tanımlarından öneriler. Öneri seçilince ad + varsayılan ücret dolar; serbest
+// metin de yazılabilir (katalogda olmayan işçilik — fiyat elle girilir).
+function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
+  draft: Row; onCell: OnCell; disabled: boolean; catalog: LaborCatalogRow[]
 }) {
-  const items = useMemo(() => searchLaborCatalog(draft.name), [draft.name])
+  const items = useMemo(() => searchLaborItems(catalog, draft.name), [catalog, draft.name])
   return (
     <Autocomplete
       items={items}
@@ -425,12 +427,12 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
       filter={null}
       autoHighlight
       openOnInputClick
-      itemToStringValue={(e: LaborCatalogEntry) => e.name}
+      itemToStringValue={(e: LaborCatalogRow) => e.name}
       onValueChange={(v: string) => {
-        // Ad, tanımlı (mock) bir işçiliğe birebir eşleşiyorsa önerilen fiyatı taşı;
-        // eşleşme bozulunca/temizlenince fiyatı da düşür ki seçili katalog fiyatı
-        // özel/serbest kaleme sızmasın (spec: temizlenince unitPrice=null).
-        const match = getMockLaborCatalog().find((e) => e.name === v)
+        // Ad tanımlı bir işçiliğe birebir eşleşiyorsa varsayılan ücreti taşı;
+        // eşleşme bozulunca/temizlenince fiyatı da düşür ki katalog fiyatı
+        // serbest kaleme sızmasın.
+        const match = catalog.find((e) => e.name === v)
         onCell(draft, { name: v, unitPrice: match ? match.defaultPriceKurus : null })
       }}
     >
@@ -445,9 +447,11 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
         }
       />
       <AutocompleteContent>
-        <AutocompleteEmpty>Tanımlı işçilik yok — kendi kaleminizi yazabilirsiniz</AutocompleteEmpty>
+        <AutocompleteEmpty>
+          Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz
+        </AutocompleteEmpty>
         <AutocompleteList>
-          {(e: LaborCatalogEntry) => (
+          {(e: LaborCatalogRow) => (
             <AutocompleteItem
               key={e.id}
               value={e}
@@ -456,7 +460,9 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{e.name}</span>
                 <span className="block text-[11px] text-muted-foreground">
-                  {e.category} · {formatTRY(e.defaultPriceKurus)}
+                  {[e.category, e.defaultPriceKurus != null ? formatTRY(e.defaultPriceKurus) : null]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </span>
             </AutocompleteItem>
@@ -467,11 +473,11 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
   )
 }
 
-// ── İşçilik composer: İç (mock öneri + serbest) / Dış (serbest) işçilik.
+// ── İşçilik composer: İç (katalog öneri + serbest) / Dış (serbest) işçilik.
 // mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
 // (draft, arama kutusu) temiz sıfırlanır.
-function LaborComposer({ onAdd, disabled }: {
-  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+function LaborComposer({ onAdd, disabled, catalog }: {
+  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; catalog: LaborCatalogRow[]
 }) {
   const [nonce, setNonce] = useState(0)
   const [mode, setMode] = useState<"labor" | "external_labor">("labor")
@@ -484,13 +490,14 @@ function LaborComposer({ onAdd, disabled }: {
         onAdd={onAdd}
         disabled={disabled}
         onAdded={() => setNonce((n) => n + 1)}
+        catalog={catalog}
       />
     </div>
   )
 }
 
-function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
-  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
+  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void; catalog: LaborCatalogRow[]
 }) {
   const [draft, setDraft] = useState<Row>(() => emptyDraft(mode, "manual"))
   const [submitting, setSubmitting] = useState(false)
@@ -502,8 +509,8 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
   async function submit() {
     if (!draft.name.trim() || submitting) return
     setSubmitting(true)
-    // Tanımlı (mock) işçilik adına birebir eşleşme → catalog rozeti; değilse manuel.
-    const isDefined = mode === "labor" && getMockLaborCatalog().some((e) => e.name === draft.name.trim())
+    // Atölyenin tanımlı işçiliğine birebir eşleşme → katalog rozeti; değilse manuel.
+    const isDefined = mode === "labor" && catalog.some((e) => e.name === draft.name.trim())
     const ok = await onAdd({ ...draft, source: isDefined ? "catalog" : "manual" })
     if (ok) onAdded()
     else setSubmitting(false)
@@ -524,7 +531,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
             className="text-sm"
           />
         ) : (
-          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} />
+          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
         )}
       </Field>
       <div className="flex items-end gap-3">
