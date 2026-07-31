@@ -163,15 +163,20 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
         </CardContent>
       </Card>
 
-      <div className="hidden md:block">
+      {/* Tablo 8 sütunlu: lg altında kart görünümü kullanılır, lg-1180px arasında yatay kaydırılır
+          (önceden overflow-hidden idi → Durum/İşlem sütunları erişilemeden kırpılıyordu). */}
+      <div className="hidden lg:block">
         <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tedarikçi</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Yetkili</th>
+                {/* Yetkili + e-posta yalnız çok geniş ekranda: 8 sütun ancak 2xl'de kaydırmasız sığıyor,
+                    dar ekranda bu ikisi gizlenince tablo tam oturur (bilgiler kartta/detayda mevcut). */}
+                <th className="hidden 2xl:table-cell text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Yetkili</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Telefon</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">E-posta</th>
+                <th className="hidden 2xl:table-cell text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">E-posta</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">İl / İlçe</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parça</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Durum</th>
@@ -181,7 +186,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
             <tbody className="divide-y divide-border">
               {suppliers.map((s) => (
                 <tr key={s.id} className="hover:bg-muted transition-colors">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 min-w-[200px]">
                     <Link href={`/suppliers/${s.id}`} className="font-medium text-foreground hover:text-primary">
                       {s.name}
                     </Link>
@@ -189,18 +194,18 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                       <span className="block text-[11px] text-muted-foreground">{s.categories.join(", ")}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">{s.contactPerson || <span className="text-muted-foreground/50">—</span>}</td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-foreground whitespace-nowrap">{s.contactPerson || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
                     {s.phone ? (
                       <a href={`tel:${s.phone}`} className="text-primary hover:text-primary/80">{s.phone}</a>
                     ) : <span className="text-muted-foreground/50">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm">
                     {s.email ? (
                       <a href={`mailto:${s.email}`} className="text-primary hover:text-primary/80 truncate block max-w-[180px]">{s.email}</a>
                     ) : <span className="text-muted-foreground/50">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">
+                  <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
                     {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground/50">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -211,7 +216,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                   <td className="px-4 py-3 text-center">
                     <SupplierStatusBadge isActive={s.isActive} />
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
                         <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}`} />} />}>
@@ -243,6 +248,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               ))}
             </tbody>
           </table>
+          </div>
           {suppliers.length === 0 && (
             <div className="text-center py-12 text-sm text-muted-foreground">
               <Truck className="size-10 mx-auto mb-2 text-muted-foreground/50" />
@@ -252,7 +258,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
         </div>
       </div>
 
-      <div className="md:hidden space-y-3">
+      <div className="lg:hidden space-y-3">
         {suppliers.map((s) => (
           <Link key={s.id} href={`/suppliers/${s.id}`}>
             <Card size="sm">
@@ -260,14 +266,22 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground truncate">{s.name}</p>
+                    {s.categories.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground truncate">{s.categories.join(", ")}</p>
+                    )}
                     {s.contactPerson && <p className="text-[11px] text-muted-foreground">{s.contactPerson}</p>}
                   </div>
                   <SupplierStatusBadge isActive={s.isActive} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {s.phone && <span>{s.phone}</span>}
-                    {s.city && <span>• {[s.city, s.district].filter(Boolean).join(" / ")}</span>}
+                    {s.city && (
+                      <span className="truncate">
+                        {s.phone && "• "}
+                        {[s.city, s.district].filter(Boolean).join(" / ")}
+                      </span>
+                    )}
                   </div>
                   <span className="inline-flex items-center gap-1 font-medium text-foreground">
                     <Truck className="size-3" /> {s.partCount} parça
