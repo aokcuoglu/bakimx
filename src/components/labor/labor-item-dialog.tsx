@@ -37,6 +37,13 @@ export function LaborItemDialog({
   const [submitting, setSubmitting] = useState(false)
 
   // Her açılışta formu düzenlenen kalemden (veya boştan) yeniden doldur.
+  // Bağımlılık kasıtlı olarak `item` nesnesi değil `item?.id` (ilkel anahtar):
+  // parent `item` prop'unu türetilmiş bir ifadeden (ör. rows.find(...)) besliyorsa
+  // her render'da yeni bir referans üretir; nesneyi bağımlılığa koymak modal açıkken
+  // parent her tazelendiğinde formu sıfırlar ve kullanıcının o an yazdığı,
+  // henüz kaydedilmemiş değerleri sessizce eski değerlere döndürür (sessiz veri kaybı).
+  // `item?.id` değişince (farklı kaleme geçildiğinde) veya modal kapanıp açıldığında
+  // sıfırlama yine çalışır; aynı kalem düzenlenirken referans değişimi formu bozmaz.
   useEffect(() => {
     if (!open) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- açılışta formu sıfırla
@@ -46,7 +53,8 @@ export function LaborItemDialog({
     setPriceDraft(item?.defaultPriceKurus != null ? String(kurusToLira(item.defaultPriceKurus)) : "")
     setDescription(item?.description ?? "")
     setIsActive(item?.isActive ?? true)
-  }, [open, item])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- kasıtlı: yalnız kalem KİMLİĞİ değişince sıfırla, nesne referansı değişince değil — kullanıcının yazdığı değerler korunsun
+  }, [open, item?.id])
 
   const categoryItems = categories.filter((c) =>
     c.toLocaleLowerCase("tr").includes(category.toLocaleLowerCase("tr"))
