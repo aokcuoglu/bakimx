@@ -1103,8 +1103,12 @@ Gövdeye (fatura state'lerinin altına):
   async function handleStatusSelect(next: string) {
     if (!next || next === order.status) return
     // Teslim müşteri onaylı (OTP) verilir — dropdown'dan doğrudan yazılmaz.
+    // OTP paneli sekme şeridinin ÜSTÜNDE açılıyor, bu dropdown ise sekme
+    // içeriğinin altında; mobilde hiçbir şey olmamış gibi görünmesin diye
+    // kullanıcıya nereye bakacağını söylüyoruz.
     if (next === "delivered") {
       onRequestDelivery?.()
+      toast.info("Teslim onay kodu paneli sayfanın üstünde açıldı")
       return
     }
     setChangingStatus(true)
@@ -1204,8 +1208,12 @@ Task 7'deki `<InfoRow label="Servise Geliş Nedeni" ... />` yerine:
                   disabled={changingReason}
                 >
                   <SelectTrigger className="w-[170px]">
-                    <SelectValue placeholder="Seçiniz">
-                      {(value: string | null) => (value ? arrivalReasonLabel(value) : null)}
+                    {/* Base UI'da `children` verilince `placeholder` HİÇ render
+                        edilmez ve render fonksiyonundan null dönerse tetikleyici
+                        bomboş kalır (kırık kontrol gibi görünür). arrivalReasonLabel
+                        boş/null değerde zaten "—" döndüğü için koşulsuz çağırıyoruz. */}
+                    <SelectValue>
+                      {(value: string | null) => arrivalReasonLabel(value)}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
