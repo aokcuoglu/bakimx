@@ -67,6 +67,7 @@ export const TENANT_TABLES = [
   "StockMovement",
   "AuditLog",
   "Supplier",
+  "PartSupplierPrice",
   "VehiclePassportToken",
   "OcrLog",
   "ChecklistItem",

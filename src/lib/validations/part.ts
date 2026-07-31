@@ -1,8 +1,47 @@
 import { z } from "zod/v4"
 
+/** Form katmanı: fiyat TRY (lira) girilir. */
+export const partSupplierPriceFormRowSchema = z.object({
+  supplierId: z.string().min(1, "Tedarikçi seçilmelidir"),
+  purchasePrice: z.coerce.number().min(0, "Alış fiyatı negatif olamaz").default(0),
+  supplierSku: z.string().optional().default(""),
+  isPreferred: z.boolean().default(false),
+})
+
+/** Sunucu katmanı: fiyat kuruş (tam sayı). */
+export const partSupplierPriceRowSchema = z.object({
+  supplierId: z.string().min(1, "Tedarikçi seçilmelidir"),
+  purchasePrice: z.coerce
+    .number()
+    .int("Alış fiyatı kuruş (tam sayı) olmalıdır")
+    .min(0, "Alış fiyatı negatif olamaz"),
+  supplierSku: z.string().optional().default(""),
+  isPreferred: z.boolean().default(false),
+})
+
+function withRowRules<T extends z.ZodType<{ supplierId: string; isPreferred: boolean }[]>>(schema: T) {
+  return schema
+    .refine(
+      (rows) => new Set(rows.map((r) => r.supplierId)).size === rows.length,
+      "Aynı tedarikçi birden fazla eklenemez"
+    )
+    .refine(
+      (rows) => rows.length === 0 || rows.filter((r) => r.isPreferred).length === 1,
+      "Bir varsayılan tedarikçi seçilmelidir"
+    )
+}
+
+export const partSupplierPricesFormSchema = withRowRules(
+  z.array(partSupplierPriceFormRowSchema).max(20, "En fazla 20 tedarikçi eklenebilir")
+)
+
+export const partSupplierPricesSchema = withRowRules(
+  z.array(partSupplierPriceRowSchema).max(20, "En fazla 20 tedarikçi eklenebilir")
+)
+
 export const partSchema = z.object({
   name: z.string().min(1, "Parça adı zorunludur"),
-  sku: z.string().optional().default(""),
+  sku: z.string().min(1, "Parça kodu zorunludur"),
   oemNo: z.string().optional().default(""),
   brand: z.string().optional().default(""),
   category: z.string().optional().default(""),
@@ -10,7 +49,6 @@ export const partSchema = z.object({
   unit: z.string().min(1, "Birim zorunludur").default("adet"),
   stockQty: z.coerce.number().min(0).default(0),
   criticalStockQty: z.coerce.number().min(0).default(0),
-  purchasePrice: z.coerce.number().min(0).optional().default(0), // TRY in the form; converted to kuruş on submit
   salePrice: z.coerce.number().min(0).optional().default(0), // TRY in the form; converted to kuruş on submit
   currency: z.enum(["TRY", "USD", "EUR"]).default("TRY"),
   supplierName: z.string().optional().default(""),
@@ -18,13 +56,14 @@ export const partSchema = z.object({
   supplierId: z.string().optional().default(""),
   shelfLocation: z.string().optional().default(""),
   barcode: z.string().optional().default(""),
+  supplierPrices: partSupplierPricesFormSchema.default([]),
 })
 
 export type PartFormValues = z.infer<typeof partSchema>
 
 export const partCreateSchema = z.object({
   name: z.string().min(1, "Parça adı zorunludur"),
-  sku: z.string().optional().or(z.literal("")),
+  sku: z.string().min(1, "Parça kodu zorunludur"),
   oemNo: z.string().optional().or(z.literal("")),
   brand: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),

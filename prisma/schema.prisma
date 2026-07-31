@@ -63,6 +63,7 @@ model Workshop {
   partStockItems         PartStockItem[]
   stockMovements         StockMovement[]
   suppliers              Supplier[]
+  partSupplierPrices     PartSupplierPrice[]
   collections            CollectionPayment[]
   ocrLogs                OcrLog[]
   passportTokens         VehiclePassportToken[]
@@ -1065,6 +1066,7 @@ model PartStockItem {
   movements         StockMovement[]
   serviceOrderItems ServiceOrderItem[]
   quoteItems        QuoteItem[]
+  supplierPrices    PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])
@@ -1074,6 +1076,28 @@ model PartStockItem {
   @@index([category])
   @@index([stockQty])
   @@index([isActive])
+  @@index([supplierId])
+}
+
+model PartSupplierPrice {
+  id            String        @id @default(cuid())
+  workshopId    String
+  workshop      Workshop      @relation(fields: [workshopId], references: [id])
+  partId        String
+  part          PartStockItem @relation(fields: [partId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+  purchasePrice Int // kuruş
+  currency      String        @default("TRY")
+  supplierSku   String? // tedarikçinin kendi parça kodu
+  isPreferred   Boolean       @default(false)
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([partId, supplierId])
+  @@index([workshopId])
+  @@index([partId])
   @@index([supplierId])
 }
 
@@ -1142,6 +1166,7 @@ model Supplier {
 
   parts      PartStockItem[]
   orderItems ServiceOrderItem[]
+  partPrices PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])

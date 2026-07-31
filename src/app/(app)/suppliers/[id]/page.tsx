@@ -2,6 +2,7 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { SupplierDetail } from "@/components/suppliers/supplier-detail"
 import { getSupplierById, getSupplierCriticalParts } from "@/lib/suppliers/queries"
+import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 
 export default async function SupplierDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -12,6 +13,13 @@ export default async function SupplierDetailPage(props: { params: Promise<{ id: 
   if (!supplier) notFound()
 
   const criticalParts = await getSupplierCriticalParts(user.workshopId, id)
+  const partPrices = await prisma.partSupplierPrice.findMany({
+    where: { workshopId: user.workshopId, supplierId: id },
+    select: { partId: true, purchasePrice: true, currency: true },
+  })
+  const priceByPartId = Object.fromEntries(
+    partPrices.map((p) => [p.partId, { purchasePrice: p.purchasePrice, currency: p.currency }])
+  )
 
   const serialized = {
     ...supplier,
@@ -27,7 +35,7 @@ export default async function SupplierDetailPage(props: { params: Promise<{ id: 
   return (
     <AppShell workshopName={workshop?.name} pageTitle={supplier.name}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <SupplierDetail supplier={serialized as any} criticalParts={criticalParts} />
+      <SupplierDetail supplier={serialized as any} criticalParts={criticalParts} priceByPartId={priceByPartId} />
     </AppShell>
   )
 }

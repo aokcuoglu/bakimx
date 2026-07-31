@@ -5,9 +5,62 @@ import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
-import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validations/part"
+import { partCreateSchema, partUpdateSchema, stockMovementSchema, partSupplierPricesSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
+import { normalizeSupplierPriceRows, derivePartPricing, shouldPreserveDerivedPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
+
+type SupplierPricesResult =
+  | { error: string }
+  | { skip: true }
+  | { rows: SupplierPriceRow[]; derived: { purchasePrice: number | null; supplierId: string | null } }
+
+/**
+ * `supplierPrices` JSON alanını okur, doğrular ve tedarikçilerin bu atölyeye
+ * ait olduğunu teyit eder. workshopId çağırandan gelir — client'a güvenilmez.
+ *
+ * Girdiye göre üç farklı sonuç:
+ * - Alan FormData'da **hiç yok** (`formData.get` → `null`): `{ skip: true }` —
+ *   çağıran tedarikçi satırlarına dokunmamalı (silmemeli, türetilmiş alanları
+ *   değiştirmemeli). Alanı göndermeyen bir çağıran = "bu konuda bilgim yok",
+ *   "hepsini sil" değil.
+ * - Alan boş string (`""`) ya da geçerli JSON'da boş dizi (`"[]"`): satırlar
+ *   temizlenir, türetilmiş `purchasePrice`/`supplierId` `null`'a düşer. Bu,
+ *   alanın **açıkça gönderildiği** ve kullanıcının tüm satırları sildiği
+ *   anlamına gelir. Bugünkü tek çağıran (parça formu) her zaman geçerli JSON
+ *   gönderdiği için pratikte `""` yolu hiç tetiklenmez, ama boş dizi (`"[]"`)
+ *   ile aynı "temizle" davranışını korumak için burada da temizleme yapılır.
+ * - Alan dolu JSON dizisi: satırlar doğrulanır/normalize edilir, tedarikçi
+ *   sahipliği tek sorguda teyit edilir.
+ */
+async function parseSupplierPrices(formData: FormData, workshopId: string): Promise<SupplierPricesResult> {
+  const raw = formData.get("supplierPrices")
+  if (raw === null) {
+    return { skip: true }
+  }
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return { rows: [], derived: { purchasePrice: null, supplierId: null } }
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(raw)
+  } catch {
+    return { error: "Tedarikçi fiyatları okunamadı" }
+  }
+
+  const parsed = partSupplierPricesSchema.safeParse(json)
+  if (!parsed.success) return { error: getValidationError(parsed) ?? "Tedarikçi fiyatları geçersiz" }
+
+  const rows = normalizeSupplierPriceRows(parsed.data)
+  if (rows.length > 0) {
+    const ids = rows.map((r) => r.supplierId)
+    const owned = await prisma.supplier.count({ where: { workshopId, id: { in: ids } } })
+    if (owned !== ids.length) return { error: "Geçersiz tedarikçi" }
+  }
+
+  return { rows, derived: derivePartPricing(rows) }
+}
 
 export async function createPartAction(formData: FormData) {
   const { user } = await requireWritableWorkshop()
@@ -23,10 +76,12 @@ export async function createPartAction(formData: FormData) {
   const parsed = partCreateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
 
-  if (parsed.data.supplierId) {
-    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
-    if (!supplier) return { error: "Geçersiz tedarikçi" }
-  }
+  const prices = await parseSupplierPrices(formData, workshopId)
+  if ("error" in prices) return { error: prices.error }
+  // Yeni kayıtta korunacak önceki bir değer yok — alan gönderilmemişse (skip)
+  // türetilmiş fiyat/tedarikçi null kalır, satır yazılmaz.
+  const priceRows = "skip" in prices ? [] : prices.rows
+  const priceDerived = "skip" in prices ? { purchasePrice: null, supplierId: null } : prices.derived
 
   const part = await prisma.partStockItem.create({
     data: {
@@ -40,16 +95,30 @@ export async function createPartAction(formData: FormData) {
       unit: parsed.data.unit || "adet",
       stockQty: parsed.data.stockQty,
       criticalStockQty: parsed.data.criticalStockQty,
-      purchasePrice: parsed.data.purchasePrice ?? null,
+      purchasePrice: priceDerived.purchasePrice,
       salePrice: parsed.data.salePrice ?? null,
       currency: parsed.data.currency || "TRY",
-      supplierName: parsed.data.supplierName || null,
-      supplierPhone: parsed.data.supplierPhone || null,
-      supplierId: parsed.data.supplierId || null,
+      supplierName: null,
+      supplierPhone: null,
+      supplierId: priceDerived.supplierId,
       shelfLocation: parsed.data.shelfLocation || null,
       barcode: parsed.data.barcode || null,
     },
   })
+
+  if (priceRows.length > 0) {
+    await prisma.partSupplierPrice.createMany({
+      data: priceRows.map((r) => ({
+        workshopId,
+        partId: part.id,
+        supplierId: r.supplierId,
+        purchasePrice: r.purchasePrice,
+        currency: parsed.data.currency || "TRY",
+        supplierSku: r.supplierSku || null,
+        isPreferred: r.isPreferred,
+      })),
+    })
+  }
 
   if (parsed.data.stockQty > 0) {
     await prisma.stockMovement.create({
@@ -78,6 +147,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
 
   const part = await prisma.partStockItem.findFirst({
     where: { id: partId, workshopId },
+    include: { _count: { select: { supplierPrices: true } } },
   })
   if (!part) return { error: "Parça bulunamadı" }
 
@@ -91,37 +161,72 @@ export async function updatePartAction(partId: string, formData: FormData) {
   const parsed = partUpdateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
 
-  if (parsed.data.supplierId) {
-    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
-    if (!supplier) return { error: "Geçersiz tedarikçi" }
-  }
-
-  await prisma.partStockItem.updateMany({
-    where: { id: partId, workshopId },
-    data: {
-      name: parsed.data.name,
-      sku: parsed.data.sku || null,
-      oemNo: parsed.data.oemNo || null,
-      brand: parsed.data.brand || null,
-      category: parsed.data.category || null,
-      description: parsed.data.description || null,
-      unit: parsed.data.unit || "adet",
-      stockQty: parsed.data.stockQty,
-      criticalStockQty: parsed.data.criticalStockQty,
-      purchasePrice: parsed.data.purchasePrice ?? null,
-      salePrice: parsed.data.salePrice ?? null,
-      currency: parsed.data.currency || "TRY",
-      supplierName: parsed.data.supplierName || null,
-      supplierPhone: parsed.data.supplierPhone || null,
-      supplierId: parsed.data.supplierId || null,
-      shelfLocation: parsed.data.shelfLocation || null,
-      barcode: parsed.data.barcode || null,
-    },
+  const prices = await parseSupplierPrices(formData, workshopId)
+  if ("error" in prices) return { error: prices.error }
+  // Alan hiç gönderilmemişse (skip) tedarikçi satırlarına dokunulmaz: ne
+  // deleteMany/createMany çalışır ne de türetilmiş purchasePrice/supplierId
+  // değiştirilir (anahtarlar updateMany data'sından tamamen çıkarılır, ki
+  // Prisma mevcut değerleri korusun).
+  //
+  // Aynı koruma, satırı hiç olmayan ESKİ parçalara boş liste geldiğinde de
+  // uygulanır: backfill satır üretemediği için (ör. fiyatı var carisi yok)
+  // boş liste "hepsini sil" değil "taşınacak veri yoktu" demektir — bkz.
+  // shouldPreserveDerivedPricing.
+  const touchSupplierPrices = !("skip" in prices)
+  const priceRows = "skip" in prices ? [] : prices.rows
+  const preserveDerived = shouldPreserveDerivedPricing({
+    touched: touchSupplierPrices,
+    incomingRowCount: priceRows.length,
+    existingRowCount: part._count.supplierPrices,
   })
+  // `"skip" in prices` mantıken gereksiz (preserveDerived skip'te zaten true)
+  // ama TypeScript'in `prices.derived`'i daraltması için gerekli.
+  const priceDerivedUpdate = preserveDerived || "skip" in prices
+    ? {}
+    : { purchasePrice: prices.derived.purchasePrice, supplierId: prices.derived.supplierId }
+
+  await prisma.$transaction([
+    ...(touchSupplierPrices ? [prisma.partSupplierPrice.deleteMany({ where: { partId, workshopId } })] : []),
+    ...(touchSupplierPrices && priceRows.length > 0
+      ? [
+          prisma.partSupplierPrice.createMany({
+            data: priceRows.map((r) => ({
+              workshopId,
+              partId,
+              supplierId: r.supplierId,
+              purchasePrice: r.purchasePrice,
+              currency: parsed.data.currency || "TRY",
+              supplierSku: r.supplierSku || null,
+              isPreferred: r.isPreferred,
+            })),
+          }),
+        ]
+      : []),
+    prisma.partStockItem.updateMany({
+      where: { id: partId, workshopId },
+      data: {
+        name: parsed.data.name,
+        sku: parsed.data.sku || null,
+        oemNo: parsed.data.oemNo || null,
+        brand: parsed.data.brand || null,
+        category: parsed.data.category || null,
+        description: parsed.data.description || null,
+        unit: parsed.data.unit || "adet",
+        stockQty: parsed.data.stockQty,
+        criticalStockQty: parsed.data.criticalStockQty,
+        salePrice: parsed.data.salePrice ?? null,
+        currency: parsed.data.currency || "TRY",
+        shelfLocation: parsed.data.shelfLocation || null,
+        barcode: parsed.data.barcode || null,
+        ...priceDerivedUpdate,
+      },
+    }),
+  ])
 
   await AuditLogAction(workshopId, user.id, "PartStockItem", partId, "part_updated")
   revalidatePath(`/parts/${partId}`)
   revalidatePath("/parts")
+  revalidatePath("/suppliers")
   return { success: true, id: partId }
 }
 

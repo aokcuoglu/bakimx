@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badge"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
 import { formatPrice, formatStockQty } from "@/lib/parts/format"
@@ -25,6 +25,8 @@ type SupplierPart = {
   isActive: boolean
   category: string | null
   brand: string | null
+  /** Bu tedarikçi parçanın varsayılan (alış fiyatını belirleyen) tedarikçisi mi. */
+  isDefaultSupplier: boolean
   createdAt: string
   updatedAt: string
 }
@@ -56,9 +58,11 @@ type SupplierType = {
 export function SupplierDetail({
   supplier,
   criticalParts,
+  priceByPartId = {},
 }: {
   supplier: SupplierType
   criticalParts: CriticalSupplierPart[]
+  priceByPartId?: Record<string, { purchasePrice: number; currency: string }>
 }) {
   const router = useRouter()
 
@@ -172,21 +176,31 @@ export function SupplierDetail({
               {supplier.parts.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   <Boxes className="size-8 mx-auto mb-2 text-muted-foreground/50" />
-                  Bu tedarikçiye bağlı parça yok.
+                  Bu tedarikçiyle ilişkili parça yok.
                 </div>
               ) : (
                 <div className="space-y-1.5">
                   {supplier.parts.map((p) => (
                     <Link key={p.id} href={`/parts/${p.id}`}>
-                      <div className="flex items-center justify-between p-2.5 bg-muted rounded-lg text-sm hover:bg-muted transition-colors">
+                      <div className="flex items-center justify-between flex-wrap gap-y-1 p-2.5 bg-muted rounded-lg text-sm hover:bg-muted transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="font-medium text-foreground truncate">{p.name}</span>
+                          {p.isDefaultSupplier && (
+                            <Badge variant="secondary" className="text-[10px] shrink-0" title="Parçanın alış fiyatı bu tedarikçiden alınır">
+                              Varsayılan
+                            </Badge>
+                          )}
                           {p.sku && <span className="text-[10px] font-mono text-muted-foreground bg-border px-1.5 py-0.5 rounded shrink-0">{p.sku}</span>}
                           {p.oemNo && <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">{p.oemNo}</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
                           <span className="text-xs font-semibold text-foreground w-16 text-right">{formatStockQty(p.stockQty)} {p.unit}</span>
+                          {priceByPartId[p.id] && (
+                            <span className="text-xs font-semibold text-foreground w-20 text-right">
+                              {formatPrice(priceByPartId[p.id].purchasePrice, priceByPartId[p.id].currency)}
+                            </span>
+                          )}
                           {p.salePrice != null && (
                             <span className="text-xs text-muted-foreground w-20 text-right">{formatPrice(p.salePrice)}</span>
                           )}

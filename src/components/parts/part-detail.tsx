@@ -47,6 +47,15 @@ type PartType = {
   createdAt: string
   updatedAt: string
   movements: Movement[]
+  supplierPrices: {
+    id: string
+    supplierId: string
+    supplierName: string
+    purchasePrice: number
+    currency: string
+    supplierSku: string | null
+    isPreferred: boolean
+  }[]
 }
 
 export function PartDetail({ part }: { part: PartType }) {
@@ -196,7 +205,10 @@ export function PartDetail({ part }: { part: PartType }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              <PriceRow label="Alış Fiyatı" value={part.purchasePrice != null ? formatPrice(part.purchasePrice, part.currency) : "—"} />
+              <PriceRow
+                label="Alış Fiyatı (varsayılan)"
+                value={part.purchasePrice != null ? formatPrice(part.purchasePrice, part.currency) : "—"}
+              />
               <PriceRow label="Satış Fiyatı" value={part.salePrice != null ? formatPrice(part.salePrice, part.currency) : "—"} />
               <PriceRow label="Para Birimi" value={part.currency} />
             </CardContent>
@@ -210,7 +222,29 @@ export function PartDetail({ part }: { part: PartType }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              {part.supplier ? (
+              {part.supplierPrices.length > 0 ? (
+                <div className="space-y-1.5">
+                  {part.supplierPrices.map((sp) => (
+                    <Link key={sp.id} href={`/suppliers/${sp.supplierId}`}>
+                      <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted text-sm hover:bg-muted/70 transition-colors">
+                        <div className="min-w-0">
+                          <span className="font-medium text-foreground truncate block">{sp.supplierName}</span>
+                          {sp.supplierSku && (
+                            <span className="text-[10px] font-mono text-muted-foreground">{sp.supplierSku}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {sp.isPreferred && <span className="text-[10px] font-medium text-primary">Varsayılan</span>}
+                          <span className="font-semibold text-foreground">{formatPrice(sp.purchasePrice, sp.currency)}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Tedarikçi fiyatı girilmemiş.</p>
+              )}
+              {part.supplierPrices.length === 0 && part.supplier ? (
                 <>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Tedarikçi</span>
@@ -225,14 +259,16 @@ export function PartDetail({ part }: { part: PartType }) {
                   )}
                 </>
               ) : (
-                <>
-                  <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
-                  {part.supplierPhone && (
-                    <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
-                      {part.supplierPhone}
-                    </a>
-                  )}
-                </>
+                part.supplierPrices.length === 0 && (
+                  <>
+                    <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
+                    {part.supplierPhone && (
+                      <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
+                        {part.supplierPhone}
+                      </a>
+                    )}
+                  </>
+                )
               )}
             </CardContent>
           </Card>
