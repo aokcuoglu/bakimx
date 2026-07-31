@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
+import { KpiStat } from "@/components/ui/kpi-stat"
 import { formatPrice, formatStockQty } from "@/lib/parts/format"
 import type { PartKPIs } from "@/lib/parts/queries"
 import { Plus, Search, X, Package, AlertTriangle, Eye, Edit3, Archive, Trash2, Boxes } from "lucide-react"
@@ -362,26 +363,6 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function KpiStat({ label, value, icon: Icon, accent, accentBg }: {
-  label: string
-  value: number
-  icon: React.ComponentType<{ className?: string }>
-  accent: string
-  accentBg: string
-}) {
-  return (
-     <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground truncate">{label}</span>
-        <div className={`size-7 sm:size-9 rounded-lg ${accentBg} flex items-center justify-center`}>
-          <Icon className={`size-3.5 sm:size-4 ${accent}`} />
-        </div>
-      </div>
-      <p className="text-lg sm:text-2xl font-bold text-foreground">{value}</p>
     </div>
   )
 }
