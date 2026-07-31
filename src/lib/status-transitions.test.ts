@@ -64,7 +64,22 @@ test("orderStatusOptions mevcut durumu ve izinli hedefleri listeler", () => {
 })
 
 test("orderStatusOptions taslakta başlama ve iptali sunar", () => {
-  expect(orderStatusOptions("draft")).toEqual(["draft", "in_progress", "waiting_approval", "cancelled"])
+  // Emekli onay akışı (waiting_approval) hedef olarak SUNULMAZ.
+  expect(orderStatusOptions("draft")).toEqual(["draft", "in_progress", "cancelled"])
+})
+
+test("orderStatusOptions emekli onay statülerini hedef olarak sunmaz", () => {
+  for (const status of ORDER_STATUSES) {
+    const targets = orderStatusOptions(status).slice(1)
+    expect(targets).not.toContain("waiting_approval")
+    expect(targets).not.toContain("approved")
+  }
+})
+
+test("orderStatusOptions emir zaten emekli statüdeyse onu listede tutar", () => {
+  // Eski kayıtlar doğru görünsün diye mevcut durum her zaman ilk eleman.
+  expect(orderStatusOptions("waiting_approval")).toEqual(["waiting_approval", "in_progress", "cancelled"])
+  expect(orderStatusOptions("approved")).toEqual(["approved", "in_progress", "waiting_parts", "cancelled"])
 })
 
 test("orderStatusOptions teslim edilmiş emirde yalnız mevcut durumu döner", () => {

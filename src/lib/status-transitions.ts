@@ -96,15 +96,27 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
 }
 
 /**
+ * Onay akışı emekli (bkz. dosya başındaki not): bu iki statü artık hiçbir akıştan
+ * üretilmiyor ve başlıktaki NEXT_STATUSES de bunları sunmuyor. Elle diriltilmesin
+ * diye hedef listesinden elenirler. ORDER_TRANSITIONS'a dokunulmaz — eski kayıtların
+ * o statülerden ileri gidebilmesi gerekiyor.
+ */
+const RETIRED_ORDER_STATUSES: readonly OrderStatus[] = ["waiting_approval", "approved"]
+
+/**
  * İş emri kartındaki Durum dropdown'ında listelenecek değerler: mevcut durum +
- * durum makinesinin o durumdan izin verdiği hedefler. Liste `ORDER_TRANSITIONS`'tan
- * türediği için UI ile sunucu doğrulaması ayrışamaz.
+ * durum makinesinin o durumdan izin verdiği, emekli olmayan hedefler. Liste
+ * `ORDER_TRANSITIONS`'tan türediği için UI ile sunucu doğrulaması ayrışamaz.
+ *
+ * Mevcut durum filtreye TABİ DEĞİL: emri zaten emekli bir statüde olan eski
+ * kayıtlar dropdown'da kendi durumlarını doğru görsün diye ilk eleman hep `current`.
  *
  * NOT: `delivered` listede DURUR ama seçilince doğrudan yazılmaz — çağıran taraf
  * müşteri onaylı teslim (OTP) akışını tetikler (bkz. order-info-card.tsx).
  */
 export function orderStatusOptions(current: OrderStatus): OrderStatus[] {
-  return [current, ...(ORDER_TRANSITIONS[current] ?? [])]
+  const targets = (ORDER_TRANSITIONS[current] ?? []).filter((s) => !RETIRED_ORDER_STATUSES.includes(s))
+  return [current, ...targets]
 }
 
 /**
