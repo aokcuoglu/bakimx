@@ -37,7 +37,17 @@ function StringCombobox({
       itemToStringValue={(s: string) => s}
       onValueChange={(v: string | null) => onValueChange(v ?? "")}
     >
-      <ComboboxInput id={id} placeholder={placeholder} disabled={disabled} className="w-full" />
+      <ComboboxInput
+        id={id}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full"
+        onKeyDown={(event) => {
+          // Base UI: liste kapalıyken Escape seçimi temizler → form alanında sessiz veri kaybı.
+          // (İl temizlenince ilçe de cascade sıfırlanıyordu.) Listeyi kapatma davranışı korunur.
+          if (event.key === "Escape") event.preventBaseUIHandler()
+        }}
+      />
       <ComboboxContent>
         <ComboboxEmpty className="py-2 text-sm text-muted-foreground">Sonuç yok</ComboboxEmpty>
         <ComboboxList>

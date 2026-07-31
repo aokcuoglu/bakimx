@@ -1111,10 +1111,11 @@ model Supplier {
   email               String?
   website             String?
   city                String?
+  district            String?
   address             String?
   taxNumber           String?
   taxOffice           String?
-  category            String?
+  categories          String[] @default([])
   paymentTermDays     Int?
   averageDeliveryDays Int?
   performanceNote     String?

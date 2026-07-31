@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { SuppliersList } from "@/components/suppliers/suppliers-list"
 import { prisma } from "@/lib/db"
 import { getSupplierKPIs } from "@/lib/suppliers/queries"
+import { matchingSupplierCategories } from "@/lib/supplier-categories"
 
 export default async function SuppliersPage(props: {
   searchParams?: Promise<{ q?: string; status?: string }>
@@ -21,7 +22,9 @@ export default async function SuppliersPage(props: {
       { phone: { contains: q } },
       { email: { contains: q, mode: "insensitive" } },
       { city: { contains: q, mode: "insensitive" } },
-      { category: { contains: q, mode: "insensitive" } },
+      { district: { contains: q, mode: "insensitive" } },
+      // Kategoriler dizi kolon: contains desteklemez → eşleşen kanonik kategorileri hasSome ile ara.
+      { categories: { hasSome: matchingSupplierCategories(q) } },
     ]
   }
 
@@ -49,7 +52,8 @@ export default async function SuppliersPage(props: {
     phone2: s.phone2,
     email: s.email,
     city: s.city,
-    category: s.category,
+    district: s.district,
+    categories: s.categories,
     isActive: s.isActive,
     partCount: s._count.parts,
     createdAt: s.createdAt.toISOString(),

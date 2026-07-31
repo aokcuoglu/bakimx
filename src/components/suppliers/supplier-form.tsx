@@ -16,6 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
+import { MultiStringCombobox } from "@/components/shared/forms/multi-string-combobox"
+import { supplierCategoryItems } from "@/lib/supplier-categories"
 import { createSupplierAction, updateSupplierAction } from "@/app/(app)/suppliers/actions"
 import { ArrowLeft, Loader2, Save, Truck, MapPin, Settings2, FileText } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -32,10 +35,11 @@ type SupplierData = {
   email: string | null
   website: string | null
   city: string | null
+  district: string | null
   address: string | null
   taxNumber: string | null
   taxOffice: string | null
-  category: string | null
+  categories: string[]
   paymentTermDays: number | null
   averageDeliveryDays: number | null
   performanceNote: string | null
@@ -52,10 +56,11 @@ function toDefaults(supplier?: SupplierData): SupplierFormValues {
     email: supplier?.email || "",
     website: supplier?.website || "",
     city: supplier?.city || "",
+    district: supplier?.district || "",
     address: supplier?.address || "",
     taxNumber: supplier?.taxNumber || "",
     taxOffice: supplier?.taxOffice || "",
-    category: supplier?.category || "",
+    categories: supplier?.categories ?? [],
     paymentTermDays: supplier?.paymentTermDays ?? 0,
     averageDeliveryDays: supplier?.averageDeliveryDays ?? 0,
     performanceNote: supplier?.performanceNote || "",
@@ -92,6 +97,11 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
   function onSubmit(values: SupplierFormValues) {
     const formData = new FormData()
     for (const [key, value] of Object.entries(values)) {
+      // Diziler (kategoriler) tek tek append edilir → server tarafında getAll ile okunur.
+      if (Array.isArray(value)) {
+        for (const item of value) formData.append(key, String(item))
+        continue
+      }
       formData.set(key, String(value))
     }
     startTransition(() => formAction(formData))
@@ -151,12 +161,17 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
                 />
                 <FormField
                   control={form.control}
-                  name="category"
+                  name="categories"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kategori</FormLabel>
+                      <FormLabel>Kategoriler</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Yedek parça, yağ, lastik..." />
+                        <MultiStringCombobox
+                          items={supplierCategoryItems(field.value ?? [])}
+                          value={field.value ?? []}
+                          placeholder="Kategori seçin (birden fazla)"
+                          onValueChange={(v) => field.onChange(v)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -255,34 +270,27 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>İl</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="İstanbul, Ankara..." />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Adres</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Açık adres..." />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <CityDistrictFields
+                city={form.watch("city") ?? ""}
+                district={form.watch("district") ?? ""}
+                onCityChange={(v) => form.setValue("city", v, { shouldDirty: true })}
+                onDistrictChange={(v) => form.setValue("district", v, { shouldDirty: true })}
+                cityError={form.formState.errors.city?.message}
+                districtError={form.formState.errors.district?.message}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adres</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Açık adres..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
