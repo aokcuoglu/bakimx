@@ -283,7 +283,7 @@ test("orderStatusOptions emekli onay statülerini hedef olarak sunmaz", () => {
 test("orderStatusOptions emir zaten emekli statüdeyse onu listede tutar", () => {
   // Eski kayıtlar doğru görünsün diye mevcut durum her zaman ilk eleman.
   expect(orderStatusOptions("waiting_approval")).toEqual(["waiting_approval", "in_progress", "cancelled"])
-  expect(orderStatusOptions("approved")).toEqual(["approved", "in_progress", "waiting_parts"])
+  expect(orderStatusOptions("approved")).toEqual(["approved", "in_progress", "waiting_parts", "cancelled"])
 })
 
 test("orderStatusOptions teslim edilmiş emirde yalnız mevcut durumu döner", () => {
