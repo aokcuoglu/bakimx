@@ -1,0 +1,4 @@
+interface:
+  display_name: "BakimX Issue Delivery"
+  short_description: "Deliver GitHub issues safely from code to merge"
+  default_prompt: "Use $bakimx-issue-delivery to implement and deliver GitHub issue #123 end to end."
