@@ -71,3 +71,16 @@ export const purchaseItemUpdateSchema = z.object({
   supplierName: z.string().nullable().optional(),
   supplierId: z.string().nullable().optional(),
 })
+
+/**
+ * Fatura bilgisi elle girilir (fatura entegrasyonu yok). İki alan da boş
+ * bırakılabilir — boş değer alanı temizler. Tarih, DatePicker'ın depolama
+ * biçiminde (GG.AA.YYYY) gelir; sunucu tarafında `trDateToDate` ile Date'e çevrilir.
+ */
+export const orderInvoiceSchema = z.object({
+  invoiceNo: z.string().trim().max(50, "Fatura numarası en fazla 50 karakter olabilir"),
+  invoiceDate: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^\d{2}\.\d{2}\.\d{4}$/.test(v), "Geçerli bir tarih seçiniz"),
+})
