@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { QuickSupplierModal } from "@/components/suppliers/quick-supplier-modal"
-import { normalizeSupplierPriceRows } from "@/lib/parts/supplier-prices"
+import { normalizeSupplierPriceRows, resolvePriceDraftCommit } from "@/lib/parts/supplier-prices"
 import { Plus, Trash2, Star, Store } from "lucide-react"
 
 export type SupplierOption = { id: string; name: string; phone: string | null }
@@ -215,11 +215,21 @@ export function PartSupplierPricesField({
  * Taslak yalnız odak süresince yaşar (`null` = düzenlenmiyor), böylece satır
  * silinip indeksler kaydığında bayat taslak kalmaz. Ayrıştırılabilir her
  * değişiklikte commit edilir — form Enter ile gönderilse (blur olmadan) bile
- * değer güncel kalır. "1e" gibi ayrıştırılamayan ara girdiler commit edilmez
- * (NaN yazılmaz), blur'da son geçerli değere dönülür.
+ * değer güncel kalır.
+ *
+ * Ara girdide state'e 0 YAZILMAZ: "1250." yazılırken tarayıcı `""` döndürür,
+ * bunu 0 saymak para alanına sessizce 0 kaydedilmesine yol açardı. Karar
+ * mantığı `resolvePriceDraftCommit`'te (saf + birim testli). `badInput` =
+ * tarayıcının sayıya çeviremediği ham metin (ör. "1e") — blur'da bile 0'a
+ * düşürülmez, son geçerli değere dönülür.
  */
 function PriceInput({ value, onCommit }: { value: number; onCommit: (price: number) => void }) {
   const [draft, setDraft] = useState<string | null>(null)
+
+  function commitFrom(input: HTMLInputElement, final: boolean) {
+    const result = resolvePriceDraftCommit(input.value, { final, badInput: input.validity.badInput })
+    if (result.commit) onCommit(result.value)
+  }
 
   return (
     <Input
@@ -231,12 +241,13 @@ function PriceInput({ value, onCommit }: { value: number; onCommit: (price: numb
       className="tabular-nums"
       value={draft ?? String(value)}
       onChange={(e) => {
-        const rawValue = e.target.value
-        setDraft(rawValue)
-        const parsed = rawValue === "" ? 0 : Number(rawValue)
-        if (Number.isFinite(parsed) && parsed >= 0) onCommit(parsed)
+        setDraft(e.target.value)
+        commitFrom(e.target, false)
       }}
-      onBlur={() => setDraft(null)}
+      onBlur={(e) => {
+        commitFrom(e.target, true)
+        setDraft(null)
+      }}
     />
   )
 }

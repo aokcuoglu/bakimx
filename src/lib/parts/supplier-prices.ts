@@ -64,3 +64,36 @@ export function shouldPreserveDerivedPricing(args: {
   if (!args.touched) return true
   return args.incomingRowCount === 0 && args.existingRowCount === 0
 }
+
+/**
+ * Fiyat alanındaki ham girdinin form state'ine yazılıp yazılmayacağına karar
+ * verir. `{ commit: false }` = state'e dokunma, son geçerli değer korunsun.
+ *
+ * Neden gerekli: `type="number"` girdisinde tarayıcı, YARIM bir sayı için
+ * (ör. "1250." ya da "1e") `value` olarak `""` döndürür. Bunu körü körüne 0
+ * saymak, ekranda "1250." yazarken state'i sessizce 0 yapar — kullanıcı tam o
+ * anda Enter'a basarsa para alanına 0 kaydedilir.
+ *
+ * Ayrım odak durumundan gelir:
+ * - Yazmaya devam ediyor (`final: false`) + ham değer boş → **commit etme**,
+ *   eski değer korunur (yarım ondalık yazılıyor olabilir).
+ * - Alandan çıkıyor (`final: true`) + ham değer boş → kullanıcı alanı gerçekten
+ *   temizlemiştir → 0.
+ * - `badInput` (tarayıcı metni sayıya çeviremiyor, ör. "1e") → hiçbir zaman
+ *   commit etme; blur'da da 0'a düşürme, son geçerli değere dönülür.
+ */
+export function resolvePriceDraftCommit(
+  rawValue: string,
+  options: { final: boolean; badInput?: boolean }
+): { commit: false } | { commit: true; value: number } {
+  if (options.badInput) return { commit: false }
+
+  const trimmed = rawValue.trim()
+  if (trimmed === "") {
+    return options.final ? { commit: true, value: 0 } : { commit: false }
+  }
+
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed) || parsed < 0) return { commit: false }
+  return { commit: true, value: parsed }
+}

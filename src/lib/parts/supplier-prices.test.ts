@@ -3,6 +3,7 @@ import {
   normalizeSupplierPriceRows,
   derivePartPricing,
   shouldPreserveDerivedPricing,
+  resolvePriceDraftCommit,
   type SupplierPriceRow,
 } from "./supplier-prices"
 
@@ -78,4 +79,75 @@ test("kullanıcı mevcut satırların hepsini silerse türetilmiş alanlar temiz
 test("satır gönderildiyse türetilmiş alanlar her durumda yazılır", () => {
   expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 1, existingRowCount: 0 })).toBe(false)
   expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 2, existingRowCount: 2 })).toBe(false)
+})
+
+// ── Fiyat alanı ara girdi koruması ──────────────────────────────────────────
+
+/**
+ * PriceInput'un döngüsünü birebir taklit eder: her tuş bir `onChange` (final
+ * false), en sonda istenirse bir `onBlur` (final true). `raw` = tarayıcının o
+ * anda `input.value` olarak döndürdüğü ham string — `type="number"` yarım bir
+ * sayı için ("1250.", "1e") `""` döndürür, `badInput` ise yalnız gerçekten
+ * sayıya çevrilemeyen metinde true olur.
+ */
+function typeIntoPriceField(
+  startValue: number,
+  keystrokes: { raw: string; badInput?: boolean }[],
+  options: { blur?: boolean } = {}
+): number {
+  let state = startValue
+  for (const k of keystrokes) {
+    const r = resolvePriceDraftCommit(k.raw, { final: false, badInput: k.badInput })
+    if (r.commit) state = r.value
+  }
+  if (options.blur) {
+    const last = keystrokes[keystrokes.length - 1] ?? { raw: "" }
+    const r = resolvePriceDraftCommit(last.raw, { final: true, badInput: last.badInput })
+    if (r.commit) state = r.value
+  }
+  return state
+}
+
+test("senaryo 1: 1·2·5·0·.·5 sırasıyla yazılınca 1250.5 olur", () => {
+  // "." tuşunda tarayıcı "1250." için "" döndürür → commit edilmez, state 1250 kalır.
+  const state = typeIntoPriceField(0, [
+    { raw: "1" },
+    { raw: "12" },
+    { raw: "125" },
+    { raw: "1250" },
+    { raw: "" }, // "1250." — yarım ondalık
+    { raw: "1250.5" },
+  ])
+  expect(state).toBe(1250.5)
+})
+
+test("senaryo 2: '1250.' yazıp blur etmeden submit edilirse 1250 kaydedilir (0 değil)", () => {
+  const state = typeIntoPriceField(0, [
+    { raw: "1" },
+    { raw: "12" },
+    { raw: "125" },
+    { raw: "1250" },
+    { raw: "" }, // "1250." — ekranda görünür, state 1250 kalmalı
+  ])
+  expect(state).toBe(1250)
+})
+
+test("senaryo 3: alan tamamen silinip blur edilirse 0 olur", () => {
+  const state = typeIntoPriceField(1250, [{ raw: "" }], { blur: true })
+  expect(state).toBe(0)
+})
+
+test("ayrıştırılamayan metin ('1e') blur'da bile 0'a düşürmez", () => {
+  const state = typeIntoPriceField(1250, [{ raw: "", badInput: true }], { blur: true })
+  expect(state).toBe(1250)
+})
+
+test("negatif değer commit edilmez", () => {
+  expect(resolvePriceDraftCommit("-5", { final: false })).toEqual({ commit: false })
+  expect(resolvePriceDraftCommit("-5", { final: true })).toEqual({ commit: false })
+})
+
+test("geçerli sayı hem yazarken hem blur'da commit edilir", () => {
+  expect(resolvePriceDraftCommit("1250.5", { final: false })).toEqual({ commit: true, value: 1250.5 })
+  expect(resolvePriceDraftCommit("0", { final: true })).toEqual({ commit: true, value: 0 })
 })
