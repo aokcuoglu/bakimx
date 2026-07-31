@@ -26,7 +26,8 @@ type SupplierRow = {
   phone2: string | null
   email: string | null
   city: string | null
-  category: string | null
+  district: string | null
+  categories: string[]
   isActive: boolean
   partCount: number
   createdAt: string
@@ -171,7 +172,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Yetkili</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Telefon</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">E-posta</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Şehir</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">İl / İlçe</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parça</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Durum</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">İşlem</th>
@@ -184,7 +185,9 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                     <Link href={`/suppliers/${s.id}`} className="font-medium text-foreground hover:text-primary">
                       {s.name}
                     </Link>
-                    {s.category && <span className="block text-[11px] text-muted-foreground">{s.category}</span>}
+                    {s.categories.length > 0 && (
+                      <span className="block text-[11px] text-muted-foreground">{s.categories.join(", ")}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">{s.contactPerson || <span className="text-muted-foreground/50">—</span>}</td>
                   <td className="px-4 py-3 text-sm">
@@ -197,7 +200,9 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                       <a href={`mailto:${s.email}`} className="text-primary hover:text-primary/80 truncate block max-w-[180px]">{s.email}</a>
                     ) : <span className="text-muted-foreground/50">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">{s.city || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground/50">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-semibold text-foreground">
                       {s.partCount}
@@ -262,7 +267,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     {s.phone && <span>{s.phone}</span>}
-                    {s.city && <span>• {s.city}</span>}
+                    {s.city && <span>• {[s.city, s.district].filter(Boolean).join(" / ")}</span>}
                   </div>
                   <span className="inline-flex items-center gap-1 font-medium text-foreground">
                     <Truck className="size-3" /> {s.partCount} parça
