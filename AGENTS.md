@@ -74,3 +74,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - STORAGE_PROVIDER=s3 requires MinIO (local) or R2 (production) — S3 provider code is fully implemented
 - All providers (OCR, AI, SMS, WhatsApp, Email, Calendar) default to mock — no API keys needed for dev
 - Demo login: demo@bakimx.com / demo123456
+
+## GitHub Issue Delivery
+- When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end.
+- Treat the issue, its comments, attachments, and linked items as the source of truth; state inferred acceptance criteria before coding.
+- Work in a dedicated `issue/<number>-<slug>` branch and isolated worktree based on the latest `origin/dev`.
+- Never stash, reset, overwrite, commit, or clean unrelated user changes.
+- A delivery request includes implementation, proportionate validation, push, PR creation, green-check monitoring, merge when permitted, issue/project verification, cleanup of only agent-created resources, and a safe local `dev` fast-forward when the checkout is clean.
+- Put `Closes #<number>` in the PR body so merge closes the issue. Confirm the linked item becomes Done in Factory - BakimX.
