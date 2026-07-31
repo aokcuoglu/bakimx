@@ -1,15 +1,37 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { PartsList } from "@/components/parts/parts-list"
+import { LaborList } from "@/components/labor/labor-list"
 import { prisma } from "@/lib/db"
 import { getPartKPIs } from "@/lib/parts/queries"
+import { getLaborCatalog, getLaborCategories, getLaborKPIs } from "@/lib/labor/queries"
 import { getUniqueBrandsAction, getUniqueCategoriesAction } from "./actions"
 
 export default async function PartsPage(props: {
-  searchParams?: Promise<{ q?: string; status?: string; category?: string; brand?: string }>
+  searchParams?: Promise<{ tab?: string; q?: string; status?: string; category?: string; brand?: string }>
 }) {
   const { user, workshop } = await getAppData()
   const searchParams = await props.searchParams
+
+  // İşçilik sekmesi: erken dönüş — parça sorgusu ve stok KPI'ları hiç çalışmaz.
+  if (searchParams?.tab === "labor") {
+    const [laborItems, laborKpis, laborCategories] = await Promise.all([
+      getLaborCatalog(user.workshopId),
+      getLaborKPIs(user.workshopId),
+      getLaborCategories(user.workshopId),
+    ])
+    return (
+      <AppShell workshopName={workshop?.name} pageTitle="Stok / Parçalar">
+        <LaborList
+          items={laborItems}
+          kpis={laborKpis}
+          categories={laborCategories}
+          currentFilters={{ q: "", status: "all" }}
+        />
+      </AppShell>
+    )
+  }
+
   const q = searchParams?.q
   const status = searchParams?.status
   const category = searchParams?.category

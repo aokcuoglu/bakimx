@@ -15,6 +15,7 @@ import { Plus, Search, X, Package, AlertTriangle, Eye, Edit3, Archive, Trash2, B
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { PartsTabsNav } from "@/app/(app)/parts/parts-tabs-nav"
 
 const STATUS_LABELS: Record<string, string> = {
   in_stock: "Stokta",
@@ -119,6 +120,8 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Plus className="size-3.5 mr-1" /> Yeni Parça
         </Button>
       </div>
+
+      <PartsTabsNav active="parts" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary" accentBg="bg-primary/10" />
