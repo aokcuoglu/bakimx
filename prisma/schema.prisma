@@ -679,6 +679,14 @@ model ServiceOrder {
   discountAmount       Int? // kuruş
   taxRate              Int? // bps (2000 = %20)
   notes                String?
+  /// Fatura entegrasyonu yok — kullanıcı kendi fatura uygulamasından okuyup elle girer.
+  /// Bu iki alan, teslim edilmiş iş emrinde de yazılabilir (bkz. updateOrderInvoiceAction);
+  /// iptal edilmiş emirde yazılamaz.
+  invoiceNo            String?
+  invoiceDate          DateTime?
+  /// Aracın servise geliş nedeni. İşin içeriğine dair bilgi olduğu için
+  /// teslim/iptal sonrası kilitlenir.
+  arrivalReason        ArrivalReason?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -713,6 +721,14 @@ enum OrderStatus {
   ready_for_delivery
   delivered
   cancelled
+}
+
+enum ArrivalReason {
+  fault // Arıza
+  damage // Hasar
+  maintenance // Bakım
+  inspection // Kontrol
+  accessory // Aksesuar
 }
 
 enum PaymentStatus {
