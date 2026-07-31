@@ -268,7 +268,22 @@ test("orderStatusOptions mevcut durumu ve izinli hedefleri listeler", () => {
 })
 
 test("orderStatusOptions taslakta başlama ve iptali sunar", () => {
-  expect(orderStatusOptions("draft")).toEqual(["draft", "in_progress", "waiting_approval", "cancelled"])
+  // Emekli onay akışı (waiting_approval) hedef olarak SUNULMAZ.
+  expect(orderStatusOptions("draft")).toEqual(["draft", "in_progress", "cancelled"])
+})
+
+test("orderStatusOptions emekli onay statülerini hedef olarak sunmaz", () => {
+  for (const status of ORDER_STATUSES) {
+    const targets = orderStatusOptions(status).slice(1)
+    expect(targets).not.toContain("waiting_approval")
+    expect(targets).not.toContain("approved")
+  }
+})
+
+test("orderStatusOptions emir zaten emekli statüdeyse onu listede tutar", () => {
+  // Eski kayıtlar doğru görünsün diye mevcut durum her zaman ilk eleman.
+  expect(orderStatusOptions("waiting_approval")).toEqual(["waiting_approval", "in_progress", "cancelled"])
+  expect(orderStatusOptions("approved")).toEqual(["approved", "in_progress", "waiting_parts"])
 })
 
 test("orderStatusOptions teslim edilmiş emirde yalnız mevcut durumu döner", () => {
@@ -302,15 +317,27 @@ Beklenen: FAIL — `orderStatusOptions is not a function`.
 
 ```ts
 /**
+ * Onay akışı emekli (bkz. dosya başındaki not): bu iki statü artık hiçbir akıştan
+ * üretilmiyor ve başlıktaki NEXT_STATUSES de bunları sunmuyor. Elle diriltilmesin
+ * diye hedef listesinden elenirler. ORDER_TRANSITIONS'a dokunulmaz — eski kayıtların
+ * o statülerden ileri gidebilmesi gerekiyor.
+ */
+const RETIRED_ORDER_STATUSES: readonly OrderStatus[] = ["waiting_approval", "approved"]
+
+/**
  * İş emri kartındaki Durum dropdown'ında listelenecek değerler: mevcut durum +
- * durum makinesinin o durumdan izin verdiği hedefler. Liste `ORDER_TRANSITIONS`'tan
- * türediği için UI ile sunucu doğrulaması ayrışamaz.
+ * durum makinesinin o durumdan izin verdiği, emekli olmayan hedefler. Liste
+ * `ORDER_TRANSITIONS`'tan türediği için UI ile sunucu doğrulaması ayrışamaz.
+ *
+ * Mevcut durum filtreye TABİ DEĞİL: emri zaten emekli bir statüde olan eski
+ * kayıtlar dropdown'da kendi durumlarını doğru görsün diye ilk eleman hep `current`.
  *
  * NOT: `delivered` listede DURUR ama seçilince doğrudan yazılmaz — çağıran taraf
  * müşteri onaylı teslim (OTP) akışını tetikler (bkz. order-info-card.tsx).
  */
 export function orderStatusOptions(current: OrderStatus): OrderStatus[] {
-  return [current, ...(ORDER_TRANSITIONS[current] ?? [])]
+  const targets = (ORDER_TRANSITIONS[current] ?? []).filter((s) => !RETIRED_ORDER_STATUSES.includes(s))
+  return [current, ...targets]
 }
 ```
 
