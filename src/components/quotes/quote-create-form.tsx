@@ -791,7 +791,20 @@ function LaborNameAutocomplete({
       itemToStringValue={(e: LaborCatalogRow) => e.name}
       onValueChange={onValueChange}
     >
-      <AutocompleteInput render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />} />
+      <AutocompleteInput
+        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
+        // (bkz. @base-ui/react/combobox ComboboxInput: `!mounted && key ===
+        // 'Escape'`) — kullanıcının henüz bir seçime dönüşmemiş yazdığı işçilik
+        // adı yok oluyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
+        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
+        // "false"). Aynı desen: customer-vehicle-picker.tsx (preventBaseUIHandler).
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
+            e.preventBaseUIHandler()
+          }
+        }}
+        render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />}
+      />
       <AutocompleteContent>
         <AutocompleteEmpty>
           Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz

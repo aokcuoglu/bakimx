@@ -437,6 +437,17 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
       }}
     >
       <AutocompleteInput
+        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
+        // (bilinen tuzak, bkz. quote-create-form.tsx LaborNameAutocomplete) —
+        // yazılan işçilik adı yok oluyor ve satır sessizce filtrelenip
+        // kaybolabiliyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
+        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
+        // "false").
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
+            e.preventBaseUIHandler()
+          }
+        }}
         render={
           <Input
             placeholder="İşçilik ara veya kendi kalemini yaz"
