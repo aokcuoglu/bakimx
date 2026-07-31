@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -51,14 +51,25 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
   // Değişen alanı mevcut filtrelerin üzerine yazar: boş değer o filtreyi kaldırır,
   // diğer filtre korunur (önceden q her koşulda geri yazılıyor → temizlenemiyordu,
   // arama yapınca da seçili durum filtresi düşüyordu).
-  function applyFilter(key: "q" | "status", value: string) {
-    const next = { ...currentFilters, [key]: value }
-    const params = new URLSearchParams()
-    if (next.q) params.set("q", next.q)
-    if (next.status && next.status !== "all") params.set("status", next.status)
-    const qs = params.toString()
-    router.push(`/suppliers${qs ? `?${qs}` : ""}`)
-  }
+  // replace: otomatik arama her tuşta geçmişe kayıt bırakmasın.
+  const applyFilter = useCallback(
+    (key: "q" | "status", value: string) => {
+      const next = { ...currentFilters, [key]: value }
+      const params = new URLSearchParams()
+      if (next.q) params.set("q", next.q)
+      if (next.status && next.status !== "all") params.set("status", next.status)
+      const qs = params.toString()
+      router.replace(`/suppliers${qs ? `?${qs}` : ""}`)
+    },
+    [currentFilters, router]
+  )
+
+  // Yazdıkça otomatik ara (400ms). "Ara" butonu anında tetikleyen kısayol olarak kalır.
+  useEffect(() => {
+    if (search === currentFilters.q) return
+    const timer = setTimeout(() => applyFilter("q", search), 400)
+    return () => clearTimeout(timer)
+  }, [search, currentFilters.q, applyFilter])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
