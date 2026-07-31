@@ -78,7 +78,7 @@ export function LaborPresetImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Hazır listeden ekle</DialogTitle>
           <DialogDescription>
@@ -101,7 +101,7 @@ export function LaborPresetImportDialog({
           </Button>
         </div>
 
-        <div className="max-h-[50vh] overflow-y-auto space-y-3">
+        <div className="space-y-3">
           {groups.map(([category, items]) => (
             <div key={category} className="space-y-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
