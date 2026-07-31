@@ -96,6 +96,18 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
 }
 
 /**
+ * İş emri kartındaki Durum dropdown'ında listelenecek değerler: mevcut durum +
+ * durum makinesinin o durumdan izin verdiği hedefler. Liste `ORDER_TRANSITIONS`'tan
+ * türediği için UI ile sunucu doğrulaması ayrışamaz.
+ *
+ * NOT: `delivered` listede DURUR ama seçilince doğrudan yazılmaz — çağıran taraf
+ * müşteri onaylı teslim (OTP) akışını tetikler (bkz. order-info-card.tsx).
+ */
+export function orderStatusOptions(current: OrderStatus): OrderStatus[] {
+  return [current, ...(ORDER_TRANSITIONS[current] ?? [])]
+}
+
+/**
  * `delivered`/`cancelled` are terminal for order *composition* (parts, labor,
  * pricing, technician assignment, checklist, notes, parts requests, labor
  * sessions) — the vehicle has left or the job never happened, so nothing about

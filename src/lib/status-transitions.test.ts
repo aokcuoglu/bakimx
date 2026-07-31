@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { canTransitionIntake, isOrderLocked, isIntakeWriteLocked, isCollectionLockedForOrder } from "./status-transitions"
+import { canTransitionIntake, canTransitionOrder, isOrderLocked, isIntakeWriteLocked, isCollectionLockedForOrder, orderStatusOptions, ORDER_STATUSES } from "./status-transitions"
 
 test("delivered'a manuel geçiş reddedilir (yalnız OTP ile)", () => {
   expect(canTransitionIntake("ready_for_delivery", "delivered")).toBe(false)
@@ -52,4 +52,36 @@ test("tahsilat kilidi: teslim edilmiş ama borçlu AÇIK", () => {
 test("tahsilat kilidi: teslim edilmemişse ödenmiş olsa da AÇIK", () => {
   expect(isCollectionLockedForOrder("in_progress", "paid")).toBe(false)
   expect(isCollectionLockedForOrder("ready_for_delivery", "paid")).toBe(false)
+})
+
+test("orderStatusOptions mevcut durumu ve izinli hedefleri listeler", () => {
+  expect(orderStatusOptions("in_progress")).toEqual([
+    "in_progress",
+    "waiting_parts",
+    "ready_for_delivery",
+    "cancelled",
+  ])
+})
+
+test("orderStatusOptions taslakta başlama ve iptali sunar", () => {
+  expect(orderStatusOptions("draft")).toEqual(["draft", "in_progress", "waiting_approval", "cancelled"])
+})
+
+test("orderStatusOptions teslim edilmiş emirde yalnız mevcut durumu döner", () => {
+  expect(orderStatusOptions("delivered")).toEqual(["delivered"])
+})
+
+test("orderStatusOptions hiçbir durumda tekrar eden değer üretmez", () => {
+  for (const status of ORDER_STATUSES) {
+    const options = orderStatusOptions(status)
+    expect(new Set(options).size).toBe(options.length)
+  }
+})
+
+test("orderStatusOptions'ın döndürdüğü her hedefe geçiş gerçekten izinli", () => {
+  for (const status of ORDER_STATUSES) {
+    for (const target of orderStatusOptions(status)) {
+      expect(canTransitionOrder(status, target)).toBe(true)
+    }
+  }
 })
