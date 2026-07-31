@@ -2,13 +2,17 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { PartForm } from "@/components/parts/part-form"
 import { getActiveSuppliersForSelect } from "@/lib/suppliers/queries"
+import { getWorkshopBrands } from "@/lib/parts/queries"
 
 export default async function NewPartPage() {
   const { user, workshop } = await getAppData()
-  const suppliers = await getActiveSuppliersForSelect(user.workshopId)
+  const [suppliers, workshopBrands] = await Promise.all([
+    getActiveSuppliersForSelect(user.workshopId),
+    getWorkshopBrands(user.workshopId),
+  ])
   return (
     <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni Parça">
-      <PartForm suppliers={suppliers} />
+      <PartForm suppliers={suppliers} workshopBrands={workshopBrands} />
     </AppShell>
   )
 }
