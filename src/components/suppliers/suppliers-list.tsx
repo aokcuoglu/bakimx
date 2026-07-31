@@ -48,12 +48,14 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
   const [search, setSearch] = useState(currentFilters.q)
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  function applyFilter(key: string, value: string) {
+  // Değişen alanı mevcut filtrelerin üzerine yazar: boş değer o filtreyi kaldırır,
+  // diğer filtre korunur (önceden q her koşulda geri yazılıyor → temizlenemiyordu,
+  // arama yapınca da seçili durum filtresi düşüyordu).
+  function applyFilter(key: "q" | "status", value: string) {
+    const next = { ...currentFilters, [key]: value }
     const params = new URLSearchParams()
-    if (currentFilters.q) params.set("q", currentFilters.q)
-    if (key === "q" && value) params.set("q", value)
-    if (key === "status" && value && value !== "all") params.set("status", value)
-    if (key !== "q" && currentFilters.q) params.set("q", currentFilters.q)
+    if (next.q) params.set("q", next.q)
+    if (next.status && next.status !== "all") params.set("status", next.status)
     const qs = params.toString()
     router.push(`/suppliers${qs ? `?${qs}` : ""}`)
   }
@@ -117,51 +119,67 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
         <KpiStat label="Parça Bağlı" value={kpis.withParts} icon={AlertCircle} accent="text-primary" accentBg="bg-primary/10" />
       </div>
 
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tedarikçi adı, yetkili, telefon, e-posta, şehir, kategori ara..."
-                className="pl-9"
-              />
-            </div>
-            <Button type="submit" size="sm" variant="outline">
-              Ara
-            </Button>
-          </form>
-
-          <div className="flex flex-wrap gap-2">
-            <Select
-              value={currentFilters.status}
-              onValueChange={(v) => applyFilter("status", v ?? "all")}
+      {/* Arama + durum filtresi + Ara tek satırda (müşteri listesi konvansiyonu).
+          Durum Select'i "all" yerine "" kullanır: Base UI placeholder yalnız falsy değerde görünür,
+          "all" truthy olduğu için tetikleyici boş görünüyordu. */}
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tedarikçi adı, yetkili, telefon, e-posta, şehir, kategori ara…"
+            aria-label="Tedarikçi ara"
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(""); if (currentFilters.q) applyFilter("q", "") }}
+              aria-label="Aramayı temizle"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Tümü">
-                  {(value: string | null) => (value && value !== "all" ? STATUS_LABELS[value] ?? value : null)}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="passive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={currentFilters.status === "all" ? "" : currentFilters.status}
+            onValueChange={(v) => applyFilter("status", v || "all")}
+          >
+            <SelectTrigger aria-label="Durum filtresi" className="w-full sm:w-40">
+              {/* Base UI placeholder'ı yalnız değer null iken gösterir; "" (Tümü) seçiliyken
+                  tetikleyici boş kalıyordu → etiketi render fonksiyonundan döndürüyoruz. */}
+              <SelectValue placeholder="Tüm Durumlar">
+                {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : "Tüm Durumlar")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Tüm Durumlar</SelectItem>
+              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="passive">Pasif</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button type="submit" variant="outline" className="h-11 md:h-8">
+            Ara
+          </Button>
+          {hasFilters && (
+            <Button type="button" variant="ghost" onClick={clearFilters} className="h-11 md:h-8">
+              <X className="size-3.5" />
+              Temizle
+            </Button>
+          )}
+        </div>
+      </form>
 
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="size-3" />
-                Filtreleri Temizle
-              </Button>
-            )}
-          </div>
-
-          <p className="text-[11px] text-muted-foreground/70">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
-        </CardContent>
-      </Card>
+      {hasFilters && (
+        <p className="-mt-3 text-xs text-muted-foreground">
+          {suppliers.length} sonuç
+          {currentFilters.q && <> · “{currentFilters.q}”</>}
+          {currentFilters.status !== "all" && <> · {STATUS_LABELS[currentFilters.status] ?? currentFilters.status}</>}
+        </p>
+      )}
 
       {/* Tablo 8 sütunlu: lg altında kart görünümü kullanılır, lg-1180px arasında yatay kaydırılır
           (önceden overflow-hidden idi → Durum/İşlem sütunları erişilemeden kırpılıyordu). */}
@@ -298,6 +316,8 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           </div>
         )}
       </div>
+
+      <p className="text-[11px] text-muted-foreground/70">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
     </div>
   )
 }
