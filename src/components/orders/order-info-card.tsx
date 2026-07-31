@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PaymentBadge } from "@/components/shared/status-badge"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
-import { ORDER_STATUS, arrivalReasonLabel, type OrderStatusKey } from "@/lib/constants"
-import { isOrderLocked } from "@/lib/status-transitions"
+import { ORDER_STATUS, ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel, type OrderStatusKey } from "@/lib/constants"
+import { isOrderLocked, orderStatusOptions } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import { Calendar, Loader2, Pencil, Receipt } from "lucide-react"
@@ -22,9 +23,13 @@ import type { OrderDetailData } from "@/components/orders/order-management-panel
 export function OrderInfoCard({
   order,
   technicians,
+  onRequestDelivery,
+  deliveryBlocked,
 }: {
   order: OrderDetailData
   technicians?: AssignableTechnician[]
+  onRequestDelivery?: () => void
+  deliveryBlocked?: boolean
 }) {
   const locked = isOrderLocked(order.status as OrderStatus)
 
@@ -65,6 +70,52 @@ export function OrderInfoCard({
       toast.error("Bir hata oluştu")
     } finally {
       setSavingInvoice(false)
+    }
+  }
+
+  const [changingStatus, setChangingStatus] = useState(false)
+  const [changingReason, setChangingReason] = useState(false)
+  const statusOptions = orderStatusOptions(order.status as OrderStatus)
+
+  async function handleStatusSelect(next: string) {
+    if (!next || next === order.status) return
+    // Teslim müşteri onaylı (OTP) verilir — dropdown'dan doğrudan yazılmaz.
+    if (next === "delivered") {
+      onRequestDelivery?.()
+      return
+    }
+    setChangingStatus(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      })
+      const data = await res.json()
+      if (data.success) router.refresh()
+      else toast.error(data.error || "Durum güncellenemedi")
+    } catch {
+      toast.error("Bir hata oluştu")
+    } finally {
+      setChangingStatus(false)
+    }
+  }
+
+  async function handleReasonSelect(next: string) {
+    setChangingReason(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/arrival-reason`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: next }),
+      })
+      const data = await res.json()
+      if (data.success) router.refresh()
+      else toast.error(data.error || "Geliş nedeni güncellenemedi")
+    } catch {
+      toast.error("Bir hata oluştu")
+    } finally {
+      setChangingReason(false)
     }
   }
 
@@ -179,8 +230,56 @@ export function OrderInfoCard({
               label="Toplam Tutar"
               value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
             />
-            <InfoRow label="Durum" value={ORDER_STATUS[order.status as OrderStatusKey]?.label ?? order.status} />
-            <InfoRow label="Servise Geliş Nedeni" value={arrivalReasonLabel(order.arrivalReason)} />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Durum</span>
+              {/* Durum makinesi tek kaynak: liste orderStatusOptions'tan gelir,
+                  sunucu da aynı geçiş kuralını uygular. Silme seçeneği yoktur —
+                  terminal aksiyon "İptal". */}
+              <Select
+                value={order.status}
+                onValueChange={(v) => handleStatusSelect(v ?? "")}
+                disabled={changingStatus || statusOptions.length <= 1}
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue>
+                    {(value: string | null) =>
+                      value ? (ORDER_STATUS[value as OrderStatusKey]?.label ?? value) : null
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((s) => (
+                    <SelectItem key={s} value={s} disabled={s === "delivered" && deliveryBlocked}>
+                      {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Servise Geliş Nedeni</span>
+              {locked ? (
+                <span className="text-sm text-foreground">{arrivalReasonLabel(order.arrivalReason)}</span>
+              ) : (
+                <Select
+                  value={order.arrivalReason ?? ""}
+                  onValueChange={(v) => handleReasonSelect(v ?? "")}
+                  disabled={changingReason}
+                >
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Seçiniz">
+                      {(value: string | null) => (value ? arrivalReasonLabel(value) : null)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Belirtilmedi</SelectItem>
+                    {ARRIVAL_REASON_ORDER.map((r) => (
+                      <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
