@@ -50,6 +50,7 @@ model LaborCatalogItem {
   updatedAt         DateTime @updatedAt
 
   @@unique([workshopId, code])
+  @@unique([workshopId, name])
   @@index([workshopId, isActive])
   @@index([workshopId, name])
 }
@@ -61,6 +62,11 @@ Başka hiçbir modele dokunulmaz.
 **Kod alanı zorunlu değildir.** Zorunlu olsaydı listeye hızlıca 20 kalem girmek
 isteyen atölye gereksiz yavaşlardı. `@@unique([workshopId, code])` PostgreSQL'de
 birden çok `NULL`'a izin verdiği için boş kodlar çakışmaz.
+
+**`@@unique([workshopId, name])` — ürün kısıtı.** Bir atölye aynı adla iki
+işçilik tanımlayamaz; bu, sadece içe aktarım (preset import) yarışını
+DB seviyesinde kapatmak için değil, bilinçli bir ürün kararıdır — aynı isimle
+ikinci bir kayıt açmak yerine kullanıcı var olanı düzenlemeye yönlendirilir.
 
 **Migration etkisi:** tek `CREATE TABLE`. Veri taşıma yok, mevcut satırlar
 etkilenmiyor, geri alınabilir. Yerelde `bun run db:migrate`, AWS dev'e

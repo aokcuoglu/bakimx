@@ -459,7 +459,7 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
       />
       <AutocompleteContent>
         <AutocompleteEmpty>
-          Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz
+          Eşleşen işçilik yok — kendi kaleminizi yazabilirsiniz
         </AutocompleteEmpty>
         <AutocompleteList>
           {(e: LaborCatalogRow) => (

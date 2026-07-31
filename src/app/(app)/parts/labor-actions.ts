@@ -15,7 +15,9 @@ const NAME_TAKEN = "Bu isimde bir işçilik zaten var"
  * Prisma tekil kısıt ihlali (P2002) → kullanıcıya anlaşılır mesaj.
  * `meta.target` hangi kısıtın (code mı, name mi) tetiklendiğini taşır;
  * driver'a göre string[] veya string olabilir, ikisi de karşılanır.
- * Eşleşmeyen bir P2002 ise (beklenmedik kısıt) null döner ve çağıran fırlatmaya devam eder.
+ * P2002 DEĞİLSE (başka bir hata) null döner ve çağıran fırlatmaya devam eder.
+ * P2002 İSE ama target ne "name" ne "code" içeriyorsa (beklenmedik kısıt),
+ * güvenli varsayılan olarak yine CODE_TAKEN döner — bu yol null dönmez.
  */
 function uniqueViolationMessage(e: unknown): string | null {
   if (typeof e !== "object" || e === null || !("code" in e) || (e as { code?: string }).code !== "P2002") {
