@@ -11,12 +11,14 @@ export async function createSupplierAction(formData: FormData) {
   const { user } = await requireWritableWorkshop()
   const workshopId = user.workshopId
 
-  const raw: Record<string, string> = {}
-  const fields = ["name", "contactPerson", "phone", "phone2", "email", "website", "city", "address", "taxNumber", "taxOffice", "category", "paymentTermDays", "averageDeliveryDays", "performanceNote", "internalNote", "isActive"]
+  const raw: Record<string, string | string[]> = {}
+  const fields = ["name", "contactPerson", "phone", "phone2", "email", "website", "city", "district", "address", "taxNumber", "taxOffice", "paymentTermDays", "averageDeliveryDays", "performanceNote", "internalNote", "isActive"]
   for (const f of fields) {
     const v = formData.get(f)
     if (v != null && typeof v === "string") raw[f] = v
   }
+  // Kategori çoklu seçim: her değer ayrı bir "categories" alanı olarak gelir.
+  raw.categories = formData.getAll("categories").filter((v): v is string => typeof v === "string" && v.length > 0)
 
   const parsed = supplierCreateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
@@ -31,10 +33,11 @@ export async function createSupplierAction(formData: FormData) {
       email: parsed.data.email || null,
       website: parsed.data.website || null,
       city: parsed.data.city || null,
+      district: parsed.data.district || null,
       address: parsed.data.address || null,
       taxNumber: parsed.data.taxNumber || null,
       taxOffice: parsed.data.taxOffice || null,
-      category: parsed.data.category || null,
+      categories: parsed.data.categories ?? [],
       paymentTermDays: parsed.data.paymentTermDays != null && parsed.data.paymentTermDays !== "" ? Number(parsed.data.paymentTermDays) : null,
       averageDeliveryDays: parsed.data.averageDeliveryDays != null && parsed.data.averageDeliveryDays !== "" ? Number(parsed.data.averageDeliveryDays) : null,
       performanceNote: parsed.data.performanceNote || null,
@@ -57,12 +60,14 @@ export async function updateSupplierAction(supplierId: string, formData: FormDat
   })
   if (!supplier) return { error: "Tedarikçi bulunamadı" }
 
-  const raw: Record<string, string> = {}
-  const fields = ["name", "contactPerson", "phone", "phone2", "email", "website", "city", "address", "taxNumber", "taxOffice", "category", "paymentTermDays", "averageDeliveryDays", "performanceNote", "internalNote", "isActive"]
+  const raw: Record<string, string | string[]> = {}
+  const fields = ["name", "contactPerson", "phone", "phone2", "email", "website", "city", "district", "address", "taxNumber", "taxOffice", "paymentTermDays", "averageDeliveryDays", "performanceNote", "internalNote", "isActive"]
   for (const f of fields) {
     const v = formData.get(f)
     if (v != null && typeof v === "string") raw[f] = v
   }
+  // Kategori çoklu seçim: her değer ayrı bir "categories" alanı olarak gelir.
+  raw.categories = formData.getAll("categories").filter((v): v is string => typeof v === "string" && v.length > 0)
 
   const parsed = supplierUpdateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
@@ -77,10 +82,11 @@ export async function updateSupplierAction(supplierId: string, formData: FormDat
       email: parsed.data.email || null,
       website: parsed.data.website || null,
       city: parsed.data.city || null,
+      district: parsed.data.district || null,
       address: parsed.data.address || null,
       taxNumber: parsed.data.taxNumber || null,
       taxOffice: parsed.data.taxOffice || null,
-      category: parsed.data.category || null,
+      categories: parsed.data.categories ?? [],
       paymentTermDays: parsed.data.paymentTermDays != null && parsed.data.paymentTermDays !== "" ? Number(parsed.data.paymentTermDays) : null,
       averageDeliveryDays: parsed.data.averageDeliveryDays != null && parsed.data.averageDeliveryDays !== "" ? Number(parsed.data.averageDeliveryDays) : null,
       performanceNote: parsed.data.performanceNote || null,
