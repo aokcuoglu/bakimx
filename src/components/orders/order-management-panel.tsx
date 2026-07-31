@@ -84,6 +84,11 @@ export type OrderDetailData = {
   estimatedDeliveryAt: string | null
   createdAt: string
   notes: string | null
+  invoiceNo: string | null
+  /** ISO string; kartta GG.AA.YYYY olarak gösterilir. */
+  invoiceDate: string | null
+  /** ArrivalReason enum anahtarı; etiket için arrivalReasonLabel kullanılır. */
+  arrivalReason: string | null
   discountAmount: number | null
   taxRate: number | null
   totals: Totals
