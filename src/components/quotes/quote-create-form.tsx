@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
+import { useState, useCallback, useEffect, useMemo, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -528,53 +528,23 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                               <FormLabel className="text-[11px] text-muted-foreground">Ad</FormLabel>
                               <FormControl>
                                 {typeVal === "labor" ? (
-                                  <Autocomplete
-                                    items={searchLaborItems(laborCatalog, field.value ?? "")}
+                                  <LaborNameAutocomplete
+                                    laborCatalog={laborCatalog}
                                     value={field.value ?? ""}
-                                    filter={null}
-                                    autoHighlight
-                                    openOnInputClick
-                                    itemToStringValue={(e: LaborCatalogRow) => e.name}
-                                    onValueChange={(v: string) => field.onChange(v)}
-                                  >
-                                    <AutocompleteInput
-                                      render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />}
-                                    />
-                                    <AutocompleteContent>
-                                      <AutocompleteEmpty>
-                                        Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz
-                                      </AutocompleteEmpty>
-                                      <AutocompleteList>
-                                        {(e: LaborCatalogRow) => (
-                                          <AutocompleteItem
-                                            key={e.id}
-                                            value={e}
-                                            onClick={() => {
-                                              field.onChange(e.name)
-                                              // Form TL tutar; katalog kuruş saklar.
-                                              if (e.defaultPriceKurus != null) {
-                                                form.setValue(
-                                                  `items.${index}.unitPrice`,
-                                                  kurusToLira(e.defaultPriceKurus),
-                                                  { shouldDirty: true }
-                                                )
-                                                recomputeTotal(index)
-                                              }
-                                            }}
-                                          >
-                                            <span className="min-w-0 flex-1">
-                                              <span className="block truncate">{e.name}</span>
-                                              {e.category && (
-                                                <span className="block text-[11px] text-muted-foreground">
-                                                  {e.category}
-                                                </span>
-                                              )}
-                                            </span>
-                                          </AutocompleteItem>
-                                        )}
-                                      </AutocompleteList>
-                                    </AutocompleteContent>
-                                  </Autocomplete>
+                                    onValueChange={(v) => field.onChange(v)}
+                                    onSelect={(e) => {
+                                      field.onChange(e.name)
+                                      // Form TL tutar; katalog kuruş saklar. Fiyatsız kalem
+                                      // seçilirse önceki satırdan kalma fiyat yapışık kalmasın
+                                      // diye unitPrice sıfırlanır (else dalı).
+                                      form.setValue(
+                                        `items.${index}.unitPrice`,
+                                        e.defaultPriceKurus != null ? kurusToLira(e.defaultPriceKurus) : null,
+                                        { shouldDirty: true }
+                                      )
+                                      recomputeTotal(index)
+                                    }}
+                                  />
                                 ) : (
                                   <Input
                                     {...field}
@@ -630,6 +600,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                                 placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -651,6 +622,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                                 placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -785,6 +757,55 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
         </div>
       </form>
     </Form>
+  )
+}
+
+// İşçilik ad alanının katalog-önerili Autocomplete'i. Ayrı bileşene çıkarıldı
+// ki `useMemo` (arama sonucu bellek) kendi Fiber'ında güvenle çalışsın —
+// react-hook-form'un FormField render-prop'u içine hook koymak, üstteki
+// `form.watch("items")` her satırda re-render tetiklediğinde Rules of Hooks'u
+// ihlal eder (bkz. parts-labor-grid.tsx:419 LaborAutocompleteField, aynı desen).
+function LaborNameAutocomplete({
+  laborCatalog,
+  value,
+  onValueChange,
+  onSelect,
+}: {
+  laborCatalog: LaborCatalogRow[]
+  value: string
+  onValueChange: (v: string) => void
+  onSelect: (e: LaborCatalogRow) => void
+}) {
+  const items = useMemo(() => searchLaborItems(laborCatalog, value), [laborCatalog, value])
+  return (
+    <Autocomplete
+      items={items}
+      value={value}
+      filter={null}
+      autoHighlight
+      openOnInputClick
+      itemToStringValue={(e: LaborCatalogRow) => e.name}
+      onValueChange={onValueChange}
+    >
+      <AutocompleteInput render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />} />
+      <AutocompleteContent>
+        <AutocompleteEmpty>
+          Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz
+        </AutocompleteEmpty>
+        <AutocompleteList>
+          {(e: LaborCatalogRow) => (
+            <AutocompleteItem key={e.id} value={e} onClick={() => onSelect(e)}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{e.name}</span>
+                {e.category && (
+                  <span className="block text-[11px] text-muted-foreground">{e.category}</span>
+                )}
+              </span>
+            </AutocompleteItem>
+          )}
+        </AutocompleteList>
+      </AutocompleteContent>
+    </Autocomplete>
   )
 }
 
