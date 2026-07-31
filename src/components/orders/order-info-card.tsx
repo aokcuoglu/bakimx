@@ -1,6 +1,13 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/ui/date-picker"
 import { PaymentBadge } from "@/components/shared/status-badge"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
@@ -9,7 +16,7 @@ import { ORDER_STATUS, arrivalReasonLabel, type OrderStatusKey } from "@/lib/con
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import { cn } from "@/lib/utils"
-import { Calendar, Receipt } from "lucide-react"
+import { Calendar, Loader2, Pencil, Receipt } from "lucide-react"
 import type { OrderDetailData } from "@/components/orders/order-management-panel"
 
 export function OrderInfoCard({
@@ -20,6 +27,46 @@ export function OrderInfoCard({
   technicians?: AssignableTechnician[]
 }) {
   const locked = isOrderLocked(order.status as OrderStatus)
+
+  const router = useRouter()
+  const [editingInvoice, setEditingInvoice] = useState(false)
+  const [savingInvoice, setSavingInvoice] = useState(false)
+  // DatePicker GG.AA.YYYY string ile çalışır; formatDate tam bu biçimi üretir.
+  const [invoiceNoDraft, setInvoiceNoDraft] = useState(order.invoiceNo ?? "")
+  const [invoiceDateDraft, setInvoiceDateDraft] = useState(
+    order.invoiceDate ? formatDate(order.invoiceDate) : "",
+  )
+
+  // Fatura araç teslim edildikten SONRA kesilir; bu yüzden teslim kilidinden muaf.
+  // İptal edilmiş emirde ise iş hiç yapılmadı — orada kapalı (sunucu da reddeder).
+  const invoiceEditable = order.status !== "cancelled"
+
+  function startEditInvoice() {
+    setInvoiceNoDraft(order.invoiceNo ?? "")
+    setInvoiceDateDraft(order.invoiceDate ? formatDate(order.invoiceDate) : "")
+    setEditingInvoice(true)
+  }
+
+  async function saveInvoice() {
+    setSavingInvoice(true)
+    try {
+      const formData = new FormData()
+      formData.set("invoiceNo", invoiceNoDraft)
+      formData.set("invoiceDate", invoiceDateDraft)
+      const res = await fetch(`/api/orders/${order.id}/invoice`, { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        setEditingInvoice(false)
+        router.refresh()
+      } else {
+        toast.error(data.error || "Fatura bilgisi kaydedilemedi")
+      }
+    } catch {
+      toast.error("Bir hata oluştu")
+    } finally {
+      setSavingInvoice(false)
+    }
+  }
 
   return (
     <Card>
@@ -72,12 +119,62 @@ export function OrderInfoCard({
           {/* SAĞ: fatura, tutar, durum, geliş nedeni.
               Mobilde dikey çizgi yerine üst kenarlık — kolonlar alt alta düşüyor. */}
           <div className="space-y-2.5 border-t pt-3 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-            <InfoRow label="Fatura Numarası" value={order.invoiceNo || "—"} mono />
-            <InfoRow
-              label="Fatura Tarihi"
-              value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
-              icon={Calendar}
-            />
+            {editingInvoice ? (
+              <div className="space-y-2.5">
+                <div>
+                  <Label htmlFor="invoice-no">Fatura Numarası</Label>
+                  <Input
+                    id="invoice-no"
+                    value={invoiceNoDraft}
+                    onChange={(e) => setInvoiceNoDraft(e.target.value)}
+                    placeholder="Örn. ABC2026000000123"
+                    maxLength={50}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="invoice-date">Fatura Tarihi</Label>
+                  <DatePicker
+                    id="invoice-date"
+                    value={invoiceDateDraft}
+                    onChange={setInvoiceDateDraft}
+                    placeholder="Tarih seçin"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button onClick={saveInvoice} disabled={savingInvoice} size="sm" className="flex-1">
+                    {savingInvoice ? <Loader2 className="size-3.5 animate-spin" /> : "Kaydet"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditingInvoice(false)} disabled={savingInvoice} size="sm">
+                    İptal
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Fatura entegrasyonu yok — bilgileri kendi fatura uygulamanızdan girin.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">Fatura Numarası</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-foreground">{order.invoiceNo || "—"}</span>
+                    {invoiceEditable && (
+                      <button
+                        onClick={startEditInvoice}
+                        className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary/5 px-1.5 py-0.5 rounded-lg touch-manipulation"
+                      >
+                        <Pencil className="size-3" /> Düzenle
+                      </button>
+                    )}
+                  </span>
+                </div>
+                <InfoRow
+                  label="Fatura Tarihi"
+                  value={order.invoiceDate ? formatDate(order.invoiceDate) : "—"}
+                  icon={Calendar}
+                />
+              </>
+            )}
             <InfoRow
               label="Toplam Tutar"
               value={order.totals.hasAnyPrice ? formatTRY(order.totals.grandTotal) : "—"}
