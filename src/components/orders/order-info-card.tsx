@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { PaymentBadge } from "@/components/shared/status-badge"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
@@ -75,7 +85,33 @@ export function OrderInfoCard({
 
   const [changingStatus, setChangingStatus] = useState(false)
   const [changingReason, setChangingReason] = useState(false)
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const statusOptions = orderStatusOptions(order.status as OrderStatus)
+
+  // Sıradan geçişlerle "İptal" onayından gelen geçiş aynı isteği paylaşır —
+  // fetch mantığı tek yerde, iki çağıran arasında kopyalanmaz.
+  async function postStatusChange(next: string) {
+    setChangingStatus(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        router.refresh()
+        return true
+      }
+      toast.error(data.error || "Durum güncellenemedi")
+      return false
+    } catch {
+      toast.error("Bir hata oluştu")
+      return false
+    } finally {
+      setChangingStatus(false)
+    }
+  }
 
   async function handleStatusSelect(next: string) {
     if (!next || next === order.status) return
@@ -88,24 +124,23 @@ export function OrderInfoCard({
       toast.info("Teslim onay kodu paneli sayfanın üstünde açıldı")
       return
     }
-    setChangingStatus(true)
-    try {
-      const res = await fetch(`/api/orders/${order.id}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next }),
-      })
-      const data = await res.json()
-      if (data.success) router.refresh()
-      else toast.error(data.error || "Durum güncellenemedi")
-    } catch {
-      toast.error("Bir hata oluştu")
-    } finally {
-      setChangingStatus(false)
+    // İptal terminal ve kilitleyici bir aksiyon — sayfa başlığındaki eylem
+    // haritası da (NEXT_STATUSES) bu üç durumdan doğrudan iptali esirger.
+    // Tek dokunuşla yazmak yerine onay iste; POST yalnız onaylanınca gider.
+    if (next === "cancelled") {
+      setConfirmCancelOpen(true)
+      return
     }
+    await postStatusChange(next)
+  }
+
+  async function handleConfirmCancel() {
+    const ok = await postStatusChange("cancelled")
+    if (ok) setConfirmCancelOpen(false)
   }
 
   async function handleReasonSelect(next: string) {
+    if (next === (order.arrivalReason ?? "")) return
     setChangingReason(true)
     try {
       const res = await fetch(`/api/orders/${order.id}/arrival-reason`, {
@@ -124,7 +159,8 @@ export function OrderInfoCard({
   }
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Receipt className="size-4 text-muted-foreground" />
@@ -291,7 +327,31 @@ export function OrderInfoCard({
           </div>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+
+      <AlertDialog
+        open={confirmCancelOpen}
+        onOpenChange={(open) => {
+          if (!open && !changingStatus) setConfirmCancelOpen(false)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İş emri iptal edilsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kalemler, fiyatlar, fotoğraflar ve usta ataması kilitlenir; iş emri
+              daha sonra &quot;Taslak&quot; seçilerek yeniden açılabilir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={changingStatus}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel} disabled={changingStatus}>
+              {changingStatus ? "İptal ediliyor…" : "İptal Et"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
