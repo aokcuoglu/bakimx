@@ -205,9 +205,13 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
     const current = form.getValues(`items.${index}`)
     const qty = Number(current?.quantity) || 0
     const price = Number(current?.unitPrice) || 0
-    if (qty > 0 && price > 0) {
-      form.setValue(`items.${index}.totalPrice`, qty * price, { shouldDirty: true })
-    }
+    // Koşulsuz yaz: fiyatsız/miktarsız durumda `null` yazılmazsa önceki
+    // kalemden kalan `totalPrice` satırda asılı kalır (bkz. code review bulgu I1)
+    // ve kuruşa çevrilirken açık totalPrice'ı önceleyen lineTotalKurus üzerinden
+    // teklife/PDF'e yanlış tutar sızar. Kuruşa yuvarlama (bulgu I2) zod'un
+    // `.multipleOf(0.01)` kısıtını kayan nokta artığından (ör. 64.07*9) korur.
+    const total = qty > 0 && price > 0 ? Math.round(qty * price * 100) / 100 : null
+    form.setValue(`items.${index}.totalPrice`, total, { shouldDirty: true })
   }
 
   // PREVIEW ONLY — the server recomputes the authoritative totals from the line

@@ -33,6 +33,23 @@ test("unitPrice null kabul edilir (fiyatsız kalem)", () => {
   expect(res.success).toBe(true)
 })
 
+// recomputeTotal (quote-create-form.tsx) `qty * price`'ı ham hâliyle yazınca
+// kayan nokta artığı üretiyor; bazı miktarlarda (₺1-2000 aralığında 9/18/19
+// gibi) ~%0,6 oranında görülüyor, diğerlerinde hiç yok — teşhisi zor "bazen
+// oluyor" hatası (bkz. code review bulgu I2). Bu test önce ham çarpımın
+// şemadan GEÇMEDİĞİNİ, sonra `Math.round(qty * price * 100) / 100` ile
+// kuruşa yuvarlanmış hâlin GEÇTİĞİNİ doğrular.
+test("hesaplanmış tutardaki kayan nokta artığı (64.07 × 9) ham hâliyle reddedilir, kuruşa yuvarlanınca kabul edilir", () => {
+  const rawTotal = 64.07 * 9
+  expect(rawTotal).toBe(576.6299999999999)
+  const rejected = quoteItemSchema.safeParse({ ...baseItem, quantity: 9, unitPrice: 64.07, totalPrice: rawTotal })
+  expect(rejected.success).toBe(false)
+
+  const roundedTotal = Math.round(64.07 * 9 * 100) / 100
+  const accepted = quoteItemSchema.safeParse({ ...baseItem, quantity: 9, unitPrice: 64.07, totalPrice: roundedTotal })
+  expect(accepted.success).toBe(true)
+})
+
 test("miktar hâlâ tam sayı olmak zorundadır", () => {
   const res = quoteItemSchema.safeParse({ ...baseItem, quantity: 1.5, unitPrice: 100, totalPrice: 100 })
   expect(res.success).toBe(false)
