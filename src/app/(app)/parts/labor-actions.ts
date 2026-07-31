@@ -8,12 +8,26 @@ import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 import { LABOR_PRESETS, pickNewPresets } from "@/lib/labor/presets"
 
-/** Prisma tekil-kod ihlali (P2002) → kullanıcıya anlaşılır mesaj. */
-function isUniqueCodeViolation(e: unknown): boolean {
-  return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002"
-}
-
 const CODE_TAKEN = "Bu işçilik kodu zaten kullanılıyor"
+const NAME_TAKEN = "Bu isimde bir işçilik zaten var"
+
+/**
+ * Prisma tekil kısıt ihlali (P2002) → kullanıcıya anlaşılır mesaj.
+ * `meta.target` hangi kısıtın (code mı, name mi) tetiklendiğini taşır;
+ * driver'a göre string[] veya string olabilir, ikisi de karşılanır.
+ * Eşleşmeyen bir P2002 ise (beklenmedik kısıt) null döner ve çağıran fırlatmaya devam eder.
+ */
+function uniqueViolationMessage(e: unknown): string | null {
+  if (typeof e !== "object" || e === null || !("code" in e) || (e as { code?: string }).code !== "P2002") {
+    return null
+  }
+  const meta = (e as { meta?: { target?: string[] | string } }).meta
+  const target = meta?.target
+  const targetStr = Array.isArray(target) ? target.join(",") : (target ?? "")
+  if (targetStr.includes("name")) return NAME_TAKEN
+  if (targetStr.includes("code")) return CODE_TAKEN
+  return CODE_TAKEN
+}
 
 export async function createLaborItemAction(input: unknown) {
   const { user } = await requireWritableWorkshop()
@@ -39,7 +53,8 @@ export async function createLaborItemAction(input: unknown) {
     revalidatePath("/parts")
     return { success: true as const, id: item.id }
   } catch (e) {
-    if (isUniqueCodeViolation(e)) return { error: CODE_TAKEN }
+    const message = uniqueViolationMessage(e)
+    if (message) return { error: message }
     throw e
   }
 }
@@ -56,8 +71,8 @@ export async function updateLaborItemAction(id: string, input: unknown) {
   const d = parsed.data
 
   try {
-    await prisma.laborCatalogItem.update({
-      where: { id },
+    await prisma.laborCatalogItem.updateMany({
+      where: { id, workshopId },
       data: {
         code: d.code || null,
         name: d.name,
@@ -71,7 +86,8 @@ export async function updateLaborItemAction(id: string, input: unknown) {
     revalidatePath("/parts")
     return { success: true as const }
   } catch (e) {
-    if (isUniqueCodeViolation(e)) return { error: CODE_TAKEN }
+    const message = uniqueViolationMessage(e)
+    if (message) return { error: message }
     throw e
   }
 }
@@ -83,7 +99,7 @@ export async function deactivateLaborItemAction(id: string) {
   const existing = await prisma.laborCatalogItem.findFirst({ where: { id, workshopId } })
   if (!existing) return { error: "İşçilik tanımı bulunamadı" }
 
-  await prisma.laborCatalogItem.update({ where: { id }, data: { isActive: false } })
+  await prisma.laborCatalogItem.updateMany({ where: { id, workshopId }, data: { isActive: false } })
   await AuditLogAction(workshopId, user.id, "LaborCatalogItem", id, "labor_item_deactivated")
   revalidatePath("/parts")
   return { success: true as const }
@@ -97,7 +113,7 @@ export async function deleteLaborItemAction(id: string) {
   if (!existing) return { error: "İşçilik tanımı bulunamadı" }
 
   // Geçmiş iş emri kalemleri ad+fiyat kopyası taşır, FK yoktur → silme güvenli.
-  await prisma.laborCatalogItem.delete({ where: { id } })
+  await prisma.laborCatalogItem.deleteMany({ where: { id, workshopId } })
   await AuditLogAction(workshopId, user.id, "LaborCatalogItem", id, "labor_item_deleted")
   revalidatePath("/parts")
   return { success: true as const }
@@ -122,25 +138,34 @@ export async function importLaborPresetsAction(names: string[]) {
   })
   const toAdd = pickNewPresets(selected, existing.map((e) => e.name))
 
+  // `added`, DB'nin gerçekten yazdığı satır sayısıdır (createMany sonucu) — uygulama
+  // içi `existing` okuması ile bu yazma arasında başka bir sekme aynı presetleri
+  // eş zamanlı eklerse, `skipDuplicates` + [workshopId, name] tekillik kısıtı sayesinde
+  // çift kayıt oluşmaz ve `added` bunu doğru yansıtır.
+  let added = 0
   if (toAdd.length > 0) {
-    await prisma.laborCatalogItem.createMany({
+    const result = await prisma.laborCatalogItem.createMany({
       data: toAdd.map((p) => ({
         workshopId,
         name: p.name,
         category: p.category,
         defaultPriceKurus: p.defaultPriceKurus,
       })),
+      skipDuplicates: true,
     })
-    await AuditLogAction(
-      workshopId,
-      user.id,
-      "LaborCatalogItem",
-      workshopId,
-      "labor_presets_imported",
-      JSON.stringify({ added: toAdd.length })
-    )
+    added = result.count
+    if (added > 0) {
+      await AuditLogAction(
+        workshopId,
+        user.id,
+        "LaborCatalogItem",
+        workshopId,
+        "labor_presets_imported",
+        JSON.stringify({ added })
+      )
+    }
   }
 
   revalidatePath("/parts")
-  return { success: true as const, added: toAdd.length, skipped: selected.length - toAdd.length }
+  return { success: true as const, added, skipped: selected.length - added }
 }

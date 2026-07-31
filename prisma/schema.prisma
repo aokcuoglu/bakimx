@@ -1100,6 +1100,7 @@ model LaborCatalogItem {
   updatedAt         DateTime @updatedAt
 
   @@unique([workshopId, code])
+  @@unique([workshopId, name])
   @@index([workshopId, isActive])
   @@index([workshopId, name])
 }
