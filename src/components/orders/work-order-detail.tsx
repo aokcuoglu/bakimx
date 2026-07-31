@@ -672,6 +672,14 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
+          {/* İş Emri Bilgileri */}
+          <OrderInfoCard
+            order={order}
+            technicians={technicians}
+            onRequestDelivery={handleRequestDeliveryOtp}
+            deliveryBlocked={deliveryBlocked}
+          />
+
           {/* Şikayet & Notlar (düzenlenebilir) */}
           <Card ref={infoCardRef}>
             <CardHeader className="pb-3">
@@ -733,14 +741,6 @@ export function WorkOrderDetail({
               )}
             </CardContent>
           </Card>
-
-          {/* İş Emri Bilgileri */}
-          <OrderInfoCard
-            order={order}
-            technicians={technicians}
-            onRequestDelivery={handleRequestDeliveryOtp}
-            deliveryBlocked={deliveryBlocked}
-          />
 
           {/* Özet & Kanıt */}
           <Card>
