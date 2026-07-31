@@ -26,10 +26,13 @@ export function PartSupplierPricesField({
   suppliers,
   value,
   onChange,
+  errors,
 }: {
   suppliers: SupplierOption[]
   value: SupplierPriceFormRow[]
   onChange: (rows: SupplierPriceFormRow[]) => void
+  /** Satır indeksine göre doğrulama mesajı (ör. "Tedarikçi seçilmelidir"). */
+  errors?: (string | undefined)[]
 }) {
   const [options, setOptions] = useState<SupplierOption[]>(suppliers)
   const [modalOpen, setModalOpen] = useState(false)
@@ -84,6 +87,7 @@ export function PartSupplierPricesField({
         <div className="space-y-2">
           {value.map((row, index) => {
             const selected = options.find((o) => o.id === row.supplierId)
+            const rowError = errors?.[index]
             return (
               <div key={index} className="rounded-lg border p-3 space-y-3 md:space-y-0 md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end md:gap-3">
                 <div className="space-y-1.5">
@@ -98,7 +102,7 @@ export function PartSupplierPricesField({
                       patchRow(index, { supplierId: v ?? "" })
                     }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-invalid={!!rowError}>
                       <SelectValue placeholder="Tedarikçi seçin">
                         {(v: string | null) => {
                           if (!v) return null
@@ -165,6 +169,12 @@ export function PartSupplierPricesField({
                     <Trash2 className="size-3.5" />
                   </Button>
                 </div>
+
+                {rowError && (
+                  <p className="md:col-span-4 text-xs text-destructive">
+                    {index + 1}. tedarikçi satırı: {rowError}
+                  </p>
+                )}
 
                 {row.isPreferred && (
                   <div className="md:col-span-4 flex items-start gap-1.5 min-w-0">

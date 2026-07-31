@@ -28,7 +28,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createPartAction, updatePartAction } from "@/app/(app)/parts/actions"
 import { ArrowLeft, Loader2, Save } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useForm, type FieldErrors } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { partSchema, type PartFormValues } from "@/lib/validations/part"
 import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
@@ -73,6 +73,38 @@ type ActionState = {
   error?: string
   success?: boolean
   id?: string
+}
+
+/**
+ * zodResolver, `supplierPrices` dizisi için hata şeklini duruma göre değiştiriyor:
+ * yalnız satır-içi (ör. eksik tedarikçi) hata varsa dizi indeksli obje döner
+ * (`{0: {supplierId: {message}}}`); yalnız dizi-seviyeli `refine` hatası varsa
+ * (ör. "varsayılan seçilmeli") doğrudan `{message}` döner; ikisi birden varsa
+ * satır hataları numaralı anahtarlarla, refine hatası ise `.root.message` altında
+ * gelir. Bu iki yardımcı üç şekli de tek biçime indirger.
+ */
+function extractSupplierPriceRowErrors(
+  errors: FieldErrors<PartFormValues>["supplierPrices"],
+  rowCount: number
+): (string | undefined)[] {
+  if (!errors) return []
+  const bag = errors as unknown as Record<
+    number,
+    { supplierId?: { message?: string }; purchasePrice?: { message?: string } } | undefined
+  >
+  return Array.from({ length: rowCount }, (_, i) => {
+    const row = bag[i]
+    const parts = [row?.supplierId?.message, row?.purchasePrice?.message].filter((m): m is string => Boolean(m))
+    return parts.length ? parts.join(" · ") : undefined
+  })
+}
+
+function extractSupplierPricesRootMessage(
+  errors: FieldErrors<PartFormValues>["supplierPrices"]
+): string | undefined {
+  if (!errors) return undefined
+  const bag = errors as unknown as { message?: string; root?: { message?: string } }
+  return bag.message ?? bag.root?.message
 }
 
 function toDefaults(part?: PartData, supplierPrices: SupplierPriceFormRow[] = []): PartFormValues {
@@ -438,18 +470,30 @@ export function PartForm({
               <FormField
                 control={form.control}
                 name="supplierPrices"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <PartSupplierPricesField
-                        suppliers={suppliers ?? []}
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const rowErrors = extractSupplierPriceRowErrors(
+                    form.formState.errors.supplierPrices,
+                    field.value.length
+                  )
+                  const rootMessage = extractSupplierPricesRootMessage(form.formState.errors.supplierPrices)
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <PartSupplierPricesField
+                          suppliers={suppliers ?? []}
+                          value={field.value}
+                          onChange={field.onChange}
+                          errors={rowErrors}
+                        />
+                      </FormControl>
+                      {rootMessage ? (
+                        <p className="text-sm text-destructive">{rootMessage}</p>
+                      ) : (
+                        <FormMessage />
+                      )}
+                    </FormItem>
+                  )
+                }}
               />
               <p className="text-[11px] text-muted-foreground/70 mt-3">
                 Alış fiyatı tedarikçi bazlı tutulur. Varsayılan tedarikçinin fiyatı parçanın alış fiyatı olarak kullanılır.
