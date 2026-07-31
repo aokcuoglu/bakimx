@@ -18,6 +18,10 @@ export default async function PartDetailPage(props: { params: Promise<{ id: stri
       supplier: {
         select: { id: true, name: true, phone: true },
       },
+      supplierPrices: {
+        include: { supplier: { select: { id: true, name: true, phone: true } } },
+        orderBy: [{ isPreferred: "desc" }, { purchasePrice: "asc" }],
+      },
     },
   })
 
@@ -30,6 +34,15 @@ export default async function PartDetailPage(props: { params: Promise<{ id: stri
     movements: part.movements.map((m) => ({
       ...m,
       createdAt: m.createdAt.toISOString(),
+    })),
+    supplierPrices: part.supplierPrices.map((p) => ({
+      id: p.id,
+      supplierId: p.supplierId,
+      supplierName: p.supplier.name,
+      purchasePrice: p.purchasePrice,
+      currency: p.currency,
+      supplierSku: p.supplierSku,
+      isPreferred: p.isPreferred,
     })),
   }
 
