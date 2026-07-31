@@ -20,6 +20,7 @@ export const intakeSchema = z.object({
   fuelLevelAtIntake: z.string().optional().default(""),
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional().default(""),
+  arrivalReason: z.string().optional().default(""),
 
   // Step 6: Approval consents
   termsAccepted: z.boolean().refine((v) => v === true, "Araç kabul formunu onaylamanız zorunludur"),
@@ -46,6 +47,9 @@ export const intakeCreateSchema = z.object({
   ),
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional(),
+  // Servise geliş nedeni opsiyoneldir — sahada akışı tıkamasın. Boş string
+  // "seçilmedi" demektir; asıl doğrulama server action'da isArrivalReason ile yapılır.
+  arrivalReason: z.string().optional(),
 })
 
 export const intakeUpdateSchema = z.object({

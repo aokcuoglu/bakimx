@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { SupplierStatusBadge } from "@/components/suppliers/supplier-status-badge"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
 import { formatPrice, formatStockQty } from "@/lib/parts/format"
@@ -40,10 +41,11 @@ type SupplierType = {
   email: string | null
   website: string | null
   city: string | null
+  district: string | null
   address: string | null
   taxNumber: string | null
   taxOffice: string | null
-  category: string | null
+  categories: string[]
   paymentTermDays: number | null
   averageDeliveryDays: number | null
   performanceNote: string | null
@@ -93,10 +95,10 @@ export function SupplierDetail({
             <SupplierStatusBadge isActive={supplier.isActive} size="md" />
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {supplier.category && <span>Kategori: {supplier.category}</span>}
+            {supplier.categories.length > 0 && <span>Kategori: {supplier.categories.join(", ")}</span>}
             {supplier.contactPerson && <span>Yetkili: {supplier.contactPerson}</span>}
             {supplier.phone && <span>Telefon: {supplier.phone}</span>}
-            {supplier.city && <span>İl: {supplier.city}</span>}
+            {supplier.city && <span>İl: {[supplier.city, supplier.district].filter(Boolean).join(" / ")}</span>}
           </div>
         </div>
         <div className="flex gap-2">
@@ -130,7 +132,20 @@ export function SupplierDetail({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <InfoItem label="Tedarikçi Adı" value={supplier.name} />
                 <InfoItem label="Yetkili Kişi" value={supplier.contactPerson || "—"} />
-                <InfoItem label="Kategori" value={supplier.category || "—"} />
+                <InfoItem
+                  label="Kategoriler"
+                  value={
+                    supplier.categories.length > 0 ? (
+                      <span className="flex flex-wrap gap-1">
+                        {supplier.categories.map((c) => (
+                          <Badge key={c} variant="secondary">{c}</Badge>
+                        ))}
+                      </span>
+                    ) : (
+                      "—"
+                    )
+                  }
+                />
                 {supplier.phone && (
                   <InfoItem label="Telefon" value={<a href={`tel:${supplier.phone}`} className="text-primary hover:text-primary">{supplier.phone}</a>} />
                 )}
@@ -143,7 +158,7 @@ export function SupplierDetail({
                 {supplier.website && (
                   <InfoItem label="Web Sitesi" value={<a href={supplier.website.startsWith("http") ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary break-all">{supplier.website}</a>} />
                 )}
-                <InfoItem label="Şehir" value={supplier.city || "—"} />
+                <InfoItem label="İl / İlçe" value={[supplier.city, supplier.district].filter(Boolean).join(" / ") || "—"} />
                 <InfoItem label="Adres" value={supplier.address || "—"} />
                 <InfoItem label="Vergi No" value={supplier.taxNumber || "—"} />
                 <InfoItem label="Vergi Dairesi" value={supplier.taxOffice || "—"} />

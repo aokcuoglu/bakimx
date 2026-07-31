@@ -106,6 +106,9 @@ export default async function OrderDetailPage({
     estimatedDeliveryAt: order.estimatedDeliveryAt ? order.estimatedDeliveryAt.toISOString() : null,
     createdAt: order.createdAt.toISOString(),
     notes: order.notes,
+    invoiceNo: order.invoiceNo,
+    invoiceDate: order.invoiceDate ? order.invoiceDate.toISOString() : null,
+    arrivalReason: order.arrivalReason,
     discountAmount: order.discountAmount,
     taxRate: order.taxRate,
     totals: {
