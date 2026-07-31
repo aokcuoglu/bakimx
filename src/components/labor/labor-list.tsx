@@ -21,7 +21,7 @@ import { LaborPresetImportDialog } from "@/components/labor/labor-preset-import-
 import { searchLaborItems } from "@/lib/labor/search"
 import { formatPrice } from "@/lib/parts/format"
 import type { LaborCatalogRow, LaborKPIs } from "@/lib/labor/types"
-import { Plus, Search, Wrench, Archive, Edit3, Trash2, Sparkles, CheckCircle2 } from "lucide-react"
+import { Plus, Search, Wrench, Archive, Edit3, Trash2, Sparkles, CheckCircle2, Loader2 } from "lucide-react"
 
 const STATUS_LABELS: Record<string, string> = { all: "Tümü", active: "Aktif", inactive: "Pasif" }
 
@@ -298,7 +298,13 @@ export function LaborList({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Sil</AlertDialogAction>
+            <AlertDialogAction
+              disabled={busyId === pendingDelete?.id}
+              onClick={confirmDelete}
+            >
+              {busyId === pendingDelete?.id && <Loader2 className="size-4 animate-spin" />}
+              Sil
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
