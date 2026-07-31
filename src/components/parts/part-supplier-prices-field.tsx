@@ -167,10 +167,13 @@ export function PartSupplierPricesField({
                 </div>
 
                 {row.isPreferred && (
-                  <div className="md:col-span-4">
-                    <Badge variant="secondary" className="text-[10px]">
-                      Varsayılan — parçanın alış fiyatı bu satırdan alınır
+                  <div className="md:col-span-4 flex items-start gap-1.5 min-w-0">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                      Varsayılan
                     </Badge>
+                    <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground">
+                      Parçanın alış fiyatı bu satırdan alınır
+                    </p>
                   </div>
                 )}
               </div>
