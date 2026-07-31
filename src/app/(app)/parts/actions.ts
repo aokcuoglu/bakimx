@@ -12,14 +12,32 @@ import { normalizeSupplierPriceRows, derivePartPricing, type SupplierPriceRow } 
 
 type SupplierPricesResult =
   | { error: string }
+  | { skip: true }
   | { rows: SupplierPriceRow[]; derived: { purchasePrice: number | null; supplierId: string | null } }
 
 /**
  * `supplierPrices` JSON alanını okur, doğrular ve tedarikçilerin bu atölyeye
  * ait olduğunu teyit eder. workshopId çağırandan gelir — client'a güvenilmez.
+ *
+ * Girdiye göre üç farklı sonuç:
+ * - Alan FormData'da **hiç yok** (`formData.get` → `null`): `{ skip: true }` —
+ *   çağıran tedarikçi satırlarına dokunmamalı (silmemeli, türetilmiş alanları
+ *   değiştirmemeli). Alanı göndermeyen bir çağıran = "bu konuda bilgim yok",
+ *   "hepsini sil" değil.
+ * - Alan boş string (`""`) ya da geçerli JSON'da boş dizi (`"[]"`): satırlar
+ *   temizlenir, türetilmiş `purchasePrice`/`supplierId` `null`'a düşer. Bu,
+ *   alanın **açıkça gönderildiği** ve kullanıcının tüm satırları sildiği
+ *   anlamına gelir. Bugünkü tek çağıran (parça formu) her zaman geçerli JSON
+ *   gönderdiği için pratikte `""` yolu hiç tetiklenmez, ama boş dizi (`"[]"`)
+ *   ile aynı "temizle" davranışını korumak için burada da temizleme yapılır.
+ * - Alan dolu JSON dizisi: satırlar doğrulanır/normalize edilir, tedarikçi
+ *   sahipliği tek sorguda teyit edilir.
  */
 async function parseSupplierPrices(formData: FormData, workshopId: string): Promise<SupplierPricesResult> {
   const raw = formData.get("supplierPrices")
+  if (raw === null) {
+    return { skip: true }
+  }
   if (typeof raw !== "string" || raw.trim() === "") {
     return { rows: [], derived: { purchasePrice: null, supplierId: null } }
   }
@@ -60,6 +78,10 @@ export async function createPartAction(formData: FormData) {
 
   const prices = await parseSupplierPrices(formData, workshopId)
   if ("error" in prices) return { error: prices.error }
+  // Yeni kayıtta korunacak önceki bir değer yok — alan gönderilmemişse (skip)
+  // türetilmiş fiyat/tedarikçi null kalır, satır yazılmaz.
+  const priceRows = "skip" in prices ? [] : prices.rows
+  const priceDerived = "skip" in prices ? { purchasePrice: null, supplierId: null } : prices.derived
 
   const part = await prisma.partStockItem.create({
     data: {
@@ -73,20 +95,20 @@ export async function createPartAction(formData: FormData) {
       unit: parsed.data.unit || "adet",
       stockQty: parsed.data.stockQty,
       criticalStockQty: parsed.data.criticalStockQty,
-      purchasePrice: prices.derived.purchasePrice,
+      purchasePrice: priceDerived.purchasePrice,
       salePrice: parsed.data.salePrice ?? null,
       currency: parsed.data.currency || "TRY",
       supplierName: null,
       supplierPhone: null,
-      supplierId: prices.derived.supplierId,
+      supplierId: priceDerived.supplierId,
       shelfLocation: parsed.data.shelfLocation || null,
       barcode: parsed.data.barcode || null,
     },
   })
 
-  if (prices.rows.length > 0) {
+  if (priceRows.length > 0) {
     await prisma.partSupplierPrice.createMany({
-      data: prices.rows.map((r) => ({
+      data: priceRows.map((r) => ({
         workshopId,
         partId: part.id,
         supplierId: r.supplierId,
@@ -140,13 +162,22 @@ export async function updatePartAction(partId: string, formData: FormData) {
 
   const prices = await parseSupplierPrices(formData, workshopId)
   if ("error" in prices) return { error: prices.error }
+  // Alan hiç gönderilmemişse (skip) tedarikçi satırlarına dokunulmaz: ne
+  // deleteMany/createMany çalışır ne de türetilmiş purchasePrice/supplierId
+  // değiştirilir (anahtarlar updateMany data'sından tamamen çıkarılır, ki
+  // Prisma mevcut değerleri korusun).
+  const touchSupplierPrices = !("skip" in prices)
+  const priceRows = "skip" in prices ? [] : prices.rows
+  const priceDerivedUpdate = "skip" in prices
+    ? {}
+    : { purchasePrice: prices.derived.purchasePrice, supplierId: prices.derived.supplierId }
 
   await prisma.$transaction([
-    prisma.partSupplierPrice.deleteMany({ where: { partId, workshopId } }),
-    ...(prices.rows.length > 0
+    ...(touchSupplierPrices ? [prisma.partSupplierPrice.deleteMany({ where: { partId, workshopId } })] : []),
+    ...(touchSupplierPrices && priceRows.length > 0
       ? [
           prisma.partSupplierPrice.createMany({
-            data: prices.rows.map((r) => ({
+            data: priceRows.map((r) => ({
               workshopId,
               partId,
               supplierId: r.supplierId,
@@ -170,12 +201,11 @@ export async function updatePartAction(partId: string, formData: FormData) {
         unit: parsed.data.unit || "adet",
         stockQty: parsed.data.stockQty,
         criticalStockQty: parsed.data.criticalStockQty,
-        purchasePrice: prices.derived.purchasePrice,
         salePrice: parsed.data.salePrice ?? null,
         currency: parsed.data.currency || "TRY",
-        supplierId: prices.derived.supplierId,
         shelfLocation: parsed.data.shelfLocation || null,
         barcode: parsed.data.barcode || null,
+        ...priceDerivedUpdate,
       },
     }),
   ])
