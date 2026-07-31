@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test"
-import { normalizeSupplierPriceRows, derivePartPricing, type SupplierPriceRow } from "./supplier-prices"
+import {
+  normalizeSupplierPriceRows,
+  derivePartPricing,
+  shouldPreserveDerivedPricing,
+  type SupplierPriceRow,
+} from "./supplier-prices"
 
 function row(over: Partial<SupplierPriceRow> = {}): SupplierPriceRow {
   return { supplierId: "s1", purchasePrice: 1000, supplierSku: "", isPreferred: false, ...over }
@@ -51,4 +56,26 @@ test("varsayılan satırın fiyatı ve tedarikçisi parçaya taşınır", () => 
     row({ supplierId: "s2", purchasePrice: 4000, isPreferred: true }),
   ])
   expect(derivePartPricing(rows)).toEqual({ purchasePrice: 4000, supplierId: "s2" })
+})
+
+// ── Türetilmiş alan koruması (eski, satırsız parçalar) ──────────────────────
+
+test("alan hiç gönderilmediyse türetilmiş alanlara dokunulmaz", () => {
+  expect(shouldPreserveDerivedPricing({ touched: false, incomingRowCount: 0, existingRowCount: 0 })).toBe(true)
+  expect(shouldPreserveDerivedPricing({ touched: false, incomingRowCount: 0, existingRowCount: 3 })).toBe(true)
+})
+
+test("satırı hiç olmayan eski parçanın fiyatı/tedarikçisi boş listede korunur", () => {
+  // Backfill'in ulaşamadığı parça (ör. fiyatı var, carisi yok) düzenlenirken
+  // form boş liste gönderir — bu silme sayılmamalı.
+  expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 0, existingRowCount: 0 })).toBe(true)
+})
+
+test("kullanıcı mevcut satırların hepsini silerse türetilmiş alanlar temizlenir", () => {
+  expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 0, existingRowCount: 2 })).toBe(false)
+})
+
+test("satır gönderildiyse türetilmiş alanlar her durumda yazılır", () => {
+  expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 1, existingRowCount: 0 })).toBe(false)
+  expect(shouldPreserveDerivedPricing({ touched: true, incomingRowCount: 2, existingRowCount: 2 })).toBe(false)
 })

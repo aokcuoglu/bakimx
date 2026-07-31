@@ -36,19 +36,24 @@ ALTER TABLE "PartSupplierPrice" ADD CONSTRAINT "PartSupplierPrice_partId_fkey" F
 -- AddForeignKey
 ALTER TABLE "PartSupplierPrice" ADD CONSTRAINT "PartSupplierPrice_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- Backfill: mevcut tekil tedarikçi + alış fiyatı olan parçalar için varsayılan satır üret
+-- Backfill: tedarikçisi olan her parça için varsayılan satır üret.
+-- Alış fiyatı boş olabilir (eski formda iki alan bağımsız/opsiyoneldi); satırın
+-- purchasePrice'ı NOT NULL olduğu için bu durumda 0 yazılır — parçanın
+-- tedarikçi bağı böylece korunur (tedarikçi sayfası + kritik stok widget'ı bu
+-- bağı okur). Tersi (fiyatı var, carisi yok) satır olarak taşınamaz: supplierId
+-- zorunlu; o veri PartStockItem üzerinde korunur (updatePartAction'daki
+-- shouldPreserveDerivedPricing koruması).
 INSERT INTO "PartSupplierPrice" ("id", "workshopId", "partId", "supplierId", "purchasePrice", "currency", "isPreferred", "createdAt", "updatedAt")
 SELECT
   replace(gen_random_uuid()::text, '-', ''),
   p."workshopId",
   p."id",
   p."supplierId",
-  p."purchasePrice",
+  COALESCE(p."purchasePrice", 0),
   p."currency",
   true,
   NOW(),
   NOW()
 FROM "PartStockItem" p
 WHERE p."supplierId" IS NOT NULL
-  AND p."purchasePrice" IS NOT NULL
 ON CONFLICT ("partId", "supplierId") DO NOTHING;

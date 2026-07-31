@@ -127,13 +127,9 @@ export function PartSupplierPricesField({
 
                 <div className="space-y-1.5">
                   <Label className="text-xs">Alış Fiyatı (₺)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <PriceInput
                     value={row.purchasePrice}
-                    onChange={(e) => patchRow(index, { purchasePrice: Number(e.target.value) })}
-                    placeholder="0"
+                    onCommit={(price) => patchRow(index, { purchasePrice: price })}
                   />
                 </div>
 
@@ -205,5 +201,42 @@ export function PartSupplierPricesField({
 
       <QuickSupplierModal open={modalOpen} onOpenChange={setModalOpen} onCreated={handleCreated} />
     </div>
+  )
+}
+
+/**
+ * Alış fiyatı girişi. Kontrollü sayı input'unda değeri doğrudan `Number(...)`
+ * ile tutmak ondalık girişi imkânsız kılıyordu: kullanıcı "12,5" için "12."
+ * yazdığı anda tarayıcı `value` olarak `""` döndürür, `Number("")` → `0` olur ve
+ * kontrollü değer input'a `0` basar (sonraki tuş "05" üretir). Çözüm repodaki
+ * çalışan desen (parts-labor-grid `priceDraft`): düzenleme sırasında **ham
+ * string** taslakta tutulur, sayıya çevrim commit anında yapılır.
+ *
+ * Taslak yalnız odak süresince yaşar (`null` = düzenlenmiyor), böylece satır
+ * silinip indeksler kaydığında bayat taslak kalmaz. Ayrıştırılabilir her
+ * değişiklikte commit edilir — form Enter ile gönderilse (blur olmadan) bile
+ * değer güncel kalır. "1e" gibi ayrıştırılamayan ara girdiler commit edilmez
+ * (NaN yazılmaz), blur'da son geçerli değere dönülür.
+ */
+function PriceInput({ value, onCommit }: { value: number; onCommit: (price: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null)
+
+  return (
+    <Input
+      type="number"
+      inputMode="decimal"
+      min="0"
+      step="0.01"
+      placeholder="0"
+      className="tabular-nums"
+      value={draft ?? String(value)}
+      onChange={(e) => {
+        const rawValue = e.target.value
+        setDraft(rawValue)
+        const parsed = rawValue === "" ? 0 : Number(rawValue)
+        if (Number.isFinite(parsed) && parsed >= 0) onCommit(parsed)
+      }}
+      onBlur={() => setDraft(null)}
+    />
   )
 }

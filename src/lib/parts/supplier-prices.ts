@@ -36,3 +36,31 @@ export function derivePartPricing(rows: SupplierPriceRow[]): {
   if (!preferred) return { purchasePrice: null, supplierId: null }
   return { purchasePrice: preferred.purchasePrice, supplierId: preferred.supplierId }
 }
+
+/**
+ * Güncellemede türetilmiş alanların (`purchasePrice`, `supplierId`) update
+ * data'sına konup konmayacağına karar verir. `true` = alanlar data'dan tümüyle
+ * çıkarılır (Prisma mevcut değeri korur).
+ *
+ * Neden: tedarikçi satırları bu dalda geldi, backfill ise yalnız hem carisi
+ * hem fiyatı olan parçalara satır üretebildi (satır `supplierId` olmadan
+ * yazılamaz). Eski form iki alanı bağımsız/opsiyonel tuttuğu için satırsız ama
+ * fiyatlı/carili parçalar var. Onlar düzenlenirken form boş satır listesi
+ * gönderir; bu "hepsini sil" sanılırsa kullanıcı yalnız raf konumunu
+ * güncellediğinde bile alış fiyatı ve tedarikçi sessizce silinir.
+ *
+ * Ayrım: satır listesi boş VE parçanın önceden de satırı YOKSA veri hiç
+ * taşınmamıştır → korunur. Önceden satır VARDI ve şimdi boş liste geldiyse
+ * kullanıcı gerçekten hepsini silmiştir → türetilmiş alanlar `null`'a düşer.
+ */
+export function shouldPreserveDerivedPricing(args: {
+  /** `supplierPrices` alanı istekte gönderildi mi (gönderilmediyse hiç dokunulmaz). */
+  touched: boolean
+  /** İstekte gelen (normalize edilmiş) satır sayısı. */
+  incomingRowCount: number
+  /** Parçanın DB'de hâlihazırda kayıtlı satır sayısı. */
+  existingRowCount: number
+}): boolean {
+  if (!args.touched) return true
+  return args.incomingRowCount === 0 && args.existingRowCount === 0
+}

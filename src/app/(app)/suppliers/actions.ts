@@ -144,11 +144,21 @@ export async function deleteSupplierAction(supplierId: string) {
   })
   if (!supplier) return { error: "Tedarikçi bulunamadı" }
 
-  const linkedParts = await prisma.partStockItem.count({
-    where: { supplierId, workshopId },
-  })
+  // İki ayrı bağ var ve ikisi de silmeyi engeller:
+  // 1) PartStockItem.supplierId — tedarikçinin VARSAYILAN olduğu parçalar.
+  // 2) PartSupplierPrice — tedarikçinin yalnız alternatif olarak bulunduğu
+  //    fiyat satırları. FK'si ON DELETE RESTRICT olduğu için sayılmazsa silme
+  //    Postgres hatasıyla çöker (çağıran taraf dönüş değeri bekliyor, exception
+  //    yakalamıyor → hata sınırı + takılı "siliniyor" durumu).
+  const [linkedParts, priceRowCount] = await Promise.all([
+    prisma.partStockItem.count({ where: { supplierId, workshopId } }),
+    prisma.partSupplierPrice.count({ where: { supplierId, workshopId } }),
+  ])
   if (linkedParts > 0) {
     return { error: `Bu tedarikçiye ${linkedParts} parça bağlı. Silinemez, pasifleştirin.` }
+  }
+  if (priceRowCount > 0) {
+    return { error: `Bu tedarikçi ${priceRowCount} parçanın fiyat listesinde. Silinemez, pasifleştirin.` }
   }
 
   await prisma.supplier.deleteMany({

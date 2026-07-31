@@ -8,7 +8,7 @@ import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import { partCreateSchema, partUpdateSchema, stockMovementSchema, partSupplierPricesSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
-import { normalizeSupplierPriceRows, derivePartPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
+import { normalizeSupplierPriceRows, derivePartPricing, shouldPreserveDerivedPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
 
 type SupplierPricesResult =
   | { error: string }
@@ -147,6 +147,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
 
   const part = await prisma.partStockItem.findFirst({
     where: { id: partId, workshopId },
+    include: { _count: { select: { supplierPrices: true } } },
   })
   if (!part) return { error: "Parça bulunamadı" }
 
@@ -166,9 +167,21 @@ export async function updatePartAction(partId: string, formData: FormData) {
   // deleteMany/createMany çalışır ne de türetilmiş purchasePrice/supplierId
   // değiştirilir (anahtarlar updateMany data'sından tamamen çıkarılır, ki
   // Prisma mevcut değerleri korusun).
+  //
+  // Aynı koruma, satırı hiç olmayan ESKİ parçalara boş liste geldiğinde de
+  // uygulanır: backfill satır üretemediği için (ör. fiyatı var carisi yok)
+  // boş liste "hepsini sil" değil "taşınacak veri yoktu" demektir — bkz.
+  // shouldPreserveDerivedPricing.
   const touchSupplierPrices = !("skip" in prices)
   const priceRows = "skip" in prices ? [] : prices.rows
-  const priceDerivedUpdate = "skip" in prices
+  const preserveDerived = shouldPreserveDerivedPricing({
+    touched: touchSupplierPrices,
+    incomingRowCount: priceRows.length,
+    existingRowCount: part._count.supplierPrices,
+  })
+  // `"skip" in prices` mantıken gereksiz (preserveDerived skip'te zaten true)
+  // ama TypeScript'in `prices.derived`'i daraltması için gerekli.
+  const priceDerivedUpdate = preserveDerived || "skip" in prices
     ? {}
     : { purchasePrice: prices.derived.purchasePrice, supplierId: prices.derived.supplierId }
 
