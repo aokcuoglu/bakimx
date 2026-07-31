@@ -78,6 +78,7 @@ model Workshop {
   invites                Invite[]
   billingOrders          BillingOrder[]
   featureOverrides       WorkshopFeatureOverride[]
+  laborCatalogItems      LaborCatalogItem[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -1081,6 +1082,26 @@ model StockMovement {
   @@index([partId])
   @@index([type])
   @@index([createdAt])
+}
+
+// Atölyenin kendi tanımladığı işçilik fiyat listesi kalemi (iş emrine
+// eklenirken varsayılan fiyat/isim önerisi olarak kullanılacak).
+model LaborCatalogItem {
+  id                String   @id @default(cuid())
+  workshopId        String
+  workshop          Workshop @relation(fields: [workshopId], references: [id])
+  code              String?
+  name              String
+  category          String?
+  defaultPriceKurus Int? // kuruş cinsinden varsayılan fiyat
+  description       String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([workshopId, code])
+  @@index([workshopId, isActive])
+  @@index([workshopId, name])
 }
 
 model AuditLog {
