@@ -5,9 +5,44 @@ import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
-import { partCreateSchema, partUpdateSchema, stockMovementSchema } from "@/lib/validations/part"
+import { partCreateSchema, partUpdateSchema, stockMovementSchema, partSupplierPricesSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
+import { normalizeSupplierPriceRows, derivePartPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
+
+type SupplierPricesResult =
+  | { error: string }
+  | { rows: SupplierPriceRow[]; derived: { purchasePrice: number | null; supplierId: string | null } }
+
+/**
+ * `supplierPrices` JSON alanını okur, doğrular ve tedarikçilerin bu atölyeye
+ * ait olduğunu teyit eder. workshopId çağırandan gelir — client'a güvenilmez.
+ */
+async function parseSupplierPrices(formData: FormData, workshopId: string): Promise<SupplierPricesResult> {
+  const raw = formData.get("supplierPrices")
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return { rows: [], derived: { purchasePrice: null, supplierId: null } }
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(raw)
+  } catch {
+    return { error: "Tedarikçi fiyatları okunamadı" }
+  }
+
+  const parsed = partSupplierPricesSchema.safeParse(json)
+  if (!parsed.success) return { error: getValidationError(parsed) ?? "Tedarikçi fiyatları geçersiz" }
+
+  const rows = normalizeSupplierPriceRows(parsed.data)
+  if (rows.length > 0) {
+    const ids = rows.map((r) => r.supplierId)
+    const owned = await prisma.supplier.count({ where: { workshopId, id: { in: ids } } })
+    if (owned !== ids.length) return { error: "Geçersiz tedarikçi" }
+  }
+
+  return { rows, derived: derivePartPricing(rows) }
+}
 
 export async function createPartAction(formData: FormData) {
   const { user } = await requireWritableWorkshop()
@@ -23,10 +58,8 @@ export async function createPartAction(formData: FormData) {
   const parsed = partCreateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
 
-  if (parsed.data.supplierId) {
-    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
-    if (!supplier) return { error: "Geçersiz tedarikçi" }
-  }
+  const prices = await parseSupplierPrices(formData, workshopId)
+  if ("error" in prices) return { error: prices.error }
 
   const part = await prisma.partStockItem.create({
     data: {
@@ -40,16 +73,30 @@ export async function createPartAction(formData: FormData) {
       unit: parsed.data.unit || "adet",
       stockQty: parsed.data.stockQty,
       criticalStockQty: parsed.data.criticalStockQty,
-      purchasePrice: parsed.data.purchasePrice ?? null,
+      purchasePrice: prices.derived.purchasePrice,
       salePrice: parsed.data.salePrice ?? null,
       currency: parsed.data.currency || "TRY",
-      supplierName: parsed.data.supplierName || null,
-      supplierPhone: parsed.data.supplierPhone || null,
-      supplierId: parsed.data.supplierId || null,
+      supplierName: null,
+      supplierPhone: null,
+      supplierId: prices.derived.supplierId,
       shelfLocation: parsed.data.shelfLocation || null,
       barcode: parsed.data.barcode || null,
     },
   })
+
+  if (prices.rows.length > 0) {
+    await prisma.partSupplierPrice.createMany({
+      data: prices.rows.map((r) => ({
+        workshopId,
+        partId: part.id,
+        supplierId: r.supplierId,
+        purchasePrice: r.purchasePrice,
+        currency: parsed.data.currency || "TRY",
+        supplierSku: r.supplierSku || null,
+        isPreferred: r.isPreferred,
+      })),
+    })
+  }
 
   if (parsed.data.stockQty > 0) {
     await prisma.stockMovement.create({
@@ -91,37 +138,52 @@ export async function updatePartAction(partId: string, formData: FormData) {
   const parsed = partUpdateSchema.safeParse(raw)
   if (!parsed.success) return { error: getValidationError(parsed) }
 
-  if (parsed.data.supplierId) {
-    const supplier = await prisma.supplier.findFirst({ where: { id: parsed.data.supplierId, workshopId } })
-    if (!supplier) return { error: "Geçersiz tedarikçi" }
-  }
+  const prices = await parseSupplierPrices(formData, workshopId)
+  if ("error" in prices) return { error: prices.error }
 
-  await prisma.partStockItem.updateMany({
-    where: { id: partId, workshopId },
-    data: {
-      name: parsed.data.name,
-      sku: parsed.data.sku || null,
-      oemNo: parsed.data.oemNo || null,
-      brand: parsed.data.brand || null,
-      category: parsed.data.category || null,
-      description: parsed.data.description || null,
-      unit: parsed.data.unit || "adet",
-      stockQty: parsed.data.stockQty,
-      criticalStockQty: parsed.data.criticalStockQty,
-      purchasePrice: parsed.data.purchasePrice ?? null,
-      salePrice: parsed.data.salePrice ?? null,
-      currency: parsed.data.currency || "TRY",
-      supplierName: parsed.data.supplierName || null,
-      supplierPhone: parsed.data.supplierPhone || null,
-      supplierId: parsed.data.supplierId || null,
-      shelfLocation: parsed.data.shelfLocation || null,
-      barcode: parsed.data.barcode || null,
-    },
-  })
+  await prisma.$transaction([
+    prisma.partSupplierPrice.deleteMany({ where: { partId, workshopId } }),
+    ...(prices.rows.length > 0
+      ? [
+          prisma.partSupplierPrice.createMany({
+            data: prices.rows.map((r) => ({
+              workshopId,
+              partId,
+              supplierId: r.supplierId,
+              purchasePrice: r.purchasePrice,
+              currency: parsed.data.currency || "TRY",
+              supplierSku: r.supplierSku || null,
+              isPreferred: r.isPreferred,
+            })),
+          }),
+        ]
+      : []),
+    prisma.partStockItem.updateMany({
+      where: { id: partId, workshopId },
+      data: {
+        name: parsed.data.name,
+        sku: parsed.data.sku || null,
+        oemNo: parsed.data.oemNo || null,
+        brand: parsed.data.brand || null,
+        category: parsed.data.category || null,
+        description: parsed.data.description || null,
+        unit: parsed.data.unit || "adet",
+        stockQty: parsed.data.stockQty,
+        criticalStockQty: parsed.data.criticalStockQty,
+        purchasePrice: prices.derived.purchasePrice,
+        salePrice: parsed.data.salePrice ?? null,
+        currency: parsed.data.currency || "TRY",
+        supplierId: prices.derived.supplierId,
+        shelfLocation: parsed.data.shelfLocation || null,
+        barcode: parsed.data.barcode || null,
+      },
+    }),
+  ])
 
   await AuditLogAction(workshopId, user.id, "PartStockItem", partId, "part_updated")
   revalidatePath(`/parts/${partId}`)
   revalidatePath("/parts")
+  revalidatePath("/suppliers")
   return { success: true, id: partId }
 }
 
