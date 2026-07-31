@@ -76,11 +76,11 @@ import {
   PartsLaborCard,
   PricingSummaryCard,
   PaymentHistoryCard,
-  OrderInfoCard,
   type OrderDetailData,
   type PricingMetaDraft,
   type Totals,
 } from "@/components/orders/order-management-panel"
+import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 
@@ -735,7 +735,12 @@ export function WorkOrderDetail({
           </Card>
 
           {/* İş Emri Bilgileri */}
-          <OrderInfoCard order={order} technicians={technicians} />
+          <OrderInfoCard
+            order={order}
+            technicians={technicians}
+            onRequestDelivery={handleRequestDeliveryOtp}
+            deliveryBlocked={deliveryBlocked}
+          />
 
           {/* Özet & Kanıt */}
           <Card>
