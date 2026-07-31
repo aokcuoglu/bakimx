@@ -449,6 +449,7 @@ git commit -m "feat(orders): fatura bilgisi doğrulama şeması"
 - Modify: `src/app/(app)/orders/actions.ts` (dosya sonuna iki yeni action; import satırları ~1–20)
 - Create: `src/app/api/orders/[id]/invoice/route.ts`
 - Create: `src/app/api/orders/[id]/arrival-reason/route.ts`
+- Modify: `src/lib/orders/activity.ts` (`buildEntry` switch'i + import satırları)
 
 **Interfaces:**
 - Consumes: `orderInvoiceSchema` (Task 4), `isArrivalReason` + `ArrivalReasonKey` (Task 1),
@@ -643,15 +644,52 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 }
 ```
 
-- [ ] **Step 6: Tip ve lint kontrolü**
+- [ ] **Step 6: İki yeni aksiyonu İşlem Geçmişi'ne bağla**
+
+`src/lib/orders/activity.ts`'teki `buildEntry` switch'i bilinmeyen aksiyonlar için
+`null` döner ve o kayıt geçmişe hiç girmez. İki yeni aksiyon eklenmezse denetim
+kaydına yazılır ama personel "Geçmiş" sekmesinde görünmez (tasarım dokümanı §7,
+QA maddesi 12 bunu şart koşuyor).
+
+`case "order_meta_updated":` satırının hemen altına:
+
+```ts
+    case "order_invoice_updated": {
+      const to = (meta.to ?? {}) as Record<string, unknown>
+      const no = typeof to.invoiceNo === "string" ? to.invoiceNo : null
+      const date = typeof to.invoiceDate === "string" ? formatDate(to.invoiceDate) : null
+      return {
+        category: "meta",
+        label: no || date ? "Fatura bilgisi güncellendi" : "Fatura bilgisi temizlendi",
+        detail: [no, date].filter(Boolean).join(" · ") || undefined,
+      }
+    }
+    case "order_arrival_reason_set": {
+      const to = typeof meta.to === "string" ? meta.to : null
+      return {
+        category: "meta",
+        label: to ? `Geliş nedeni: ${arrivalReasonLabel(to)}` : "Geliş nedeni kaldırıldı",
+      }
+    }
+```
+
+Import satırlarını genişlet — `arrivalReasonLabel` mevcut `@/lib/constants` bloğuna
+eklenir, `formatDate` yeni bir satırdır (`@/lib/utils-client` Node bağımlılığı olmayan
+saf formatlayıcılar barındırır, `server-only` dosyada güvenle kullanılır):
+
+```ts
+import { formatDate } from "@/lib/utils-client"
+```
+
+- [ ] **Step 7: Tip ve lint kontrolü**
 
 Çalıştır: `bun run typecheck && bun run lint`
 Beklenen: her ikisi de hatasız.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add "src/app/(app)/orders/actions.ts" "src/app/api/orders/[id]/invoice" "src/app/api/orders/[id]/arrival-reason"
+git add "src/app/(app)/orders/actions.ts" "src/app/api/orders/[id]/invoice" "src/app/api/orders/[id]/arrival-reason" src/lib/orders/activity.ts
 git commit -m "feat(orders): fatura bilgisi ve geliş nedeni yazma aksiyonları"
 ```
 
