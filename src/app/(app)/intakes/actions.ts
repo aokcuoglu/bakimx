@@ -10,6 +10,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isIntakeWriteLocked } from "@/lib/status-transitions"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
+import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 
 export async function createIntakeAction(formData: FormData) {
   const user = await requireAuth()
@@ -21,11 +22,21 @@ export async function createIntakeAction(formData: FormData) {
     fuelLevelAtIntake: formData.get("fuelLevelAtIntake") as string,
     customerComplaint: formData.get("customerComplaint") as string,
     internalNote: formData.get("internalNote") as string,
+    arrivalReason: formData.get("arrivalReason") as string,
   }
 
   const parsed = intakeCreateSchema.safeParse(raw)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  // Tanınmayan neden sessizce yutulmaz; şema serbest string kabul ettiği için
+  // asıl kontrol burada.
+  const rawReason = parsed.data.arrivalReason ?? ""
+  let arrivalReason: ArrivalReasonKey | null = null
+  if (rawReason !== "") {
+    if (!isArrivalReason(rawReason)) return { error: "Geçersiz geliş nedeni" }
+    arrivalReason = rawReason
   }
 
   const customer = await prisma.customer.findFirst({
@@ -57,7 +68,7 @@ export async function createIntakeAction(formData: FormData) {
         internalNote: parsed.data.internalNote || null,
       },
     })
-    const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id)
+    const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id, arrivalReason)
     // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
     const km = parsed.data.mileageAtIntake
     if (km) {
