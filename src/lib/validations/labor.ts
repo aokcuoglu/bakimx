@@ -15,4 +15,4 @@ export const laborItemSchema = z.object({
   isActive: z.boolean().default(true),
 })
 
-export type LaborItemInput = z.infer<typeof laborItemSchema>
+export type LaborItemInput = z.input<typeof laborItemSchema>
