@@ -26,12 +26,22 @@ import {
 import { Plus, Trash2, Loader2, Calculator, User, X } from "lucide-react"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
+import {
+  Autocomplete,
+  AutocompleteContent,
+  AutocompleteEmpty,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteList,
+} from "@/components/ui/autocomplete"
 import { formatPrice } from "@/lib/parts/format"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira, percentToBps } from "@/lib/money"
 import { calculateOrderTotals } from "@/lib/totals"
+import { searchLaborItems } from "@/lib/labor/search"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 import { useForm, useFieldArray } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -78,7 +88,7 @@ const defaultItem = {
   partId: "",
 }
 
-export function QuoteCreateForm() {
+export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRow[] }) {
   const router = useRouter()
   const wrappedAction = async (
     _prev: ActionState | null,
@@ -517,11 +527,61 @@ export function QuoteCreateForm() {
                             <FormItem className="sm:col-span-2">
                               <FormLabel className="text-[11px] text-muted-foreground">Ad</FormLabel>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder={typeVal === "part" ? "Fren balatası..." : "Yağ değişimi..."}
-                                  className="h-8 text-sm"
-                                />
+                                {typeVal === "labor" ? (
+                                  <Autocomplete
+                                    items={searchLaborItems(laborCatalog, field.value ?? "")}
+                                    value={field.value ?? ""}
+                                    filter={null}
+                                    autoHighlight
+                                    openOnInputClick
+                                    itemToStringValue={(e: LaborCatalogRow) => e.name}
+                                    onValueChange={(v: string) => field.onChange(v)}
+                                  >
+                                    <AutocompleteInput
+                                      render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />}
+                                    />
+                                    <AutocompleteContent>
+                                      <AutocompleteEmpty>
+                                        Tanımlı işçilik yok — Stok / İşçilikler ekranından ekleyebilirsiniz
+                                      </AutocompleteEmpty>
+                                      <AutocompleteList>
+                                        {(e: LaborCatalogRow) => (
+                                          <AutocompleteItem
+                                            key={e.id}
+                                            value={e}
+                                            onClick={() => {
+                                              field.onChange(e.name)
+                                              // Form TL tutar; katalog kuruş saklar.
+                                              if (e.defaultPriceKurus != null) {
+                                                form.setValue(
+                                                  `items.${index}.unitPrice`,
+                                                  kurusToLira(e.defaultPriceKurus),
+                                                  { shouldDirty: true }
+                                                )
+                                                recomputeTotal(index)
+                                              }
+                                            }}
+                                          >
+                                            <span className="min-w-0 flex-1">
+                                              <span className="block truncate">{e.name}</span>
+                                              {e.category && (
+                                                <span className="block text-[11px] text-muted-foreground">
+                                                  {e.category}
+                                                </span>
+                                              )}
+                                            </span>
+                                          </AutocompleteItem>
+                                        )}
+                                      </AutocompleteList>
+                                    </AutocompleteContent>
+                                  </Autocomplete>
+                                ) : (
+                                  <Input
+                                    {...field}
+                                    placeholder="Fren balatası..."
+                                    className="h-8 text-sm"
+                                  />
+                                )}
                               </FormControl>
                             </FormItem>
                           )
