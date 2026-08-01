@@ -23,6 +23,8 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { CustomerVehiclePicker } from "@/components/intake/customer-vehicle-picker"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel } from "@/lib/constants"
 
 type Customer = {
   id: string
@@ -96,6 +98,7 @@ export function IntakeWizard({
       fuelLevelAtIntake: "",
       customerComplaint: "",
       internalNote: "",
+      arrivalReason: "",
       termsAccepted: false,
       privacyAccepted: false,
       serviceInfoAccepted: false,
@@ -203,6 +206,7 @@ export function IntakeWizard({
       formData.set("mileageAtIntake", values.mileageAtIntake)
       formData.set("fuelLevelAtIntake", values.fuelLevelAtIntake)
       formData.set("internalNote", values.internalNote)
+      formData.set("arrivalReason", values.arrivalReason)
 
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
       const data = await res.json()
@@ -358,6 +362,31 @@ export function IntakeWizard({
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="arrivalReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Servise Geliş Nedeni</FormLabel>
+                      <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <SelectTrigger className="w-full">
+                          {/* Base UI'da `children` verilince `placeholder` HİÇ render
+                              edilmez (bkz. order-info-card.tsx) — boş durumu render
+                              fonksiyonu içinde kendimiz metinleştiriyoruz. */}
+                          <SelectValue>
+                            {(value: string | null) => (value ? arrivalReasonLabel(value) : "Seçiniz (opsiyonel)")}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Belirtilmedi</SelectItem>
+                          {ARRIVAL_REASON_ORDER.map((r) => (
+                            <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />

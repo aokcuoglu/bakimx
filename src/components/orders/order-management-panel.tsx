@@ -12,15 +12,13 @@ import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
-import { formatDate, formatDateTime } from "@/lib/utils-client"
+import { formatDate } from "@/lib/utils-client"
 import {
   Plus,
   Wrench,
-  Calendar,
   Loader2,
   Pencil,
   Save,
-  Receipt,
   Calculator,
   Wallet,
   ChevronRight,
@@ -29,9 +27,6 @@ import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
 import type { LaborCatalogRow } from "@/lib/labor/types"
-import { isOrderLocked } from "@/lib/status-transitions"
-import type { OrderStatus } from "@prisma/client"
-import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
 import { CollectionQuickModal } from "@/components/cashbox/collection-quick-modal"
 
@@ -90,6 +85,11 @@ export type OrderDetailData = {
   estimatedDeliveryAt: string | null
   createdAt: string
   notes: string | null
+  invoiceNo: string | null
+  /** ISO string; kartta GG.AA.YYYY olarak gösterilir. */
+  invoiceDate: string | null
+  /** ArrivalReason enum anahtarı; etiket için arrivalReasonLabel kullanılır. */
+  arrivalReason: string | null
   discountAmount: number | null
   taxRate: number | null
   totals: Totals
@@ -383,85 +383,6 @@ function SummaryRow({
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
       <span className={cn(muted ? "text-muted-foreground/70" : toneColor, large && "text-lg font-bold text-foreground", bold && !large && toneColor)}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-export function OrderInfoCard({
-  order,
-  technicians,
-}: {
-  order: OrderDetailData
-  technicians?: AssignableTechnician[]
-}) {
-  const locked = isOrderLocked(order.status as OrderStatus)
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Receipt className="size-4 text-muted-foreground" />
-          İş Emri Bilgileri
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2.5 text-sm">
-        <InfoRow label="İş No" value={order.workOrderNo} mono />
-        <InfoRow label="Oluşturulma" value={formatDateTime(order.createdAt)} icon={Calendar} />
-        <InfoRow
-          label="Tahmini Teslim"
-          value={order.estimatedDeliveryAt ? formatDateTime(order.estimatedDeliveryAt) : "—"}
-          icon={Calendar}
-        />
-        {order.completedAt && (
-          <InfoRow label="Tamamlanma" value={formatDateTime(order.completedAt)} icon={Calendar} />
-        )}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">Atanan Usta</span>
-          {/* Atama tek bir yerden yürür (technician-assign); burada yalnız tetikleyici durur. */}
-          <TechnicianAssign
-            orderId={order.id}
-            assignedTechnicianId={order.assignedTechnicianId}
-            assignedTechnicianName={order.assignedTechnicianName}
-            technicians={technicians ?? []}
-            locked={locked}
-          />
-        </div>
-        {order.technicianName && order.technicianName !== order.assignedTechnicianName && (
-          <InfoRow label="Teknisyen (eski)" value={order.technicianName} />
-        )}
-        {order.notes && (
-          <div className="pt-2 border-t">
-            <p className="text-xs text-muted-foreground mb-1">Notlar</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{order.notes}</p>
-          </div>
-        )}
-        <div className="pt-2 border-t">
-          <p className="text-xs text-muted-foreground mb-1.5">Ödeme</p>
-          <PaymentBadge status={order.paymentStatus} size="md" />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function InfoRow({
-  label,
-  value,
-  mono,
-  icon: Icon,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-  icon?: React.ComponentType<{ className?: string }>
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-sm text-foreground flex items-center gap-1.5", mono && "font-mono text-xs")}>
-        {Icon && <Icon className="size-3.5 text-muted-foreground/70" />}
         {value}
       </span>
     </div>

@@ -63,6 +63,7 @@ model Workshop {
   partStockItems         PartStockItem[]
   stockMovements         StockMovement[]
   suppliers              Supplier[]
+  partSupplierPrices     PartSupplierPrice[]
   collections            CollectionPayment[]
   ocrLogs                OcrLog[]
   passportTokens         VehiclePassportToken[]
@@ -680,6 +681,14 @@ model ServiceOrder {
   discountAmount       Int? // kuruş
   taxRate              Int? // bps (2000 = %20)
   notes                String?
+  /// Fatura entegrasyonu yok — kullanıcı kendi fatura uygulamasından okuyup elle girer.
+  /// Bu iki alan, teslim edilmiş iş emrinde de yazılabilir (bkz. updateOrderInvoiceAction);
+  /// iptal edilmiş emirde yazılamaz.
+  invoiceNo            String?
+  invoiceDate          DateTime?
+  /// Aracın servise geliş nedeni. İşin içeriğine dair bilgi olduğu için
+  /// teslim/iptal sonrası kilitlenir.
+  arrivalReason        ArrivalReason?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -714,6 +723,14 @@ enum OrderStatus {
   ready_for_delivery
   delivered
   cancelled
+}
+
+enum ArrivalReason {
+  fault // Arıza
+  damage // Hasar
+  maintenance // Bakım
+  inspection // Kontrol
+  accessory // Aksesuar
 }
 
 enum PaymentStatus {
@@ -1050,6 +1067,7 @@ model PartStockItem {
   movements         StockMovement[]
   serviceOrderItems ServiceOrderItem[]
   quoteItems        QuoteItem[]
+  supplierPrices    PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])
@@ -1059,6 +1077,28 @@ model PartStockItem {
   @@index([category])
   @@index([stockQty])
   @@index([isActive])
+  @@index([supplierId])
+}
+
+model PartSupplierPrice {
+  id            String        @id @default(cuid())
+  workshopId    String
+  workshop      Workshop      @relation(fields: [workshopId], references: [id])
+  partId        String
+  part          PartStockItem @relation(fields: [partId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+  purchasePrice Int // kuruş
+  currency      String        @default("TRY")
+  supplierSku   String? // tedarikçinin kendi parça kodu
+  isPreferred   Boolean       @default(false)
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([partId, supplierId])
+  @@index([workshopId])
+  @@index([partId])
   @@index([supplierId])
 }
 
@@ -1133,10 +1173,11 @@ model Supplier {
   email               String?
   website             String?
   city                String?
+  district            String?
   address             String?
   taxNumber           String?
   taxOffice           String?
-  category            String?
+  categories          String[] @default([])
   paymentTermDays     Int?
   averageDeliveryDays Int?
   performanceNote     String?
@@ -1147,6 +1188,7 @@ model Supplier {
 
   parts      PartStockItem[]
   orderItems ServiceOrderItem[]
+  partPrices PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])

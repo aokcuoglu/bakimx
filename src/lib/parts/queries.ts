@@ -113,6 +113,17 @@ export async function getPartMovements(workshopId: string, partId: string, limit
   })
 }
 
+/** Bu atölyenin daha önce kullandığı marka adları (marka önerileri için). */
+export async function getWorkshopBrands(workshopId: string): Promise<string[]> {
+  const rows = await prisma.partStockItem.findMany({
+    where: { workshopId, brand: { not: null } },
+    select: { brand: true },
+    distinct: ["brand"],
+    orderBy: { brand: "asc" },
+  })
+  return rows.map((r) => r.brand).filter((b): b is string => !!b && b.trim().length > 0)
+}
+
 export async function searchParts(workshopId: string, query: string, limit = 20) {
   return prisma.partStockItem.findMany({
     where: {

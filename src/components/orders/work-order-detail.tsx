@@ -76,11 +76,11 @@ import {
   PartsLaborCard,
   PricingSummaryCard,
   PaymentHistoryCard,
-  OrderInfoCard,
   type OrderDetailData,
   type PricingMetaDraft,
   type Totals,
 } from "@/components/orders/order-management-panel"
+import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
@@ -676,6 +676,14 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
+          {/* İş Emri Bilgileri */}
+          <OrderInfoCard
+            order={order}
+            technicians={technicians}
+            onRequestDelivery={handleRequestDeliveryOtp}
+            deliveryBlocked={deliveryBlocked}
+          />
+
           {/* Şikayet & Notlar (düzenlenebilir) */}
           <Card ref={infoCardRef}>
             <CardHeader className="pb-3">
@@ -737,9 +745,6 @@ export function WorkOrderDetail({
               )}
             </CardContent>
           </Card>
-
-          {/* İş Emri Bilgileri */}
-          <OrderInfoCard order={order} technicians={technicians} />
 
           {/* Özet & Kanıt */}
           <Card>

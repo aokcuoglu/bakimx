@@ -35,30 +35,58 @@ export async function getSupplierKPIs(workshopId: string): Promise<SupplierKPIs>
   }
 }
 
+/**
+ * Tedarikçi detayı. "İlişkili Parçalar" listesi iki kaynağın BİRLEŞİMİdir:
+ * - `PartSupplierPrice` satırları — tedarikçinin fiyat listesindeki tüm parçalar
+ *   (alternatif tedarikçi olduğu parçalar dâhil),
+ * - `PartStockItem.supplierId` — tedarikçinin varsayılan olduğu parçalar.
+ *
+ * Yalnız ikincisine bakmak, tedarikçiyi 5 parçaya alternatif olarak ekleyen
+ * kullanıcıya hâlâ "0 parça" gösteriyordu. `isDefaultSupplier` ile hangilerinde
+ * varsayılan olduğu listede işaretlenir.
+ */
 export async function getSupplierById(workshopId: string, supplierId: string) {
-  return prisma.supplier.findFirst({
+  const supplier = await prisma.supplier.findFirst({
     where: { id: supplierId, workshopId },
-    include: {
-      parts: {
-        orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          oemNo: true,
-          stockQty: true,
-          criticalStockQty: true,
-          salePrice: true,
-          unit: true,
-          isActive: true,
-          category: true,
-          brand: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
+  })
+  if (!supplier) return null
+
+  const priceRows = await prisma.partSupplierPrice.findMany({
+    where: { workshopId, supplierId },
+    select: { partId: true },
+  })
+
+  const parts = await prisma.partStockItem.findMany({
+    where: {
+      workshopId,
+      OR: [{ supplierId }, { id: { in: priceRows.map((r) => r.partId) } }],
+    },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      oemNo: true,
+      stockQty: true,
+      criticalStockQty: true,
+      salePrice: true,
+      unit: true,
+      isActive: true,
+      category: true,
+      brand: true,
+      supplierId: true,
+      createdAt: true,
+      updatedAt: true,
     },
   })
+
+  return {
+    ...supplier,
+    parts: parts.map(({ supplierId: partSupplierId, ...p }) => ({
+      ...p,
+      isDefaultSupplier: partSupplierId === supplierId,
+    })),
+  }
 }
 
 export interface CriticalSupplierPart {
