@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
+import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
@@ -321,7 +322,18 @@ export function TechnicianOrderDetail({
         <PhotoSection label="Onarım Öncesi" photos={beforePhotos} />
         <PhotoSection label="Onarım Sırasında" photos={duringPhotos} />
         <PhotoSection label="Onarım Sonrası" photos={afterPhotos} />
-        <p className="text-xs text-muted-foreground/70 mt-2">Fotoğraf yüklemek için araç kabulünden veya iş emri detayından fotoğraf ekleyin.</p>
+        {galleryPhotos.length === 0 && (
+          <p className="text-sm text-muted-foreground/70">Henüz fotoğraf eklenmedi.</p>
+        )}
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine fotoğraf eklenemez</p>
+        ) : (
+          <TechnicianPhotoUpload
+            intakeFormId={order.intake.id}
+            orderStatus={order.status}
+            existingPhotoTypes={order.photos.map((p) => p.type)}
+          />
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">

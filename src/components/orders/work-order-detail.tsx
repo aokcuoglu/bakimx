@@ -51,7 +51,7 @@ import {
   TriangleAlert,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
+import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
@@ -83,12 +83,6 @@ import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
-
-const PHOTO_PHASE_LABELS: Record<string, string> = {
-  intake: "Kabul (Intake)",
-  repair_progress: "Onarım Aşaması",
-  delivery: "Teslim",
-}
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -1049,13 +1043,13 @@ export function WorkOrderDetail({
                   <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v ?? "intake")}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aşama seçin">
-                        {(value: string | null) => (value ? PHOTO_PHASE_LABELS[value] ?? value : null)}
+                        {(value: string | null) => (value ? PHOTO_PHASES[value as PhotoPhaseKey]?.label ?? value : null)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="intake">Kabul (Intake)</SelectItem>
-                      <SelectItem value="repair_progress">Onarım Aşaması</SelectItem>
-                      <SelectItem value="delivery">Teslim</SelectItem>
+                      {(Object.keys(PHOTO_PHASES) as PhotoPhaseKey[]).map((key) => (
+                        <SelectItem key={key} value={key}>{PHOTO_PHASES[key].label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
