@@ -126,6 +126,17 @@ export const PHOTO_TYPES = {
   other: { label: "Diğer", required: false },
 } as const
 
+export type PhotoTypeKey = keyof typeof PHOTO_TYPES
+
+/** `PhotoPhase` enum'unun kullanıcıya görünen karşılıkları (prisma/schema.prisma). */
+export const PHOTO_PHASES = {
+  intake: { label: "Kabul (Intake)" },
+  repair_progress: { label: "Onarım Aşaması" },
+  delivery: { label: "Teslim" },
+} as const
+
+export type PhotoPhaseKey = keyof typeof PHOTO_PHASES
+
 export const CUSTOMER_TYPES = {
   individual: { label: "Bireysel", color: "bg-primary/10 text-foreground border-primary/20" },
   corporate: { label: "Kurumsal", color: "bg-secondary text-secondary-foreground border-border" },

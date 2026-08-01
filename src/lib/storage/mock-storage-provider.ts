@@ -5,12 +5,11 @@ export class MockStorageProvider implements StorageProvider {
 
   async upload(file: File, path: string): Promise<{ url: string; key: string }> {
     const key = path || `mock/${Date.now()}-${file.name}`
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+    // `FileReader` bir tarayıcı API'sidir; yükleme sunucu tarafında çalıştığı için
+    // burada yoktur (kullanılırsa "FileReader is not defined" ile 400 döner).
+    // Node runtime'ında dosya baytları `arrayBuffer()` ile okunur.
+    const base64 = Buffer.from(await file.arrayBuffer()).toString("base64")
+    const dataUrl = `data:${file.type || "application/octet-stream"};base64,${base64}`
     this.store.set(key, dataUrl)
     return { url: dataUrl, key }
   }
