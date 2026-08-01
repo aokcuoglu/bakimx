@@ -56,7 +56,6 @@ export default async function OrderDetailPage({
           },
           approvals: { orderBy: { createdAt: "desc" }, take: 1 },
           shareLinks: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" } },
-          timelineEvents: { orderBy: { createdAt: "asc" } },
         },
       },
       items: {
@@ -259,11 +258,6 @@ export default async function OrderDetailPage({
       createdAt: a.createdAt,
     })),
     shareLinks: intakeForm.shareLinks.map((s) => ({ id: s.id, token: s.token, isActive: s.isActive })),
-    timelineEvents: intakeForm.timelineEvents.map((t) => ({
-      eventType: t.eventType,
-      description: t.description,
-      createdAt: t.createdAt,
-    })),
     order: {
       id: order.id,
       status: order.status,

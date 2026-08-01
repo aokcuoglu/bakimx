@@ -67,7 +67,6 @@ import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
 import { FuelGauge, FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { formatFuelLevel } from "@/lib/fuel-level"
-import { ApprovalTimeline } from "@/components/intake/approval-timeline"
 import { OrderActivityLog } from "@/components/orders/order-activity-log"
 import { useOrderSync } from "@/hooks/use-order-sync"
 import type { OrderActivityEntry } from "@/lib/orders/activity"
@@ -154,7 +153,6 @@ type IntakeDetailProps = {
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
-  timelineEvents: { eventType: string; description: string; createdAt: Date }[]
   order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
@@ -231,6 +229,7 @@ export function WorkOrderDetail({
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const pendingPhotoScrollRef = useRef(false)
+  const pendingPricingScrollRef = useRef(false)
   const pricingRef = useRef<HTMLDivElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -251,6 +250,25 @@ export function WorkOrderDetail({
       photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
   }, [activeTab])
+
+  // Fiyatlandırma artık Özet sekmesinde. Parça sekmesindeki mobil toplam çubuğu
+  // önce sekmeyi açar; panel mount edildikten sonra karta kaydırma tamamlanır.
+  useEffect(() => {
+    if (activeTab === "ozet" && pendingPricingScrollRef.current) {
+      pendingPricingScrollRef.current = false
+      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [activeTab])
+
+  function focusPricingSummary() {
+    if (activeTab === "ozet") {
+      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
+
+    pendingPricingScrollRef.current = true
+    handleTabChange("ozet")
+  }
 
   // Listeden "Düzenle" ile gelindiğinde kart sayfanın alt kısmında kalıyor;
   // özellikle mobilde kullanıcı düzenleme alanını göremiyor.
@@ -759,12 +777,24 @@ export function WorkOrderDetail({
                 publicLinkStatus={publicLinkStatus}
                 onMissingPhotoClick={(key) => focusPhoto(key)}
               />
-              <div className="pt-3 border-t">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Onay Zaman Çizelgesi</p>
-                <ApprovalTimeline events={intake.timelineEvents || []} intakeCreatedAt={intake.createdAt} approvedAt={intake.approvedAt} />
-              </div>
             </CardContent>
           </Card>
+
+          <div ref={pricingRef} className="scroll-mt-20">
+            <PricingSummaryCard
+              totals={order.totals}
+              paymentStatus={order.paymentStatus}
+              paidAmount={order.paidAmount}
+              remainingAmount={order.remainingAmount}
+              locked={isOrderLocked(order.status as OrderStatus)}
+              editingMeta={editingMeta}
+              setEditingMeta={setEditingMeta}
+              metaDraft={metaDraft}
+              setMetaDraft={setMetaDraft}
+              saveMeta={saveMeta}
+              loading={loading}
+            />
+          </div>
 
           {/* Müşteri Çıktısı & Paylaşım */}
           <Card>
@@ -859,22 +889,6 @@ export function WorkOrderDetail({
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
           <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} />
 
-          <div ref={pricingRef} className="scroll-mt-20">
-            <PricingSummaryCard
-              totals={order.totals}
-              paymentStatus={order.paymentStatus}
-              paidAmount={order.paidAmount}
-              remainingAmount={order.remainingAmount}
-              locked={isOrderLocked(order.status as OrderStatus)}
-              editingMeta={editingMeta}
-              setEditingMeta={setEditingMeta}
-              metaDraft={metaDraft}
-              setMetaDraft={setMetaDraft}
-              saveMeta={saveMeta}
-              loading={loading}
-            />
-          </div>
-
           {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
               kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
           <Accordion>
@@ -908,7 +922,7 @@ export function WorkOrderDetail({
           <MobileTotalsBar
             totals={order.totals}
             itemCount={order.items.length}
-            onJump={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onJump={focusPricingSummary}
           />
         </TabsContent>
 
