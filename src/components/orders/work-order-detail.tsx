@@ -49,6 +49,8 @@ import {
   Lock,
   Calculator,
   TriangleAlert,
+  Images,
+  X,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
@@ -83,6 +85,7 @@ import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
+import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -107,6 +110,10 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
   { key: "kanit", label: "Kanıt", icon: Camera },
   { key: "gecmis", label: "Geçmiş", icon: History },
 ]
+
+// Yüklenmeyi bekleyen seçim. `previewUrl` bir blob URL'idir; kare listeden
+// çıktığında (kaldırıldı / yüklendi / dialog kapandı) revoke edilir.
+type PendingPhoto = { key: string; file: File; previewUrl: string }
 
 type VehiclePhoto = {
   id: string
@@ -220,12 +227,21 @@ export function WorkOrderDetail({
   const [photoType, setPhotoType] = useState("")
   const [photoPhase, setPhotoPhase] = useState("intake")
   const [photoNote, setPhotoNote] = useState("")
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  // Çoklu yükleme: seçilen kareler yüklenene kadar burada birikir. Önizleme
+  // blob URL'i her kare için tutulur ve listeden çıkınca serbest bırakılır.
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
+  const [uploadedCount, setUploadedCount] = useState(0)
   const pendingPhotoScrollRef = useRef(false)
   const pendingPricingScrollRef = useRef(false)
   const pricingRef = useRef<HTMLDivElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
+  // Mobilde `capture` girdisi galeri seçicisini baypas edip doğrudan kamerayı
+  // açtığı için çoklu seçim ayrı bir girdide (capture'sız, `multiple`) duruyor.
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  // Üretilen tüm blob URL'leri; unmount'ta topluca serbest bırakılır (tekrar
+  // revoke etmek zararsız, tek tek kaldırmada zaten serbest bırakılıyorlar).
+  const photoUrlsRef = useRef<string[]>([])
+  useEffect(() => () => { photoUrlsRef.current.forEach(URL.revokeObjectURL) }, [])
 
   // Share
   const [shareToken, setShareToken] = useState(intake.shareLinks[0]?.token || "")
@@ -348,35 +364,114 @@ export function WorkOrderDetail({
     }
   }
 
-  async function handleAddPhoto() {
-    if (!photoType) return
-    setLoading(true)
-    setError("")
+  // Seçilen kareleri listeye ekler (değiştirmez): kamera ve galeri girdileri
+  // arka arkaya kullanılabilsin diye seçim biriktirilir.
+  function addPickedPhotos(list: FileList | null) {
+    if (!list || list.length === 0) return
+    const { accepted, duplicates, overflow } = selectPhotoFiles(
+      pendingPhotos.map((p) => p.file),
+      Array.from(list),
+    )
+    if (duplicates > 0) toast.info(`${duplicates} fotoğraf zaten seçiliydi`)
+    if (overflow > 0) toast.warning(`Tek seferde en fazla ${MAX_BATCH_PHOTOS} fotoğraf; ${overflow} tanesi eklenmedi`)
+    if (accepted.length === 0) return
+    const added = accepted.map((file, i) => {
+      const previewUrl = URL.createObjectURL(file)
+      photoUrlsRef.current.push(previewUrl)
+      return { key: `${file.name}-${file.size}-${file.lastModified}-${pendingPhotos.length + i}`, file, previewUrl }
+    })
+    setPendingPhotos([...pendingPhotos, ...added])
+  }
+
+  function removePendingPhoto(key: string) {
+    const target = pendingPhotos.find((p) => p.key === key)
+    if (target) URL.revokeObjectURL(target.previewUrl)
+    setPendingPhotos(pendingPhotos.filter((p) => p.key !== key))
+  }
+
+  function resetPhotoDraft(items: PendingPhoto[] = pendingPhotos) {
+    items.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+    setPendingPhotos([])
+    setUploadedCount(0)
+    if (cameraInputRef.current) cameraInputRef.current.value = ""
+    if (galleryInputRef.current) galleryInputRef.current.value = ""
+  }
+
+  // Tek kare gönderir. Sunucu sözleşmesi değişmedi (istek başına bir dosya);
+  // toplu yükleme istemcide sıralı tekrar ile yapılır.
+  async function uploadPhoto(file: File | null): Promise<{ ok: boolean; error?: string }> {
     const formData = new FormData()
     formData.set("intakeFormId", intake.id)
     formData.set("type", photoType)
     formData.set("label", PHOTO_TYPES[photoType as keyof typeof PHOTO_TYPES]?.label || photoType)
     if (photoNote) formData.set("note", photoNote)
     if (photoPhase) formData.set("phase", photoPhase)
-    if (photoFile) formData.set("file", photoFile)
+    if (file) formData.set("file", file)
     try {
       const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
       const data = await res.json()
-      if (data.success) {
+      if (data.success) return { ok: true }
+      return { ok: false, error: data.error || "Fotoğraf eklenemedi" }
+    } catch {
+      return { ok: false, error: "Bir hata oluştu" }
+    }
+  }
+
+  async function handleAddPhoto() {
+    if (!photoType || loading) return
+    setLoading(true)
+    setError("")
+    setUploadedCount(0)
+
+    // Dosyasız "kayıt ekle" yolu korunuyor (eksik kanıtı yer tutucuyla işaretleme).
+    if (pendingPhotos.length === 0) {
+      const result = await uploadPhoto(null)
+      if (result.ok) {
         setAddingPhoto(false)
         setPhotoType("")
         setPhotoPhase("intake")
         setPhotoNote("")
-        setPhotoFile(null)
-        setPhotoPreview(null)
-        if (photoInputRef.current) photoInputRef.current.value = ""
+        resetPhotoDraft()
         router.refresh()
-      } else setError(data.error || "Fotoğraf eklenemedi")
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
+      } else setError(result.error ?? "Fotoğraf eklenemedi")
       setLoading(false)
+      return
     }
+
+    // Sıralı yükleme: mobil bağlantıda paralel istekler birbirini aç bırakıyor
+    // ve kısmi hatayı hangi karenin ürettiğini izlemek zorlaşıyor.
+    const failed: PendingPhoto[] = []
+    let firstError = ""
+    let done = 0
+    for (const pending of pendingPhotos) {
+      const result = await uploadPhoto(pending.file)
+      if (result.ok) {
+        done++
+        setUploadedCount(done)
+      } else {
+        failed.push(pending)
+        if (!firstError) firstError = result.error ?? ""
+      }
+    }
+
+    if (failed.length === 0) {
+      toast.success(done === 1 ? "Fotoğraf eklendi" : `${done} fotoğraf eklendi`)
+      setAddingPhoto(false)
+      setPhotoType("")
+      setPhotoPhase("intake")
+      setPhotoNote("")
+      resetPhotoDraft()
+    } else {
+      // Yüklenenlerin önizlemesini bırak, başarısızları tekrar denenebilsin diye tut.
+      const failedKeys = new Set(failed.map((p) => p.key))
+      pendingPhotos.filter((p) => !failedKeys.has(p.key)).forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      setPendingPhotos(failed)
+      setUploadedCount(0)
+      const summary = describeUploadFailure(failed.map((p) => p.file.name), pendingPhotos.length)
+      setError(firstError ? `${summary} (${firstError})` : summary)
+    }
+    router.refresh()
+    setLoading(false)
   }
 
   async function handleGenerateShareLink() {
@@ -1008,8 +1103,9 @@ export function WorkOrderDetail({
               <Dialog
                 open={addingPhoto}
                 onOpenChange={(o) => {
+                  if (!o && loading) return // yükleme sürerken kapanmasın
                   setAddingPhoto(o)
-                  if (!o) { setPhotoType(""); setPhotoNote(""); setPhotoFile(null); setPhotoPreview(null); if (photoInputRef.current) photoInputRef.current.value = "" }
+                  if (!o) { setPhotoType(""); setPhotoNote(""); resetPhotoDraft() }
                 }}
               >
                 <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -1019,7 +1115,7 @@ export function WorkOrderDetail({
                   <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
-                  <Select value={photoType} onValueChange={(v) => { setPhotoType(v ?? ""); setPhotoFile(null); setPhotoPreview(null) }}>
+                  <Select value={photoType} onValueChange={(v) => setPhotoType(v ?? "")}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seçiniz...">
                         {(value: string | null) => {
@@ -1055,48 +1151,80 @@ export function WorkOrderDetail({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Çek / Yükle</Label>
+                  {/* İki ayrı girdi: `capture` bulunan girdi mobilde galeri
+                      seçicisini baypas edip kamerayı açtığı için çoklu seçim
+                      ayrı, capture'sız girdide duruyor. İkisi de aynı listeye ekler. */}
                   <input
-                    ref={photoInputRef}
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     capture="environment"
                     className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      setPhotoFile(file)
-                      setPhotoPreview(URL.createObjectURL(file))
-                    }}
+                    onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
-                  >
-                    <Camera className="size-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{photoFile ? "Fotoğraf seçildi — tekrar değiştir" : "Kamera ile çek veya galeriden seç"}</span>
-                  </button>
-                  {photoPreview && (
-                    <div className="relative mt-2 rounded-lg overflow-hidden border bg-black">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photoPreview} alt="Seçilen fotoğraf önizlemesi" className="w-full max-h-48 object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setPhotoFile(null); setPhotoPreview(null); if (photoInputRef.current) photoInputRef.current.value = "" }}
-                        className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full"
-                      >
-                        Kaldır
-                      </button>
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" disabled={loading} onClick={() => cameraInputRef.current?.click()}>
+                      <Camera className="size-4 mr-1.5" /> Kamera
+                    </Button>
+                    <Button type="button" variant="outline" disabled={loading} onClick={() => galleryInputRef.current?.click()}>
+                      <Images className="size-4 mr-1.5" /> Galeriden seç
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Galeriden tek seferde birden fazla fotoğraf seçebilirsiniz (en fazla {MAX_BATCH_PHOTOS}).
+                  </p>
+                  {pendingPhotos.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {pendingPhotos.length} fotoğraf seçildi
+                        {loading && uploadedCount > 0 ? ` — ${uploadedCount}/${pendingPhotos.length} yüklendi` : ""}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {pendingPhotos.map((p, i) => (
+                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.previewUrl} alt={`Seçilen fotoğraf ${i + 1}`} className="size-full object-cover" />
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="secondary"
+                              aria-label={`Fotoğraf ${i + 1} — seçimden çıkar`}
+                              disabled={loading}
+                              onClick={() => removePendingPhoto(p.key)}
+                              className="absolute top-1 right-1 rounded-full"
+                            >
+                              <X className="size-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Not</Label>
                   <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
+                  {pendingPhotos.length > 1 && (
+                    <p className="text-xs text-muted-foreground">Tür, aşama ve not seçilen tüm fotoğraflara uygulanır.</p>
+                  )}
                 </div>
                 <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full">
                   {loading ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Upload className="size-4 mr-1" />}
-                  {photoFile ? "Fotoğraf Yükle ve Kaydet" : "Fotoğraf Kaydı Ekle"}
+                  {loading && pendingPhotos.length > 0
+                    ? `Yükleniyor ${Math.min(uploadedCount + 1, pendingPhotos.length)}/${pendingPhotos.length}`
+                    : pendingPhotos.length > 1
+                      ? `${pendingPhotos.length} Fotoğrafı Yükle ve Kaydet`
+                      : pendingPhotos.length === 1
+                        ? "Fotoğraf Yükle ve Kaydet"
+                        : "Fotoğraf Kaydı Ekle"}
                 </Button>
                   </div>
                 </DialogContent>
