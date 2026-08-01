@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# `git pull` / `git merge` sonrası: şema değiştiyse Prisma Client'ı tazele.
+# ORIG_HEAD merge/pull tarafından yazılır; yoksa reflog'a düşeriz.
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+BEFORE="$(git rev-parse --verify --quiet ORIG_HEAD || git rev-parse --verify --quiet 'HEAD@{1}' || true)"
+AFTER="$(git rev-parse --verify --quiet HEAD || true)"
+
+bash "$HOOK_DIR/lib/prisma-sync.sh" "$BEFORE" "$AFTER" "git pull/merge" || true
+exit 0

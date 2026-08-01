@@ -17,6 +17,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB studio:** `bun run db:studio` — Prisma Studio on port 5555
 - **DB migrate:** `bun run db:migrate` — create migration (use `prisma migrate deploy` for production)
 - **Dev login (QA):** `GET /api/auth/dev-login?email=<seed-user>&redirect=<path>` — opens a session without typing a password (default `admin@bakimx.com`, redirect `/dashboard`). Only responds when `NODE_ENV=development` AND the request host is localhost; 404 everywhere else. Use it for browser QA in isolated worktrees instead of hand-rolling a temporary login route.
+- **Git hooks:** `postinstall` registers `core.hooksPath=.githooks`. `post-merge`/`post-checkout` re-run `prisma generate` whenever `prisma/schema.prisma` changed in the pulled/checked-out range — otherwise the generated client stays stale and Prisma throws `Unknown argument` for fields that DO exist in the schema. Restart the dev server after it fires (Turbopack does not hot-reload `node_modules`).
 
 ## Local Infrastructure
 - **Start services:** `docker compose -f docker-compose.local.yml up -d`
