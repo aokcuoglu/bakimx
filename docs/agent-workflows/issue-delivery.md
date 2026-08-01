@@ -122,6 +122,19 @@ bun run build
   Done. If it does not, inspect the project workflow configuration and report the
   failure; update the item manually only when authorized.
 - Do not close an issue manually before merge merely to make the board look done.
+- **Link the PR to the issue when the PR is opened, never after it is closed.**
+  `Closes #<number>` in the PR body creates the link at the right moment. Adding a
+  link from the issue's Development panel after the issue is already closed makes
+  project automation overwrite `Done` with an in-progress status, and `Item closed`
+  never fires again to correct it. On 2026-08-01 this stranded 14 closed issues in
+  In Progress; the `Pull request linked to issue` workflow was disabled as a result.
+- Close the delivery by reconciling the board, which is idempotent and safe to run
+  at any time:
+
+```sh
+bun run project:sync              # closed issue -> Status Done
+bun run project:sync -- --dry-run # report drift without changing anything
+```
 
 ## 8. Cleanup and local synchronization
 

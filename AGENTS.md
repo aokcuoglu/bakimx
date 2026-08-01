@@ -82,3 +82,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Never stash, reset, overwrite, commit, or clean unrelated user changes.
 - A delivery request includes implementation, proportionate validation, push, PR creation, green-check monitoring, merge when permitted, issue/project verification, cleanup of only agent-created resources, and a safe local `dev` fast-forward when the checkout is clean.
 - Put `Closes #<number>` in the PR body so merge closes the issue. Confirm the linked item becomes Done in Factory - BakimX.
+- Never link a PR to an issue after that issue is closed (issue → Development panel). Project automation reacts to the link and overwrites `Done`. `Closes #<number>` at PR-open time is the only link you need.
+- Finish delivery with `bun run project:sync` — it moves any closed issue's card to Done and reports open issues sitting in Done. Idempotent, board-only, safe to re-run.
