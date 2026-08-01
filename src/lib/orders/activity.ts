@@ -146,6 +146,11 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
       return { category: "photo", label: "Fotoğraf eklendi", detail: type ?? undefined }
     }
 
+    case "photo_deleted": {
+      const type = typeof meta.type === "string" ? (PHOTO_TYPES as Record<string, { label: string }>)[meta.type]?.label ?? meta.type : null
+      return { category: "photo", label: "Fotoğraf silindi", detail: type ?? undefined }
+    }
+
     case "damage_mark_added": {
       const zone = typeof meta.zone === "string" ? (VEHICLE_ZONES as Record<string, string>)[meta.zone] ?? meta.zone : null
       const dtype = typeof meta.damageType === "string" ? (DAMAGE_TYPES as Record<string, { label: string }>)[meta.damageType]?.label ?? meta.damageType : null
@@ -198,6 +203,8 @@ export async function getOrderActivity({
 }): Promise<OrderActivityEntry[]> {
   const [items, photos, damageMarks, collections, partsRequests] = await Promise.all([
     prisma.serviceOrderItem.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),
+    // Bilerek `deletedAt` filtresi YOK: silinmiş karenin `photo_deleted` denetim
+    // kaydı personel-içi işlem geçmişinde görünmeye devam etmeli.
     prisma.vehiclePhoto.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.damageMark.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.collectionPayment.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),

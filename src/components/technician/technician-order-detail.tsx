@@ -36,6 +36,7 @@ import { PartSearchInput } from "@/components/parts/part-search-input"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
+import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
@@ -318,9 +319,9 @@ export function TechnicianOrderDetail({
           <Camera className="size-4 text-muted-foreground" />
           Onarım Fotoğrafları
         </h3>
-        <PhotoSection label="Onarım Öncesi" photos={beforePhotos} />
-        <PhotoSection label="Onarım Sırasında" photos={duringPhotos} />
-        <PhotoSection label="Onarım Sonrası" photos={afterPhotos} />
+        <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+        <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+        <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
         <p className="text-xs text-muted-foreground/70 mt-2">Fotoğraf yüklemek için araç kabulünden veya iş emri detayından fotoğraf ekleyin.</p>
       </div>
 
@@ -668,27 +669,42 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
   )
 }
 
-function PhotoSection({ label, photos }: { label: string; photos: { id: string; fileUrl: string | null; label: string; note: string | null }[] }) {
+function PhotoSection({
+  label,
+  photos,
+  canDelete,
+  onDeleted,
+}: {
+  label: string
+  photos: { id: string; fileUrl: string | null; label: string; note: string | null }[]
+  canDelete?: boolean
+  onDeleted?: () => void
+}) {
   if (photos.length === 0) return null
   return (
     <div className="mb-3">
       <p className="text-xs font-medium text-muted-foreground mb-2">{label} ({photos.length})</p>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
         {photos.map((p) => (
-          p.fileUrl ? (
-            <a key={p.id} href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.fileUrl}
-                alt={p.label}
-                className="w-full aspect-square object-cover rounded-lg border border-border"
-              />
-            </a>
-          ) : (
-            <div key={p.id} className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
-              <Camera className="size-5" />
-            </div>
-          )
+          <div key={p.id} className="relative">
+            {canDelete && (
+              <PhotoDeleteButton photoId={p.id} photoLabel={p.label} onDeleted={onDeleted} />
+            )}
+            {p.fileUrl ? (
+              <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.fileUrl}
+                  alt={p.label}
+                  className="w-full aspect-square object-cover rounded-lg border border-border"
+                />
+              </a>
+            ) : (
+              <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                <Camera className="size-5" />
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

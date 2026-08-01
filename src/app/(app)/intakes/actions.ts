@@ -11,6 +11,7 @@ import { isIntakeWriteLocked } from "@/lib/status-transitions"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createIntakeAction(formData: FormData) {
   const user = await requireAuth()
@@ -108,6 +109,7 @@ export async function getIntakeAction(id: string) {
       customer: true,
       vehicle: true,
       photos: {
+        where: VISIBLE_PHOTO,
         select: {
           id: true,
           type: true,
@@ -335,17 +337,65 @@ export async function addPhotoAction(formData: FormData) {
 }
 
 export async function replacePhotoAction(_formData: FormData) {
-  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) değiştirilemez de silinemez de.
-  // Eksikse yeni kare eklenir (addPhotoAction); eklenen kanıt kalıcıdır.
+  // Yerinde DEĞİŞTİRME hâlâ kapalı: bir karenin içeriğini sessizce başkasıyla
+  // takas etmek denetim izini bozar. Hatalı kare `removePhotoAction` ile (soft,
+  // loglu) kaldırılır ve yerine `addPhotoAction` ile yeni kare eklenir.
   await requireAuth()
-  return { error: "Fotoğraf değiştirilemez. Kabul kanıtları kalıcıdır." }
+  return { error: "Fotoğraf değiştirilemez. Hatalı kareyi silip yenisini ekleyin." }
 }
 
-export async function removePhotoAction(_photoId: string, _intakeFormId: string) {
-  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) silinemez. Hatalı/bulanık
-  // bir kare yeniden çekilmek istenirse replacePhotoAction (Değiştir) kullanılır.
-  await requireAuth()
-  return { error: "Fotoğraf silinemez. Kabul kanıtları kalıcıdır." }
+/**
+ * Yanlış/bulanık kareyi galeriden kaldırır. Silme SOFT'tur: satır ve depodaki
+ * dosya olduğu gibi kalır, yalnızca `deletedAt` işaretlenir — böylece delil
+ * bütünlüğü korunurken hatalı kare müşteriye/PDF'e yansımaz. Kim, ne zaman
+ * sildiği `deletedById` + AuditLog `photo_deleted` kaydında durur.
+ *
+ * Teslim edilmiş/iptal edilmiş iş emrinde kilitli (fotoğraf EKLEME ile aynı
+ * kural). Public timeline'a olay YAZILMAZ: silme dahili bir düzeltmedir.
+ */
+export async function removePhotoAction(photoId: string) {
+  const user = await requireAuth()
+
+  if (!photoId) return { error: "Fotoğraf bulunamadı" }
+
+  const photo = await prisma.vehiclePhoto.findFirst({
+    where: { id: photoId, workshopId: user.workshopId },
+    include: {
+      intakeForm: { select: { id: true, status: true, order: { select: { id: true, status: true } } } },
+    },
+  })
+  if (!photo) return { error: "Fotoğraf bulunamadı" }
+  if (photo.deletedAt) return { success: true }
+
+  if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emrinin fotoğrafı silinemez" }
+  }
+
+  await prisma.vehiclePhoto.update({
+    where: { id: photo.id },
+    data: { deletedAt: new Date(), deletedById: user.id },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "VehiclePhoto",
+    photo.id,
+    "photo_deleted",
+    JSON.stringify({
+      type: photo.type,
+      label: photo.label,
+      phase: photo.phase,
+      fileName: photo.fileName,
+      storageKey: photo.storageKey,
+      intakeFormId: photo.intakeFormId,
+      serviceOrderItemId: photo.serviceOrderItemId,
+    }),
+    photo.intakeForm.order?.id
+  )
+
+  // Çağıranlar başarıdan sonra kendi router.refresh()'ini yapıyor.
+  return { success: true }
 }
 
 // Kabul tarafından durum değiştirme kaldırıldı: tek çağrı noktası olan

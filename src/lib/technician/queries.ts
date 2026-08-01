@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -162,6 +163,7 @@ export async function getTechnicianOrderDetail(
           vehicle: true,
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
+            where: VISIBLE_PHOTO,
             orderBy: { createdAt: "asc" },
             select: {
               id: true, type: true, label: true, required: true,

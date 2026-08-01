@@ -7,6 +7,7 @@ import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { escapeHtml } from "@/lib/html-escape"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -341,7 +342,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
           customer: true,
           vehicle: true,
           // Dış alım (satın alma) fotoğrafları dahili-yalnızdır — müşteri PDF'ine sızmaz.
-          photos: { where: { serviceOrderItemId: null }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
+          photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
           timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },

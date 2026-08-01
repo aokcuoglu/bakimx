@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { calculateOrderTotals } from "@/lib/totals"
 import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VehiclePassport } from "@/components/vehicles/vehicle-passport"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +23,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
           damageMarks: true,
           photos: {
             // Dış alım fotoğrafları araç pasaportuna girmez (dahili-yalnız).
-            where: { serviceOrderItemId: null },
+            where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
             select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
           },
           timelineEvents: {

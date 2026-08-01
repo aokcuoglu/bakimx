@@ -31,11 +31,10 @@ export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url)
     const id = url.searchParams.get("id")
-    const intakeFormId = url.searchParams.get("intakeFormId")
-    if (!id || !intakeFormId) {
+    if (!id) {
       return NextResponse.json({ error: "Parametreler eksik" }, { status: 400 })
     }
-    const result = await removePhotoAction(id, intakeFormId)
+    const result = await removePhotoAction(id)
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }

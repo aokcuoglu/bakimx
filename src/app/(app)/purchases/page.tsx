@@ -10,6 +10,7 @@ import { normalizePlate, trDateToDate } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, Prisma } from "@prisma/client"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -58,7 +59,7 @@ export default async function PurchasesPage({
       serviceOrder: { include: { intakeForm: { include: { vehicle: true } } } },
       supplier: { select: { id: true, name: true } },
       purchasedBy: { select: { fullName: true } },
-      photos: { select: { id: true } },
+      photos: { where: VISIBLE_PHOTO, select: { id: true } },
     },
     orderBy: { purchasedAt: "desc" },
   })

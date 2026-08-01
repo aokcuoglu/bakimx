@@ -11,6 +11,7 @@ import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 import { getLaborCatalog } from "@/lib/labor/queries"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export default async function OrderDetailPage({
   params,
@@ -38,7 +39,7 @@ export default async function OrderDetailPage({
           photos: {
             // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
             // kaleminin satın-alma modalından (items.photos) erişilir.
-            where: { serviceOrderItemId: null },
+            where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
             orderBy: { createdAt: "asc" },
             select: {
               id: true,
@@ -62,7 +63,7 @@ export default async function OrderDetailPage({
         orderBy: { createdAt: "asc" },
         include: {
           // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı + alan teknisyen.
-          photos: { select: { id: true } },
+          photos: { where: VISIBLE_PHOTO, select: { id: true } },
           purchasedBy: { select: { fullName: true } },
         },
       },

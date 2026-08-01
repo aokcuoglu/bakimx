@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { getStorageProvider } from "@/lib/storage"
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
     }
 
     const photo = await prisma.vehiclePhoto.findFirst({
-      where: { id: photoId, workshopId: user.workshopId },
+      // Silinmiş kare artık servis edilmez (bayat <img src> ile de çekilemesin).
+      where: { id: photoId, workshopId: user.workshopId, ...VISIBLE_PHOTO },
     })
 
     if (!photo) {

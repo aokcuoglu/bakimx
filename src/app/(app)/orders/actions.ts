@@ -19,6 +19,7 @@ import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -1033,7 +1034,7 @@ export async function getOrderAction(orderId: string) {
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
     include: {
-      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: true } },
+      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: { where: VISIBLE_PHOTO } } },
       items: true,
     },
   })
