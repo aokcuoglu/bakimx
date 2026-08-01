@@ -569,7 +569,7 @@ function ChecklistSection({
               }
             </button>
             <div className="flex-1 min-w-0">
-              <span className={cn("text-sm", item.isCompleted ? "line-through text-muted-foreground/70" : "text-foreground")}>
+              <span className={cn("text-sm", item.isCompleted ? "text-success" : "text-foreground")}>
                 {item.description}
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
