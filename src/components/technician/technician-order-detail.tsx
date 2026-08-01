@@ -5,15 +5,20 @@ import { formatTRY } from "@/lib/format"
 import { bpsToPercent, parseTRYToKurus } from "@/lib/money"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
+  ImageOff, Loader2, ListChecks,
 } from "lucide-react"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
+import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
@@ -47,6 +52,7 @@ import {
   countIncompleteItems,
   startWorkBlockMessage,
   completeWorkBlockMessage,
+  summarizeChecklist,
   START_GATE_CATEGORIES,
   COMPLETE_GATE_CATEGORIES,
 } from "@/lib/technician/gates"
@@ -127,6 +133,7 @@ export function TechnicianOrderDetail({
   const inspectionItems = order.checklistItems.filter((c) => c.category === "inspection")
   const repairItems = order.checklistItems.filter((c) => c.category === "repair")
   const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
+  const checklistSummary = summarizeChecklist(order.checklistItems)
 
   // Alış fotoğrafları (serviceOrderItemId != null) dahili-yalnızdır; onarım
   // galerilerine sızmaması için hepsinden dışlanır.
@@ -222,34 +229,55 @@ export function TechnicianOrderDetail({
 
       <ComplaintCard complaint={order.intake.customerComplaint} />
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-2">Kontrol Listesi</h3>
-        <ChecklistSection
-          title="Kontrol"
-          category="inspection"
-          items={inspectionItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        <ChecklistSection
-          title="Onarım"
-          category="repair"
-          items={repairItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        <ChecklistSection
-          title="Teslim"
-          category="delivery"
-          items={deliveryItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
-        ) : (
-          <AddChecklistItemForm orderId={order.id} />
-        )}
+      {/* Kontrol listesi kapalı başlar — mobilde ekranın çoğunu kaplıyordu.
+          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür. */}
+      <div className="rounded-lg border border-border bg-white px-4">
+        <Accordion>
+          <AccordionItem className="border-0">
+            <AccordionTrigger className="items-center py-3 hover:no-underline">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+                <ListChecks className="size-4 text-muted-foreground" />
+                Kontrol Listesi
+                <span className="text-xs font-normal text-muted-foreground/70">
+                  {checklistSummary.completed}/{checklistSummary.total}
+                </span>
+                {checklistSummary.missingRequired > 0 && (
+                  <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-warning/15 text-warning-foreground">
+                    {checklistSummary.missingRequired} zorunlu eksik
+                  </span>
+                )}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <ChecklistSection
+                title="Kontrol"
+                category="inspection"
+                items={inspectionItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              <ChecklistSection
+                title="Onarım"
+                category="repair"
+                items={repairItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              <ChecklistSection
+                title="Teslim"
+                category="delivery"
+                items={deliveryItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              {locked ? (
+                <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
+              ) : (
+                <AddChecklistItemForm orderId={order.id} />
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
@@ -322,7 +350,18 @@ export function TechnicianOrderDetail({
         <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
         <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
         <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-        <p className="text-xs text-muted-foreground/70 mt-2">Fotoğraf yüklemek için araç kabulünden veya iş emri detayından fotoğraf ekleyin.</p>
+        {galleryPhotos.length === 0 && (
+          <p className="text-sm text-muted-foreground/70">Henüz fotoğraf eklenmedi.</p>
+        )}
+        {locked ? (
+          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine fotoğraf eklenemez</p>
+        ) : (
+          <TechnicianPhotoUpload
+            intakeFormId={order.intake.id}
+            orderStatus={order.status}
+            existingPhotoTypes={order.photos.map((p) => p.type)}
+          />
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
@@ -669,6 +708,12 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
   )
 }
 
+/**
+ * Faz bazlı fotoğraf ızgarası. Kaynak `fileUrl` değil `resolvePhotoSrc` ile
+ * belirlenir (depo referansı doğrudan açılamaz), dokununca diğer ekranlardaki
+ * gibi tam ekran `PhotoLightbox` açılır. `canDelete` verildiğinde her karenin
+ * köşesinde sil butonu çıkar (silme sunucuda soft'tur).
+ */
 function PhotoSection({
   label,
   photos,
@@ -680,34 +725,112 @@ function PhotoSection({
   canDelete?: boolean
   onDeleted?: () => void
 }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  // Dosyası olmayan kayıtlar açılamaz; lightbox yalnızca görüntülenebilirleri gezer.
+  const viewable = photos.filter((p) => p.fileUrl)
+  const lightboxPhotos: LightboxPhoto[] = viewable.map((p) => ({
+    id: p.id,
+    label: p.label,
+    note: p.note,
+    fileUrl: resolvePhotoSrc(p),
+  }))
+
   if (photos.length === 0) return null
+
   return (
     <div className="mb-3">
       <p className="text-xs font-medium text-muted-foreground mb-2">{label} ({photos.length})</p>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-        {photos.map((p) => (
-          <div key={p.id} className="relative">
-            {canDelete && (
-              <PhotoDeleteButton photoId={p.id} photoLabel={p.label} onDeleted={onDeleted} />
-            )}
-            {p.fileUrl ? (
-              <a href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.fileUrl}
-                  alt={p.label}
-                  className="w-full aspect-square object-cover rounded-lg border border-border"
+        {photos.map((p) => {
+          const src = resolvePhotoSrc(p)
+          return (
+            <div key={p.id} className="relative">
+              {canDelete && (
+                <PhotoDeleteButton photoId={p.id} photoLabel={p.label} onDeleted={onDeleted} />
+              )}
+              {src ? (
+                <PhotoThumbnail
+                  src={src}
+                  label={p.label}
+                  onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
                 />
-              </a>
-            ) : (
-              <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
-                <Camera className="size-5" />
-              </div>
-            )}
-          </div>
-        ))}
+              ) : (
+                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                  <Camera className="size-5" />
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
+      <PhotoLightbox
+        photos={lightboxPhotos}
+        index={lightboxIndex ?? 0}
+        onIndexChange={setLightboxIndex}
+        open={lightboxIndex !== null}
+        onOpenChange={(next) => { if (!next) setLightboxIndex(null) }}
+      />
     </div>
+  )
+}
+
+function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; onOpen: () => void }) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
+
+  // Önbellekten gelen görsel, React olay dinleyicileri bağlanmadan tamamlanabilir;
+  // o durumda `onLoad` HİÇ tetiklenmez. Bu yüzden (a) mount'tan sonra `complete`
+  // durumunu elle ölç, (b) görseli spinner'ın ÜSTÜNE koy ve yalnız gerçek hatada
+  // gizle — böylece kaçan bir olay fotoğrafı görünmez yapamaz.
+  const imgRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    let frame = 0
+    const settle = () => {
+      const node = imgRef.current
+      if (!node) return
+      if (node.complete) {
+        setState(node.naturalWidth > 0 ? "ready" : "failed")
+        return
+      }
+      frame = requestAnimationFrame(settle)
+    }
+    settle()
+    return () => cancelAnimationFrame(frame)
+  }, [src])
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      disabled={state === "failed"}
+      aria-label={`${label} — büyüt`}
+      className="relative w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted touch-manipulation"
+    >
+      {state !== "ready" && (
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground/70">
+          {state === "loading" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <>
+              <ImageOff className="size-4" />
+              <span className="text-[10px] leading-none">Yüklenemedi</span>
+            </>
+          )}
+        </span>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={src}
+        alt={label}
+        onLoad={() => setState("ready")}
+        onError={() => setState("failed")}
+        className={cn(
+          "relative w-full h-full object-cover transition-transform active:scale-95",
+          state === "failed" && "opacity-0"
+        )}
+      />
+    </button>
   )
 }
 

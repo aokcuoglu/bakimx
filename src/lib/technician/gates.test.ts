@@ -4,6 +4,7 @@ import {
   countIncompleteItems,
   startWorkBlockMessage,
   completeWorkBlockMessage,
+  summarizeChecklist,
   START_GATE_CATEGORIES,
   COMPLETE_GATE_CATEGORIES,
 } from "./gates"
@@ -34,6 +35,20 @@ test("tamamlanmamış kalem sayısı completedAt'e bakar", () => {
 
 test("kalem yoksa engel yok", () => {
   expect(countIncompleteItems([])).toBe(0)
+})
+
+test("özet tamamlanan ve kalan zorunlu maddeyi sayar", () => {
+  const items = [
+    req("inspection", true),
+    req("repair", false),
+    { category: "repair", isCompleted: false, isRequired: false },
+    { category: "delivery", isCompleted: true, isRequired: false },
+  ]
+  expect(summarizeChecklist(items)).toEqual({ total: 4, completed: 2, missingRequired: 1 })
+})
+
+test("madde yoksa özet sıfırdır", () => {
+  expect(summarizeChecklist([])).toEqual({ total: 0, completed: 0, missingRequired: 0 })
 })
 
 test("eksik yoksa başlama mesajı null", () => {
