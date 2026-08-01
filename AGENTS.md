@@ -16,6 +16,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB seed:** `bun run db:seed` — seed demo data (demo@bakimx.com / demo123456)
 - **DB studio:** `bun run db:studio` — Prisma Studio on port 5555
 - **DB migrate:** `bun run db:migrate` — create migration (use `prisma migrate deploy` for production)
+- **Dev login (QA):** `GET /api/auth/dev-login?email=<seed-user>&redirect=<path>` — opens a session without typing a password (default `admin@bakimx.com`, redirect `/dashboard`). Only responds when `NODE_ENV=development` AND the request host is localhost; 404 everywhere else. Use it for browser QA in isolated worktrees instead of hand-rolling a temporary login route.
 
 ## Local Infrastructure
 - **Start services:** `docker compose -f docker-compose.local.yml up -d`

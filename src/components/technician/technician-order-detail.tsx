@@ -135,6 +135,25 @@ export function TechnicianOrderDetail({
   const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
   const checklistSummary = summarizeChecklist(order.checklistItems)
 
+  // Kontrol listesi kapalı geldiği için, kapıya takılan teknisyen eksik
+  // maddeleri göremiyordu: engel mesajı bölümü açıp oraya kaydırır.
+  const [checklistOpen, setChecklistOpen] = useState<string[]>([])
+  const checklistRef = useRef<HTMLDivElement>(null)
+
+  function revealChecklist() {
+    setChecklistOpen(["checklist"])
+    // Panel bir sonraki boyamada açılıyor; kaydırmayı ondan sonraya bırak.
+    // Odak önce alınır ve `preventScroll` ile kendi sıçramasını yapmaz —
+    // aksi halde tarayıcının odak kaydırması smooth animasyonu iptal ediyor.
+    requestAnimationFrame(() => {
+      checklistRef.current?.querySelector<HTMLButtonElement>('[data-slot="accordion-trigger"]')
+        ?.focus({ preventScroll: true })
+      // `behavior` bilerek verilmiyor: html'deki `scroll-smooth` geçerli olsun,
+      // hareket tercihi tek yerden (CSS) yönetilebilsin.
+      checklistRef.current?.scrollIntoView({ block: "start" })
+    })
+  }
+
   // Alış fotoğrafları (serviceOrderItemId != null) dahili-yalnızdır; onarım
   // galerilerine sızmaması için hepsinden dışlanır.
   const galleryPhotos = order.photos.filter((p) => p.serviceOrderItemId == null)
@@ -230,10 +249,11 @@ export function TechnicianOrderDetail({
       <ComplaintCard complaint={order.intake.customerComplaint} />
 
       {/* Kontrol listesi kapalı başlar — mobilde ekranın çoğunu kaplıyordu.
-          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür. */}
-      <div className="rounded-lg border border-border bg-white px-4">
-        <Accordion>
-          <AccordionItem className="border-0">
+          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür.
+          Kontrollü: alttaki engel mesajı da bu bölümü açıp buraya kaydırıyor. */}
+      <div ref={checklistRef} className="rounded-lg border border-border bg-white px-4 scroll-mt-4">
+        <Accordion value={checklistOpen} onValueChange={(v) => setChecklistOpen(v as string[])}>
+          <AccordionItem value="checklist" className="border-0">
             <AccordionTrigger className="items-center py-3 hover:no-underline">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
                 <ListChecks className="size-4 text-muted-foreground" />
@@ -504,12 +524,39 @@ export function TechnicianOrderDetail({
           )}
         </div>
         {canStart && startBlockedMessage && (
-          <p className="text-xs text-warning-foreground text-center">{startBlockedMessage}</p>
+          <BlockedMessage message={startBlockedMessage} onReveal={startMissing > 0 ? revealChecklist : undefined} />
         )}
         {canComplete && completeBlockedMessage && (
-          <p className="text-xs text-warning-foreground text-center">{completeBlockedMessage}</p>
+          <BlockedMessage
+            message={completeBlockedMessage}
+            onReveal={completeChecklistMissing > 0 ? revealChecklist : undefined}
+          />
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * "İşe Başla / Tamamla" engel mesajı. Engelin sebebi eksik kontrol maddesiyse
+ * mesaj tıklanabilir olur ve kapalı kontrol listesini açıp oraya kaydırır;
+ * sebep yalnız eksik iş kalemiyse düz metin kalır (açacak bir liste yok).
+ */
+function BlockedMessage({ message, onReveal }: { message: string; onReveal?: () => void }) {
+  if (!onReveal) {
+    return <p className="text-xs text-warning-foreground text-center">{message}</p>
+  }
+  return (
+    <div className="flex justify-center">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onReveal}
+        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-warning-foreground whitespace-normal"
+      >
+        <ListChecks className="size-3.5 shrink-0" />
+        <span className="min-w-0 text-left">{message} — kontrol listesini aç</span>
+      </Button>
     </div>
   )
 }
