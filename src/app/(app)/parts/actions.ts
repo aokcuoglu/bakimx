@@ -5,10 +5,11 @@ import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
-import { partCreateSchema, partUpdateSchema, stockMovementSchema, partSupplierPricesSchema } from "@/lib/validations/part"
+import { partCreateSchema, partUpdateSchema, quickPartCreateSchema, stockMovementSchema, partSupplierPricesSchema } from "@/lib/validations/part"
 import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizeSupplierPriceRows, derivePartPricing, shouldPreserveDerivedPricing, type SupplierPriceRow } from "@/lib/parts/supplier-prices"
+import type { QuickPartCreateResult } from "@/lib/parts/quick-part-draft"
 
 type SupplierPricesResult =
   | { error: string }
@@ -139,6 +140,69 @@ export async function createPartAction(formData: FormData) {
   await AuditLogAction(workshopId, user.id, "PartStockItem", part.id, "part_created")
   revalidatePath("/parts")
   return { success: true, id: part.id }
+}
+
+/**
+ * İş emri ekranındaki "Oluştur & Düzenle" modalından hızlı stok kartı açar (#210).
+ *
+ * Tam parça formunun (createPartAction) yerini TUTMAZ; yalnız kod + ad (+ marka,
+ * kategori, satış fiyatı) yazar. Kasıtlı sınırlar:
+ * - Kart `stockQty = 0` ile açılır ve StockMovement üretmez. Buradaki amaç
+ *   "rafımdan şu parçayı harcadım" değil, "bu parçaya kalıcı bir stok kodu
+ *   tanımlayayım"dır; kalem de karta BAĞLANMAZ (ServiceOrderItem.partId boş
+ *   kalır), dolayısıyla iş emri stok düşümü (reserveStockInTx) tetiklenmez.
+ *   Aksi hâlde 0 stoklu yeni kart "Yetersiz stok" ile kalem eklemeyi bloklardı.
+ * - Aynı koddan ikinci kart açılmasını engeller. `PartStockItem.sku` üzerinde
+ *   DB tekil kısıtı YOKtur (mevcut veride yinelenen kodlar olabileceği için
+ *   eklenmedi); bu yüzden kontrol uygulama katmanındadır ve eşzamanlı iki
+ *   istekte teorik olarak yarışabilir. Tam parça formu bu kontrolü hâlâ
+ *   yapmıyor — oradaki davranış bilinçli olarak değiştirilmedi.
+ */
+export async function createQuickPartAction(formData: FormData): Promise<QuickPartCreateResult> {
+  const { user } = await requireWritableWorkshop()
+  const workshopId = user.workshopId
+
+  const raw: Record<string, string> = {}
+  for (const f of ["brand", "category", "salePrice"]) {
+    const v = formData.get(f)
+    if (v && typeof v === "string") raw[f] = v
+  }
+  // sku/name boş gelse bile ANAHTAR olarak taşınır: aksi hâlde alan `undefined`
+  // olur ve Zod kendi genel tip hatasını döndürür ("expected string, received
+  // undefined") — kullanıcı "Stok kodu zorunludur" mesajını görmez.
+  for (const f of ["sku", "name"]) {
+    const v = formData.get(f)
+    raw[f] = typeof v === "string" ? v : ""
+  }
+
+  const parsed = quickPartCreateSchema.safeParse(raw)
+  if (!parsed.success) return { error: getValidationError(parsed) ?? "Geçersiz bilgiler" }
+
+  const { sku, name } = parsed.data
+
+  // Pasif kartlar da kodu tutar — isActive filtresi YOK.
+  const existing = await prisma.partStockItem.findFirst({
+    where: { workshopId, sku: { equals: sku, mode: "insensitive" } },
+    select: { name: true },
+  })
+  if (existing) {
+    return { error: `Bu stok kodu zaten kullanılıyor: “${existing.name}”` }
+  }
+
+  const part = await prisma.partStockItem.create({
+    data: {
+      workshopId,
+      name,
+      sku,
+      brand: parsed.data.brand || null,
+      category: parsed.data.category || null,
+      salePrice: parsed.data.salePrice ?? null,
+    },
+  })
+
+  await AuditLogAction(workshopId, user.id, "PartStockItem", part.id, "part_created")
+  revalidatePath("/parts")
+  return { success: true as const, id: part.id, sku, name }
 }
 
 export async function updatePartAction(partId: string, formData: FormData) {

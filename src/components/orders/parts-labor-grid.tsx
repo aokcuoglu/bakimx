@@ -45,7 +45,7 @@ import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
-import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
+import { createQuickPartAction, ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
@@ -589,6 +589,9 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const submittingRef = useRef(false)
+  // Bu modal oturumunda açılan stok kartının kodu (yeniden denemede ikinci kart
+  // açılmasını engeller). Modal her açılışta sıfırlanır.
+  const createdPartSkuRef = useRef<string | null>(null)
   const linked = vehicle?.catalogVehicleTypeId != null
   const [prefetching, setPrefetching] = useState(false)
   // Prefetch dolarken mevcut aramayı periyodik yeniden tetikleyen sinyal:
@@ -662,6 +665,64 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     return ok
   }
 
+  /**
+   * "Oluştur & Düzenle" modalının gönderimi. Anahtar açıksa ÖNCE kalıcı stok
+   * kartı açılır, sonra kalem eklenir: kod çakışması gibi hatalar hiçbir şey
+   * eklenmeden yakalansın ve kullanıcı modalda kodu düzeltebilsin. Kart açıldıktan
+   * sonra kalem ekleme başarısız olursa (ör. iş emri bu arada kilitlenmişse) kart
+   * kalır — hata üstteki uyarı alanında görünür, tekrar denemede aynı kodla ikinci
+   * kart açılamaz.
+   *
+   * Hata mesajı döndürmek modalı AÇIK bırakır; null dönüşü başarıyı bildirir.
+   */
+  async function submitManualDraft(d: ManualPartDraft): Promise<string | null> {
+    const sku = d.sku?.trim() || null
+    // Kart açıldıktan sonra kalem ekleme takılırsa kullanıcı aynı modalda tekrar
+    // dener; ikinci denemede aynı kodla kart AÇILMAZ (yoksa kendi açtığı kart
+    // "bu kod zaten kullanılıyor" diyip kullanıcıyı çıkmaza sokardı). Kod
+    // değiştirilirse ref eşleşmez ve yeni kart açılır.
+    if (d.createStockItem && sku !== createdPartSkuRef.current) {
+      if (submittingRef.current) return null
+      submittingRef.current = true
+      setSubmitting(true)
+      try {
+        const fd = new FormData()
+        fd.set("sku", sku ?? "")
+        fd.set("name", d.name)
+        if (d.brand) fd.set("brand", d.brand)
+        if (d.category) fd.set("category", d.category)
+        if (d.unitPrice != null) fd.set("salePrice", String(d.unitPrice))
+        const res = await createQuickPartAction(fd)
+        // NOT: sadece `"error" in res` yazılır — `&& res.error` eklemek birleşim
+        // tipini erken dönüşten sonra daraltmaz ve başarı dalındaki alanlar derlenmez.
+        if ("error" in res) return res.error
+        createdPartSkuRef.current = res.sku
+        toast.success(`Stok kartı oluşturuldu · ${res.sku}`)
+      } finally {
+        submittingRef.current = false
+        setSubmitting(false)
+      }
+    }
+    // Kalem karta BAĞLANMAZ (partId yok): stok düşümü tetiklenmesin diye —
+    // gerekçe createQuickPartAction başlığında.
+    const ok = await add({
+      source: "manual",
+      name: d.name,
+      sku,
+      brand: d.brand,
+      category: d.category,
+      categoryId: d.categoryId,
+      quantity: d.quantity,
+      unitPrice: d.unitPrice,
+    })
+    if (ok) setDialogOpen(false)
+    // Ekleme hatası TOAST ile bildirilir, modal içine yazılmaz: modaldeki satır-içi
+    // hata alanı stok kodu alanına bağlıdır (aria-invalid) ve buradaki hatanın kodla
+    // ilgisi yok. Ayrıntılı sunucu mesajı arkadaki uyarı alanında (onError) durur.
+    if (!ok) toast.error("Kalem eklenemedi. Lütfen tekrar deneyin.")
+    return null
+  }
+
   return (
     <div className="space-y-3">
       {!linked && (
@@ -698,7 +759,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         searchTitle={linked ? "TecDoc kataloğundan seç" : "Araç TecDoc'ta eşleşmedi"}
         showCreate
         onCreate={(text) => void add({ source: "manual", name: text })}
-        onCreateEdit={(text) => { setName(text); setDialogOpen(true) }}
+        onCreateEdit={(text) => { setName(text); createdPartSkuRef.current = null; setDialogOpen(true) }}
         refreshSignal={refreshSignal}
         onResultsCount={handleResultsCount}
       />
@@ -755,17 +816,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         initialName={name}
         vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
         submitting={submitting}
-        onSubmit={(d: ManualPartDraft) => {
-          void add({
-            source: "manual",
-            name: d.name,
-            brand: d.brand,
-            category: d.category,
-            categoryId: d.categoryId,
-            quantity: d.quantity,
-            unitPrice: d.unitPrice,
-          }).then((ok) => { if (ok) setDialogOpen(false) })
-        }}
+        onSubmit={submitManualDraft}
       />
     </div>
   )
