@@ -6,6 +6,7 @@ import { ImageOff, Loader2 } from "lucide-react"
 import { PHOTO_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 
 export type GalleryPhoto = {
   id: string
@@ -17,10 +18,7 @@ export type GalleryPhoto = {
   note: string | null
 }
 
-function toSrc(photo: Pick<GalleryPhoto, "id" | "fileUrl">): string | null {
-  if (!photo.fileUrl) return null
-  return photo.fileUrl.startsWith("data:") ? photo.fileUrl : `/api/photos?id=${photo.id}`
-}
+const toSrc = resolvePhotoSrc
 
 /**
  * Tıklanabilir fotoğraf grid'i — kartlardan birine dokununca aynı grup içinde

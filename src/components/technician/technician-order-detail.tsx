@@ -5,13 +5,16 @@ import { formatTRY } from "@/lib/format"
 import { bpsToPercent, parseTRYToKurus } from "@/lib/money"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
+  ImageOff, Loader2,
 } from "lucide-react"
+import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -668,30 +671,115 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
   )
 }
 
+/**
+ * Faz bazlı fotoğraf ızgarası. Kaynak `fileUrl` değil `resolvePhotoSrc` ile
+ * belirlenir (depo referansı doğrudan açılamaz), dokununca diğer ekranlardaki
+ * gibi tam ekran `PhotoLightbox` açılır.
+ */
 function PhotoSection({ label, photos }: { label: string; photos: { id: string; fileUrl: string | null; label: string; note: string | null }[] }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  // Dosyası olmayan kayıtlar açılamaz; lightbox yalnızca görüntülenebilirleri gezer.
+  const viewable = photos.filter((p) => p.fileUrl)
+  const lightboxPhotos: LightboxPhoto[] = viewable.map((p) => ({
+    id: p.id,
+    label: p.label,
+    note: p.note,
+    fileUrl: resolvePhotoSrc(p),
+  }))
+
   if (photos.length === 0) return null
+
   return (
     <div className="mb-3">
       <p className="text-xs font-medium text-muted-foreground mb-2">{label} ({photos.length})</p>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-        {photos.map((p) => (
-          p.fileUrl ? (
-            <a key={p.id} href={p.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.fileUrl}
-                alt={p.label}
-                className="w-full aspect-square object-cover rounded-lg border border-border"
-              />
-            </a>
-          ) : (
-            <div key={p.id} className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
-              <Camera className="size-5" />
-            </div>
+        {photos.map((p) => {
+          const src = resolvePhotoSrc(p)
+          if (!src) {
+            return (
+              <div key={p.id} className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                <Camera className="size-5" />
+              </div>
+            )
+          }
+          return (
+            <PhotoThumbnail
+              key={p.id}
+              src={src}
+              label={p.label}
+              onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
+            />
           )
-        ))}
+        })}
       </div>
+      <PhotoLightbox
+        photos={lightboxPhotos}
+        index={lightboxIndex ?? 0}
+        onIndexChange={setLightboxIndex}
+        open={lightboxIndex !== null}
+        onOpenChange={(next) => { if (!next) setLightboxIndex(null) }}
+      />
     </div>
+  )
+}
+
+function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; onOpen: () => void }) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
+
+  // Önbellekten gelen görsel, React olay dinleyicileri bağlanmadan tamamlanabilir;
+  // o durumda `onLoad` HİÇ tetiklenmez. Bu yüzden (a) mount'tan sonra `complete`
+  // durumunu elle ölç, (b) görseli spinner'ın ÜSTÜNE koy ve yalnız gerçek hatada
+  // gizle — böylece kaçan bir olay fotoğrafı görünmez yapamaz.
+  const imgRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    let frame = 0
+    const settle = () => {
+      const node = imgRef.current
+      if (!node) return
+      if (node.complete) {
+        setState(node.naturalWidth > 0 ? "ready" : "failed")
+        return
+      }
+      frame = requestAnimationFrame(settle)
+    }
+    settle()
+    return () => cancelAnimationFrame(frame)
+  }, [src])
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      disabled={state === "failed"}
+      aria-label={`${label} — büyüt`}
+      className="relative w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted touch-manipulation"
+    >
+      {state !== "ready" && (
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground/70">
+          {state === "loading" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <>
+              <ImageOff className="size-4" />
+              <span className="text-[10px] leading-none">Yüklenemedi</span>
+            </>
+          )}
+        </span>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={src}
+        alt={label}
+        onLoad={() => setState("ready")}
+        onError={() => setState("failed")}
+        className={cn(
+          "relative w-full h-full object-cover transition-transform active:scale-95",
+          state === "failed" && "opacity-0"
+        )}
+      />
+    </button>
   )
 }
 
