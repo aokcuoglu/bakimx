@@ -32,6 +32,7 @@ export async function sendVerifyEmail(workshopId: string): Promise<{ ok: boolean
     workshopId,
     // Statik key: resend akışında birden çok gönderime izin ver (sendSystemEmail dedup ETMEZ).
     templateKey: "verify_email",
+    audience: "workshop",
   })
   return { ok: res.ok }
 }

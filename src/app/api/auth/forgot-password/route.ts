@@ -67,6 +67,7 @@ export async function POST(request: Request) {
           html: mail.html,
           workshopId: user.workshopId,
           templateKey: "password_reset",
+          audience: "workshop",
         }).catch(() => {})
       }
     } catch {

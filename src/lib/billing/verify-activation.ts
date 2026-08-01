@@ -66,6 +66,7 @@ export async function activateVerifiedWorkshop(workshopId: string): Promise<{ ok
         html: built.html,
         workshopId,
         templateKey: "welcome_trial",
+        audience: "workshop",
       })
     }
   } catch (err) {

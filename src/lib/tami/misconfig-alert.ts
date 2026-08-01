@@ -70,6 +70,7 @@ export async function alertTamiMisconfigOnce(opts: {
     html: built.html,
     workshopId: opts.workshopId,
     templateKey,
+    audience: "internal",
   })
   return result.ok
 }

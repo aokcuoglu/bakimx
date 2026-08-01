@@ -1435,6 +1435,14 @@ model ReminderExecutionLog {
   @@index([executedAt])
 }
 
+/// Bir iletişim denemesinin kaydı. `workshopId` HER ZAMAN dolu (zorunlu FK), ama
+/// bu satırın kiracıya AİT olduğu anlamına gelmez: platform yöneticilerine giden
+/// sistem uyarıları da (yeni başvuru bildirimi, TAMI hash/misconfig alarmı, takılı
+/// işlem alarmı) ilgili workshop'a bağlanarak loglanır — dedup anahtarı oradan
+/// okunur. `internal = true` bu satırların YALNIZ platform tarafına ait olduğunu
+/// söyler; kiracıya dönük her sorgu `internal: false` ile filtrelemek ZORUNDADIR
+/// (bkz. src/app/(app)/communications/actions.ts). Değeri sendSystemEmail'in
+/// zorunlu `audience` alanından gelir, tahminle değil.
 model CommunicationLog {
   id           String            @id @default(cuid())
   workshopId   String
@@ -1443,6 +1451,7 @@ model CommunicationLog {
   provider     String
   recipient    String
   status       String            @default("pending")
+  internal     Boolean           @default(false)
   templateKey  String?
   entityType   String?
   entityId     String?
