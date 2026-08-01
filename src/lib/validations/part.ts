@@ -1,5 +1,8 @@
 import { z } from "zod/v4"
 
+const optionalPartAttributeSchema = z.string().trim().max(120, "En fazla 120 karakter girilebilir").optional().default("")
+const optionalPartAttributeServerSchema = z.string().trim().max(120, "En fazla 120 karakter girilebilir").optional().or(z.literal(""))
+
 /** Form katmanı: fiyat TRY (lira) girilir. */
 export const partSupplierPriceFormRowSchema = z.object({
   supplierId: z.string().min(1, "Tedarikçi seçilmelidir"),
@@ -43,8 +46,8 @@ export const partSchema = z.object({
   name: z.string().min(1, "Parça adı zorunludur"),
   sku: z.string().min(1, "Parça kodu zorunludur"),
   oemNo: z.string().optional().default(""),
-  brand: z.string().optional().default(""),
-  category: z.string().optional().default(""),
+  brand: optionalPartAttributeSchema,
+  category: optionalPartAttributeSchema,
   description: z.string().optional().default(""),
   unit: z.string().min(1, "Birim zorunludur").default("adet"),
   stockQty: z.coerce.number().min(0).default(0),
@@ -65,8 +68,8 @@ export const partCreateSchema = z.object({
   name: z.string().min(1, "Parça adı zorunludur"),
   sku: z.string().min(1, "Parça kodu zorunludur"),
   oemNo: z.string().optional().or(z.literal("")),
-  brand: z.string().optional().or(z.literal("")),
-  category: z.string().optional().or(z.literal("")),
+  brand: optionalPartAttributeServerSchema,
+  category: optionalPartAttributeServerSchema,
   description: z.string().optional().or(z.literal("")),
   unit: z.string().default("adet"),
   stockQty: z.coerce.number().int("Stok miktarı tam sayı olmalıdır").min(0, "Stok miktarı negatif olamaz").default(0),
