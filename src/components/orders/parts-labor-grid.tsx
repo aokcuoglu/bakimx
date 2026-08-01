@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -30,6 +31,7 @@ import {
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import { formatTRY } from "@/lib/format"
+import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { liraToKurus, kurusToLira } from "@/lib/money"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -57,6 +59,11 @@ type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string;
 type PartFilter = { supplierId?: number; supplierName?: string; categoryId?: number; categoryName?: string }
 
 type OnCell = (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; localOnly?: boolean }) => void
+
+// Satırda 2 sn görünen geçici onay işareti: yeni kalem eklendi mi, mevcut satır
+// otosave ile kaydedildi mi — ikisi ayrı okunur (bkz. RowFlash).
+type FlashKind = "saved" | "added"
+const FLASH_LABELS: Record<FlashKind, string> = { saved: "Kaydedildi", added: "Eklendi" }
 
 /**
  * Parça detay modalı açma isteği. Modal TEK örnek olarak PartsLaborGrid'de durur
@@ -111,15 +118,16 @@ export function PartsLaborGrid({
   const [detail, setDetail] = useState<DetailRequest | null>(null)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
-  // Sessiz otosave'i görünür kılan geçici "✓ Kaydedildi" işareti: başarılı
-  // PATCH sonrası ilgili satırda 2 sn gösterilir (tecrübesiz kullanıcı için
-  // "değişikliğim kaydoldu mu?" belirsizliğini kaldırır).
-  const [savedRowId, setSavedRowId] = useState<string | null>(null)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  function flashSaved(rowId: string) {
-    setSavedRowId(rowId)
-    if (savedTimer.current) clearTimeout(savedTimer.current)
-    savedTimer.current = setTimeout(() => setSavedRowId(null), 2000)
+  // Sessiz otosave'i / yeni eklemeyi görünür kılan geçici satır işareti:
+  // başarılı PATCH sonrası "✓ Kaydedildi", yeni kalem eklendikten sonra
+  // "✓ Eklendi" olarak 2 sn gösterilir (tecrübesiz kullanıcı için
+  // "değişikliğim kaydoldu mu / parça eklendi mi?" belirsizliğini kaldırır).
+  const [flash, setFlash] = useState<{ rowId: string; kind: FlashKind } | null>(null)
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function flashRow(rowId: string, kind: FlashKind) {
+    setFlash({ rowId, kind })
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+    flashTimer.current = setTimeout(() => setFlash(null), 2000)
   }
 
   // Sunucu items'ı yerele senkronla. Runtime-only brandSupplierId (persist
@@ -140,7 +148,7 @@ export function PartsLaborGrid({
     const timers = saveTimers.current
     return () => {
       Object.values(timers).forEach((t) => clearTimeout(t))
-      if (savedTimer.current) clearTimeout(savedTimer.current)
+      if (flashTimer.current) clearTimeout(flashTimer.current)
     }
   }, [])
 
@@ -152,11 +160,12 @@ export function PartsLaborGrid({
   // listeye ekler + router.refresh() ile sunucudan doğrular. true dönerse
   // composer kendini sıfırlar.
   async function addItem(draft: Row): Promise<boolean> {
-    if (!draft.name.trim()) return false
+    const name = draft.name.trim()
+    if (!name) return false
     const fd = new FormData()
     fd.set("serviceOrderId", orderId)
     fd.set("type", draft.type)
-    fd.set("name", draft.name.trim())
+    fd.set("name", name)
     if (draft.sku) fd.set("sku", draft.sku)
     if (draft.unit) fd.set("unit", draft.unit)
     fd.set("quantity", String(draft.quantity))
@@ -176,6 +185,11 @@ export function PartsLaborGrid({
           ...prev,
           { ...toRow(draft), id: realId, __draft: false, brandSupplierId: draft.brandSupplierId },
         ])
+        // Arama kutusu ekleme sonrası temizlendiği için ekranda "bir şey oldu mu?"
+        // sorusu kalıyordu (issue #209): eklenen kalemin adını toast ile bildir ve
+        // listeye düşen satırı kısa süre "✓ Eklendi" ile işaretle.
+        toast.success(formatItemAddedMessage(draft.type, name))
+        flashRow(realId, "added")
         router.refresh()
         return true
       }
@@ -208,7 +222,7 @@ export function PartsLaborGrid({
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
         if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows(items.map(toRow)) }
-        else { flashSaved(rowId); router.refresh() }
+        else { flashRow(rowId, "saved"); router.refresh() }
       } catch { onError("Bir hata oluştu"); setRows(items.map(toRow)) }
     }
     if (opts?.debounce) {
@@ -305,7 +319,7 @@ export function PartsLaborGrid({
                   vehicle={vehicle}
                   onCell={onCell}
                   onRemove={removeRow}
-                  saved={savedRowId === row.id}
+                  flash={flash?.rowId === row.id ? flash.kind : null}
                   onShowDetail={setDetail}
                 />
               ))
@@ -328,7 +342,7 @@ export function PartsLaborGrid({
               vehicle={vehicle}
               onCell={onCell}
               onRemove={removeRow}
-              saved={savedRowId === row.id}
+              flash={flash?.rowId === row.id ? flash.kind : null}
               onShowDetail={setDetail}
             />
           ))
@@ -1089,18 +1103,20 @@ function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: s
   )
 }
 
-// Başarılı otosave sonrası 2 sn'lik onay işareti. Masaüstünde dar kolonlara
-// sığması için iconOnly, mobil kart başlığında metinli sürüm.
-function SavedFlash({ show, iconOnly }: { show: boolean; iconOnly?: boolean }) {
-  if (!show) return null
+// Başarılı otosave ("Kaydedildi") veya yeni ekleme ("Eklendi") sonrası 2 sn'lik
+// onay işareti. Masaüstünde dar kolonlara sığması için iconOnly, mobil kart
+// başlığında metinli sürüm.
+function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: boolean }) {
+  if (!kind) return null
+  const label = FLASH_LABELS[kind]
   return (
     <span
       className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success"
-      title="Kaydedildi"
+      title={label}
       aria-live="polite"
     >
       <CheckCircle2 className="size-3.5" />
-      {!iconOnly && "Kaydedildi"}
+      {!iconOnly && label}
     </span>
   )
 }
@@ -1301,14 +1317,14 @@ const META_FIELD_MOBILE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  saved?: boolean
+  flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
@@ -1364,7 +1380,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
       {/* Toplam (vurgulu) + otosave onayı */}
       <TableCell className="py-3.5">
         <div className="flex items-center justify-end gap-1.5">
-          <SavedFlash show={!!saved} iconOnly />
+          <RowFlash kind={flash} iconOnly />
           <TotalField lineTotal={ed.lineTotal} strong />
         </div>
       </TableCell>
@@ -1380,14 +1396,14 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  saved?: boolean
+  flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
@@ -1407,7 +1423,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
-          <SavedFlash show={!!saved} />
+          <RowFlash kind={flash} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>
