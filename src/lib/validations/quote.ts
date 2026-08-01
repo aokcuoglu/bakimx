@@ -4,9 +4,11 @@ export const quoteItemSchema = z.object({
   type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
   name: z.string().min(1, "Kalem adı zorunludur"),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır"),
-  // Money is integer kuruş (client converts TRY -> kuruş before submit).
-  unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").nullable(),
-  totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").nullable(),
+  // Bu şema FORM değerlerini doğrular: alanlar TL (lira) tutar, en fazla iki
+  // ondalık basamağa izin verilir. Kuruşa çevrim yalnız gönderimde (onSubmit,
+  // liraToKurus) yapılır — burada tamsayı zorunluluğu YANLIŞ olurdu.
+  unitPrice: z.coerce.number().multipleOf(0.01, "Birim fiyat en fazla iki ondalık olabilir").min(0, "Birim fiyat negatif olamaz").nullable(),
+  totalPrice: z.coerce.number().multipleOf(0.01, "Toplam fiyat en fazla iki ondalık olabilir").min(0, "Toplam fiyat negatif olamaz").nullable(),
   note: z.string().optional().default(""),
   // Kendi stoğundan seçilen parça (DB PartStockItem.id) — boşsa manuel/katalog parçası.
   // Teklif stok düşMEZ, sadece partId bağlar; çevrim sırasında stok düşülür.

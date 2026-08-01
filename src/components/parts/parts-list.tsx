@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
+import { KpiStat } from "@/components/ui/kpi-stat"
 import { formatPrice, formatStockQty } from "@/lib/parts/format"
 import type { PartKPIs } from "@/lib/parts/queries"
 import { Plus, Search, X, Package, AlertTriangle, Eye, Edit3, Archive, Trash2, Boxes } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { PartsTabsNav } from "@/app/(app)/parts/parts-tabs-nav"
 
 const STATUS_LABELS: Record<string, string> = {
   in_stock: "Stokta",
@@ -118,6 +120,8 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Plus className="size-3.5 mr-1" /> Yeni Parça
         </Button>
       </div>
+
+      <PartsTabsNav active="parts" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary" accentBg="bg-primary/10" />
@@ -362,26 +366,6 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function KpiStat({ label, value, icon: Icon, accent, accentBg }: {
-  label: string
-  value: number
-  icon: React.ComponentType<{ className?: string }>
-  accent: string
-  accentBg: string
-}) {
-  return (
-     <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground truncate">{label}</span>
-        <div className={`size-7 sm:size-9 rounded-lg ${accentBg} flex items-center justify-center`}>
-          <Icon className={`size-3.5 sm:size-4 ${accent}`} />
-        </div>
-      </div>
-      <p className="text-lg sm:text-2xl font-bold text-foreground">{value}</p>
     </div>
   )
 }

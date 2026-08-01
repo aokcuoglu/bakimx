@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
+import { useState, useCallback, useEffect, useMemo, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -26,12 +26,22 @@ import {
 import { Plus, Trash2, Loader2, Calculator, User, X } from "lucide-react"
 import { StockStatusBadge } from "@/components/parts/stock-status-badge"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
+import {
+  Autocomplete,
+  AutocompleteContent,
+  AutocompleteEmpty,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteList,
+} from "@/components/ui/autocomplete"
 import { formatPrice } from "@/lib/parts/format"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { formatTRY } from "@/lib/format"
 import { liraToKurus, kurusToLira, percentToBps } from "@/lib/money"
 import { calculateOrderTotals } from "@/lib/totals"
+import { searchLaborItems } from "@/lib/labor/search"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 import { useForm, useFieldArray } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -78,7 +88,7 @@ const defaultItem = {
   partId: "",
 }
 
-export function QuoteCreateForm() {
+export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRow[] }) {
   const router = useRouter()
   const wrappedAction = async (
     _prev: ActionState | null,
@@ -195,9 +205,13 @@ export function QuoteCreateForm() {
     const current = form.getValues(`items.${index}`)
     const qty = Number(current?.quantity) || 0
     const price = Number(current?.unitPrice) || 0
-    if (qty > 0 && price > 0) {
-      form.setValue(`items.${index}.totalPrice`, qty * price, { shouldDirty: true })
-    }
+    // Koşulsuz yaz: fiyatsız/miktarsız durumda `null` yazılmazsa önceki
+    // kalemden kalan `totalPrice` satırda asılı kalır (bkz. code review bulgu I1)
+    // ve kuruşa çevrilirken açık totalPrice'ı önceleyen lineTotalKurus üzerinden
+    // teklife/PDF'e yanlış tutar sızar. Kuruşa yuvarlama (bulgu I2) zod'un
+    // `.multipleOf(0.01)` kısıtını kayan nokta artığından (ör. 64.07*9) korur.
+    const total = qty > 0 && price > 0 ? Math.round(qty * price * 100) / 100 : null
+    form.setValue(`items.${index}.totalPrice`, total, { shouldDirty: true })
   }
 
   // PREVIEW ONLY — the server recomputes the authoritative totals from the line
@@ -517,11 +531,31 @@ export function QuoteCreateForm() {
                             <FormItem className="sm:col-span-2">
                               <FormLabel className="text-[11px] text-muted-foreground">Ad</FormLabel>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder={typeVal === "part" ? "Fren balatası..." : "Yağ değişimi..."}
-                                  className="h-8 text-sm"
-                                />
+                                {typeVal === "labor" ? (
+                                  <LaborNameAutocomplete
+                                    laborCatalog={laborCatalog}
+                                    value={field.value ?? ""}
+                                    onValueChange={(v) => field.onChange(v)}
+                                    onSelect={(e) => {
+                                      field.onChange(e.name)
+                                      // Form TL tutar; katalog kuruş saklar. Fiyatsız kalem
+                                      // seçilirse önceki satırdan kalma fiyat yapışık kalmasın
+                                      // diye unitPrice sıfırlanır (else dalı).
+                                      form.setValue(
+                                        `items.${index}.unitPrice`,
+                                        e.defaultPriceKurus != null ? kurusToLira(e.defaultPriceKurus) : null,
+                                        { shouldDirty: true }
+                                      )
+                                      recomputeTotal(index)
+                                    }}
+                                  />
+                                ) : (
+                                  <Input
+                                    {...field}
+                                    placeholder="Fren balatası..."
+                                    className="h-8 text-sm"
+                                  />
+                                )}
                               </FormControl>
                             </FormItem>
                           )
@@ -570,6 +604,7 @@ export function QuoteCreateForm() {
                                 placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -591,6 +626,7 @@ export function QuoteCreateForm() {
                                 placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -725,6 +761,68 @@ export function QuoteCreateForm() {
         </div>
       </form>
     </Form>
+  )
+}
+
+// İşçilik ad alanının katalog-önerili Autocomplete'i. Ayrı bileşene çıkarıldı
+// ki `useMemo` (arama sonucu bellek) kendi Fiber'ında güvenle çalışsın —
+// react-hook-form'un FormField render-prop'u içine hook koymak, üstteki
+// `form.watch("items")` her satırda re-render tetiklediğinde Rules of Hooks'u
+// ihlal eder (bkz. parts-labor-grid.tsx:419 LaborAutocompleteField, aynı desen).
+function LaborNameAutocomplete({
+  laborCatalog,
+  value,
+  onValueChange,
+  onSelect,
+}: {
+  laborCatalog: LaborCatalogRow[]
+  value: string
+  onValueChange: (v: string) => void
+  onSelect: (e: LaborCatalogRow) => void
+}) {
+  const items = useMemo(() => searchLaborItems(laborCatalog, value), [laborCatalog, value])
+  return (
+    <Autocomplete
+      items={items}
+      value={value}
+      filter={null}
+      autoHighlight
+      openOnInputClick
+      itemToStringValue={(e: LaborCatalogRow) => e.name}
+      onValueChange={onValueChange}
+    >
+      <AutocompleteInput
+        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
+        // (bkz. @base-ui/react/combobox ComboboxInput: `!mounted && key ===
+        // 'Escape'`) — kullanıcının henüz bir seçime dönüşmemiş yazdığı işçilik
+        // adı yok oluyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
+        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
+        // "false"). Aynı desen: customer-vehicle-picker.tsx (preventBaseUIHandler).
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
+            e.preventBaseUIHandler()
+          }
+        }}
+        render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />}
+      />
+      <AutocompleteContent>
+        <AutocompleteEmpty>
+          Eşleşen işçilik yok — kendi kaleminizi yazabilirsiniz
+        </AutocompleteEmpty>
+        <AutocompleteList>
+          {(e: LaborCatalogRow) => (
+            <AutocompleteItem key={e.id} value={e} onClick={() => onSelect(e)}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{e.name}</span>
+                {e.category && (
+                  <span className="block text-[11px] text-muted-foreground">{e.category}</span>
+                )}
+              </span>
+            </AutocompleteItem>
+          )}
+        </AutocompleteList>
+      </AutocompleteContent>
+    </Autocomplete>
   )
 }
 

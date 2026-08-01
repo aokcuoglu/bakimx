@@ -65,6 +65,7 @@ export const TENANT_TABLES = [
   "MaintenanceReminder",
   "PartStockItem",
   "StockMovement",
+  "LaborCatalogItem",
   "AuditLog",
   "Supplier",
   "PartSupplierPrice",

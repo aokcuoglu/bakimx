@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SendReminderButton } from "@/components/orders/send-reminder-button"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 import type { PartsRequestRow } from "@/components/orders/parts-request-panel"
 import { CollectionQuickModal } from "@/components/cashbox/collection-quick-modal"
 
@@ -172,6 +173,7 @@ export function PartsLaborCard({
   onError,
   onLoading,
   loading,
+  laborCatalog,
 }: {
   orderId: string
   status: string
@@ -180,6 +182,7 @@ export function PartsLaborCard({
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
+  laborCatalog: LaborCatalogRow[]
 }) {
   return (
     <Card>
@@ -201,6 +204,7 @@ export function PartsLaborCard({
           onError={onError}
           onLoading={onLoading}
           loading={loading}
+          laborCatalog={laborCatalog}
         />
       </CardContent>
     </Card>

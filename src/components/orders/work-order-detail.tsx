@@ -83,6 +83,7 @@ import {
 import { OrderInfoCard } from "@/components/orders/order-info-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 
 const PHOTO_PHASE_LABELS: Record<string, string> = {
   intake: "Kabul (Intake)",
@@ -164,6 +165,7 @@ export function WorkOrderDetail({
   hasAiAdvisor,
   activity = [],
   editInitially = false,
+  laborCatalog,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
@@ -173,6 +175,8 @@ export function WorkOrderDetail({
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
   editInitially?: boolean
+  // Atölyenin işçilik kataloğu — İşçilik composer'ının öneri kaynağı.
+  laborCatalog: LaborCatalogRow[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -853,7 +857,7 @@ export function WorkOrderDetail({
               listede ekranın çok altında kalıyor, banner viewport dışında kalıp
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} />
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} />
 
           <div ref={pricingRef} className="scroll-mt-20">
             <PricingSummaryCard

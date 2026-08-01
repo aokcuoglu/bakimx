@@ -2,9 +2,11 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import Link from "next/link"
 import { QuoteCreateForm } from "@/components/quotes/quote-create-form"
+import { getLaborCatalog } from "@/lib/labor/queries"
 
 export default async function NewQuotePage() {
-  const { workshop } = await getAppData()
+  const { user, workshop } = await getAppData()
+  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Yeni Teklif">
@@ -19,7 +21,7 @@ export default async function NewQuotePage() {
 
         <h2 className="text-xl sm:text-2xl font-bold text-foreground">Yeni Teklif</h2>
 
-        <QuoteCreateForm />
+        <QuoteCreateForm laborCatalog={laborCatalog} />
       </div>
     </AppShell>
   )
