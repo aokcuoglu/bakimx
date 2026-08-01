@@ -41,6 +41,7 @@ import { PartSearchInput } from "@/components/parts/part-search-input"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
+import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
@@ -346,9 +347,9 @@ export function TechnicianOrderDetail({
           <Camera className="size-4 text-muted-foreground" />
           Onarım Fotoğrafları
         </h3>
-        <PhotoSection label="Onarım Öncesi" photos={beforePhotos} />
-        <PhotoSection label="Onarım Sırasında" photos={duringPhotos} />
-        <PhotoSection label="Onarım Sonrası" photos={afterPhotos} />
+        <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+        <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+        <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
         {galleryPhotos.length === 0 && (
           <p className="text-sm text-muted-foreground/70">Henüz fotoğraf eklenmedi.</p>
         )}
@@ -710,9 +711,20 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
 /**
  * Faz bazlı fotoğraf ızgarası. Kaynak `fileUrl` değil `resolvePhotoSrc` ile
  * belirlenir (depo referansı doğrudan açılamaz), dokununca diğer ekranlardaki
- * gibi tam ekran `PhotoLightbox` açılır.
+ * gibi tam ekran `PhotoLightbox` açılır. `canDelete` verildiğinde her karenin
+ * köşesinde sil butonu çıkar (silme sunucuda soft'tur).
  */
-function PhotoSection({ label, photos }: { label: string; photos: { id: string; fileUrl: string | null; label: string; note: string | null }[] }) {
+function PhotoSection({
+  label,
+  photos,
+  canDelete,
+  onDeleted,
+}: {
+  label: string
+  photos: { id: string; fileUrl: string | null; label: string; note: string | null }[]
+  canDelete?: boolean
+  onDeleted?: () => void
+}) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   // Dosyası olmayan kayıtlar açılamaz; lightbox yalnızca görüntülenebilirleri gezer.
@@ -732,20 +744,23 @@ function PhotoSection({ label, photos }: { label: string; photos: { id: string; 
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
         {photos.map((p) => {
           const src = resolvePhotoSrc(p)
-          if (!src) {
-            return (
-              <div key={p.id} className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
-                <Camera className="size-5" />
-              </div>
-            )
-          }
           return (
-            <PhotoThumbnail
-              key={p.id}
-              src={src}
-              label={p.label}
-              onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
-            />
+            <div key={p.id} className="relative">
+              {canDelete && (
+                <PhotoDeleteButton photoId={p.id} photoLabel={p.label} onDeleted={onDeleted} />
+              )}
+              {src ? (
+                <PhotoThumbnail
+                  src={src}
+                  label={p.label}
+                  onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
+                />
+              ) : (
+                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                  <Camera className="size-5" />
+                </div>
+              )}
+            </div>
           )
         })}
       </div>

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { getStorageProvider } from "@/lib/storage"
 import { notFound } from "next/navigation"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function GET(
   request: Request,
@@ -20,7 +21,7 @@ export async function GET(
             workshopId: true,
             photos: {
               // Dış alım fotoğrafı public token ile servis edilemez (dahili-yalnız).
-              where: { id: photoId, serviceOrderItemId: null },
+              where: { id: photoId, serviceOrderItemId: null, ...VISIBLE_PHOTO },
               select: {
                 workshopId: true,
                 storageKey: true,

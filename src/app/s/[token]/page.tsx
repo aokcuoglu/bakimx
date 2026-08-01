@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { PublicSharePage } from "@/components/intake/public-share-page"
 import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +18,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           customer: true,
           vehicle: true,
           // Dış alım (satın alma) fotoğrafları dahili-yalnızdır — müşteri özetine sızmaz.
-          photos: { where: { serviceOrderItemId: null }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
+          photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
           timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },

@@ -9,6 +9,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -176,7 +177,7 @@ export async function getVehicleAction(vehicleId: string) {
         include: {
           order: { include: { items: true } },
           damageMarks: true,
-          photos: { select: { id: true, type: true, label: true, fileUrl: true, createdAt: true } },
+          photos: { where: VISIBLE_PHOTO, select: { id: true, type: true, label: true, fileUrl: true, createdAt: true } },
           approvals: { orderBy: { createdAt: "desc" }, take: 1 },
         },
         orderBy: { createdAt: "desc" },

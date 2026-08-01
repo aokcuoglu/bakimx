@@ -1070,7 +1070,7 @@ export function WorkOrderDetail({
             <CardContent className="space-y-3">
               {/* Gallery */}
               {intake.photos.length > 0 ? (
-                <PhotoGalleryGrid photos={intake.photos} />
+                <PhotoGalleryGrid photos={intake.photos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-3">Henüz fotoğraf eklenmedi</p>
               )}
@@ -1263,7 +1263,7 @@ export function WorkOrderDetail({
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hasar Fotoğrafları ({damagePhotos.length})</p>
-                  <PhotoGalleryGrid photos={damagePhotos} />
+                  <PhotoGalleryGrid photos={damagePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
                 </div>
               )}
             </CardContent>

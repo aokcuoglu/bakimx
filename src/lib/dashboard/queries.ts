@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { applyTaxBps, addKurus } from "@/lib/money"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 type OStat = import("@prisma/client").OrderStatus
 type IStat = import("@prisma/client").IntakeStatus
@@ -104,6 +105,7 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
         workshopId,
         intakeFormId: { in: intakeIds },
         type: { in: REQUIRED_PHOTO_TYPES },
+        ...VISIBLE_PHOTO,
       },
       select: { intakeFormId: true, type: true },
     })
@@ -189,7 +191,7 @@ export async function getActiveWorkOrders(
           customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true } },
           vehicle: { select: { plate: true, brand: true, model: true } },
           photos: {
-            where: { type: { in: REQUIRED_PHOTO_TYPES } },
+            where: { type: { in: REQUIRED_PHOTO_TYPES }, ...VISIBLE_PHOTO },
             select: { type: true },
           },
         },
@@ -345,7 +347,7 @@ export async function getMissingPhotoItems(workshopId: string): Promise<MissingP
           customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true } },
           vehicle: { select: { plate: true } },
           photos: {
-            where: { type: { in: REQUIRED_PHOTO_TYPES } },
+            where: { type: { in: REQUIRED_PHOTO_TYPES }, ...VISIBLE_PHOTO },
             select: { type: true },
           },
         },

@@ -261,6 +261,7 @@ model User {
   auditLogs      AuditLog[]
   sentInvites    Invite[]             @relation("InviteCreatedBy")
   passwordResets PasswordResetToken[]
+  deletedPhotos  VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
 
   @@index([workshopId])
 }
@@ -505,6 +506,12 @@ model VehiclePhoto {
   storageProvider    String?
   storageKey         String?
   note               String?
+  // Silme SOFT'tur: delil bütünlüğü gereği satır ve depodaki dosya korunur,
+  // yalnızca galeriler/PDF/public paylaşım `deletedAt: null` ile filtreler.
+  // Kimin sildiği denetim için burada, ayrıntısı AuditLog `photo_deleted`ta.
+  deletedAt          DateTime?
+  deletedById        String?
+  deletedBy          User?             @relation("VehiclePhotoDeletedBy", fields: [deletedById], references: [id])
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
@@ -513,6 +520,7 @@ model VehiclePhoto {
   @@index([phase])
   @@index([serviceOrderId])
   @@index([serviceOrderItemId])
+  @@index([deletedAt])
 }
 
 enum VehiclePhotoType {

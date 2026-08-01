@@ -6,6 +6,7 @@ import { TechnicianOrderDetail } from "@/components/technician/technician-order-
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +27,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           vehicle: true,
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
+            where: VISIBLE_PHOTO,
             orderBy: { createdAt: "asc" },
             select: {
               id: true, type: true, label: true, required: true,
