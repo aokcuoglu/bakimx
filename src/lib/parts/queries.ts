@@ -124,6 +124,19 @@ export async function getWorkshopBrands(workshopId: string): Promise<string[]> {
   return rows.map((r) => r.brand).filter((b): b is string => !!b && b.trim().length > 0)
 }
 
+/** Bu atölyenin daha önce kullandığı kategori adları (kategori önerileri için). */
+export async function getWorkshopCategories(workshopId: string): Promise<string[]> {
+  const rows = await prisma.partStockItem.findMany({
+    where: { workshopId, category: { not: null } },
+    select: { category: true },
+    distinct: ["category"],
+    orderBy: { category: "asc" },
+  })
+  return rows
+    .map((row) => row.category?.trim())
+    .filter((category): category is string => Boolean(category))
+}
+
 export async function searchParts(workshopId: string, query: string, limit = 20) {
   return prisma.partStockItem.findMany({
     where: {
@@ -134,6 +147,7 @@ export async function searchParts(workshopId: string, query: string, limit = 20)
         { sku: { contains: query, mode: "insensitive" } },
         { oemNo: { contains: query, mode: "insensitive" } },
         { brand: { contains: query, mode: "insensitive" } },
+        { category: { contains: query, mode: "insensitive" } },
         { barcode: { contains: query } },
       ],
     },

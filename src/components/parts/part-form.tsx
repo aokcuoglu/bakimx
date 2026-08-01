@@ -32,6 +32,7 @@ import { useForm, type FieldErrors } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { partSchema, type PartFormValues } from "@/lib/validations/part"
 import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
+import { mergePartAttributeOptions } from "@/lib/parts/attributes"
 
 const CURRENCY_LABELS: Record<string, string> = {
   TRY: "₺ TRY",
@@ -134,11 +135,13 @@ export function PartForm({
   part,
   suppliers,
   workshopBrands = [],
+  workshopCategories = [],
   supplierPrices = [],
 }: {
   part?: PartData
   suppliers?: SupplierOption[]
   workshopBrands?: string[]
+  workshopCategories?: string[]
   supplierPrices?: SupplierPriceFormRow[]
 }) {
   const router = useRouter()
@@ -163,16 +166,16 @@ export function PartForm({
 
   // Öneriler: atölyenin kendi markaları önce, ardından TecDoc markaları (tekilleştirilmiş).
   const brandOptions = useMemo(() => {
-    const seen = new Set<string>()
-    const out: string[] = []
-    for (const b of [...workshopBrands, ...brands.map((x) => x.name)]) {
-      const key = b.trim().toLocaleLowerCase("tr")
-      if (!b.trim() || seen.has(key)) continue
-      seen.add(key)
-      out.push(b.trim())
-    }
-    return out
+    return mergePartAttributeOptions(workshopBrands, brands.map((brand) => brand.name))
   }, [workshopBrands, brands])
+
+  // Kategoriler atölyenin kendi stok kayıtlarından türetilir. Autocomplete'in
+  // serbest girişi sayesinde yeni bir ad yazılıp parça kaydedildiğinde sonraki
+  // kayıtlarda bu atölyeye özel bir öneri olarak görünür.
+  const categoryOptions = useMemo(
+    () => mergePartAttributeOptions(workshopCategories),
+    [workshopCategories]
+  )
 
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && part) {
@@ -315,7 +318,30 @@ export function PartForm({
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Fren, Motor, Filtre..." />
+                        <Autocomplete
+                          items={categoryOptions}
+                          value={field.value}
+                          autoHighlight
+                          openOnInputClick
+                          itemToStringValue={(category: string) => category}
+                          onValueChange={(value: string) => field.onChange(value)}
+                        >
+                          <AutocompleteInput render={<Input placeholder="Fren, Motor, Filtre..." />} />
+                          <AutocompleteContent>
+                            <AutocompleteEmpty>Listede yok — yazdığınız kategori kaydedilir</AutocompleteEmpty>
+                            <AutocompleteList>
+                              {(category: string) => (
+                                <AutocompleteItem
+                                  key={category}
+                                  value={category}
+                                  onClick={() => field.onChange(category)}
+                                >
+                                  <span className="block truncate">{category}</span>
+                                </AutocompleteItem>
+                              )}
+                            </AutocompleteList>
+                          </AutocompleteContent>
+                        </Autocomplete>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

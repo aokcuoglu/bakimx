@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { PartForm } from "@/components/parts/part-form"
 import { prisma } from "@/lib/db"
 import { getActiveSuppliersForSelect } from "@/lib/suppliers/queries"
-import { getWorkshopBrands } from "@/lib/parts/queries"
+import { getWorkshopBrands, getWorkshopCategories } from "@/lib/parts/queries"
 import { kurusToLira } from "@/lib/money"
 import { notFound } from "next/navigation"
 
@@ -22,9 +22,10 @@ export default async function EditPartPage(props: { params: Promise<{ id: string
 
   if (!part) notFound()
 
-  const [suppliers, workshopBrands] = await Promise.all([
+  const [suppliers, workshopBrands, workshopCategories] = await Promise.all([
     getActiveSuppliersForSelect(user.workshopId),
     getWorkshopBrands(user.workshopId),
+    getWorkshopCategories(user.workshopId),
   ])
 
   const supplierPrices = part.supplierPrices.map((p) => ({
@@ -55,7 +56,7 @@ export default async function EditPartPage(props: { params: Promise<{ id: string
   return (
     <AppShell constrained workshopName={workshop?.name} pageTitle={`Düzenle: ${part.name}`}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <PartForm part={serialized as any} suppliers={supplierOptions} workshopBrands={workshopBrands} supplierPrices={supplierPrices} />
+      <PartForm part={serialized as any} suppliers={supplierOptions} workshopBrands={workshopBrands} workshopCategories={workshopCategories} supplierPrices={supplierPrices} />
     </AppShell>
   )
 }
