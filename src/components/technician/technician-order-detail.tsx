@@ -11,8 +11,9 @@ import {
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2,
+  ImageOff, Loader2, ListChecks,
 } from "lucide-react"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
@@ -50,6 +51,7 @@ import {
   countIncompleteItems,
   startWorkBlockMessage,
   completeWorkBlockMessage,
+  summarizeChecklist,
   START_GATE_CATEGORIES,
   COMPLETE_GATE_CATEGORIES,
 } from "@/lib/technician/gates"
@@ -130,6 +132,7 @@ export function TechnicianOrderDetail({
   const inspectionItems = order.checklistItems.filter((c) => c.category === "inspection")
   const repairItems = order.checklistItems.filter((c) => c.category === "repair")
   const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
+  const checklistSummary = summarizeChecklist(order.checklistItems)
 
   // Alış fotoğrafları (serviceOrderItemId != null) dahili-yalnızdır; onarım
   // galerilerine sızmaması için hepsinden dışlanır.
@@ -225,34 +228,55 @@ export function TechnicianOrderDetail({
 
       <ComplaintCard complaint={order.intake.customerComplaint} />
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-2">Kontrol Listesi</h3>
-        <ChecklistSection
-          title="Kontrol"
-          category="inspection"
-          items={inspectionItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        <ChecklistSection
-          title="Onarım"
-          category="repair"
-          items={repairItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        <ChecklistSection
-          title="Teslim"
-          category="delivery"
-          items={deliveryItems}
-          orderId={order.id}
-          locked={locked}
-        />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
-        ) : (
-          <AddChecklistItemForm orderId={order.id} />
-        )}
+      {/* Kontrol listesi kapalı başlar — mobilde ekranın çoğunu kaplıyordu.
+          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür. */}
+      <div className="rounded-lg border border-border bg-white px-4">
+        <Accordion>
+          <AccordionItem className="border-0">
+            <AccordionTrigger className="items-center py-3 hover:no-underline">
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+                <ListChecks className="size-4 text-muted-foreground" />
+                Kontrol Listesi
+                <span className="text-xs font-normal text-muted-foreground/70">
+                  {checklistSummary.completed}/{checklistSummary.total}
+                </span>
+                {checklistSummary.missingRequired > 0 && (
+                  <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-warning/15 text-warning-foreground">
+                    {checklistSummary.missingRequired} zorunlu eksik
+                  </span>
+                )}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <ChecklistSection
+                title="Kontrol"
+                category="inspection"
+                items={inspectionItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              <ChecklistSection
+                title="Onarım"
+                category="repair"
+                items={repairItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              <ChecklistSection
+                title="Teslim"
+                category="delivery"
+                items={deliveryItems}
+                orderId={order.id}
+                locked={locked}
+              />
+              {locked ? (
+                <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
+              ) : (
+                <AddChecklistItemForm orderId={order.id} />
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
