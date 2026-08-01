@@ -86,6 +86,22 @@ export const partCreateSchema = z.object({
 
 export const partUpdateSchema = partCreateSchema
 
+/**
+ * İş emri ekranındaki "Oluştur & Düzenle" modalından açılan hızlı stok kartı.
+ * `partCreateSchema`'nın küçük bir alt kümesi: kart yalnız kod + ad (+ marka,
+ * kategori, satış fiyatı) ile açılır; stok, tedarikçi, raf, barkod gibi alanlar
+ * sonradan /parts/[id] üzerinden doldurulur. Stok kodu burada ZORUNLUDUR —
+ * kartın tek amacı parçaya kalıcı bir kod vermek (bkz. #210).
+ */
+export const quickPartCreateSchema = z.object({
+  sku: z.string().trim().min(1, "Stok kodu zorunludur").max(60, "Stok kodu en fazla 60 karakter olabilir"),
+  name: z.string().trim().min(1, "Parça adı zorunludur").max(200, "Parça adı en fazla 200 karakter olabilir"),
+  brand: optionalPartAttributeServerSchema,
+  category: optionalPartAttributeServerSchema,
+  // kuruş — modaldeki birim fiyat alanı satış fiyatı olarak karta taşınır.
+  salePrice: z.coerce.number().int("Satış fiyatı kuruş (tam sayı) olmalıdır").min(0, "Satış fiyatı negatif olamaz").optional(),
+})
+
 export const stockMovementSchema = z.object({
   partId: z.string().min(1, "Parça seçimi zorunludur"),
   type: z.enum(["in", "out", "adjustment"], { error: "Geçerli bir hareket tipi seçiniz" }),
