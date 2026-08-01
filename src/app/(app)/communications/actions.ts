@@ -11,7 +11,10 @@ export async function getCommunicationLogs(filters?: {
   dateTo?: string
 }) {
   const { workshopId } = await requireAuth()
-  const where: Record<string, unknown> = { workshopId }
+  // `internal: false` workshopId kadar kritik: platform yöneticilerine giden
+  // sistem uyarıları da dedup için bu kiracıya bağlı loglanır, ama kiracıya
+  // gösterilirse admin e-posta adresleri sızar (issue #194).
+  const where: Record<string, unknown> = { workshopId, internal: false }
 
   if (filters?.type) where.type = filters.type
   if (filters?.status) where.status = filters.status
@@ -56,15 +59,18 @@ export async function getCommunicationLogs(filters?: {
 
 export async function getCommunicationStats() {
   const { workshopId } = await requireAuth()
+  // Sayaçlar listeyle aynı görünürlük kuralına uymalı — aksi halde "Gönderildi: 5"
+  // deyip listede 1 satır göstermek gizlenen kayıtları ele verir.
+  const visible = { workshopId, internal: false }
   const [sent, failed, pending] = await Promise.all([
-    prisma.communicationLog.count({ where: { workshopId, status: "sent" } }),
-    prisma.communicationLog.count({ where: { workshopId, status: "failed" } }),
-    prisma.communicationLog.count({ where: { workshopId, status: "pending" } }),
+    prisma.communicationLog.count({ where: { ...visible, status: "sent" } }),
+    prisma.communicationLog.count({ where: { ...visible, status: "failed" } }),
+    prisma.communicationLog.count({ where: { ...visible, status: "pending" } }),
   ])
 
   const byType = await prisma.communicationLog.groupBy({
     by: ["type"],
-    where: { workshopId },
+    where: visible,
     _count: true,
   })
 

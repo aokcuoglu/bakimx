@@ -32,7 +32,9 @@ export default async function CommunicationsPage() {
         </div>
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">İletişim Kayıtları</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">SMS, WhatsApp ve e-posta iletişim geçmişi</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Müşterilerinize ve hesabınıza gönderilen SMS, WhatsApp ve e-posta kayıtları
+          </p>
         </div>
         <CommunicationLogList logs={logs} stats={stats} />
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { communicationTemplateLabel } from "@/lib/communications/template-labels"
 
 type LogEntry = {
   id: string
@@ -47,17 +48,6 @@ const STATUS_COLORS: Record<string, string> = {
   sent: "bg-success/10 text-success border-success/20",
   failed: "bg-destructive/10 text-destructive border-destructive/20",
   pending: "bg-warning/10 text-warning border-warning/20",
-}
-
-const TEMPLATE_LABELS: Record<string, string> = {
-  appointment_created: "Randevu Oluşturuldu",
-  appointment_reminder: "Randevu Hatırlatması",
-  intake_approval: "Araç Kabul Onayı",
-  quote_ready: "Teklif Hazır",
-  work_order_completed: "İş Emri Tamamlandı",
-  maintenance_reminder: "Bakım Hatırlatması",
-  payment_reminder: "Ödeme Hatırlatması",
-  vehicle_passport_share: "Araç Pasaportu Paylaşım",
 }
 
 export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats: Stats }) {
@@ -131,7 +121,7 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
                       </span>
                     </td>
                     <td className="px-4 py-3 text-foreground">{log.recipient}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{TEMPLATE_LABELS[log.templateKey || ""] || log.templateKey || "-"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{communicationTemplateLabel(log.templateKey)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${STATUS_COLORS[log.status] || "bg-muted text-muted-foreground border-border"}`}>
                         {STATUS_LABELS[log.status] || log.status}

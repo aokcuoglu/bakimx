@@ -2,12 +2,29 @@ import { sendEmailDirect } from "@/lib/communications/sender"
 import { prisma } from "@/lib/db"
 import type { CommunicationResult } from "@/lib/communications/types"
 
+/**
+ * Bu e-postayı KİM okuyacak?
+ *  - "workshop": alıcı kiracının kendi kullanıcısı (doğrulama, karşılama, şifre
+ *    sıfırlama, ödeme makbuzu, plan hatırlatması). Kayıt kiracının İletişim
+ *    Kayıtları ekranında görünür.
+ *  - "internal": alıcı platform yöneticisi (getAdminEmails). Kayıt yalnız dedup
+ *    ve platform gözlemlenebilirliği için ilgili workshop'a bağlanır; kiracıya
+ *    ASLA gösterilmez — yoksa admin e-posta adresleri ve iç ödeme/güvenlik
+ *    alarmlarının varlığı kiracıya sızar (issue #194).
+ *
+ * Alan bilerek ZORUNLU: yeni bir sistem e-postası eklendiğinde derleyici hedef
+ * kitleyi seçmeye zorlar. Varsayılanı "workshop" yapmak, denylist'i güncellemeyi
+ * unutan her yeni çağrıyı sessiz bir sızıntıya çevirirdi.
+ */
+export type SystemEmailAudience = "workshop" | "internal"
+
 export interface SystemEmailParams {
   to: string
   subject: string
   html: string
   workshopId: string
   templateKey: string
+  audience: SystemEmailAudience
 }
 
 export interface SystemEmailLogEntry {
@@ -17,6 +34,7 @@ export interface SystemEmailLogEntry {
   status: "sent" | "failed"
   errorMessage: string | null
   providerId: string | null
+  internal: boolean
 }
 
 export interface SystemEmailDeps {
@@ -32,6 +50,7 @@ async function defaultLog(entry: SystemEmailLogEntry): Promise<void> {
       provider: process.env.EMAIL_PROVIDER || "mock",
       recipient: entry.recipient,
       status: entry.status,
+      internal: entry.internal,
       templateKey: entry.templateKey,
       entityType: null,
       entityId: null,
@@ -71,6 +90,7 @@ export async function sendSystemEmail(
       status: result.success ? "sent" : "failed",
       errorMessage: result.error ?? null,
       providerId: result.providerId ?? null,
+      internal: params.audience === "internal",
     })
   } catch (logErr) {
     // Logging must never break the caller.
