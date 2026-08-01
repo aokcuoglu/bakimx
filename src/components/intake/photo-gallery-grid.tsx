@@ -18,8 +18,6 @@ export type GalleryPhoto = {
   note: string | null
 }
 
-const toSrc = resolvePhotoSrc
-
 /**
  * Tıklanabilir fotoğraf grid'i — kartlardan birine dokununca aynı grup içinde
  * gezinilebilen tam ekran lightbox (`PhotoLightbox`) açılır. Dosyası olmayan
@@ -43,7 +41,7 @@ export function PhotoGalleryGrid({
         id: p.id,
         label: PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]?.label || p.type,
         note: p.note,
-        fileUrl: toSrc(p),
+        fileUrl: resolvePhotoSrc(p),
       })),
     [viewable]
   )
