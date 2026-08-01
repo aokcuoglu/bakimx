@@ -29,6 +29,7 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | --- | --- | --- |
 | `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı |
 | `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `docs/releasing.md`) |
+| `project-board-sync.sh` | `bun run project:sync` | Factory - BakimX panosunda kapalı issue'ların kartını Done'a çeker (`-- --dry-run` ile rapor) |
 
 > Contabo VPS dönemine ait script'ler (`provision-vps.sh`, `restore-db.sh`,
 > `db-migrate-prod.sh`) 2026-07'de kaldırıldı — BakımX AWS ECS üzerinde çalışıyor

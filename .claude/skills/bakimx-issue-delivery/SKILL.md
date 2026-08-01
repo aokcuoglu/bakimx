@@ -18,9 +18,13 @@ completely before acting.
 5. Run targeted checks, full tests, lint, typecheck, build, and relevant UI QA.
 6. Review the final diff for security, tenant isolation, accessibility, performance,
    migrations, secrets, and scope.
-7. Push and open a PR to `dev` with `Closes #<number>` in its body.
+7. Push and open a PR to `dev` with `Closes #<number>` in its body. That keyword is
+   the only PR-to-issue link you create — never link a PR from the issue's
+   Development panel after the issue is closed; it makes project automation
+   overwrite `Done`.
 8. Monitor Actions and reviews; merge only when every required gate is green.
-9. Verify the issue is closed and Factory - BakimX shows Done.
+9. Verify the issue is closed, then run `bun run project:sync` and confirm
+   Factory - BakimX shows Done.
 10. Remove only resources created by this task; fast-forward local `dev` only when
     its checkout is clean.
 
