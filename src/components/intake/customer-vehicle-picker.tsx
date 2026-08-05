@@ -20,7 +20,7 @@ import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/li
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin, normalizeVin } from "@/lib/vin/types"
-import { searchQueryFor, type PickerSearchMode } from "@/lib/vin/search"
+import { searchQueryFor, visibleResultsFor, type PickerSearchMode } from "@/lib/vin/search"
 
 type CustVehicle = { id: string; plate: string; brand: string; model: string }
 type Mode = PickerSearchMode // "plate" | "customer" | "vin"
@@ -32,9 +32,12 @@ type Selected =
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
 
 /**
- * Birleşik müşteri+araç seçici (mod-geçişli). Plaka modu (varsayılan) / müşteri modu
- * (kişi ikonu toggle). Seçimi `onChange` ile dışarı iter; `value` yalnızca dış reset'i
- * yansıtır (id'lerden etiketli seçim kurmaz — Faz 3'e ertelendi).
+ * Birleşik müşteri+araç seçici. Varsayılan modda tek kutu hem plakayı hem
+ * müşteriyi arar ve ikisini tek listede gösterir (#152); araç seçilirse doğrudan,
+ * müşteri seçilirse o müşterinin araç listesi üzerinden devam edilir. VIN modu
+ * (barkod ikonu) ve müşteri modu (kişi ikonu — yeni müşteri oluşturma yolu)
+ * ayrı toggle olarak kalır. Seçimi `onChange` ile dışarı iter; `value` yalnızca
+ * dış reset'i yansıtır (id'lerden etiketli seçim kurmaz — Faz 3'e ertelendi).
  */
 export function CustomerVehiclePicker({
   value,
@@ -112,7 +115,7 @@ export function CustomerVehiclePicker({
     return () => { active = false }
   }, [value.vehicleId, value.customerId, selected, onChange])
 
-  const modeResults = results.filter((r) => (mode === "customer" ? r.kind === "customer" : r.kind === "vehicle"))
+  const modeResults = visibleResultsFor(mode, results)
 
   function switchMode(m: Mode) { setMode(m); setQuery(""); setResults([]) }
 
@@ -274,11 +277,15 @@ export function CustomerVehiclePicker({
               onInputValueChange={(v: string) => setQuery(mode === "vin" ? v.toUpperCase() : v)}
               open={comboOpen}
               onOpenChange={setComboOpen}
-              onValueChange={(r: UnifiedResult | null) => { if (r && r.kind === "vehicle") pickVehicle(r) }}
+              onValueChange={(r: UnifiedResult | null) => {
+                if (!r) return
+                if (r.kind === "vehicle") pickVehicle(r)
+                else enterCustomer(r.customerId, r.label)
+              }}
             >
               <ComboboxInput
                 showTrigger={false}
-                placeholder={mode === "vin" ? "VIN ile ara…" : "Plaka ile ara…"}
+                placeholder={mode === "vin" ? "VIN ile ara…" : "Plaka veya müşteri ara…"}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return
                   // Ok tuşuyla bir seçenek vurgulanmışsa (aria-activedescendant),
@@ -292,7 +299,8 @@ export function CustomerVehiclePicker({
                   e.preventDefault()
                   if (loading) return
                   const first = modeResults[0]
-                  if (first && first.kind === "vehicle") { pickVehicle(first); return }
+                  if (first?.kind === "vehicle") { pickVehicle(first); return }
+                  if (first?.kind === "customer") { enterCustomer(first.customerId, first.label); return }
                   // Eşleşme yok: plaka modu her metinde modalı açar; VIN modu yalnız
                   // geçerli 17-hane VIN'de (kısmi girişte Enter no-op).
                   if (mode === "vin") { if (isValidVin(query)) openCreate({ vin: normalizeVin(query) }) }
@@ -318,7 +326,7 @@ export function CustomerVehiclePicker({
                       <Button type="button" size="sm" onClick={() => openCreate({ plate: query.trim() })}><Plus className="size-4 mr-1" /> Oluştur</Button>
                     </div>
                   ) : (
-                    <span className="py-2 text-sm text-muted-foreground">Plaka yazın</span>
+                    <span className="py-2 text-sm text-muted-foreground">Plaka veya müşteri adı yazın</span>
                   )}
                 </ComboboxEmpty>
                 <ComboboxList>
