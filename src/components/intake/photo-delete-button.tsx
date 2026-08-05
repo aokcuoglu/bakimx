@@ -68,11 +68,11 @@ export function PhotoDeleteButton({
           className={cn(
             "absolute top-1.5 right-1.5 z-10 inline-flex size-8 items-center justify-center rounded-full",
             "bg-background/85 text-destructive ring-1 ring-border backdrop-blur-sm",
-            // Hover'da zemini DOLU destructive yapma: temada `--destructive-foreground`
-            // token'ı yok, `text-destructive-foreground` hiç CSS üretmiyor ve ikon
-            // kırmızı zeminde kırmızı kalıp kayboluyordu. Button'ın destructive
-            // varyantındaki tonlu desene uyuyoruz (bg tonu koyulaşır, ikon kırmızı kalır).
-            "transition-colors hover:bg-destructive/15 hover:ring-destructive/40",
+            // Ters kontrast: dolu kırmızı zemin + `destructive-foreground` ikon.
+            // Bu token temaya sonradan eklendi (globals.css); yoksa Tailwind
+            // `text-destructive-foreground` için kural üretmez ve ikon kırmızı
+            // zeminde kırmızı kalıp kaybolur.
+            "transition-colors hover:bg-destructive hover:text-destructive-foreground hover:ring-destructive",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation",
             className
           )}
