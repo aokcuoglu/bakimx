@@ -29,6 +29,12 @@ SERVICE="bakimx-$ENV-app-svc"
 # Comfortably inside the 20 min idle timeout, and cheap (one TCP round-trip).
 KEEPALIVE_SECS="${KEEPALIVE_SECS:-300}"
 RETRY_SECS="${RETRY_SECS:-5}"
+# session-manager-plugin her gelen TCP bağlantısı için bir
+# "Connection accepted for session [...]" satırı basar. Prisma'nın havuzu
+# (ve aşağıdaki keepalive) sürekli bağlantı açtığı için filtresiz tünel,
+# çalıştığı terminali — ve üstüne çizilen TUI'yi — doldurur. Tüneli teşhis
+# ederken ham çıktı için TUNNEL_VERBOSE=1.
+VERBOSE="${TUNNEL_VERBOSE:-0}"
 
 if lsof -nP -iTCP:"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "✗ localhost:$LOCAL_PORT is already in use — tunnel already open?" >&2
@@ -36,12 +42,23 @@ if lsof -nP -iTCP:"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 
 KEEPALIVE_PID=""
+SESSION_PID=""
 cleanup() {
   trap - INT TERM
   [ -n "$KEEPALIVE_PID" ] && kill "$KEEPALIVE_PID" 2>/dev/null || true
+  # Oturumu da açıkça indir. Gerçek Ctrl-C'de terminal SIGINT'i tüm süreç
+  # grubuna dağıttığı için bu gereksiz görünür; ama script'e doğrudan sinyal
+  # gönderildiğinde (kill, IDE'nin "stop"u, dev:tunnel sarmalayıcısı) aws ve
+  # onun session-manager-plugin çocuğu hayatta kalıp portu tutuyordu — sonuç
+  # TCP'yi kabul eden ama Postgres el sıkışması yapmayan BAYAT bir tünel ve
+  # teşhisi zor bir P1001.
+  if [ -n "$SESSION_PID" ]; then
+    pkill -P "$SESSION_PID" 2>/dev/null || true
+    kill "$SESSION_PID" 2>/dev/null || true
+  fi
   echo
   echo "→ Tunnel closed."
-  exit 0
+  exit "${1:-0}"
 }
 trap cleanup INT TERM
 
@@ -91,6 +108,14 @@ echo
 
 # `set -e` must not kill the supervisor when a session ends or a resolve fails.
 while true; do
+  # Bu tünel yeniden bağlanmaya çalışırken başka bir tünel portu kapmış
+  # olabilir; yukarıdaki açılış kontrolü yalnız ilk denemeyi kapsıyor. Bu
+  # olmadan kaybeden taraf, asla bağlanamayacağı hâlde sonsuza dek döner.
+  if lsof -nP -iTCP:"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "✗ localhost:$LOCAL_PORT is now held by another process — another tunnel is open. Exiting." >&2
+    cleanup 1
+  fi
+
   echo "→ Resolving RUNNING ECS task for $SERVICE ..."
   if ! target_line=$(resolve_target); then
     # Resolve failed → this is a setup problem (expired SSO, dev service down),
@@ -103,11 +128,28 @@ while true; do
   echo "  Target: $ssm_target"
   echo "  Tunnel: localhost:$LOCAL_PORT → $rds_host:5432"
 
-  aws ssm start-session \
-    --target "$ssm_target" \
-    --document-name AWS-StartPortForwardingSessionToRemoteHost \
-    --parameters "{\"host\":[\"$rds_host\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"$LOCAL_PORT\"]}" \
-    --profile "$PROFILE" --region "$REGION" || true
+  # Arka planda + `wait`: boru hattı kullanılsaydı `$!` grep'i verirdi ve
+  # cleanup asıl aws sürecini bulamazdı. Process substitution ile filtre
+  # uygulanırken `$!` gerçek oturum sürecini gösteriyor.
+  if [ "$VERBOSE" = "1" ]; then
+    aws ssm start-session \
+      --target "$ssm_target" \
+      --document-name AWS-StartPortForwardingSessionToRemoteHost \
+      --parameters "{\"host\":[\"$rds_host\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"$LOCAL_PORT\"]}" \
+      --profile "$PROFILE" --region "$REGION" &
+  else
+    # stderr de filtreye giriyor ki gerçek hatalar (bind hatası, süresi dolmuş
+    # SSO) görünmeye devam etsin; yalnız bağlantı-başına gürültü düşürülüyor.
+    aws ssm start-session \
+      --target "$ssm_target" \
+      --document-name AWS-StartPortForwardingSessionToRemoteHost \
+      --parameters "{\"host\":[\"$rds_host\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"$LOCAL_PORT\"]}" \
+      --profile "$PROFILE" --region "$REGION" \
+      > >(grep --line-buffered -Ev '^Connection accepted for session') 2>&1 &
+  fi
+  SESSION_PID=$!
+  wait "$SESSION_PID" 2>/dev/null || true
+  SESSION_PID=""
 
   echo "→ Session ended — reconnecting in ${RETRY_SECS}s (Ctrl-C to stop) ..." >&2
   sleep "$RETRY_SECS"
