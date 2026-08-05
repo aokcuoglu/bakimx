@@ -62,10 +62,14 @@ export async function getCommunicationStats() {
   // Sayaçlar listeyle aynı görünürlük kuralına uymalı — aksi halde "Gönderildi: 5"
   // deyip listede 1 satır göstermek gizlenen kayıtları ele verir.
   const visible = { workshopId, internal: false }
-  const [sent, failed, pending] = await Promise.all([
+  // `skipped` DA sayılmalı: müşteri onay vermediğinde sendCommunication gönderim
+  // yapmadan satır yazar (kanal başına bir tane). Sayılmadığı sürece "Gönderildi 5"
+  // deyip listede 20 satır göstermek kaçınılmazdı (issue #246).
+  const [sent, failed, pending, skipped] = await Promise.all([
     prisma.communicationLog.count({ where: { ...visible, status: "sent" } }),
     prisma.communicationLog.count({ where: { ...visible, status: "failed" } }),
     prisma.communicationLog.count({ where: { ...visible, status: "pending" } }),
+    prisma.communicationLog.count({ where: { ...visible, status: "skipped" } }),
   ])
 
   const byType = await prisma.communicationLog.groupBy({
@@ -79,5 +83,5 @@ export async function getCommunicationStats() {
     typeMap[t.type] = t._count
   }
 
-  return { sent, failed, pending, byType: typeMap }
+  return { sent, failed, pending, skipped, byType: typeMap }
 }
