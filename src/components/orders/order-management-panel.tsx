@@ -123,6 +123,10 @@ export type OrderDetailData = {
     fuelLevelAtIntake: number | null
     customerComplaint: string
     internalNote: string | null
+    droppedOffByName: string | null
+    droppedOffByPhone: string | null
+    pickedUpByName: string | null
+    pickedUpByPhone: string | null
     createdAt: string
     approvedAt: string | null
     shareToken: string | null

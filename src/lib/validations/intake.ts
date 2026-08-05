@@ -21,6 +21,9 @@ export const intakeSchema = z.object({
   customerComplaint: z.string().min(1, "Müşteri şikayeti zorunludur"),
   internalNote: z.string().optional().default(""),
   arrivalReason: z.string().optional().default(""),
+  // #196 — aracı getiren kişi müşteri değilse. Boş = müşteri kendi getirdi.
+  droppedOffByName: z.string().optional().default(""),
+  droppedOffByPhone: z.string().optional().default(""),
 
   // Step 6: Approval consents
   termsAccepted: z.boolean().refine((v) => v === true, "Araç kabul formunu onaylamanız zorunludur"),
@@ -50,6 +53,8 @@ export const intakeCreateSchema = z.object({
   // Servise geliş nedeni opsiyoneldir — sahada akışı tıkamasın. Boş string
   // "seçilmedi" demektir; asıl doğrulama server action'da isArrivalReason ile yapılır.
   arrivalReason: z.string().optional(),
+  droppedOffByName: z.string().optional(),
+  droppedOffByPhone: z.string().optional(),
 })
 
 export const intakeUpdateSchema = z.object({
@@ -61,6 +66,12 @@ export const intakeUpdateSchema = z.object({
   fuelLevelAtIntake: z
     .union([z.null(), z.coerce.number().refine(isFuelLevel, "Geçersiz yakıt seviyesi")])
     .optional(),
+  // #196 / #149 — aracı getiren ve teslim alacak kişi. Boş string = "temizle"
+  // (müşteri kendi getirdi/alacak), undefined = alan gönderilmedi, değer korunur.
+  droppedOffByName: z.string().optional(),
+  droppedOffByPhone: z.string().optional(),
+  pickedUpByName: z.string().optional(),
+  pickedUpByPhone: z.string().optional(),
 })
 
 export const otpVerifySchema = z.object({
