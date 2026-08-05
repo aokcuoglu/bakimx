@@ -8,6 +8,8 @@ import {
   NOTIFICATION_PROVIDER_LABELS,
   SENDING_DISABLED_LABEL,
   CALENDAR_DISABLED_LABEL,
+  ADVISOR_DEMO_NOTICE,
+  advisorProviderNotice,
 } from "./provider-labels"
 
 /**
@@ -24,6 +26,8 @@ import {
 const SETTINGS_DIRS = [
   join(import.meta.dir, "..", "components", "settings"),
   join(import.meta.dir, "..", "app", "(app)", "settings"),
+  // Danışman paneli de aynı kurala tabi (#253).
+  join(import.meta.dir, "..", "components", "advisor"),
 ]
 
 function walk(dir: string): string[] {
@@ -72,7 +76,23 @@ test("gerçek sağlayıcı adları korunur", () => {
   expect(NOTIFICATION_PROVIDER_LABELS.gmail).toBe("Gmail")
 })
 
-test("ayar ekranlarında kullanıcıya görünen 'Mock' metni kalmadı", () => {
+test("danışman notu: mock'ta demo uyarısı, gerçek sağlayıcıda ad (#253)", () => {
+  expect(advisorProviderNotice("mock")).toBe(ADVISOR_DEMO_NOTICE)
+  expect(ADVISOR_DEMO_NOTICE.toLowerCase()).not.toContain("mock")
+  // Panel yine çıktı ürettiği için "kapalı" demiyoruz.
+  expect(ADVISOR_DEMO_NOTICE.toLowerCase()).not.toContain("kapalı")
+
+  expect(advisorProviderNotice("anthropic")).toBe("Sağlayıcı: Claude")
+  expect(advisorProviderNotice("openai")).toBe("Sağlayıcı: OpenAI")
+
+  // Sonuç yokken ya da tanınmayan değerde hiçbir şey gösterilmez.
+  expect(advisorProviderNotice(undefined)).toBe("")
+  expect(advisorProviderNotice(null)).toBe("")
+  expect(advisorProviderNotice("")).toBe("")
+  expect(advisorProviderNotice("deepseek")).toBe("")
+})
+
+test("ayar ve danışman ekranlarında kullanıcıya görünen 'Mock' metni kalmadı", () => {
   const offenders: string[] = []
   for (const dir of SETTINGS_DIRS) {
     for (const file of walk(dir)) {
