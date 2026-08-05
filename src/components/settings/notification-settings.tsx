@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import type { TemplateChannel } from "@/lib/communications/templates"
+import { NOTIFICATION_PROVIDER_LABELS } from "@/lib/provider-labels"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -32,13 +33,7 @@ const CHANNEL_COLORS: Record<TemplateChannel, string> = {
   email: "bg-primary/10 text-foreground border-primary/20",
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
-  mock: "Mock (Test)",
-  netgsm: "Netgsm",
-  business: "WhatsApp Business API",
-  resend: "Resend",
-  gmail: "Gmail",
-}
+const PROVIDER_LABELS = NOTIFICATION_PROVIDER_LABELS
 
 const TEST_RECIPIENT_PLACEHOLDER: Record<TemplateChannel, string> = {
   sms: "5xx xxx xx xx",
@@ -81,7 +76,7 @@ export function NotificationSettings({
       if (data.success) {
         const providerLabel = PROVIDER_LABELS[data.provider] || data.provider
         const text = data.provider === "mock"
-          ? `Test modu (${providerLabel}) — gerçek gönderim yapılmadı.`
+          ? "Gönderim kapalı — mesaj iletilmedi, yalnızca iletişim kaydına yazıldı."
           : `Gönderildi — ${providerLabel}.`
         setTestResult((prev) => ({ ...prev, [channel]: { type: "success", text } }))
       } else {
@@ -190,7 +185,7 @@ export function NotificationSettings({
           })}
         </div>
         <p className="text-xs text-muted-foreground/70 mt-2">
-          Sağlayıcılar ortam değişkenleri ile yapılandırılır. Varsayılan: mock (test modu). Test butonu, ayarlı sağlayıcı üzerinden örnek mesaj gönderir.
+          Sağlayıcılar ortam değişkenleri ile yapılandırılır. Sağlayıcı tanımlı değilse gönderim kapalıdır. Test butonu, ayarlı sağlayıcı üzerinden örnek mesaj gönderir.
         </p>
       </div>
 

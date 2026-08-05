@@ -25,21 +25,11 @@ import {
   normalizeEmailProvider,
   type CommunicationSettingsFormValues,
 } from "@/lib/validations/settings"
-
-const SMS_PROVIDER_LABELS: Record<string, string> = {
-  mock: "Mock (Test)",
-  netgsm: "Netgsm",
-}
-
-const WHATSAPP_PROVIDER_LABELS: Record<string, string> = {
-  mock: "Mock (Test)",
-  business_api: "WhatsApp Business API",
-}
-
-const EMAIL_PROVIDER_LABELS: Record<string, string> = {
-  mock: "Mock (Test)",
-  resend: "Resend",
-}
+import {
+  SMS_PROVIDER_LABELS,
+  WHATSAPP_PROVIDER_LABELS,
+  EMAIL_PROVIDER_LABELS,
+} from "@/lib/provider-labels"
 
 type SettingsData = {
   smsProvider: string
@@ -139,8 +129,8 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="mock">Mock (Test)</SelectItem>
-                          <SelectItem value="netgsm">Netgsm</SelectItem>
+                          <SelectItem value="mock">{SMS_PROVIDER_LABELS.mock}</SelectItem>
+                          <SelectItem value="netgsm">{SMS_PROVIDER_LABELS.netgsm}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -181,7 +171,7 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
             {smsProvider === "mock" && (
               <Alert>
                 <AlertDescription>
-                  Mock sağlayıcı aktif. SMS&apos;ler gerçek gönderilmez, iletişim loglarına kaydedilir.
+                  SMS gönderimi kapalı. Mesajlar müşterilere ulaşmaz, yalnızca iletişim kayıtlarına yazılır. Göndermek için bir sağlayıcı seçin.
                 </AlertDescription>
               </Alert>
             )}
@@ -209,8 +199,8 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="mock">Mock (Test)</SelectItem>
-                          <SelectItem value="business_api">WhatsApp Business API</SelectItem>
+                          <SelectItem value="mock">{WHATSAPP_PROVIDER_LABELS.mock}</SelectItem>
+                          <SelectItem value="business_api">{WHATSAPP_PROVIDER_LABELS.business_api}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -251,7 +241,7 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
             {whatsappProvider === "mock" && (
               <Alert>
                 <AlertDescription>
-                  Mock sağlayıcı aktif. WhatsApp mesajları gerçek gönderilmez, iletişim loglarına kaydedilir.
+                  WhatsApp gönderimi kapalı. Mesajlar müşterilere ulaşmaz, yalnızca iletişim kayıtlarına yazılır. Göndermek için bir sağlayıcı seçin.
                 </AlertDescription>
               </Alert>
             )}
@@ -279,8 +269,8 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="mock">Mock (Test)</SelectItem>
-                          <SelectItem value="resend">Resend</SelectItem>
+                          <SelectItem value="mock">{EMAIL_PROVIDER_LABELS.mock}</SelectItem>
+                          <SelectItem value="resend">{EMAIL_PROVIDER_LABELS.resend}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -335,7 +325,7 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
             {emailProvider === "mock" && (
               <Alert>
                 <AlertDescription>
-                  Mock sağlayıcı aktif. E-postalar gerçek gönderilmez, iletişim loglarına kaydedilir.
+                  E-posta gönderimi kapalı. Mesajlar müşterilere ulaşmaz, yalnızca iletişim kayıtlarına yazılır. Göndermek için bir sağlayıcı seçin.
                 </AlertDescription>
               </Alert>
             )}

@@ -7,10 +7,16 @@
  * startup instead of on the first user query buried in the logs.
  */
 
-/** Provider vars that resolve to a mock/demo provider when unset or "mock". */
+/**
+ * Provider vars that resolve to a mock/demo provider when unset or "mock".
+ * `realValue`/`keyEnv` feed the fix hint — they differ per provider, so a single
+ * hardcoded "=rapidapi + RAPIDAPI_KEY" line would be wrong for OCR/AI.
+ */
 const PROVIDER_VARS = [
-  { env: "VIN_PROVIDER", label: "VIN'den araç tanıma" },
-  { env: "TECDOC_PROVIDER", label: "TecDoc parça kataloğu" },
+  { env: "VIN_PROVIDER", label: "VIN'den araç tanıma", realValue: "rapidapi", keyEnv: "RAPIDAPI_KEY" },
+  { env: "TECDOC_PROVIDER", label: "TecDoc parça kataloğu", realValue: "rapidapi", keyEnv: "RAPIDAPI_KEY" },
+  { env: "OCR_PROVIDER", label: "Ruhsat okuma (OCR)", realValue: "anthropic", keyEnv: "ANTHROPIC_API_KEY" },
+  { env: "AI_PROVIDER", label: "Servis danışmanı (AI)", realValue: "anthropic", keyEnv: "ANTHROPIC_API_KEY" },
 ] as const
 
 export interface ProviderEnvIssue {
@@ -18,6 +24,10 @@ export interface ProviderEnvIssue {
   label: string
   /** The raw (lowercased) value, or "(ayarsız)" when absent/empty. */
   value: string
+  /** The value that switches this provider to the real service. */
+  realValue: string
+  /** The credential var that real mode additionally needs. */
+  keyEnv: string
 }
 
 export type EnvReader = (name: string) => string | undefined
@@ -29,7 +39,15 @@ export function findMockProviders(getEnv: EnvReader = defaultEnv): ProviderEnvIs
   return PROVIDER_VARS.flatMap((p) => {
     const raw = (getEnv(p.env) ?? "").toLowerCase().trim()
     if (raw === "" || raw === "mock") {
-      return [{ env: p.env, label: p.label, value: raw === "" ? "(ayarsız)" : raw }]
+      return [
+        {
+          env: p.env,
+          label: p.label,
+          value: raw === "" ? "(ayarsız)" : raw,
+          realValue: p.realValue,
+          keyEnv: p.keyEnv,
+        },
+      ]
     }
     return []
   })
@@ -37,15 +55,19 @@ export function findMockProviders(getEnv: EnvReader = defaultEnv): ProviderEnvIs
 
 /** Multi-line banner text for the given issues (no I/O — pure, so it's testable). */
 export function buildProviderWarningBanner(issues: ProviderEnvIssue[]): string {
+  // Aynı anahtar birden çok sağlayıcıyı besliyor (RAPIDAPI_KEY → vin + tecdoc),
+  // ipucunda tekrar etmesin.
+  const keyEnvs = [...new Set(issues.map((i) => i.keyEnv))]
   return [
     "",
     "  ┌────────────────────────────────────────────────────────────────┐",
     "  │  ⚠  SAĞLAYICI UYARISI — GERÇEK YERİNE DEMO/MOCK VERİ DÖNÜYOR      │",
     "  └────────────────────────────────────────────────────────────────┘",
     ...issues.map((i) => `  • ${i.env}=${i.value} → ${i.label} MOCK sağlayıcı kullanıyor.`),
-    "  Düzeltme: bu ortamın .env dosyasına ekleyip container'ı yeniden başlatın:",
-    ...issues.map((i) => `      ${i.env}=rapidapi`),
-    "      RAPIDAPI_KEY=<rapidapi anahtarınız>",
+    "  Düzeltme: bu ortamın sağlayıcı ayarlarına ekleyip servisi yeniden başlatın",
+    "  (AWS: SSM Parameter Store /bakimx/<env>/<DEĞİŞKEN> — yerelde .env.local):",
+    ...issues.map((i) => `      ${i.env}=${i.realValue}`),
+    ...keyEnvs.map((k) => `      ${k}=<anahtarınız>`),
     "",
   ].join("\n")
 }

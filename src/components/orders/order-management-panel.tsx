@@ -12,6 +12,11 @@ import { formatTRY } from "@/lib/format"
 import { liraToKurus, percentToBps, applyDiscountKurus, applyTaxBps, addKurus } from "@/lib/money"
 import { PAYMENT_METHOD_LABELS } from "@/lib/cashbox/status"
 import type { PaymentMethodKey } from "@/lib/cashbox/status"
+import type {
+  TechnicianChecklistItem,
+  TechnicianInternalNote,
+  TechnicianLaborSession,
+} from "@/components/orders/technician-progress-panel"
 import { formatDate } from "@/lib/utils-client"
 import {
   Plus,
@@ -95,6 +100,10 @@ export type OrderDetailData = {
   totals: Totals
   items: OrderItem[]
   partsRequests: PartsRequestRow[]
+  // Teknisyen sekmesi — salt okunur, düzenleme teknisyen panelinde kalır.
+  checklistItems: TechnicianChecklistItem[]
+  laborSessions: TechnicianLaborSession[]
+  internalNotes: TechnicianInternalNote[]
   customer: {
     id: string
     firstName: string | null
