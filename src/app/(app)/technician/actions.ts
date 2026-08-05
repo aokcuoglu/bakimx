@@ -152,7 +152,7 @@ export async function startWorkAction(orderId: string) {
     workshopId: user.workshopId,
     intakeFormId: order.intakeFormId,
     eventType: "work_started",
-    description: "İşe başlandı",
+    description: "Tamire başlandı",
   })
 
   revalidatePath(`/technician/orders/${orderId}`)

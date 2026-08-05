@@ -56,7 +56,7 @@ test("eksik yoksa başlama mesajı null", () => {
 })
 
 test("eksik varsa başlama mesajı sayıyı içerir", () => {
-  expect(startWorkBlockMessage(3)).toBe("Araç kabul kontrolleri tamamlanmadan işe başlanamaz (3 madde eksik)")
+  expect(startWorkBlockMessage(3)).toBe("Araç kabul kontrolleri tamamlanmadan tamire başlanamaz (3 madde eksik)")
 })
 
 test("tamamlama mesajı iki eksiği birlikte anlatır", () => {

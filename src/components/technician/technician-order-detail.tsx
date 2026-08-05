@@ -490,7 +490,7 @@ export function TechnicianOrderDetail({
               className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
             >
               <Play className="size-5" />
-              {order.status === "waiting_parts" ? "İşe Devam Et" : "İşe Başla"}
+              {order.status === "waiting_parts" ? "Tamire Devam Et" : "Tamire Başla"}
             </Button>
           )}
           {canHold && (
@@ -538,7 +538,7 @@ export function TechnicianOrderDetail({
 }
 
 /**
- * "İşe Başla / Tamamla" engel mesajı. Engelin sebebi eksik kontrol maddesiyse
+ * "Tamire Başla / Tamamla" engel mesajı. Engelin sebebi eksik kontrol maddesiyse
  * mesaj tıklanabilir olur ve kapalı kontrol listesini açıp oraya kaydırır;
  * sebep yalnız eksik iş kalemiyse düz metin kalır (açacak bir liste yok).
  */
