@@ -122,7 +122,10 @@
   --input: oklch(0.91 0.01 250);
   --ring: oklch(0.543 0.213 260);
   --success: oklch(0.60 0.18 145);
-  --success-foreground: oklch(0.98 0.002 250);
+  /* Yeşil zeminde beyaza yakın metin yalnız 3.47:1 veriyordu (AA altı). Yeşili
+     değiştirmek yerine metni koyulaştırdık: 4.94:1. warning ile aynı değer ve
+     aynı mantık (açık renkli çip → koyu metin); koyu tema zaten böyleydi. */
+  --success-foreground: oklch(0.20 0.04 260);
   --warning: oklch(0.70 0.18 85);
   --warning-foreground: oklch(0.20 0.04 260);
   --chart-1: oklch(0.543 0.213 260);

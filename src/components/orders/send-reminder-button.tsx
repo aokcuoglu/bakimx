@@ -65,14 +65,16 @@ export function SendReminderButton({
         <div className="rounded-lg border border-success/20 bg-success/10 p-3 space-y-1">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-success" />
-            <p className="text-sm font-medium text-success-foreground">Hatırlatma gönderildi</p>
+            {/* `text-success-foreground` DEĞİL: o token dolu yeşil zemin için
+                (koyu metin); buradaki zemin `bg-success/10` yani neredeyse beyaz. */}
+            <p className="text-sm font-medium text-foreground">Hatırlatma gönderildi</p>
           </div>
           <p className="text-xs text-success">
             {customerName}{vehiclePlate ? ` — ${vehiclePlate}` : ""} için tahsilat hatırlatması gönderildi.
           </p>
           <button
             onClick={() => { setResult(null) }}
-            className="text-xs text-success hover:text-success-foreground font-medium"
+            className="text-xs text-muted-foreground hover:text-foreground font-medium"
           >
             Kapat
           </button>
