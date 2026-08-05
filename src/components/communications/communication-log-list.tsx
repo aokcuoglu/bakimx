@@ -110,7 +110,8 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
           <p className="text-sm text-muted-foreground">İletişim kaydı bulunamadı</p>
         </div>
       ) : (
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <>
+        <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -153,6 +154,44 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
             </table>
           </div>
         </div>
+
+        {/* Mobil: altı kolonluk tablo dar ekrana sığmıyordu, kullanıcı her satır
+            için yatay kaydırmak zorunda kalıyordu. Diğer liste ekranlarındaki
+            (reminder-list, parts-list) `md:hidden` kart deseni (issue #247). */}
+        <div className="md:hidden space-y-3">
+          {filtered.map((log) => (
+            <div key={log.id} className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${TYPE_COLORS[log.type] || "bg-muted text-muted-foreground"}`}>
+                    {TYPE_LABELS[log.type] || log.type}
+                  </span>
+                  <h3 className="text-sm font-semibold text-foreground mt-1.5">
+                    {communicationTemplateLabel(log.templateKey)}
+                  </h3>
+                  {/* Alıcı boş olabilir (müşterinin e-postası yoksa) — boş satır bırakma. */}
+                  {log.recipient && (
+                    <p className="text-sm text-foreground/80 mt-0.5 break-all">{log.recipient}</p>
+                  )}
+                </div>
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${STATUS_COLORS[log.status] || "bg-muted text-muted-foreground border-border"}`}>
+                  {communicationStatusLabel(log.status)}
+                </span>
+              </div>
+
+              {log.errorMessage && (
+                <p className="text-xs text-muted-foreground mt-2">{log.errorMessage}</p>
+              )}
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                <span>{new Date(log.sentAt).toLocaleString("tr-TR")}</span>
+                <span aria-hidden="true">·</span>
+                <span>{log.provider}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        </>
       )}
     </div>
   )
