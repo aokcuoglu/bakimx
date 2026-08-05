@@ -222,6 +222,11 @@ export function WorkOrderDetail({
   const [editFuelLevel, setEditFuelLevel] = useState<number | null>(
     openInfoEditor ? order.intake.fuelLevelAtIntake ?? null : null
   )
+  // #196 / #149 — aracı getiren ve teslim alacak kişi (müşteri değilse).
+  const [editDropName, setEditDropName] = useState(openInfoEditor ? order.intake.droppedOffByName ?? "" : "")
+  const [editDropPhone, setEditDropPhone] = useState(openInfoEditor ? order.intake.droppedOffByPhone ?? "" : "")
+  const [editPickName, setEditPickName] = useState(openInfoEditor ? order.intake.pickedUpByName ?? "" : "")
+  const [editPickPhone, setEditPickPhone] = useState(openInfoEditor ? order.intake.pickedUpByPhone ?? "" : "")
   const infoCardRef = useRef<HTMLDivElement>(null)
 
   // Photos
@@ -337,6 +342,13 @@ export function WorkOrderDetail({
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
     setEditFuelLevel(order.intake.fuelLevelAtIntake ?? null)
+    // Bu dördü de seed edilmek ZORUNDA: boş string "temizle" anlamına geliyor,
+    // seed edilmezse yalnızca şikayeti düzenleyen biri kayıtlı getiren/teslim
+    // alan kişiyi farkında olmadan siler.
+    setEditDropName(order.intake.droppedOffByName ?? "")
+    setEditDropPhone(order.intake.droppedOffByPhone ?? "")
+    setEditPickName(order.intake.pickedUpByName ?? "")
+    setEditPickPhone(order.intake.pickedUpByPhone ?? "")
     setError("")
     setEditingInfo(true)
   }
@@ -353,6 +365,10 @@ export function WorkOrderDetail({
           internalNote: editNote,
           mileageAtIntake: editMileage,
           fuelLevelAtIntake: editFuelLevel,
+          droppedOffByName: editDropName,
+          droppedOffByPhone: editDropPhone,
+          pickedUpByName: editPickName,
+          pickedUpByPhone: editPickPhone,
         }),
       })
       const data = await res.json()
@@ -830,6 +846,34 @@ export function WorkOrderDetail({
                       <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
                     </div>
                   </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>Ad Soyad</Label>
+                        <Input value={editDropName} onChange={(e) => setEditDropName(e.target.value)} placeholder="Örn. Ahmet Yılmaz" />
+                      </div>
+                      <div>
+                        <Label>Telefon</Label>
+                        <Input type="tel" inputMode="tel" value={editDropPhone} onChange={(e) => setEditDropPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>Ad Soyad</Label>
+                        <Input value={editPickName} onChange={(e) => setEditPickName(e.target.value)} placeholder="Örn. Ayşe Demir" />
+                      </div>
+                      <div>
+                        <Label>Telefon</Label>
+                        <Input type="tel" inputMode="tel" value={editPickPhone} onChange={(e) => setEditPickPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
                   <div className="flex gap-2 pt-1">
                     <Button onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
@@ -849,6 +893,30 @@ export function WorkOrderDetail({
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Teknisyen İç Notu</p>
                       <p className="text-sm text-foreground whitespace-pre-wrap">{order.intake.internalNote}</p>
                       <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
+                    </div>
+                  )}
+                  {/* Getiren/teslim alacak kişi yalnız kaydedildiyse görünür —
+                      vakaların çoğunda müşteri aracı kendi getirip alıyor. */}
+                  {(order.intake.droppedOffByName || order.intake.pickedUpByName) && (
+                    <div className="pt-3 border-t grid gap-3 sm:grid-cols-2">
+                      {order.intake.droppedOffByName && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Getiren</p>
+                          <p className="text-sm text-foreground">{order.intake.droppedOffByName}</p>
+                          {order.intake.droppedOffByPhone && (
+                            <p className="text-xs text-muted-foreground">{order.intake.droppedOffByPhone}</p>
+                          )}
+                        </div>
+                      )}
+                      {order.intake.pickedUpByName && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Teslim Alacak</p>
+                          <p className="text-sm text-foreground">{order.intake.pickedUpByName}</p>
+                          {order.intake.pickedUpByPhone && (
+                            <p className="text-xs text-muted-foreground">{order.intake.pickedUpByPhone}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

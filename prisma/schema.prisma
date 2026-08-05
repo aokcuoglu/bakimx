@@ -455,6 +455,14 @@ model VehicleIntakeForm {
   fuelLevelAtIntake   Int?
   customerComplaint   String
   internalNote        String?
+  /// Aracı servise GETİREN kişi, müşterinin kendisi değilse (#196). Kabulde
+  /// doldurulur. null = müşteri aracı kendi getirdi.
+  droppedOffByName    String?
+  droppedOffByPhone   String?
+  /// Aracı TESLİM ALACAK kişi, müşterinin kendisi değilse (#149). Teslimden
+  /// önce herhangi bir anda doldurulabilir. null = müşteri kendi teslim alacak.
+  pickedUpByName      String?
+  pickedUpByPhone     String?
   approvalTextVersion String?
   approvedAt          DateTime?
   createdAt           DateTime     @default(now())

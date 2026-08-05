@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
+import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -24,6 +25,8 @@ export async function createIntakeAction(formData: FormData) {
     customerComplaint: formData.get("customerComplaint") as string,
     internalNote: formData.get("internalNote") as string,
     arrivalReason: formData.get("arrivalReason") as string,
+    droppedOffByName: formData.get("droppedOffByName") as string,
+    droppedOffByPhone: formData.get("droppedOffByPhone") as string,
   }
 
   const parsed = intakeCreateSchema.safeParse(raw)
@@ -67,6 +70,9 @@ export async function createIntakeAction(formData: FormData) {
         fuelLevelAtIntake: parsed.data.fuelLevelAtIntake ?? null,
         customerComplaint: parsed.data.customerComplaint,
         internalNote: parsed.data.internalNote || null,
+        // Boş bırakılırsa "müşteri aracı kendi getirdi" demektir.
+        droppedOffByName: parsed.data.droppedOffByName?.trim() || null,
+        droppedOffByPhone: parsed.data.droppedOffByPhone?.trim() || null,
       },
     })
     const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id, arrivalReason)
@@ -148,7 +154,16 @@ export async function getIntakesAction() {
 
 export async function updateIntakeDetailsAction(
   intakeFormId: string,
-  input: { customerComplaint: string; internalNote?: string; mileageAtIntake?: string; fuelLevelAtIntake?: number | null },
+  input: {
+    customerComplaint: string
+    internalNote?: string
+    mileageAtIntake?: string
+    fuelLevelAtIntake?: number | null
+    droppedOffByName?: string
+    droppedOffByPhone?: string
+    pickedUpByName?: string
+    pickedUpByPhone?: string
+  },
 ) {
   const user = await requireAuth()
 
@@ -174,6 +189,13 @@ export async function updateIntakeDetailsAction(
   const newFuel =
     parsed.data.fuelLevelAtIntake === undefined ? intake.fuelLevelAtIntake : parsed.data.fuelLevelAtIntake
 
+  // Teslim eden/alan kişiler: alan gönderilmediyse korunur, boş gönderildiyse
+  // temizlenir ("müşteri kendi getirdi/alacak").
+  const newDropName = resolveHandoverField(parsed.data.droppedOffByName, intake.droppedOffByName)
+  const newDropPhone = resolveHandoverField(parsed.data.droppedOffByPhone, intake.droppedOffByPhone)
+  const newPickName = resolveHandoverField(parsed.data.pickedUpByName, intake.pickedUpByName)
+  const newPickPhone = resolveHandoverField(parsed.data.pickedUpByPhone, intake.pickedUpByPhone)
+
   // Km geriye gidemez: yeni km aracın son kayıtlı km'sinden düşük olamaz.
   if (newMileage != null && intake.vehicle.mileage != null && newMileage < intake.vehicle.mileage) {
     return { error: `Girilen kilometre aracın son kayıtlı kilometresinden (${intake.vehicle.mileage} km) düşük olamaz.` }
@@ -185,6 +207,12 @@ export async function updateIntakeDetailsAction(
   if ((intake.internalNote ?? null) !== newNote) changes.push("iç not")
   if ((intake.mileageAtIntake ?? null) !== newMileage) changes.push("kilometre")
   if ((intake.fuelLevelAtIntake ?? null) !== newFuel) changes.push("yakıt seviyesi")
+  if ((intake.droppedOffByName ?? null) !== newDropName || (intake.droppedOffByPhone ?? null) !== newDropPhone) {
+    changes.push("aracı getiren kişi")
+  }
+  if ((intake.pickedUpByName ?? null) !== newPickName || (intake.pickedUpByPhone ?? null) !== newPickPhone) {
+    changes.push("aracı teslim alacak kişi")
+  }
 
   if (changes.length === 0) return { success: true }
 
@@ -196,6 +224,10 @@ export async function updateIntakeDetailsAction(
         internalNote: newNote,
         mileageAtIntake: newMileage,
         fuelLevelAtIntake: newFuel,
+        droppedOffByName: newDropName,
+        droppedOffByPhone: newDropPhone,
+        pickedUpByName: newPickName,
+        pickedUpByPhone: newPickPhone,
       },
     })
     // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
@@ -220,12 +252,20 @@ export async function updateIntakeDetailsAction(
         internalNote: intake.internalNote,
         mileageAtIntake: intake.mileageAtIntake,
         fuelLevelAtIntake: intake.fuelLevelAtIntake,
+        droppedOffByName: intake.droppedOffByName,
+        droppedOffByPhone: intake.droppedOffByPhone,
+        pickedUpByName: intake.pickedUpByName,
+        pickedUpByPhone: intake.pickedUpByPhone,
       },
       after: {
         customerComplaint: newComplaint,
         internalNote: newNote,
         mileageAtIntake: newMileage,
         fuelLevelAtIntake: newFuel,
+        droppedOffByName: newDropName,
+        droppedOffByPhone: newDropPhone,
+        pickedUpByName: newPickName,
+        pickedUpByPhone: newPickPhone,
       },
     }),
   )

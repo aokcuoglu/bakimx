@@ -98,6 +98,8 @@ export function IntakeWizard({
       fuelLevelAtIntake: "",
       customerComplaint: "",
       internalNote: "",
+      droppedOffByName: "",
+      droppedOffByPhone: "",
       arrivalReason: "",
       termsAccepted: false,
       privacyAccepted: false,
@@ -207,6 +209,8 @@ export function IntakeWizard({
       formData.set("fuelLevelAtIntake", values.fuelLevelAtIntake)
       formData.set("internalNote", values.internalNote)
       formData.set("arrivalReason", values.arrivalReason)
+      formData.set("droppedOffByName", values.droppedOffByName)
+      formData.set("droppedOffByPhone", values.droppedOffByPhone)
 
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
       const data = await res.json()
@@ -403,6 +407,43 @@ export function IntakeWizard({
                     </FormItem>
                   )}
                 />
+                {/* #196 — aracı müşteri değil başkası getirdiyse kaydedilsin.
+                    Opsiyonel ve akışı tıkamayacak şekilde en alta konuldu:
+                    vakaların çoğunda müşteri aracı kendi getiriyor. */}
+                <div className="rounded-lg border border-border p-3 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aracı müşterinin kendisi getirdiyse boş bırakın.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="droppedOffByName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ad Soyad</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Örn. Ahmet Yılmaz" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="droppedOffByPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefon</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="tel" inputMode="tel" placeholder="Örn. 0532 000 0000" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 <div className="pt-4 flex justify-between">
                   <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
                     Geri
