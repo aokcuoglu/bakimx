@@ -72,6 +72,10 @@ export default async function OrderDetailPage({
         orderBy: { createdAt: "desc" },
         include: { requestedBy: { select: { fullName: true } } },
       },
+      // Teknisyen sekmesi (salt okunur) — düzenleme teknisyen panelinde kalır.
+      checklistItems: { orderBy: { sortOrder: "asc" } },
+      laborSessions: { orderBy: { startTime: "desc" } },
+      internalNotes: { orderBy: { createdAt: "desc" } },
     },
   })
 
@@ -160,6 +164,27 @@ export default async function OrderDetailPage({
       createdAt: p.createdAt.toISOString(),
       requestedByName: p.requestedBy?.fullName ?? null,
       convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
+    })),
+    checklistItems: order.checklistItems.map((c) => ({
+      id: c.id,
+      category: c.category,
+      description: c.description,
+      isCompleted: c.isCompleted,
+      isRequired: c.isRequired,
+      completedAt: c.completedAt ? c.completedAt.toISOString() : null,
+      note: c.note,
+    })),
+    laborSessions: order.laborSessions.map((l) => ({
+      id: l.id,
+      startTime: l.startTime.toISOString(),
+      endTime: l.endTime ? l.endTime.toISOString() : null,
+      durationMinutes: l.durationMinutes,
+    })),
+    internalNotes: order.internalNotes.map((n) => ({
+      id: n.id,
+      content: n.content,
+      isPinned: n.isPinned,
+      createdAt: n.createdAt.toISOString(),
     })),
     customer: {
       id: intakeForm.customer.id,

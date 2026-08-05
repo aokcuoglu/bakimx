@@ -51,6 +51,7 @@ import {
   TriangleAlert,
   Images,
   X,
+  Wrench,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
@@ -82,6 +83,7 @@ import {
   type Totals,
 } from "@/components/orders/order-management-panel"
 import { OrderInfoCard } from "@/components/orders/order-info-card"
+import { TechnicianProgressPanel } from "@/components/orders/technician-progress-panel"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
@@ -101,13 +103,14 @@ const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
 
 // Detay içeriği sekmelere bölünür (uzun tek-scroll yerine). Aktif sekme URL'de
 // `?tab=` ile tutulur; settings-tabs deseniyle aynı.
-type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "gecmis"
+type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "teknisyen" | "gecmis"
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "ozet", label: "Özet", icon: Info },
   { key: "parca", label: "Parça & İşçilik", icon: Package },
   { key: "tahsilat", label: "Tahsilat", icon: Wallet },
   { key: "kanit", label: "Kanıt", icon: Camera },
+  { key: "teknisyen", label: "Teknisyen", icon: Wrench },
   { key: "gecmis", label: "Geçmiş", icon: History },
 ]
 
@@ -1268,6 +1271,16 @@ export function WorkOrderDetail({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
+        <TabsContent value="teknisyen">
+          <TechnicianProgressPanel
+            checklistItems={order.checklistItems}
+            laborSessions={order.laborSessions}
+            internalNotes={order.internalNotes}
+            technicianName={order.assignedTechnicianName}
+          />
         </TabsContent>
 
         {/* GEÇMİŞ */}
