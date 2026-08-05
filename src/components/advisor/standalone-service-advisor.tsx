@@ -20,6 +20,7 @@ import {
   FileText,
   StickyNote,
 } from "lucide-react"
+import { advisorProviderNotice } from "@/lib/provider-labels"
 
 type AdvisorResult = {
   suggestedInspections: string[]
@@ -73,8 +74,7 @@ export function StandaloneServiceAdvisor() {
     }
   }
 
-  const providerLabel =
-    result?.provider === "mock" ? "Demo (Mock)" : result?.provider === "openai" ? "OpenAI" : result?.provider === "anthropic" ? "Claude" : ""
+  const providerNotice = advisorProviderNotice(result?.provider)
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
@@ -223,7 +223,7 @@ export function StandaloneServiceAdvisor() {
               <Shield className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
               <span>
                 AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir.
-                {providerLabel && <span className="ml-1 text-muted-foreground">Sağlayıcı: {providerLabel}</span>}
+                {providerNotice && <span className="ml-1 text-muted-foreground">{providerNotice}</span>}
               </span>
             </div>
           </div>

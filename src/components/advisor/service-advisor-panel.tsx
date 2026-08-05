@@ -21,6 +21,7 @@ import {
   StickyNote,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { advisorProviderNotice } from "@/lib/provider-labels"
 
 type AdvisorResult = {
   suggestedInspections: string[]
@@ -156,8 +157,7 @@ export function ServiceAdvisorPanel({
   const inspections = items.filter((i) => i.type === "inspection")
   const laborAndParts = items.filter((i) => i.type !== "inspection")
 
-  const providerLabel =
-    result?.provider === "mock" ? "Demo (Mock)" : result?.provider === "openai" ? "OpenAI" : result?.provider === "anthropic" ? "Claude" : ""
+  const providerNotice = advisorProviderNotice(result?.provider)
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
@@ -386,7 +386,7 @@ export function ServiceAdvisorPanel({
               <Shield className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
               <span>
                 AI sonucu tavsiye niteliğindedir, kesin arıza teşhisi değildir. Önerilen kalemler otomatik eklenmez — eklemek için onaylamanız gerekir.
-                {providerLabel && <span className="ml-1 text-muted-foreground">Sağlayıcı: {providerLabel}</span>}
+                {providerNotice && <span className="ml-1 text-muted-foreground">{providerNotice}</span>}
               </span>
             </div>
 

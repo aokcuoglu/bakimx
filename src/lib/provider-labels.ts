@@ -32,6 +32,29 @@ export const EMAIL_PROVIDER_LABELS: Record<string, string> = {
 }
 
 /**
+ * Servis danışmanı: `mock` iken panel yine bir çıktı üretiyor, ama içerik demo
+ * verisi. "Kapalı" demek yanıltıcı olurdu (#253), yanıtın gerçek olmadığını
+ * söylemek gerekiyor.
+ */
+export const ADVISOR_DEMO_NOTICE = "Bu yanıt demo verisidir — yapay zekâ bağlı değil."
+
+const ADVISOR_PROVIDER_NAMES: Record<string, string> = {
+  anthropic: "Claude",
+  openai: "OpenAI",
+}
+
+/**
+ * Danışman sonucunun altındaki sağlayıcı notu. Gerçek sağlayıcıda "Sağlayıcı: X",
+ * mock'ta uyarı cümlesi döner; tanınmayan/boş değerde hiçbir şey gösterilmez.
+ */
+export function advisorProviderNotice(provider: string | null | undefined): string {
+  if (!provider) return ""
+  if (provider === "mock") return ADVISOR_DEMO_NOTICE
+  const name = ADVISOR_PROVIDER_NAMES[provider]
+  return name ? `Sağlayıcı: ${name}` : ""
+}
+
+/**
  * Bildirimler ekranı üç kanalın sağlayıcısını tek bir haritadan okur; env'den
  * gelen değerler (`business`, `gmail`) form seçeneklerinden farklı olabiliyor.
  */
