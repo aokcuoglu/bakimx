@@ -6,7 +6,7 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
-import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
+import { ensureChecklistSeeded, seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
 import {
   countBlockingChecklist,
   countIncompleteItems,
@@ -18,6 +18,32 @@ import {
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
+
+/**
+ * Kapı hesabı için kontrol listesini okur; şablon maddeleri eksikse önce
+ * tamamlar ve listeyi yeniden okur.
+ *
+ * Seed eskiden yalnızca atama anında çalışıyordu, bu yüzden özellikten önce
+ * atanmış iş emirlerinde liste boş kalıyor ve boş liste kapıyı açıyordu.
+ * Tamamlama yalnızca gerçekten eksik varken bir transaction açar — normal
+ * akışta ek maliyet tek bir `findMany`'nin `templateKey` kolonundan ibaret.
+ */
+async function readGateChecklist(
+  workshopId: string,
+  order: { id: string; status: OrderStatus; assignedTechnicianId: string | null }
+) {
+  const select = { category: true, isCompleted: true, isRequired: true, templateKey: true }
+  const where = { serviceOrderId: order.id, workshopId }
+
+  const checklist = await prisma.checklistItem.findMany({ where, select })
+  const seeded = await ensureChecklistSeeded(
+    prisma,
+    workshopId,
+    order,
+    checklist.map((c) => c.templateKey)
+  )
+  return seeded ? prisma.checklistItem.findMany({ where, select }) : checklist
+}
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -109,10 +135,9 @@ export async function startWorkAction(orderId: string) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
 
-  const checklist = await prisma.checklistItem.findMany({
-    where: { serviceOrderId: orderId, workshopId: user.workshopId },
-    select: { category: true, isCompleted: true, isRequired: true },
-  })
+  // Kapı, var olan maddeler üzerinden sayar; liste hiç oluşmamışsa "0 engel"
+  // çıkar ve kontroller sessizce atlanırdı. Önce eksikleri tamamla.
+  const checklist = await readGateChecklist(user.workshopId, order)
   const startBlock = startWorkBlockMessage(countBlockingChecklist(checklist, START_GATE_CATEGORIES))
   if (startBlock) return { error: startBlock }
 
@@ -183,10 +208,7 @@ export async function completeWorkAction(orderId: string) {
   }
 
   const [checklist, items] = await Promise.all([
-    prisma.checklistItem.findMany({
-      where: { serviceOrderId: orderId, workshopId: user.workshopId },
-      select: { category: true, isCompleted: true, isRequired: true },
-    }),
+    readGateChecklist(user.workshopId, order),
     prisma.serviceOrderItem.findMany({
       where: { serviceOrderId: orderId, workshopId: user.workshopId },
       select: { completedAt: true },

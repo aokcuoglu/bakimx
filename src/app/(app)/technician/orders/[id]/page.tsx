@@ -7,6 +7,7 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
 
 export const dynamic = "force-dynamic"
 
@@ -47,6 +48,30 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   })
 
   if (!order) notFound()
+
+  // Şablon maddeleri atama anında oluşur. Özellikten önce atanmış (veya şablona
+  // sonradan madde eklenmiş) iş emirlerinde liste eksik kalırdı; burada gerçekten
+  // eksik varken bir kez tamamlanır, sonraki açılışlarda hiç yazma olmaz.
+  // Kapılar da aynı tamamlamayı kendi içinde yapar — bu satır yalnızca teknisyen
+  // listeyi boş görmesin diyedir, güvenlik ona bağlı değildir.
+  // Render sırasındaki yazma sayfayı ASLA düşürmemeli: eşzamanlı iki istek
+  // unique kısıtına çarpabilir. Başarısızlıkta liste eksik görünür, kapılar
+  // yine de tamamlamayı kendi tarafında yapar.
+  const checklistItems = await ensureChecklistSeeded(
+    prisma,
+    user.workshopId,
+    order,
+    order.checklistItems.map((c) => c.templateKey)
+  )
+    .then((seeded) =>
+      seeded
+        ? prisma.checklistItem.findMany({
+            where: { serviceOrderId: order.id, workshopId: user.workshopId },
+            orderBy: { sortOrder: "asc" },
+          })
+        : order.checklistItems
+    )
+    .catch(() => order.checklistItems)
 
   const totals = calculateOrderTotals(order.items, {
     discountAmount: order.discountAmount,
@@ -165,7 +190,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       note: p.note,
       createdAt: p.createdAt.toISOString(),
     })),
-    checklistItems: order.checklistItems.map((c) => ({
+    checklistItems: checklistItems.map((c) => ({
       id: c.id,
       category: c.category,
       description: c.description,
