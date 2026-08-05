@@ -27,6 +27,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -109,6 +110,14 @@
   --accent: oklch(0.96 0.02 250);
   --accent-foreground: oklch(0.20 0.04 260);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Dolu destructive zemin üzerindeki metin/ikon. Koyu temadaki karşılığı .dark
+     bloğunda lacivert-siyaha döner (kırmızı orada açıldığı için) — success ve
+     warning ile aynı desen.
+     Diğer *-foreground'lar oklch(0.98 0.002 250) kullanıyor ama burada SAF BEYAZ
+     bilinçli: kırmızı zeminde o değer 4.49:1 ile AA eşiğinin (4.5) kılpayı
+     altında kalıyor, saf beyaz 4.77:1 ile geçiyor. Bandın metni text-xs olduğu
+     için büyük-metin istisnası uygulanmıyor. */
+  --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.91 0.01 250);
   --input: oklch(0.91 0.01 250);
   --ring: oklch(0.543 0.213 260);
@@ -148,6 +157,7 @@
   --accent: oklch(0.27 0.04 250);
   --accent-foreground: oklch(0.96 0.01 250);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.15 0.05 260);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.63 0.20 258);
