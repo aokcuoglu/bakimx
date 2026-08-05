@@ -3,6 +3,11 @@
 import { useState } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { communicationTemplateLabel } from "@/lib/communications/template-labels"
+import {
+  COMMUNICATION_STATUSES,
+  communicationStatusLabel,
+  type CommunicationStatus,
+} from "@/lib/communications/status-labels"
 
 type LogEntry = {
   id: string
@@ -23,8 +28,14 @@ type Stats = {
   sent: number
   failed: number
   pending: number
+  skipped: number
   byType: Record<string, number>
 }
+
+/** Sayaç kartları ve filtre çubuğu aynı diziden beslenir — biri güncellenip
+ *  diğeri unutulamıyor (issue #246). */
+const STATUSES = COMMUNICATION_STATUSES
+type StatusKey = CommunicationStatus
 
 const TYPE_LABELS: Record<string, string> = {
   sms: "SMS",
@@ -38,21 +49,24 @@ const TYPE_COLORS: Record<string, string> = {
   email: "bg-primary/10 text-primary",
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  sent: "Gönderildi",
-  failed: "Başarısız",
-  pending: "Bekliyor",
-}
-
 const STATUS_COLORS: Record<string, string> = {
   sent: "bg-success/10 text-success border-success/20",
   failed: "bg-destructive/10 text-destructive border-destructive/20",
   pending: "bg-warning/10 text-warning border-warning/20",
+  skipped: "bg-muted text-muted-foreground border-border",
+}
+
+/** Sayaç kartlarının vurgu rengi — nötr "gönderilmedi" alarma benzemesin. */
+const STAT_COLORS: Record<StatusKey, string> = {
+  sent: "text-success",
+  failed: "text-destructive",
+  pending: "text-warning",
+  skipped: "text-muted-foreground",
 }
 
 export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats: Stats }) {
   const [filter, setFilter] = useState<"all" | "sms" | "whatsapp" | "email">("all")
-  const [statusFilter, setStatusFilter] = useState<"all" | "sent" | "failed" | "pending">("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | StatusKey>("all")
 
   const filtered = logs.filter((log) => {
     if (filter !== "all" && log.type !== filter) return false
@@ -62,33 +76,30 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-lg border border-border p-4">
-          <p className="text-xs text-muted-foreground font-medium">Gönderildi</p>
-          <p className="text-2xl font-bold text-success">{stats.sent}</p>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <p className="text-xs text-muted-foreground font-medium">Başarısız</p>
-          <p className="text-2xl font-bold text-destructive">{stats.failed}</p>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <p className="text-xs text-muted-foreground font-medium">Bekliyor</p>
-          <p className="text-2xl font-bold text-warning">{stats.pending}</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {STATUSES.map((s) => (
+          <div key={s} className="bg-card rounded-lg border border-border p-4">
+            <p className="text-xs text-muted-foreground font-medium">{communicationStatusLabel(s)}</p>
+            <p className={`text-2xl font-bold ${STAT_COLORS[s]}`}>{stats[s]}</p>
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <ToggleGroup value={[filter]} onValueChange={(v) => { if (v.length) setFilter(v[0] as "all" | "sms" | "whatsapp" | "email") }} variant="outline">
+        {/* flex-wrap şart: ToggleGroup varsayılanda `w-fit flex-row` ve içeride
+            sarmıyor — beşinci durum butonu eklenince 390px ekranda grup 456px'e
+            çıkıp taşıyordu (buton erişilemez hâle geliyordu). */}
+        <ToggleGroup className="flex-wrap" value={[filter]} onValueChange={(v) => { if (v.length) setFilter(v[0] as "all" | "sms" | "whatsapp" | "email") }} variant="outline">
           {(["all", "sms", "whatsapp", "email"] as const).map((f) => (
             <ToggleGroupItem key={f} value={f} className="px-3 py-1.5 text-xs">
               {f === "all" ? "Tümü" : TYPE_LABELS[f] || f}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-        <ToggleGroup value={[statusFilter]} onValueChange={(v) => { if (v.length) setStatusFilter(v[0] as "all" | "sent" | "failed" | "pending") }} variant="outline">
-          {(["all", "sent", "failed", "pending"] as const).map((s) => (
+        <ToggleGroup className="flex-wrap" value={[statusFilter]} onValueChange={(v) => { if (v.length) setStatusFilter(v[0] as "all" | StatusKey) }} variant="outline">
+          {(["all", ...STATUSES] as const).map((s) => (
             <ToggleGroupItem key={s} value={s} className="px-3 py-1.5 text-xs">
-              {s === "all" ? "Tüm Durum" : STATUS_LABELS[s] || s}
+              {s === "all" ? "Tüm Durum" : communicationStatusLabel(s)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -124,8 +135,13 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
                     <td className="px-4 py-3 text-muted-foreground">{communicationTemplateLabel(log.templateKey)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${STATUS_COLORS[log.status] || "bg-muted text-muted-foreground border-border"}`}>
-                        {STATUS_LABELS[log.status] || log.status}
+                        {communicationStatusLabel(log.status)}
                       </span>
+                      {/* "Gönderilmedi"/"Başarısız" tek başına sebebi söylemiyor;
+                          kayıttaki açıklama ("Müşteri SMS onayı vermemiş") burada. */}
+                      {log.errorMessage && (
+                        <p className="text-[11px] text-muted-foreground mt-1">{log.errorMessage}</p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{log.provider}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
