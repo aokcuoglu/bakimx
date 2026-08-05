@@ -285,7 +285,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     required
                   />
                   {(form.formState.errors.brand || form.formState.errors.model) && (
-                    <p className="col-span-2 text-sm text-destructive">
+                    <p className="col-span-2 text-sm text-destructive-strong">
                       {form.formState.errors.brand?.message ?? form.formState.errors.model?.message}
                     </p>
                   )}

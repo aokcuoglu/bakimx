@@ -34,14 +34,14 @@ export function RevenueAnalyticsSection({ analytics }: { analytics: RevenueAnaly
           label="Toplam Tahsilat"
           value={formatTRY(analytics.totalCollected)}
           icon={Wallet}
-          accent="text-success"
+          accent="text-success-strong"
           accentBg="bg-success/10"
         />
         <StatCard
           label="Açık Alacak"
           value={formatTRY(analytics.totalReceivable)}
           icon={Receipt}
-          accent="text-destructive"
+          accent="text-destructive-strong"
           accentBg="bg-destructive/10"
           subtitle={`${analytics.completedOrders} tamamlanan sipariş`}
         />
@@ -65,7 +65,7 @@ export function RevenueAnalyticsSection({ analytics }: { analytics: RevenueAnaly
 
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
-          <TrendingUp className="size-4 text-success" />
+          <TrendingUp className="size-4 text-success-strong" />
           <h3 className="text-base font-semibold text-foreground">Tahsilat Trendi (Son 6 Ay)</h3>
         </div>
         <div className="p-4 sm:p-6">

@@ -24,7 +24,7 @@ export function PillarsSection() {
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 shrink-0 text-primary" />
             <span className="font-mono text-sm font-semibold">34 ABC 123</span>
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success-strong">
               <CheckCircle2 className="h-3 w-3" />
               Otomatik dolduruldu
             </span>

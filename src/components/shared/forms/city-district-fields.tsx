@@ -101,7 +101,7 @@ export function CityDistrictFields({
             onDistrictChange("") // cascade reset — yalnız kullanıcı değişiminde
           }}
         />
-        {cityError && <p className="text-sm text-destructive">{cityError}</p>}
+        {cityError && <p className="text-sm text-destructive-strong">{cityError}</p>}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor={`${uid}-district`}>İlçe</Label>
@@ -113,7 +113,7 @@ export function CityDistrictFields({
           disabled={!city}
           onValueChange={(v) => onDistrictChange(v)}
         />
-        {districtError && <p className="text-sm text-destructive">{districtError}</p>}
+        {districtError && <p className="text-sm text-destructive-strong">{districtError}</p>}
       </div>
     </div>
   )

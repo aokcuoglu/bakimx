@@ -249,7 +249,7 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
                     {t.maskedPan ? ` · ${t.maskedPan}` : ""}
                   </p>
                 )}
-                {t.errorCode && <p className="text-destructive">{t.errorCode}</p>}
+                {t.errorCode && <p className="text-destructive-strong">{t.errorCode}</p>}
                 {t.correlationId && <CopyMono value={t.correlationId} />}
               </div>
             ))}
@@ -299,7 +299,7 @@ function OrderRow({ o }: { o: AdminOrderRow }) {
           </p>
           <p className="text-muted-foreground">{o.invoiceTitle ?? "—"}{o.taxNumber ? ` · VKN ${o.taxNumber}` : ""}</p>
           {isCard && <PaymentAttempts txns={o.txnHistory} />}
-          {error && <p className="text-destructive mt-1">{error}</p>}
+          {error && <p className="text-destructive-strong mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
@@ -323,7 +323,7 @@ function StuckTransactionsSection({ rows }: { rows: AdminStuckTxnRow[] }) {
   if (rows.length === 0) return null
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-bold text-destructive flex items-center gap-2">
+      <h2 className="text-lg font-bold text-destructive-strong flex items-center gap-2">
         <AlertTriangle className="size-5" /> Takılı Ödemeler
       </h2>
       <p className="text-sm text-muted-foreground">
@@ -368,7 +368,7 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
             İşlem: <CopyMono value={r.providerOrderId} />
           </p>
           <p className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("tr-TR")} tarihinden beri &quot;callback_received&quot;</p>
-          {error && <p className="text-destructive mt-1">{error}</p>}
+          {error && <p className="text-destructive-strong mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}

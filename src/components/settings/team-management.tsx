@@ -155,7 +155,7 @@ export function TeamManagement({
       )}
 
       {error && (
-        <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+        <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
           {error}
         </div>
       )}
@@ -175,7 +175,7 @@ export function TeamManagement({
               onClick={() => copy(lastInviteUrl)}
               className="shrink-0"
             >
-              {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
               {copied ? "Kopyalandı" : "Kopyala"}
             </Button>
           </div>
@@ -304,8 +304,8 @@ export function TeamManagement({
                     className={cn(
                       "touch-manipulation",
                       m.isActive
-                        ? "text-destructive hover:bg-destructive/10 border-destructive/20"
-                        : "text-success hover:bg-success/10 border-success/20"
+                        ? "text-destructive-strong hover:bg-destructive/10 border-destructive/20"
+                        : "text-success-strong hover:bg-success/10 border-success/20"
                     )}
                   >
                     {m.isActive ? "Pasif Yap" : "Aktif Yap"}

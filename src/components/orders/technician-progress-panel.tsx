@@ -89,12 +89,12 @@ function ChecklistCategoryBlock({
         {items.map((item) => (
           <li key={item.id} className="flex items-start gap-2 py-1.5">
             {item.isCompleted ? (
-              <CheckSquare className="size-5 text-success shrink-0 mt-0.5" aria-hidden />
+              <CheckSquare className="size-5 text-success-strong shrink-0 mt-0.5" aria-hidden />
             ) : (
               <Square className="size-5 text-muted-foreground/70 shrink-0 mt-0.5" aria-hidden />
             )}
             <div className="flex-1 min-w-0">
-              <span className={cn("text-sm", item.isCompleted ? "text-success" : "text-foreground")}>
+              <span className={cn("text-sm", item.isCompleted ? "text-success-strong" : "text-foreground")}>
                 {item.description}
               </span>
               <span className="sr-only">{item.isCompleted ? " — tamamlandı" : " — bekliyor"}</span>
@@ -235,7 +235,7 @@ export function TechnicianProgressPanel({
                   key={note.id}
                   className="flex items-start gap-2 py-2 px-3 rounded-lg bg-warning/10 border border-warning/20"
                 >
-                  <StickyNote className="size-4 text-warning shrink-0 mt-0.5" aria-hidden />
+                  <StickyNote className="size-4 text-warning-strong shrink-0 mt-0.5" aria-hidden />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
                     <p className="text-[10px] text-foreground/60 mt-1">{formatDateTime(note.createdAt)}</p>

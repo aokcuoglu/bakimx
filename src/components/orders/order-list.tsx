@@ -77,10 +77,10 @@ export function OrderList({
 }) {
   const kpiConfigs: KpiConfig[] = [
     { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-primary/10 text-primary border-primary/20" },
-    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning border-warning/20" },
+    { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning-strong border-warning/20" },
     { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary border-primary/20" },
-    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success border-success/20" },
-    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive border-destructive/20" },
+    { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success-strong border-success/20" },
+    { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive-strong border-destructive/20" },
   ]
 
   // KPI kartına tıklamak yalnız durumu değiştirmeli; diğer aktif filtreler korunur.

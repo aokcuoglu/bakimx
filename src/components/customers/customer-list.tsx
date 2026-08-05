@@ -199,7 +199,7 @@ export function CustomerList({
           <StatCard
             label="Tekrar Eden"
             value={kpis.returning}
-            accent="bg-success/10 text-success border-success/20"
+            accent="bg-success/10 text-success-strong border-success/20"
           />
         </div>
       )}

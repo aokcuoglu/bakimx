@@ -18,7 +18,7 @@ function approvalBadge(status: string | null) {
   if (!status) return null
   if (status === "waiting_approval") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-warning font-medium">
+      <span className="inline-flex items-center gap-1 text-xs text-warning-strong font-medium">
         <MessageCircle className="size-3" />
         Bekliyor
       </span>
@@ -30,14 +30,14 @@ function approvalBadge(status: string | null) {
 function photoBadge(completion: { present: number; required: number }) {
   if (completion.present >= completion.required) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-success font-medium">
+      <span className="inline-flex items-center gap-1 text-xs text-success-strong font-medium">
         <Camera className="size-3" />
         {completion.present}/{completion.required}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium">
+    <span className="inline-flex items-center gap-1 text-xs text-destructive-strong font-medium">
       <XCircle className="size-3" />
       {completion.present}/{completion.required}
     </span>
@@ -161,7 +161,7 @@ export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] })
             <div className="flex items-center flex-wrap gap-1.5 mb-2">
               <StatusBadge status={o.status} />
               {o.approvalStatus === "waiting_approval" && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-warning font-medium bg-warning/10 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] text-warning-strong font-medium bg-warning/10 px-2 py-0.5 rounded-full">
                   <MessageCircle className="size-3" />
                   Onay Bekliyor
                 </span>

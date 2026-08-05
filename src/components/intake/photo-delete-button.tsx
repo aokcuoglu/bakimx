@@ -67,7 +67,7 @@ export function PhotoDeleteButton({
           onKeyDown={(e) => e.stopPropagation()}
           className={cn(
             "absolute top-1.5 right-1.5 z-10 inline-flex size-8 items-center justify-center rounded-full",
-            "bg-background/85 text-destructive ring-1 ring-border backdrop-blur-sm",
+            "bg-background/85 text-destructive-strong ring-1 ring-border backdrop-blur-sm",
             // Ters kontrast: dolu kırmızı zemin + `destructive-foreground` ikon.
             // Bu token temaya sonradan eklendi (globals.css); yoksa Tailwind
             // `text-destructive-foreground` için kural üretmez ve ikon kırmızı
@@ -85,7 +85,7 @@ export function PhotoDeleteButton({
           variant="outline"
           size="sm"
           onClick={() => setOpen(true)}
-          className={cn("text-destructive", className)}
+          className={cn("text-destructive-strong", className)}
         >
           <Trash2 className="size-3.5" />
           Fotoğrafı sil

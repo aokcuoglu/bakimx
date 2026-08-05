@@ -33,7 +33,7 @@ export function ImpersonateButton({ workshopId }: { workshopId: string }) {
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
         Müşteri gibi gör
       </button>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive-strong">{error}</p>}
     </div>
   )
 }

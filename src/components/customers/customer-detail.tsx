@@ -502,7 +502,7 @@ export function CustomerDetail({
 
           <SectionCard title="İletişim İzinleri" icon={ShieldCheck}>
             <ul className="space-y-2 text-sm">
-              <ConsentRow icon={<MessageCircle className="size-4 text-success" />} label="WhatsApp izni" granted={customer.whatsappConsent} />
+              <ConsentRow icon={<MessageCircle className="size-4 text-success-strong" />} label="WhatsApp izni" granted={customer.whatsappConsent} />
               <ConsentRow icon={<Smartphone className="size-4 text-primary" />} label="SMS izni" granted={customer.smsConsent} />
               <ConsentRow icon={<Mail className="size-4 text-primary" />} label="E-posta izni" granted={customer.emailConsent} />
               <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
@@ -657,7 +657,7 @@ function ConsentRow({ icon, label, granted }: { icon: React.ReactNode; label: st
       <span
         className={cn(
           "inline-flex items-center gap-1 text-xs font-medium",
-          granted ? "text-success" : "text-muted-foreground/70"
+          granted ? "text-success-strong" : "text-muted-foreground/70"
         )}
       >
         {granted ? (

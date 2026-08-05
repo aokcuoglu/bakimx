@@ -317,7 +317,7 @@ export function IntakeWizard({
                         />
                       </FormControl>
                       {kmTooLow ? (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-destructive-strong">
                           Yeni kilometre, aracın son kaydından ({lastKm!.toLocaleString("tr-TR")} km) düşük olamaz.
                         </p>
                       ) : vehicleInfo?.mileage != null ? (

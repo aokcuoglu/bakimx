@@ -158,7 +158,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       </div>
 
       {actionError ? (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive px-4 py-3 text-sm">{actionError}</div>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive-strong px-4 py-3 text-sm">{actionError}</div>
       ) : null}
 
       <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
@@ -213,7 +213,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("cancel")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-destructive hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-destructive-strong hover:bg-destructive/10 text-sm font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <XCircle className="size-4" />
                 <span className="hidden sm:inline">İptal</span>

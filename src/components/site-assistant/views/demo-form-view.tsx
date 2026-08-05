@@ -106,19 +106,19 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
       <div className="space-y-1.5">
         <Label htmlFor="da-name">Ad Soyad *</Label>
         <Input id="da-name" placeholder="Ahmet Yılmaz" value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
-        {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+        {errors.name && <p className="text-xs text-destructive-strong">{errors.name}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="da-business">İşletme Adı *</Label>
         <Input id="da-business" placeholder="Yılmaz Oto Servis" value={data.businessName} onChange={(e) => setData({ ...data, businessName: e.target.value })} />
-        {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
+        {errors.businessName && <p className="text-xs text-destructive-strong">{errors.businessName}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="da-phone">Telefon *</Label>
         <Input id="da-phone" inputMode="tel" placeholder="0532 123 4567" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
-        {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+        {errors.phone && <p className="text-xs text-destructive-strong">{errors.phone}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -135,7 +135,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
             </SelectGroup>
           </SelectContent>
         </Select>
-        {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
+        {errors.city && <p className="text-xs text-destructive-strong">{errors.city}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -160,7 +160,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
             </SelectGroup>
           </SelectContent>
         </Select>
-        {errors.monthlyVehicles && <p className="text-xs text-destructive">{errors.monthlyVehicles}</p>}
+        {errors.monthlyVehicles && <p className="text-xs text-destructive-strong">{errors.monthlyVehicles}</p>}
       </div>
 
       <div className="space-y-1.5">

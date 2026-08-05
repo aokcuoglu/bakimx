@@ -226,13 +226,13 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
                   label="Şase Teyit"
                   value={
                     v.vinConfirmed ? (
-                      <span className="inline-flex items-center gap-1 text-success">
+                      <span className="inline-flex items-center gap-1 text-success-strong">
                         <ShieldCheck className="size-3" />
                         Teyit Edildi
                       </span>
                     ) : v.vin ? (
                       <span className="inline-flex items-center gap-2 flex-wrap">
-                        <span className="text-warning">Teyit Bekliyor</span>
+                        <span className="text-warning-strong">Teyit Bekliyor</span>
                         <Button
                           variant="outline"
                           size="sm"

@@ -64,12 +64,12 @@ export function SendReminderButton({
       {result && (
         <div className="rounded-lg border border-success/20 bg-success/10 p-3 space-y-1">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-4 text-success" />
+            <CheckCircle2 className="size-4 text-success-strong" />
             {/* `text-success-foreground` DEĞİL: o token dolu yeşil zemin için
                 (koyu metin); buradaki zemin `bg-success/10` yani neredeyse beyaz. */}
             <p className="text-sm font-medium text-foreground">Hatırlatma gönderildi</p>
           </div>
-          <p className="text-xs text-success">
+          <p className="text-xs text-success-strong">
             {customerName}{vehiclePlate ? ` — ${vehiclePlate}` : ""} için tahsilat hatırlatması gönderildi.
           </p>
           <button
@@ -103,7 +103,7 @@ export function SendReminderButton({
             </Button>
           </div>
           {error && (
-            <div className="flex items-center gap-1.5 text-xs text-destructive">
+            <div className="flex items-center gap-1.5 text-xs text-destructive-strong">
               <AlertCircle className="size-3.5" />
               {error}
             </div>

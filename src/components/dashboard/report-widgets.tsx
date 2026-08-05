@@ -18,10 +18,10 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-muted-foreground">Aylık Ciro</span>
           <div className="size-9 rounded-lg bg-success/10 flex items-center justify-center">
-            <TrendingUp className="size-4 text-success" />
+            <TrendingUp className="size-4 text-success-strong" />
           </div>
         </div>
-        <p className="text-2xl sm:text-3xl font-bold text-success">{formatTRY(data.monthlyRevenue)}</p>
+        <p className="text-2xl sm:text-3xl font-bold text-success-strong">{formatTRY(data.monthlyRevenue)}</p>
         <p className="text-[11px] text-muted-foreground/70 mt-0.5">Bu ay tahsil edilen toplam</p>
       </Link>
 

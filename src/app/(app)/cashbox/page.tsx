@@ -81,7 +81,7 @@ export default async function CashboxPage() {
             label="Bugünkü Tahsilat"
             value={formatTRY(stats.todayCollected)}
             icon={Banknote}
-            accent="text-success"
+            accent="text-success-strong"
             accentBg="bg-success/10"
           />
           <KpiCard
@@ -95,21 +95,21 @@ export default async function CashboxPage() {
             label="Açık Alacak"
             value={formatTRY(stats.openReceivable)}
             icon={Receipt}
-            accent="text-destructive"
+            accent="text-destructive-strong"
             accentBg="bg-destructive/10"
           />
           <KpiCard
             label="Geciken Alacak"
             value={formatTRY(stats.overdueReceivable)}
             icon={AlertTriangle}
-            accent="text-destructive"
+            accent="text-destructive-strong"
             accentBg="bg-destructive/10"
           />
           <KpiCard
             label="Kısmi Ödemeler"
             value={stats.partialPayments.toString()}
             icon={Clock}
-            accent="text-warning"
+            accent="text-warning-strong"
             accentBg="bg-warning/10"
           />
           <KpiCard

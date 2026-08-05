@@ -112,7 +112,7 @@ export function TechnicianPhotoUpload({
               variant="outline"
               size="sm"
               onClick={() => openWith(key)}
-              className="h-7 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive touch-manipulation"
+              className="h-7 rounded-full border-destructive/20 bg-destructive/10 px-2 text-[11px] font-medium text-destructive-strong touch-manipulation"
             >
               <Camera className="size-3" />
               {PHOTO_TYPES[key].label}
@@ -170,7 +170,7 @@ export function TechnicianPhotoUpload({
       >
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
               {error}
             </p>
           )}

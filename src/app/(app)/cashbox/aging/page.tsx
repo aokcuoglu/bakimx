@@ -7,10 +7,10 @@ import { Clock, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const bucketColors = [
-  { bg: "bg-success/10", border: "border-success/20", text: "text-success", accentBg: "bg-success/20", icon: Clock },
-  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning", accentBg: "bg-warning/20", icon: Clock },
-  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning", accentBg: "bg-warning/20", icon: AlertTriangle },
-  { bg: "bg-destructive/10", border: "border-destructive/20", text: "text-destructive", accentBg: "bg-destructive/20", icon: AlertTriangle },
+  { bg: "bg-success/10", border: "border-success/20", text: "text-success-strong", accentBg: "bg-success/20", icon: Clock },
+  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning-strong", accentBg: "bg-warning/20", icon: Clock },
+  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning-strong", accentBg: "bg-warning/20", icon: AlertTriangle },
+  { bg: "bg-destructive/10", border: "border-destructive/20", text: "text-destructive-strong", accentBg: "bg-destructive/20", icon: AlertTriangle },
 ]
 
 export default async function AgingReportPage() {

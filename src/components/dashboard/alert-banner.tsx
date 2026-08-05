@@ -46,7 +46,7 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
   if (alerts.length === 0) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-4 py-3">
-        <CheckCircle2 className="size-4 text-success shrink-0" />
+        <CheckCircle2 className="size-4 text-success-strong shrink-0" />
         <p className="text-sm text-foreground">Bugün kritik operasyon uyarısı bulunmuyor.</p>
       </div>
     )
@@ -56,19 +56,19 @@ export function AlertBanner({ stats }: { stats: DashboardStats }) {
     red: {
       bg: "bg-destructive/10 border-destructive/20",
       text: "text-foreground",
-      icon: "text-destructive",
+      icon: "text-destructive-strong",
       hover: "hover:bg-destructive/20",
     },
     rose: {
       bg: "bg-destructive/10 border-destructive/20",
       text: "text-foreground",
-      icon: "text-destructive",
+      icon: "text-destructive-strong",
       hover: "hover:bg-destructive/20",
     },
     amber: {
       bg: "bg-warning/10 border-warning/20",
       text: "text-foreground",
-      icon: "text-warning",
+      icon: "text-warning-strong",
       hover: "hover:bg-warning/20",
     },
   }

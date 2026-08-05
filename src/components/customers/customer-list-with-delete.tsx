@@ -40,7 +40,7 @@ export function CustomerListWithDelete({
   return (
     <div className="space-y-2">
       {error ? (
-        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive-strong">
           {error}
         </div>
       ) : null}

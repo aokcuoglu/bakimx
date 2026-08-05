@@ -89,25 +89,25 @@ export function SupportFormView({ onBack, onSuccess }: SupportFormViewProps) {
       <div className="space-y-1.5">
         <Label htmlFor="sa-name">Ad Soyad *</Label>
         <Input id="sa-name" placeholder="Ahmet Yılmaz" value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
-        {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+        {errors.name && <p className="text-xs text-destructive-strong">{errors.name}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="sa-business">İşletme Adı *</Label>
         <Input id="sa-business" placeholder="Yılmaz Oto Servis" value={data.businessName} onChange={(e) => setData({ ...data, businessName: e.target.value })} />
-        {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
+        {errors.businessName && <p className="text-xs text-destructive-strong">{errors.businessName}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="sa-email">E-posta *</Label>
         <Input id="sa-email" type="email" inputMode="email" placeholder="ornek@servis.com" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
-        {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+        {errors.email && <p className="text-xs text-destructive-strong">{errors.email}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="sa-phone">Telefon *</Label>
         <Input id="sa-phone" inputMode="tel" placeholder="0532 123 4567" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
-        {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+        {errors.phone && <p className="text-xs text-destructive-strong">{errors.phone}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -118,7 +118,7 @@ export function SupportFormView({ onBack, onSuccess }: SupportFormViewProps) {
       <div className="space-y-1.5">
         <Label htmlFor="sa-message">Mesajınız *</Label>
         <Textarea id="sa-message" rows={3} placeholder="Size nasıl yardımcı olabiliriz?" value={data.message} onChange={(e) => setData({ ...data, message: e.target.value })} />
-        {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
+        {errors.message && <p className="text-xs text-destructive-strong">{errors.message}</p>}
       </div>
 
       <Button type="submit" size="lg" className="w-full" disabled={submitting}>

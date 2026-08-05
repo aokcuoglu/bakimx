@@ -1108,7 +1108,7 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
   })
   return (
-    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success", className)}>
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success-strong", className)}>
       <Check className="size-3 shrink-0" />
       Yapıldı
       <span className="font-normal text-muted-foreground">· {stamp}</span>
@@ -1162,7 +1162,7 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
   const label = FLASH_LABELS[kind]
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success"
+      className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success-strong"
       title={label}
       aria-live="polite"
     >
@@ -1175,7 +1175,7 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
 function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => void }) {
   return (
     <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
-      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Satırı sil">
+      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong" aria-label="Satırı sil">
       <Trash2 className="size-4" />
     </Button>
   )

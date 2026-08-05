@@ -291,11 +291,11 @@ export function CollectionQuickModal({
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Daha Önce Tahsil Edilen</span>
-                <span className="font-medium text-success">{formatTRY(paidAmount)}</span>
+                <span className="font-medium text-success-strong">{formatTRY(paidAmount)}</span>
               </div>
               <div className="flex items-center justify-between text-xs border-t pt-1.5">
                 <span className="text-muted-foreground font-medium">Kalan (tahsilat sonrası)</span>
-                <span className={cn("font-bold", newRemaining > 0 ? "text-destructive" : "text-foreground")}>
+                <span className={cn("font-bold", newRemaining > 0 ? "text-destructive-strong" : "text-foreground")}>
                   {formatTRY(newRemaining)}
                 </span>
               </div>

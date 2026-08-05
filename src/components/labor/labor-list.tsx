@@ -107,7 +107,7 @@ export function LaborList({
 
       <div className="grid grid-cols-3 gap-3">
         <KpiStat label="Toplam İşçilik" value={kpis.total} icon={Wrench} accent="text-primary" accentBg="bg-primary/10" />
-        <KpiStat label="Aktif" value={kpis.active} icon={CheckCircle2} accent="text-success" accentBg="bg-success/10" />
+        <KpiStat label="Aktif" value={kpis.active} icon={CheckCircle2} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Pasif" value={kpis.inactive} icon={Archive} accent="text-muted-foreground" accentBg="bg-muted" />
       </div>
 

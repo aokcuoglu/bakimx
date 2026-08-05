@@ -188,7 +188,7 @@ export function AppointmentRulesForm({ settings }: { settings: SettingsData }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeReminder(index)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive-strong hover:text-destructive-strong"
                     >
                       <Trash2 className="size-4" />
                       <span className="sr-only">Kaldır</span>
@@ -197,7 +197,7 @@ export function AppointmentRulesForm({ settings }: { settings: SettingsData }) {
                 </div>
               ))}
               {form.formState.errors.reminders?.message && (
-                <p className="text-xs text-destructive">{form.formState.errors.reminders.message}</p>
+                <p className="text-xs text-destructive-strong">{form.formState.errors.reminders.message}</p>
               )}
               <Button
                 type="button"

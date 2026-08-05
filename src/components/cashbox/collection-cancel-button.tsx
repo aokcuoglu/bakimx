@@ -39,7 +39,7 @@ export function CancelCollectionButton({ collectionId }: { collectionId: string 
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-destructive border-destructive/20 hover:bg-destructive/10">
+      <Button variant="outline" size="sm" onClick={() => setShowConfirm(true)} className="text-destructive-strong border-destructive/20 hover:bg-destructive/10">
         <XCircle className="size-3.5 mr-1" />
         İptal Et
       </Button>

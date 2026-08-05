@@ -637,7 +637,7 @@ export function WorkOrderDetail({
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 text-destructive shrink-0 mt-0.5" />
+          <Info className="size-4 text-destructive-strong shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
@@ -647,7 +647,7 @@ export function WorkOrderDetail({
           önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
       {deliveryBlocked && order.status === "ready_for_delivery" && (
         <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
-          <TriangleAlert className="size-4 text-warning shrink-0 mt-0.5" />
+          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <div className="min-w-0 space-y-1">
             <p className="font-medium">{unpricedItems.length} kalemin fiyatı girilmemiş.</p>
             <p className="text-muted-foreground truncate">
@@ -666,7 +666,7 @@ export function WorkOrderDetail({
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> Teslim Onayı (OTP)</p>
           {order.paymentStatus !== "paid" && (
-            <p className="text-xs text-warning">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
+            <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
           {deliverySentCode && (
             <div className="space-y-2">
@@ -705,8 +705,8 @@ export function WorkOrderDetail({
       {order.totals.hasAnyPrice && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
           <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
-          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span></span>
-          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span></span>
+          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
+          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
         </div>
       )}
 
@@ -904,8 +904,8 @@ export function WorkOrderDetail({
               ) : (
                 <>
                   <div className="flex items-center gap-2 text-xs">
-                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success" /> : <EyeOff className="size-3.5 text-destructive" />}
-                    <span className={intake.shareLinks[0]?.isActive ? "text-success font-medium" : "text-destructive font-medium"}>
+                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success-strong" /> : <EyeOff className="size-3.5 text-destructive-strong" />}
+                    <span className={intake.shareLinks[0]?.isActive ? "text-success-strong font-medium" : "text-destructive-strong font-medium"}>
                       {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
                     </span>
                   </div>
@@ -1034,11 +1034,11 @@ export function WorkOrderDetail({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Ödenen</span>
-                    <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span>
+                    <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span>
                   </div>
                   <div className="flex items-center justify-between border-t pt-2">
                     <span className="text-muted-foreground">Kalan</span>
-                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span>
+                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span>
                   </div>
                 </>
               ) : (
@@ -1087,14 +1087,14 @@ export function WorkOrderDetail({
                       key={key}
                       type="button"
                       onClick={() => focusPhoto(key)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/15 transition-colors touch-manipulation"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive-strong border border-destructive/20 hover:bg-destructive/15 transition-colors touch-manipulation"
                     >
                       <Camera className="size-3" /> {val.label}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-success flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
+                <p className="text-xs text-success-strong flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
               )}
 
               {/* Add photo trigger + dialog */}
@@ -1240,7 +1240,7 @@ export function WorkOrderDetail({
           {/* Hasar */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning" /> Hasar</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {!orderLocked && <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />}

@@ -26,7 +26,7 @@ export function SuccessView({ context, onReset, onClose }: SuccessViewProps) {
   return (
     <div className="flex flex-col items-center gap-3 p-6 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
-        <CheckCircle2 className="h-6 w-6 text-success" />
+        <CheckCircle2 className="h-6 w-6 text-success-strong" />
       </span>
       <p className="text-base font-semibold text-foreground">{m.title}</p>
       <p className="text-sm text-muted-foreground">{m.body}</p>

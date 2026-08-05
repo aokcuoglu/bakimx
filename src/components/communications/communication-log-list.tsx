@@ -44,23 +44,23 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  sms: "bg-success/10 text-success",
-  whatsapp: "bg-success/10 text-success",
+  sms: "bg-success/10 text-success-strong",
+  whatsapp: "bg-success/10 text-success-strong",
   email: "bg-primary/10 text-primary",
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  sent: "bg-success/10 text-success border-success/20",
-  failed: "bg-destructive/10 text-destructive border-destructive/20",
-  pending: "bg-warning/10 text-warning border-warning/20",
+  sent: "bg-success/10 text-success-strong border-success/20",
+  failed: "bg-destructive/10 text-destructive-strong border-destructive/20",
+  pending: "bg-warning/10 text-warning-strong border-warning/20",
   skipped: "bg-muted text-muted-foreground border-border",
 }
 
 /** Sayaç kartlarının vurgu rengi — nötr "gönderilmedi" alarma benzemesin. */
 const STAT_COLORS: Record<StatusKey, string> = {
-  sent: "text-success",
-  failed: "text-destructive",
-  pending: "text-warning",
+  sent: "text-success-strong",
+  failed: "text-destructive-strong",
+  pending: "text-warning-strong",
   skipped: "text-muted-foreground",
 }
 

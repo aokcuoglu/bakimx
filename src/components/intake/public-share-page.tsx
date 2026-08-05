@@ -309,7 +309,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               <div className="space-y-1.5 pt-2 border-t border-border">
                 {intakeForm.photos.map((photo, idx) => (
                   <div key={`${photo.type}-${idx}`} className="text-sm flex items-center gap-2">
-                    <CheckCircle2 className="size-3.5 text-success print:text-black shrink-0" />
+                    <CheckCircle2 className="size-3.5 text-success-strong print:text-black shrink-0" />
                     <span>{photo.label}</span>
                     {photo.fileUrl ? (
                       <span className="text-xs text-foreground print:text-muted-foreground">(Fotoğraf mevcut)</span>
@@ -381,12 +381,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               <div>
                 {intakeForm.approvals[0].status === "verified" ? (
                   <div className="flex items-center gap-2 text-foreground print:text-black">
-                    <CheckCircle2 className="size-5 text-success shrink-0" />
+                    <CheckCircle2 className="size-5 text-success-strong shrink-0" />
                     <span className="font-bold">Müşteri onayı verildi</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-foreground print:text-black">
-                    <Shield className="size-5 text-warning shrink-0" />
+                    <Shield className="size-5 text-warning-strong shrink-0" />
                     <span>Onay bekliyor</span>
                   </div>
                 )}
@@ -571,7 +571,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             WhatsApp ile Paylaş
           </Button>
           <Button onClick={handleCopyLink} className="w-full" variant="outline" size="xl">
-            {copied ? <CheckCircle2 className="size-5 text-success" /> : <Share2 className="size-5" />}
+            {copied ? <CheckCircle2 className="size-5 text-success-strong" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
           </Button>
           <p className="text-center text-xs text-muted-foreground/60 px-4">

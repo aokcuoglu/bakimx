@@ -222,7 +222,7 @@ export function CustomerSearchOrCreate({
             <Button type="button" size="sm" className="w-full" onClick={() => onSelected(duplicate.id, duplicate.label)}><User className="size-4 mr-1" /> Bu müşteriyi seç</Button>
           </div>
         ) : error ? (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive-strong">{error}</p>
         ) : null}
         <div className="flex justify-end gap-2">
           <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError("") }}>Vazgeç</Button>

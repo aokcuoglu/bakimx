@@ -40,7 +40,7 @@ export function ResendVerifyButton() {
         )}
       </Button>
       {state === "error" && (
-        <p className="text-sm text-destructive">Gönderilemedi. Lütfen birkaç dakika sonra tekrar deneyin.</p>
+        <p className="text-sm text-destructive-strong">Gönderilemedi. Lütfen birkaç dakika sonra tekrar deneyin.</p>
       )}
     </div>
   )
