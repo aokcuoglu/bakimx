@@ -70,8 +70,8 @@ export function TechniciansReport({ stats, performance, roleLabels }: Technician
                 </span>
               </td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.assignedJobs}</td>
-              <td className="px-4 py-2.5 font-semibold text-success">{row.completedJobs}</td>
-              <td className="px-4 py-2.5 font-semibold text-warning">{row.activeJobs}</td>
+              <td className="px-4 py-2.5 font-semibold text-success-strong">{row.completedJobs}</td>
+              <td className="px-4 py-2.5 font-semibold text-warning-strong">{row.activeJobs}</td>
               <td className="px-4 py-2.5 text-muted-foreground">
                 {row.avgCompletionDays != null ? `${row.avgCompletionDays} gün` : "—"}
               </td>

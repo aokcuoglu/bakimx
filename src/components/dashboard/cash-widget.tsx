@@ -23,19 +23,19 @@ export function CashWidget({ data }: { data: CashWidgetData }) {
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Bugünkü Tahsilat</span>
-          <span className="text-sm font-bold text-success">{formatTRY(data.todayCollected)}</span>
+          <span className="text-sm font-bold text-success-strong">{formatTRY(data.todayCollected)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Açık Alacak</span>
-          <span className="text-sm font-bold text-destructive">{formatTRY(data.openReceivable)}</span>
+          <span className="text-sm font-bold text-destructive-strong">{formatTRY(data.openReceivable)}</span>
         </div>
         {data.partialPayments > 0 && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground flex items-center gap-1.5">
               Kısmi Ödeme
-              <AlertTriangle className="size-3.5 text-warning" />
+              <AlertTriangle className="size-3.5 text-warning-strong" />
             </span>
-            <span className="text-sm font-bold text-warning">{data.partialPayments}</span>
+            <span className="text-sm font-bold text-warning-strong">{data.partialPayments}</span>
           </div>
         )}
       </div>

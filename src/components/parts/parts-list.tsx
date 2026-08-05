@@ -125,8 +125,8 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary" accentBg="bg-primary/10" />
-        <KpiStat label="Stokta Olan" value={kpis.inStock} icon={Package} accent="text-success" accentBg="bg-success/10" />
-        <KpiStat label="Kritik Stokta" value={kpis.critical} icon={AlertTriangle} accent="text-destructive" accentBg="bg-destructive/10" />
+        <KpiStat label="Stokta Olan" value={kpis.inStock} icon={Package} accent="text-success-strong" accentBg="bg-success/10" />
+        <KpiStat label="Kritik Stokta" value={kpis.critical} icon={AlertTriangle} accent="text-destructive-strong" accentBg="bg-destructive/10" />
         <KpiStat label="Stokta Yok" value={kpis.outOfStock} icon={AlertTriangle} accent="text-muted-foreground" accentBg="bg-muted" />
         <KpiStat label="Pasif Parça" value={kpis.inactive} icon={Archive} accent="text-muted-foreground" accentBg="bg-muted" />
       </div>
@@ -248,7 +248,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-semibold text-sm",
-                       part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive" : "text-foreground"
+                       part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                      )}>
                        {formatStockQty(part.stockQty)}
                      </span>
@@ -342,7 +342,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 <div className="flex items-center justify-between text-xs">
                   <span className={cn(
                     "font-semibold",
-                    part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive" : "text-foreground"
+                    part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                    )}>
                      Stok: {formatStockQty(part.stockQty)} {part.unit}
                    </span>

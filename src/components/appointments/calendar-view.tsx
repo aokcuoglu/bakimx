@@ -197,7 +197,7 @@ export function CalendarView({
           <h3 className="text-sm font-semibold text-foreground">Hatırlatma Sonuçları</h3>
           {checkResult.map((r) => (
             <div key={r.jobType} className="flex items-center gap-2 text-sm">
-              {r.failed > 0 ? <XCircle className="size-4 text-destructive" /> : <CheckCircle2 className="size-4 text-success" />}
+              {r.failed > 0 ? <XCircle className="size-4 text-destructive-strong" /> : <CheckCircle2 className="size-4 text-success-strong" />}
               <span className="text-foreground font-medium">{r.jobType === "appointment_reminder" ? "Randevu" : r.jobType === "maintenance_reminder" ? "Bakım" : "Teslimat"} Hatırlatmaları:</span>
               <span className="text-muted-foreground">{r.processed} işlendi, {r.sent} gönderildi{r.failed > 0 ? `, ${r.failed} başarısız` : ""}</span>
             </div>

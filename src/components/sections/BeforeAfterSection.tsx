@@ -43,7 +43,7 @@ export function BeforeAfterSection() {
             <ul className="mt-5 space-y-3.5">
               {beforeItems.map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm sm:text-base text-muted-foreground">
-                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive/60" />
+                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive-strong/60" />
                   {item}
                 </li>
               ))}
@@ -62,7 +62,7 @@ export function BeforeAfterSection() {
             <ul className="mt-5 space-y-3.5">
               {afterItems.map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm sm:text-base">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-strong" />
                   {item}
                 </li>
               ))}

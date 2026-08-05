@@ -162,7 +162,7 @@ export function CardFormFields({
       </div>
       {/* SKT/CVV için ortak hata satırı (üçlü grid altında tek yerde) */}
       {(errors.expiry || errors.cvv) && (
-        <p className="text-xs leading-4 text-destructive">{errors.expiry || errors.cvv}</p>
+        <p className="text-xs leading-4 text-destructive-strong">{errors.expiry || errors.cvv}</p>
       )}
 
       <Button type="submit" size="lg" disabled={submitting} className="mt-1 w-full">
@@ -191,7 +191,7 @@ function Field({
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       {children}
-      {error && <p className="min-h-[16px] text-xs leading-4 text-destructive">{error}</p>}
+      {error && <p className="min-h-[16px] text-xs leading-4 text-destructive-strong">{error}</p>}
     </div>
   )
 }

@@ -516,7 +516,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                         size="icon-sm"
                         onClick={() => remove(index)}
                         aria-label="Kalemi sil"
-                        className="text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10"
+                        className="text-muted-foreground/70 hover:text-destructive-strong hover:bg-destructive/10"
                       >
                         <Trash2 className="size-3.5" />
                       </Button>

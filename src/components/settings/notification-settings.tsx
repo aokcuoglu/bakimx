@@ -181,7 +181,7 @@ export function NotificationSettings({
                   </Button>
                 </div>
                 {result && (
-                  <p className={`text-xs ${result.type === "success" ? "text-success" : "text-destructive"}`}>
+                  <p className={`text-xs ${result.type === "success" ? "text-success-strong" : "text-destructive-strong"}`}>
                     {result.text}
                   </p>
                 )}
@@ -246,7 +246,7 @@ export function NotificationSettings({
                               type="button"
                               onClick={() => handleReset(template.key, ch)}
                               disabled={saving}
-                              className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                              className="text-xs text-muted-foreground hover:text-destructive-strong transition-colors disabled:opacity-50"
                             >
                               Varsayılana Sıfırla
                             </button>

@@ -349,11 +349,11 @@ export function InlineCreateModal({
           {/* Primary vehicle fields */}
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
             <div className="space-y-1">
-              <Label className="flex items-center gap-1">Plaka * {lowConf("plate") && <AlertTriangle className="size-3 text-warning" />}</Label>
+              <Label className="flex items-center gap-1">Plaka * {lowConf("plate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
               <Input value={fields.plate} onChange={(e) => setField("plate", e.target.value.toUpperCase())} className={fieldClass("plate")} />
             </div>
             <div className="space-y-1">
-              <Label className="flex items-center gap-1">Yıl {lowConf("modelYear") && <AlertTriangle className="size-3 text-warning" />}</Label>
+              <Label className="flex items-center gap-1">Yıl {lowConf("modelYear") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
               <Input value={fields.modelYear} onChange={(e) => setField("modelYear", e.target.value)} inputMode="numeric" className={fieldClass("modelYear")} />
             </div>
             <VehicleBrandModelPicker
@@ -368,7 +368,7 @@ export function InlineCreateModal({
           {existingMatch && (
             <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 space-y-2">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="size-4 text-warning mt-0.5 shrink-0" />
+                <AlertTriangle className="size-4 text-warning-strong mt-0.5 shrink-0" />
                 <div className="min-w-0 text-sm">
                   <p className="font-medium text-foreground">Bu plaka zaten kayıtlı: {existingMatch.label}</p>
                   <p className="text-xs text-muted-foreground">{existingMatch.sublabel}</p>
@@ -397,7 +397,7 @@ export function InlineCreateModal({
                 <Input value={fields.commercialName} onChange={(e) => setField("commercialName", e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning" />}</Label>
+                <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v ?? "")}>
                   <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
                     <SelectValue placeholder="Seçiniz">
@@ -427,7 +427,7 @@ export function InlineCreateModal({
                 </Select>
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning" />}</Label>
+                <Label className="flex items-center gap-1">Şase No (VIN) {lowConf("vin") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <div className="flex gap-2">
                   <Input value={fields.vin} onChange={(e) => setField("vin", e.target.value.toUpperCase())} className={fieldClass("vin")} />
                   <VinResolveButton
@@ -450,7 +450,7 @@ export function InlineCreateModal({
                   </p>
                 )}
                 {vinResolve.notice && <p className="text-xs text-muted-foreground">{vinResolve.notice}</p>}
-                {vinResolve.error && <p className="text-xs text-destructive">{vinResolve.error}</p>}
+                {vinResolve.error && <p className="text-xs text-destructive-strong">{vinResolve.error}</p>}
                 {vinResolve.locked && <VinLockedNotice />}
                 {vinResolve.candidates.length > 0 && (
                   <VinCandidateList
@@ -462,7 +462,7 @@ export function InlineCreateModal({
                 )}
               </div>
               <div className="space-y-1">
-                <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning" />}</Label>
+                <Label className="flex items-center gap-1">Motor No {lowConf("engineNo") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <Input value={fields.engineNo} onChange={(e) => setField("engineNo", e.target.value.toUpperCase())} className={fieldClass("engineNo")} />
               </div>
               <div className="space-y-1">
@@ -474,7 +474,7 @@ export function InlineCreateModal({
                 <Input value={fields.enginePower} onChange={(e) => setField("enginePower", e.target.value)} placeholder="85 kW" />
               </div>
               <div className="space-y-1">
-                <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning" />}</Label>
+                <Label className="flex items-center gap-1">İlk Tescil Tarihi {lowConf("firstRegistrationDate") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
                 <DatePicker value={fields.firstRegistrationDate} onChange={(v) => setField("firstRegistrationDate", v)} className={fieldClass("firstRegistrationDate")} />
               </div>
               <div className="space-y-1 col-span-2">
@@ -484,7 +484,7 @@ export function InlineCreateModal({
             </div>
           )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-sm text-destructive-strong">{error}</p>}
 
           <div className="flex items-center justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => handleCreate(true)} disabled={loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Oluştur ve Düzenle"}</Button>

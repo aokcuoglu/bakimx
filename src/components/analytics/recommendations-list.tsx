@@ -17,13 +17,13 @@ function recStyles(type: Recommendation["type"]) {
     case "warning":
       return {
         bg: "bg-warning/10 border-warning/20",
-        icon: "text-warning",
+        icon: "text-warning-strong",
         text: "text-foreground",
       }
     case "success":
       return {
         bg: "bg-success/10 border-success/20",
-        icon: "text-success",
+        icon: "text-success-strong",
         text: "text-foreground",
       }
     default:
@@ -51,7 +51,7 @@ export function RecommendationsList({ recommendations }: { recommendations: Reco
   if (recommendations.length === 0) {
     return (
       <div className="rounded-lg border border-success/20 bg-success/5 p-6 text-center">
-        <CheckCircle2 className="size-8 text-success mx-auto mb-2" />
+        <CheckCircle2 className="size-8 text-success-strong mx-auto mb-2" />
         <h3 className="text-base font-semibold text-foreground">Her Şey Yolunda</h3>
         <p className="text-sm text-muted-foreground mt-1">Şu anda dikkat gerektiren bir öneri yok.</p>
       </div>

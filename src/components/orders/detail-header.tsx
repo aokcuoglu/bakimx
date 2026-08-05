@@ -141,7 +141,7 @@ export function DetailHeader({
                               disabled={loading || a.disabled}
                               className={cn(
                                 "gap-2",
-                                isDanger && "text-destructive data-highlighted:text-destructive"
+                                isDanger && "text-destructive-strong data-highlighted:text-destructive-strong"
                               )}
                             >
                               {Icon && <Icon className="size-4" />}

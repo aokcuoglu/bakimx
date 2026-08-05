@@ -152,7 +152,7 @@ export function PurchaseDetailDialog({
         </DialogHeader>
 
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
             {error}
           </p>
         )}

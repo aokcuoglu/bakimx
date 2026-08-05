@@ -51,10 +51,10 @@ const SUPPORT_STATUSES: { value: string; label: string }[] = [
 const STATUS_BADGE: Record<string, string> = {
   new: "bg-muted text-muted-foreground",
   contacted: "bg-primary/15 text-primary",
-  qualified: "bg-success/15 text-success",
-  converted: "bg-success/15 text-success",
+  qualified: "bg-success/15 text-success-strong",
+  converted: "bg-success/15 text-success-strong",
   in_progress: "bg-primary/15 text-primary",
-  resolved: "bg-success/15 text-success",
+  resolved: "bg-success/15 text-success-strong",
   archived: "bg-muted text-muted-foreground",
 }
 
@@ -127,7 +127,7 @@ function DemoRequestRow({ r }: { r: AdminDemoRequestRow }) {
           {r.notes && (
             <p className="text-sm text-muted-foreground mt-1 italic">“{r.notes}”</p>
           )}
-          {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+          {error && <p className="text-sm text-destructive-strong mt-1">{error}</p>}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
@@ -180,7 +180,7 @@ function SupportRequestRow({ r }: { r: AdminSupportRequestRow }) {
             <p className="text-sm font-medium text-foreground mt-1">{r.subject}</p>
           )}
           <p className="text-sm text-muted-foreground mt-1">{r.message}</p>
-          {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+          {error && <p className="text-sm text-destructive-strong mt-1">{error}</p>}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 shrink-0">

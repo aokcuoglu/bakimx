@@ -620,7 +620,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                     <FormItem>
                       <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2 cursor-pointer touch-manipulation">
                         <div className="flex items-center gap-2 text-sm text-foreground">
-                          <MessageCircle className="size-4 text-success" />
+                          <MessageCircle className="size-4 text-success-strong" />
                           <span>WhatsApp izni var</span>
                         </div>
                         <FormControl>

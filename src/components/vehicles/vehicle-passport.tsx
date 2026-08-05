@@ -518,7 +518,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                               />
                             }>
                               {t.isActive ? (
-                                <ToggleRight className="size-5 text-success" />
+                                <ToggleRight className="size-5 text-success-strong" />
                               ) : (
                                 <ToggleLeft className="size-5 text-muted-foreground/70" />
                               )}
@@ -550,7 +550,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
 
                       {t.expiresAt && (
-                        <p className="text-[11px] text-warning">
+                        <p className="text-[11px] text-warning-strong">
                           Son kullanma: {formatDate(t.expiresAt)}
                           {new Date(t.expiresAt) < new Date() ? " (Süresi dolmuş)" : ""}
                         </p>
@@ -563,7 +563,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                               onClick={() => handleCopy(t.token)}
                               className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-xs font-medium transition-colors"
                             >
-                              {copied === t.token ? <CheckCircle2 className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+                              {copied === t.token ? <CheckCircle2 className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
                               {copied === t.token ? "Kopyalandı!" : "Linki Kopyala"}
                             </button>
                             <Button

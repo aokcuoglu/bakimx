@@ -150,7 +150,7 @@ export function AppointmentDetail({
       </div>
 
       {(statusUpdateError || convertError) && (
-        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm flex items-start gap-2">
           <Info className="size-4 shrink-0 mt-0.5" />
           <span>{statusUpdateError || convertError}</span>
         </div>
@@ -391,7 +391,7 @@ export function AppointmentDetail({
                   <input type="hidden" name="status" value="cancelled" />
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-2 w-full h-9 px-3 rounded-lg border border-destructive/20 bg-card text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full h-9 px-3 rounded-lg border border-destructive/20 bg-card text-sm font-medium text-destructive-strong hover:bg-destructive/10 transition-colors"
                   >
                     <XCircle className="size-4" />
                     Randevuyu İptal Et

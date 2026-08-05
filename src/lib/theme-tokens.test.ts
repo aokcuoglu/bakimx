@@ -60,6 +60,22 @@ function toRgb(value: string): [number, number, number] {
   ]
 }
 
+/** İki sRGB rengi alfa ile karıştırır (`bg-<renk>/10` gibi tonlu zeminler için). */
+function mixSrgb(base: [number, number, number], over: [number, number, number], alpha: number): [number, number, number] {
+  return base.map((v, i) => v * (1 - alpha) + over[i] * alpha) as [number, number, number]
+}
+
+function relLum(rgb: [number, number, number]): number {
+  const f = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))
+  return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2])
+}
+
+function contrastRgb(a: [number, number, number], b: [number, number, number]): number {
+  const x = relLum(a)
+  const y = relLum(b)
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+
 function contrast(bg: string, fg: string): number {
   const lum = (c: string) => {
     const f = (v: number) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))
@@ -71,9 +87,9 @@ function contrast(bg: string, fg: string): number {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
 }
 
-/** Kaynakta geçen `-foreground` renk sınıfları → kullanılan token adı. */
+/** Kaynakta geçen `-foreground` / `-strong` renk sınıfları → kullanılan token adı. */
 const CLASS_RE =
-  /\b(?:text|bg|border|ring|fill|stroke|from|via|to|decoration|outline|shadow|accent|caret|divide)-([a-z0-9-]*foreground)\b/g
+  /\b(?:text|bg|border|ring|fill|stroke|from|via|to|decoration|outline|shadow|accent|caret|divide)-([a-z0-9-]*(?:foreground|strong))\b/g
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -128,6 +144,59 @@ test("kullanılan her -foreground sınıfının temada karşılığı var", () =
         const token = m[1]
         if (!defined.has(token)) offenders.push(`${rel}:${i + 1} → ${m[0]} (--color-${token} tanımsız)`)
       }
+    })
+  }
+
+  expect(offenders).toEqual([])
+})
+
+/**
+ * Fill renkleri (`--success` vb.) canlı olmak zorunda — warning kehribar
+ * kalmalı, yoksa kahverengiye döner. Ama aynı canlı ton AÇIK yüzeyde METİN
+ * olarak AA'yı geçmiyordu. `-strong` tonları tam bu iş için var: hem kart
+ * zemininde hem de `bg-<renk>/10` tonlu zeminde okunaklı olmalılar.
+ */
+test("-strong tonları açık yüzeyde ve tonlu zeminde AA geçer", () => {
+  const failures: string[] = []
+
+  for (const which of ["root", "dark"] as const) {
+    const vars = themeBlock(which)
+    const card = vars.card
+    for (const name of ["success", "warning", "destructive"]) {
+      const strong = vars[`${name}-strong`]
+      const fill = vars[name]
+      if (!strong || !fill || !card) {
+        failures.push(`${which}/${name}: token eksik`)
+        continue
+      }
+      // `bg-<renk>/10` kartın üstünde: %10 fill + %90 kart
+      const tint = mixSrgb(toRgb(card), toRgb(fill), 0.1)
+      const onCard = contrastRgb(toRgb(card), toRgb(strong))
+      const onTint = contrastRgb(tint, toRgb(strong))
+      const tema = which === "root" ? "açık" : "koyu"
+      if (onCard < 4.5) failures.push(`${tema}/${name}-strong kart üzerinde ${onCard.toFixed(2)}:1`)
+      if (onTint < 4.5) failures.push(`${tema}/${name}-strong tonlu zeminde ${onTint.toFixed(2)}:1`)
+    }
+  }
+
+  expect(failures).toEqual([])
+})
+
+/**
+ * `text-success` / `text-warning` / `text-destructive` FILL tonunu kullanır; o
+ * ton canlı olmak zorunda olduğu için açık yüzeyde metin olarak AA'yı geçmez.
+ * Metin ve ikon için `-strong` tonu var. Çıplak kullanım geri sızmasın diye
+ * kaynak taraması yapılıyor (Tailwind sınıfı geçerli olduğundan derleyici
+ * yakalayamaz).
+ */
+test("metin için çıplak text-<renk> yerine -strong kullanılır", () => {
+  const bare = /\btext-(success|warning|destructive)(?![-\w])/
+  const offenders: string[] = []
+
+  for (const file of walk(SRC)) {
+    const rel = file.slice(SRC.length + 1)
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (bare.test(line)) offenders.push(`${rel}:${i + 1} → ${line.trim().slice(0, 90)}`)
     })
   }
 

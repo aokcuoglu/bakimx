@@ -27,7 +27,7 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
               <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
               {s.phone && <p className="text-xs text-muted-foreground mt-0.5">{s.phone}</p>}
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive shrink-0">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive-strong shrink-0">
               {s.criticalPartCount} parça
             </span>
           </Link>

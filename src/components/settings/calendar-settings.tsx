@@ -36,7 +36,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
         <div className="grid gap-3">
           <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
             {settings.provider === "mock" ? (
-              <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : (
               <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
             )}
@@ -53,9 +53,9 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
 
           <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
             {settings.provider === "google" && settings.googleConfigured ? (
-              <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : settings.provider === "google" && !settings.googleConfigured ? (
-              <XCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+              <XCircle className="size-5 text-destructive-strong shrink-0 mt-0.5" />
             ) : (
               <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
             )}
@@ -66,13 +66,13 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
               </div>
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ID</code>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ACCESS_TOKEN</code>

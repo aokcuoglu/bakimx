@@ -651,12 +651,12 @@ function ChecklistSection({
               className="mt-0.5 touch-manipulation"
             >
               {item.isCompleted
-                ? <CheckSquare className="size-5 text-success" />
+                ? <CheckSquare className="size-5 text-success-strong" />
                 : <Square className="size-5 text-muted-foreground/70 group-hover:text-muted-foreground" />
               }
             </button>
             <div className="flex-1 min-w-0">
-              <span className={cn("text-sm", item.isCompleted ? "text-success" : "text-foreground")}>
+              <span className={cn("text-sm", item.isCompleted ? "text-success-strong" : "text-foreground")}>
                 {item.description}
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
@@ -669,7 +669,7 @@ function ChecklistSection({
                     await deleteChecklistItemAction(item.id)
                   })
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive transition-opacity"
+                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity"
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -1273,7 +1273,7 @@ function AddPurchaseButton({
       >
         <div className="space-y-3 py-1">
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
@@ -1468,7 +1468,7 @@ function InternalNotesSection({
     <div className="space-y-2">
       {notes.map((note) => (
         <div key={note.id} className="flex items-start gap-2 py-2 px-3 rounded-lg bg-warning/10 border border-warning/20 group">
-          <StickyNote className="size-4 text-warning shrink-0 mt-0.5" />
+          <StickyNote className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground whitespace-pre-wrap">{note.content}</p>
             <p className="text-[10px] text-foreground/60 mt-1">
@@ -1482,7 +1482,7 @@ function InternalNotesSection({
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-warning/60 hover:text-destructive transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong/60 hover:text-destructive-strong transition-opacity"
             >
               <Trash2 className="size-3.5" />
             </button>

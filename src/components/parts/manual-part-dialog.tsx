@@ -132,7 +132,7 @@ export function ManualPartDialog({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">
-                Stok kodu{createStockItem && <span className="text-destructive"> *</span>}
+                Stok kodu{createStockItem && <span className="text-destructive-strong"> *</span>}
               </span>
               <Input
                 value={sku}
@@ -157,7 +157,7 @@ export function ManualPartDialog({
           </div>
 
           {error && (
-            <p id="manual-part-sku-error" role="alert" className="text-xs text-destructive">
+            <p id="manual-part-sku-error" role="alert" className="text-xs text-destructive-strong">
               {error}
             </p>
           )}

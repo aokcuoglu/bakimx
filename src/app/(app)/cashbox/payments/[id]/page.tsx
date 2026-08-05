@@ -91,11 +91,11 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
           )}
           {collection.status === "cancelled" && collection.cancellationReason && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-destructive flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-destructive-strong flex items-center gap-2">
                 <AlertTriangle className="size-4" />
                 İptal Bilgisi
               </h3>
-              <p className="text-sm text-destructive">{collection.cancellationReason}</p>
+              <p className="text-sm text-destructive-strong">{collection.cancellationReason}</p>
             </div>
           )}
         </div>
@@ -158,15 +158,15 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Diğer Tahsilatlar</span>
-                  <span className="font-medium text-success">{formatTRY(paidByOtherCollections)}</span>
+                  <span className="font-medium text-success-strong">{formatTRY(paidByOtherCollections)}</span>
                 </div>
                 <div className="flex justify-between text-sm border-t border-border pt-2">
                   <span className="text-muted-foreground font-medium">Toplam Tahsil Edilen</span>
-                  <span className="font-bold text-success">{formatTRY(collection.amount + paidByOtherCollections)}</span>
+                  <span className="font-bold text-success-strong">{formatTRY(collection.amount + paidByOtherCollections)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-medium">Kalan Bakiye</span>
-                  <span className="font-bold text-destructive">{formatTRY(Math.max(0, orderTotals.grandTotal - collection.amount - paidByOtherCollections))}</span>
+                  <span className="font-bold text-destructive-strong">{formatTRY(Math.max(0, orderTotals.grandTotal - collection.amount - paidByOtherCollections))}</span>
                 </div>
               </div>
 

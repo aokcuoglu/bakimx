@@ -375,7 +375,7 @@ export function PublicVehiclePassportPage({
             <div className="space-y-1.5">
               {photoHistory.map((p, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="size-3.5 text-success print:text-black shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-success-strong print:text-black shrink-0" />
                   <span>{p.label}</span>
                   <span className="text-xs text-muted-foreground/60 ml-auto">{fmtDate(p.createdAt)}</span>
                 </div>
@@ -488,7 +488,7 @@ export function PublicVehiclePassportPage({
             onClick={handleCopyLink}
             className="w-full flex items-center justify-center gap-2 py-3 border border-border bg-white text-muted-foreground rounded-lg font-medium hover:bg-muted transition-colors"
           >
-            {copied ? <CheckCircle2 className="size-5 text-success" /> : <Share2 className="size-5" />}
+            {copied ? <CheckCircle2 className="size-5 text-success-strong" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
           </button>
           <p className="text-center text-xs text-muted-foreground/60 px-4">

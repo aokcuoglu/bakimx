@@ -79,9 +79,9 @@ export function PartDetail({ part }: { part: PartType }) {
   }
 
   const movementColors: Record<string, string> = {
-    in: "text-success bg-success/10",
-    out: "text-destructive bg-destructive/10",
-    adjustment: "text-warning bg-warning/10",
+    in: "text-success-strong bg-success/10",
+    out: "text-destructive-strong bg-destructive/10",
+    adjustment: "text-warning-strong bg-warning/10",
   }
 
   return (

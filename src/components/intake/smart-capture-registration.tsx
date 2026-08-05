@@ -69,7 +69,7 @@ function ConfidenceIndicator({ confidence }: { confidence?: number }) {
       className={`ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-foreground`}
       title={`Güven: %${pct}`}
     >
-      {isLow && <AlertTriangle className="size-3 text-warning" />}
+      {isLow && <AlertTriangle className="size-3 text-warning-strong" />}
       %{pct}
     </span>
   )
@@ -208,7 +208,7 @@ export function SmartCaptureRegistration() {
           <CardContent className="py-8">
             <div className="mx-auto max-w-2xl text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success/10">
-                <CheckCircle2 className="size-7 text-success" />
+                <CheckCircle2 className="size-7 text-success-strong" />
               </div>
               <h3 className="mt-4 text-xl font-bold text-foreground">Müşteri ve araç hazır</h3>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -222,7 +222,7 @@ export function SmartCaptureRegistration() {
           <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 space-y-1">
             {saveResult.warnings.map((w, i) => (
               <p key={i} className="text-sm text-foreground flex items-start gap-2">
-                <AlertTriangle className="size-4 text-warning shrink-0 mt-0.5" />
+                <AlertTriangle className="size-4 text-warning-strong shrink-0 mt-0.5" />
                 {w}
               </p>
             ))}
@@ -350,7 +350,7 @@ export function SmartCaptureRegistration() {
     return (
       <div className="space-y-5">
         <div className="rounded-lg border border-warning/20 bg-warning/10 p-4 flex items-start gap-3">
-          <AlertTriangle className="size-5 text-warning shrink-0 mt-0.5" />
+          <AlertTriangle className="size-5 text-warning-strong shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-foreground">
               Ruhsat okuma sonucu otomatik öneridir. Lütfen bilgileri kontrol edip onaylayın.
@@ -422,7 +422,7 @@ export function SmartCaptureRegistration() {
                     )}
                     {lowConf && (
                       <p className="text-xs text-foreground flex items-center gap-1">
-                        <AlertTriangle className="size-3 text-warning" />
+                        <AlertTriangle className="size-3 text-warning-strong" />
                         Düşük güven oranı — lütfen bu alanı dikkatle kontrol edin
                       </p>
                     )}

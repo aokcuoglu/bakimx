@@ -259,7 +259,7 @@ export function PlateScanner({ onDetected, onClose }: Props) {
         <span className="text-sm font-medium">Plakayı Tara</span>
         {torchSupported && status === "ready" ? (
           <button onClick={toggleTorch} className="flex size-11 items-center justify-center rounded-full bg-white/10" aria-label="Flaş">
-            {torchOn ? <Zap className="size-5 text-warning" /> : <ZapOff className="size-5" />}
+            {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </button>
         ) : (
           <span className="size-11" />
@@ -316,7 +316,7 @@ export function PlateScanner({ onDetected, onClose }: Props) {
             {status === "scanning" && <BrandSpinner size={48} label="Plaka okunuyor…" className="text-white" />}
             {status === "error" && (
               <div className="flex flex-col items-center gap-3 text-center">
-                <AlertTriangle className="size-8 text-warning" />
+                <AlertTriangle className="size-8 text-warning-strong" />
                 <p className="max-w-sm text-sm text-white/90">{errorMsg}</p>
                 <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
                   <RefreshCw className="size-4" /> Tekrar çek
@@ -329,7 +329,7 @@ export function PlateScanner({ onDetected, onClose }: Props) {
         {/* Kamera yoksa/izin yoksa: dosyadan yükle */}
         {isFallback && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-            <AlertTriangle className="size-10 text-warning" />
+            <AlertTriangle className="size-10 text-warning-strong" />
             <p className="max-w-sm text-sm text-white/90">
               {status === "denied"
                 ? "Kamera izni verilmedi. Tarayıcı ayarlarından izin verin veya dosyadan yükleyin."

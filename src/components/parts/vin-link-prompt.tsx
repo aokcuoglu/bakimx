@@ -125,7 +125,7 @@ export function VinLinkPrompt({ vehicle }: { vehicle: PickerVehicle }) {
         </Link>
       </div>
       {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive-strong">{error}</p>}
       {locked && <VinLockedNotice />}
       {candidates.length > 0 && (
         <VinCandidateList

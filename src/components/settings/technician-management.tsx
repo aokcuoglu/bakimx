@@ -108,8 +108,8 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                   className={cn(
                     "touch-manipulation",
                     t.isActive
-                      ? "text-destructive hover:bg-destructive/10 border-destructive/20"
-                      : "text-success hover:bg-success/10 border-success/20"
+                      ? "text-destructive-strong hover:bg-destructive/10 border-destructive/20"
+                      : "text-success-strong hover:bg-success/10 border-success/20"
                   )}
                 >
                   {t.isActive ? "Pasif Yap" : "Aktif Yap"}
@@ -160,7 +160,7 @@ function AddTechnicianForm({
     >
       <h4 className="text-sm font-semibold text-foreground">Yeni Teknisyen Ekle</h4>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-destructive-strong">{error}</p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input

@@ -62,7 +62,7 @@ export function TechnicianStatusWidget({
           className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 transition-colors hover:bg-warning/15"
         >
           <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <AlertTriangle className="size-4 text-warning" />
+            <AlertTriangle className="size-4 text-warning-strong" />
             Atanmamış iş
           </span>
           <span className="text-sm font-semibold text-foreground">{unassignedCount}</span>
@@ -100,7 +100,7 @@ export function TechnicianStatusWidget({
                     </span>
                   )}
                   {t.delayedJobs > 0 && (
-                    <span className="flex items-center gap-1 text-warning">
+                    <span className="flex items-center gap-1 text-warning-strong">
                       <AlertTriangle className="size-3" />
                       {t.delayedJobs} gecikmiş
                     </span>

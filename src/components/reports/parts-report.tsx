@@ -88,7 +88,7 @@ export function PartsReport({ stats, mostUsed, lowestStock }: PartsReportProps) 
             <tr key={row.id} className="hover:bg-muted">
               <td className="px-4 py-2.5 font-medium text-foreground">{row.name}</td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.sku || "—"}</td>
-              <td className={`px-4 py-2.5 font-semibold ${row.status === "out_of_stock" ? "text-destructive" : "text-warning"}`}>
+              <td className={`px-4 py-2.5 font-semibold ${row.status === "out_of_stock" ? "text-destructive-strong" : "text-warning-strong"}`}>
                 {row.stockQty}
               </td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.criticalStockQty}</td>
@@ -96,8 +96,8 @@ export function PartsReport({ stats, mostUsed, lowestStock }: PartsReportProps) 
               <td className="px-4 py-2.5">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                   row.status === "out_of_stock"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-warning/10 text-warning"
+                    ? "bg-destructive/10 text-destructive-strong"
+                    : "bg-warning/10 text-warning-strong"
                 }`}>
                   {row.status === "out_of_stock" ? "Tükendi" : "Kritik"}
                 </span>

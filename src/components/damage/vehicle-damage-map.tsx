@@ -281,7 +281,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
       {/* Damage type legend */}
       <div className="bg-card border rounded-xl p-3.5">
         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-2">
-          <AlertTriangle className="size-3 text-destructive" />
+          <AlertTriangle className="size-3 text-destructive-strong" />
           Hasar Tipleri
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
@@ -298,7 +298,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
       {damageMarks.length > 0 && (
         <div className="bg-card border rounded-xl p-3.5">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-2">
-            <AlertTriangle className="size-3 text-destructive" />
+            <AlertTriangle className="size-3 text-destructive-strong" />
             Kayıtlar ({damageMarks.length})
           </h4>
           <div className="space-y-0.5 max-h-60 overflow-y-auto pr-1">
@@ -315,7 +315,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                   <button
                     onClick={(e) => { e.stopPropagation(); onRemoveMark(m.id) }}
                     aria-label="Hasarı kaldır"
-                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0 ml-1 opacity-100 touch-manipulation sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
+                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive-strong/70 hover:text-destructive-strong hover:bg-destructive/10 transition-all shrink-0 ml-1 opacity-100 touch-manipulation sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
                     title="Kaldır"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>

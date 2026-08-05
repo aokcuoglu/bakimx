@@ -47,7 +47,7 @@ export function TaxIdentityFields({
             maxLength={11}
             placeholder="12345678901"
           />
-          {errors?.identityNumber && <p className="text-sm text-destructive">{errors.identityNumber}</p>}
+          {errors?.identityNumber && <p className="text-sm text-destructive-strong">{errors.identityNumber}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${uid}-tax-number`}>Vergi No</Label>
@@ -59,7 +59,7 @@ export function TaxIdentityFields({
             maxLength={10}
             placeholder="1234567890"
           />
-          {errors?.taxNumber && <p className="text-sm text-destructive">{errors.taxNumber}</p>}
+          {errors?.taxNumber && <p className="text-sm text-destructive-strong">{errors.taxNumber}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`${uid}-tax-office`}>Vergi Dairesi</Label>
@@ -69,7 +69,7 @@ export function TaxIdentityFields({
             onChange={(e) => onTaxOfficeChange(e.target.value)}
             placeholder="Kadıköy VD"
           />
-          {errors?.taxOffice && <p className="text-sm text-destructive">{errors.taxOffice}</p>}
+          {errors?.taxOffice && <p className="text-sm text-destructive-strong">{errors.taxOffice}</p>}
         </div>
       </div>
     </div>

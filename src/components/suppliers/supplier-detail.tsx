@@ -217,7 +217,7 @@ export function SupplierDetail({
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-destructive" />
+                  <AlertTriangle className="size-4 text-destructive-strong" />
                   Kritik Stok Parçaları
                 </CardTitle>
               </CardHeader>
@@ -227,7 +227,7 @@ export function SupplierDetail({
                     <Link key={p.id} href={`/parts/${p.id}`}>
                       <div className="flex items-center justify-between p-2.5 bg-destructive/10 rounded-lg text-sm hover:bg-destructive/20 transition-colors">
                         <div className="flex items-center gap-2 min-w-0">
-                          <AlertTriangle className="size-3.5 text-destructive shrink-0" />
+                          <AlertTriangle className="size-3.5 text-destructive-strong shrink-0" />
                           <span className="font-medium text-foreground truncate">{p.name}</span>
                           {p.sku && <span className="text-[10px] font-mono text-muted-foreground shrink-0">{p.sku}</span>}
                         </div>

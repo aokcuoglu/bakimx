@@ -167,7 +167,7 @@ export function PartSupplierPricesField({
                 </div>
 
                 {rowError && (
-                  <p className="md:col-span-4 text-xs text-destructive">
+                  <p className="md:col-span-4 text-xs text-destructive-strong">
                     {index + 1}. tedarikçi satırı: {rowError}
                   </p>
                 )}

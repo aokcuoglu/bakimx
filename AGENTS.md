@@ -52,6 +52,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **`<Link>` as button:** use `<Button nativeButton={false} render={<Link href={...} />}>` (NOT `<Link><Button>...</Button></Link>`)
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
+- **Semantic colors have three roles — pick the right token:**
+  - fill / bar / dot / tinted bg → `bg-success`, `bg-warning/10`, `border-destructive/20` (vivid tone; warning must stay amber)
+  - text / icon on a filled surface → `text-success-foreground` (only on solid `bg-<color>`)
+  - text / icon on a light surface (card, tinted box, plain bg) → **`text-success-strong`**, `text-warning-strong`, `text-destructive-strong`
+  Bare `text-success` / `text-warning` / `text-destructive` fails WCAG AA on light
+  surfaces (2.69–3.99:1) — `src/lib/theme-tokens.test.ts` fails the build on it,
+  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair.
 - **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
 - **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
 

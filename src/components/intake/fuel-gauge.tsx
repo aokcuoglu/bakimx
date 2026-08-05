@@ -32,7 +32,7 @@ export function FuelGauge({
     <div className={cn("inline-flex flex-col items-center gap-0.5", className)}>
       <svg
         viewBox="0 0 100 62"
-        className={cn(GAUGE_WIDTHS[size], low ? "text-destructive" : "text-primary")}
+        className={cn(GAUGE_WIDTHS[size], low ? "text-destructive-strong" : "text-primary")}
         role="img"
         aria-label={`Yakıt seviyesi: ${formatFuelLevel(value)}`}
       >
@@ -65,7 +65,7 @@ export function FuelGauge({
         )}
       </svg>
       {showLabel && (
-        <span className={cn("text-xs font-medium", low ? "text-destructive" : "text-foreground")}>
+        <span className={cn("text-xs font-medium", low ? "text-destructive-strong" : "text-foreground")}>
           {formatFuelLevel(value)}
         </span>
       )}

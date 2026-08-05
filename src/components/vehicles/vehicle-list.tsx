@@ -127,14 +127,14 @@ export function VehicleList({
             <StatCard
               label="Belge Bitiyor"
               value={kpis.documentsExpiring}
-              accent="bg-warning/10 text-warning border-warning/20"
+              accent="bg-warning/10 text-warning-strong border-warning/20"
             />
           )}
           {kpis.serviceDue > 0 && (
             <StatCard
               label="Bakım Gerekli"
               value={kpis.serviceDue}
-              accent="bg-destructive/10 text-destructive border-destructive/20"
+              accent="bg-destructive/10 text-destructive-strong border-destructive/20"
             />
           )}
         </div>

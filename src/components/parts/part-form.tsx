@@ -513,7 +513,7 @@ export function PartForm({
                         />
                       </FormControl>
                       {rootMessage ? (
-                        <p className="text-sm text-destructive">{rootMessage}</p>
+                        <p className="text-sm text-destructive-strong">{rootMessage}</p>
                       ) : (
                         <FormMessage />
                       )}

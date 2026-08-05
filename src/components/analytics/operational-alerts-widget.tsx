@@ -16,9 +16,9 @@ function recIcon(type: Recommendation["type"]) {
 function iconColor(type: Recommendation["type"]): string {
   switch (type) {
     case "warning":
-      return "text-warning"
+      return "text-warning-strong"
     case "success":
-      return "text-success"
+      return "text-success-strong"
     default:
       return "text-primary"
   }
@@ -32,7 +32,7 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
         className="block rounded-lg border border-success/20 bg-success/5 p-4 hover:border-success/30 transition-colors"
       >
         <div className="flex items-center gap-2 mb-2">
-          <CheckCircle2 className="size-4 text-success" />
+          <CheckCircle2 className="size-4 text-success-strong" />
           <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         </div>
         <p className="text-xs text-foreground">Tüm işlemler yolunda.</p>
@@ -46,7 +46,7 @@ export function OperationalAlertsWidget({ recommendations }: { recommendations: 
       className="block rounded-lg border border-border bg-card p-4 hover:shadow-sm hover:border-border transition-all"
     >
       <div className="flex items-center gap-2 mb-3">
-        <AlertIcon className="size-4 text-warning" />
+        <AlertIcon className="size-4 text-warning-strong" />
         <h3 className="text-sm font-semibold text-foreground">Operasyon Uyarıları</h3>
         <span className="ml-auto text-xs text-muted-foreground">{recommendations.length} öneri</span>
       </div>

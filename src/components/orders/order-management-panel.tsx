@@ -378,7 +378,7 @@ function SummaryRow({
   muted?: boolean
   tone?: "slate" | "emerald" | "rose"
 }) {
-  const toneColor = tone === "emerald" ? "text-success" : tone === "rose" ? "text-destructive" : "text-foreground"
+  const toneColor = tone === "emerald" ? "text-success-strong" : tone === "rose" ? "text-destructive-strong" : "text-foreground"
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
@@ -455,14 +455,14 @@ export function PaymentHistoryCard({
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className={`text-sm font-semibold ${isRowCancelled ? "text-destructive line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
+                      <p className={`text-sm font-semibold ${isRowCancelled ? "text-destructive-strong line-through" : "text-foreground"}`}>{formatTRY(c.amount)}</p>
                       <span className={`inline-flex items-center h-5 px-1.5 rounded border text-[11px] font-medium ${isRowCancelled ? "bg-destructive/10 text-foreground border-destructive/20" : "bg-success/10 text-foreground border-success/20"}`}>
                         {isRowCancelled ? "İptal" : methodLabel}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{formatDate(c.paymentDate)}</p>
                     {isRowCancelled && c.cancellationReason && (
-                      <p className="text-xs text-destructive mt-0.5 truncate">{c.cancellationReason}</p>
+                      <p className="text-xs text-destructive-strong mt-0.5 truncate">{c.cancellationReason}</p>
                     )}
                     {!isRowCancelled && c.referenceNo && (
                       <p className="text-xs text-muted-foreground/70 mt-0.5">Ref: {c.referenceNo}</p>

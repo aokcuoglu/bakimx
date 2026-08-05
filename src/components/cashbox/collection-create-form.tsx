@@ -297,11 +297,11 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Daha Önce Tahsil Edilen</span>
-                      <span className="font-semibold text-success">{formatTRY(selectedOrder.paidAmount)}</span>
+                      <span className="font-semibold text-success-strong">{formatTRY(selectedOrder.paidAmount)}</span>
                     </div>
                     <div className="flex justify-between border-t border-border pt-1.5">
                       <span className="text-muted-foreground font-medium">Kalan Bakiye</span>
-                      <span className={cn("font-bold", remaining > 0 ? "text-destructive" : "text-foreground")}>{formatTRY(remaining)}</span>
+                      <span className={cn("font-bold", remaining > 0 ? "text-destructive-strong" : "text-foreground")}>{formatTRY(remaining)}</span>
                     </div>
                   </div>
                 )}
@@ -480,7 +480,7 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
 }
 
 function SummaryRow({ label, value, bold, tone = "slate" }: { label: string; value: string; bold?: boolean; tone?: "slate" | "emerald" | "primary" | "destructive" }) {
-  const color = tone === "emerald" ? "text-success" : tone === "primary" ? "text-primary" : tone === "destructive" ? "text-destructive" : "text-foreground"
+  const color = tone === "emerald" ? "text-success-strong" : tone === "primary" ? "text-primary" : tone === "destructive" ? "text-destructive-strong" : "text-foreground"
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>

@@ -114,7 +114,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.delayedJobs}
         icon={Clock}
         href="/analytics"
-        accent="text-destructive"
+        accent="text-destructive-strong"
         accentBg="bg-destructive/10"
         subtitle={health.delayedJobs > 0 ? "Teslim tarihi geçti" : undefined}
       />
@@ -123,7 +123,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.waitingApprovals}
         icon={MessageCircle}
         href="/orders?status=waiting_approval"
-        accent="text-warning"
+        accent="text-warning-strong"
         accentBg="bg-warning/10"
       />
       <MetricCard
@@ -131,7 +131,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.criticalStock}
         icon={AlertTriangle}
         href="/parts"
-        accent="text-warning"
+        accent="text-warning-strong"
         accentBg="bg-warning/10"
       />
       <MetricCard
@@ -139,7 +139,7 @@ export function HealthMetricCards({ health }: { health: OperationsHealth }) {
         value={health.unpaidWorkOrders}
         icon={Wallet}
         href="/reports/collections"
-        accent="text-destructive"
+        accent="text-destructive-strong"
         accentBg="bg-destructive/10"
         subtitle={health.openReceivables > 0 ? "Ödenmemiş iş emri" : undefined}
       />

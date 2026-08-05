@@ -39,7 +39,7 @@ export function DeleteCustomerButton({
   if (confirming) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-xs text-destructive font-medium" title={error || ""}>
+        <span className="text-xs text-destructive-strong font-medium" title={error || ""}>
           “{customerLabel}” silinsin mi?
         </span>
         <Button
@@ -63,7 +63,7 @@ export function DeleteCustomerButton({
         >
           Vazgeç
         </Button>
-        {error ? <span className="text-xs text-destructive">{error}</span> : null}
+        {error ? <span className="text-xs text-destructive-strong">{error}</span> : null}
       </span>
     )
   }

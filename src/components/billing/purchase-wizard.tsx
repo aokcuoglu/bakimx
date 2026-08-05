@@ -184,7 +184,7 @@ export function PurchaseWizard({
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive-strong">
                   {error}
                 </div>
               )}
@@ -511,7 +511,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       <Label className="text-xs">{label}</Label>
       {children}
       {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
-      <p className="min-h-[16px] text-xs leading-4 text-destructive">{error ?? ""}</p>
+      <p className="min-h-[16px] text-xs leading-4 text-destructive-strong">{error ?? ""}</p>
     </div>
   )
 }

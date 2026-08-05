@@ -33,8 +33,8 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  sms: "bg-success/10 text-success",
-  whatsapp: "bg-success/10 text-success",
+  sms: "bg-success/10 text-success-strong",
+  whatsapp: "bg-success/10 text-success-strong",
   email: "bg-primary/10 text-primary",
 }
 
@@ -45,9 +45,9 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  sent: "bg-success/10 text-success border-success/20",
-  failed: "bg-destructive/10 text-destructive border-destructive/20",
-  pending: "bg-warning/10 text-warning border-warning/20",
+  sent: "bg-success/10 text-success-strong border-success/20",
+  failed: "bg-destructive/10 text-destructive-strong border-destructive/20",
+  pending: "bg-warning/10 text-warning-strong border-warning/20",
 }
 
 export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats: Stats }) {
@@ -65,15 +65,15 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card rounded-lg border border-border p-4">
           <p className="text-xs text-muted-foreground font-medium">Gönderildi</p>
-          <p className="text-2xl font-bold text-success">{stats.sent}</p>
+          <p className="text-2xl font-bold text-success-strong">{stats.sent}</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4">
           <p className="text-xs text-muted-foreground font-medium">Başarısız</p>
-          <p className="text-2xl font-bold text-destructive">{stats.failed}</p>
+          <p className="text-2xl font-bold text-destructive-strong">{stats.failed}</p>
         </div>
         <div className="bg-card rounded-lg border border-border p-4">
           <p className="text-xs text-muted-foreground font-medium">Bekliyor</p>
-          <p className="text-2xl font-bold text-warning">{stats.pending}</p>
+          <p className="text-2xl font-bold text-warning-strong">{stats.pending}</p>
         </div>
       </div>
 

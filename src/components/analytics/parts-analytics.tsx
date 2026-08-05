@@ -40,14 +40,14 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
           label="Stok Değeri"
           value={formatTRY(analytics.stockValue)}
           icon={BarChart3}
-          accent="text-success"
+          accent="text-success-strong"
           accentBg="bg-success/10"
         />
         <StatCard
           label="Kritik Stok"
           value={analytics.criticalStockCount}
           icon={AlertTriangle}
-          accent="text-warning"
+          accent="text-warning-strong"
           accentBg="bg-warning/10"
           subtitle="Kritik seviyede"
         />
@@ -55,7 +55,7 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
           label="Tükenen Stok"
           value={analytics.outOfStockCount}
           icon={PackageX}
-          accent="text-destructive"
+          accent="text-destructive-strong"
           accentBg="bg-destructive/10"
           subtitle="Stokta yok"
         />
@@ -93,7 +93,7 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
 
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
-            <AlertTriangle className="size-4 text-destructive" />
+            <AlertTriangle className="size-4 text-destructive-strong" />
             <h3 className="text-base font-semibold text-foreground">Stok Risk Listesi</h3>
           </div>
           {analytics.stockRiskList.length === 0 ? (
@@ -121,7 +121,7 @@ export function PartsAnalyticsSection({ analytics }: { analytics: PartsAnalytics
                         {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
                       </td>
                       <td className="px-4 py-2 text-center">
-                        <span className={item.stockQty <= 0 ? "text-destructive font-semibold" : "text-warning font-semibold"}>
+                        <span className={item.stockQty <= 0 ? "text-destructive-strong font-semibold" : "text-warning-strong font-semibold"}>
                           {item.stockQty}
                         </span>
                       </td>

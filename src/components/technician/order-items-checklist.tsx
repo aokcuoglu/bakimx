@@ -105,17 +105,17 @@ function ItemGroup({
               {isPending
                 ? <Loader2 className="size-5 shrink-0 animate-spin text-muted-foreground" />
                 : isDone
-                  ? <CheckSquare className="size-5 shrink-0 text-success" />
+                  ? <CheckSquare className="size-5 shrink-0 text-success-strong" />
                   : <Square className="size-5 shrink-0 text-muted-foreground/70" />}
 
               <span className="flex-1 min-w-0">
-                <span className={cn("block truncate text-sm", isDone ? "text-success" : "text-foreground")}>
+                <span className={cn("block truncate text-sm", isDone ? "text-success-strong" : "text-foreground")}>
                   {item.name}
                 </span>
                 {item.note && <span className="block truncate text-xs text-muted-foreground">{item.note}</span>}
               </span>
 
-              <span className={cn("shrink-0 text-sm tabular-nums", isDone ? "text-success" : "text-foreground")}>
+              <span className={cn("shrink-0 text-sm tabular-nums", isDone ? "text-success-strong" : "text-foreground")}>
                 {item.quantity > 1 && <span className="mr-1.5 text-xs text-muted-foreground">×{item.quantity}</span>}
                 {price}
               </span>

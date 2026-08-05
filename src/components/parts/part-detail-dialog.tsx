@@ -177,7 +177,7 @@ export function PartDetailDialog({
               </div>
             )}
 
-            {!loading && error && <p className="py-6 text-center text-sm text-destructive">{error}</p>}
+            {!loading && error && <p className="py-6 text-center text-sm text-destructive-strong">{error}</p>}
 
             {!loading && !error && detail && (
               <div className="space-y-5">
@@ -308,7 +308,7 @@ export function PartDetailDialog({
                           <BrandSpinner size={32} label="Muadiller getiriliyor…" />
                         </div>
                       )}
-                      {crossRefsError && <p className="py-2 text-xs text-destructive">{crossRefsError}</p>}
+                      {crossRefsError && <p className="py-2 text-xs text-destructive-strong">{crossRefsError}</p>}
                       {!crossRefsLoading && !crossRefsError && crossRefs && (
                         <>
                           {crossRefs.length === 0 ? (

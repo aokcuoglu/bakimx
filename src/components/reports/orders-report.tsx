@@ -231,7 +231,7 @@ export function OrdersReport({
               <td className="px-4 py-2.5 font-medium text-foreground">{row.workOrderNo || "—"}</td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.customerName}</td>
               <td className="px-4 py-2.5 text-muted-foreground">{row.plate}</td>
-              <td className="px-4 py-2.5 font-semibold text-warning">{row.durationDays} gün</td>
+              <td className="px-4 py-2.5 font-semibold text-warning-strong">{row.durationDays} gün</td>
               <td className="px-4 py-2.5 text-muted-foreground">{statusLabel(row.status)}</td>
               <td className="px-4 py-2.5 text-muted-foreground text-xs">{formatDate(row.createdAt)}</td>
             </tr>
