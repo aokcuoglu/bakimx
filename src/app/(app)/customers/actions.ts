@@ -55,7 +55,7 @@ async function findCustomerByPhone(
 }
 
 export async function createCustomerAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const type = (formData.get("type") as string) || "individual"
   const raw = {
@@ -152,7 +152,7 @@ export async function createCustomerAction(formData: FormData) {
 }
 
 export async function updateCustomerAction(customerId: string, formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const existing = await prisma.customer.findFirst({
     where: { id: customerId, workshopId: user.workshopId },
@@ -257,7 +257,7 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
 }
 
 export async function deleteCustomerAction(customerId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
   const existing = await prisma.customer.findFirst({
     where: { id: customerId, workshopId: user.workshopId },
     include: {

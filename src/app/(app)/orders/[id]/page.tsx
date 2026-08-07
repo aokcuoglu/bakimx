@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { roleCan } from "@/lib/roles"
 import { type PlanTier } from "@/lib/plan"
 import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/layout/app-shell"
@@ -327,6 +328,7 @@ export default async function OrderDetailPage({
         activity={activity}
         editInitially={editInitially}
         laborCatalog={laborCatalog}
+        canReopen={roleCan(user.role, "order.reopen")}
       />
     </AppShell>
   )

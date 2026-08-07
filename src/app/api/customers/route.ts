@@ -2,6 +2,7 @@ import { createCustomerAction } from "@/app/(app)/customers/actions"
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function GET(request: Request) {
   const user = await requireAuth()
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
       )
     }
     return NextResponse.json({ success: true, id: result.id })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

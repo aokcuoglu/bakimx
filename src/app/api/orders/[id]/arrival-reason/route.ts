@@ -1,5 +1,6 @@
 import { updateOrderArrivalReasonAction } from "@/app/(app)/orders/actions"
 import { NextResponse } from "next/server"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

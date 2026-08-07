@@ -83,6 +83,16 @@ import {
   type Totals,
 } from "@/components/orders/order-management-panel"
 import { OrderInfoCard } from "@/components/orders/order-info-card"
+import { reopenDeliveredOrderAction } from "@/app/(app)/orders/actions"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { TechnicianProgressPanel } from "@/components/orders/technician-progress-panel"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
@@ -168,6 +178,7 @@ export function WorkOrderDetail({
   activity = [],
   editInitially = false,
   laborCatalog,
+  canReopen = false,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
@@ -179,6 +190,9 @@ export function WorkOrderDetail({
   editInitially?: boolean
   // Atölyenin işçilik kataloğu — İşçilik composer'ının öneri kaynağı.
   laborCatalog: LaborCatalogRow[]
+  // #183 — teslim edilmiş iş emrini yeniden açma yetkisi (yalnız Yönetici).
+  // Karar SUNUCUDA verilir; burada yalnız görünürlük. Asıl kapı action'da.
+  canReopen?: boolean
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -212,6 +226,29 @@ export function WorkOrderDetail({
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
   const openInfoEditor = editInitially && !orderLocked
+
+  // #183 — teslim edilmiş iş emrini yeniden açma. Gerekçe zorunlu: denetim
+  // kaydında "neden geri alındı" sorusunun cevabı dursun.
+  const [reopenOpen, setReopenOpen] = useState(false)
+  const [reopenReason, setReopenReason] = useState("")
+  const [reopening, setReopening] = useState(false)
+
+  async function handleReopen() {
+    setReopening(true)
+    try {
+      const res = await reopenDeliveredOrderAction(order.id, reopenReason)
+      if (res && "error" in res) {
+        toast.error(res.error)
+        return
+      }
+      toast.success("İş emri yeniden açıldı")
+      setReopenOpen(false)
+      setReopenReason("")
+      router.refresh()
+    } finally {
+      setReopening(false)
+    }
+  }
   const [editingInfo, setEditingInfo] = useState(openInfoEditor)
   const [savingInfo, setSavingInfo] = useState(false)
   const [editComplaint, setEditComplaint] = useState(openInfoEditor ? order.intake.customerComplaint : "")
@@ -741,6 +778,22 @@ export function WorkOrderDetail({
 
         {/* ÖZET */}
         <TabsContent value="ozet" className="space-y-5">
+          {canReopen && order.status === "delivered" && (
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">İş emri teslim edildi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Araç geri geldiyse iş emrini yeniden açabilirsiniz. Tahsilat ve müşteri
+                    onayı kayıtları korunur.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setReopenOpen(true)}>
+                  Yeniden Aç
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           {/* Müşteri & Araç */}
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
@@ -1357,6 +1410,34 @@ export function WorkOrderDetail({
           <OrderActivityLog entries={activity} />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İş emri yeniden açılsın mı?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Durum &quot;Teslime Hazır&quot;a döner. Tahsilat, paylaşım linki ve müşteri onayı
+              kayıtlarına dokunulmaz. Gerekçe denetim kaydına yazılır.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="reopen-reason">Gerekçe</Label>
+            <Textarea
+              id="reopen-reason"
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              placeholder="Örn. Müşteri aynı arızayla geri geldi"
+              className="min-h-[70px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reopening}>Vazgeç</AlertDialogCancel>
+            <Button onClick={handleReopen} disabled={reopening || reopenReason.trim().length < 5}>
+              {reopening ? <Loader2 className="size-4 animate-spin" /> : "Yeniden Aç"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

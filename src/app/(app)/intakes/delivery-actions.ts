@@ -10,6 +10,7 @@ import { isOtpExpired } from "@/lib/intake/otp"
 import { checkRateLimit, recordAttempt } from "@/lib/communications/rate-limit"
 import { sendSMSDirect } from "@/lib/communications/sender"
 import { updateOrderStatusAction } from "@/app/(app)/orders/actions"
+import { assertCan } from "@/lib/rbac"
 
 const OTP_TTL_MS = 10 * 60 * 1000
 const DELIVERY_TYPE = "vehicle_delivery"
@@ -53,6 +54,10 @@ async function checkDeliveryPricing(
 // getCurrentUserWithWorkshop kullanır (bilinçli; Task 7 sweep'ine geri alma değil).
 export async function requestDeliveryOtpAction(intakeFormId: string) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
+  // Rol kapısı EVET, plan yazma kilidi HAYIR: teslim akışı plan bitmiş atölyede
+  // de tamamlanabilmeli (aşağıdaki PlanWriteLockedError muafiyeti bu yüzden var).
+  // Bu yüzden requireWritableWorkshop bilerek kullanılmıyor.
+  assertCan(user, "order.status")
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -114,6 +119,10 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
 
 export async function verifyDeliveryOtpAction(intakeFormId: string, code: string) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
+  // Rol kapısı EVET, plan yazma kilidi HAYIR: teslim akışı plan bitmiş atölyede
+  // de tamamlanabilmeli (aşağıdaki PlanWriteLockedError muafiyeti bu yüzden var).
+  // Bu yüzden requireWritableWorkshop bilerek kullanılmıyor.
+  assertCan(user, "order.status")
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },

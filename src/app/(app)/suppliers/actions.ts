@@ -8,7 +8,7 @@ import { getValidationError } from "@/lib/validations/shared"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function createSupplierAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const raw: Record<string, string | string[]> = {}
@@ -52,7 +52,7 @@ export async function createSupplierAction(formData: FormData) {
 }
 
 export async function updateSupplierAction(supplierId: string, formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -102,7 +102,7 @@ export async function updateSupplierAction(supplierId: string, formData: FormDat
 }
 
 export async function deactivateSupplierAction(supplierId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -122,7 +122,7 @@ export async function deactivateSupplierAction(supplierId: string) {
 }
 
 export async function reactivateSupplierAction(supplierId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({
@@ -142,7 +142,7 @@ export async function reactivateSupplierAction(supplierId: string) {
 }
 
 export async function deleteSupplierAction(supplierId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const supplier = await prisma.supplier.findFirst({

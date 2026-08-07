@@ -47,7 +47,7 @@ async function readGateChecklist(
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -92,7 +92,7 @@ export async function assignTechnicianAction(orderId: string, technicianId: stri
 
 export async function unassignTechnicianAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -125,7 +125,7 @@ export async function unassignTechnicianAction(orderId: string) {
 
 export async function startWorkAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -164,7 +164,7 @@ export async function startWorkAction(orderId: string) {
 
 export async function holdWorkAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -197,7 +197,7 @@ export async function holdWorkAction(orderId: string) {
 
 export async function completeWorkAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -246,7 +246,7 @@ export async function completeWorkAction(orderId: string) {
 
 export async function addChecklistItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -285,7 +285,7 @@ export async function addChecklistItemAction(formData: FormData) {
 
 export async function toggleChecklistItemAction(itemId: string, checked: boolean) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -314,7 +314,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
 
 export async function updateChecklistNoteAction(itemId: string, note: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -337,7 +337,7 @@ export async function updateChecklistNoteAction(itemId: string, note: string) {
 
 export async function deleteChecklistItemAction(itemId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -361,7 +361,7 @@ export async function deleteChecklistItemAction(itemId: string) {
 
 export async function addInternalNoteAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -394,7 +394,7 @@ export async function addInternalNoteAction(formData: FormData) {
 
 export async function deleteInternalNoteAction(noteId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const note = await prisma.internalNote.findFirst({
     where: { id: noteId, workshopId: user.workshopId },
@@ -417,7 +417,7 @@ export async function deleteInternalNoteAction(noteId: string) {
 
 export async function createPartsRequestAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -470,7 +470,7 @@ export async function createPartsRequestAction(formData: FormData) {
 
 export async function updatePartsRequestStatusAction(requestId: string, status: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const request = await prisma.partsRequest.findFirst({
     where: { id: requestId, workshopId: user.workshopId },
@@ -507,7 +507,7 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
 
 export async function startLaborSessionAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
@@ -535,7 +535,7 @@ export async function startLaborSessionAction(orderId: string) {
 
 export async function stopLaborSessionAction(orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const activeSession = await prisma.laborSession.findFirst({
     where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
@@ -561,7 +561,7 @@ export async function stopLaborSessionAction(orderId: string) {
 
 export async function createTechnicianAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("team.manage")
 
   const fullName = (formData.get("fullName") as string || "").trim()
   const phone = (formData.get("phone") as string || "").trim()
@@ -591,7 +591,7 @@ export async function createTechnicianAction(formData: FormData) {
 
 export async function toggleTechnicianActiveAction(technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("team.manage")
 
   const technician = await prisma.technician.findFirst({
     where: { id: technicianId, workshopId: user.workshopId },
@@ -616,7 +616,7 @@ export async function toggleTechnicianActiveAction(technicianId: string) {
  */
 export async function toggleOrderItemCompletedAction(itemId: string, done: boolean) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -665,7 +665,7 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
  */
 export async function convertPartsRequestToOrderItemAction(requestId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const request = await prisma.partsRequest.findFirst({
     where: { id: requestId, workshopId: user.workshopId },
