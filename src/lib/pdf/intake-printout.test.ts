@@ -130,6 +130,40 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).toContain("2 kalem")
   })
 
+  test("hiçbir kalemde tutar yoksa Tutar sütunu hiç basılmaz", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        items: [
+          { type: "part", name: "Manuel parça", quantity: 1, unitPrice: null, totalPrice: null },
+          { type: "part", name: "Filtre, kabin havası", quantity: 1, unitPrice: null, totalPrice: null },
+        ],
+      },
+    })
+    expect(html).toContain("Manuel parça")
+    expect(html).not.toContain("Tutar</th>")
+    // `.cell-amount` stylesheet'te tanımlı kalır; asıl kontrol hücrenin hiç
+    // basılmaması.
+    expect(html).not.toContain('<td class="cell cell-amount">')
+  })
+
+  test("tek bir kalemin tutarı varsa sütun kalır, fiyatsız satır — basar", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        items: [
+          { type: "part", name: "Filtre, kabin havası", quantity: 1, unitPrice: 50000, totalPrice: null },
+          { type: "part", name: "Manuel parça", quantity: 1, unitPrice: null, totalPrice: null },
+        ],
+      },
+    })
+    expect(html).toContain("Tutar</th>")
+    expect(html).toContain("₺500,00")
+    expect(html).toContain('<td class="cell cell-amount">—</td>')
+  })
+
   test("kalem adındaki HTML kaçırılır (XSS regresyonu)", () => {
     const html = render({
       order: {

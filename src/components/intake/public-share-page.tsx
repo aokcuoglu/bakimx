@@ -104,7 +104,9 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
       workshopName: workshop.name,
       plate: intakeForm.vehicle.plate,
       statusLabel: intakeForm.statusLabel,
-      totalAmount: shareLink.showPaymentStatus && intakeForm.order ? orderItems.reduce((sum, item) => {
+      // Tutarlar kalemlerle birlikte gelir (bkz. sanitizeIntakeForPublic);
+      // showPaymentStatus yalnızca "Ödendi / Ödenmedi" etiketini yönetir.
+      totalAmount: shareLink.showOrderItems && intakeForm.order ? orderItems.reduce((sum, item) => {
         if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
         if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
         return sum
