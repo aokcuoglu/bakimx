@@ -1,5 +1,6 @@
 import { updatePassportTokenAction, deletePassportTokenAction } from "@/app/(app)/vehicles/[id]/passport/actions"
 import { NextResponse } from "next/server"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; tokenId: string }> }) {
   try {
@@ -10,8 +11,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }
 
@@ -23,7 +24,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

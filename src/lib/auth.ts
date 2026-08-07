@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import type { UserRole } from "@prisma/client"
 import { assertWriteAccess } from "@/lib/plan"
+import type { Permission } from "@/lib/roles"
 
 export interface AuthUser {
   id: string
@@ -99,9 +100,21 @@ export async function getCurrentUserWithWorkshop() {
  * `requireAuth()` / `getCurrentUserWithWorkshop()`. Billing/purchase and auth
  * actions must stay exempt so a locked workshop can recover by paying.
  */
-export async function requireWritableWorkshop() {
+/**
+ * Yazma yapan her server action'ın kapısı (#183).
+ *
+ * `permission` BİLEREK zorunlu: opsiyonel olsaydı yeni bir action eklerken
+ * yazmayı unutmak sessiz bir yetki açığı olurdu. Zorunlu olduğu için derleyici
+ * her çağrı yerini sınıflandırmaya zorlar.
+ *
+ * Sıra önemli: önce plan/abonelik yazma kilidi, sonra rol kapısı. Böylece plan
+ * biten atölyede rol ne olursa olsun yazma yine kapalı.
+ */
+export async function requireWritableWorkshop(permission: Permission) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
   assertWriteAccess(workshop)
+  const { assertCan } = await import("@/lib/rbac")
+  assertCan(user, permission)
   return { user, workshop }
 }
 

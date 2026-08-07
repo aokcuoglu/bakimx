@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 /**
  * İş emri detay sayfasının hafif "senkron sürümü" ucu.
@@ -94,7 +95,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       { version },
       { headers: { "Cache-Control": "no-store" } }
     )
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

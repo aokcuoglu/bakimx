@@ -23,7 +23,7 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -62,7 +62,7 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
 
 export async function addOrderItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -193,7 +193,7 @@ export async function addOrderItemAction(formData: FormData) {
  */
 export async function addPurchaseItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const serviceOrderId = formData.get("serviceOrderId") as string
   const rawPurchasedAt = (formData.get("purchasedAt") as string) || ""
@@ -347,7 +347,7 @@ export async function addPurchaseItemAction(formData: FormData) {
  */
 export async function updatePurchaseItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -480,7 +480,7 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -576,7 +576,7 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
 
 export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -729,7 +729,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
 
 export async function updateOrderStatusAction(orderId: string, status: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
 
@@ -839,7 +839,7 @@ const orderMetaSchema = z.object({
 
 export async function updateOrderMetaAction(orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     technicianName: formData.get("technicianName") as string,
@@ -908,7 +908,7 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
  */
 export async function updateOrderInvoiceAction(orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const parsed = orderInvoiceSchema.safeParse({
     invoiceNo: (formData.get("invoiceNo") as string) ?? "",
@@ -977,7 +977,7 @@ export async function updateOrderInvoiceAction(orderId: string, formData: FormDa
  */
 export async function updateOrderArrivalReasonAction(orderId: string, reason: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   // Ayrı `if` bloğu bilinçli: tek satırlık koşulda TS `reason`'ı daraltamıyor.
   let nextReason: ArrivalReasonKey | null = null
@@ -1039,4 +1039,67 @@ export async function getOrderAction(orderId: string) {
     },
   })
   return order
+}
+
+/**
+ * Teslim edilmiş iş emrini yeniden açar (#183 — yalnız Yönetici).
+ *
+ * Genel durum action'ı üzerinden YAPILMAZ: `ORDER_TRANSITIONS.delivered` bilerek
+ * boş bırakıldı, teslim tek yönlü bir kapı. Geri alma ayrı bir yetenek
+ * (`order.reopen`) ve ayrı bir action olarak durur ki genel durum yolunu
+ * gevşetmek zorunda kalmayalım.
+ *
+ * Teslimden hemen önceki duruma dönülür (`ready_for_delivery`): araç geri
+ * geldiğinde iş oradan devam eder. Tahsilat, paylaşım linki ve onay kayıtlarına
+ * DOKUNULMAZ — para ve müşteri onayı geçmişi geriye alınmaz.
+ */
+export async function reopenDeliveredOrderAction(orderId: string, reason: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.reopen")
+
+  const justification = reason.trim()
+  if (justification.length < 5) {
+    return { error: "Yeniden açma gerekçesi en az 5 karakter olmalıdır" }
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (order.status !== "delivered") {
+    return { error: "Yalnız teslim edilmiş iş emri yeniden açılabilir" }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: "delivered" },
+      data: { status: "ready_for_delivery" },
+    })
+    await tx.vehicleIntakeForm.updateMany({
+      where: { id: order.intakeFormId, workshopId: user.workshopId, status: "delivered" },
+      data: { status: "ready_for_delivery" },
+    })
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrder",
+    orderId,
+    "order_reopened",
+    JSON.stringify({ reason: justification, from: "delivered", to: "ready_for_delivery" }),
+    orderId,
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "order_reopened",
+    description: "İş emri yeniden açıldı",
+  })
+
+  revalidatePath(`/orders/${orderId}`)
+  revalidatePath("/orders")
+  return { success: true }
 }

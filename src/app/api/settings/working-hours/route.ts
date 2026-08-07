@@ -1,6 +1,7 @@
 import { updateWorkingHoursAction } from "@/app/(app)/settings/actions"
 import { rateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request) {
   const clientId = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown"
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

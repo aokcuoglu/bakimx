@@ -11,6 +11,7 @@ import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import { deriveBillingOrderType } from "@/lib/billing/order-type"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
+import { roleCan } from "@/lib/roles"
 
 /**
  * Creates a pending-payment BillingOrder for the current workshop (upgrade /
@@ -30,6 +31,11 @@ export async function createBillingOrder(input: {
   | { ok: false; error: string }
 > {
   const { user, workshop } = await getCurrentUserWithWorkshop()
+  // Rol kapısı EVET, plan yazma kilidi HAYIR: satın alma tam da planı bitmiş
+  // atölyenin yapacağı iş; requireWritableWorkshop burada checkout'u kilitlerdi.
+  if (!roleCan(user.role, "billing.manage")) {
+    return { ok: false, error: "Bu işlem için yetkiniz yok." }
+  }
 
   const parsed = checkoutInAppSchema.safeParse(input)
   if (!parsed.success) {

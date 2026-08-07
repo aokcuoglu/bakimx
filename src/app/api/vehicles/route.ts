@@ -2,6 +2,7 @@ import { createVehicleAction } from "@/app/(app)/vehicles/actions"
 import { getAppData } from "@/app/(app)/data"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request) {
   try {
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json(vehicles)
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
 import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
@@ -15,7 +15,7 @@ import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createIntakeAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -165,7 +165,7 @@ export async function updateIntakeDetailsAction(
     pickedUpByPhone?: string
   },
 ) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const parsed = intakeUpdateSchema.safeParse(input)
   if (!parsed.success) {
@@ -289,7 +289,7 @@ export async function updateIntakeDetailsAction(
 // delil bütünlüğü gereği kalıcıdırlar.
 
 export async function addPhotoAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string
@@ -394,7 +394,7 @@ export async function replacePhotoAction(_formData: FormData) {
  * kural). Public timeline'a olay YAZILMAZ: silme dahili bir düzeltmedir.
  */
 export async function removePhotoAction(photoId: string) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   if (!photoId) return { error: "Fotoğraf bulunamadı" }
 

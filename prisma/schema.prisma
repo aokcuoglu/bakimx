@@ -268,9 +268,12 @@ model User {
 
 // Workshop-scoped team roles. `staff` is the least-privileged operational role.
 enum UserRole {
-  owner // full control incl. team management + (future) billing
-  manager // manage team (invite / change role of non-owners) + all operations
-  staff // operational features only; no team management
+  owner // Yönetici — her şey + kapalı iş emrini yeniden açabilir
+  manager // Servis Müdürü — ekip yönetimi + tüm operasyonlar
+  usta // Usta — iş emri düzenler, durum ilerletir; ekip/kasa/katalog yönetemez
+  cirak // Çırak — parça alır ve maliyet girer; iş emri düzenleyemez
+  staff // LEGACY: #183 öncesi kayıtlar. İzin düzeyi `usta` ile aynıdır — mevcut
+  // kullanıcılar yetki KAYBETMESİN diye korunur; yeni atama listesinde yoktur.
 }
 
 // Token-based team invite. The raw token lives only in the e-mailed URL; we

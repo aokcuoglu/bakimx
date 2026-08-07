@@ -3,6 +3,7 @@ import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -35,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     revalidatePath(`/s/${link.token}`)
 
     return NextResponse.json({ success: true, isActive })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

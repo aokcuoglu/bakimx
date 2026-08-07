@@ -64,7 +64,7 @@ async function parseSupplierPrices(formData: FormData, workshopId: string): Prom
 }
 
 export async function createPartAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const raw: Record<string, string> = {}
@@ -159,7 +159,7 @@ export async function createPartAction(formData: FormData) {
  *   yapmıyor — oradaki davranış bilinçli olarak değiştirilmedi.
  */
 export async function createQuickPartAction(formData: FormData): Promise<QuickPartCreateResult> {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const raw: Record<string, string> = {}
@@ -206,7 +206,7 @@ export async function createQuickPartAction(formData: FormData): Promise<QuickPa
 }
 
 export async function updatePartAction(partId: string, formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -295,7 +295,7 @@ export async function updatePartAction(partId: string, formData: FormData) {
 }
 
 export async function deactivatePartAction(partId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -315,7 +315,7 @@ export async function deactivatePartAction(partId: string) {
 }
 
 export async function reactivatePartAction(partId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -335,7 +335,7 @@ export async function reactivatePartAction(partId: string) {
 }
 
 export async function deletePartAction(partId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const part = await prisma.partStockItem.findFirst({
@@ -371,7 +371,7 @@ export async function deletePartAction(partId: string) {
 }
 
 export async function createStockMovementAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const raw = {

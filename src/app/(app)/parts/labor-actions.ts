@@ -83,7 +83,7 @@ async function uniqueViolationMessage(
 }
 
 export async function createLaborItemAction(input: unknown) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const parsed = laborItemSchema.safeParse(input)
@@ -113,7 +113,7 @@ export async function createLaborItemAction(input: unknown) {
 }
 
 export async function updateLaborItemAction(id: string, input: unknown) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const existing = await prisma.laborCatalogItem.findFirst({ where: { id, workshopId } })
@@ -146,7 +146,7 @@ export async function updateLaborItemAction(id: string, input: unknown) {
 }
 
 export async function deactivateLaborItemAction(id: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const existing = await prisma.laborCatalogItem.findFirst({ where: { id, workshopId } })
@@ -159,7 +159,7 @@ export async function deactivateLaborItemAction(id: string) {
 }
 
 export async function deleteLaborItemAction(id: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   const existing = await prisma.laborCatalogItem.findFirst({ where: { id, workshopId } })
@@ -177,7 +177,7 @@ export async function deleteLaborItemAction(id: string) {
  * Atlanan (zaten var olan) kalem sayısı geri döner — sessiz atlama yoktur.
  */
 export async function importLaborPresetsAction(names: string[]) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("catalog.manage")
   const workshopId = user.workshopId
 
   if (!Array.isArray(names) || names.length === 0) return { error: "Hiç kalem seçilmedi" }

@@ -43,7 +43,7 @@ export async function getNotificationTemplates() {
 }
 
 export async function saveNotificationTemplateAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("settings.manage")
   const templateKey = formData.get("templateKey") as string
   const channel = formData.get("channel") as string
   const content = formData.get("content") as string
@@ -76,7 +76,7 @@ export async function saveNotificationTemplateAction(formData: FormData) {
 }
 
 export async function resetNotificationTemplateAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("settings.manage")
   const templateKey = formData.get("templateKey") as string
   const channel = formData.get("channel") as string
 
@@ -119,7 +119,7 @@ export async function sendProviderTestAction(formData: FormData): Promise<{
   providerId?: string
   error?: string
 }> {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("settings.manage")
   const workshopId = user.workshopId
 
   const channel = formData.get("channel") as CommunicationType

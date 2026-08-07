@@ -13,7 +13,7 @@ import { syncMaintenanceReminderToCalendar } from "@/lib/calendar/sync"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
 
 export async function createReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -118,7 +118,7 @@ export async function createReminderAction(formData: FormData) {
 }
 
 export async function updateReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -197,7 +197,7 @@ export async function updateReminderAction(formData: FormData) {
 }
 
 export async function completeReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -221,7 +221,7 @@ export async function completeReminderAction(formData: FormData) {
 }
 
 export async function postponeReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const id = formData.get("id") as string
   const newDueDate = formData.get("dueDate") as string
@@ -247,7 +247,7 @@ export async function postponeReminderAction(formData: FormData) {
 }
 
 export async function cancelReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")
@@ -268,7 +268,7 @@ export async function cancelReminderAction(formData: FormData) {
 }
 
 export async function createAppointmentFromReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const id = formData.get("id") as string
   if (!id) throw new Error("Hatırlatma ID gerekli")

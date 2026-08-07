@@ -6,7 +6,7 @@ import { getCalendarSyncLogs, getReminderExecutionLogs } from "@/lib/calendar"
 import { revalidatePath } from "next/cache"
 
 export async function checkRemindersAction() {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
   const results = await runAllReminderJobs(user.workshopId)
   revalidatePath("/calendar")
   return results.map((r) => ({
