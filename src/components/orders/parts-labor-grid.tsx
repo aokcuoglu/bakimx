@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import type { StockPartLite } from "@/lib/parts/suggestions"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Table,
@@ -52,7 +63,9 @@ const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İ
 
 // brandSupplierId: yalnız runtime — marka→kategori best-effort filtresi için
 // seçili markanın TecDoc supplierId'sini taşır; ASLA persist edilmez.
-type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null }
+// __partId: atölyenin kendi stok kartına bağ. Set edilirse sunucu stok düşümü
+// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli.
+type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null; __partId?: string | null }
 
 // Satır-yerel arama filtresi (persist EDİLMEZ). Combobox seçimi buraya yazar;
 // parça seçilince senkronlanır; satır temizlenince sıfırlanır.
@@ -176,6 +189,8 @@ export function PartsLaborGrid({
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
+    // Stok kartına bağlıysa sunucu stoğu düşürür (bkz. Row.__partId).
+    if (draft.__partId) fd.set("partId", draft.__partId)
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: fd })
       const data = await res.json()
@@ -640,6 +655,24 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     [stopPolling],
   )
 
+  // #157 — araca bağlı olmayan (kendi stoğumuzdan) bir parça eklenmeden önce
+  // kullanıcıya sorulur. Onaysız ekleme yok: katalog dışı parça yanlış araca
+  // takılırsa sahada maliyeti yüksek.
+  const [stockConfirm, setStockConfirm] = useState<StockPartLite | null>(null)
+
+  /** Stok kartı → kalem taslağı. partId bağı stok düşümünü tetikler. */
+  function stockDraft(p: StockPartLite): Partial<Row> & { source: "manual" } {
+    return {
+      source: "manual",
+      name: p.name,
+      sku: p.sku,
+      brand: p.brand,
+      unit: p.unit,
+      unitPrice: p.salePrice,
+      __partId: p.id,
+    }
+  }
+
   /** Arama sonucu → kalem taslağı; hem satır seçimi hem detay modalı kullanır. */
   function catalogDraft(a: ArticleSearchResult): Partial<Row> & { source: "catalog" } {
     return {
@@ -748,6 +781,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         placeholder="Parça no, adı veya marka ara…"
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
+        onSelectStockPart={(p) => setStockConfirm(p)}
         onShowDetail={(a) =>
           onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
@@ -763,6 +797,40 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         refreshSignal={refreshSignal}
         onResultsCount={handleResultsCount}
       />
+
+      {/* #157 — araca bağlı olmayan parçada onay. Stok adedi burada gösterilir:
+          sunucu stok yetmezse eklemeyi tümüyle reddediyor, kullanıcı bunu
+          reddedilmeden ÖNCE görsün. */}
+      <AlertDialog open={stockConfirm != null} onOpenChange={(o) => { if (!o) setStockConfirm(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu parça bu araca bağlı değil</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">{stockConfirm?.name}</span> kendi stok
+              kartlarınızdan geliyor; aracın katalog listesinde yer almıyor. Uygun olduğundan emin
+              misiniz?
+              {stockConfirm != null && (
+                <span className="mt-2 block">
+                  Mevcut stok: {stockConfirm.stockQty} {stockConfirm.unit}
+                  {stockConfirm.stockQty <= 0 && " — stok yok, ekleme reddedilebilir."}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const p = stockConfirm
+                setStockConfirm(null)
+                if (p) void add(stockDraft(p))
+              }}
+            >
+              Yine de ekle
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {prefetching && (
         <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
