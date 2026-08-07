@@ -87,7 +87,11 @@ export function TeamManagement({
   const [error, setError] = useState("")
   const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState<UserRole>("staff")
+  // Varsayılan "staff" idi; #183'te bu rol LEGACY oldu ve atanabilir listesinden
+  // çıkarıldı. Varsayılan güncellenmediği için davet formu, seçenekler arasında
+  // BULUNMAYAN "Personel (eski)" ile açılıyor ve dokunulmazsa yeni kullanıcı eski
+  // role düşüyordu. Yeni davetin makul tabanı: Usta.
+  const [inviteRole, setInviteRole] = useState<UserRole>("usta")
   const [lastInviteUrl, setLastInviteUrl] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -127,13 +131,20 @@ export function TeamManagement({
               <span
                 className={cn(
                   "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  atLimit ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"
+                  // Sabit renk yerine tema token'ı (proje UI kuralı); açık zeminde
+                  // metin AA geçsin diye warning'in -strong tonu.
+                  atLimit ? "bg-warning/15 text-warning-strong" : "bg-muted text-muted-foreground"
                 )}
               >
                 {seatUsed} / {seatLimit} koltuk
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">İş yerinizin kullanıcılarını ve yetkilerini yönetin</p>
+            {/* Aşağıdaki "Teknisyenler & Ustalar" kartıyla karışıyordu: iki listede
+                de "Usta" ve "Yönetici" geçiyor. Metin, hangisinin YETKİ verdiğini
+                söylemek zorunda (#274). */}
+            <p className="text-xs text-muted-foreground">
+              Uygulamaya giriş yapan kullanıcılar. Rol, kişinin uygulamada neyi yapabileceğini belirler.
+            </p>
           </div>
         </div>
         {canManage && (
@@ -149,7 +160,7 @@ export function TeamManagement({
       </div>
 
       {canManage && atLimit && (
-        <div className="mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900">
+        <div className="mb-4 p-3 rounded-lg border border-warning/20 bg-warning/10 text-sm text-warning-strong">
           Koltuk limitiniz dolu ({seatUsed}/{seatLimit}). Yeni kullanıcı davet etmek için{" "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">
             paketinizi yükseltin
@@ -198,7 +209,7 @@ export function TeamManagement({
               (r) => {
                 setLastInviteUrl(r.inviteUrl || "")
                 setInviteEmail("")
-                setInviteRole("staff")
+                setInviteRole("usta")
                 setShowInvite(false)
               }
             )
