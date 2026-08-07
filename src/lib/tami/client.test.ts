@@ -20,6 +20,20 @@ const cfg: TamiConfig = {
 
 // buildTamiPaymentBody'den üretilir (Task 1 wire şeması) — elle şekillendirilmiş bir
 // istek gövdesi DEĞİL, böylece bu test dosyası gerçek şemayla senkron kalır.
+/**
+ * Rastgele üretilen korelasyon UUID'lerini sabitler.
+ *
+ * CVV üç karakterdir ("423"); log çıktısının TAMAMINDA alt-dize olarak aranınca
+ * `correlationId` UUID'sinin içinde tesadüfen geçebiliyor ve test sahte kırılıyor.
+ * Bu, 2026-08-07 prod sürüm kapısını düşürdü. Kontrolün gücü korunmalı, ama
+ * karşılaştırma testin konusu OLMAYAN rastgele veriye takılmamalı: UUID'leri
+ * maskeleyip asıl yükte tam alt-dize aramasına devam ediyoruz.
+ */
+const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
+function withoutRandomIds(value: string): string {
+  return value.replace(UUID_RE, "<correlation-id>")
+}
+
 const sampleInput = buildTamiPaymentBody({
   orderId: "ORDER-CLIENT-TEST-1",
   amountMinor: 19990,
@@ -207,7 +221,7 @@ test("auth3ds: fetch reddedilirse (ağ hatası) → TamiError fırlatır, hata l
     console.error = originalConsoleError
   }
 
-  const serialized = JSON.stringify(errorLogs)
+  const serialized = withoutRandomIds(JSON.stringify(errorLogs))
   expect(serialized).not.toContain(sampleInput.card.number)
   expect(serialized).not.toContain(sampleInput.card.cvv)
   expect(serialized).toContain("[redacted]")
@@ -244,11 +258,13 @@ test("TamiError: hata nesnesi istek gövdesini/kart verisini taşımaz (serializ
 
   expect(caught).toBeInstanceOf(TamiError)
   const tamiErr = caught as TamiError
-  const serializedErr = JSON.stringify({
-    ...tamiErr,
-    message: tamiErr.message,
-    stack: tamiErr.stack,
-  })
+  const serializedErr = withoutRandomIds(
+    JSON.stringify({
+      ...tamiErr,
+      message: tamiErr.message,
+      stack: tamiErr.stack,
+    })
+  )
   expect(serializedErr).not.toContain(sampleInput.card.number)
   expect(serializedErr).not.toContain(sampleInput.card.cvv)
   // JWS-benzeri string'ler TamiError üzerinden de sızmamalı
