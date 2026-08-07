@@ -1,4 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
+import { roleCan } from "@/lib/roles"
 import { type PlanTier } from "@/lib/plan"
 import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/layout/app-shell"
@@ -10,6 +11,8 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
+import { getLaborCatalog } from "@/lib/labor/queries"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export default async function OrderDetailPage({
   params,
@@ -37,7 +40,7 @@ export default async function OrderDetailPage({
           photos: {
             // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
             // kaleminin satın-alma modalından (items.photos) erişilir.
-            where: { serviceOrderItemId: null },
+            where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
             orderBy: { createdAt: "asc" },
             select: {
               id: true,
@@ -55,14 +58,13 @@ export default async function OrderDetailPage({
           },
           approvals: { orderBy: { createdAt: "desc" }, take: 1 },
           shareLinks: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" } },
-          timelineEvents: { orderBy: { createdAt: "asc" } },
         },
       },
       items: {
         orderBy: { createdAt: "asc" },
         include: {
           // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı + alan teknisyen.
-          photos: { select: { id: true } },
+          photos: { where: VISIBLE_PHOTO, select: { id: true } },
           purchasedBy: { select: { fullName: true } },
         },
       },
@@ -71,6 +73,10 @@ export default async function OrderDetailPage({
         orderBy: { createdAt: "desc" },
         include: { requestedBy: { select: { fullName: true } } },
       },
+      // Teknisyen sekmesi (salt okunur) — düzenleme teknisyen panelinde kalır.
+      checklistItems: { orderBy: { sortOrder: "asc" } },
+      laborSessions: { orderBy: { startTime: "desc" } },
+      internalNotes: { orderBy: { createdAt: "desc" } },
     },
   })
 
@@ -106,6 +112,9 @@ export default async function OrderDetailPage({
     estimatedDeliveryAt: order.estimatedDeliveryAt ? order.estimatedDeliveryAt.toISOString() : null,
     createdAt: order.createdAt.toISOString(),
     notes: order.notes,
+    invoiceNo: order.invoiceNo,
+    invoiceDate: order.invoiceDate ? order.invoiceDate.toISOString() : null,
+    arrivalReason: order.arrivalReason,
     discountAmount: order.discountAmount,
     taxRate: order.taxRate,
     totals: {
@@ -157,6 +166,27 @@ export default async function OrderDetailPage({
       requestedByName: p.requestedBy?.fullName ?? null,
       convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
     })),
+    checklistItems: order.checklistItems.map((c) => ({
+      id: c.id,
+      category: c.category,
+      description: c.description,
+      isCompleted: c.isCompleted,
+      isRequired: c.isRequired,
+      completedAt: c.completedAt ? c.completedAt.toISOString() : null,
+      note: c.note,
+    })),
+    laborSessions: order.laborSessions.map((l) => ({
+      id: l.id,
+      startTime: l.startTime.toISOString(),
+      endTime: l.endTime ? l.endTime.toISOString() : null,
+      durationMinutes: l.durationMinutes,
+    })),
+    internalNotes: order.internalNotes.map((n) => ({
+      id: n.id,
+      content: n.content,
+      isPinned: n.isPinned,
+      createdAt: n.createdAt.toISOString(),
+    })),
     customer: {
       id: intakeForm.customer.id,
       firstName: intakeForm.customer.firstName,
@@ -191,6 +221,10 @@ export default async function OrderDetailPage({
       fuelLevelAtIntake: intakeForm.fuelLevelAtIntake,
       customerComplaint: intakeForm.customerComplaint,
       internalNote: intakeForm.internalNote,
+      droppedOffByName: intakeForm.droppedOffByName,
+      droppedOffByPhone: intakeForm.droppedOffByPhone,
+      pickedUpByName: intakeForm.pickedUpByName,
+      pickedUpByPhone: intakeForm.pickedUpByPhone,
       createdAt: intakeForm.createdAt.toISOString(),
       approvedAt: intakeForm.approvedAt ? intakeForm.approvedAt.toISOString() : null,
       shareToken: intakeForm.shareLinks[0]?.token || null,
@@ -255,11 +289,6 @@ export default async function OrderDetailPage({
       createdAt: a.createdAt,
     })),
     shareLinks: intakeForm.shareLinks.map((s) => ({ id: s.id, token: s.token, isActive: s.isActive })),
-    timelineEvents: intakeForm.timelineEvents.map((t) => ({
-      eventType: t.eventType,
-      description: t.description,
-      createdAt: t.createdAt,
-    })),
     order: {
       id: order.id,
       status: order.status,
@@ -284,6 +313,8 @@ export default async function OrderDetailPage({
     intakeFormId: intakeForm.id,
   })
 
+  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
+
   return (
     <AppShell
       workshopName={workshop?.name}
@@ -296,6 +327,8 @@ export default async function OrderDetailPage({
         hasAiAdvisor={hasAiAdvisor}
         activity={activity}
         editInitially={editInitially}
+        laborCatalog={laborCatalog}
+        canReopen={roleCan(user.role, "order.reopen")}
       />
     </AppShell>
   )

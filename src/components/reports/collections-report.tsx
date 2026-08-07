@@ -62,7 +62,7 @@ export function CollectionsReport({ stats, dailyCollections, monthlyCollections,
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Nakit</p>
-            <p className="text-lg font-bold text-success">{formatTRY(stats.cashTotal)}</p>
+            <p className="text-lg font-bold text-success-strong">{formatTRY(stats.cashTotal)}</p>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Kredi Kartı</p>

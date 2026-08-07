@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { requestDeliveryOtpAction } from "@/app/(app)/intakes/delivery-actions"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,7 +10,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
     return NextResponse.json(result)
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

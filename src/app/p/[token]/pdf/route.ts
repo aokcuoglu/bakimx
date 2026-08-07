@@ -5,6 +5,7 @@ import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import { VEHICLE_ZONES, fuelTypeLabel } from "@/lib/constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { escapeHtml } from "@/lib/html-escape"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -249,7 +250,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
               damageMarks: true,
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — pasaport PDF'ine sızmaz.
-                where: { serviceOrderItemId: null },
+                where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
                 select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
               },
               timelineEvents: {

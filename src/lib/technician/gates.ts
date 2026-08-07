@@ -14,7 +14,7 @@ export interface GateOrderItem {
   completedAt: Date | string | null
 }
 
-/** "İşe Başla" kapısı: araç teslim alınırken yapılması gerekenler. */
+/** "Tamire Başla" kapısı: araç teslim alınırken yapılması gerekenler. */
 export const START_GATE_CATEGORIES = ["inspection"] as const
 /** "Tamamla" kapısı: onarım ve teslim kontrolleri. */
 export const COMPLETE_GATE_CATEGORIES = ["repair", "delivery"] as const
@@ -30,9 +30,25 @@ export function countIncompleteItems(items: GateOrderItem[]): number {
   return items.filter((i) => !i.completedAt).length
 }
 
+/**
+ * Kapalı gelen "Kontrol Listesi" başlığındaki özet: teknisyen bölümü açmadan
+ * ilerlemeyi ve kalan zorunlu madde sayısını görebilsin.
+ */
+export function summarizeChecklist(items: GateChecklistItem[]): {
+  total: number
+  completed: number
+  missingRequired: number
+} {
+  return {
+    total: items.length,
+    completed: items.filter((i) => i.isCompleted).length,
+    missingRequired: items.filter((i) => i.isRequired && !i.isCompleted).length,
+  }
+}
+
 export function startWorkBlockMessage(missingChecklist: number): string | null {
   if (missingChecklist <= 0) return null
-  return `Araç kabul kontrolleri tamamlanmadan işe başlanamaz (${missingChecklist} madde eksik)`
+  return `Araç kabul kontrolleri tamamlanmadan tamire başlanamaz (${missingChecklist} madde eksik)`
 }
 
 export function completeWorkBlockMessage(

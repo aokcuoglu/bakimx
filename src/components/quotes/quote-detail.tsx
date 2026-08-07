@@ -393,7 +393,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
                       type="button"
                       size="sm"
                       variant={s === "cancelled" ? "outline" : "default"}
-                      className={cn("w-full gap-2", s === "cancelled" && "text-destructive border-destructive/20 hover:bg-destructive/10")}
+                      className={cn("w-full gap-2", s === "cancelled" && "text-destructive-strong border-destructive/20 hover:bg-destructive/10")}
                       disabled={statusLoading}
                       onClick={() => handleStatusChange(s)}
                     >

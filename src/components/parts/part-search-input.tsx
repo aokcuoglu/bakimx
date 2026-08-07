@@ -15,9 +15,16 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { Info, PackageSearch, Search, XIcon, Plus, PencilLine } from "lucide-react"
+import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import {
+  buildPartSuggestions,
+  suggestionKey,
+  suggestionLabel,
+  type PartSuggestion,
+  type StockPartLite,
+} from "@/lib/parts/suggestions"
 
 /**
  * "Parça adı" alanı: serbest metin + (araç kataloğa bağlıysa) cache'lenmiş
@@ -49,6 +56,7 @@ export function PartSearchInput({
   refreshSignal,
   onResultsCount,
   onShowDetail,
+  onSelectStockPart,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -63,6 +71,11 @@ export function PartSearchInput({
   /** Yazarken çağrılır — YALNIZ yerel güncelleme (kaydetmez); katalog modunda arama sorgusu. */
   onNameChange: (name: string) => void
   onSelectArticle: (a: ArticleSearchResult) => void
+  /**
+   * Atölyenin kendi stok kartı seçildi (#181). Verilmezse stok kartları hiç
+   * aranmaz — bileşenin eski davranışı korunur.
+   */
+  onSelectStockPart?: (p: StockPartLite) => void
   /** Serbest-metin adı kalıcılaştır (yalnız katalogsuz modda blur'da; katalogda seçim kalıcılaştırır). */
   onCommit?: () => void
   /** Parça seçimini (ad/SKU/marka/kategori) temizler; showClear ile gösterilir. */
@@ -152,6 +165,7 @@ export function PartSearchInput({
   ) : null
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<ArticleSearchResult[]>([])
+  const [stockResults, setStockResults] = useState<StockPartLite[]>([])
   // Dış `value` (kayıtlı ad / otomatik-doldur / seçim) query'yi güncellesin ama
   // arama TETİKLEMESİN — yoksa doldurulan ad tekrar aranıp liste geri açılır.
   const skipNextSearch = useRef(false)
@@ -213,8 +227,42 @@ export function PartSearchInput({
     // refreshSignal: prefetch dolarken dışarıdan tetiklenen yeniden-arama sinyali.
   }, [query, vehicleTypeId, supplierId, categoryId, refreshSignal])
 
-  // Araç kataloğa bağlı değil → arama yok, düz metin girişi + (composer'da) create aksiyonları.
-  if (vehicleTypeId == null) {
+  // Atölyenin kendi stok kartlarında arama (#181). TecDoc aramasından BAĞIMSIZ:
+  // araç kataloğa bağlı olmasa da stok kartları aranabilir olmalı — iş emri
+  // araması bugüne dek kendi stoğumuzu hiç sorgulamıyordu.
+  useEffect(() => {
+    if (!onSelectStockPart) return
+    const q = query.trim()
+    if (q.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStockResults([])
+      return
+    }
+    let active = true
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/parts/search?q=${encodeURIComponent(q)}`)
+        const data = await res.json()
+        if (active && res.ok) setStockResults(Array.isArray(data.parts) ? data.parts : [])
+      } catch {
+        /* stok araması sessizce boş kalır — katalog araması ve serbest metin çalışır */
+      }
+    }, 300)
+    return () => {
+      active = false
+      clearTimeout(t)
+    }
+  }, [query, onSelectStockPart])
+
+  const suggestions = buildPartSuggestions(results, stockResults)
+
+  // Araç kataloğa bağlı değil VE stok araması da yok → arama yapacak bir şey
+  // kalmaz, düz metin girişi + (composer'da) create aksiyonları.
+  //
+  // Stok araması varsa düz input'a DÜŞÜLMEZ: katalogsuz araç, atölyenin kendi
+  // stok kartlarının en çok işe yaradığı durum (#181). Bu erken dönüş yüzünden
+  // stok sonuçları hiç görünmüyordu.
+  if (vehicleTypeId == null && !onSelectStockPart) {
     const inputGroup = (
       <InputGroup>
         {skuChip}
@@ -253,12 +301,12 @@ export function PartSearchInput({
 
   return (
     <Autocomplete
-      items={results}
+      items={suggestions}
       value={query}
       filter={null}
       autoHighlight
       openOnInputClick={supplierId != null || categoryId != null}
-      itemToStringValue={(a: ArticleSearchResult) => a.productName}
+      itemToStringValue={suggestionLabel}
       onValueChange={(v: string) => {
         setQuery(v)
         onNameChange(v)
@@ -270,7 +318,7 @@ export function PartSearchInput({
           onKeyDown={(e) => {
             // Sonuç yokken Enter → yazılan serbest metni kaydet (katalogda olmayan
             // parça). Sonuç varsa Enter'ı Autocomplete işler (autoHighlight → seçim).
-            if (e.key === "Enter" && results.length === 0 && query.trim()) {
+            if (e.key === "Enter" && suggestions.length === 0 && query.trim()) {
               e.preventDefault()
               onCommit?.()
             }
@@ -301,10 +349,33 @@ export function PartSearchInput({
             )}
           </AutocompleteEmpty>
           <AutocompleteList>
-            {(a: ArticleSearchResult) => (
+            {(s: PartSuggestion) => (s.kind === "stock" ? (
+              // #181 — atölyenin kendi stok kartı: araca bağlı DEĞİL, ünlemle
+              // ayrışsın ki kullanıcı listeden anlasın. Onay akışı çağıranda (#157).
               <AutocompleteItem
-                key={a.tecdocArticleId}
-                value={a}
+                key={suggestionKey(s)}
+                value={s}
+                onClick={() => onSelectStockPart?.(s.part)}
+              >
+                <span className="size-8 shrink-0 rounded bg-warning/15 flex items-center justify-center">
+                  <TriangleAlert className="size-4 text-warning-strong" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{s.part.name}</span>
+                  <span className="block text-xs text-muted-foreground truncate">
+                    {s.part.sku && <span className="font-mono">{s.part.sku}</span>}
+                    {s.part.brand && <> · {s.part.brand}</>}
+                    <> · Stok: {s.part.stockQty} {s.part.unit}</>
+                  </span>
+                  <span className="block text-[11px] text-warning-strong">
+                    Bu araca bağlı değil — kendi stok kartınız
+                  </span>
+                </span>
+              </AutocompleteItem>
+            ) : (() => { const a = s.article; return (
+              <AutocompleteItem
+                key={suggestionKey(s)}
+                value={s}
                 onClick={() => onSelectArticle(a)}
               >
                 {a.imageUrl ? (
@@ -350,7 +421,7 @@ export function PartSearchInput({
                   </button>
                 )}
               </AutocompleteItem>
-            )}
+            ) })())}
           </AutocompleteList>
           {renderCreateActions(query)}
         </AutocompleteContent>

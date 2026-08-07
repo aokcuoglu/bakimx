@@ -1,8 +1,9 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
+import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -10,9 +11,11 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isIntakeWriteLocked } from "@/lib/status-transitions"
 import { nanoid } from "nanoid"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
+import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createIntakeAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -21,11 +24,23 @@ export async function createIntakeAction(formData: FormData) {
     fuelLevelAtIntake: formData.get("fuelLevelAtIntake") as string,
     customerComplaint: formData.get("customerComplaint") as string,
     internalNote: formData.get("internalNote") as string,
+    arrivalReason: formData.get("arrivalReason") as string,
+    droppedOffByName: formData.get("droppedOffByName") as string,
+    droppedOffByPhone: formData.get("droppedOffByPhone") as string,
   }
 
   const parsed = intakeCreateSchema.safeParse(raw)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+
+  // Tanınmayan neden sessizce yutulmaz; şema serbest string kabul ettiği için
+  // asıl kontrol burada.
+  const rawReason = parsed.data.arrivalReason ?? ""
+  let arrivalReason: ArrivalReasonKey | null = null
+  if (rawReason !== "") {
+    if (!isArrivalReason(rawReason)) return { error: "Geçersiz geliş nedeni" }
+    arrivalReason = rawReason
   }
 
   const customer = await prisma.customer.findFirst({
@@ -55,9 +70,12 @@ export async function createIntakeAction(formData: FormData) {
         fuelLevelAtIntake: parsed.data.fuelLevelAtIntake ?? null,
         customerComplaint: parsed.data.customerComplaint,
         internalNote: parsed.data.internalNote || null,
+        // Boş bırakılırsa "müşteri aracı kendi getirdi" demektir.
+        droppedOffByName: parsed.data.droppedOffByName?.trim() || null,
+        droppedOffByPhone: parsed.data.droppedOffByPhone?.trim() || null,
       },
     })
-    const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id)
+    const order = await createServiceOrderForIntake(tx, user.workshopId, intake.id, arrivalReason)
     // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
     const km = parsed.data.mileageAtIntake
     if (km) {
@@ -97,6 +115,7 @@ export async function getIntakeAction(id: string) {
       customer: true,
       vehicle: true,
       photos: {
+        where: VISIBLE_PHOTO,
         select: {
           id: true,
           type: true,
@@ -135,9 +154,18 @@ export async function getIntakesAction() {
 
 export async function updateIntakeDetailsAction(
   intakeFormId: string,
-  input: { customerComplaint: string; internalNote?: string; mileageAtIntake?: string; fuelLevelAtIntake?: number | null },
+  input: {
+    customerComplaint: string
+    internalNote?: string
+    mileageAtIntake?: string
+    fuelLevelAtIntake?: number | null
+    droppedOffByName?: string
+    droppedOffByPhone?: string
+    pickedUpByName?: string
+    pickedUpByPhone?: string
+  },
 ) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const parsed = intakeUpdateSchema.safeParse(input)
   if (!parsed.success) {
@@ -161,6 +189,13 @@ export async function updateIntakeDetailsAction(
   const newFuel =
     parsed.data.fuelLevelAtIntake === undefined ? intake.fuelLevelAtIntake : parsed.data.fuelLevelAtIntake
 
+  // Teslim eden/alan kişiler: alan gönderilmediyse korunur, boş gönderildiyse
+  // temizlenir ("müşteri kendi getirdi/alacak").
+  const newDropName = resolveHandoverField(parsed.data.droppedOffByName, intake.droppedOffByName)
+  const newDropPhone = resolveHandoverField(parsed.data.droppedOffByPhone, intake.droppedOffByPhone)
+  const newPickName = resolveHandoverField(parsed.data.pickedUpByName, intake.pickedUpByName)
+  const newPickPhone = resolveHandoverField(parsed.data.pickedUpByPhone, intake.pickedUpByPhone)
+
   // Km geriye gidemez: yeni km aracın son kayıtlı km'sinden düşük olamaz.
   if (newMileage != null && intake.vehicle.mileage != null && newMileage < intake.vehicle.mileage) {
     return { error: `Girilen kilometre aracın son kayıtlı kilometresinden (${intake.vehicle.mileage} km) düşük olamaz.` }
@@ -172,6 +207,12 @@ export async function updateIntakeDetailsAction(
   if ((intake.internalNote ?? null) !== newNote) changes.push("iç not")
   if ((intake.mileageAtIntake ?? null) !== newMileage) changes.push("kilometre")
   if ((intake.fuelLevelAtIntake ?? null) !== newFuel) changes.push("yakıt seviyesi")
+  if ((intake.droppedOffByName ?? null) !== newDropName || (intake.droppedOffByPhone ?? null) !== newDropPhone) {
+    changes.push("aracı getiren kişi")
+  }
+  if ((intake.pickedUpByName ?? null) !== newPickName || (intake.pickedUpByPhone ?? null) !== newPickPhone) {
+    changes.push("aracı teslim alacak kişi")
+  }
 
   if (changes.length === 0) return { success: true }
 
@@ -183,6 +224,10 @@ export async function updateIntakeDetailsAction(
         internalNote: newNote,
         mileageAtIntake: newMileage,
         fuelLevelAtIntake: newFuel,
+        droppedOffByName: newDropName,
+        droppedOffByPhone: newDropPhone,
+        pickedUpByName: newPickName,
+        pickedUpByPhone: newPickPhone,
       },
     })
     // Aracın güncel km'sini canlı tut (km geri gitmesin); araç workshop-scoped doğrulandı.
@@ -207,12 +252,20 @@ export async function updateIntakeDetailsAction(
         internalNote: intake.internalNote,
         mileageAtIntake: intake.mileageAtIntake,
         fuelLevelAtIntake: intake.fuelLevelAtIntake,
+        droppedOffByName: intake.droppedOffByName,
+        droppedOffByPhone: intake.droppedOffByPhone,
+        pickedUpByName: intake.pickedUpByName,
+        pickedUpByPhone: intake.pickedUpByPhone,
       },
       after: {
         customerComplaint: newComplaint,
         internalNote: newNote,
         mileageAtIntake: newMileage,
         fuelLevelAtIntake: newFuel,
+        droppedOffByName: newDropName,
+        droppedOffByPhone: newDropPhone,
+        pickedUpByName: newPickName,
+        pickedUpByPhone: newPickPhone,
       },
     }),
   )
@@ -236,7 +289,7 @@ export async function updateIntakeDetailsAction(
 // delil bütünlüğü gereği kalıcıdırlar.
 
 export async function addPhotoAction(formData: FormData) {
-  const user = await requireAuth()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string
@@ -324,17 +377,65 @@ export async function addPhotoAction(formData: FormData) {
 }
 
 export async function replacePhotoAction(_formData: FormData) {
-  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) değiştirilemez de silinemez de.
-  // Eksikse yeni kare eklenir (addPhotoAction); eklenen kanıt kalıcıdır.
+  // Yerinde DEĞİŞTİRME hâlâ kapalı: bir karenin içeriğini sessizce başkasıyla
+  // takas etmek denetim izini bozar. Hatalı kare `removePhotoAction` ile (soft,
+  // loglu) kaldırılır ve yerine `addPhotoAction` ile yeni kare eklenir.
   await requireAuth()
-  return { error: "Fotoğraf değiştirilemez. Kabul kanıtları kalıcıdır." }
+  return { error: "Fotoğraf değiştirilemez. Hatalı kareyi silip yenisini ekleyin." }
 }
 
-export async function removePhotoAction(_photoId: string, _intakeFormId: string) {
-  // Delil bütünlüğü: yüklenen fotoğraflar (kanıt/hasar) silinemez. Hatalı/bulanık
-  // bir kare yeniden çekilmek istenirse replacePhotoAction (Değiştir) kullanılır.
-  await requireAuth()
-  return { error: "Fotoğraf silinemez. Kabul kanıtları kalıcıdır." }
+/**
+ * Yanlış/bulanık kareyi galeriden kaldırır. Silme SOFT'tur: satır ve depodaki
+ * dosya olduğu gibi kalır, yalnızca `deletedAt` işaretlenir — böylece delil
+ * bütünlüğü korunurken hatalı kare müşteriye/PDF'e yansımaz. Kim, ne zaman
+ * sildiği `deletedById` + AuditLog `photo_deleted` kaydında durur.
+ *
+ * Teslim edilmiş/iptal edilmiş iş emrinde kilitli (fotoğraf EKLEME ile aynı
+ * kural). Public timeline'a olay YAZILMAZ: silme dahili bir düzeltmedir.
+ */
+export async function removePhotoAction(photoId: string) {
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  if (!photoId) return { error: "Fotoğraf bulunamadı" }
+
+  const photo = await prisma.vehiclePhoto.findFirst({
+    where: { id: photoId, workshopId: user.workshopId },
+    include: {
+      intakeForm: { select: { id: true, status: true, order: { select: { id: true, status: true } } } },
+    },
+  })
+  if (!photo) return { error: "Fotoğraf bulunamadı" }
+  if (photo.deletedAt) return { success: true }
+
+  if (isIntakeWriteLocked(photo.intakeForm.status, photo.intakeForm.order?.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emrinin fotoğrafı silinemez" }
+  }
+
+  await prisma.vehiclePhoto.update({
+    where: { id: photo.id },
+    data: { deletedAt: new Date(), deletedById: user.id },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "VehiclePhoto",
+    photo.id,
+    "photo_deleted",
+    JSON.stringify({
+      type: photo.type,
+      label: photo.label,
+      phase: photo.phase,
+      fileName: photo.fileName,
+      storageKey: photo.storageKey,
+      intakeFormId: photo.intakeFormId,
+      serviceOrderItemId: photo.serviceOrderItemId,
+    }),
+    photo.intakeForm.order?.id
+  )
+
+  // Çağıranlar başarıdan sonra kendi router.refresh()'ini yapıyor.
+  return { success: true }
 }
 
 // Kabul tarafından durum değiştirme kaldırıldı: tek çağrı noktası olan

@@ -96,7 +96,7 @@ export function HeroLeadForm() {
     return (
       <div id="demo-form" className="rounded-xl border bg-card p-8 shadow-xl text-center scroll-mt-24">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
-          <CheckCircle2 className="h-7 w-7 text-success" />
+          <CheckCircle2 className="h-7 w-7 text-success-strong" />
         </div>
         <h3 className="text-xl font-bold">Talebiniz alındı!</h3>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -142,7 +142,7 @@ export function HeroLeadForm() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-xs text-destructive-strong">{errors.name}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hero-phone">Telefon</Label>
@@ -153,7 +153,7 @@ export function HeroLeadForm() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
-            {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+            {errors.phone && <p className="text-xs text-destructive-strong">{errors.phone}</p>}
           </div>
         </div>
         <div className="space-y-1.5">
@@ -164,7 +164,7 @@ export function HeroLeadForm() {
             value={formData.businessName}
             onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
           />
-          {errors.businessName && <p className="text-xs text-destructive">{errors.businessName}</p>}
+          {errors.businessName && <p className="text-xs text-destructive-strong">{errors.businessName}</p>}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -186,7 +186,7 @@ export function HeroLeadForm() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
+            {errors.city && <p className="text-xs text-destructive-strong">{errors.city}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hero-monthlyVehicles">Aylık araç adedi</Label>
@@ -207,7 +207,7 @@ export function HeroLeadForm() {
               </SelectContent>
             </Select>
             {errors.monthlyVehicles && (
-              <p className="text-xs text-destructive">{errors.monthlyVehicles}</p>
+              <p className="text-xs text-destructive-strong">{errors.monthlyVehicles}</p>
             )}
           </div>
         </div>

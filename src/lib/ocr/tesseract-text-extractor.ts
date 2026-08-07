@@ -3,9 +3,10 @@ import { join } from "node:path"
 import { createWorker, OEM, PSM, type Worker } from "tesseract.js"
 
 // Committed, pre-seeded traineddata (tur + eng, uncompressed) so the worker
-// NEVER downloads at runtime. The prod image is Alpine and OCR_PROVIDER=mock,
-// so before the plate scanner this Tesseract path had never actually run in a
-// deployed container — and the runtime CDN download for traineddata hangs there,
+// NEVER downloads at runtime. Registration OCR goes through the Anthropic
+// provider (prod/dev both run OCR_PROVIDER=anthropic), so before the plate
+// scanner this Tesseract path had never actually run in a deployed container —
+// and the runtime CDN download for traineddata hangs on the Alpine image,
 // surfacing as a "Bağlantı hatası" after a long spin. Reading from this baked-in
 // cache (cacheMethod: "readOnly") removes the network dependency entirely.
 // See Dockerfile (COPY ocr-assets + tesseract.js-core into the runner image).

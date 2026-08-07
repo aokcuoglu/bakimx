@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Calendar, CheckCircle2, XCircle, Info } from "lucide-react"
+import { CALENDAR_DISABLED_LABEL } from "@/lib/provider-labels"
 
 interface CalendarSettingsProps {
   settings: {
@@ -11,7 +12,7 @@ interface CalendarSettingsProps {
 }
 
 export function CalendarSettings({ settings }: CalendarSettingsProps) {
-  const providerLabel = settings.provider === "google" ? "Google Calendar" : "Mock (Varsayılan)"
+  const providerLabel = settings.provider === "google" ? "Google Calendar" : CALENDAR_DISABLED_LABEL
 
   return (
     <div className="space-y-6">
@@ -36,14 +37,14 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
         <div className="grid gap-3">
           <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
             {settings.provider === "mock" ? (
-              <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : (
               <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Mock Sağlayıcı</div>
+              <div className="text-sm font-medium text-foreground">Uygulama İçi Takvim</div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Varsayılan sağlayıcı. Takvim etkinlikleri uygulama içinde gösterilir, harici senkronizasyon yapılmaz. API anahtarı gerekmez.
+                Varsayılan. Takvim etkinlikleri yalnızca BakımX içinde gösterilir, harici senkronizasyon yapılmaz. API anahtarı gerekmez.
               </div>
               {settings.provider === "mock" && (
                 <span className="inline-block mt-1 text-[10px] font-semibold text-foreground bg-success/10 px-1.5 py-0.5 rounded">AKTİF</span>
@@ -53,9 +54,9 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
 
           <div className="flex items-start gap-3 p-3 rounded-lg border border-border">
             {settings.provider === "google" && settings.googleConfigured ? (
-              <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : settings.provider === "google" && !settings.googleConfigured ? (
-              <XCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+              <XCircle className="size-5 text-destructive-strong shrink-0 mt-0.5" />
             ) : (
               <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
             )}
@@ -66,13 +67,13 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
               </div>
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ID</code>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ACCESS_TOKEN</code>
@@ -109,7 +110,7 @@ CALENDAR_PROVIDER=mock
 # GOOGLE_CALENDAR_API_URL=https://www.googleapis.com/calendar/v3`}
           </pre>
           <p className="text-xs text-muted-foreground/70">
-            Uygulamayı yeniden başlattıktan sonra değişiklikler etkili olur. Google kimlik bilgileri olmadan <code className="text-muted-foreground">google</code> sağlayıcısı seçilirse sistem otomatik olarak mock sağlayıcıya döner.
+            Uygulamayı yeniden başlattıktan sonra değişiklikler etkili olur. Google kimlik bilgileri olmadan <code className="text-muted-foreground">google</code> sağlayıcısı seçilirse sistem otomatik olarak uygulama içi takvime döner.
           </p>
         </div>
       </div>
@@ -124,7 +125,7 @@ CALENDAR_PROVIDER=mock
             <li>Randevu oluşturulduğunda takvime otomatik senkronize edilir</li>
             <li>İş emri teslimat tarihi belirlendiğinde takvime eklenir</li>
             <li>Bakım hatırlatmaları due date ile takvime senkronize edilir</li>
-            <li>Mock sağlayıcı ile tüm işlemler uygulama içinde gerçekleşir</li>
+            <li>Google Takvim bağlı değilken tüm işlemler uygulama içinde gerçekleşir</li>
             <li>Senkronizasyon logları <Link href="/calendar" className="text-primary hover:text-primary underline">Takvim</Link> sayfasından takip edilebilir</li>
           </ul>
         </div>

@@ -1,5 +1,8 @@
 # BakimX Project Rules
 
+@AGENTS.md
+@docs/agent-workflows/issue-delivery.md
+
 BakimX is a Next.js auto repair workshop SaaS project.
 
 ## Product context
@@ -28,6 +31,12 @@ BakimX is a Next.js auto repair workshop SaaS project.
 - First summarize the current relevant files.
 - Then propose a short implementation plan.
 - Wait for approval before broad refactors.
+
+## Issue delivery
+- When a user asks to implement or deliver a GitHub issue by number, use the
+  `bakimx-issue-delivery` project skill and complete the full lifecycle unless the
+  user narrows the scope.
+- Never disturb unrelated local changes.
 
 ## After editing
 Run or suggest the relevant checks:

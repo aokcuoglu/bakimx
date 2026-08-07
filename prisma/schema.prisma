@@ -63,6 +63,7 @@ model Workshop {
   partStockItems         PartStockItem[]
   stockMovements         StockMovement[]
   suppliers              Supplier[]
+  partSupplierPrices     PartSupplierPrice[]
   collections            CollectionPayment[]
   ocrLogs                OcrLog[]
   passportTokens         VehiclePassportToken[]
@@ -78,6 +79,7 @@ model Workshop {
   invites                Invite[]
   billingOrders          BillingOrder[]
   featureOverrides       WorkshopFeatureOverride[]
+  laborCatalogItems      LaborCatalogItem[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -259,15 +261,19 @@ model User {
   auditLogs      AuditLog[]
   sentInvites    Invite[]             @relation("InviteCreatedBy")
   passwordResets PasswordResetToken[]
+  deletedPhotos  VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
 
   @@index([workshopId])
 }
 
 // Workshop-scoped team roles. `staff` is the least-privileged operational role.
 enum UserRole {
-  owner // full control incl. team management + (future) billing
-  manager // manage team (invite / change role of non-owners) + all operations
-  staff // operational features only; no team management
+  owner // Yönetici — her şey + kapalı iş emrini yeniden açabilir
+  manager // Servis Müdürü — ekip yönetimi + tüm operasyonlar
+  usta // Usta — iş emri düzenler, durum ilerletir; ekip/kasa/katalog yönetemez
+  cirak // Çırak — parça alır ve maliyet girer; iş emri düzenleyemez
+  staff // LEGACY: #183 öncesi kayıtlar. İzin düzeyi `usta` ile aynıdır — mevcut
+  // kullanıcılar yetki KAYBETMESİN diye korunur; yeni atama listesinde yoktur.
 }
 
 // Token-based team invite. The raw token lives only in the e-mailed URL; we
@@ -452,6 +458,14 @@ model VehicleIntakeForm {
   fuelLevelAtIntake   Int?
   customerComplaint   String
   internalNote        String?
+  /// Aracı servise GETİREN kişi, müşterinin kendisi değilse (#196). Kabulde
+  /// doldurulur. null = müşteri aracı kendi getirdi.
+  droppedOffByName    String?
+  droppedOffByPhone   String?
+  /// Aracı TESLİM ALACAK kişi, müşterinin kendisi değilse (#149). Teslimden
+  /// önce herhangi bir anda doldurulabilir. null = müşteri kendi teslim alacak.
+  pickedUpByName      String?
+  pickedUpByPhone     String?
   approvalTextVersion String?
   approvedAt          DateTime?
   createdAt           DateTime     @default(now())
@@ -503,6 +517,12 @@ model VehiclePhoto {
   storageProvider    String?
   storageKey         String?
   note               String?
+  // Silme SOFT'tur: delil bütünlüğü gereği satır ve depodaki dosya korunur,
+  // yalnızca galeriler/PDF/public paylaşım `deletedAt: null` ile filtreler.
+  // Kimin sildiği denetim için burada, ayrıntısı AuditLog `photo_deleted`ta.
+  deletedAt          DateTime?
+  deletedById        String?
+  deletedBy          User?             @relation("VehiclePhotoDeletedBy", fields: [deletedById], references: [id])
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
@@ -511,6 +531,7 @@ model VehiclePhoto {
   @@index([phase])
   @@index([serviceOrderId])
   @@index([serviceOrderItemId])
+  @@index([deletedAt])
 }
 
 enum VehiclePhotoType {
@@ -679,6 +700,14 @@ model ServiceOrder {
   discountAmount       Int? // kuruş
   taxRate              Int? // bps (2000 = %20)
   notes                String?
+  /// Fatura entegrasyonu yok — kullanıcı kendi fatura uygulamasından okuyup elle girer.
+  /// Bu iki alan, teslim edilmiş iş emrinde de yazılabilir (bkz. updateOrderInvoiceAction);
+  /// iptal edilmiş emirde yazılamaz.
+  invoiceNo            String?
+  invoiceDate          DateTime?
+  /// Aracın servise geliş nedeni. İşin içeriğine dair bilgi olduğu için
+  /// teslim/iptal sonrası kilitlenir.
+  arrivalReason        ArrivalReason?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -713,6 +742,14 @@ enum OrderStatus {
   ready_for_delivery
   delivered
   cancelled
+}
+
+enum ArrivalReason {
+  fault // Arıza
+  damage // Hasar
+  maintenance // Bakım
+  inspection // Kontrol
+  accessory // Aksesuar
 }
 
 enum PaymentStatus {
@@ -1049,6 +1086,7 @@ model PartStockItem {
   movements         StockMovement[]
   serviceOrderItems ServiceOrderItem[]
   quoteItems        QuoteItem[]
+  supplierPrices    PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])
@@ -1058,6 +1096,28 @@ model PartStockItem {
   @@index([category])
   @@index([stockQty])
   @@index([isActive])
+  @@index([supplierId])
+}
+
+model PartSupplierPrice {
+  id            String        @id @default(cuid())
+  workshopId    String
+  workshop      Workshop      @relation(fields: [workshopId], references: [id])
+  partId        String
+  part          PartStockItem @relation(fields: [partId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+  purchasePrice Int // kuruş
+  currency      String        @default("TRY")
+  supplierSku   String? // tedarikçinin kendi parça kodu
+  isPreferred   Boolean       @default(false)
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([partId, supplierId])
+  @@index([workshopId])
+  @@index([partId])
   @@index([supplierId])
 }
 
@@ -1081,6 +1141,27 @@ model StockMovement {
   @@index([partId])
   @@index([type])
   @@index([createdAt])
+}
+
+// Atölyenin kendi tanımladığı işçilik fiyat listesi kalemi (iş emrine
+// eklenirken varsayılan fiyat/isim önerisi olarak kullanılacak).
+model LaborCatalogItem {
+  id                String   @id @default(cuid())
+  workshopId        String
+  workshop          Workshop @relation(fields: [workshopId], references: [id])
+  code              String?
+  name              String
+  category          String?
+  defaultPriceKurus Int? // kuruş cinsinden varsayılan fiyat
+  description       String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([workshopId, code])
+  @@unique([workshopId, name])
+  @@index([workshopId, isActive])
+  @@index([workshopId, name])
 }
 
 model AuditLog {
@@ -1111,10 +1192,11 @@ model Supplier {
   email               String?
   website             String?
   city                String?
+  district            String?
   address             String?
   taxNumber           String?
   taxOffice           String?
-  category            String?
+  categories          String[] @default([])
   paymentTermDays     Int?
   averageDeliveryDays Int?
   performanceNote     String?
@@ -1125,6 +1207,7 @@ model Supplier {
 
   parts      PartStockItem[]
   orderItems ServiceOrderItem[]
+  partPrices PartSupplierPrice[]
 
   @@index([workshopId])
   @@index([name])
@@ -1371,6 +1454,14 @@ model ReminderExecutionLog {
   @@index([executedAt])
 }
 
+/// Bir iletişim denemesinin kaydı. `workshopId` HER ZAMAN dolu (zorunlu FK), ama
+/// bu satırın kiracıya AİT olduğu anlamına gelmez: platform yöneticilerine giden
+/// sistem uyarıları da (yeni başvuru bildirimi, TAMI hash/misconfig alarmı, takılı
+/// işlem alarmı) ilgili workshop'a bağlanarak loglanır — dedup anahtarı oradan
+/// okunur. `internal = true` bu satırların YALNIZ platform tarafına ait olduğunu
+/// söyler; kiracıya dönük her sorgu `internal: false` ile filtrelemek ZORUNDADIR
+/// (bkz. src/app/(app)/communications/actions.ts). Değeri sendSystemEmail'in
+/// zorunlu `audience` alanından gelir, tahminle değil.
 model CommunicationLog {
   id           String            @id @default(cuid())
   workshopId   String
@@ -1379,6 +1470,7 @@ model CommunicationLog {
   provider     String
   recipient    String
   status       String            @default("pending")
+  internal     Boolean           @default(false)
   templateKey  String?
   entityType   String?
   entityId     String?

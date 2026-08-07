@@ -66,9 +66,9 @@ export function TechnicianDashboard({
 
   const kpiCards = [
     { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary" },
-    { label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning" },
-    { label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning" },
-    { label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success" },
+    { label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
+    { label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
+    { label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
     { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary" },
   ]
 
@@ -182,7 +182,7 @@ function OrderCard({ order }: { order: OrderRow }) {
               {statusLabel}
             </span>
             {order.hasActiveLabor && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success border border-success/20">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success-strong border border-success/20">
                 ⏱ İşçilik
               </span>
             )}

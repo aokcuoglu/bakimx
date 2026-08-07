@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# ──────────────────────────────────────────────────────────────────────────
+# `dev` ve `main`'e DOĞRUDAN push'u engeller.
+#
+# Neden var: repo private + free plan olduğu için GitHub'ın branch protection
+# ve rulesets API'leri 403 dönüyor — sunucu tarafında korunan dal kuramıyoruz.
+# Bu hook o boşluğun yerel karşılığı.
+#
+# Ne kadar koruma: bu bir HATIRLATICI, güvenlik sınırı DEĞİL. İstemci tarafında
+# çalışır, `--no-verify` ile atlanır ve yalnızca `bun install` çalışmış bir
+# checkout'ta devrededir (postinstall core.hooksPath=.githooks kaydeder).
+# Kas hafızasını yakalar; kararlı bir kullanıcıyı durdurmaz.
+#
+# Asıl kapı sunucuda: deploy-dev-aws.yml / deploy-prod-aws.yml artık `quality`
+# workflow'unu `needs:` ile çağırıyor, yani doğrudan push edilmiş bir commit de
+# deploy edilmeden önce test/lint/typecheck/build'den geçmek zorunda.
+#
+# Bilinçli olarak atlamak için:  ALLOW_DIRECT_PUSH=1 git push origin dev
+# ──────────────────────────────────────────────────────────────────────────
+
+PROTECTED="refs/heads/dev refs/heads/main"
+
+if [ "${ALLOW_DIRECT_PUSH:-}" = "1" ]; then
+  exit 0
+fi
+
+blocked=""
+
+# pre-push stdin'i: <yerel-ref> <yerel-sha> <uzak-ref> <uzak-sha>
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  [ -n "${remote_ref:-}" ] || continue
+  for p in $PROTECTED; do
+    if [ "$remote_ref" = "$p" ]; then
+      blocked="$blocked ${remote_ref#refs/heads/}"
+    fi
+  done
+done
+
+[ -n "$blocked" ] || exit 0
+
+cat >&2 <<EOF
+
+  ✗ Doğrudan push engellendi:$blocked
+
+  Bu dallara değişiklik PR ile girer:
+
+      git switch -c issue/<no>-<slug>
+      git push -u origin issue/<no>-<slug>
+      gh pr create --base dev
+
+  Neden: PR'sız giden bir commit'i kimse gözden geçirmiyor ve \`main\`'e her
+  push doğrudan prod'a deploy oluyor (deploy-prod-aws.yml).
+
+  Gerçekten bilinçli bir hotfix ise:  ALLOW_DIRECT_PUSH=1 git push ...
+
+EOF
+
+exit 1

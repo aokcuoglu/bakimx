@@ -16,6 +16,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { formatTRY } from "@/lib/format"
 import { parseTRYToKurus, kurusToLira } from "@/lib/money"
 import { Camera, Pencil, Trash2, ShoppingCart } from "lucide-react"
+import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 
 export type PurchaseDetailItem = {
   id: string
@@ -151,7 +152,7 @@ export function PurchaseDetailDialog({
         </DialogHeader>
 
         {error && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
@@ -232,6 +233,15 @@ export function PurchaseDetailDialog({
                   alt="Parça kutusu"
                   className="w-full max-h-56 object-contain rounded-lg border border-border bg-muted"
                 />
+                {editable && (
+                  <PhotoDeleteButton
+                    photoId={item.purchasePhotoId}
+                    photoLabel="Parça kutusu"
+                    variant="inline"
+                    className="mt-2"
+                    onDeleted={() => { onOpenChange(false); router.refresh() }}
+                  />
+                )}
               </div>
             )}
           </div>

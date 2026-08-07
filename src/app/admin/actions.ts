@@ -43,6 +43,7 @@ async function sendOwnerDecisionEmail(
       html: built.html,
       workshopId,
       templateKey: decision === "approved" ? "workshop_approved" : "workshop_rejected",
+      audience: "workshop",
     })
   } catch (err) {
     console.error("[admin] decision email failed:", err instanceof Error ? err.message : err)

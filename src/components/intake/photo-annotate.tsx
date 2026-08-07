@@ -3,11 +3,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Camera, Undo2, Trash2, Pencil, ArrowUpRight, Square, Circle } from "lucide-react"
+import { Loader2, Camera, Images, Undo2, Trash2, Pencil, ArrowUpRight, Square, Circle } from "lucide-react"
 import { fitDimensions } from "@/lib/image/fit-dimensions"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 
 const MAX_EDGE = 1600
+/** Tek seçimde kuyruğa alınacak azami kare (bellekte blob + canvas maliyeti). */
+const MAX_QUEUE = 20
 const JPEG_QUALITY = 0.85
 const STROKE_WIDTH = 4
 const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#111827", "#ffffff"]
@@ -47,7 +49,10 @@ export function PhotoAnnotate({
   phase?: string
   onUploaded?: (photo: UploadedPhoto) => void
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // `capture` taşıyan girdi mobilde galeri seçicisini baypas edip kamerayı
+  // açtığı için çoklu seçim ayrı, capture'sız bir girdide duruyor.
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const baseCanvasRef = useRef<HTMLCanvasElement>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -57,6 +62,7 @@ export function PhotoAnnotate({
   const logicalRef = useRef({ w: 0, h: 0 }) // çizim koordinat uzayı (CSS px)
 
   const [hasImage, setHasImage] = useState(false)
+  const [queue, setQueue] = useState<File[]>([]) // seçilip sırasını bekleyen kareler
   const [displayTick, setDisplayTick] = useState(0) // yeni görsel → yeniden ölçekle
   const [tool, setTool] = useState<Tool>("pen")
   const [color, setColor] = useState(COLORS[0])
@@ -98,10 +104,21 @@ export function PhotoAnnotate({
   }, [])
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
+    const picked = Array.from(e.target.files ?? [])
     e.target.value = "" // aynı dosyayı tekrar seçebilmek için
-    if (!file) return
+    if (picked.length === 0) return
     setError("")
+    // Çoklu seçimde ilk kare hemen açılır, kalanlar kuyruğa alınır: her kaydet
+    // (veya atla) sonrası bir sonraki kendiliğinden yüklenir, kullanıcı tekrar
+    // "foto seç" adımına dönmek zorunda kalmaz.
+    const [first, ...rest] = picked.slice(0, MAX_QUEUE)
+    if (picked.length > MAX_QUEUE) setError(`Tek seferde en fazla ${MAX_QUEUE} fotoğraf işlenir; fazlası atlandı`)
+    setQueue(rest)
+    await loadFileIntoCanvas(first)
+  }
+
+  /** Dosyayı base canvas'a çizer, çizim katmanını sıfırlar. */
+  async function loadFileIntoCanvas(file: File) {
     try {
       const img = await loadImage(file)
       const { w, h } = fitDimensions(img.width, img.height, MAX_EDGE)
@@ -130,6 +147,27 @@ export function PhotoAnnotate({
     } catch {
       setError("Görsel yüklenemedi")
     }
+  }
+
+  /** Kuyruktaki bir sonraki kareye geçer; kuyruk boşsa seçim ekranına döner. */
+  async function advanceQueue() {
+    shapesRef.current = []
+    setNote("")
+    const [next, ...rest] = queue
+    if (!next) {
+      setHasImage(false)
+      return
+    }
+    setQueue(rest)
+    await loadFileIntoCanvas(next)
+  }
+
+  /** Mevcut kareyi ve kuyruğun tamamını bırakır. */
+  function discardAll() {
+    shapesRef.current = []
+    setNote("")
+    setQueue([])
+    setHasImage(false)
   }
 
   function pointFromEvent(e: React.PointerEvent<HTMLCanvasElement>): Point {
@@ -267,10 +305,8 @@ export function PhotoAnnotate({
       objectUrlsRef.current.push(previewUrl)
       setUploaded((u) => [...u, { id, previewUrl }])
       onUploaded?.({ id, fileUrl: null })
-      shapesRef.current = []
-      setNote("")
-      setHasImage(false)
       setBusy(false)
+      await advanceQueue() // çoklu seçimde bir sonraki kare kendiliğinden açılır
     } catch {
       setError("Bir hata oluştu")
       setBusy(false)
@@ -280,18 +316,36 @@ export function PhotoAnnotate({
   return (
     <div className="space-y-3">
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
         onChange={onFileChange}
       />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={onFileChange}
+      />
 
       {!hasImage && (
-        <Button type="button" variant="outline" size="lg" className="w-full" onClick={() => fileInputRef.current?.click()}>
-          <Camera className="size-4 mr-2" /> Foto çek / seç
-        </Button>
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" size="lg" onClick={() => cameraInputRef.current?.click()}>
+              <Camera className="size-4 mr-2" /> Foto çek
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={() => galleryInputRef.current?.click()}>
+              <Images className="size-4 mr-2" /> Galeriden seç
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Galeriden birden fazla fotoğraf seçebilirsiniz; her biri sırayla açılır.
+          </p>
+        </div>
       )}
 
       {/* Canvas'lar HER ZAMAN mount'lu kalır — onFileChange foto yüklenmeden ref'lere
@@ -351,13 +405,19 @@ export function PhotoAnnotate({
 
         <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Hasar notu (opsiyonel)…" />
 
-        <div className="flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={() => { shapesRef.current = []; setNote(""); setHasImage(false) }} disabled={busy}>Vazgeç</Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {queue.length > 0 && (
+            <p className="mr-auto text-xs text-muted-foreground">Sırada {queue.length} fotoğraf daha var</p>
+          )}
+          <Button type="button" variant="ghost" onClick={discardAll} disabled={busy}>Vazgeç</Button>
+          {queue.length > 0 && (
+            <Button type="button" variant="outline" onClick={() => void advanceQueue()} disabled={busy}>Atla</Button>
+          )}
           <Button type="button" onClick={save} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}</Button>
         </div>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive-strong">{error}</p>}
 
       {uploaded.length > 0 && (
         <div className="space-y-2">

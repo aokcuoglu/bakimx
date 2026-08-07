@@ -94,6 +94,7 @@ async function sendReceiptEmail(orderId: string, maskedPan: string | null, refer
       html: built.html,
       workshopId: order.workshopId,
       templateKey: `payment_receipt:${reference ?? orderId}`,
+      audience: "workshop",
     })
   } catch (err) {
     console.error("[payments/callback] receipt email failed:", err instanceof Error ? err.message : err)

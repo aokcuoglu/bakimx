@@ -23,12 +23,20 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | `local-reset.sh` | — | Yerel DB'yi sıfırlar (yalnız geliştirme) |
 | `prod-reset.ts` | `bun run db:prod-reset` | Kiracı verisini siler, katalog/cache tablolarını korur (varsayılan rapor modu; `--confirm` ile uygular) |
 
+> **Tünel çıktısı:** `aws-dev-tunnel.sh`, `session-manager-plugin`'in her TCP
+> bağlantısı için bastığı `Connection accepted for session [...]` satırlarını
+> filtreler — Prisma havuzu sürekli bağlantı açtığı için bu satırlar tüneli
+> çalıştıran terminali (ve üstüne çizilen TUI'yi) doldururdu. Gerçek hatalar
+> (bind hatası, süresi dolmuş SSO) filtreden geçmeye devam eder. Tüneli teşhis
+> ederken ham çıktı için `TUNNEL_VERBOSE=1 bun run db:tunnel`.
+
 ## Operasyon
 
 | Script | npm script | Ne yapar |
 | --- | --- | --- |
 | `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı |
 | `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `docs/releasing.md`) |
+| `project-board-sync.sh` | `bun run project:sync` | Factory - BakimX panosunda kapalı issue'ların kartını Done'a çeker (`-- --dry-run` ile rapor) |
 
 > Contabo VPS dönemine ait script'ler (`provision-vps.sh`, `restore-db.sh`,
 > `db-migrate-prod.sh`) 2026-07'de kaldırıldı — BakımX AWS ECS üzerinde çalışıyor

@@ -6,6 +6,7 @@ import { VehicleDetail } from "@/components/vehicles/vehicle-detail"
 import { calculateOrderTotals } from "@/lib/totals"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { getVehicleReminders } from "@/lib/reminders/queries"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -21,7 +22,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           damageMarks: true,
           photos: {
             // Dış alım fotoğrafları araç foto geçmişine karışmaz (dahili-yalnız).
-            where: { serviceOrderItemId: null },
+            where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
             select: { id: true, type: true, label: true, fileUrl: true, createdAt: true },
           },
         },

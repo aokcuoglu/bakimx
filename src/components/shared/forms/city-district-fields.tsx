@@ -37,7 +37,17 @@ function StringCombobox({
       itemToStringValue={(s: string) => s}
       onValueChange={(v: string | null) => onValueChange(v ?? "")}
     >
-      <ComboboxInput id={id} placeholder={placeholder} disabled={disabled} className="w-full" />
+      <ComboboxInput
+        id={id}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full"
+        onKeyDown={(event) => {
+          // Base UI: liste kapalıyken Escape seçimi temizler → form alanında sessiz veri kaybı.
+          // (İl temizlenince ilçe de cascade sıfırlanıyordu.) Listeyi kapatma davranışı korunur.
+          if (event.key === "Escape") event.preventBaseUIHandler()
+        }}
+      />
       <ComboboxContent>
         <ComboboxEmpty className="py-2 text-sm text-muted-foreground">Sonuç yok</ComboboxEmpty>
         <ComboboxList>
@@ -91,7 +101,7 @@ export function CityDistrictFields({
             onDistrictChange("") // cascade reset — yalnız kullanıcı değişiminde
           }}
         />
-        {cityError && <p className="text-sm text-destructive">{cityError}</p>}
+        {cityError && <p className="text-sm text-destructive-strong">{cityError}</p>}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor={`${uid}-district`}>İlçe</Label>
@@ -103,7 +113,7 @@ export function CityDistrictFields({
           disabled={!city}
           onValueChange={(v) => onDistrictChange(v)}
         />
-        {districtError && <p className="text-sm text-destructive">{districtError}</p>}
+        {districtError && <p className="text-sm text-destructive-strong">{districtError}</p>}
       </div>
     </div>
   )

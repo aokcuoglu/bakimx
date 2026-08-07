@@ -21,6 +21,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Issue delivery uses repository-local git worktrees. Their source and
+    // generated .next output are separate checkouts and must be linted there,
+    // not recursively from the primary checkout.
+    ".worktrees/**",
     // Vendor/third-party files in public/ must not be linted:
     "public/opencv/**",
     // Vendored third-party UMD build (browser-only, no requires):

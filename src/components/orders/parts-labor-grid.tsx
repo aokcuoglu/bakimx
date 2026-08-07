@@ -2,10 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import type { StockPartLite } from "@/lib/parts/suggestions"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Table,
@@ -19,7 +31,8 @@ import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageChe
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
-import { getMockLaborCatalog, searchLaborCatalog, type LaborCatalogEntry } from "@/lib/labor/mock-labor-catalog"
+import { searchLaborItems } from "@/lib/labor/search"
+import type { LaborCatalogRow } from "@/lib/labor/types"
 import {
   Autocomplete,
   AutocompleteInput,
@@ -29,6 +42,7 @@ import {
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import { formatTRY } from "@/lib/format"
+import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { liraToKurus, kurusToLira } from "@/lib/money"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -42,20 +56,27 @@ import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
-import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
+import { createQuickPartAction, ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
 const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İşçilik", external_labor: "Dış İşçilik" }
 
 // brandSupplierId: yalnız runtime — marka→kategori best-effort filtresi için
 // seçili markanın TecDoc supplierId'sini taşır; ASLA persist edilmez.
-type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null }
+// __partId: atölyenin kendi stok kartına bağ. Set edilirse sunucu stok düşümü
+// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli.
+type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null; __partId?: string | null }
 
 // Satır-yerel arama filtresi (persist EDİLMEZ). Combobox seçimi buraya yazar;
 // parça seçilince senkronlanır; satır temizlenince sıfırlanır.
 type PartFilter = { supplierId?: number; supplierName?: string; categoryId?: number; categoryName?: string }
 
 type OnCell = (row: Row, patch: Partial<Row>, opts?: { debounce?: boolean; localOnly?: boolean }) => void
+
+// Satırda 2 sn görünen geçici onay işareti: yeni kalem eklendi mi, mevcut satır
+// otosave ile kaydedildi mi — ikisi ayrı okunur (bkz. RowFlash).
+type FlashKind = "saved" | "added"
+const FLASH_LABELS: Record<FlashKind, string> = { saved: "Kaydedildi", added: "Eklendi" }
 
 /**
  * Parça detay modalı açma isteği. Modal TEK örnek olarak PartsLaborGrid'de durur
@@ -92,7 +113,7 @@ function emptyDraft(type: ItemType, source: "catalog" | "manual"): Row {
 }
 
 export function PartsLaborGrid({
-  orderId, status, items, vehicle, onError, loading,
+  orderId, status, items, vehicle, onError, loading, laborCatalog,
 }: {
   orderId: string
   status: string
@@ -101,6 +122,7 @@ export function PartsLaborGrid({
   onError: (msg: string) => void
   onLoading: (b: boolean) => void
   loading: boolean
+  laborCatalog: LaborCatalogRow[]
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -109,15 +131,16 @@ export function PartsLaborGrid({
   const [detail, setDetail] = useState<DetailRequest | null>(null)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
-  // Sessiz otosave'i görünür kılan geçici "✓ Kaydedildi" işareti: başarılı
-  // PATCH sonrası ilgili satırda 2 sn gösterilir (tecrübesiz kullanıcı için
-  // "değişikliğim kaydoldu mu?" belirsizliğini kaldırır).
-  const [savedRowId, setSavedRowId] = useState<string | null>(null)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  function flashSaved(rowId: string) {
-    setSavedRowId(rowId)
-    if (savedTimer.current) clearTimeout(savedTimer.current)
-    savedTimer.current = setTimeout(() => setSavedRowId(null), 2000)
+  // Sessiz otosave'i / yeni eklemeyi görünür kılan geçici satır işareti:
+  // başarılı PATCH sonrası "✓ Kaydedildi", yeni kalem eklendikten sonra
+  // "✓ Eklendi" olarak 2 sn gösterilir (tecrübesiz kullanıcı için
+  // "değişikliğim kaydoldu mu / parça eklendi mi?" belirsizliğini kaldırır).
+  const [flash, setFlash] = useState<{ rowId: string; kind: FlashKind } | null>(null)
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function flashRow(rowId: string, kind: FlashKind) {
+    setFlash({ rowId, kind })
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+    flashTimer.current = setTimeout(() => setFlash(null), 2000)
   }
 
   // Sunucu items'ı yerele senkronla. Runtime-only brandSupplierId (persist
@@ -138,7 +161,7 @@ export function PartsLaborGrid({
     const timers = saveTimers.current
     return () => {
       Object.values(timers).forEach((t) => clearTimeout(t))
-      if (savedTimer.current) clearTimeout(savedTimer.current)
+      if (flashTimer.current) clearTimeout(flashTimer.current)
     }
   }, [])
 
@@ -150,11 +173,12 @@ export function PartsLaborGrid({
   // listeye ekler + router.refresh() ile sunucudan doğrular. true dönerse
   // composer kendini sıfırlar.
   async function addItem(draft: Row): Promise<boolean> {
-    if (!draft.name.trim()) return false
+    const name = draft.name.trim()
+    if (!name) return false
     const fd = new FormData()
     fd.set("serviceOrderId", orderId)
     fd.set("type", draft.type)
-    fd.set("name", draft.name.trim())
+    fd.set("name", name)
     if (draft.sku) fd.set("sku", draft.sku)
     if (draft.unit) fd.set("unit", draft.unit)
     fd.set("quantity", String(draft.quantity))
@@ -165,6 +189,8 @@ export function PartsLaborGrid({
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
+    // Stok kartına bağlıysa sunucu stoğu düşürür (bkz. Row.__partId).
+    if (draft.__partId) fd.set("partId", draft.__partId)
     try {
       const res = await fetch("/api/orders/items", { method: "POST", body: fd })
       const data = await res.json()
@@ -174,6 +200,11 @@ export function PartsLaborGrid({
           ...prev,
           { ...toRow(draft), id: realId, __draft: false, brandSupplierId: draft.brandSupplierId },
         ])
+        // Arama kutusu ekleme sonrası temizlendiği için ekranda "bir şey oldu mu?"
+        // sorusu kalıyordu (issue #209): eklenen kalemin adını toast ile bildir ve
+        // listeye düşen satırı kısa süre "✓ Eklendi" ile işaretle.
+        toast.success(formatItemAddedMessage(draft.type, name))
+        flashRow(realId, "added")
         router.refresh()
         return true
       }
@@ -206,7 +237,7 @@ export function PartsLaborGrid({
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
         if (!data.success) { onError(data.error || "Kalem güncellenemedi"); setRows(items.map(toRow)) }
-        else { flashSaved(rowId); router.refresh() }
+        else { flashRow(rowId, "saved"); router.refresh() }
       } catch { onError("Bir hata oluştu"); setRows(items.map(toRow)) }
     }
     if (opts?.debounce) {
@@ -257,7 +288,7 @@ export function PartsLaborGrid({
             </ComposerCard>
           </TabsContent>
           <TabsContent value="iscilik" className="pt-4">
-            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} /></ComposerCard>
+            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} catalog={laborCatalog} /></ComposerCard>
           </TabsContent>
         </Tabs>
       )}
@@ -303,7 +334,7 @@ export function PartsLaborGrid({
                   vehicle={vehicle}
                   onCell={onCell}
                   onRemove={removeRow}
-                  saved={savedRowId === row.id}
+                  flash={flash?.rowId === row.id ? flash.kind : null}
                   onShowDetail={setDetail}
                 />
               ))
@@ -326,7 +357,7 @@ export function PartsLaborGrid({
               vehicle={vehicle}
               onCell={onCell}
               onRemove={removeRow}
-              saved={savedRowId === row.id}
+              flash={flash?.rowId === row.id ? flash.kind : null}
               onShowDetail={setDetail}
             />
           ))
@@ -411,13 +442,13 @@ function LaborModeToggle({ mode, onChange, disabled }: {
   )
 }
 
-// İç işçilik ad alanı: serbest-metin Autocomplete + mock katalog önerileri.
-// Yazdıkça searchLaborCatalog önerir; öneri seçilince ad+önerilen fiyat dolar;
-// serbest metin de yazılabilir (kendi işçilik kalemi — fiyat elle girilir).
-function LaborAutocompleteField({ draft, onCell, disabled }: {
-  draft: Row; onCell: OnCell; disabled: boolean
+// İç işçilik ad alanı: serbest-metin Autocomplete + atölyenin kendi işçilik
+// tanımlarından öneriler. Öneri seçilince ad + varsayılan ücret dolar; serbest
+// metin de yazılabilir (katalogda olmayan işçilik — fiyat elle girilir).
+function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
+  draft: Row; onCell: OnCell; disabled: boolean; catalog: LaborCatalogRow[]
 }) {
-  const items = useMemo(() => searchLaborCatalog(draft.name), [draft.name])
+  const items = useMemo(() => searchLaborItems(catalog, draft.name), [catalog, draft.name])
   return (
     <Autocomplete
       items={items}
@@ -425,16 +456,27 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
       filter={null}
       autoHighlight
       openOnInputClick
-      itemToStringValue={(e: LaborCatalogEntry) => e.name}
+      itemToStringValue={(e: LaborCatalogRow) => e.name}
       onValueChange={(v: string) => {
-        // Ad, tanımlı (mock) bir işçiliğe birebir eşleşiyorsa önerilen fiyatı taşı;
-        // eşleşme bozulunca/temizlenince fiyatı da düşür ki seçili katalog fiyatı
-        // özel/serbest kaleme sızmasın (spec: temizlenince unitPrice=null).
-        const match = getMockLaborCatalog().find((e) => e.name === v)
+        // Ad tanımlı bir işçiliğe birebir eşleşiyorsa varsayılan ücreti taşı;
+        // eşleşme bozulunca/temizlenince fiyatı da düşür ki katalog fiyatı
+        // serbest kaleme sızmasın.
+        const match = catalog.find((e) => e.name === v)
         onCell(draft, { name: v, unitPrice: match ? match.defaultPriceKurus : null })
       }}
     >
       <AutocompleteInput
+        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
+        // (bilinen tuzak, bkz. quote-create-form.tsx LaborNameAutocomplete) —
+        // yazılan işçilik adı yok oluyor ve satır sessizce filtrelenip
+        // kaybolabiliyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
+        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
+        // "false").
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
+            e.preventBaseUIHandler()
+          }
+        }}
         render={
           <Input
             placeholder="İşçilik ara veya kendi kalemini yaz"
@@ -445,9 +487,11 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
         }
       />
       <AutocompleteContent>
-        <AutocompleteEmpty>Tanımlı işçilik yok — kendi kaleminizi yazabilirsiniz</AutocompleteEmpty>
+        <AutocompleteEmpty>
+          Eşleşen işçilik yok — kendi kaleminizi yazabilirsiniz
+        </AutocompleteEmpty>
         <AutocompleteList>
-          {(e: LaborCatalogEntry) => (
+          {(e: LaborCatalogRow) => (
             <AutocompleteItem
               key={e.id}
               value={e}
@@ -456,7 +500,9 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{e.name}</span>
                 <span className="block text-[11px] text-muted-foreground">
-                  {e.category} · {formatTRY(e.defaultPriceKurus)}
+                  {[e.category, e.defaultPriceKurus != null ? formatTRY(e.defaultPriceKurus) : null]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </span>
             </AutocompleteItem>
@@ -467,11 +513,11 @@ function LaborAutocompleteField({ draft, onCell, disabled }: {
   )
 }
 
-// ── İşçilik composer: İç (mock öneri + serbest) / Dış (serbest) işçilik.
+// ── İşçilik composer: İç (katalog öneri + serbest) / Dış (serbest) işçilik.
 // mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
 // (draft, arama kutusu) temiz sıfırlanır.
-function LaborComposer({ onAdd, disabled }: {
-  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean
+function LaborComposer({ onAdd, disabled, catalog }: {
+  onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; catalog: LaborCatalogRow[]
 }) {
   const [nonce, setNonce] = useState(0)
   const [mode, setMode] = useState<"labor" | "external_labor">("labor")
@@ -484,13 +530,14 @@ function LaborComposer({ onAdd, disabled }: {
         onAdd={onAdd}
         disabled={disabled}
         onAdded={() => setNonce((n) => n + 1)}
+        catalog={catalog}
       />
     </div>
   )
 }
 
-function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
-  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void
+function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
+  mode: "labor" | "external_labor"; onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; onAdded: () => void; catalog: LaborCatalogRow[]
 }) {
   const [draft, setDraft] = useState<Row>(() => emptyDraft(mode, "manual"))
   const [submitting, setSubmitting] = useState(false)
@@ -502,8 +549,8 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
   async function submit() {
     if (!draft.name.trim() || submitting) return
     setSubmitting(true)
-    // Tanımlı (mock) işçilik adına birebir eşleşme → catalog rozeti; değilse manuel.
-    const isDefined = mode === "labor" && getMockLaborCatalog().some((e) => e.name === draft.name.trim())
+    // Atölyenin tanımlı işçiliğine birebir eşleşme → katalog rozeti; değilse manuel.
+    const isDefined = mode === "labor" && catalog.some((e) => e.name === draft.name.trim())
     const ok = await onAdd({ ...draft, source: isDefined ? "catalog" : "manual" })
     if (ok) onAdded()
     else setSubmitting(false)
@@ -524,7 +571,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded }: {
             className="text-sm"
           />
         ) : (
-          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} />
+          <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
         )}
       </Field>
       <div className="flex items-end gap-3">
@@ -557,6 +604,9 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const submittingRef = useRef(false)
+  // Bu modal oturumunda açılan stok kartının kodu (yeniden denemede ikinci kart
+  // açılmasını engeller). Modal her açılışta sıfırlanır.
+  const createdPartSkuRef = useRef<string | null>(null)
   const linked = vehicle?.catalogVehicleTypeId != null
   const [prefetching, setPrefetching] = useState(false)
   // Prefetch dolarken mevcut aramayı periyodik yeniden tetikleyen sinyal:
@@ -605,6 +655,24 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     [stopPolling],
   )
 
+  // #157 — araca bağlı olmayan (kendi stoğumuzdan) bir parça eklenmeden önce
+  // kullanıcıya sorulur. Onaysız ekleme yok: katalog dışı parça yanlış araca
+  // takılırsa sahada maliyeti yüksek.
+  const [stockConfirm, setStockConfirm] = useState<StockPartLite | null>(null)
+
+  /** Stok kartı → kalem taslağı. partId bağı stok düşümünü tetikler. */
+  function stockDraft(p: StockPartLite): Partial<Row> & { source: "manual" } {
+    return {
+      source: "manual",
+      name: p.name,
+      sku: p.sku,
+      brand: p.brand,
+      unit: p.unit,
+      unitPrice: p.salePrice,
+      __partId: p.id,
+    }
+  }
+
   /** Arama sonucu → kalem taslağı; hem satır seçimi hem detay modalı kullanır. */
   function catalogDraft(a: ArticleSearchResult): Partial<Row> & { source: "catalog" } {
     return {
@@ -628,6 +696,64 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     setSubmitting(false)
     if (ok) { setName(""); setFilter({}) }
     return ok
+  }
+
+  /**
+   * "Oluştur & Düzenle" modalının gönderimi. Anahtar açıksa ÖNCE kalıcı stok
+   * kartı açılır, sonra kalem eklenir: kod çakışması gibi hatalar hiçbir şey
+   * eklenmeden yakalansın ve kullanıcı modalda kodu düzeltebilsin. Kart açıldıktan
+   * sonra kalem ekleme başarısız olursa (ör. iş emri bu arada kilitlenmişse) kart
+   * kalır — hata üstteki uyarı alanında görünür, tekrar denemede aynı kodla ikinci
+   * kart açılamaz.
+   *
+   * Hata mesajı döndürmek modalı AÇIK bırakır; null dönüşü başarıyı bildirir.
+   */
+  async function submitManualDraft(d: ManualPartDraft): Promise<string | null> {
+    const sku = d.sku?.trim() || null
+    // Kart açıldıktan sonra kalem ekleme takılırsa kullanıcı aynı modalda tekrar
+    // dener; ikinci denemede aynı kodla kart AÇILMAZ (yoksa kendi açtığı kart
+    // "bu kod zaten kullanılıyor" diyip kullanıcıyı çıkmaza sokardı). Kod
+    // değiştirilirse ref eşleşmez ve yeni kart açılır.
+    if (d.createStockItem && sku !== createdPartSkuRef.current) {
+      if (submittingRef.current) return null
+      submittingRef.current = true
+      setSubmitting(true)
+      try {
+        const fd = new FormData()
+        fd.set("sku", sku ?? "")
+        fd.set("name", d.name)
+        if (d.brand) fd.set("brand", d.brand)
+        if (d.category) fd.set("category", d.category)
+        if (d.unitPrice != null) fd.set("salePrice", String(d.unitPrice))
+        const res = await createQuickPartAction(fd)
+        // NOT: sadece `"error" in res` yazılır — `&& res.error` eklemek birleşim
+        // tipini erken dönüşten sonra daraltmaz ve başarı dalındaki alanlar derlenmez.
+        if ("error" in res) return res.error
+        createdPartSkuRef.current = res.sku
+        toast.success(`Stok kartı oluşturuldu · ${res.sku}`)
+      } finally {
+        submittingRef.current = false
+        setSubmitting(false)
+      }
+    }
+    // Kalem karta BAĞLANMAZ (partId yok): stok düşümü tetiklenmesin diye —
+    // gerekçe createQuickPartAction başlığında.
+    const ok = await add({
+      source: "manual",
+      name: d.name,
+      sku,
+      brand: d.brand,
+      category: d.category,
+      categoryId: d.categoryId,
+      quantity: d.quantity,
+      unitPrice: d.unitPrice,
+    })
+    if (ok) setDialogOpen(false)
+    // Ekleme hatası TOAST ile bildirilir, modal içine yazılmaz: modaldeki satır-içi
+    // hata alanı stok kodu alanına bağlıdır (aria-invalid) ve buradaki hatanın kodla
+    // ilgisi yok. Ayrıntılı sunucu mesajı arkadaki uyarı alanında (onError) durur.
+    if (!ok) toast.error("Kalem eklenemedi. Lütfen tekrar deneyin.")
+    return null
   }
 
   return (
@@ -655,6 +781,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         placeholder="Parça no, adı veya marka ara…"
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
+        onSelectStockPart={(p) => setStockConfirm(p)}
         onShowDetail={(a) =>
           onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
@@ -666,10 +793,44 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         searchTitle={linked ? "TecDoc kataloğundan seç" : "Araç TecDoc'ta eşleşmedi"}
         showCreate
         onCreate={(text) => void add({ source: "manual", name: text })}
-        onCreateEdit={(text) => { setName(text); setDialogOpen(true) }}
+        onCreateEdit={(text) => { setName(text); createdPartSkuRef.current = null; setDialogOpen(true) }}
         refreshSignal={refreshSignal}
         onResultsCount={handleResultsCount}
       />
+
+      {/* #157 — araca bağlı olmayan parçada onay. Stok adedi burada gösterilir:
+          sunucu stok yetmezse eklemeyi tümüyle reddediyor, kullanıcı bunu
+          reddedilmeden ÖNCE görsün. */}
+      <AlertDialog open={stockConfirm != null} onOpenChange={(o) => { if (!o) setStockConfirm(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu parça bu araca bağlı değil</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">{stockConfirm?.name}</span> kendi stok
+              kartlarınızdan geliyor; aracın katalog listesinde yer almıyor. Uygun olduğundan emin
+              misiniz?
+              {stockConfirm != null && (
+                <span className="mt-2 block">
+                  Mevcut stok: {stockConfirm.stockQty} {stockConfirm.unit}
+                  {stockConfirm.stockQty <= 0 && " — stok yok, ekleme reddedilebilir."}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const p = stockConfirm
+                setStockConfirm(null)
+                if (p) void add(stockDraft(p))
+              }}
+            >
+              Yine de ekle
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {prefetching && (
         <p className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
@@ -723,17 +884,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         initialName={name}
         vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
         submitting={submitting}
-        onSubmit={(d: ManualPartDraft) => {
-          void add({
-            source: "manual",
-            name: d.name,
-            brand: d.brand,
-            category: d.category,
-            categoryId: d.categoryId,
-            quantity: d.quantity,
-            unitPrice: d.unitPrice,
-          }).then((ok) => { if (ok) setDialogOpen(false) })
-        }}
+        onSubmit={submitManualDraft}
       />
     </div>
   )
@@ -1025,7 +1176,7 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
   })
   return (
-    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success", className)}>
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium text-success-strong", className)}>
       <Check className="size-3 shrink-0" />
       Yapıldı
       <span className="font-normal text-muted-foreground">· {stamp}</span>
@@ -1071,18 +1222,20 @@ function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: s
   )
 }
 
-// Başarılı otosave sonrası 2 sn'lik onay işareti. Masaüstünde dar kolonlara
-// sığması için iconOnly, mobil kart başlığında metinli sürüm.
-function SavedFlash({ show, iconOnly }: { show: boolean; iconOnly?: boolean }) {
-  if (!show) return null
+// Başarılı otosave ("Kaydedildi") veya yeni ekleme ("Eklendi") sonrası 2 sn'lik
+// onay işareti. Masaüstünde dar kolonlara sığması için iconOnly, mobil kart
+// başlığında metinli sürüm.
+function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: boolean }) {
+  if (!kind) return null
+  const label = FLASH_LABELS[kind]
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success"
-      title="Kaydedildi"
+      className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success-strong"
+      title={label}
       aria-live="polite"
     >
       <CheckCircle2 className="size-3.5" />
-      {!iconOnly && "Kaydedildi"}
+      {!iconOnly && label}
     </span>
   )
 }
@@ -1090,7 +1243,7 @@ function SavedFlash({ show, iconOnly }: { show: boolean; iconOnly?: boolean }) {
 function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => void }) {
   return (
     <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
-      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Satırı sil">
+      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong" aria-label="Satırı sil">
       <Trash2 className="size-4" />
     </Button>
   )
@@ -1283,14 +1436,14 @@ const META_FIELD_MOBILE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  saved?: boolean
+  flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
@@ -1346,7 +1499,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
       {/* Toplam (vurgulu) + otosave onayı */}
       <TableCell className="py-3.5">
         <div className="flex items-center justify-end gap-1.5">
-          <SavedFlash show={!!saved} iconOnly />
+          <RowFlash kind={flash} iconOnly />
           <TotalField lineTotal={ed.lineTotal} strong />
         </div>
       </TableCell>
@@ -1362,14 +1515,14 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved, onShowDetail }: {
+function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   orderId: string
   locked: boolean
   vehicle?: PickerVehicle
   onCell: OnCell
   onRemove: (row: Row) => void
-  saved?: boolean
+  flash?: FlashKind | null
   onShowDetail: OnShowDetail
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
@@ -1389,7 +1542,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, saved,
           {row.source === "purchase" && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
-          <SavedFlash show={!!saved} />
+          <RowFlash kind={flash} />
         </div>
         {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
       </div>

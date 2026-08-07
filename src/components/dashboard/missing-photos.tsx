@@ -22,7 +22,7 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
             >
               <div className="size-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                <Camera className="size-4 text-destructive" />
+                <Camera className="size-4 text-destructive-strong" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
@@ -32,7 +32,7 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
                 <p className="text-sm text-foreground truncate">{item.customerName}</p>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-xs font-semibold text-destructive">-{item.missingCount}</span>
+                <span className="text-xs font-semibold text-destructive-strong">-{item.missingCount}</span>
                 <ChevronRight className="size-3.5 text-muted-foreground/50 mt-0.5 ml-auto" />
               </div>
             </Link>

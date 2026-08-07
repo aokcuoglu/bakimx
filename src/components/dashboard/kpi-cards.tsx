@@ -46,7 +46,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         value={stats.todayDeliveries}
         icon={Clock}
         href="/orders"
-        accent="text-success"
+        accent="text-success-strong"
         accentBg="bg-success/10"
       />
       <KpiCard
@@ -54,7 +54,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         value={stats.waitingApprovals}
         icon={MessageCircle}
         href="/orders?status=waiting_approval"
-        accent="text-warning"
+        accent="text-warning-strong"
         accentBg="bg-warning/10"
       />
       <KpiCard
@@ -62,7 +62,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         value={stats.missingPhotoIntakes}
         icon={Camera}
         href="/orders"
-        accent="text-destructive"
+        accent="text-destructive-strong"
         accentBg="bg-destructive/10"
       />
       <KpiCard
@@ -70,7 +70,7 @@ export function KpiCards({ stats }: { stats: DashboardStats }) {
         value={stats.overdueDeliveries}
         icon={AlertTriangle}
         href="/orders"
-        accent="text-destructive"
+        accent="text-destructive-strong"
         accentBg="bg-destructive/10"
       />
       <KpiCard

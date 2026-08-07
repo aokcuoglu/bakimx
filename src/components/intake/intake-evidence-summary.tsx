@@ -54,7 +54,7 @@ export function PhotoCompletionBar({
       </div>
       {missingLabels.length > 0 && (
         <div className="space-y-1 pt-1">
-          <p className="text-xs font-medium text-destructive flex items-center gap-1">
+          <p className="text-xs font-medium text-destructive-strong flex items-center gap-1">
             <AlertTriangle className="size-3" />
             Eksik zorunlu fotoğraflar — çekmek için dokunun
           </p>
@@ -74,7 +74,7 @@ export function PhotoCompletionBar({
         </div>
       )}
       {isComplete && (
-        <div className="flex items-center gap-1 text-xs text-success">
+        <div className="flex items-center gap-1 text-xs text-success-strong">
           <CheckCircle2 className="size-3.5" />
           <span>Tüm zorunlu fotoğraflar tamamlandı</span>
         </div>
@@ -173,9 +173,9 @@ function EvidenceStatCard({
   }
 
   const iconColors = {
-    success: "text-success",
-    warning: "text-warning",
-    danger: "text-destructive",
+    success: "text-success-strong",
+    warning: "text-warning-strong",
+    danger: "text-destructive-strong",
     neutral: "text-muted-foreground",
   }
 

@@ -166,7 +166,7 @@ export function RuhsatDemoSection() {
               <CircleCheck className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold">Okunan Bilgiler</h3>
               {phase === "done" && (
-                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success-strong">
                   <CheckCircle2 className="size-3" />
                   Tamamlandı
                 </span>
@@ -379,7 +379,7 @@ function FieldCell({
         )}
         {shown && field.lowConf && (
           <span
-            className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-medium text-warning"
+            className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-medium text-warning-strong"
             title="Düşük güven — kaydetmeden önce kontrol edin"
           >
             <Pencil className="size-2.5" />

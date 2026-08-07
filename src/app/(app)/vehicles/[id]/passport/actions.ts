@@ -16,7 +16,7 @@ export async function createPassportTokenAction(vehicleId: string, data: {
   showReminders?: boolean
   showPaymentStatus?: boolean
 }) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -58,7 +58,7 @@ export async function updatePassportTokenAction(tokenId: string, vehicleId: stri
   showReminders?: boolean
   showPaymentStatus?: boolean
 }) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const existing = await prisma.vehiclePassportToken.findFirst({
     where: { id: tokenId, workshopId: user.workshopId, vehicleId },
@@ -88,7 +88,7 @@ export async function updatePassportTokenAction(tokenId: string, vehicleId: stri
 }
 
 export async function deletePassportTokenAction(tokenId: string, vehicleId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const existing = await prisma.vehiclePassportToken.findFirst({
     where: { id: tokenId, workshopId: user.workshopId, vehicleId },

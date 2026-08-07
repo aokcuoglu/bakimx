@@ -6,6 +6,8 @@ import { ImageOff, Loader2 } from "lucide-react"
 import { PHOTO_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 
 export type GalleryPhoto = {
   id: string
@@ -17,22 +19,25 @@ export type GalleryPhoto = {
   note: string | null
 }
 
-function toSrc(photo: Pick<GalleryPhoto, "id" | "fileUrl">): string | null {
-  if (!photo.fileUrl) return null
-  return photo.fileUrl.startsWith("data:") ? photo.fileUrl : `/api/photos?id=${photo.id}`
-}
-
 /**
  * Tıklanabilir fotoğraf grid'i — kartlardan birine dokununca aynı grup içinde
  * gezinilebilen tam ekran lightbox (`PhotoLightbox`) açılır. Dosyası olmayan
  * kayıtlar tıklanamaz. Hasar notu hem kartta hem lightbox'ta gösterilir.
+ *
+ * `canDelete` verildiğinde her kartın köşesinde sil butonu çıkar (yanlış çekilen
+ * kareyi kaldırmak için); silme sunucuda soft'tur, çağıran `onDeleted` ile
+ * kendi tazelemesini yapar.
  */
 export function PhotoGalleryGrid({
   photos,
   gridClassName = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5",
+  canDelete = false,
+  onDeleted,
 }: {
   photos: GalleryPhoto[]
   gridClassName?: string
+  canDelete?: boolean
+  onDeleted?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [index, setIndex] = useState(0)
@@ -45,7 +50,7 @@ export function PhotoGalleryGrid({
         id: p.id,
         label: PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]?.label || p.type,
         note: p.note,
-        fileUrl: toSrc(p),
+        fileUrl: resolvePhotoSrc(p),
       })),
     [viewable]
   )
@@ -65,6 +70,8 @@ export function PhotoGalleryGrid({
             key={photo.id}
             photo={photo}
             onOpen={photo.fileUrl ? () => openAt(photo) : undefined}
+            canDelete={canDelete}
+            onDeleted={onDeleted}
           />
         ))}
       </div>
@@ -79,7 +86,17 @@ export function PhotoGalleryGrid({
   )
 }
 
-function PhotoGalleryCard({ photo, onOpen }: { photo: GalleryPhoto; onOpen?: () => void }) {
+function PhotoGalleryCard({
+  photo,
+  onOpen,
+  canDelete,
+  onDeleted,
+}: {
+  photo: GalleryPhoto
+  onOpen?: () => void
+  canDelete?: boolean
+  onDeleted?: () => void
+}) {
   const typeLabel = PHOTO_TYPES[photo.type as keyof typeof PHOTO_TYPES]?.label || photo.type
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
@@ -108,6 +125,9 @@ function PhotoGalleryCard({ photo, onOpen }: { photo: GalleryPhoto; onOpen?: () 
       }
     >
       <div className="relative aspect-[4/3] bg-muted flex items-center justify-center">
+        {canDelete && (
+          <PhotoDeleteButton photoId={photo.id} photoLabel={typeLabel} onDeleted={onDeleted} />
+        )}
         {photo.fileUrl ? (
           <PhotoThumbnail photoId={photo.id} fileUrl={photo.fileUrl} />
         ) : (

@@ -37,7 +37,17 @@ env:
   ROLE_ARN: arn:aws:iam::292398627626:role/bakimx-dev-gha-deploy
 
 jobs:
+  # Quality gate. `quality` otherwise only runs on pull_request, which means a direct
+  # push to dev — or a merge whose result nobody revalidated — reached this environment
+  # with no test/lint/typecheck/build at all. Branch protection would normally cover
+  # that, but it is unavailable on this plan (private repo + free plan → the
+  # branch-protection and rulesets APIs both 403), so the gate lives here instead.
+  # It runs against the exact commit about to be deployed, not a PR head.
+  quality:
+    uses: ./.github/workflows/quality.yml
+
   deploy:
+    needs: quality
     # Native ARM64 runner → Fargate task runtimePlatform is ARM64 (Graviton), so the image
     # must be arm64. Native build avoids QEMU emulation. If arm64 hosted runners are not
     # available on your GitHub plan, switch to `ubuntu-latest` and add
@@ -45,22 +55,22 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ env.ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build & push image to ECR (arm64)
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           push: true
@@ -71,8 +81,15 @@ jobs:
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:sha-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Build cache lives in ECR, NOT in GitHub Actions cache. `type=gha,mode=max`
+          # writes every intermediate layer as its own cache entry and the GHA backend
+          # never garbage-collects them — it filled the repo's 10 GB quota in ~6 weeks
+          # and then started LRU-evicting layers the next build still needed.
+          # ECR has no such quota, and `image-manifest=true` + `oci-mediatypes=true` are
+          # required for ECR to accept the cache manifest at all.
+          # `ignore-error=true`: a cache export hiccup must never fail a deploy.
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:buildcache-dev
+          cache-to: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:buildcache-dev,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true
           build-args: |
             SESSION_SECRET=build_time_placeholder_at_least_32_chars_long__
             SESSION_COOKIE_NAME=bakimx_session_dev

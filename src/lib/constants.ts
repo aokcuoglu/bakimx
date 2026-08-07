@@ -77,6 +77,38 @@ export const ORDER_STATUS_ORDER: readonly OrderStatusKey[] = [
   "cancelled",
 ]
 
+/**
+ * Servise geliş nedeni. DB'de `ArrivalReason` enum anahtarı (İngilizce) tutulur;
+ * Türkçe etiketler yalnız burada yaşar — ORDER_STATUS ile aynı desen.
+ */
+export const ARRIVAL_REASONS = {
+  fault: { label: "Arıza" },
+  damage: { label: "Hasar" },
+  maintenance: { label: "Bakım" },
+  inspection: { label: "Kontrol" },
+  accessory: { label: "Aksesuar" },
+} as const
+
+export type ArrivalReasonKey = keyof typeof ARRIVAL_REASONS
+
+export const ARRIVAL_REASON_ORDER: readonly ArrivalReasonKey[] = [
+  "fault",
+  "damage",
+  "maintenance",
+  "inspection",
+  "accessory",
+]
+
+// `value in ARRIVAL_REASONS` KULLANILMAZ: prototip anahtarları ("toString") true döner.
+export function isArrivalReason(value: string): value is ArrivalReasonKey {
+  return (ARRIVAL_REASON_ORDER as readonly string[]).includes(value)
+}
+
+export function arrivalReasonLabel(value: string | null | undefined): string {
+  if (!value) return "—"
+  return ARRIVAL_REASONS[value as ArrivalReasonKey]?.label ?? value
+}
+
 export type OrderStatusKey = keyof typeof ORDER_STATUS
 export type PaymentStatusKey = keyof typeof PAYMENT_STATUS
 
@@ -93,6 +125,17 @@ export const PHOTO_TYPES = {
   damage_detail: { label: "Hasar detayı", required: false },
   other: { label: "Diğer", required: false },
 } as const
+
+export type PhotoTypeKey = keyof typeof PHOTO_TYPES
+
+/** `PhotoPhase` enum'unun kullanıcıya görünen karşılıkları (prisma/schema.prisma). */
+export const PHOTO_PHASES = {
+  intake: { label: "Kabul (Intake)" },
+  repair_progress: { label: "Onarım Aşaması" },
+  delivery: { label: "Teslim" },
+} as const
+
+export type PhotoPhaseKey = keyof typeof PHOTO_PHASES
 
 export const CUSTOMER_TYPES = {
   individual: { label: "Bireysel", color: "bg-primary/10 text-foreground border-primary/20" },

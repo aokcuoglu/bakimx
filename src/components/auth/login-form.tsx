@@ -122,7 +122,7 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
           </div>
         )}
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
             {error}
           </div>
         )}

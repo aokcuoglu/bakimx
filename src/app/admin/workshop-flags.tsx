@@ -48,7 +48,7 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
         <p className="text-xs text-muted-foreground mt-0.5">
           Plan varsayılanı: {f.tierGrants ? "açık" : "kapalı"}
         </p>
-        {error && <p className="text-xs text-destructive mt-0.5">{error}</p>}
+        {error && <p className="text-xs text-destructive-strong mt-0.5">{error}</p>}
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">

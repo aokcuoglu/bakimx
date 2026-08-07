@@ -3,24 +3,45 @@ import { findMockProviders, checkProviderEnvAtStartup, buildProviderWarningBanne
 
 const env = (vars: Record<string, string | undefined>) => (name: string) => vars[name]
 
-test("findMockProviders: flags unset, empty, and explicit mock; ignores rapidapi", () => {
-  const issues = findMockProviders(env({ VIN_PROVIDER: undefined, TECDOC_PROVIDER: "rapidapi" }))
+/** Hepsi gerçek sağlayıcıda olan bir ortam — testler tek tek bunu bozar. */
+const allReal = {
+  VIN_PROVIDER: "rapidapi",
+  TECDOC_PROVIDER: "rapidapi",
+  OCR_PROVIDER: "anthropic",
+  AI_PROVIDER: "anthropic",
+}
+
+test("findMockProviders: flags unset, empty, and explicit mock; ignores real values", () => {
+  const issues = findMockProviders(env({ ...allReal, VIN_PROVIDER: undefined }))
   expect(issues.map((i) => i.env)).toEqual(["VIN_PROVIDER"])
   expect(issues[0].value).toBe("(ayarsız)")
 
-  expect(findMockProviders(env({ VIN_PROVIDER: "  MOCK ", TECDOC_PROVIDER: "" })).map((i) => i.env)).toEqual([
+  expect(findMockProviders(env({ ...allReal, VIN_PROVIDER: "  MOCK ", TECDOC_PROVIDER: "" })).map((i) => i.env)).toEqual([
     "VIN_PROVIDER",
     "TECDOC_PROVIDER",
   ])
 
-  expect(findMockProviders(env({ VIN_PROVIDER: "rapidapi", TECDOC_PROVIDER: "rapidapi" }))).toEqual([])
+  expect(findMockProviders(env(allReal))).toEqual([])
+})
+
+test("findMockProviders: OCR ve AI de kapsanır (#256)", () => {
+  expect(findMockProviders(env({ ...allReal, OCR_PROVIDER: undefined })).map((i) => i.env)).toEqual(["OCR_PROVIDER"])
+  expect(findMockProviders(env({ ...allReal, AI_PROVIDER: "mock" })).map((i) => i.env)).toEqual(["AI_PROVIDER"])
+
+  // Boş ortamda dördü birden yakalanmalı.
+  expect(findMockProviders(env({})).map((i) => i.env)).toEqual([
+    "VIN_PROVIDER",
+    "TECDOC_PROVIDER",
+    "OCR_PROVIDER",
+    "AI_PROVIDER",
+  ])
 })
 
 test("checkProviderEnvAtStartup: silent in non-prod even when mock", () => {
   let warned = false
   let informed = false
   checkProviderEnvAtStartup({
-    getEnv: env({ VIN_PROVIDER: undefined, TECDOC_PROVIDER: undefined }),
+    getEnv: env({}),
     isProd: false,
     warn: () => (warned = true),
     info: () => (informed = true),
@@ -32,7 +53,7 @@ test("checkProviderEnvAtStartup: silent in non-prod even when mock", () => {
 test("checkProviderEnvAtStartup: warns in prod when a provider is mock", () => {
   const msgs: string[] = []
   checkProviderEnvAtStartup({
-    getEnv: env({ VIN_PROVIDER: undefined, TECDOC_PROVIDER: "rapidapi" }),
+    getEnv: env({ ...allReal, VIN_PROVIDER: undefined }),
     isProd: true,
     warn: (m) => msgs.push(m),
     info: () => {},
@@ -46,7 +67,7 @@ test("checkProviderEnvAtStartup: info-only when all real in prod", () => {
   let warned = false
   const infos: string[] = []
   checkProviderEnvAtStartup({
-    getEnv: env({ VIN_PROVIDER: "rapidapi", TECDOC_PROVIDER: "rapidapi" }),
+    getEnv: env(allReal),
     isProd: true,
     warn: () => (warned = true),
     info: (m) => infos.push(m),
@@ -54,10 +75,32 @@ test("checkProviderEnvAtStartup: info-only when all real in prod", () => {
   expect(warned).toBe(false)
   expect(infos[0]).toContain("vin=rapidapi")
   expect(infos[0]).toContain("tecdoc=rapidapi")
+  expect(infos[0]).toContain("ocr=anthropic")
+  expect(infos[0]).toContain("ai=anthropic")
 })
 
 test("buildProviderWarningBanner: one bullet + one fix line per issue", () => {
-  const banner = buildProviderWarningBanner([{ env: "VIN_PROVIDER", label: "VIN'den araç tanıma", value: "(ayarsız)" }])
+  const banner = buildProviderWarningBanner(
+    findMockProviders(env({ ...allReal, VIN_PROVIDER: undefined }))
+  )
   expect(banner).toContain("VIN'den araç tanıma MOCK sağlayıcı kullanıyor")
   expect(banner).toContain("VIN_PROVIDER=rapidapi")
+  expect(banner).toContain("RAPIDAPI_KEY=<anahtarınız>")
+})
+
+test("buildProviderWarningBanner: ipucu sağlayıcıya göre doğru anahtar/değeri verir (#256)", () => {
+  const banner = buildProviderWarningBanner(findMockProviders(env({ ...allReal, OCR_PROVIDER: "mock" })))
+  expect(banner).toContain("Ruhsat okuma (OCR) MOCK sağlayıcı kullanıyor")
+  expect(banner).toContain("OCR_PROVIDER=anthropic")
+  expect(banner).toContain("ANTHROPIC_API_KEY=<anahtarınız>")
+  // Eskiden ipucu her değişken için rapidapi öneriyordu — OCR için yanlıştı.
+  expect(banner).not.toContain("OCR_PROVIDER=rapidapi")
+  expect(banner).not.toContain("RAPIDAPI_KEY")
+})
+
+test("buildProviderWarningBanner: aynı anahtarı paylaşan sağlayıcılarda anahtar satırı tekrarlamaz", () => {
+  const banner = buildProviderWarningBanner(
+    findMockProviders(env({ ...allReal, VIN_PROVIDER: "mock", TECDOC_PROVIDER: "mock" }))
+  )
+  expect(banner.match(/RAPIDAPI_KEY/g)).toHaveLength(1)
 })

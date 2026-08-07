@@ -35,6 +35,19 @@ export function isLowFuel(value: number): boolean {
 }
 
 /**
+ * Yakıt çubuğunda (#197) bir kademe dolu mu?
+ *
+ * Seçili kademeye kadar olan tüm bölmeler dolar; değer, doluluğun bittiği yer
+ * olarak okunur. Ölçüm yoksa (null) hiçbir bölme dolmaz.
+ *
+ * DİKKAT: 0 ("E") geçerli bir ölçüm. `value &&` kalıbı burada tüm çubuğu boş
+ * gösterir — karşılaştırma `!= null` ile yapılmalı (bkz. dosya başlığı).
+ */
+export function isFuelSegmentFilled(level: number, value: number | null): boolean {
+  return value != null && level <= value
+}
+
+/**
  * Kadran geometrisi: merkez (50,50), yay yarıçapı 40, E solda (180°) F sağda (0°).
  * viewBox "0 0 100 62" varsayılır — hem React bileşeni hem PDF çıktısı bunu kullanır.
  */

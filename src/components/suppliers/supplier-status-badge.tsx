@@ -11,7 +11,7 @@ export function SupplierStatusBadge({
 }) {
   const label = isActive ? "Aktif" : "Pasif"
   const color = isActive
-    ? "bg-success/10 text-success border-success/20"
+    ? "bg-success/10 text-success-strong border-success/20"
     : "bg-muted text-muted-foreground border-border"
 
   return (

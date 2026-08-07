@@ -1,7 +1,7 @@
 import { Prisma, type UserRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import type { AuthUser } from "@/lib/auth"
-import { ROLE_RANK } from "@/lib/roles"
+import { ROLE_RANK, roleCan, type Permission } from "@/lib/roles"
 import { getSeatLimit, type PlanTier } from "@/lib/plan"
 
 /**
@@ -15,14 +15,55 @@ import { getSeatLimit, type PlanTier } from "@/lib/plan"
  * Pure constants (labels/rank/assignable) live in `@/lib/roles` and are
  * re-exported here so existing server imports keep working.
  */
-export { ROLE_LABELS, ROLE_RANK, ASSIGNABLE_ROLES, rolesUpTo } from "@/lib/roles"
+export {
+  ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
+  ROLE_RANK,
+  ASSIGNABLE_ROLES,
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
+  roleCan,
+  rolesUpTo,
+  type Permission,
+} from "@/lib/roles"
 
 export function canManageTeam(role: UserRole): boolean {
-  return role === "owner" || role === "manager"
+  return roleCan(role, "team.manage")
 }
 
 export function canManageBilling(role: UserRole): boolean {
-  return role === "owner"
+  return roleCan(role, "billing.manage")
+}
+
+/** İzin yoksa fırlatır. Server action'ların TEK kapı çağrısı budur (#183). */
+export function assertCan(user: AuthUser, permission: Permission): void {
+  if (!roleCan(user.role, permission)) {
+    throw new PermissionError(permission)
+  }
+}
+
+/**
+ * Kapı hatası ayrı tip: action'lar bunu yakalayıp kullanıcıya okunur bir mesaj
+ * dönebilsin, beklenmeyen hatalarla karışmasın.
+ */
+export class PermissionError extends Error {
+  readonly permission: Permission
+  constructor(permission: Permission) {
+    super("Bu işlem için yetkiniz yok.")
+    this.name = "PermissionError"
+    this.permission = permission
+  }
+}
+
+/**
+ * Kapıyı `{ error }` sözleşmesine çeviren yardımcı: bu repodaki server action'lar
+ * throw yerine `{ error }` döndürüyor, kapı da aynı dili konuşsun.
+ */
+export function permissionError(
+  user: AuthUser,
+  permission: Permission
+): { error: string } | null {
+  return roleCan(user.role, permission) ? null : { error: "Bu işlem için yetkiniz yok." }
 }
 
 /** Throws if the user may not manage the team. */

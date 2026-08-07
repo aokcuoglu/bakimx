@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Dal değiştirmede ($3=1) şema farklıysa Prisma Client'ı tazele.
+# Dosya bazlı checkout'ta ($3=0) hiçbir şey yapma.
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+PREV_HEAD="${1:-}"
+NEW_HEAD="${2:-}"
+BRANCH_CHECKOUT="${3:-0}"
+
+[ "$BRANCH_CHECKOUT" = "1" ] || exit 0
+
+bash "$HOOK_DIR/lib/prisma-sync.sh" "$PREV_HEAD" "$NEW_HEAD" "dal değişimi" || true
+exit 0

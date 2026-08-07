@@ -1,0 +1,33 @@
+version: 2
+
+# Sadece GitHub Actions ekosistemi. Amaç iki yönlü:
+#
+# 1. Workflow'lardaki action'lar commit SHA'sına pinli (bkz. .github/workflows/*.yml).
+#    Pin, tag'in taşınmasını — yani bir action'ın hesabı ele geçirilirse `@v7`nin
+#    altına kötü niyetli kod itilmesini — engeller. Ama pin tek başına action'ı
+#    dondurur: güvenlik yaması da gelmez. Dependabot pin'i ve yanındaki sürüm
+#    yorumunu güncel tutarak bu ikilemi çözer. Biri olmadan diğeri eksiktir.
+#
+# 2. Denetim sırasında `actions/checkout` ve `aws-actions/configure-aws-credentials`
+#    ikişer major sürüm geride çıktı; kimse haber vermiyordu.
+#
+# target-branch ZORUNLU: reponun varsayılan dalı `main` ve `main`'e her push prod'a
+# deploy ediyor (deploy-prod-aws.yml). Bu satır olmadan Dependabot PR'ları doğrudan
+# `main`'e açar, yani dev→main akışını atlayıp doğrudan prod'u hedefler.
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
+    groups:
+      # Tek tek 6 PR yerine tek toplu PR — hepsi aynı quality kapısından geçiyor.
+      actions:
+        patterns:
+          - "*"

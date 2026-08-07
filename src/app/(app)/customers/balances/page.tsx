@@ -179,10 +179,10 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-muted text-foreground" />
           <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary" />
-          <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-success/10 text-success" />
-          <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-destructive/10 text-destructive" />
-          <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-warning/10 text-warning" />
-          <KpiCard label="Ödenmiş" value={totals.settled.toString()} accent="bg-success/10 text-success" />
+          <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-success/10 text-success-strong" />
+          <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-destructive/10 text-destructive-strong" />
+          <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-warning/10 text-warning-strong" />
+          <KpiCard label="Ödenmiş" value={totals.settled.toString()} accent="bg-success/10 text-success-strong" />
         </div>
 
         <form action="/customers/balances" method="get" className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -246,8 +246,8 @@ function nameFor(c: { type: string; firstName: string | null; lastName: string |
 
 function BalanceStatusBadge({ remaining, grandTotal }: { remaining: number; grandTotal: number }) {
   if (grandTotal <= 0) return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-muted text-muted-foreground border-border">Pasif</span>
-  if (remaining > 0) return <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-medium bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="size-3" /> Alacak</span>
-  return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-success/10 text-success border-success/20">Ödendi</span>
+  if (remaining > 0) return <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-medium bg-destructive/10 text-destructive-strong border-destructive/20"><AlertTriangle className="size-3" /> Alacak</span>
+  return <span className="inline-flex items-center h-5 px-2 rounded-full border text-[11px] font-medium bg-success/10 text-success-strong border-success/20">Ödendi</span>
 }
 
 function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; phone: string; tag: string | null; vehicleCount: number; ordersCount: number; grandTotal: number; paidAmount: number; remainingAmount: number; lastPaymentDate: string | null; lastActivityDate: string | null }> }) {
@@ -291,10 +291,10 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">
                   {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground/70">—</span>}
                 </td>
-                <td className="px-4 py-3 text-right text-success tabular-nums">
+                <td className="px-4 py-3 text-right text-success-strong tabular-nums">
                   {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-muted-foreground/70">—</span>}
                 </td>
-                <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-destructive" : "text-muted-foreground")}>
+                <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-destructive-strong" : "text-muted-foreground")}>
                   {row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
@@ -353,9 +353,9 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
 function MiniStat({ label, value, tone = "slate" }: { label: string; value: string; tone?: "slate" | "emerald" | "rose" }) {
   const color =
     tone === "emerald"
-      ? "text-success"
+      ? "text-success-strong"
       : tone === "rose"
-      ? "text-destructive"
+      ? "text-destructive-strong"
       : "text-foreground"
   return (
     <div className="rounded-lg bg-muted px-2 py-1.5">

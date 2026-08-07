@@ -158,6 +158,9 @@ export async function POST(request: Request) {
             html: adminMail.html,
             workshopId: workshop.id,
             templateKey: "new_application_admin",
+            // Alıcı platform yöneticisi — kayıt yeni kiracının workshopId'siyle
+            // tutulur ama onun ekranında GÖRÜNMEZ (issue #194).
+            audience: "internal",
           }),
         ),
       )

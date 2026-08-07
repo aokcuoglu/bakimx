@@ -165,6 +165,7 @@ export async function sweepTrialWarnings(): Promise<LifecycleSweepResult> {
         html: built.html,
         workshopId: workshop.id,
         templateKey: trialTemplateKey(threshold, trialEndsAt),
+        audience: "workshop",
       })
       if (sendResult.ok) result.sent++
       else result.failed++
@@ -240,6 +241,7 @@ export async function sweepSubscriptionWarnings(): Promise<LifecycleSweepResult>
         html: built.html,
         workshopId: workshop.id,
         templateKey: subscriptionTemplateKey(threshold, currentPeriodEnd),
+        audience: "workshop",
       })
       if (sendResult.ok) result.sent++
       else result.failed++
@@ -304,6 +306,7 @@ async function alertStuckTransactionOnce(txn: { id: string; workshopId: string }
     html: built.html,
     workshopId: txn.workshopId,
     templateKey,
+    audience: "internal",
   })
   return result.ok
 }

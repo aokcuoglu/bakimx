@@ -23,4 +23,5 @@
 <!-- Gözden geçirenin doğrulaması için adımlar -->
 
 ## İlgili
-<!-- issue / spec / release notu -->
+<!-- Merge sonrası issue'nun otomatik kapanması için: Closes #123 -->
+Closes #

@@ -267,7 +267,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         <span className="text-sm font-medium">Ruhsatı Tara</span>
         {torchSupported && status === "ready" ? (
           <button onClick={toggleTorch} className="flex size-11 items-center justify-center rounded-full bg-white/10" aria-label="Flaş">
-            {torchOn ? <Zap className="size-5 text-warning" /> : <ZapOff className="size-5" />}
+            {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </button>
         ) : (
           <span className="size-11" />
@@ -319,7 +319,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         {/* Fallback */}
         {isFallback && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-            <AlertTriangle className="size-10 text-warning" />
+            <AlertTriangle className="size-10 text-warning-strong" />
             <p className="max-w-sm text-sm text-white/90">
               {status === "denied" && "Kamera izni verilmedi. Lütfen tarayıcı ayarlarından izin verin veya dosyadan yükleyin."}
               {status === "unsupported" && "Bu cihaz/tarayıcı canlı kamerayı desteklemiyor. Lütfen dosyadan yükleyin."}

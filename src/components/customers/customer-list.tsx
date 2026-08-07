@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Users,
   Search,
@@ -136,10 +137,36 @@ export function CustomerList({
   kpis?: CustomerKpis
   onDelete?: (id: string, label: string) => void
 }) {
+  const router = useRouter()
   const [q, setQ] = useState(initialFilters.q)
   const [type, setType] = useState<Filters["type"]>(initialFilters.type)
   const [tag, setTag] = useState(initialFilters.tag)
   const [source, setSource] = useState(initialFilters.source)
+
+  // Filtreler tek noktadan URL'e yazılır (sunucu tarafı q/type/tag/source okuyor).
+  // replace: yazdıkça arama her tuşta geçmişe kayıt bırakmasın.
+  const syncUrl = useCallback(
+    (next: Filters) => {
+      const params = new URLSearchParams()
+      if (next.q) params.set("q", next.q)
+      if (next.type) params.set("type", next.type)
+      if (next.tag) params.set("tag", next.tag)
+      if (next.source) params.set("source", next.source)
+      const qs = params.toString()
+      router.replace(`/customers${qs ? `?${qs}` : ""}`)
+    },
+    [router]
+  )
+
+  // Otomatik tetikleme: aramada 400ms bekle, seçim (tip/etiket/kaynak) anında uygulansın.
+  useEffect(() => {
+    const searchChanged = q !== initialFilters.q
+    const selectionChanged =
+      type !== initialFilters.type || tag !== initialFilters.tag || source !== initialFilters.source
+    if (!searchChanged && !selectionChanged) return
+    const timer = setTimeout(() => syncUrl({ q, type, tag, source }), searchChanged ? 400 : 0)
+    return () => clearTimeout(timer)
+  }, [q, type, tag, source, initialFilters, syncUrl])
 
   const filtered = useMemo(() => {
     return customers.filter((row) => {
@@ -172,14 +199,20 @@ export function CustomerList({
           <StatCard
             label="Tekrar Eden"
             value={kpis.returning}
-            accent="bg-success/10 text-success border-success/20"
+            accent="bg-success/10 text-success-strong border-success/20"
           />
         </div>
       )}
 
+      {/* Filtreler otomatik uygulanır; "Filtrele" butonu bekleme süresini atlayan kısayol.
+          GET submit type/tag/source'u URL'den düşürdüğü için engellenip syncUrl'e yönlendirildi. */}
       <form
         action="/customers"
         method="get"
+        onSubmit={(e) => {
+          e.preventDefault()
+          syncUrl({ q, type, tag, source })
+        }}
         className="flex items-center gap-2"
       >
         <div className="relative flex-1">
@@ -215,7 +248,7 @@ export function CustomerList({
           >
             <SelectTrigger aria-label="Müşteri tipi filtresi">
               <SelectValue placeholder="Tüm Tipler">
-                {(value: string | null) => (value ? TYPE_LABELS[value] ?? value : null)}
+                {(value: string | null) => (value ? TYPE_LABELS[value] ?? value : "Tüm Tipler")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -230,7 +263,7 @@ export function CustomerList({
           >
             <SelectTrigger aria-label="Etiket filtresi">
               <SelectValue placeholder="Tüm Etiketler">
-                {(value: string | null) => (value ? TAG_LABELS[value] ?? value : null)}
+                {(value: string | null) => (value ? TAG_LABELS[value] ?? value : "Tüm Etiketler")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -247,7 +280,7 @@ export function CustomerList({
           >
             <SelectTrigger aria-label="Müşteri kaynağı filtresi">
               <SelectValue placeholder="Tüm Kaynaklar">
-                {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : null)}
+                {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : "Tüm Kaynaklar")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>

@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ROLE_LABELS, ROLE_RANK, rolesUpTo } from "@/lib/roles"
+import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_RANK, rolesUpTo } from "@/lib/roles"
 import {
   inviteMemberAction,
   resendInviteAction,
@@ -49,9 +49,13 @@ export type PendingInvite = {
   expiresAt: string
 }
 
+// Sabit renk YOK — tema token'ları (bkz. proje UI kuralları). Rozet tonu
+// yetkinin ağırlığını yansıtır: yönetici > müdür > usta > çırak > eski kayıt.
 const ROLE_BADGE: Record<UserRole, string> = {
   owner: "bg-primary/10 text-primary border-primary/20",
-  manager: "bg-blue-100 text-blue-800 border-blue-200",
+  manager: "bg-primary/5 text-foreground border-primary/20",
+  usta: "bg-success/10 text-success-strong border-success/20",
+  cirak: "bg-warning/10 text-warning-strong border-warning/20",
   staff: "bg-muted text-muted-foreground border-border",
 }
 
@@ -155,7 +159,7 @@ export function TeamManagement({
       )}
 
       {error && (
-        <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+        <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
           {error}
         </div>
       )}
@@ -175,7 +179,7 @@ export function TeamManagement({
               onClick={() => copy(lastInviteUrl)}
               className="shrink-0"
             >
-              {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
               {copied ? "Kopyalandı" : "Kopyala"}
             </Button>
           </div>
@@ -216,7 +220,12 @@ export function TeamManagement({
               </SelectTrigger>
               <SelectContent>
                 {assignable.map((r) => (
-                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    <span className="flex flex-col items-start">
+                      <span>{ROLE_LABELS[r]}</span>
+                      <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
+                    </span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -304,8 +313,8 @@ export function TeamManagement({
                     className={cn(
                       "touch-manipulation",
                       m.isActive
-                        ? "text-destructive hover:bg-destructive/10 border-destructive/20"
-                        : "text-success hover:bg-success/10 border-success/20"
+                        ? "text-destructive-strong hover:bg-destructive/10 border-destructive/20"
+                        : "text-success-strong hover:bg-success/10 border-success/20"
                     )}
                   >
                     {m.isActive ? "Pasif Yap" : "Aktif Yap"}

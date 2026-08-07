@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { FUEL_LEVELS, formatFuelLevel, fuelNeedlePoint, isLowFuel } from "@/lib/fuel-level"
+import { FUEL_LEVELS, formatFuelLevel, fuelNeedlePoint, isFuelSegmentFilled, isLowFuel } from "@/lib/fuel-level"
 
 const GAUGE_WIDTHS = {
   sm: "w-14",
@@ -32,7 +32,7 @@ export function FuelGauge({
     <div className={cn("inline-flex flex-col items-center gap-0.5", className)}>
       <svg
         viewBox="0 0 100 62"
-        className={cn(GAUGE_WIDTHS[size], low ? "text-destructive" : "text-primary")}
+        className={cn(GAUGE_WIDTHS[size], low ? "text-destructive-strong" : "text-primary")}
         role="img"
         aria-label={`Yakıt seviyesi: ${formatFuelLevel(value)}`}
       >
@@ -65,7 +65,7 @@ export function FuelGauge({
         )}
       </svg>
       {showLabel && (
-        <span className={cn("text-xs font-medium", low ? "text-destructive" : "text-foreground")}>
+        <span className={cn("text-xs font-medium", low ? "text-destructive-strong" : "text-foreground")}>
           {formatFuelLevel(value)}
         </span>
       )}
@@ -74,8 +74,12 @@ export function FuelGauge({
 }
 
 /**
- * Kadran + 5 kademeli seçim. Seçili kademeye tekrar dokunmak seçimi kaldırır
- * (Base UI ToggleGroup davranışı) → değer null olur = "ölçülmedi".
+ * 5 kademeli yakıt seçimi, tek sıra çubuk. Seçili kademeye tekrar dokunmak
+ * seçimi kaldırır (Base UI ToggleGroup davranışı) → değer null = "ölçülmedi".
+ *
+ * Kadran (`FuelGauge`) bilinçli olarak burada YOK: alan mobilde ekranın çoğunu
+ * kaplıyordu (#197). Kadran salt-okunur gösterimlerde (araç detayı, pasaport,
+ * PDF) duruyor — orada zaten dar bir alanda tek bir değeri anlatıyor.
  */
 export function FuelLevelPicker({
   value,
@@ -86,37 +90,39 @@ export function FuelLevelPicker({
   onChange: (value: number | null) => void
   disabled?: boolean
 }) {
+  const low = value != null && isLowFuel(value)
+
   return (
-    // Geniş kartlarda (iş emri düzenleme) 5 buton sayfa boyunca yayılmasın.
-    <div className="max-w-sm space-y-2">
-      <div className="flex justify-center">
-        <FuelGauge
-          value={value ?? 0}
-          size="md"
-          showLabel={false}
-          className={value == null ? "opacity-40" : undefined}
-        />
-      </div>
-      <ToggleGroup
-        value={value != null ? [String(value)] : []}
-        onValueChange={(v) => onChange(v.length ? Number(v[0]) : null)}
-        variant="outline"
-        size="lg"
-        disabled={disabled}
-        className="w-full"
-      >
-        {FUEL_LEVELS.map((level) => (
-          <ToggleGroupItem
-            key={level}
-            value={String(level)}
-            // Varsayılan `aria-pressed:bg-muted` seçimi zor okunuyor; veri girişi
-            // olduğu için seçili kademe dolgu renkle net ayrışsın.
-            className="flex-1 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-          >
-            {formatFuelLevel(level)}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-    </div>
+    <ToggleGroup
+      value={value != null ? [String(value)] : []}
+      onValueChange={(v) => onChange(v.length ? Number(v[0]) : null)}
+      variant="outline"
+      size="lg"
+      // Bölmeler bitişik olsun ki beş ayrı buton değil tek bir çubuk okunsun.
+      spacing={0}
+      disabled={disabled}
+      aria-label="Yakıt seviyesi"
+      // Geniş kartlarda (iş emri düzenleme) çubuk sayfa boyunca yayılmasın.
+      className="w-full max-w-sm"
+    >
+      {FUEL_LEVELS.map((level) => (
+        <ToggleGroupItem
+          key={level}
+          value={String(level)}
+          className={cn(
+            "flex-1",
+            // `aria-pressed:` varyantları ŞART: outline varyantının kendi
+            // `aria-pressed:bg-muted` kuralı, düz `bg-*` sınıfını ezip seçili
+            // bölmeyi açık zemin + beyaz metin (yani görünmez) bırakıyor.
+            isFuelSegmentFilled(level, value) &&
+              (low
+                ? "bg-destructive text-destructive-foreground aria-pressed:border-destructive aria-pressed:bg-destructive aria-pressed:text-destructive-foreground"
+                : "bg-primary text-primary-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground")
+          )}
+        >
+          {formatFuelLevel(level)}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   )
 }

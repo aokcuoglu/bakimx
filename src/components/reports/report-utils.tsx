@@ -67,9 +67,9 @@ export function StatCard({
 }) {
   const colors = {
     blue: "bg-primary/10 text-primary",
-    green: "bg-success/10 text-success",
-    amber: "bg-warning/10 text-warning",
-    red: "bg-destructive/10 text-destructive",
+    green: "bg-success/10 text-success-strong",
+    amber: "bg-warning/10 text-warning-strong",
+    red: "bg-destructive/10 text-destructive-strong",
     purple: "bg-primary/10 text-primary",
     indigo: "bg-primary/10 text-primary",
   }

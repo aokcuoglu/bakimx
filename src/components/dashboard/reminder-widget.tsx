@@ -34,7 +34,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
         </CardTitle>
         <div className="flex items-center gap-2">
           {overdue.length > 0 ? (
-            <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20">
+            <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive-strong border border-destructive/20">
               {overdue.length} Geciken
             </span>
           ) : null}

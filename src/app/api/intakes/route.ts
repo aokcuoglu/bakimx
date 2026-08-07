@@ -1,5 +1,6 @@
 import { createIntakeAction } from "@/app/(app)/intakes/actions"
 import { NextResponse } from "next/server"
+import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, id: result.id, orderId: result.orderId })
     }
     return NextResponse.json({ error: "Beklenmeyen hata" }, { status: 400 })
-  } catch {
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 })
+  } catch (err) {
+    return apiErrorResponse(err)
   }
 }

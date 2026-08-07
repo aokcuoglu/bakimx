@@ -10,7 +10,7 @@ import { nanoid } from "nanoid"
 import { AuditLogAction } from "@/lib/audit"
 
 export async function generateShareLinkAction(intakeFormId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },

@@ -138,7 +138,7 @@ export function HeroSection() {
               <div className="flex items-center gap-2">
                 <ScanLine className="h-4 w-4 text-primary" />
                 <span className="font-mono text-sm font-semibold">34 ABC 123</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success-strong">
                   <CheckCircle2 className="h-3 w-3" />
                   Ruhsattan dolduruldu
                 </span>

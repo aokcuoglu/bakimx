@@ -9,6 +9,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 /**
  * The catalog id columns have no DB foreign keys (the catalog is re-importable
@@ -57,7 +58,7 @@ async function validateCatalogSelection(data: {
 }
 
 export async function createVehicleAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -176,7 +177,7 @@ export async function getVehicleAction(vehicleId: string) {
         include: {
           order: { include: { items: true } },
           damageMarks: true,
-          photos: { select: { id: true, type: true, label: true, fileUrl: true, createdAt: true } },
+          photos: { where: VISIBLE_PHOTO, select: { id: true, type: true, label: true, fileUrl: true, createdAt: true } },
           approvals: { orderBy: { createdAt: "desc" }, take: 1 },
         },
         orderBy: { createdAt: "desc" },
@@ -188,7 +189,7 @@ export async function getVehicleAction(vehicleId: string) {
 }
 
 export async function updateVehicleAction(vehicleId: string, formData: FormData) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -288,7 +289,7 @@ export async function linkVehicleCatalogAction(
   vehicleId: string,
   data: { catalogBrandId?: number; catalogModelId?: number; catalogVehicleTypeId: number }
 ) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -330,7 +331,7 @@ export async function linkVehicleCatalogAction(
 }
 
 export async function confirmVehicleVinAction(vehicleId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -358,7 +359,7 @@ export async function confirmVehicleVinAction(vehicleId: string) {
 }
 
 export async function deleteVehicleAction(vehicleId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },
@@ -378,7 +379,7 @@ export async function deleteVehicleAction(vehicleId: string) {
 }
 
 export async function changeVehicleOwnerAction(vehicleId: string, newCustomerId: string) {
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("records.manage")
 
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, workshopId: user.workshopId },

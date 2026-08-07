@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
-import { serviceOrderItemSchema, serviceOrderItemUpdateSchema, purchaseItemCreateSchema, purchaseItemUpdateSchema } from "@/lib/validations/order"
+import { serviceOrderItemSchema, serviceOrderItemUpdateSchema, purchaseItemCreateSchema, purchaseItemUpdateSchema, orderInvoiceSchema } from "@/lib/validations/order"
+import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
@@ -18,10 +19,11 @@ import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
 import { syncDeliveryToCalendar } from "@/lib/calendar/sync"
 import { z } from "zod/v4"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createServiceOrderAction(intakeFormId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const intake = await prisma.vehicleIntakeForm.findFirst({
     where: { id: intakeFormId, workshopId: user.workshopId },
@@ -60,7 +62,7 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
 
 export async function addOrderItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -191,7 +193,7 @@ export async function addOrderItemAction(formData: FormData) {
  */
 export async function addPurchaseItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const serviceOrderId = formData.get("serviceOrderId") as string
   const rawPurchasedAt = (formData.get("purchasedAt") as string) || ""
@@ -345,7 +347,7 @@ export async function addPurchaseItemAction(formData: FormData) {
  */
 export async function updatePurchaseItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("parts.purchase")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -478,7 +480,7 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
 
 export async function removeOrderItemAction(itemId: string, orderId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -574,7 +576,7 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
 
 export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.serviceOrderItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
@@ -727,7 +729,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
 
 export async function updateOrderStatusAction(orderId: string, status: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.status")
 
   if (!isOrderStatus(status)) return { error: "Geçersiz durum" }
 
@@ -837,7 +839,7 @@ const orderMetaSchema = z.object({
 
 export async function updateOrderMetaAction(orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop()
+  const { user } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     technicianName: formData.get("technicianName") as string,
@@ -898,6 +900,120 @@ export async function updateOrderMetaAction(orderId: string, formData: FormData)
   return { success: true }
 }
 
+/**
+ * Fatura no + tarih elle girilir. `isOrderLocked` BİLEREK uygulanmaz: fatura
+ * pratikte araç teslim edildikten sonra kesilir, bu yüzden teslim edilmiş iş
+ * emrinde de bu iki alan yazılabilir kalır. Kalem/fiyat/fotoğraf/durum kilidi
+ * aynen sürer. İptal edilmiş emir istisnadır — iş hiç yapılmadı.
+ */
+export async function updateOrderInvoiceAction(orderId: string, formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const parsed = orderInvoiceSchema.safeParse({
+    invoiceNo: (formData.get("invoiceNo") as string) ?? "",
+    invoiceDate: (formData.get("invoiceDate") as string) ?? "",
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz fatura bilgisi" }
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, invoiceNo: true, invoiceDate: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (order.status === "cancelled") {
+    return { error: "İptal edilmiş iş emrine fatura bilgisi girilemez" }
+  }
+
+  // `trDateToDate` takvim geçerliliğini KONTROL ETMEZ: "31.02.2026" Invalid Date
+  // üretmez, sessizce 03.03.2026'ya taşar. Şema yalnız GG.AA.YYYY biçimine baktığı
+  // için bu sessiz bozulmayı burada kapatıyoruz — çevrilen tarihin parçaları girdiyle
+  // birebir aynı değilse tarih geçersizdir. (DatePicker böyle bir değer üretemez;
+  // koruma doğrudan API'ye POST eden çağrılar içindir.)
+  let invoiceDate: Date | null = null
+  if (parsed.data.invoiceDate) {
+    const [day, month, year] = parsed.data.invoiceDate.split(".").map(Number)
+    const converted = trDateToDate(parsed.data.invoiceDate)
+    if (
+      !converted ||
+      converted.getDate() !== day ||
+      converted.getMonth() + 1 !== month ||
+      converted.getFullYear() !== year
+    ) {
+      return { error: "Geçerli bir tarih seçiniz" }
+    }
+    invoiceDate = converted
+  }
+
+  const invoiceNo = parsed.data.invoiceNo || null
+
+  await prisma.serviceOrder.updateMany({
+    where: { id: orderId, workshopId: user.workshopId },
+    data: { invoiceNo, invoiceDate },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrder",
+    orderId,
+    "order_invoice_updated",
+    JSON.stringify({
+      from: { invoiceNo: order.invoiceNo, invoiceDate: order.invoiceDate?.toISOString() ?? null },
+      to: { invoiceNo, invoiceDate: invoiceDate?.toISOString() ?? null },
+    }),
+    orderId,
+  )
+
+  revalidatePath(`/orders/${orderId}`)
+  return { success: true }
+}
+
+/**
+ * Servise geliş nedeni, işin İÇERİĞİNE dair bir bilgidir: fatura alanlarının
+ * aksine teslim/iptal sonrası kilitlenir. Boş string nedeni temizler.
+ */
+export async function updateOrderArrivalReasonAction(orderId: string, reason: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  // Ayrı `if` bloğu bilinçli: tek satırlık koşulda TS `reason`'ı daraltamıyor.
+  let nextReason: ArrivalReasonKey | null = null
+  if (reason !== "") {
+    if (!isArrivalReason(reason)) return { error: "Geçersiz geliş nedeni" }
+    nextReason = reason
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, arrivalReason: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) {
+    return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+  }
+
+  await prisma.serviceOrder.updateMany({
+    where: { id: orderId, workshopId: user.workshopId },
+    data: { arrivalReason: nextReason },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrder",
+    orderId,
+    "order_arrival_reason_set",
+    JSON.stringify({ from: order.arrivalReason, to: nextReason }),
+    orderId,
+  )
+
+  revalidatePath(`/orders/${orderId}`)
+  return { success: true }
+}
+
 export async function getOrdersAction() {
   const { requireAuth } = await import("@/lib/auth")
   const user = await requireAuth()
@@ -918,9 +1034,72 @@ export async function getOrderAction(orderId: string) {
   const order = await prisma.serviceOrder.findFirst({
     where: { id: orderId, workshopId: user.workshopId },
     include: {
-      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: true } },
+      intakeForm: { include: { customer: true, vehicle: true, damageMarks: true, photos: { where: VISIBLE_PHOTO } } },
       items: true,
     },
   })
   return order
+}
+
+/**
+ * Teslim edilmiş iş emrini yeniden açar (#183 — yalnız Yönetici).
+ *
+ * Genel durum action'ı üzerinden YAPILMAZ: `ORDER_TRANSITIONS.delivered` bilerek
+ * boş bırakıldı, teslim tek yönlü bir kapı. Geri alma ayrı bir yetenek
+ * (`order.reopen`) ve ayrı bir action olarak durur ki genel durum yolunu
+ * gevşetmek zorunda kalmayalım.
+ *
+ * Teslimden hemen önceki duruma dönülür (`ready_for_delivery`): araç geri
+ * geldiğinde iş oradan devam eder. Tahsilat, paylaşım linki ve onay kayıtlarına
+ * DOKUNULMAZ — para ve müşteri onayı geçmişi geriye alınmaz.
+ */
+export async function reopenDeliveredOrderAction(orderId: string, reason: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.reopen")
+
+  const justification = reason.trim()
+  if (justification.length < 5) {
+    return { error: "Yeniden açma gerekçesi en az 5 karakter olmalıdır" }
+  }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (order.status !== "delivered") {
+    return { error: "Yalnız teslim edilmiş iş emri yeniden açılabilir" }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.updateMany({
+      where: { id: orderId, workshopId: user.workshopId, status: "delivered" },
+      data: { status: "ready_for_delivery" },
+    })
+    await tx.vehicleIntakeForm.updateMany({
+      where: { id: order.intakeFormId, workshopId: user.workshopId, status: "delivered" },
+      data: { status: "ready_for_delivery" },
+    })
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ServiceOrder",
+    orderId,
+    "order_reopened",
+    JSON.stringify({ reason: justification, from: "delivered", to: "ready_for_delivery" }),
+    orderId,
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "order_reopened",
+    description: "İş emri yeniden açıldı",
+  })
+
+  revalidatePath(`/orders/${orderId}`)
+  revalidatePath("/orders")
+  return { success: true }
 }

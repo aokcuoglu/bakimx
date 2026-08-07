@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { PublicVehiclePassportPage } from "@/components/vehicles/public-vehicle-passport"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
+import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -20,7 +21,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               damageMarks: true,
               photos: {
                 // Dış alım (satın alma) fotoğrafları dahili-yalnız — araç pasaportuna sızmaz.
-                where: { serviceOrderItemId: null },
+                where: { serviceOrderItemId: null, ...VISIBLE_PHOTO },
                 select: { id: true, type: true, label: true, fileUrl: true, phase: true, createdAt: true },
               },
               timelineEvents: {

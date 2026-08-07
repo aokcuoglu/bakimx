@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState, startTransition } from "react"
+import { useActionState, useEffect, useMemo, useState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { liraToKurus, kurusToLira } from "@/lib/money"
@@ -10,13 +10,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox"
+  Autocomplete,
+  AutocompleteInput,
+  AutocompleteContent,
+  AutocompleteList,
+  AutocompleteItem,
+  AutocompleteEmpty,
+} from "@/components/ui/autocomplete"
 import {
   Form,
   FormControl,
@@ -28,9 +28,11 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createPartAction, updatePartAction } from "@/app/(app)/parts/actions"
 import { ArrowLeft, Loader2, Save } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useForm, type FieldErrors } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { partSchema, type PartFormValues } from "@/lib/validations/part"
+import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
+import { mergePartAttributeOptions } from "@/lib/parts/attributes"
 
 const CURRENCY_LABELS: Record<string, string> = {
   TRY: "₺ TRY",
@@ -59,7 +61,7 @@ type PartData = {
   barcode: string | null
 }
 
-/** TecDoc supplier — parça markası (Marka Combobox'ını doldurur). */
+/** TecDoc supplier — parça markası (Marka Autocomplete'ini doldurur). */
 type Brand = { supplierId: number; name: string }
 
 type SupplierOption = {
@@ -74,7 +76,39 @@ type ActionState = {
   id?: string
 }
 
-function toDefaults(part?: PartData): PartFormValues {
+/**
+ * zodResolver, `supplierPrices` dizisi için hata şeklini duruma göre değiştiriyor:
+ * yalnız satır-içi (ör. eksik tedarikçi) hata varsa dizi indeksli obje döner
+ * (`{0: {supplierId: {message}}}`); yalnız dizi-seviyeli `refine` hatası varsa
+ * (ör. "varsayılan seçilmeli") doğrudan `{message}` döner; ikisi birden varsa
+ * satır hataları numaralı anahtarlarla, refine hatası ise `.root.message` altında
+ * gelir. Bu iki yardımcı üç şekli de tek biçime indirger.
+ */
+function extractSupplierPriceRowErrors(
+  errors: FieldErrors<PartFormValues>["supplierPrices"],
+  rowCount: number
+): (string | undefined)[] {
+  if (!errors) return []
+  const bag = errors as unknown as Record<
+    number,
+    { supplierId?: { message?: string }; purchasePrice?: { message?: string } } | undefined
+  >
+  return Array.from({ length: rowCount }, (_, i) => {
+    const row = bag[i]
+    const parts = [row?.supplierId?.message, row?.purchasePrice?.message].filter((m): m is string => Boolean(m))
+    return parts.length ? parts.join(" · ") : undefined
+  })
+}
+
+function extractSupplierPricesRootMessage(
+  errors: FieldErrors<PartFormValues>["supplierPrices"]
+): string | undefined {
+  if (!errors) return undefined
+  const bag = errors as unknown as { message?: string; root?: { message?: string } }
+  return bag.message ?? bag.root?.message
+}
+
+function toDefaults(part?: PartData, supplierPrices: SupplierPriceFormRow[] = []): PartFormValues {
   return {
     name: part?.name || "",
     sku: part?.sku || "",
@@ -85,8 +119,7 @@ function toDefaults(part?: PartData): PartFormValues {
     unit: part?.unit || "adet",
     stockQty: part?.stockQty ?? 0,
     criticalStockQty: part?.criticalStockQty ?? 0,
-    // Stored in kuruş; the form inputs hold TRY.
-    purchasePrice: part?.purchasePrice != null ? kurusToLira(part.purchasePrice) : 0,
+    // Stored in kuruş; the form input holds TRY.
     salePrice: part?.salePrice != null ? kurusToLira(part.salePrice) : 0,
     currency: (part?.currency as "TRY" | "USD" | "EUR") || "TRY",
     supplierName: part?.supplierName || "",
@@ -94,20 +127,33 @@ function toDefaults(part?: PartData): PartFormValues {
     supplierId: part?.supplierId || "",
     shelfLocation: part?.shelfLocation || "",
     barcode: part?.barcode || "",
+    supplierPrices,
   }
 }
 
-export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: SupplierOption[] }) {
+export function PartForm({
+  part,
+  suppliers,
+  workshopBrands = [],
+  workshopCategories = [],
+  supplierPrices = [],
+}: {
+  part?: PartData
+  suppliers?: SupplierOption[]
+  workshopBrands?: string[]
+  workshopCategories?: string[]
+  supplierPrices?: SupplierPriceFormRow[]
+}) {
   const router = useRouter()
   const isEdit = !!part
 
   const form = useForm<PartFormValues, unknown, PartFormValues>({
     resolver: typedResolver(partSchema),
-    defaultValues: toDefaults(part),
+    defaultValues: toDefaults(part, supplierPrices),
   })
 
   // Parça markaları (TecDoc suppliers) — araç-bağımsız, tek sefer çekilir.
-  // Combobox serbest girişi destekler: liste boş olsa da yazılan değer geçerli.
+  // Autocomplete serbest girişi destekler: liste boş olsa da yazılan değer geçerli.
   const [brands, setBrands] = useState<Brand[]>([])
   useEffect(() => {
     let active = true
@@ -117,6 +163,19 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
       .catch(() => { if (active) setBrands([]) })
     return () => { active = false }
   }, [])
+
+  // Öneriler: atölyenin kendi markaları önce, ardından TecDoc markaları (tekilleştirilmiş).
+  const brandOptions = useMemo(() => {
+    return mergePartAttributeOptions(workshopBrands, brands.map((brand) => brand.name))
+  }, [workshopBrands, brands])
+
+  // Kategoriler atölyenin kendi stok kayıtlarından türetilir. Autocomplete'in
+  // serbest girişi sayesinde yeni bir ad yazılıp parça kaydedildiğinde sonraki
+  // kayıtlarda bu atölyeye özel bir öneri olarak görünür.
+  const categoryOptions = useMemo(
+    () => mergePartAttributeOptions(workshopCategories),
+    [workshopCategories]
+  )
 
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && part) {
@@ -136,11 +195,23 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
   function onSubmit(values: PartFormValues) {
     const formData = new FormData()
     for (const [key, value] of Object.entries(values)) {
+      if (key === "supplierPrices") continue
       formData.set(key, String(value))
     }
-    // Prices are entered in TRY but stored as kuruş.
-    formData.set("purchasePrice", String(liraToKurus(Number(values.purchasePrice) || 0)))
+    // Satış fiyatı TRY girilir, kuruş saklanır.
     formData.set("salePrice", String(liraToKurus(Number(values.salePrice) || 0)))
+    // Tedarikçi satırları JSON olarak gider; fiyatlar kuruşa çevrilir.
+    formData.set(
+      "supplierPrices",
+      JSON.stringify(
+        values.supplierPrices.map((r) => ({
+          supplierId: r.supplierId,
+          purchasePrice: liraToKurus(Number(r.purchasePrice) || 0),
+          supplierSku: r.supplierSku,
+          isPreferred: r.isPreferred,
+        }))
+      )
+    )
     startTransition(() => formAction(formData))
   }
 
@@ -185,9 +256,9 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Parça Kodu / SKU</FormLabel>
+                      <FormLabel>Parça Kodu / SKU *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Opsiyonel" />
+                        <Input {...field} placeholder="Örn. 0986424815" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -215,28 +286,26 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                     <FormItem>
                       <FormLabel>Marka</FormLabel>
                       <FormControl>
-                        <Combobox
-                          items={brands}
-                          filter={(item: Brand, query: string) =>
-                            item.name.toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))}
-                          itemToStringLabel={(b: Brand) => b.name}
-                          itemToStringValue={(b: Brand) => b.name}
-                          inputValue={field.value}
-                          onInputValueChange={(v: string) => field.onChange(v)}
-                          onValueChange={(b: Brand | null) => { if (b) field.onChange(b.name) }}
+                        <Autocomplete
+                          items={brandOptions}
+                          value={field.value}
+                          autoHighlight
+                          openOnInputClick
+                          itemToStringValue={(b: string) => b}
+                          onValueChange={(v: string) => field.onChange(v)}
                         >
-                          <ComboboxInput placeholder="Bosch, Mann, OEM..." />
-                          <ComboboxContent>
-                            <ComboboxEmpty className="py-2 text-sm text-muted-foreground">
-                              Listede yok — yazdığınız değer kullanılacak
-                            </ComboboxEmpty>
-                            <ComboboxList>
-                              {(b: Brand) => (
-                                <ComboboxItem key={b.supplierId} value={b}>{b.name}</ComboboxItem>
+                          <AutocompleteInput render={<Input placeholder="Bosch, Mann, OEM..." />} />
+                          <AutocompleteContent>
+                            <AutocompleteEmpty>Listede yok — yazdığınız marka kaydedilir</AutocompleteEmpty>
+                            <AutocompleteList>
+                              {(b: string) => (
+                                <AutocompleteItem key={b} value={b} onClick={() => field.onChange(b)}>
+                                  <span className="block truncate">{b}</span>
+                                </AutocompleteItem>
                               )}
-                            </ComboboxList>
-                          </ComboboxContent>
-                        </Combobox>
+                            </AutocompleteList>
+                          </AutocompleteContent>
+                        </Autocomplete>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -249,7 +318,30 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Fren, Motor, Filtre..." />
+                        <Autocomplete
+                          items={categoryOptions}
+                          value={field.value}
+                          autoHighlight
+                          openOnInputClick
+                          itemToStringValue={(category: string) => category}
+                          onValueChange={(value: string) => field.onChange(value)}
+                        >
+                          <AutocompleteInput render={<Input placeholder="Fren, Motor, Filtre..." />} />
+                          <AutocompleteContent>
+                            <AutocompleteEmpty>Listede yok — yazdığınız kategori kaydedilir</AutocompleteEmpty>
+                            <AutocompleteList>
+                              {(category: string) => (
+                                <AutocompleteItem
+                                  key={category}
+                                  value={category}
+                                  onClick={() => field.onChange(category)}
+                                >
+                                  <span className="block truncate">{category}</span>
+                                </AutocompleteItem>
+                              )}
+                            </AutocompleteList>
+                          </AutocompleteContent>
+                        </Autocomplete>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -354,20 +446,7 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
               <CardTitle className="text-sm font-semibold">Fiyat Bilgileri</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <FormField
-                  control={form.control}
-                  name="purchasePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Alış Fiyatı</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" step="0.01" placeholder="0" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="salePrice"
@@ -411,69 +490,40 @@ export function PartForm({ part, suppliers }: { part?: PartData; suppliers?: Sup
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-semibold">Tedarikçi Bilgisi</CardTitle>
+              <CardTitle className="text-sm font-semibold">Tedarikçiler & Alış Fiyatları</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {suppliers && suppliers.length > 0 && (
-                <FormField
-                  control={form.control}
-                  name="supplierId"
-                  render={({ field }) => (
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="supplierPrices"
+                render={({ field }) => {
+                  const rowErrors = extractSupplierPriceRowErrors(
+                    form.formState.errors.supplierPrices,
+                    field.value.length
+                  )
+                  const rootMessage = extractSupplierPricesRootMessage(form.formState.errors.supplierPrices)
+                  return (
                     <FormItem>
-                      <FormLabel>Tedarikçi Seç</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Tedarikçi seçin (opsiyonel)">
-                              {(value: string | null) => {
-                                if (!value) return null
-                                const s = suppliers?.find((s) => s.id === value)
-                                return s ? `${s.name}${s.phone ? ` — ${s.phone}` : ""}` : value
-                              }}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Tedarikçi seçin (opsiyonel)</SelectItem>
-                            {suppliers.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` — ${s.phone}` : ""}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <PartSupplierPricesField
+                          suppliers={suppliers ?? []}
+                          value={field.value}
+                          onChange={field.onChange}
+                          errors={rowErrors}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      {rootMessage ? (
+                        <p className="text-sm text-destructive-strong">{rootMessage}</p>
+                      ) : (
+                        <FormMessage />
+                      )}
                     </FormItem>
-                  )}
-                />
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="supplierName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tedarikçi Adı (metin)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Tedarikçi adı..." />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="supplierPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tedarikçi Telefonu</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="05XX XXX XX XX" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground/70">Seçili tedarikçi önceliklidir. Eski kayıtlar metin alanını kullanmaya devam eder.</p>
+                  )
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground/70 mt-3">
+                Alış fiyatı tedarikçi bazlı tutulur. Varsayılan tedarikçinin fiyatı parçanın alış fiyatı olarak kullanılır.
+              </p>
             </CardContent>
           </Card>
 

@@ -36,7 +36,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
           label="Bu Ay Yeni"
           value={analytics.newThisMonth}
           icon={UserPlus}
-          accent="text-success"
+          accent="text-success-strong"
         />
         <StatCard
           label="Geri Dönüş Oranı"
@@ -50,13 +50,13 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
           value={analytics.inactiveCustomers}
           subtitle="90+ gün aktif değil"
           icon={UserX}
-          accent="text-warning"
+          accent="text-warning-strong"
         />
       </div>
 
       <div className="rounded-lg border border-border bg-white overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
-          <TrendingUp className="size-4 text-success" />
+          <TrendingUp className="size-4 text-success-strong" />
           <h3 className="text-base font-semibold text-foreground">En Yüksek Değerli Müşteriler</h3>
         </div>
         {analytics.highValueCustomers.length === 0 ? (
@@ -79,7 +79,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
                 {analytics.highValueCustomers.map((c, i) => (
                   <tr key={c.id} className="border-b border-border hover:bg-muted/50">
                     <td className="px-4 py-2.5">
-                      <span className="size-6 rounded-full bg-success/10 text-success inline-flex items-center justify-center text-xs font-bold">
+                      <span className="size-6 rounded-full bg-success/10 text-success-strong inline-flex items-center justify-center text-xs font-bold">
                         {i + 1}
                       </span>
                     </td>

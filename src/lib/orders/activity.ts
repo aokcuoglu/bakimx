@@ -2,12 +2,14 @@ import "server-only"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { formatTRY } from "@/lib/format"
+import { formatDate } from "@/lib/utils-client"
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
   PHOTO_TYPES,
   DAMAGE_TYPES,
   VEHICLE_ZONES,
+  arrivalReasonLabel,
 } from "@/lib/constants"
 
 export type ActivityCategory =
@@ -102,6 +104,24 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     case "order_meta_updated":
       return { category: "meta", label: "İş emri bilgileri güncellendi" }
 
+    case "order_invoice_updated": {
+      const to = (meta.to ?? {}) as Record<string, unknown>
+      const no = typeof to.invoiceNo === "string" ? to.invoiceNo : null
+      const date = typeof to.invoiceDate === "string" ? formatDate(to.invoiceDate) : null
+      return {
+        category: "meta",
+        label: no || date ? "Fatura bilgisi güncellendi" : "Fatura bilgisi temizlendi",
+        detail: [no, date].filter(Boolean).join(" · ") || undefined,
+      }
+    }
+    case "order_arrival_reason_set": {
+      const to = typeof meta.to === "string" ? meta.to : null
+      return {
+        category: "meta",
+        label: to ? `Geliş nedeni: ${arrivalReasonLabel(to)}` : "Geliş nedeni kaldırıldı",
+      }
+    }
+
     case "collection_created": {
       const amount = typeof meta.amount === "number" ? formatTRY(meta.amount) : null
       const method = typeof meta.method === "string" ? PAYMENT_METHOD_LABELS[meta.method] ?? meta.method : null
@@ -124,6 +144,11 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     case "photo_uploaded": {
       const type = typeof meta.type === "string" ? (PHOTO_TYPES as Record<string, { label: string }>)[meta.type]?.label ?? meta.type : null
       return { category: "photo", label: "Fotoğraf eklendi", detail: type ?? undefined }
+    }
+
+    case "photo_deleted": {
+      const type = typeof meta.type === "string" ? (PHOTO_TYPES as Record<string, { label: string }>)[meta.type]?.label ?? meta.type : null
+      return { category: "photo", label: "Fotoğraf silindi", detail: type ?? undefined }
     }
 
     case "damage_mark_added": {
@@ -178,6 +203,8 @@ export async function getOrderActivity({
 }): Promise<OrderActivityEntry[]> {
   const [items, photos, damageMarks, collections, partsRequests] = await Promise.all([
     prisma.serviceOrderItem.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),
+    // Bilerek `deletedAt` filtresi YOK: silinmiş karenin `photo_deleted` denetim
+    // kaydı personel-içi işlem geçmişinde görünmeye devam etmeli.
     prisma.vehiclePhoto.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.damageMark.findMany({ where: { intakeFormId, workshopId }, select: { id: true } }),
     prisma.collectionPayment.findMany({ where: { serviceOrderId: orderId, workshopId }, select: { id: true } }),

@@ -49,9 +49,12 @@ import {
   Lock,
   Calculator,
   TriangleAlert,
+  Images,
+  X,
+  Wrench,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { PHOTO_TYPES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
+import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
@@ -67,7 +70,6 @@ import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
 import { FuelGauge, FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { formatFuelLevel } from "@/lib/fuel-level"
-import { ApprovalTimeline } from "@/components/intake/approval-timeline"
 import { OrderActivityLog } from "@/components/orders/order-activity-log"
 import { useOrderSync } from "@/hooks/use-order-sync"
 import type { OrderActivityEntry } from "@/lib/orders/activity"
@@ -76,19 +78,26 @@ import {
   PartsLaborCard,
   PricingSummaryCard,
   PaymentHistoryCard,
-  OrderInfoCard,
   type OrderDetailData,
   type PricingMetaDraft,
   type Totals,
 } from "@/components/orders/order-management-panel"
+import { OrderInfoCard } from "@/components/orders/order-info-card"
+import { reopenDeliveredOrderAction } from "@/app/(app)/orders/actions"
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { TechnicianProgressPanel } from "@/components/orders/technician-progress-panel"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
-
-const PHOTO_PHASE_LABELS: Record<string, string> = {
-  intake: "Kabul (Intake)",
-  repair_progress: "Onarım Aşaması",
-  delivery: "Teslim",
-}
+import type { LaborCatalogRow } from "@/lib/labor/types"
+import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -104,15 +113,20 @@ const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
 
 // Detay içeriği sekmelere bölünür (uzun tek-scroll yerine). Aktif sekme URL'de
 // `?tab=` ile tutulur; settings-tabs deseniyle aynı.
-type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "gecmis"
+type TabKey = "ozet" | "parca" | "tahsilat" | "kanit" | "teknisyen" | "gecmis"
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "ozet", label: "Özet", icon: Info },
   { key: "parca", label: "Parça & İşçilik", icon: Package },
   { key: "tahsilat", label: "Tahsilat", icon: Wallet },
   { key: "kanit", label: "Kanıt", icon: Camera },
+  { key: "teknisyen", label: "Teknisyen", icon: Wrench },
   { key: "gecmis", label: "Geçmiş", icon: History },
 ]
+
+// Yüklenmeyi bekleyen seçim. `previewUrl` bir blob URL'idir; kare listeden
+// çıktığında (kaldırıldı / yüklendi / dialog kapandı) revoke edilir.
+type PendingPhoto = { key: string; file: File; previewUrl: string }
 
 type VehiclePhoto = {
   id: string
@@ -153,7 +167,6 @@ type IntakeDetailProps = {
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   approvals: { id: string; status: string; otpCode: string; createdAt: Date }[]
   shareLinks: { id: string; token: string; isActive: boolean }[]
-  timelineEvents: { eventType: string; description: string; createdAt: Date }[]
   order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
@@ -164,6 +177,8 @@ export function WorkOrderDetail({
   hasAiAdvisor,
   activity = [],
   editInitially = false,
+  laborCatalog,
+  canReopen = false,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
@@ -173,6 +188,11 @@ export function WorkOrderDetail({
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
   editInitially?: boolean
+  // Atölyenin işçilik kataloğu — İşçilik composer'ının öneri kaynağı.
+  laborCatalog: LaborCatalogRow[]
+  // #183 — teslim edilmiş iş emrini yeniden açma yetkisi (yalnız Yönetici).
+  // Karar SUNUCUDA verilir; burada yalnız görünürlük. Asıl kapı action'da.
+  canReopen?: boolean
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -206,6 +226,29 @@ export function WorkOrderDetail({
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
   const openInfoEditor = editInitially && !orderLocked
+
+  // #183 — teslim edilmiş iş emrini yeniden açma. Gerekçe zorunlu: denetim
+  // kaydında "neden geri alındı" sorusunun cevabı dursun.
+  const [reopenOpen, setReopenOpen] = useState(false)
+  const [reopenReason, setReopenReason] = useState("")
+  const [reopening, setReopening] = useState(false)
+
+  async function handleReopen() {
+    setReopening(true)
+    try {
+      const res = await reopenDeliveredOrderAction(order.id, reopenReason)
+      if (res && "error" in res) {
+        toast.error(res.error)
+        return
+      }
+      toast.success("İş emri yeniden açıldı")
+      setReopenOpen(false)
+      setReopenReason("")
+      router.refresh()
+    } finally {
+      setReopening(false)
+    }
+  }
   const [editingInfo, setEditingInfo] = useState(openInfoEditor)
   const [savingInfo, setSavingInfo] = useState(false)
   const [editComplaint, setEditComplaint] = useState(openInfoEditor ? order.intake.customerComplaint : "")
@@ -216,6 +259,11 @@ export function WorkOrderDetail({
   const [editFuelLevel, setEditFuelLevel] = useState<number | null>(
     openInfoEditor ? order.intake.fuelLevelAtIntake ?? null : null
   )
+  // #196 / #149 — aracı getiren ve teslim alacak kişi (müşteri değilse).
+  const [editDropName, setEditDropName] = useState(openInfoEditor ? order.intake.droppedOffByName ?? "" : "")
+  const [editDropPhone, setEditDropPhone] = useState(openInfoEditor ? order.intake.droppedOffByPhone ?? "" : "")
+  const [editPickName, setEditPickName] = useState(openInfoEditor ? order.intake.pickedUpByName ?? "" : "")
+  const [editPickPhone, setEditPickPhone] = useState(openInfoEditor ? order.intake.pickedUpByPhone ?? "" : "")
   const infoCardRef = useRef<HTMLDivElement>(null)
 
   // Photos
@@ -224,11 +272,21 @@ export function WorkOrderDetail({
   const [photoType, setPhotoType] = useState("")
   const [photoPhase, setPhotoPhase] = useState("intake")
   const [photoNote, setPhotoNote] = useState("")
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  // Çoklu yükleme: seçilen kareler yüklenene kadar burada birikir. Önizleme
+  // blob URL'i her kare için tutulur ve listeden çıkınca serbest bırakılır.
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
+  const [uploadedCount, setUploadedCount] = useState(0)
   const pendingPhotoScrollRef = useRef(false)
+  const pendingPricingScrollRef = useRef(false)
   const pricingRef = useRef<HTMLDivElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
+  // Mobilde `capture` girdisi galeri seçicisini baypas edip doğrudan kamerayı
+  // açtığı için çoklu seçim ayrı bir girdide (capture'sız, `multiple`) duruyor.
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  // Üretilen tüm blob URL'leri; unmount'ta topluca serbest bırakılır (tekrar
+  // revoke etmek zararsız, tek tek kaldırmada zaten serbest bırakılıyorlar).
+  const photoUrlsRef = useRef<string[]>([])
+  useEffect(() => () => { photoUrlsRef.current.forEach(URL.revokeObjectURL) }, [])
 
   // Share
   const [shareToken, setShareToken] = useState(intake.shareLinks[0]?.token || "")
@@ -247,6 +305,25 @@ export function WorkOrderDetail({
       photosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
   }, [activeTab])
+
+  // Fiyatlandırma artık Özet sekmesinde. Parça sekmesindeki mobil toplam çubuğu
+  // önce sekmeyi açar; panel mount edildikten sonra karta kaydırma tamamlanır.
+  useEffect(() => {
+    if (activeTab === "ozet" && pendingPricingScrollRef.current) {
+      pendingPricingScrollRef.current = false
+      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [activeTab])
+
+  function focusPricingSummary() {
+    if (activeTab === "ozet") {
+      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
+
+    pendingPricingScrollRef.current = true
+    handleTabChange("ozet")
+  }
 
   // Listeden "Düzenle" ile gelindiğinde kart sayfanın alt kısmında kalıyor;
   // özellikle mobilde kullanıcı düzenleme alanını göremiyor.
@@ -302,6 +379,13 @@ export function WorkOrderDetail({
     setEditNote(order.intake.internalNote ?? "")
     setEditMileage(order.intake.mileageAtIntake != null ? String(order.intake.mileageAtIntake) : "")
     setEditFuelLevel(order.intake.fuelLevelAtIntake ?? null)
+    // Bu dördü de seed edilmek ZORUNDA: boş string "temizle" anlamına geliyor,
+    // seed edilmezse yalnızca şikayeti düzenleyen biri kayıtlı getiren/teslim
+    // alan kişiyi farkında olmadan siler.
+    setEditDropName(order.intake.droppedOffByName ?? "")
+    setEditDropPhone(order.intake.droppedOffByPhone ?? "")
+    setEditPickName(order.intake.pickedUpByName ?? "")
+    setEditPickPhone(order.intake.pickedUpByPhone ?? "")
     setError("")
     setEditingInfo(true)
   }
@@ -318,6 +402,10 @@ export function WorkOrderDetail({
           internalNote: editNote,
           mileageAtIntake: editMileage,
           fuelLevelAtIntake: editFuelLevel,
+          droppedOffByName: editDropName,
+          droppedOffByPhone: editDropPhone,
+          pickedUpByName: editPickName,
+          pickedUpByPhone: editPickPhone,
         }),
       })
       const data = await res.json()
@@ -332,35 +420,114 @@ export function WorkOrderDetail({
     }
   }
 
-  async function handleAddPhoto() {
-    if (!photoType) return
-    setLoading(true)
-    setError("")
+  // Seçilen kareleri listeye ekler (değiştirmez): kamera ve galeri girdileri
+  // arka arkaya kullanılabilsin diye seçim biriktirilir.
+  function addPickedPhotos(list: FileList | null) {
+    if (!list || list.length === 0) return
+    const { accepted, duplicates, overflow } = selectPhotoFiles(
+      pendingPhotos.map((p) => p.file),
+      Array.from(list),
+    )
+    if (duplicates > 0) toast.info(`${duplicates} fotoğraf zaten seçiliydi`)
+    if (overflow > 0) toast.warning(`Tek seferde en fazla ${MAX_BATCH_PHOTOS} fotoğraf; ${overflow} tanesi eklenmedi`)
+    if (accepted.length === 0) return
+    const added = accepted.map((file, i) => {
+      const previewUrl = URL.createObjectURL(file)
+      photoUrlsRef.current.push(previewUrl)
+      return { key: `${file.name}-${file.size}-${file.lastModified}-${pendingPhotos.length + i}`, file, previewUrl }
+    })
+    setPendingPhotos([...pendingPhotos, ...added])
+  }
+
+  function removePendingPhoto(key: string) {
+    const target = pendingPhotos.find((p) => p.key === key)
+    if (target) URL.revokeObjectURL(target.previewUrl)
+    setPendingPhotos(pendingPhotos.filter((p) => p.key !== key))
+  }
+
+  function resetPhotoDraft(items: PendingPhoto[] = pendingPhotos) {
+    items.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+    setPendingPhotos([])
+    setUploadedCount(0)
+    if (cameraInputRef.current) cameraInputRef.current.value = ""
+    if (galleryInputRef.current) galleryInputRef.current.value = ""
+  }
+
+  // Tek kare gönderir. Sunucu sözleşmesi değişmedi (istek başına bir dosya);
+  // toplu yükleme istemcide sıralı tekrar ile yapılır.
+  async function uploadPhoto(file: File | null): Promise<{ ok: boolean; error?: string }> {
     const formData = new FormData()
     formData.set("intakeFormId", intake.id)
     formData.set("type", photoType)
     formData.set("label", PHOTO_TYPES[photoType as keyof typeof PHOTO_TYPES]?.label || photoType)
     if (photoNote) formData.set("note", photoNote)
     if (photoPhase) formData.set("phase", photoPhase)
-    if (photoFile) formData.set("file", photoFile)
+    if (file) formData.set("file", file)
     try {
       const res = await fetch("/api/intakes/photos", { method: "POST", body: formData })
       const data = await res.json()
-      if (data.success) {
+      if (data.success) return { ok: true }
+      return { ok: false, error: data.error || "Fotoğraf eklenemedi" }
+    } catch {
+      return { ok: false, error: "Bir hata oluştu" }
+    }
+  }
+
+  async function handleAddPhoto() {
+    if (!photoType || loading) return
+    setLoading(true)
+    setError("")
+    setUploadedCount(0)
+
+    // Dosyasız "kayıt ekle" yolu korunuyor (eksik kanıtı yer tutucuyla işaretleme).
+    if (pendingPhotos.length === 0) {
+      const result = await uploadPhoto(null)
+      if (result.ok) {
         setAddingPhoto(false)
         setPhotoType("")
         setPhotoPhase("intake")
         setPhotoNote("")
-        setPhotoFile(null)
-        setPhotoPreview(null)
-        if (photoInputRef.current) photoInputRef.current.value = ""
+        resetPhotoDraft()
         router.refresh()
-      } else setError(data.error || "Fotoğraf eklenemedi")
-    } catch {
-      setError("Bir hata oluştu")
-    } finally {
+      } else setError(result.error ?? "Fotoğraf eklenemedi")
       setLoading(false)
+      return
     }
+
+    // Sıralı yükleme: mobil bağlantıda paralel istekler birbirini aç bırakıyor
+    // ve kısmi hatayı hangi karenin ürettiğini izlemek zorlaşıyor.
+    const failed: PendingPhoto[] = []
+    let firstError = ""
+    let done = 0
+    for (const pending of pendingPhotos) {
+      const result = await uploadPhoto(pending.file)
+      if (result.ok) {
+        done++
+        setUploadedCount(done)
+      } else {
+        failed.push(pending)
+        if (!firstError) firstError = result.error ?? ""
+      }
+    }
+
+    if (failed.length === 0) {
+      toast.success(done === 1 ? "Fotoğraf eklendi" : `${done} fotoğraf eklendi`)
+      setAddingPhoto(false)
+      setPhotoType("")
+      setPhotoPhase("intake")
+      setPhotoNote("")
+      resetPhotoDraft()
+    } else {
+      // Yüklenenlerin önizlemesini bırak, başarısızları tekrar denenebilsin diye tut.
+      const failedKeys = new Set(failed.map((p) => p.key))
+      pendingPhotos.filter((p) => !failedKeys.has(p.key)).forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      setPendingPhotos(failed)
+      setUploadedCount(0)
+      const summary = describeUploadFailure(failed.map((p) => p.file.name), pendingPhotos.length)
+      setError(firstError ? `${summary} (${firstError})` : summary)
+    }
+    router.refresh()
+    setLoading(false)
   }
 
   async function handleGenerateShareLink() {
@@ -523,7 +690,7 @@ export function WorkOrderDetail({
 
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-foreground text-sm flex items-start gap-2">
-          <Info className="size-4 text-destructive shrink-0 mt-0.5" />
+          <Info className="size-4 text-destructive-strong shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
@@ -533,7 +700,7 @@ export function WorkOrderDetail({
           önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
       {deliveryBlocked && order.status === "ready_for_delivery" && (
         <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
-          <TriangleAlert className="size-4 text-warning shrink-0 mt-0.5" />
+          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <div className="min-w-0 space-y-1">
             <p className="font-medium">{unpricedItems.length} kalemin fiyatı girilmemiş.</p>
             <p className="text-muted-foreground truncate">
@@ -552,7 +719,7 @@ export function WorkOrderDetail({
         <div className="rounded-lg border border-border bg-card p-3 space-y-2">
           <p className="text-sm font-medium flex items-center gap-2"><KeyRound className="size-4" /> Teslim Onayı (OTP)</p>
           {order.paymentStatus !== "paid" && (
-            <p className="text-xs text-warning">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
+            <p className="text-xs text-warning-strong">Uyarı: Bu iş emrinde ödeme tamamlanmadı ({order.paymentStatus}).</p>
           )}
           {deliverySentCode && (
             <div className="space-y-2">
@@ -591,8 +758,8 @@ export function WorkOrderDetail({
       {order.totals.hasAnyPrice && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
           <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
-          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span></span>
-          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span></span>
+          <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
+          <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
         </div>
       )}
 
@@ -611,6 +778,22 @@ export function WorkOrderDetail({
 
         {/* ÖZET */}
         <TabsContent value="ozet" className="space-y-5">
+          {canReopen && order.status === "delivered" && (
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">İş emri teslim edildi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Araç geri geldiyse iş emrini yeniden açabilirsiniz. Tahsilat ve müşteri
+                    onayı kayıtları korunur.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setReopenOpen(true)}>
+                  Yeniden Aç
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           {/* Müşteri & Araç */}
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Müşteri & Araç</CardTitle></CardHeader>
@@ -672,6 +855,14 @@ export function WorkOrderDetail({
             </CardContent>
           </Card>
 
+          {/* İş Emri Bilgileri */}
+          <OrderInfoCard
+            order={order}
+            technicians={technicians}
+            onRequestDelivery={handleRequestDeliveryOtp}
+            deliveryBlocked={deliveryBlocked}
+          />
+
           {/* Şikayet & Notlar (düzenlenebilir) */}
           <Card ref={infoCardRef}>
             <CardHeader className="pb-3">
@@ -708,6 +899,34 @@ export function WorkOrderDetail({
                       <FuelLevelPicker value={editFuelLevel} onChange={setEditFuelLevel} />
                     </div>
                   </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi getirdiyse boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>Ad Soyad</Label>
+                        <Input value={editDropName} onChange={(e) => setEditDropName(e.target.value)} placeholder="Örn. Ahmet Yılmaz" />
+                      </div>
+                      <div>
+                        <Label>Telefon</Label>
+                        <Input type="tel" inputMode="tel" value={editDropPhone} onChange={(e) => setEditDropPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border p-3 space-y-3">
+                    <p className="text-sm font-medium text-foreground">Aracı teslim alacak kişi</p>
+                    <p className="text-xs text-muted-foreground">Aracı müşterinin kendisi teslim alacaksa boş bırakın.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>Ad Soyad</Label>
+                        <Input value={editPickName} onChange={(e) => setEditPickName(e.target.value)} placeholder="Örn. Ayşe Demir" />
+                      </div>
+                      <div>
+                        <Label>Telefon</Label>
+                        <Input type="tel" inputMode="tel" value={editPickPhone} onChange={(e) => setEditPickPhone(e.target.value)} placeholder="Örn. 0532 000 0000" />
+                      </div>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">Yapılan değişiklik zaman çizelgesine ve denetim kaydına işlenir.</p>
                   <div className="flex gap-2 pt-1">
                     <Button onClick={handleSaveInfo} disabled={savingInfo || !editComplaint.trim()} size="sm" className="flex-1">
@@ -729,13 +948,34 @@ export function WorkOrderDetail({
                       <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
                     </div>
                   )}
+                  {/* Getiren/teslim alacak kişi yalnız kaydedildiyse görünür —
+                      vakaların çoğunda müşteri aracı kendi getirip alıyor. */}
+                  {(order.intake.droppedOffByName || order.intake.pickedUpByName) && (
+                    <div className="pt-3 border-t grid gap-3 sm:grid-cols-2">
+                      {order.intake.droppedOffByName && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Getiren</p>
+                          <p className="text-sm text-foreground">{order.intake.droppedOffByName}</p>
+                          {order.intake.droppedOffByPhone && (
+                            <p className="text-xs text-muted-foreground">{order.intake.droppedOffByPhone}</p>
+                          )}
+                        </div>
+                      )}
+                      {order.intake.pickedUpByName && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Teslim Alacak</p>
+                          <p className="text-sm text-foreground">{order.intake.pickedUpByName}</p>
+                          {order.intake.pickedUpByPhone && (
+                            <p className="text-xs text-muted-foreground">{order.intake.pickedUpByPhone}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* İş Emri Bilgileri */}
-          <OrderInfoCard order={order} technicians={technicians} />
 
           {/* Özet & Kanıt */}
           <Card>
@@ -750,12 +990,24 @@ export function WorkOrderDetail({
                 publicLinkStatus={publicLinkStatus}
                 onMissingPhotoClick={(key) => focusPhoto(key)}
               />
-              <div className="pt-3 border-t">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Onay Zaman Çizelgesi</p>
-                <ApprovalTimeline events={intake.timelineEvents || []} intakeCreatedAt={intake.createdAt} approvedAt={intake.approvedAt} />
-              </div>
             </CardContent>
           </Card>
+
+          <div ref={pricingRef} className="scroll-mt-20">
+            <PricingSummaryCard
+              totals={order.totals}
+              paymentStatus={order.paymentStatus}
+              paidAmount={order.paidAmount}
+              remainingAmount={order.remainingAmount}
+              locked={isOrderLocked(order.status as OrderStatus)}
+              editingMeta={editingMeta}
+              setEditingMeta={setEditingMeta}
+              metaDraft={metaDraft}
+              setMetaDraft={setMetaDraft}
+              saveMeta={saveMeta}
+              loading={loading}
+            />
+          </div>
 
           {/* Müşteri Çıktısı & Paylaşım */}
           <Card>
@@ -773,8 +1025,8 @@ export function WorkOrderDetail({
               ) : (
                 <>
                   <div className="flex items-center gap-2 text-xs">
-                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success" /> : <EyeOff className="size-3.5 text-destructive" />}
-                    <span className={intake.shareLinks[0]?.isActive ? "text-success font-medium" : "text-destructive font-medium"}>
+                    {intake.shareLinks[0]?.isActive ? <Eye className="size-3.5 text-success-strong" /> : <EyeOff className="size-3.5 text-destructive-strong" />}
+                    <span className={intake.shareLinks[0]?.isActive ? "text-success-strong font-medium" : "text-destructive-strong font-medium"}>
                       {intake.shareLinks[0]?.isActive ? "Link aktif" : "Link devre dışı"}
                     </span>
                   </div>
@@ -848,23 +1100,7 @@ export function WorkOrderDetail({
               listede ekranın çok altında kalıyor, banner viewport dışında kalıp
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} />
-
-          <div ref={pricingRef} className="scroll-mt-20">
-            <PricingSummaryCard
-              totals={order.totals}
-              paymentStatus={order.paymentStatus}
-              paidAmount={order.paidAmount}
-              remainingAmount={order.remainingAmount}
-              locked={isOrderLocked(order.status as OrderStatus)}
-              editingMeta={editingMeta}
-              setEditingMeta={setEditingMeta}
-              metaDraft={metaDraft}
-              setMetaDraft={setMetaDraft}
-              saveMeta={saveMeta}
-              loading={loading}
-            />
-          </div>
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} />
 
           {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
               kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
@@ -899,7 +1135,7 @@ export function WorkOrderDetail({
           <MobileTotalsBar
             totals={order.totals}
             itemCount={order.items.length}
-            onJump={() => pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onJump={focusPricingSummary}
           />
         </TabsContent>
 
@@ -919,11 +1155,11 @@ export function WorkOrderDetail({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Ödenen</span>
-                    <span className="font-semibold text-success">{formatTRY(order.paidAmount)}</span>
+                    <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span>
                   </div>
                   <div className="flex items-center justify-between border-t pt-2">
                     <span className="text-muted-foreground">Kalan</span>
-                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive" : "text-success"}`}>{formatTRY(order.remainingAmount)}</span>
+                    <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span>
                   </div>
                 </>
               ) : (
@@ -958,7 +1194,7 @@ export function WorkOrderDetail({
             <CardContent className="space-y-3">
               {/* Gallery */}
               {intake.photos.length > 0 ? (
-                <PhotoGalleryGrid photos={intake.photos} />
+                <PhotoGalleryGrid photos={intake.photos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-3">Henüz fotoğraf eklenmedi</p>
               )}
@@ -972,14 +1208,14 @@ export function WorkOrderDetail({
                       key={key}
                       type="button"
                       onClick={() => focusPhoto(key)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/15 transition-colors touch-manipulation"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive-strong border border-destructive/20 hover:bg-destructive/15 transition-colors touch-manipulation"
                     >
                       <Camera className="size-3" /> {val.label}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-success flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
+                <p className="text-xs text-success-strong flex items-center gap-1.5"><CheckCircle2 className="size-3.5" /> Tüm zorunlu fotoğraflar tamam</p>
               )}
 
               {/* Add photo trigger + dialog */}
@@ -991,8 +1227,9 @@ export function WorkOrderDetail({
               <Dialog
                 open={addingPhoto}
                 onOpenChange={(o) => {
+                  if (!o && loading) return // yükleme sürerken kapanmasın
                   setAddingPhoto(o)
-                  if (!o) { setPhotoType(""); setPhotoNote(""); setPhotoFile(null); setPhotoPreview(null); if (photoInputRef.current) photoInputRef.current.value = "" }
+                  if (!o) { setPhotoType(""); setPhotoNote(""); resetPhotoDraft() }
                 }}
               >
                 <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -1002,7 +1239,7 @@ export function WorkOrderDetail({
                   <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
-                  <Select value={photoType} onValueChange={(v) => { setPhotoType(v ?? ""); setPhotoFile(null); setPhotoPreview(null) }}>
+                  <Select value={photoType} onValueChange={(v) => setPhotoType(v ?? "")}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seçiniz...">
                         {(value: string | null) => {
@@ -1026,60 +1263,92 @@ export function WorkOrderDetail({
                   <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v ?? "intake")}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aşama seçin">
-                        {(value: string | null) => (value ? PHOTO_PHASE_LABELS[value] ?? value : null)}
+                        {(value: string | null) => (value ? PHOTO_PHASES[value as PhotoPhaseKey]?.label ?? value : null)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="intake">Kabul (Intake)</SelectItem>
-                      <SelectItem value="repair_progress">Onarım Aşaması</SelectItem>
-                      <SelectItem value="delivery">Teslim</SelectItem>
+                      {(Object.keys(PHOTO_PHASES) as PhotoPhaseKey[]).map((key) => (
+                        <SelectItem key={key} value={key}>{PHOTO_PHASES[key].label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Çek / Yükle</Label>
+                  {/* İki ayrı girdi: `capture` bulunan girdi mobilde galeri
+                      seçicisini baypas edip kamerayı açtığı için çoklu seçim
+                      ayrı, capture'sız girdide duruyor. İkisi de aynı listeye ekler. */}
                   <input
-                    ref={photoInputRef}
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     capture="environment"
                     className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      setPhotoFile(file)
-                      setPhotoPreview(URL.createObjectURL(file))
-                    }}
+                    onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
-                  >
-                    <Camera className="size-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{photoFile ? "Fotoğraf seçildi — tekrar değiştir" : "Kamera ile çek veya galeriden seç"}</span>
-                  </button>
-                  {photoPreview && (
-                    <div className="relative mt-2 rounded-lg overflow-hidden border bg-black">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photoPreview} alt="Seçilen fotoğraf önizlemesi" className="w-full max-h-48 object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setPhotoFile(null); setPhotoPreview(null); if (photoInputRef.current) photoInputRef.current.value = "" }}
-                        className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full"
-                      >
-                        Kaldır
-                      </button>
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { addPickedPhotos(e.target.files); e.target.value = "" }}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" disabled={loading} onClick={() => cameraInputRef.current?.click()}>
+                      <Camera className="size-4 mr-1.5" /> Kamera
+                    </Button>
+                    <Button type="button" variant="outline" disabled={loading} onClick={() => galleryInputRef.current?.click()}>
+                      <Images className="size-4 mr-1.5" /> Galeriden seç
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Galeriden tek seferde birden fazla fotoğraf seçebilirsiniz (en fazla {MAX_BATCH_PHOTOS}).
+                  </p>
+                  {pendingPhotos.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {pendingPhotos.length} fotoğraf seçildi
+                        {loading && uploadedCount > 0 ? ` — ${uploadedCount}/${pendingPhotos.length} yüklendi` : ""}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {pendingPhotos.map((p, i) => (
+                          <div key={p.key} className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.previewUrl} alt={`Seçilen fotoğraf ${i + 1}`} className="size-full object-cover" />
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="secondary"
+                              aria-label={`Fotoğraf ${i + 1} — seçimden çıkar`}
+                              disabled={loading}
+                              onClick={() => removePendingPhoto(p.key)}
+                              className="absolute top-1 right-1 rounded-full"
+                            >
+                              <X className="size-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Not</Label>
                   <Input value={photoNote} onChange={(e) => setPhotoNote(e.target.value)} placeholder="Fotoğraf açıklaması..." />
+                  {pendingPhotos.length > 1 && (
+                    <p className="text-xs text-muted-foreground">Tür, aşama ve not seçilen tüm fotoğraflara uygulanır.</p>
+                  )}
                 </div>
                 <Button onClick={handleAddPhoto} disabled={loading || !photoType} size="lg" className="w-full">
                   {loading ? <Loader2 className="size-4 mr-1 animate-spin" /> : <Upload className="size-4 mr-1" />}
-                  {photoFile ? "Fotoğraf Yükle ve Kaydet" : "Fotoğraf Kaydı Ekle"}
+                  {loading && pendingPhotos.length > 0
+                    ? `Yükleniyor ${Math.min(uploadedCount + 1, pendingPhotos.length)}/${pendingPhotos.length}`
+                    : pendingPhotos.length > 1
+                      ? `${pendingPhotos.length} Fotoğrafı Yükle ve Kaydet`
+                      : pendingPhotos.length === 1
+                        ? "Fotoğraf Yükle ve Kaydet"
+                        : "Fotoğraf Kaydı Ekle"}
                 </Button>
                   </div>
                 </DialogContent>
@@ -1092,7 +1361,7 @@ export function WorkOrderDetail({
           {/* Hasar */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning" /> Hasar</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-warning-strong" /> Hasar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {!orderLocked && <PhotoAnnotate intakeFormId={intake.id} onUploaded={() => router.refresh()} />}
@@ -1118,11 +1387,21 @@ export function WorkOrderDetail({
               {damagePhotos.length > 0 && (
                 <div className="pt-3 border-t">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hasar Fotoğrafları ({damagePhotos.length})</p>
-                  <PhotoGalleryGrid photos={damagePhotos} />
+                  <PhotoGalleryGrid photos={damagePhotos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
                 </div>
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
+        <TabsContent value="teknisyen">
+          <TechnicianProgressPanel
+            checklistItems={order.checklistItems}
+            laborSessions={order.laborSessions}
+            internalNotes={order.internalNotes}
+            technicianName={order.assignedTechnicianName}
+          />
         </TabsContent>
 
         {/* GEÇMİŞ */}
@@ -1131,6 +1410,34 @@ export function WorkOrderDetail({
           <OrderActivityLog entries={activity} />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={reopenOpen} onOpenChange={(o) => { if (!reopening) setReopenOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İş emri yeniden açılsın mı?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Durum &quot;Teslime Hazır&quot;a döner. Tahsilat, paylaşım linki ve müşteri onayı
+              kayıtlarına dokunulmaz. Gerekçe denetim kaydına yazılır.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="reopen-reason">Gerekçe</Label>
+            <Textarea
+              id="reopen-reason"
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              placeholder="Örn. Müşteri aynı arızayla geri geldi"
+              className="min-h-[70px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reopening}>Vazgeç</AlertDialogCancel>
+            <Button onClick={handleReopen} disabled={reopening || reopenReason.trim().length < 5}>
+              {reopening ? <Loader2 className="size-4 animate-spin" /> : "Yeniden Aç"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

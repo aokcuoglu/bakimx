@@ -64,6 +64,7 @@ export async function alertHashFailureOnce(opts: {
     html: built.html,
     workshopId: txn.workshopId,
     templateKey,
+    audience: "internal",
   })
   return result.ok
 }

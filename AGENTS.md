@@ -16,6 +16,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB seed:** `bun run db:seed` — seed demo data (demo@bakimx.com / demo123456)
 - **DB studio:** `bun run db:studio` — Prisma Studio on port 5555
 - **DB migrate:** `bun run db:migrate` — create migration (use `prisma migrate deploy` for production)
+- **Dev login (QA):** `GET /api/auth/dev-login?email=<seed-user>&redirect=<path>` — opens a session without typing a password (default `admin@bakimx.com`, redirect `/dashboard`). Only responds when `NODE_ENV=development` AND the request host is localhost; 404 everywhere else. Use it for browser QA in isolated worktrees instead of hand-rolling a temporary login route.
+- **Git hooks:** `postinstall` registers `core.hooksPath=.githooks`. `post-merge`/`post-checkout` re-run `prisma generate` whenever `prisma/schema.prisma` changed in the pulled/checked-out range — otherwise the generated client stays stale and Prisma throws `Unknown argument` for fields that DO exist in the schema. Restart the dev server after it fires (Turbopack does not hot-reload `node_modules`).
 
 ## Local Infrastructure
 - **Start services:** `docker compose -f docker-compose.local.yml up -d`
@@ -50,6 +52,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **`<Link>` as button:** use `<Button nativeButton={false} render={<Link href={...} />}>` (NOT `<Link><Button>...</Button></Link>`)
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
+- **Semantic colors have three roles — pick the right token:**
+  - fill / bar / dot / tinted bg → `bg-success`, `bg-warning/10`, `border-destructive/20` (vivid tone; warning must stay amber)
+  - text / icon on a filled surface → `text-success-foreground` (only on solid `bg-<color>`)
+  - text / icon on a light surface (card, tinted box, plain bg) → **`text-success-strong`**, `text-warning-strong`, `text-destructive-strong`
+  Bare `text-success` / `text-warning` / `text-destructive` fails WCAG AA on light
+  surfaces (2.69–3.99:1) — `src/lib/theme-tokens.test.ts` fails the build on it,
+  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair.
 - **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
 - **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
 
@@ -74,3 +83,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - STORAGE_PROVIDER=s3 requires MinIO (local) or R2 (production) — S3 provider code is fully implemented
 - All providers (OCR, AI, SMS, WhatsApp, Email, Calendar) default to mock — no API keys needed for dev
 - Demo login: demo@bakimx.com / demo123456
+
+## GitHub Issue Delivery
+- When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end.
+- Treat the issue, its comments, attachments, and linked items as the source of truth; state inferred acceptance criteria before coding.
+- Work in a dedicated `issue/<number>-<slug>` branch and isolated worktree based on the latest `origin/dev`.
+- Never stash, reset, overwrite, commit, or clean unrelated user changes.
+- A delivery request includes implementation, proportionate validation, push, PR creation, green-check monitoring, merge when permitted, issue/project verification, cleanup of only agent-created resources, and a safe local `dev` fast-forward when the checkout is clean.
+- Put `Closes #<number>` in the PR body so merge closes the issue. Confirm the linked item becomes Done in Factory - BakimX.
+- Never link a PR to an issue after that issue is closed (issue → Development panel). Project automation reacts to the link and overwrites `Done`. `Closes #<number>` at PR-open time is the only link you need.
+- Finish delivery with `bun run project:sync` — it moves any closed issue's card to Done and reports open issues sitting in Done. Idempotent, board-only, safe to re-run.

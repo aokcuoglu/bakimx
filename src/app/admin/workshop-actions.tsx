@@ -99,7 +99,7 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
           </div>
         )}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive-strong">{error}</p>}
     </div>
   )
 }

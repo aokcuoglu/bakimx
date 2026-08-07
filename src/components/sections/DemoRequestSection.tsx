@@ -133,7 +133,7 @@ export function DemoRequestSection() {
             className="rounded-lg border bg-card p-8 sm:p-12"
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 mx-auto mb-4">
-              <CheckCircle2 className="h-7 w-7 text-success" />
+              <CheckCircle2 className="h-7 w-7 text-success-strong" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Demo talebiniz alındı!
@@ -218,7 +218,7 @@ export function DemoRequestSection() {
                         }
                       />
                       {errors.name && (
-                        <p className="text-sm text-destructive">{errors.name}</p>
+                        <p className="text-sm text-destructive-strong">{errors.name}</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -238,7 +238,7 @@ export function DemoRequestSection() {
                         }
                       />
                       {errors.businessName && (
-                        <p className="text-sm text-destructive">
+                        <p className="text-sm text-destructive-strong">
                           {errors.businessName}
                         </p>
                       )}
@@ -260,7 +260,7 @@ export function DemoRequestSection() {
                         }
                       />
                       {errors.phone && (
-                        <p className="text-sm text-destructive">{errors.phone}</p>
+                        <p className="text-sm text-destructive-strong">{errors.phone}</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -288,7 +288,7 @@ export function DemoRequestSection() {
                         </SelectContent>
                       </Select>
                       {errors.city && (
-                        <p className="text-sm text-destructive">{errors.city}</p>
+                        <p className="text-sm text-destructive-strong">{errors.city}</p>
                       )}
                     </div>
                   </div>
@@ -317,7 +317,7 @@ export function DemoRequestSection() {
                       </SelectContent>
                     </Select>
                     {errors.monthlyVehicles && (
-                      <p className="text-sm text-destructive">
+                      <p className="text-sm text-destructive-strong">
                         {errors.monthlyVehicles}
                       </p>
                     )}

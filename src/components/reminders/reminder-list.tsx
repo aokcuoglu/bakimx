@@ -322,7 +322,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-success"
+                                  className="text-success-strong"
                                   onClick={() => handleAction("complete", r.id)}
                                   disabled={actionLoading === r.id}
                                 >
@@ -343,7 +343,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-destructive"
+                                className="text-destructive-strong"
                                 onClick={() => handleAction("cancel", r.id)}
                                 disabled={actionLoading === r.id}
                               >
@@ -396,7 +396,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-success"
+                            className="text-success-strong"
                             onClick={(e) => { e.preventDefault(); handleAction("complete", r.id) }}
                             disabled={actionLoading === r.id}
                           >
@@ -428,9 +428,9 @@ export function ReminderList({ initialReminders, stats }: Props) {
 function KpiCards({ stats }: { stats: Record<string, number> }) {
   const items = [
     { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary border-primary/20" },
-    { key: "due_soon", label: "Yaklaşıyor", color: "bg-warning/10 text-warning border-warning/20" },
-    { key: "overdue", label: "Geciken", color: "bg-destructive/10 text-destructive border-destructive/20" },
-    { key: "completed", label: "Tamamlanan", color: "bg-success/10 text-success border-success/20" },
+    { key: "due_soon", label: "Yaklaşıyor", color: "bg-warning/10 text-warning-strong border-warning/20" },
+    { key: "overdue", label: "Geciken", color: "bg-destructive/10 text-destructive-strong border-destructive/20" },
+    { key: "completed", label: "Tamamlanan", color: "bg-success/10 text-success-strong border-success/20" },
     { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary border-primary/20" },
     { key: "cancelled", label: "İptal", color: "bg-muted text-muted-foreground border-border" },
   ]

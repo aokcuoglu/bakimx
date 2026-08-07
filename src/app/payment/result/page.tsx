@@ -45,7 +45,7 @@ function IconBadge({
     tone === "success"
       ? "bg-primary/10 text-primary"
       : tone === "error"
-        ? "bg-destructive/10 text-destructive"
+        ? "bg-destructive/10 text-destructive-strong"
         : "bg-muted text-muted-foreground"
   return (
     <div className={`mx-auto mb-4 flex size-14 items-center justify-center rounded-full ${cls}`}>

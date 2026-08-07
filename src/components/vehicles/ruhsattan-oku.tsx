@@ -188,7 +188,7 @@ export function RuhsattanOku({
         </>
       )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive-strong">{error}</p>}
     </div>
   )
 }

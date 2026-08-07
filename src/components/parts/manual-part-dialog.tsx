@@ -11,25 +11,40 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Minus, Loader2 } from "lucide-react"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
+import { validateQuickPartDraft } from "@/lib/parts/quick-part-draft"
 import { liraToKurus } from "@/lib/money"
 
 export type ManualPartDraft = {
   name: string
+  /** Stok kodu (SKU). Kalem satırına yazılır; kart açılıyorsa parçanın kodu olur. */
+  sku: string | null
   brand: string | null
   category: string | null
   categoryId: number | null
   quantity: number
   unitPrice: number | null // kuruş
+  /** true → kalemin yanında kalıcı bir stok kartı (PartStockItem) da açılır. */
+  createStockItem: boolean
 }
 
 /**
  * "Oluştur & Düzenle" modalı: birleşik parça arama kutusundan açılır. Yazılan
- * metni ön-doldurur; marka/kategori/miktar/birim fiyatı odaklı bir formda
- * toplayıp onSubmit ile üst bileşene (addItem) verir. Manuel parça = source
- * "manual" (üst bileşen atar). PartAttributeField, üstteki PartAttrOptionsProvider
- * bağlamına (React portal bağlamı korunur) güvenir.
+ * metni ön-doldurur; stok kodu/marka/kategori/miktar/birim fiyatı odaklı bir
+ * formda toplayıp onSubmit ile üst bileşene (addItem) verir. Manuel parça =
+ * source "manual" (üst bileşen atar). PartAttributeField, üstteki
+ * PartAttrOptionsProvider bağlamına (React portal bağlamı korunur) güvenir.
+ *
+ * "Stok kartı olarak kaydet" açıkken (varsayılan) parça, kodu ile atölyenin
+ * Stok / Parçalar listesine de yazılır (#210); kapatılırsa yalnız tek seferlik
+ * kalem eklenir. Kartın açılması kalemi stoktan DÜŞMEZ — gerekçe için
+ * createQuickPartAction'ın başlığına bakınız.
+ *
+ * onSubmit hata mesajı döndürürse (ör. kod zaten kullanılıyor) modal açık kalır
+ * ve mesaj stok kodu alanının altında gösterilir; null dönerse üst bileşen
+ * modalı kapatır.
  */
 export function ManualPartDialog({
   open,
@@ -44,9 +59,13 @@ export function ManualPartDialog({
   initialName: string
   vehicleTypeId: number | null
   submitting: boolean
-  onSubmit: (d: ManualPartDraft) => void
+  /** Hata mesajı döndürür (modal açık kalır) ya da başarıda null. */
+  onSubmit: (d: ManualPartDraft) => Promise<string | null>
 }) {
   const [name, setName] = useState(initialName)
+  const [sku, setSku] = useState("")
+  const [createStockItem, setCreateStockItem] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   // Marka/Kategori serbest metni: yazılan metin (henüz commit edilmemiş de olsa)
   // doğrudan kaydedilsin diye alanın kendi metnini izleriz. Katalog önerisi
   // seçilirse kategoriId + seçilen etiket saklanır; metin etikettten sapınca id düşer.
@@ -62,6 +81,9 @@ export function ManualPartDialog({
     if (!open) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- açılışta formu ön-dolu ad ile sıfırla
     setName(initialName)
+    setSku("")
+    setCreateStockItem(true)
+    setError(null)
     setBrandText("")
     setCategoryText("")
     setCategoryId(null)
@@ -70,15 +92,31 @@ export function ManualPartDialog({
     setPriceDraft("")
   }, [open, initialName])
 
-  function submit() {
-    if (!name.trim() || submitting) return
+  async function submit() {
+    if (submitting) return
+    const validationError = validateQuickPartDraft({ name, sku, createStockItem })
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+    setError(null)
     const lira = Number(priceDraft)
     const unitPrice = priceDraft && !Number.isNaN(lira) && lira >= 0 ? liraToKurus(lira) : null
     const brand = brandText.trim() || null
     const category = categoryText.trim() || null
     // categoryId yalnız metin, seçilen katalog etiketiyle hâlâ birebir eşleşiyorsa geçerli.
     const finalCategoryId = category && category === categorySelLabel ? categoryId : null
-    onSubmit({ name: name.trim(), brand, category, categoryId: finalCategoryId, quantity, unitPrice })
+    const message = await onSubmit({
+      name: name.trim(),
+      sku: sku.trim() || null,
+      brand,
+      category,
+      categoryId: finalCategoryId,
+      quantity,
+      unitPrice,
+      createStockItem,
+    })
+    if (message) setError(message)
   }
 
   return (
@@ -89,16 +127,40 @@ export function ManualPartDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="space-y-1">
-            <span className="block text-xs font-medium text-muted-foreground">Parça adı</span>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Parça adı (ör. ön fren balatası)"
-              className="text-sm"
-              autoFocus
-            />
+          {/* Kod|Ad ikilisi Yeni İşçilik modalıyla aynı hizada durur. Odak ada
+              değil KODA verilir: ad arama kutusundan zaten ön-dolu gelir. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_1fr]">
+            <div className="space-y-1">
+              <span className="block text-xs font-medium text-muted-foreground">
+                Stok kodu{createStockItem && <span className="text-destructive-strong"> *</span>}
+              </span>
+              <Input
+                value={sku}
+                onChange={(e) => { setSku(e.target.value); setError(null) }}
+                placeholder="BLK-1234"
+                className="text-sm"
+                maxLength={60}
+                aria-invalid={!!error}
+                aria-describedby={error ? "manual-part-sku-error" : undefined}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="block text-xs font-medium text-muted-foreground">Parça adı</span>
+              <Input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(null) }}
+                placeholder="Parça adı (ör. ön fren balatası)"
+                className="text-sm"
+              />
+            </div>
           </div>
+
+          {error && (
+            <p id="manual-part-sku-error" role="alert" className="text-xs text-destructive-strong">
+              {error}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
@@ -160,13 +222,27 @@ export function ManualPartDialog({
               </InputGroup>
             </div>
           </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">Stok kartı olarak kaydet</p>
+              <p className="text-xs text-muted-foreground">
+                Parça, kodu ile Stok / Parçalar listesine eklenir. Stok miktarı 0 başlar, bu kalem stoktan düşmez.
+              </p>
+            </div>
+            <Switch
+              checked={createStockItem}
+              onCheckedChange={(v) => { setCreateStockItem(v); setError(null) }}
+              aria-label="Stok kartı olarak kaydet"
+            />
+          </div>
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Vazgeç
           </Button>
-          <Button type="button" onClick={submit} disabled={submitting || !name.trim()}>
+          <Button type="button" onClick={() => void submit()} disabled={submitting || !name.trim()}>
             {submitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Ekle
           </Button>

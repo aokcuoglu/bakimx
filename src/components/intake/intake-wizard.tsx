@@ -23,6 +23,8 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { CustomerVehiclePicker } from "@/components/intake/customer-vehicle-picker"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel } from "@/lib/constants"
 
 type Customer = {
   id: string
@@ -96,6 +98,9 @@ export function IntakeWizard({
       fuelLevelAtIntake: "",
       customerComplaint: "",
       internalNote: "",
+      droppedOffByName: "",
+      droppedOffByPhone: "",
+      arrivalReason: "",
       termsAccepted: false,
       privacyAccepted: false,
       serviceInfoAccepted: false,
@@ -203,6 +208,9 @@ export function IntakeWizard({
       formData.set("mileageAtIntake", values.mileageAtIntake)
       formData.set("fuelLevelAtIntake", values.fuelLevelAtIntake)
       formData.set("internalNote", values.internalNote)
+      formData.set("arrivalReason", values.arrivalReason)
+      formData.set("droppedOffByName", values.droppedOffByName)
+      formData.set("droppedOffByPhone", values.droppedOffByPhone)
 
       const res = await fetch("/api/intakes", { method: "POST", body: formData })
       const data = await res.json()
@@ -313,7 +321,7 @@ export function IntakeWizard({
                         />
                       </FormControl>
                       {kmTooLow ? (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-destructive-strong">
                           Yeni kilometre, aracın son kaydından ({lastKm!.toLocaleString("tr-TR")} km) düşük olamaz.
                         </p>
                       ) : vehicleInfo?.mileage != null ? (
@@ -363,6 +371,31 @@ export function IntakeWizard({
                 />
                 <FormField
                   control={form.control}
+                  name="arrivalReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Servise Geliş Nedeni</FormLabel>
+                      <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <SelectTrigger className="w-full">
+                          {/* Base UI'da `children` verilince `placeholder` HİÇ render
+                              edilmez (bkz. order-info-card.tsx) — boş durumu render
+                              fonksiyonu içinde kendimiz metinleştiriyoruz. */}
+                          <SelectValue>
+                            {(value: string | null) => (value ? arrivalReasonLabel(value) : "Seçiniz (opsiyonel)")}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Belirtilmedi</SelectItem>
+                          {ARRIVAL_REASON_ORDER.map((r) => (
+                            <SelectItem key={r} value={r}>{ARRIVAL_REASONS[r].label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="internalNote"
                   render={({ field }) => (
                     <FormItem>
@@ -374,6 +407,43 @@ export function IntakeWizard({
                     </FormItem>
                   )}
                 />
+                {/* #196 — aracı müşteri değil başkası getirdiyse kaydedilsin.
+                    Opsiyonel ve akışı tıkamayacak şekilde en alta konuldu:
+                    vakaların çoğunda müşteri aracı kendi getiriyor. */}
+                <div className="rounded-lg border border-border p-3 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Aracı getiren kişi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aracı müşterinin kendisi getirdiyse boş bırakın.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="droppedOffByName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ad Soyad</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Örn. Ahmet Yılmaz" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="droppedOffByPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefon</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="tel" inputMode="tel" placeholder="Örn. 0532 000 0000" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 <div className="pt-4 flex justify-between">
                   <Button type="button" variant="outline" onClick={() => setStep(1)} size="lg">
                     Geri

@@ -27,6 +27,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-strong: var(--destructive-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -41,8 +43,10 @@
   --color-card: var(--card);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
   --color-navy: #071F49;
   --color-navy-foreground: #FFFFFF;
   --color-navy-light: #031432;
@@ -109,13 +113,33 @@
   --accent: oklch(0.96 0.02 250);
   --accent-foreground: oklch(0.20 0.04 260);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Dolu destructive zemin üzerindeki metin/ikon. Koyu temadaki karşılığı .dark
+     bloğunda lacivert-siyaha döner (kırmızı orada açıldığı için) — success ve
+     warning ile aynı desen.
+     Diğer *-foreground'lar oklch(0.98 0.002 250) kullanıyor ama burada SAF BEYAZ
+     bilinçli: kırmızı zeminde o değer 4.49:1 ile AA eşiğinin (4.5) kılpayı
+     altında kalıyor, saf beyaz 4.77:1 ile geçiyor. Bandın metni text-xs olduğu
+     için büyük-metin istisnası uygulanmıyor. */
+  --destructive-foreground: oklch(1 0 0);
+  /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu. Fill renkleri (--success vb.)
+     canlı olmak zorunda — özellikle warning'in kehribar kalması gerek, yoksa
+     kahverengiye döner. Ama aynı canlı ton beyaz/tonlu zeminde metin olarak
+     AA'yı geçmiyordu (warning 2.69:1, success 3.67:1, destructive tonluda
+     3.99:1). Bu yüzden metin için ayrı, koyulaştırılmış ton: L=0.47.
+     Koyu temada temel renkler zaten AA geçiyor, orada -strong = temel renk. */
+  --destructive-strong: oklch(0.47 0.245 27.325);
   --border: oklch(0.91 0.01 250);
   --input: oklch(0.91 0.01 250);
   --ring: oklch(0.543 0.213 260);
   --success: oklch(0.60 0.18 145);
-  --success-foreground: oklch(0.98 0.002 250);
+  /* Yeşil zeminde beyaza yakın metin yalnız 3.47:1 veriyordu (AA altı). Yeşili
+     değiştirmek yerine metni koyulaştırdık: 4.94:1. warning ile aynı değer ve
+     aynı mantık (açık renkli çip → koyu metin); koyu tema zaten böyleydi. */
+  --success-foreground: oklch(0.20 0.04 260);
+  --success-strong: oklch(0.47 0.18 145);
   --warning: oklch(0.70 0.18 85);
   --warning-foreground: oklch(0.20 0.04 260);
+  --warning-strong: oklch(0.47 0.18 85);
   --chart-1: oklch(0.543 0.213 260);
   --chart-2: oklch(0.70 0.18 230);
   --chart-3: oklch(0.45 0.15 260);
@@ -148,13 +172,18 @@
   --accent: oklch(0.27 0.04 250);
   --accent-foreground: oklch(0.96 0.01 250);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.15 0.05 260);
+  /* Koyu temada temel renk zaten okunaklı; -strong onunla aynı. */
+  --destructive-strong: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.63 0.20 258);
   --success: oklch(0.70 0.18 145);
   --success-foreground: oklch(0.15 0.05 260);
+  --success-strong: oklch(0.70 0.18 145);
   --warning: oklch(0.75 0.15 85);
   --warning-foreground: oklch(0.15 0.05 260);
+  --warning-strong: oklch(0.75 0.15 85);
   --chart-1: oklch(0.63 0.20 258);
   --chart-2: oklch(0.55 0.22 260);
   --chart-3: oklch(0.45 0.15 260);
