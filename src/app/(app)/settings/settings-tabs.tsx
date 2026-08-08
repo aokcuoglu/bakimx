@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { BusinessProfileForm } from "@/components/settings/business-profile-form"
@@ -25,13 +26,19 @@ import {
 
 type TabKey = "profile" | "branding" | "communication" | "working-hours" | "appointment-rules" | "pdf-templates" | "team" | "security"
 
+/**
+ * Sekme etiketleri kısa tutuldu (#278): sayfanın kendisi zaten "Ayarlar" olduğu
+ * için her sekmede tekrar eden "… Ayarları / … Kuralları / … Şablonları" ekleri
+ * bilgi taşımıyor ama şeridi 1125px'e çıkarıp her masaüstünde kaydırma
+ * gerektiriyordu. Kısaltma sonrası şerit `wide` (max-w-5xl) kaba sığıyor.
+ */
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "profile", label: "İş Yeri Profili", icon: Building2 },
-  { key: "branding", label: "Marka Ayarları", icon: Palette },
-  { key: "communication", label: "İletişim Ayarları", icon: MessageSquare },
+  { key: "branding", label: "Marka", icon: Palette },
+  { key: "communication", label: "İletişim", icon: MessageSquare },
   { key: "working-hours", label: "Çalışma Saatleri", icon: Clock },
-  { key: "appointment-rules", label: "Randevu Kuralları", icon: CalendarClock },
-  { key: "pdf-templates", label: "PDF Şablonları", icon: FileText },
+  { key: "appointment-rules", label: "Randevu", icon: CalendarClock },
+  { key: "pdf-templates", label: "PDF", icon: FileText },
   { key: "team", label: "Ekip", icon: Users },
   { key: "security", label: "Güvenlik", icon: Shield },
 ]
@@ -129,6 +136,31 @@ export function SettingsTabs({
   // `initialTab` yalnızca query parametresi yokken yedek varsayılan olarak kalır.
   const activeTab = (searchParams.get("tab") as TabKey) || (initialTab as TabKey) || "profile"
 
+  // Şerit taşma durumu: hangi yönde kaydırılacak içerik kaldığını izler, kenar
+  // solmaları buna göre çıkar. Base UI `TabsList`'e ref geçirmek yerine sarmalayıcı
+  // üzerinden sorgulanır — bileşenin ref sözleşmesine bağımlılık kurulmaz.
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ start: false, end: false })
+
+  useEffect(() => {
+    const list = stripRef.current?.querySelector<HTMLElement>('[data-slot="tabs-list"]')
+    if (!list) return
+
+    const update = () => {
+      const max = list.scrollWidth - list.clientWidth
+      setEdges({ start: list.scrollLeft > 1, end: list.scrollLeft < max - 1 })
+    }
+
+    update()
+    list.addEventListener("scroll", update, { passive: true })
+    const observer = new ResizeObserver(update)
+    observer.observe(list)
+    return () => {
+      list.removeEventListener("scroll", update)
+      observer.disconnect()
+    }
+  }, [])
+
   function handleTabChange(key: string | null) {
     if (!key) return
     const params = new URLSearchParams()
@@ -139,17 +171,31 @@ export function SettingsTabs({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {TABS.map((t) => {
-            const Icon = t.icon
-            return (
-              <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
-                <Icon className="size-4" />
-                <span className="hidden sm:inline">{t.label}</span>
-              </TabsTrigger>
-            )
-          })}
-        </TabsList>
+        <div ref={stripRef} className="relative">
+          <TabsList variant="line" className="flex w-full flex-nowrap gap-1 sm:gap-2 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {TABS.map((t) => {
+              const Icon = t.icon
+              const isActive = activeTab === t.key
+              return (
+                <TabsTrigger key={t.key} value={t.key} className="px-3 py-2.5 shrink-0 flex-none">
+                  <Icon className="size-4" />
+                  {/* Dar ekranda etiketler gizlenip yalnız ikon kalıyordu; ikonlar
+                      birbirine yakın anlamda olduğu için hangi sekmede olunduğu
+                      anlaşılmıyordu. Aktif sekmenin etiketi her genişlikte durur. */}
+                  <span className={isActive ? "inline" : "hidden sm:inline"}>{t.label}</span>
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
+          {/* Kaydırma çubuğu gizli olduğu için taşma görünmüyordu; kenar
+              solmaları yalnızca o yönde kaydırılacak içerik varken çıkar. */}
+          {edges.start && (
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent" />
+          )}
+          {edges.end && (
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent" />
+          )}
+        </div>
 
         <TabsContent value="profile"><BusinessProfileForm workshop={workshop} contact={settings} /></TabsContent>
         <TabsContent value="branding"><BrandingForm settings={settings} /></TabsContent>
