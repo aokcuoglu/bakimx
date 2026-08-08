@@ -69,6 +69,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     workOrderTemplate: settings.workOrderTemplate,
     servicePassportTemplate: settings.servicePassportTemplate,
     collectionReceiptTemplate: settings.collectionReceiptTemplate,
+    instagramUrl: settings.instagramUrl,
+    facebookUrl: settings.facebookUrl,
+    xUrl: settings.xUrl,
+    tiktokUrl: settings.tiktokUrl,
+    youtubeUrl: settings.youtubeUrl,
+    linkedinUrl: settings.linkedinUrl,
+    publicWhatsappNumber: settings.publicWhatsappNumber,
+    secondaryPhone: settings.secondaryPhone,
+    faxNumber: settings.faxNumber,
   }
 
   const serializedUser = {

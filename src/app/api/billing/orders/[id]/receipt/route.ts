@@ -4,6 +4,7 @@ import { isAdminEmail } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { generateReceiptHtml } from "@/lib/billing/receipt"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -12,7 +13,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const order = await prisma.billingOrder.findUnique({
     where: { id },
-    include: { workshop: { select: { id: true, name: true, invoiceTitle: true, taxNumber: true, taxOffice: true, address: true } } },
+    include: {
+      workshop: {
+        select: {
+          id: true,
+          name: true,
+          invoiceTitle: true,
+          taxNumber: true,
+          taxOffice: true,
+          address: true,
+          settings: { select: WORKSHOP_PUBLIC_CONTACT_SELECT },
+        },
+      },
+    },
   })
   if (!order || order.status !== "confirmed") notFound()
 
@@ -33,6 +46,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     taxNumber: snap.taxNumber ?? order.workshop.taxNumber,
     taxOffice: snap.taxOffice ?? order.workshop.taxOffice,
     address: snap.address ?? order.workshop.address,
+    contact: pickWorkshopPublicContact(order.workshop.settings),
   })
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } })
 }

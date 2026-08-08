@@ -4,7 +4,9 @@ import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import type { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
+import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { escapeHtml } from "@/lib/html-escape"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const DEFAULT_PRIMARY_COLOR = "#0B1F3A"
 export const DEFAULT_ACCENT_COLOR = "#2563EB"
@@ -24,6 +26,8 @@ type IntakePrintoutData = {
   workshop: { name: string; phone: string; city: string; address: string; logoUrl?: string | null }
   intakeForm: ReturnType<typeof sanitizeIntakeForPublic>
   branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }
+  /** Atölyenin müşteriye gösterdiği iletişim / sosyal medya bilgileri (#173). */
+  contact?: WorkshopPublicContact | null
   customTemplate?: string | null
   createdAt: Date
   photoCompletion: {
@@ -110,7 +114,7 @@ function section(title: string, body: string, meta = ""): string {
  * ekranda görülen ile kâğıda basılan aynı olur.
  */
 export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
-  const { workshop, intakeForm, branding, customTemplate, createdAt, photoCompletion } = data
+  const { workshop, intakeForm, branding, contact, customTemplate, createdAt, photoCompletion } = data
   const primaryColor = safeHexColor(branding?.themeColor, DEFAULT_PRIMARY_COLOR)
   const accentColor = safeHexColor(branding?.accentColor, DEFAULT_ACCENT_COLOR)
   const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
@@ -346,7 +350,8 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     "İş Yeri Bilgileri",
     `<div class="field-value">${safeWorkshopName}</div>
      <div class="field-sub">${safeWorkshopCity}, ${safeWorkshopAddress}</div>
-     <div class="field-sub">Tel: ${safeWorkshopPhone}</div>`
+     <div class="field-sub">Tel: ${safeWorkshopPhone}</div>
+     ${renderWorkshopContactHtml(contact, { fontSize: "10.5px" })}`
   )
 
   const documentTitle = `${intakeForm.vehicle.plate} • Araç Kabul ve İşlem Özeti`
