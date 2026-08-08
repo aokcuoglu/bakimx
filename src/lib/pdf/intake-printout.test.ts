@@ -1,6 +1,7 @@
 import { expect, test, describe } from "bun:test"
 import { renderIntakePrintoutHtml, safeHexColor, DEFAULT_PRIMARY_COLOR } from "./intake-printout"
 import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-safety"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 const CREATED_AT = new Date("2026-07-05T08:59:00.000Z")
 
@@ -43,11 +44,16 @@ function buildIntake(overrides: Record<string, unknown> = {}) {
   )
 }
 
-function render(overrides: Record<string, unknown> = {}, branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }) {
+function render(
+  overrides: Record<string, unknown> = {},
+  branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null },
+  contact?: WorkshopPublicContact | null
+) {
   return renderIntakePrintoutHtml({
     workshop: { name: "KIZILDAĞ OTO", phone: "02121112233", city: "İstanbul", address: "Sanayi Sitesi 1", logoUrl: null },
     intakeForm: buildIntake(overrides),
     branding,
+    contact,
     customTemplate: null,
     createdAt: CREATED_AT,
     photoCompletion: { percentage: 0, requiredCompleted: 0, required: 8, total: 12, completed: 1, missingLabels: ["Ön sol"] },
@@ -188,5 +194,24 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).not.toContain("Hasar Kayıtları")
     expect(html).not.toContain("Servis Emri")
     expect(html).toContain("Süreç Zaman Çizelgesi")
+  })
+
+  test("iş yeri iletişim bilgileri adres/telefon satırının altında görünür", () => {
+    const html = render({}, undefined, {
+      publicWhatsappNumber: "5445157408",
+      instagramUrl: "https://instagram.com/kizildagoto",
+    })
+    expect(html).toContain("Tel: 02121112233")
+    expect(html.indexOf("WhatsApp: ")).toBeGreaterThan(html.indexOf("Tel: 02121112233"))
+    expect(html).toContain('href="https://wa.me/905445157408"')
+    expect(html).toContain("instagram.com/kizildagoto")
+  })
+
+  test("iletişim bilgisi girilmemişse hiçbir iz bırakmaz", () => {
+    const html = render({}, undefined, { instagramUrl: "", publicWhatsappNumber: null })
+    expect(html).not.toContain("WhatsApp")
+    expect(html).not.toContain("Instagram")
+    expect(html).not.toContain("Telefon 2")
+    expect(html).not.toContain("Faks")
   })
 })

@@ -6,6 +6,8 @@ import { VEHICLE_ZONES, fuelTypeLabel } from "@/lib/constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { escapeHtml } from "@/lib/html-escape"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
+import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact, type WorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const dynamic = "force-dynamic"
 
@@ -16,10 +18,12 @@ async function generatePassportPdfHtml(data: {
   customer: { firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; contactName: string | null; type: string; phone: string }
   visibility: { showServiceHistory: boolean; showWorkOrders: boolean; showDamages: boolean; showPhotos: boolean; showReminders: boolean; showPaymentStatus: boolean }
   branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }
+  /** Atölyenin müşteriye gösterdiği iletişim / sosyal medya bilgileri (#173). */
+  contact?: WorkshopPublicContact | null
   customTemplate?: string | null
   createdAt: string
 }): Promise<string> {
-  const { workshop, passportData, vehicle, customer, visibility, branding, customTemplate, createdAt } = data
+  const { workshop, passportData, vehicle, customer, visibility, branding, contact, customTemplate, createdAt } = data
   const primaryColor = branding?.themeColor || "#0B1F3A"
   const accentColor = branding?.accentColor || "#2563EB"
   const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
@@ -223,6 +227,7 @@ async function generatePassportPdfHtml(data: {
       <div style="font-weight:700;">★ ${safeWorkshopName}</div>
       <div style="font-size:9px;color:#666;">${safeWorkshopCity}, ${safeWorkshopAddress}</div>
       <div style="font-size:9px;color:#666;">Tel: ${safeWorkshopPhone}</div>
+      ${renderWorkshopContactHtml(contact)}
     </div>
   </div>
 
@@ -274,7 +279,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
 
   const workshopSettings = await prisma.workshopSettings.findUnique({
     where: { workshopId: passportToken.workshopId },
-    select: { pdfLogoUrl: true, themeColor: true, accentColor: true, servicePassportTemplate: true },
+    select: {
+      pdfLogoUrl: true,
+      themeColor: true,
+      accentColor: true,
+      servicePassportTemplate: true,
+      ...WORKSHOP_PUBLIC_CONTACT_SELECT,
+    },
   })
 
   const reminders = await prisma.maintenanceReminder.findMany({
@@ -402,6 +413,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     },
     visibility,
     branding: workshopSettings ? { pdfLogoUrl: workshopSettings.pdfLogoUrl, themeColor: workshopSettings.themeColor, accentColor: workshopSettings.accentColor } : undefined,
+    contact: pickWorkshopPublicContact(workshopSettings),
     customTemplate: workshopSettings?.servicePassportTemplate || null,
     createdAt: passportToken.createdAt.toISOString(),
   })

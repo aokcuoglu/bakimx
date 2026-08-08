@@ -79,6 +79,15 @@ type SettingsData = {
   workOrderTemplate: string | null
   servicePassportTemplate: string | null
   collectionReceiptTemplate: string | null
+  instagramUrl: string | null
+  facebookUrl: string | null
+  xUrl: string | null
+  tiktokUrl: string | null
+  youtubeUrl: string | null
+  linkedinUrl: string | null
+  publicWhatsappNumber: string | null
+  secondaryPhone: string | null
+  faxNumber: string | null
 }
 
 type UserData = {
@@ -142,7 +151,7 @@ export function SettingsTabs({
           })}
         </TabsList>
 
-        <TabsContent value="profile"><BusinessProfileForm workshop={workshop} /></TabsContent>
+        <TabsContent value="profile"><BusinessProfileForm workshop={workshop} contact={settings} /></TabsContent>
         <TabsContent value="branding"><BrandingForm settings={settings} /></TabsContent>
         <TabsContent value="communication"><CommunicationSettingsForm settings={settings} /></TabsContent>
         <TabsContent value="working-hours"><WorkingHoursForm settings={settings} /></TabsContent>

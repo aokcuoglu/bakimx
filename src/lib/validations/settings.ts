@@ -1,4 +1,42 @@
 import { z } from "zod/v4"
+import { normalizeContactNumber, normalizeSocialUrl } from "@/lib/workshop-contact"
+
+/**
+ * Sosyal medya alanı: boş bırakılabilir, şemasız yazılabilir ("instagram.com/x").
+ * Kabul edilen değer `normalizeSocialUrl` ile kanonikleştirilebilen http(s)
+ * adresidir — kaydetme sırasında sunucu aynı fonksiyonla normalize eder.
+ */
+const socialUrlField = (label: string) =>
+  z
+    .string()
+    .optional()
+    .default("")
+    .refine((v) => v.trim() === "" || normalizeSocialUrl(v) !== null, `Geçerli bir ${label} adresi giriniz`)
+
+/** Telefon / faks / WhatsApp alanı: boş ya da 10 haneye indirgenebilen numara. */
+const contactNumberField = (label: string) =>
+  z
+    .string()
+    .optional()
+    .default("")
+    .refine((v) => v.trim() === "" || normalizeContactNumber(v) !== null, `Geçerli bir ${label} giriniz`)
+
+/**
+ * Müşteriye gösterilen iletişim / sosyal medya alanları (#173). Form ve server
+ * action şemaları aynı tanımı paylaşır, böylece istemci doğrulaması ile sunucu
+ * doğrulaması ayrışamaz.
+ */
+export const workshopPublicContactShape = {
+  instagramUrl: socialUrlField("Instagram"),
+  facebookUrl: socialUrlField("Facebook"),
+  xUrl: socialUrlField("X"),
+  tiktokUrl: socialUrlField("TikTok"),
+  youtubeUrl: socialUrlField("YouTube"),
+  linkedinUrl: socialUrlField("LinkedIn"),
+  publicWhatsappNumber: contactNumberField("WhatsApp numarası"),
+  secondaryPhone: contactNumberField("telefon numarası"),
+  faxNumber: contactNumberField("faks numarası"),
+}
 
 export const businessProfileFormSchema = z.object({
   name: z.string().min(1, "İş yeri adı zorunludur"),
@@ -12,6 +50,7 @@ export const businessProfileFormSchema = z.object({
   taxNumber: z.string().optional().default(""),
   taxOffice: z.string().optional().default(""),
   invoiceTitle: z.string().optional().default(""),
+  ...workshopPublicContactShape,
 })
 export type BusinessProfileFormValues = z.infer<typeof businessProfileFormSchema>
 
@@ -121,6 +160,7 @@ export const businessProfileSchema = z.object({
   taxOffice: z.string().optional().or(z.literal("")),
   invoiceTitle: z.string().optional().or(z.literal("")),
   logoUrl: z.url("Geçerli bir URL giriniz").optional().or(z.literal("")),
+  ...workshopPublicContactShape,
 })
 
 export const brandingSchema = z.object({

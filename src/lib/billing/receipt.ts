@@ -1,6 +1,8 @@
 import { formatTRY } from "@/lib/format"
 import { escapeHtml } from "@/lib/html-escape"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
+import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 interface ReceiptData {
   reference: string
@@ -13,6 +15,8 @@ interface ReceiptData {
   taxNumber: string | null
   taxOffice: string | null
   address: string | null
+  /** Atölyenin kimlik bloğunu tamamlayan iletişim / sosyal medya bilgileri (#173). */
+  contact?: WorkshopPublicContact | null
 }
 
 /** Simple, self-contained HTML receipt (makbuz). NOT a legal e-invoice — that
@@ -35,6 +39,7 @@ export function generateReceiptHtml(d: ReceiptData): string {
   <p class="muted">Referans: ${escapeHtml(d.reference)} · ${escapeHtml(date)}</p>
   <p class="muted">${escapeHtml(d.invoiceTitle || d.workshopName)}${d.taxNumber ? " · VKN/TCKN: " + escapeHtml(d.taxNumber) : ""}${d.taxOffice ? " · " + escapeHtml(d.taxOffice) : ""}</p>
   ${d.address ? `<p class="muted">${escapeHtml(d.address)}</p>` : ""}
+  ${renderWorkshopContactHtml(d.contact, { fontSize: "12px", color: "#64748b" })}
   <table>
     <tr><td>${escapeHtml(d.planName)} paketi (${escapeHtml(d.cycleLabel)})</td><td class="r">${escapeHtml(tl)}</td></tr>
     <tr class="total"><td>Toplam (KDV dahil)</td><td class="r">${escapeHtml(tl)}</td></tr>

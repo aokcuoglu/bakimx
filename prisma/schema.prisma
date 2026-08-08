@@ -236,6 +236,21 @@ model WorkshopSettings {
   servicePassportTemplate   String?
   collectionReceiptTemplate String?
 
+  // Müşteriye giden yüzeylerin alt bilgisinde gösterilen pazarlama / iletişim
+  // bilgileri (#173). Hepsi opsiyoneldir; boş olan alan hiçbir yüzeyde satır
+  // açmaz. `publicWhatsappNumber`, yukarıdaki `whatsappPhoneNumber` ile aynı
+  // şey DEĞİLDİR: o alan sağlayıcının gönderim numarasıdır, bu alan müşteriye
+  // gösterilen hattır.
+  facebookUrl          String?
+  instagramUrl         String?
+  xUrl                 String?
+  tiktokUrl            String?
+  youtubeUrl           String?
+  linkedinUrl          String?
+  publicWhatsappNumber String?
+  faxNumber            String?
+  secondaryPhone       String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
