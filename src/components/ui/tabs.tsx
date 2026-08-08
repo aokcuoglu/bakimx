@@ -23,8 +23,23 @@ function Tabs({
   )
 }
 
+/**
+ * `justify-center-safe` (= `justify-content: safe center`) bilinçli bir tercih,
+ * düz `justify-center` DEĞİL.
+ *
+ * Ortalanmış bir flex kabı taştığında taşma iki yana dağılır: baştaki içerik
+ * negatif ofsete düşer ve `scrollLeft` zaten 0 olduğu için oraya kaydırılamaz —
+ * yani ilk sekme kalıcı olarak erişilemez hale gelir. `/settings` şeridinde tam
+ * olarak bu yaşandı (#277): "İş Yeri Profili" x = −88px'te kalıyordu.
+ *
+ * `safe center`, taşma olduğu anda hizalamayı `start`'a düşürür; sığdığı sürece
+ * ortalama korunur. Böylece kaydırılabilir yeni bir şerit eklendiğinde aynı
+ * tuzağa düşülmez. Desteklemeyen eski tarayıcılarda kural tamamen geçersiz
+ * sayılır ve `justify-content` başlangıç değerine (start hizası) döner — yine
+ * güvenli taraf.
+ */
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
+  "group/tabs-list inline-flex w-fit items-center justify-center-safe rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
   {
     variants: {
       variant: {
