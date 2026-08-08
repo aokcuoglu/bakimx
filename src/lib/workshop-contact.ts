@@ -1,4 +1,5 @@
 import { formatPhoneTR, normalizePhone } from "@/lib/format"
+import type { BrandIconKey } from "@/lib/brand-icons"
 
 /**
  * Atölyenin müşteriye gösterdiği pazarlama / iletişim bilgileri (#173).
@@ -29,6 +30,12 @@ export type WorkshopContactEntry = {
   label: string
   value: string
   href: string | null
+  /**
+   * Sosyal satırlarda gösterilecek marka ikonu. Eşleme burada durur ki React
+   * yüzeyleri ile ham HTML (PDF/makbuz) yüzeyleri aynı ikonu göstersin.
+   * Numara satırlarında yoktur — telefon/faks bir marka değil.
+   */
+  icon?: BrandIconKey
 }
 
 /** Numara alanları — form ve sunucu tarafı aynı listeyi kullanır. */
@@ -96,6 +103,16 @@ const SOCIAL_LABELS: Record<WorkshopSocialField, string> = {
   tiktokUrl: "TikTok",
   youtubeUrl: "YouTube",
   linkedinUrl: "LinkedIn",
+}
+
+/** Alan -> marka ikonu. Tek eşleme; React ve PDF yüzeyleri buradan okur. */
+const SOCIAL_ICONS: Record<WorkshopSocialField, BrandIconKey> = {
+  instagramUrl: "instagram",
+  facebookUrl: "facebook",
+  xUrl: "x",
+  tiktokUrl: "tiktok",
+  youtubeUrl: "youtube",
+  linkedinUrl: "linkedin",
 }
 
 const NUMBER_LABELS: Record<WorkshopContactNumberField, string> = {
@@ -183,7 +200,13 @@ export function buildWorkshopContactEntries(contact: WorkshopPublicContact | nul
   for (const key of WORKSHOP_SOCIAL_FIELDS) {
     const url = normalizeSocialUrl(contact[key])
     if (!url) continue
-    socials.push({ key, label: SOCIAL_LABELS[key], value: socialDisplayValue(url), href: url })
+    socials.push({
+      key,
+      label: SOCIAL_LABELS[key],
+      value: socialDisplayValue(url),
+      href: url,
+      icon: SOCIAL_ICONS[key],
+    })
   }
 
   return { channels, socials }

@@ -1,4 +1,5 @@
-import { MessageCircle, Phone, Printer, Share2 } from "lucide-react"
+import { MessageCircle, Phone, Printer } from "lucide-react"
+import { BRAND_ICON_PATHS, BRAND_ICON_VIEWBOX, type BrandIconKey } from "@/lib/brand-icons"
 import { buildWorkshopContactEntries, type WorkshopPublicContact } from "@/lib/workshop-contact"
 
 const CHANNEL_ICONS = {
@@ -6,6 +7,19 @@ const CHANNEL_ICONS = {
   secondaryPhone: Phone,
   faxNumber: Printer,
 } as const
+
+/**
+ * Marka ikonu tek renk basar (`currentColor`), yani satırın soluk rengini
+ * devralır — marka renkleri kullanılmıyor (bkz. `brand-icons.ts`). Dekoratiftir;
+ * hangi hesap olduğunu yanındaki adres metni söyler.
+ */
+function BrandIcon({ icon, className }: { icon: BrandIconKey; className?: string }) {
+  return (
+    <svg viewBox={BRAND_ICON_VIEWBOX} fill="currentColor" aria-hidden focusable="false" className={className}>
+      <path d={BRAND_ICON_PATHS[icon]} />
+    </svg>
+  )
+}
 
 /**
  * Atölyenin iletişim / sosyal medya bilgilerini müşteriye açık sayfaların
@@ -53,7 +67,7 @@ export function WorkshopContactBlock({ contact }: { contact: WorkshopPublicConta
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
           {socials.map((entry) => (
             <span key={entry.key} className="inline-flex items-start gap-1.5 min-w-0">
-              <Share2 className="size-3.5 shrink-0 mt-0.5" aria-hidden />
+              {entry.icon && <BrandIcon icon={entry.icon} className="size-3.5 shrink-0 mt-0.5" />}
               <a
                 href={entry.href ?? undefined}
                 target="_blank"

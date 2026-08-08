@@ -1,5 +1,20 @@
 import { escapeHtml } from "@/lib/html-escape"
+import { BRAND_ICON_PATHS, BRAND_ICON_VIEWBOX, type BrandIconKey } from "@/lib/brand-icons"
 import { buildWorkshopContactEntries, type WorkshopContactEntry, type WorkshopPublicContact } from "@/lib/workshop-contact"
+
+/**
+ * Marka ikonu inline SVG olarak gömülür — PDF motoru harici `<img src>`
+ * yüklemeyebilir. `currentColor` ile tek renk basar, yani satırın soluk rengini
+ * devralır (marka renkleri kullanılmıyor; bkz. `brand-icons.ts`).
+ *
+ * Yol verisi kod içinde sabittir, kullanıcı girdisi değildir; yine de yalnızca
+ * bilinen anahtarlar render edilir.
+ */
+function brandIconSvg(key: BrandIconKey | undefined, size: string): string {
+  const path = key ? BRAND_ICON_PATHS[key] : undefined
+  if (!path) return ""
+  return `<svg viewBox="${BRAND_ICON_VIEWBOX}" width="${size}" height="${size}" fill="currentColor" aria-hidden="true" focusable="false" style="vertical-align:-1px;flex:none;"><path d="${path}"/></svg>`
+}
 
 /**
  * Atölyenin iletişim / sosyal medya bilgilerini ham HTML çıktılarının (iş emri
@@ -14,7 +29,7 @@ import { buildWorkshopContactEntries, type WorkshopContactEntry, type WorkshopPu
  */
 export function renderWorkshopContactHtml(
   contact: WorkshopPublicContact | null | undefined,
-  options: { fontSize?: string; color?: string } = {}
+  options: { fontSize?: string; color?: string; iconSize?: string } = {}
 ): string {
   const { channels, socials } = buildWorkshopContactEntries(contact)
   if (channels.length === 0 && socials.length === 0) return ""
@@ -22,13 +37,19 @@ export function renderWorkshopContactHtml(
   const fontSize = options.fontSize ?? "9px"
   const color = options.color ?? "#666"
 
+  const iconSize = options.iconSize ?? "10px"
+
   const renderEntry = (entry: WorkshopContactEntry, nowrap: boolean) => {
     const label = escapeHtml(entry.label)
     const value = escapeHtml(entry.value)
     const text = entry.href
       ? `<a href="${escapeHtml(entry.href)}" style="color:inherit;text-decoration:none;">${value}</a>`
       : value
-    return `<span style="${nowrap ? "white-space:nowrap;" : "word-break:break-word;"}">${label}: ${text}</span>`
+    const icon = brandIconSvg(entry.icon, iconSize)
+    // İkon dekoratif: adres metni yanında görünür kalır, çünkü kâğıda basıldığında
+    // ikon tek başına hangi hesap olduğunu söylemez.
+    const body = icon ? `${icon} ${text}` : `${label}: ${text}`
+    return `<span style="${nowrap ? "white-space:nowrap;" : "word-break:break-word;"}">${body}</span>`
   }
 
   const rows = [
