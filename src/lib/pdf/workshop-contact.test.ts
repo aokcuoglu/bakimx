@@ -1,5 +1,6 @@
 import { expect, test, describe } from "bun:test"
 import { renderWorkshopContactHtml } from "./workshop-contact"
+import { BRAND_ICON_PATHS } from "@/lib/brand-icons"
 
 describe("renderWorkshopContactHtml", () => {
   test("dolu alanları etiket + bağlantı olarak basar", () => {
@@ -47,5 +48,25 @@ describe("renderWorkshopContactHtml", () => {
 
   test("geçersiz şemalı adres hiç render edilmez", () => {
     expect(renderWorkshopContactHtml({ facebookUrl: "javascript:alert(1)" })).toBe("")
+  })
+
+  test("marka ikonu inline SVG olarak gömülür — harici istek yok", () => {
+    const html = renderWorkshopContactHtml({ instagramUrl: "instagram.com/kizildagoto" })
+
+    expect(html).toContain("<svg")
+    expect(html).toContain(BRAND_ICON_PATHS.instagram)
+    expect(html).toContain('fill="currentColor"')
+    // PDF motoru harici kaynağı yükleyemeyebilir: <img src> / url() olmamalı.
+    expect(html).not.toContain("<img")
+    expect(html).not.toContain("url(")
+    // İkon dekoratif; hangi hesap olduğunu adres metni söyler (baskıda okunur).
+    expect(html).toContain('aria-hidden="true"')
+    expect(html).toContain("instagram.com/kizildagoto")
+  })
+
+  test("numara satırları marka ikonu almaz, etiketiyle basılır", () => {
+    const html = renderWorkshopContactHtml({ publicWhatsappNumber: "5445157408" })
+    expect(html).toContain("WhatsApp: ")
+    expect(html).not.toContain("<svg")
   })
 })

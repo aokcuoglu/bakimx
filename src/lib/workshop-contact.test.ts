@@ -68,7 +68,13 @@ describe("buildWorkshopContactEntries", () => {
       ["Faks", "0212 111 22 44", null],
     ])
     expect(socials).toEqual([
-      { key: "instagramUrl", label: "Instagram", value: "instagram.com/kizildagoto", href: "https://instagram.com/kizildagoto" },
+      {
+        key: "instagramUrl",
+        label: "Instagram",
+        value: "instagram.com/kizildagoto",
+        href: "https://instagram.com/kizildagoto",
+        icon: "instagram",
+      },
     ])
   })
 
@@ -80,6 +86,23 @@ describe("buildWorkshopContactEntries", () => {
       facebookUrl: "facebook.com/a",
     })
     expect(socials.map((s) => s.label)).toEqual(["Instagram", "Facebook", "YouTube", "LinkedIn"])
+  })
+
+  test("her sosyal satır bir marka ikonu taşır, numara satırları taşımaz", () => {
+    const { channels, socials } = buildWorkshopContactEntries({
+      publicWhatsappNumber: "5445157408",
+      faxNumber: "2121112244",
+      instagramUrl: "instagram.com/a",
+      facebookUrl: "facebook.com/a",
+      xUrl: "x.com/a",
+      tiktokUrl: "tiktok.com/@a",
+      youtubeUrl: "youtube.com/@a",
+      linkedinUrl: "linkedin.com/company/a",
+    })
+
+    expect(socials.map((s) => s.icon)).toEqual(["instagram", "facebook", "x", "tiktok", "youtube", "linkedin"])
+    // Telefon/faks bir marka değil — jenerik ikonla gösterilir.
+    expect(channels.every((c) => c.icon === undefined)).toBe(true)
   })
 
   test("boş, yarım ve geçersiz alanlar hiç satır açmaz", () => {
