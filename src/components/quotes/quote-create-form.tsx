@@ -241,7 +241,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       <FormLabel>Müşteri (sahip) *</FormLabel>
                       <FormControl>
                         <div>
-                          <input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
+                          <Input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
                           {field.value && customerLabel ? (
                             <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
                               <span className="flex items-center gap-2 text-sm font-medium">

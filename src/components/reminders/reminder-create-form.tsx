@@ -122,7 +122,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
-        {mode === "edit" && reminderId ? <input type="hidden" name="id" value={reminderId} /> : null}
+        {mode === "edit" && reminderId ? <Input type="hidden" name="id" value={reminderId} /> : null}
 
         {form.formState.errors.root?.message ? (
           <Alert variant="destructive">
