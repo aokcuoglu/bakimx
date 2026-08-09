@@ -3,10 +3,12 @@
 import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Loader2, Mail, Lock, Building2, User, Phone, MapPin } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, Building2, User, Phone, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import {
   Select,
   SelectContent,
@@ -118,7 +120,7 @@ export function RegisterForm() {
 
       <form onSubmit={handleSubmit} method="post" className="space-y-4">
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
+          <div role="alert" aria-live="polite" className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
             {error}
           </div>
         )}
@@ -200,24 +202,21 @@ export function RegisterForm() {
               placeholder="En az 8 karakter"
               className="pl-9 pr-9"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
-              tabIndex={-1}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
         <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer">
-          <input
-            type="checkbox"
-            name="kvkkConsent"
-            className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
-          />
+          <Checkbox name="kvkkConsent" className="mt-0.5" aria-label="Kullanım koşulları ve aydınlatma metinlerini onayla" />
           <span>
             <Link href="/terms" target="_blank" className="text-primary hover:underline">Kullanım koşulları</Link>,{" "}
             <Link href="/kvkk" target="_blank" className="text-primary hover:underline">aydınlatma metni</Link> ve{" "}
@@ -228,7 +227,7 @@ export function RegisterForm() {
         <Button type="submit" size="xl" disabled={loading || !hydrated} className="w-full">
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader2 className="size-4 animate-spin" />
+              <BrandSpinner size={18} />
               Hesap oluşturuluyor...
             </span>
           ) : (

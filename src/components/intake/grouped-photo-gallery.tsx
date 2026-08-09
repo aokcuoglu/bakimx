@@ -1,9 +1,11 @@
 "use client"
 
-import { Camera, ImageOff, Loader2 } from "lucide-react"
+import { Camera, ImageOff } from "lucide-react"
 import { PHOTO_TYPES } from "@/lib/constants"
 import { useState, useEffect } from "react"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { Button } from "@/components/ui/button"
 
 type GroupedPhoto = {
   id: string
@@ -135,7 +137,7 @@ function PhotoCard({
   if (loading) {
     return (
       <div className={`aspect-square bg-muted rounded-lg flex items-center justify-center ${compact ? "rounded" : "rounded-lg"}`}>
-        <Loader2 className="size-4 text-muted-foreground/40 animate-spin" />
+        <BrandSpinner size={20} />
       </div>
     )
   }
@@ -154,11 +156,12 @@ function PhotoCard({
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onOpen}
       aria-label={`${typeLabel} — büyüt`}
-      className={`group relative aspect-square overflow-hidden bg-muted touch-manipulation ${compact ? "rounded" : "rounded-lg"}`}
+      className={`group relative h-auto w-full aspect-square overflow-hidden bg-muted p-0 touch-manipulation ${compact ? "rounded" : "rounded-lg"}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -166,6 +169,6 @@ function PhotoCard({
         alt={typeLabel}
         className="w-full h-full object-cover transition-transform group-active:scale-95"
       />
-    </button>
+    </Button>
   )
 }

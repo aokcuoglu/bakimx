@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import {
   Car,
   Phone,
@@ -18,6 +19,7 @@ import {
   Clock,
   Gauge,
   Calendar,
+  FileDown,
 } from "lucide-react"
 import { ORDER_STATUS, PAYMENT_STATUS, MAINTENANCE_REMINDER_STATUS, vehicleTypeLabel, fuelTypeLabel, transmissionLabel } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
@@ -25,6 +27,7 @@ import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generatePassportWhatsAppText } from "@/lib/passport/data-safety"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
+import { Button } from "@/components/ui/button"
 import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 type SafePassportVehicle = {
@@ -474,27 +477,22 @@ export function PublicVehiclePassportPage({
 
         {/* Actions (screen only) */}
         <div className="print:hidden space-y-3 pt-2 pb-8">
-          <button
-            onClick={handlePrint}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-navy text-white rounded-lg font-medium hover:bg-navy/90 transition-colors"
-          >
+          <Button onClick={handlePrint} className="w-full" variant="navy" size="xl">
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
-          </button>
-          <button
-            onClick={handleWhatsAppShare}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#25D366]/90 transition-colors"
-          >
+          </Button>
+          <Button nativeButton={false} render={<Link href={`/p/${passportToken.token}/pdf`} target="_blank" />} className="w-full" size="xl">
+            <FileDown className="size-5" />
+            Yazdırılabilir sayfayı aç
+          </Button>
+          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <Share2 className="size-5" />
             WhatsApp ile Paylaş
-          </button>
-          <button
-            onClick={handleCopyLink}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-border bg-white text-muted-foreground rounded-lg font-medium hover:bg-muted transition-colors"
-          >
+          </Button>
+          <Button onClick={handleCopyLink} className="w-full" variant="outline" size="xl">
             {copied ? <CheckCircle2 className="size-5 text-success-strong" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
-          </button>
+          </Button>
           <p className="text-center text-xs text-muted-foreground/60 px-4">
             Bu sayfanın çıktısını alabilir veya PDF olarak kaydedebilirsiniz.
           </p>
