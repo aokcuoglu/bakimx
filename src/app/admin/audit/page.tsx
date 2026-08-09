@@ -2,6 +2,8 @@ import Link from "next/link"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import type { Prisma } from "@prisma/client"
+import { Button } from "@/components/ui/button"
+import { FilterSelect } from "@/components/shared/filter-select"
 
 export const dynamic = "force-dynamic"
 
@@ -77,44 +79,29 @@ export default async function AdminAuditPage({
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           İş yeri
-          <select
+          <FilterSelect
             name="workshopId"
             defaultValue={sp.workshopId ?? ""}
-            className="h-9 rounded-lg border border-border bg-white px-2 text-sm text-foreground"
-          >
-            <option value="">Tümü</option>
-            {workshops.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Tümü"
+            options={[{ value: "", label: "Tümü" }, ...workshops.map((w) => ({ value: w.id, label: w.name }))]}
+          />
         </label>
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           İşlem
-          <select
+          <FilterSelect
             name="action"
             defaultValue={sp.action ?? ""}
-            className="h-9 rounded-lg border border-border bg-white px-2 text-sm text-foreground"
-          >
-            <option value="">Tümü</option>
-            {knownActions.map((a) => (
-              <option key={a} value={a}>
-                {ACTION_LABELS[a]}
-              </option>
-            ))}
-          </select>
+            placeholder="Tümü"
+            options={[{ value: "", label: "Tümü" }, ...knownActions.map((a) => ({ value: a, label: ACTION_LABELS[a] }))]}
+          />
         </label>
-        <button
-          type="submit"
-          className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
+        <Button type="submit">
           Filtrele
-        </button>
+        </Button>
         {(sp.workshopId || sp.action) && (
-          <Link href="/admin/audit" className="h-9 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+          <Button nativeButton={false} variant="ghost" render={<Link href="/admin/audit" />}>
             Temizle
-          </Link>
+          </Button>
         )}
       </form>
 
@@ -162,20 +149,14 @@ export default async function AdminAuditPage({
           </span>
           <div className="flex gap-2">
             {page > 1 && (
-              <Link
-                href={buildHref({ page: String(page - 1) })}
-                className="rounded-lg border px-3 py-1.5 hover:bg-muted"
-              >
+              <Button nativeButton={false} variant="outline" render={<Link href={buildHref({ page: String(page - 1) })} />}>
                 Önceki
-              </Link>
+              </Button>
             )}
             {page < totalPages && (
-              <Link
-                href={buildHref({ page: String(page + 1) })}
-                className="rounded-lg border px-3 py-1.5 hover:bg-muted"
-              >
+              <Button nativeButton={false} variant="outline" render={<Link href={buildHref({ page: String(page + 1) })} />}>
                 Sonraki
-              </Link>
+              </Button>
             )}
           </div>
         </div>

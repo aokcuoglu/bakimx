@@ -147,11 +147,12 @@ export function BrandingForm({ settings }: { settings: SettingsData }) {
                       <FormLabel>Ana Renk</FormLabel>
                       <FormControl>
                         <div className="flex gap-2 items-center">
-                          <input
+                          <Input
                             type="color"
                             value={field.value || "#3B82F6"}
                             onChange={(e) => field.onChange(e.target.value)}
-                            className="h-8 w-8 rounded border border-border cursor-pointer bg-background"
+                            className="size-11 cursor-pointer p-1 md:size-9"
+                            aria-label="Ana rengi seç"
                           />
                           <Input {...field} placeholder="#3B82F6" />
                         </div>
@@ -170,11 +171,12 @@ export function BrandingForm({ settings }: { settings: SettingsData }) {
                       <FormLabel>Vurgu Rengi</FormLabel>
                       <FormControl>
                         <div className="flex gap-2 items-center">
-                          <input
+                          <Input
                             type="color"
                             value={field.value || "#10B981"}
                             onChange={(e) => field.onChange(e.target.value)}
-                            className="h-8 w-8 rounded border border-border cursor-pointer bg-background"
+                            className="size-11 cursor-pointer p-1 md:size-9"
+                            aria-label="Vurgu rengini seç"
                           />
                           <Input {...field} placeholder="#10B981" />
                         </div>

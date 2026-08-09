@@ -2,6 +2,7 @@ import Link from "next/link"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { GATED_FEATURES, FEATURE_LABELS } from "@/lib/features"
+import { Badge } from "@/components/ui/badge"
 
 export const dynamic = "force-dynamic"
 
@@ -70,19 +71,13 @@ export default async function AdminFlagsPage() {
                         {FEATURE_LABELS[o.featureKey as keyof typeof FEATURE_LABELS] ?? o.featureKey}
                       </td>
                       <td className="px-3 py-2">
-                        <span
-                          className={
-                            o.enabled
-                              ? "inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
-                              : "inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
-                          }
-                        >
+                        <Badge variant={o.enabled ? "default" : "secondary"}>
                           {o.enabled ? "açık" : "kapalı"}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {o.expiresAt ? (
-                          <span className={expired ? "text-rose-600" : undefined}>
+                          <span className={expired ? "text-destructive-strong" : undefined}>
                             {o.expiresAt.toLocaleDateString("tr-TR")} {expired && "(süresi doldu)"}
                           </span>
                         ) : (
