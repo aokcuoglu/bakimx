@@ -157,7 +157,14 @@ export function PartsLaborEditor({
   return (
     <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
     <TooltipProvider>
-    <div className="space-y-4">
+    {/* min-w-0: düzenleyici bir grid/flex hücresinin içine konduğunda (teklif
+        ekranında FormItem `display:grid`) hücrenin otomatik asgari genişliği
+        min-content olur; içerideki 52rem'lik tablo yüzünden hücre 834px'e
+        büyüyüp Card'ın `overflow-hidden`'ı tarafından KESİLİYORDU (#290).
+        @container: masaüstü tablo / mobil kart seçimi artık ekran genişliğine
+        değil DÜZENLEYİCİNİN KENDİ genişliğine bakıyor — dar bir kolonda
+        (teklif formu ~730px) yatay kaydırmalı tablo yerine kart düzeni çıkar. */}
+    <div className="@container min-w-0 space-y-4">
       {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
           "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
       {!locked && (
@@ -192,8 +199,10 @@ export function PartsLaborEditor({
       {!locked && <Separator />}
 
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
-      {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
-      <div className="hidden overflow-hidden rounded-lg border border-border md:block">
+      {/* Geniş kapsayıcı (≥52rem): gerçek shadcn Base <table>. Eşik tablonun kendi
+          min genişliği; altında tablo zaten yatay kaydırmaya düşerdi, onun yerine
+          aşağıdaki kart düzeni devreye girer. */}
+      <div className="hidden overflow-hidden rounded-lg border border-border @min-[52rem]:block">
         <Table className="min-w-[52rem] table-fixed">
           <colgroup>
             <col className="w-40" />{/* Tür */}
@@ -240,8 +249,9 @@ export function PartsLaborEditor({
         </Table>
       </div>
 
-      {/* Mobil (<md): kart düzeni (mobil-first). */}
-      <div className="space-y-2 md:hidden">
+      {/* Dar kapsayıcı (<52rem): kart düzeni — mobil ekran VE masaüstündeki dar
+          kolon (teklif formu) aynı düzeni paylaşır. */}
+      <div className="space-y-2 @min-[52rem]:hidden">
         {rows.length === 0 ? (
           <EmptyItemsHint locked={locked} />
         ) : (
