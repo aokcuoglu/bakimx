@@ -3,12 +3,15 @@ import { z } from "zod/v4"
 export const quoteItemSchema = z.object({
   type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
   name: z.string().min(1, "Kalem adı zorunludur"),
+  // Katalog parça numarası ve birim — QuoteItem.sku / QuoteItem.unit kolonlarına yazılır.
+  sku: z.string().nullable().optional().default(null),
+  unit: z.string().optional().default("adet"),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır"),
-  // Bu şema FORM değerlerini doğrular: alanlar TL (lira) tutar, en fazla iki
-  // ondalık basamağa izin verilir. Kuruşa çevrim yalnız gönderimde (onSubmit,
-  // liraToKurus) yapılır — burada tamsayı zorunluluğu YANLIŞ olurdu.
-  unitPrice: z.coerce.number().multipleOf(0.01, "Birim fiyat en fazla iki ondalık olabilir").min(0, "Birim fiyat negatif olamaz").nullable(),
-  totalPrice: z.coerce.number().multipleOf(0.01, "Toplam fiyat en fazla iki ondalık olabilir").min(0, "Toplam fiyat negatif olamaz").nullable(),
+  // #179 — form artık iş emri kalem düzenleyicisini kullanıyor ve o düzenleyici
+  // parayı KURUŞ tamsayısı olarak taşıyor. Form ile sunucu aynı birimi konuşur;
+  // eski lira↔kuruş çevrim katmanı (ve onun yuvarlama riski) kalktı.
+  unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").nullable(),
+  totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").nullable(),
   note: z.string().optional().default(""),
   // Kendi stoğundan seçilen parça (DB PartStockItem.id) — boşsa manuel/katalog parçası.
   // Teklif stok düşMEZ, sadece partId bağlar; çevrim sırasında stok düşülür.
@@ -38,8 +41,10 @@ export type QuoteFormValues = z.infer<typeof quoteSchema>
 export const quoteItemActionSchema = z.object({
   type: z.enum(["part", "labor"], { error: "Geçerli bir kalem tipi seçiniz (parça/işçilik)" }),
   name: z.string().min(1, "Kalem adı zorunludur"),
+  sku: z.string().nullable().optional(),
+  unit: z.string().optional(),
   quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
-  // Money is integer kuruş (client converts TRY -> kuruş before submit).
+  // Money is integer kuruş.
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").optional(),
   note: z.string().optional(),

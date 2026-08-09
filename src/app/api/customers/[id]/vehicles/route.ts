@@ -19,7 +19,13 @@ export async function GET(
 
   const vehicles = await prisma.vehicle.findMany({
     where: { workshopId: user.workshopId, customerId: id },
-    select: { id: true, plate: true, brand: true, model: true },
+    // Katalog/motor alanları teklif ekranındaki parça araması (TecDoc) için
+    // gerekli — araç seçilince PickerVehicle olarak kalem düzenleyiciye geçer (#179).
+    select: {
+      id: true, plate: true, brand: true, model: true,
+      catalogVehicleTypeId: true, vin: true, modelYear: true,
+      engineDisplacement: true, enginePower: true, fuelType: true, firstRegistrationDate: true,
+    },
     orderBy: { createdAt: "desc" },
   })
 

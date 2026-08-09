@@ -41,7 +41,7 @@ export async function createQuoteAction(formData: FormData) {
 
   // Parse + validate the line items first; the server is the single authority
   // over totals, so we never trust a client-sent grandTotal.
-  const lineItems: Array<{ type: "part" | "labor"; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null }> = []
+  const lineItems: Array<{ type: "part" | "labor"; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null }> = []
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
     let items: Array<Record<string, unknown>>
@@ -56,6 +56,8 @@ export async function createQuoteAction(formData: FormData) {
         lineItems.push({
           type: parsedItem.data.type,
           name: parsedItem.data.name,
+          sku: parsedItem.data.sku || null,
+          unit: parsedItem.data.unit || null,
           quantity: parsedItem.data.quantity,
           unitPrice: parsedItem.data.unitPrice ?? null,
           totalPrice: parsedItem.data.totalPrice ?? null,
@@ -101,6 +103,8 @@ export async function createQuoteAction(formData: FormData) {
         quoteId: quote.id,
         type: item.type,
         name: item.name,
+        sku: item.sku,
+        unit: item.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
@@ -243,6 +247,10 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
           serviceOrderId: createdOrder.id,
           type: item.type === "part" ? "part" : "labor",
           name: item.name,
+          // Parça no ve birim teklifte tutuluyor (#179) → iş emrine taşı, yoksa
+          // katalogdan seçilen parçanın kimliği çevrimde kayboluyordu.
+          sku: item.sku,
+          unit: item.unit ?? undefined,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,

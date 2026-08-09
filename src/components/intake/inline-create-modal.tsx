@@ -20,7 +20,7 @@ import { AlertTriangle, Car, ChevronDown, Loader2, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
-import { VinResolveButton, VinCandidateList, VinLockedNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
+import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { normalizePlate } from "@/lib/format"
@@ -276,9 +276,7 @@ export function InlineCreateModal({
       vf.set("enginePower", fields.enginePower)
       vf.set("firstRegistrationDate", fields.firstRegistrationDate)
       vf.set("inspectionValidUntil", fields.inspectionValidUntil)
-      // Geçerli 17-haneli VIN (ruhsat taraması / VIN-arama / elle) → şase teyit edildi.
-      // smart-capture (vin.length===17) + linkVehicleCatalog (isValidVin) ile aynı konvansiyon.
-      if (isValidVin(fields.vin)) vf.set("vinConfirmed", "on")
+      // Şase teyidi GÖNDERİLMEZ: sunucu VIN'den türetiyor (#179, deriveVinConfirmed).
       if (catalogIds.brandId) vf.set("catalogBrandId", String(catalogIds.brandId))
       if (catalogIds.modelId) vf.set("catalogModelId", String(catalogIds.modelId))
       if (catalogIds.vehicleTypeId) vf.set("catalogVehicleTypeId", String(catalogIds.vehicleTypeId))
@@ -449,7 +447,7 @@ export function InlineCreateModal({
                     <Loader2 className="size-3 animate-spin" /> VIN sorgulanıyor…
                   </p>
                 )}
-                {vinResolve.notice && <p className="text-xs text-muted-foreground">{vinResolve.notice}</p>}
+                <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
                 {vinResolve.error && <p className="text-xs text-destructive-strong">{vinResolve.error}</p>}
                 {vinResolve.locked && <VinLockedNotice />}
                 {vinResolve.candidates.length > 0 && (
