@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES } from "@/lib/constants"
 import { AlertTriangle, Info, Car } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type DamageMark = {
   id: string
@@ -180,7 +181,14 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                 role="button"
                 tabIndex={0}
                 aria-label={VEHICLE_ZONES[zone.id as keyof typeof VEHICLE_ZONES] || zone.id}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    onZoneClick(zone.id)
+                  }
+                }}
               >
+                <circle cx={zone.dx} cy={zone.dy} r="36" fill="transparent" />
                 {/* Zone shape */}
                 <path
                   d={zone.path}
@@ -262,18 +270,19 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
           const count = g.zones.reduce((s, z) => s + marksIn(z).length, 0)
           const firstFree = g.zones.find((z) => !isDamaged(z))
           return (
-            <button
+            <Button
               key={g.label}
+              type="button"
+              variant="outline"
+              size="lg"
               onClick={() => firstFree && onZoneClick(firstFree)}
-              className={`text-left p-3 min-h-12 rounded-xl border transition-all touch-manipulation active:scale-[0.98] ${
-                count > 0 ? "bg-destructive/5 border-destructive/15" : "bg-card border-border hover:border-primary/30"
-              }`}
+              className="h-auto min-h-12 flex-col items-start gap-0 px-3 py-2 text-left"
             >
               <div className="text-xs font-medium">{g.label}</div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {count > 0 ? `${count} hasar` : "Temiz"}
               </div>
-            </button>
+            </Button>
           )
         })}
       </div>
@@ -312,14 +321,16 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                   {m.note && <span className="text-muted-foreground truncate hidden sm:inline">— {m.note}</span>}
                 </div>
                 {onRemoveMark && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-lg"
                     onClick={(e) => { e.stopPropagation(); onRemoveMark(m.id) }}
-                    aria-label="Hasarı kaldır"
-                    className="inline-flex size-9 items-center justify-center rounded-md text-destructive-strong/70 hover:text-destructive-strong hover:bg-destructive/10 transition-all shrink-0 ml-1 opacity-100 touch-manipulation sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
-                    title="Kaldır"
+                    aria-label={`${VEHICLE_ZONES[m.zone as keyof typeof VEHICLE_ZONES] || m.zone} hasarını kaldır`}
+                    className="shrink-0 text-destructive-strong sm:opacity-0 sm:group-hover:opacity-100"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
+                  </Button>
                 )}
               </div>
             ))}
