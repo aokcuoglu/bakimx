@@ -6,6 +6,7 @@ import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getPlanState, isPlanExpiredLock } from "@/lib/plan"
+import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
@@ -17,9 +18,13 @@ export const metadata: Metadata = {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Effective identity — under impersonation this resolves to the target tenant.
+  // Oturum çerezi geçerli imzalı olduğu hâlde karşılığı çözülemiyorsa (silinmiş
+  // kullanıcı, yerelde yeniden seed, elle veri işlemi) düz `/login` yönlendirmesi
+  // SONSUZ DÖNGÜ yapar: middleware çerezi görüp bizi /dashboard'a geri yollar.
+  // `reason` parametresi middleware'e çerezi imha etmesini söyler.
   const user = await getCurrentUser()
   if (!user) {
-    redirect("/login")
+    redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
   const impersonation = await getActiveImpersonation()
 
@@ -36,7 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     },
   })
   if (!workshop) {
-    redirect("/login")
+    redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
 
   const plan = getPlanState(workshop)

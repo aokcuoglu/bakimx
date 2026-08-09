@@ -48,6 +48,14 @@ const EXPIRED_NOTICE: Record<string, string> = {
     "Aboneliğiniz sona erdi. Devam etmek için giriş yapın ve paketinizi yenileyin.",
   subscription_inactive:
     "Aboneliğiniz aktif değil. Devam etmek için giriş yapın ve paketinizi yenileyin.",
+  // Oturum çerezi geçerliydi ama karşılığı bulunamadı (silinmiş kullanıcı, veri
+  // taşıma, yerelde yeniden seed). Kullanıcı sebebi bilmek zorunda değil —
+  // yapması gerekeni söylüyoruz.
+  session_invalid: "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
+  session_inactive:
+    "Hesabınız devre dışı bırakıldı. Yetkiniz olduğunu düşünüyorsanız iş yeri yöneticinizle görüşün.",
+  session_loop:
+    "Oturumunuzda bir sorun oluştu ve güvenliğiniz için kapatıldı. Lütfen tekrar giriş yapın.",
 }
 
 /** Giriş isteğinin istemci tarafı üst sınırı — sunucunun bağlantı sınırından uzun. */

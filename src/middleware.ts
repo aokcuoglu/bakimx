@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server"
-import { isPlanExpiredLock } from "@/lib/plan"
 import { getSession, sessionOptions } from "@/lib/session"
+import {
+  AUTH_BOUNCE_COOKIE,
+  AUTH_BOUNCE_TTL_SECONDS,
+  isBounceLimitReached,
+  LOGOUT_REASON_PARAM,
+  nextBounceCount,
+  SESSION_LOOP_REASON,
+  shouldClearSessionOnLogin,
+} from "@/lib/session-recovery"
 import type { NextRequest } from "next/server"
 
 // Two subdomains, one container (nginx preserves Host):
@@ -30,17 +38,19 @@ function isPublicPage(pathname: string): boolean {
 }
 
 /**
- * Plan paywall çıkışı. (app)/layout.tsx, deneme/abonelik süresi bitmiş bir
- * oturumu `/login?expired=<lockReason>`'a yönlendirir; oturum cookie'sini burada
- * siliyoruz çünkü bir Server Component cookie yazamaz. Middleware hem tam sayfa
- * hem RSC (soft navigation) isteklerinde çalıştığı için tek güvenilir nokta.
+ * Zorla çıkış sinyali. (app)/layout.tsx, oturumu artık geçerli olmayan bir
+ * kullanıcıyı `/login?expired=<lockReason>` (plan kilidi) veya
+ * `/login?reason=session_invalid` (çerez geçerli ama karşılığı yok) ile buraya
+ * yollar; oturum cookie'sini burada siliyoruz çünkü bir Server Component cookie
+ * yazamaz. Middleware hem tam sayfa hem RSC (soft navigation) isteklerinde
+ * çalıştığı için tek güvenilir nokta.
  *
- * Cookie temizlenmezse /login → (oturum görülür) → /dashboard → (plan kilidi) →
- * /login sonsuz döngüsü oluşur; bu yüzden `expired` parametresi varken oturumlu
- * kullanıcıyı /dashboard'a geri YOLLAMIYORUZ.
+ * Cookie temizlenmezse /login → (oturum görülür) → /dashboard → (layout reddeder)
+ * → /login sonsuz döngüsü oluşur; bu yüzden sinyal varken oturumlu kullanıcıyı
+ * /dashboard'a geri YOLLAMIYORUZ.
  */
-function isExpiredLogout(request: NextRequest): boolean {
-  return isPlanExpiredLock(request.nextUrl.searchParams.get("expired"))
+function isForcedLogout(request: NextRequest): boolean {
+  return shouldClearSessionOnLogin(request.nextUrl.searchParams)
 }
 
 function clearSession(response: NextResponse): NextResponse {
@@ -48,6 +58,44 @@ function clearSession(response: NextResponse): NextResponse {
     ...sessionOptions.cookieOptions,
     maxAge: 0,
   })
+  response.cookies.set(AUTH_BOUNCE_COOKIE, "", { path: "/", maxAge: 0 })
+  return response
+}
+
+/**
+ * Son savunma hattı: /login ↔ /dashboard sekmelerini sayar.
+ *
+ * Yukarıdaki açık sinyal bilinen kök nedeni kapatır. Bu sayaç ise BİLİNMEYEN bir
+ * neden (ileride eklenen bir kapı, beklenmedik bir veri durumu) yüzünden oluşan
+ * döngüde kullanıcının kilitlenmesini engeller: limitte oturum imha edilir ve
+ * giriş formu gösterilir. Sağlıklı kullanımda sayaç 1'i geçmez ve
+ * AUTH_BOUNCE_TTL_SECONDS içinde kendiliğinden düşer.
+ */
+function guardBounce(request: NextRequest, redirectTo: string | URL): NextResponse {
+  const raw = request.cookies.get(AUTH_BOUNCE_COOKIE)?.value
+
+  if (isBounceLimitReached(raw)) {
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set(LOGOUT_REASON_PARAM, SESSION_LOOP_REASON)
+    return clearSession(NextResponse.redirect(loginUrl))
+  }
+
+  const response = NextResponse.redirect(redirectTo)
+  response.cookies.set(AUTH_BOUNCE_COOKIE, String(nextBounceCount(raw)), {
+    path: "/",
+    maxAge: AUTH_BOUNCE_TTL_SECONDS,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  })
+  return response
+}
+
+/** Sayfa gerçekten servis edildiyse döngü yok — sayacı temizle. */
+function clearBounceIfPresent(request: NextRequest, response: NextResponse): NextResponse {
+  if (request.cookies.has(AUTH_BOUNCE_COOKIE)) {
+    response.cookies.set(AUTH_BOUNCE_COOKIE, "", { path: "/", maxAge: 0 })
+  }
   return response
 }
 
@@ -76,11 +124,11 @@ export async function middleware(request: NextRequest) {
       if (pathname === "/login") {
         const session = await getSession()
         if (session?.userId) {
-          if (isExpiredLogout(request)) return clearSession(NextResponse.next())
-          return NextResponse.redirect(new URL("/dashboard", request.url))
+          if (isForcedLogout(request)) return clearSession(NextResponse.next())
+          return guardBounce(request, new URL("/dashboard", request.url))
         }
       }
-      return NextResponse.next()
+      return clearBounceIfPresent(request, NextResponse.next())
     }
     const session = await getSession()
     if (!session?.userId) {
@@ -88,7 +136,7 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
-    return NextResponse.next()
+    return clearBounceIfPresent(request, NextResponse.next())
   }
 
   // ---- PROD: host-aware ----
@@ -115,7 +163,7 @@ export async function middleware(request: NextRequest) {
       const target = encodeURIComponent(`${APP_ORIGIN}${pathname}${search}`)
       return NextResponse.redirect(`${LANDING_ORIGIN}/login?redirect=${target}`)
     }
-    return NextResponse.next()
+    return clearBounceIfPresent(request, NextResponse.next())
   }
 
   // ---- LANDING HOST (bakimx.com) + unknown hosts ----
@@ -123,11 +171,11 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/login") {
       const session = await getSession()
       if (session?.userId) {
-        if (isExpiredLogout(request)) return clearSession(NextResponse.next())
-        return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+        if (isForcedLogout(request)) return clearSession(NextResponse.next())
+        return guardBounce(request, `${APP_ORIGIN}/dashboard`)
       }
     }
-    return NextResponse.next()
+    return clearBounceIfPresent(request, NextResponse.next())
   }
   // app path requested on the landing host → move it to the app host
   return NextResponse.redirect(`${APP_ORIGIN}${pathname}${search}`, 301)
