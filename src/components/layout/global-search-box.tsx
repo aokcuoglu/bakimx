@@ -89,7 +89,7 @@ export function GlobalSearch({ className }: { className?: string }) {
       </div>
 
       {showContent && (
-        <AutocompleteContent>
+        <AutocompleteContent className="min-w-(--anchor-width) sm:min-w-80">
           {loading ? (
             <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground">
               <BrandSpinner size={16} />
@@ -113,9 +113,9 @@ export function GlobalSearch({ className }: { className?: string }) {
                     ) : (
                       <User className="size-4 text-muted-foreground" />
                     )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{r.label}</span>
-                      <span className="block text-xs text-muted-foreground truncate">
+                    <span className="min-w-0 flex-1 py-1">
+                      <span className="block break-words leading-snug">{r.label}</span>
+                      <span className="mt-0.5 block break-words text-xs leading-snug text-muted-foreground">
                         {r.sublabel}
                       </span>
                     </span>
