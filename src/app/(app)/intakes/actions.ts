@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
-import { intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
+import { damageMarkSchema, intakeCreateSchema, intakeUpdateSchema } from "@/lib/validations/intake"
 import { resolveHandoverField } from "@/lib/intake/handover"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
@@ -282,11 +282,37 @@ export async function updateIntakeDetailsAction(
   return { success: true }
 }
 
-// DamageMark yazma yolu (ekle/sil) kaldırıldı: SVG hasar haritası Faz C'de akıştan
-// çıkarıldı ve yerini PhotoAnnotate aldı; tek çağrı noktası olan /api/intakes/damage
-// rotasının da hiçbir tüketicisi kalmamıştı. Mevcut DamageMark KAYITLARI okunmaya
-// devam ediyor (araç detayı/pasaportu, iş emri, teknisyen, /s/[token] ve PDF) —
-// delil bütünlüğü gereği kalıcıdırlar.
+export async function addDamageMarkAction(input: unknown) {
+  const { user } = await requireWritableWorkshop("order.edit")
+  const parsed = damageMarkSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Hasar bilgileri geçersiz" }
+
+  const intake = await prisma.vehicleIntakeForm.findFirst({
+    where: { id: parsed.data.intakeFormId, workshopId: user.workshopId },
+    include: { order: { select: { id: true, status: true } } },
+  })
+  if (!intake) return { error: "Kabul formu bulunamadı" }
+  if (isIntakeWriteLocked(intake.status, intake.order?.status)) return { error: "Kapalı iş emrine hasar eklenemez" }
+
+  const mark = await prisma.damageMark.create({
+    data: { workshopId: user.workshopId, intakeFormId: intake.id, zone: parsed.data.zone, damageType: parsed.data.damageType, severity: parsed.data.severity, note: parsed.data.note || null },
+  })
+  await AuditLogAction(user.workshopId, user.id, "DamageMark", mark.id, "damage_mark_added", JSON.stringify(parsed.data), intake.order?.id)
+  return { success: true, mark: { id: mark.id, zone: mark.zone, damageType: mark.damageType, severity: mark.severity, note: mark.note } }
+}
+
+export async function removeDamageMarkAction(id: string) {
+  const { user } = await requireWritableWorkshop("order.edit")
+  const mark = await prisma.damageMark.findFirst({
+    where: { id, workshopId: user.workshopId },
+    include: { intakeForm: { include: { order: { select: { id: true, status: true } } } } },
+  })
+  if (!mark) return { error: "Hasar kaydı bulunamadı" }
+  if (isIntakeWriteLocked(mark.intakeForm.status, mark.intakeForm.order?.status)) return { error: "Kapalı iş emrindeki hasar kaldırılamaz" }
+  await prisma.damageMark.delete({ where: { id: mark.id } })
+  await AuditLogAction(user.workshopId, user.id, "DamageMark", mark.id, "damage_mark_removed", JSON.stringify({ zone: mark.zone, damageType: mark.damageType, severity: mark.severity, note: mark.note }), mark.intakeForm.order?.id)
+  return { success: true }
+}
 
 export async function addPhotoAction(formData: FormData) {
   const { user } = await requireWritableWorkshop("order.edit")

@@ -248,10 +248,11 @@ export function CustomerVehiclePicker({
   return (
     <div className="space-y-2">
       {/* Belirgin başlangıç: ruhsattan yeni müşteri & araç oluştur (OCR ile ön-doldur). */}
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={() => openCreate({})}
-        className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left transition-colors hover:border-primary hover:bg-primary/10"
+        className="h-auto w-full justify-start gap-3 whitespace-normal border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left hover:border-primary hover:bg-primary/10"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <ScanLine className="size-5" />
@@ -260,14 +261,14 @@ export function CustomerVehiclePicker({
           <span className="block text-sm font-semibold text-foreground">Ruhsat tara — yeni müşteri & araç</span>
           <span className="block text-xs text-muted-foreground">Ruhsatı okutun, alanlar otomatik dolsun.</span>
         </span>
-      </button>
+      </Button>
 
       <div className="relative flex items-center gap-2 py-0.5 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" /> veya plaka/müşteri ile ara <span className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="flex items-stretch gap-2">
-        <div className="flex-1">
+      <div className="flex min-w-0 flex-col items-stretch gap-2 sm:flex-row">
+        <div className="min-w-0 flex-1">
           {mode === "plate" || mode === "vin" ? (
             <Combobox
               items={modeResults}
@@ -284,6 +285,7 @@ export function CustomerVehiclePicker({
               }}
             >
               <ComboboxInput
+                className="w-full"
                 showTrigger={false}
                 placeholder={mode === "vin" ? "VIN ile ara…" : "Plaka veya müşteri ara…"}
                 onKeyDown={(e) => {
@@ -345,8 +347,9 @@ export function CustomerVehiclePicker({
             <CustomerSearchOrCreate onSelected={enterCustomer} />
           )}
         </div>
-        {/* Plakayı kamerayla tara — yalnızca plaka modunda */}
-        {mode === "plate" && (
+        <div className="grid grid-cols-3 gap-2 sm:contents">
+          {/* Plakayı kamerayla tara — yalnızca plaka modunda */}
+          {mode === "plate" && (
           <Button
             type="button"
             variant="outline"
@@ -357,9 +360,9 @@ export function CustomerVehiclePicker({
           >
             <ScanLine className="size-4" />
           </Button>
-        )}
-        {/* Mod toggle: VIN ikonu — aktifse VIN modu (plaka toggle) */}
-        <Button
+          )}
+          {/* Mod toggle: VIN ikonu — aktifse VIN modu (plaka toggle) */}
+          <Button
           type="button"
           variant={mode === "vin" ? "default" : "outline"}
           size="icon"
@@ -369,9 +372,9 @@ export function CustomerVehiclePicker({
           onClick={() => switchMode(mode === "vin" ? "plate" : "vin")}
         >
           <Barcode className="size-4" />
-        </Button>
-        {/* Mod toggle: kişi ikonu — aktifse müşteri modu */}
-        <Button
+          </Button>
+          {/* Mod toggle: kişi ikonu — aktifse müşteri modu */}
+          <Button
           type="button"
           variant={mode === "customer" ? "default" : "outline"}
           size="icon"
@@ -381,7 +384,8 @@ export function CustomerVehiclePicker({
           onClick={() => switchMode(mode === "customer" ? "plate" : "customer")}
         >
           <User className="size-4" />
-        </Button>
+          </Button>
+        </div>
       </div>
 
       <InlineCreateModal

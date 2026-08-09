@@ -74,6 +74,21 @@ export const intakeUpdateSchema = z.object({
   pickedUpByPhone: z.string().optional(),
 })
 
+export const damageMarkSchema = z.object({
+  intakeFormId: z.string().min(1, "Kabul kaydı bulunamadı"),
+  zone: z.enum([
+    "front_bumper", "rear_bumper", "hood", "trunk", "roof", "windshield", "rear_window",
+    "left_front_door", "left_rear_door", "right_front_door", "right_rear_door",
+    "left_front_fender", "right_front_fender", "left_rear_fender", "right_rear_fender",
+    "left_headlight", "right_headlight", "left_taillight", "right_taillight", "wheels",
+  ], "Araç bölgesi seçin"),
+  damageType: z.enum(["scratch", "dent", "broken", "cracked", "paint_damage", "missing_part", "other"], "Hasar türü seçin"),
+  severity: z.enum(["light", "medium", "heavy"], "Hasar derecesi seçin"),
+  note: z.string().trim().max(500, "Not en fazla 500 karakter olabilir").optional(),
+})
+
+export type DamageMarkValues = z.infer<typeof damageMarkSchema>
+
 export const otpVerifySchema = z.object({
   otpCode: z.string().min(4, "Doğrulama kodu gerekli").max(6, "Doğrulama kodu en fazla 6 haneli olmalıdır"),
 })
