@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
-import { notFound } from "next/navigation"
 import { PublicVehiclePassportPage } from "@/components/vehicles/public-vehicle-passport"
+import { PublicLinkState } from "@/components/shared/public-link-state"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
@@ -38,9 +38,9 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     },
   })
 
-  if (!passportToken || !passportToken.isActive || (passportToken.expiresAt && passportToken.expiresAt < new Date())) {
-    notFound()
-  }
+  if (!passportToken) return <PublicLinkState problem="invalid" />
+  if (!passportToken.isActive) return <PublicLinkState problem="inactive" />
+  if (passportToken.expiresAt && passportToken.expiresAt < new Date()) return <PublicLinkState problem="expired" />
 
   const { vehicle, workshop } = passportToken
 

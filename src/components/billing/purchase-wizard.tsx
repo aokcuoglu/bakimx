@@ -4,7 +4,7 @@ import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
+import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -25,6 +25,7 @@ import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -204,19 +205,20 @@ export function PurchaseWizard({
                       <h2 className="text-lg font-bold text-foreground">Paket seçin</h2>
                       <div className="inline-flex w-full gap-1 rounded-lg border bg-muted/40 p-1">
                         {(["monthly", "yearly"] as const).map((c) => (
-                          <button
+                          <Button
                             key={c}
                             type="button"
+                            variant="ghost"
                             onClick={() => setCycle(c)}
                             className={cn(
-                              "flex-1 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+                              "h-11 flex-1 rounded-md px-4 text-sm font-medium md:h-9",
                               cycle === c
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
                             {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                       <div className="grid gap-3">
@@ -225,13 +227,14 @@ export function PurchaseWizard({
                           const selected = tier === pkg.tier
                           const minor = getPlanPriceMinor(pkg.tier, cycle)
                           return (
-                            <button
+                            <Button
                               key={pkg.tier}
                               type="button"
+                              variant="outline"
                               onClick={() => setTier(pkg.tier)}
                               aria-pressed={selected}
                               className={cn(
-                                "relative flex items-center justify-between rounded-xl border p-4 text-left transition-all",
+                                "relative h-auto min-h-14 w-full items-center justify-between whitespace-normal rounded-xl p-4 text-left",
                                 selected
                                   ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                                   : "border-border hover:border-primary/40 hover:bg-muted/30",
@@ -260,7 +263,7 @@ export function PurchaseWizard({
                                   {cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil
                                 </p>
                               </div>
-                            </button>
+                            </Button>
                           )
                         })}
                       </div>
@@ -384,13 +387,14 @@ export function PurchaseWizard({
                             const selected = method === opt.value
                             const Icon = opt.icon
                             return (
-                              <button
+                              <Button
                                 key={opt.value}
                                 type="button"
+                                variant="outline"
                                 onClick={() => setMethod(opt.value)}
                                 aria-pressed={selected}
                                 className={cn(
-                                  "flex items-center gap-2 rounded-xl border p-3 text-left text-sm font-medium transition-all",
+                                  "h-auto min-h-12 items-center justify-start gap-2 whitespace-normal rounded-xl p-3 text-left text-sm font-medium",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
@@ -398,7 +402,7 @@ export function PurchaseWizard({
                               >
                                 <Icon className="size-4 shrink-0 text-primary" />
                                 {opt.label}
-                              </button>
+                              </Button>
                             )
                           })}
                         </div>
@@ -430,7 +434,7 @@ export function PurchaseWizard({
                         >
                           {loading ? (
                             <>
-                              <Loader2 className="size-4 animate-spin" /> Gönderiliyor…
+                              <BrandSpinner size={18} /> Gönderiliyor…
                             </>
                           ) : method === "card" ? (
                             "Ödemeye geç"

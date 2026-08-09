@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -117,12 +118,12 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {expiredNotice && !error && (
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-sm">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-strong">
             {expiredNotice}
           </div>
         )}
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
+          <div role="alert" aria-live="polite" className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
             {error}
           </div>
         )}
@@ -160,15 +161,16 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
               required
               className="pl-9 pr-9"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
-              tabIndex={-1}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -180,7 +182,7 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader2 className="size-4 animate-spin" />
+              <BrandSpinner size={18} />
               Giriş yapılıyor...
             </span>
           ) : (
