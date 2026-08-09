@@ -34,9 +34,25 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 
 | Script | npm script | Ne yapar |
 | --- | --- | --- |
-| `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı |
+| `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı (`list`, `approve`, `reject`, `set-plan`, `set-seats`) |
 | `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `docs/releasing.md`) |
 | `project-board-sync.sh` | `bun run project:sync` | Factory - BakimX panosunda kapalı issue'ların kartını Done'a çeker (`-- --dry-run` ile rapor) |
+
+> **`set-plan` ve ücretli dönem:** `set-plan <id|email> <tier> active` tek başına
+> yalnız paket + durum yazar; `currentPeriodEnd` boş kalır ve plan "süresiz"
+> görünür. Gerçek bir satın almayı taklit etmek için dönemi de verin:
+>
+> ```sh
+> bun run workshop set-plan usta@atolye.com premium active --cycle yearly
+> bun run workshop set-plan usta@atolye.com pro active --cycle monthly --ends-in 3
+> bun run workshop set-plan usta@atolye.com pro active --ends-in -1   # süresi dolmuş
+> ```
+>
+> `--ends-in` bilerek 0/negatif günü de kabul eder — `subscription_expired`
+> kilidini ve abonelik bitiş uyarılarını (`src/lib/billing/lifecycle.ts`) gerçek
+> bir ödeme akışı kurmadan test etmenin tek yolu budur. Bayrak verilmezse dönem
+> alanlarına dokunulmaz. `list` çıktısı dönemi `abone→<tarih>` olarak gösterir,
+> geçmiş tarihleri ⛔ ile işaretler.
 
 > Contabo VPS dönemine ait script'ler (`provision-vps.sh`, `restore-db.sh`,
 > `db-migrate-prod.sh`) 2026-07'de kaldırıldı — BakımX AWS ECS üzerinde çalışıyor
