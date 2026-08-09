@@ -371,9 +371,9 @@ export function TecdocPartPicker({
           <DialogHeader className="border-b px-4 py-3 gap-0">
             <div className="flex items-center gap-2 pr-8">
               {(stack.length > 0 || articles) && (
-                <button type="button" onClick={goBack} className="p-1 -ml-1 text-muted-foreground hover:text-foreground" aria-label="Geri">
+                <Button type="button" variant="ghost" size="icon" onClick={goBack} className="-ml-2" aria-label="Geri">
                   <ChevronLeft className="size-5" />
-                </button>
+                </Button>
               )}
               <div className="min-w-0">
                 <DialogTitle className="text-sm truncate">
