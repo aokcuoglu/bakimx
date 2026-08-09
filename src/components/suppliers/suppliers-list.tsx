@@ -144,14 +144,16 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
             className="pl-9 pr-9"
           />
           {search && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => { setSearch(""); if (currentFilters.q) applyFilter("q", "") }}
               aria-label="Aramayı temizle"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
+              className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
         <div className="flex items-center gap-2">
