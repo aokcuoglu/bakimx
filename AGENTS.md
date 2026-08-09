@@ -91,5 +91,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Never stash, reset, overwrite, commit, or clean unrelated user changes.
 - A delivery request includes implementation, proportionate validation, push, PR creation, green-check monitoring, merge when permitted, issue/project verification, cleanup of only agent-created resources, and a safe local `dev` fast-forward when the checkout is clean.
 - Put `Closes #<number>` in the PR body so merge closes the issue. Confirm the linked item becomes Done in Factory - BakimX.
-- Never link a PR to an issue after that issue is closed (issue → Development panel). Project automation reacts to the link and overwrites `Done`. `Closes #<number>` at PR-open time is the only link you need.
+- When the same work is also tracked in Multica, add a second closing line — `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) — so the PR links there too and merge moves that issue to Done. The key must follow a closing keyword, sit in the PR title, or be in the branch name; a bare mention is filed as `reference_only` and stays invisible. Write only the GitHub line when there is no Multica issue — never invent a key.
+- Never link a PR to an issue after that issue is closed (issue → Development panel). Project automation reacts to the link and overwrites `Done`. The `Closes` lines written at PR-open time are the only links you need.
 - Finish delivery with `bun run project:sync` — it moves any closed issue's card to Done and reports open issues sitting in Done. Idempotent, board-only, safe to re-run.
