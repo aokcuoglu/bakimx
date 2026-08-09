@@ -3,9 +3,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Camera, Images, Undo2, Trash2, Pencil, ArrowUpRight, Square, Circle } from "lucide-react"
+import { Camera, Images, Undo2, Trash2, Pencil, ArrowUpRight, Square, Circle } from "lucide-react"
 import { fitDimensions } from "@/lib/image/fit-dimensions"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 const MAX_EDGE = 1600
 /** Tek seçimde kuyruğa alınacak azami kare (bellekte blob + canvas maliyeti). */
@@ -315,7 +316,7 @@ export function PhotoAnnotate({
 
   return (
     <div className="space-y-3">
-      <input
+      <Input
         ref={cameraInputRef}
         type="file"
         accept="image/*"
@@ -323,7 +324,7 @@ export function PhotoAnnotate({
         className="hidden"
         onChange={onFileChange}
       />
-      <input
+      <Input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
@@ -357,28 +358,30 @@ export function PhotoAnnotate({
             {TOOLS.map((t) => {
               const Icon = t.icon
               return (
-                <button
+                <Button
                   key={t.id}
                   type="button"
                   aria-label={t.label}
                   aria-pressed={tool === t.id}
-                  title={t.label}
                   onClick={() => setTool(t.id)}
-                  className={`grid size-8 place-items-center rounded-md border ${tool === t.id ? "border-foreground bg-foreground/5 text-foreground" : "border-border text-muted-foreground"}`}
+                  variant={tool === t.id ? "secondary" : "outline"}
+                  size="icon-lg"
                 >
                   <Icon className="size-4" />
-                </button>
+                </Button>
               )
             })}
           </div>
           <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />
           {COLORS.map((c) => (
-            <button
+            <Button
               key={c}
               type="button"
               aria-label={`Renk ${c}`}
               onClick={() => setColor(c)}
-              className={`size-7 rounded-full border-2 ${color === c ? "border-foreground" : "border-border"}`}
+              variant="outline"
+              size="icon-lg"
+              className={`rounded-full border-2 ${color === c ? "border-foreground" : "border-border"}`}
               style={{ backgroundColor: c }}
             />
           ))}
@@ -413,7 +416,7 @@ export function PhotoAnnotate({
           {queue.length > 0 && (
             <Button type="button" variant="outline" onClick={() => void advanceQueue()} disabled={busy}>Atla</Button>
           )}
-          <Button type="button" onClick={save} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Kaydet"}</Button>
+          <Button type="button" size="lg" onClick={save} disabled={busy}>{busy ? <BrandSpinner size={18} label="Yükleniyor…" /> : "Fotoğrafı Kaydet"}</Button>
         </div>
       </div>
 
@@ -426,12 +429,13 @@ export function PhotoAnnotate({
           </p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {uploaded.map((p, i) => (
-              <button
+              <Button
                 key={p.id}
                 type="button"
                 onClick={() => setLightboxIndex(i)}
                 aria-label={`Hasar ${i + 1} — büyüt`}
-                className="group relative aspect-square touch-manipulation overflow-hidden rounded-lg border border-border bg-muted"
+                variant="outline"
+                className="group relative h-auto aspect-square touch-manipulation overflow-hidden rounded-lg p-0"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -439,7 +443,7 @@ export function PhotoAnnotate({
                   alt={`Hasar ${i + 1}`}
                   className="size-full object-cover transition-transform group-active:scale-95"
                 />
-              </button>
+              </Button>
             ))}
           </div>
         </div>

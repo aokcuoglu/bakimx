@@ -23,6 +23,7 @@ import { typedResolver } from "@/lib/validations/resolver"
 import { CustomerVehiclePicker } from "@/components/intake/customer-vehicle-picker"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
+import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel } from "@/lib/constants"
 
@@ -511,6 +512,14 @@ export function IntakeWizard({
           <Card className={step === 4 ? undefined : "hidden"}>
             <CardHeader><CardTitle>Fotoğraf & Hasar İşaretleme</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              <DamageCapture
+                intakeFormId={intakeId}
+                vehicle={vehicleInfo ? { plate: vehicleInfo.plate, brand: vehicleInfo.brand, model: vehicleInfo.model } : null}
+              />
+              <div className="border-t pt-4">
+                <h3 className="font-medium">Hasar fotoğrafları</h3>
+                <p className="mb-3 text-sm text-muted-foreground">Hasarı yakından çekin. Yükleme başarısız olursa fotoğrafı yeniden seçip tekrar deneyebilirsiniz.</p>
+              </div>
               <PhotoAnnotate intakeFormId={intakeId} />
               <div className="pt-4 flex flex-wrap items-center justify-between gap-2">
                 <Button type="button" variant="outline" onClick={() => setStep(3)} size="lg">
