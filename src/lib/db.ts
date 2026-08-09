@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
-import { buildPoolConfig } from "./pg-connection"
+import { buildAppPoolConfig } from "./pg-connection"
 
 // Mutating Prisma operations. Reads are never gated.
 const WRITE_OPS = new Set([
@@ -67,7 +67,11 @@ function createPrismaClient(): PrismaClient {
   // RDS TLS handling (DB_SSL_NO_VERIFY) lives in buildPoolConfig so the standalone scripts
   // that build their own Pool — prisma/seed.ts, scripts/migrate-vehicle-catalog.ts — connect
   // identically. Local dev leaves the flag unset → connection string used unchanged.
-  const pool = new Pool(buildPoolConfig(rawUrl))
+  //
+  // buildAppPoolConfig ek olarak sorgu süresini de sınırlar: bir web isteği
+  // içindeki sorgu sonsuza kadar asılı kalmamalı. Bakım script'leri taban
+  // buildPoolConfig'i kullanmaya devam eder (uzun backfill'ler kesilmesin).
+  const pool = new Pool(buildAppPoolConfig(rawUrl))
   const adapter = new PrismaPg(pool)
   return withImpersonationGuard(new PrismaClient({ adapter })) as unknown as PrismaClient
 }

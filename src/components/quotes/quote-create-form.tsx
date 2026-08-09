@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,8 +22,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Loader2, Calculator, User, X } from "lucide-react"
+import { Loader2, Calculator, Plus, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
+import { InlineCreateModal, type InlineCreateResult } from "@/components/intake/inline-create-modal"
 import { QuoteItemsEditor } from "@/components/quotes/quote-items-editor"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
@@ -73,6 +73,8 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
   const [customerLabel, setCustomerLabel] = useState("")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [vehicleLoading, setVehicleLoading] = useState(false)
+  const [vehicleError, setVehicleError] = useState("")
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"draft" | "sent">("sent")
 
   const form = useForm<QuoteFormValues, unknown, QuoteFormValues>({
@@ -107,14 +109,17 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
 
   const fetchVehicles = useCallback(async (custId: string) => {
     setVehicleLoading(true)
+    setVehicleError("")
     form.setValue("vehicleId", "")
     try {
       const res = await fetch(`/api/customers/${custId}/vehicles`)
+      if (!res.ok) throw new Error("Araç listesi yüklenemedi")
       const data = await res.json()
       if (data.vehicles) setVehicles(data.vehicles)
       else setVehicles([])
     } catch {
       setVehicles([])
+      setVehicleError("Araçlar yüklenemedi. Lütfen tekrar deneyin.")
     } finally {
       setVehicleLoading(false)
     }
@@ -131,6 +136,29 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
     form.setValue("vehicleId", "")
     setCustomerLabel("")
     setVehicles([])
+    setVehicleError("")
+    setVehicleModalOpen(false)
+  }
+
+  function onVehicleCreated(result: InlineCreateResult) {
+    const created: Vehicle = {
+      id: result.vehicleId,
+      plate: result.plate ?? "",
+      brand: result.brand ?? "",
+      model: result.model ?? "",
+      catalogVehicleTypeId: null,
+      vin: null,
+      modelYear: null,
+      engineDisplacement: null,
+      enginePower: null,
+      fuelType: null,
+      firstRegistrationDate: null,
+    }
+    setVehicles((current) =>
+      current.some((vehicle) => vehicle.id === created.id) ? current : [created, ...current]
+    )
+    form.setValue("vehicleId", created.id, { shouldDirty: true, shouldValidate: true })
+    setVehicleError("")
   }
 
   // PREVIEW ONLY — the server recomputes the authoritative totals from the line
@@ -213,7 +241,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       <FormLabel>Müşteri (sahip) *</FormLabel>
                       <FormControl>
                         <div>
-                          <input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
+                          <Input type="hidden" ref={field.ref} name={field.name} value={field.value} onChange={field.onChange} />
                           {field.value && customerLabel ? (
                             <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
                               <span className="flex items-center gap-2 text-sm font-medium">
@@ -240,13 +268,25 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                     <FormItem>
                       <FormLabel>Araç</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select
+                          value={field.value}
+                          onValueChange={(v) => field.onChange(v ?? "")}
+                          disabled={vehicleLoading || vehicles.length === 0}
+                        >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder={vehicleLoading ? "Yükleniyor..." : "Araç seçin (isteğe bağlı)"}>
+                            <SelectValue>
                               {(value: string | null) => {
-                                if (!value) return null
                                 const v = vehicles.find((v) => v.id === value)
-                                return v ? `${v.plate} — ${v.brand} ${v.model}` : value
+                                if (v) return `${v.plate} — ${v.brand} ${v.model}`
+                                return (
+                                  <span className="text-muted-foreground">
+                                    {vehicleLoading
+                                      ? "Araçlar yükleniyor…"
+                                      : vehicles.length === 0
+                                        ? "Bu müşterinin kayıtlı aracı yok"
+                                        : "Araç seçin (isteğe bağlı)"}
+                                  </span>
+                                )
                               }}
                             </SelectValue>
                           </SelectTrigger>
@@ -264,18 +304,33 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                   )}
                 />
 
+                {vehicleError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{vehicleError}</AlertDescription>
+                  </Alert>
+                )}
+
                 {customerId && (
-                  <div className="flex items-center gap-3 text-xs">
+                  <div className="flex justify-end">
                     <Button
-                      nativeButton={false}
-                      variant="link"
-                      size="xs"
-                      className="h-auto p-0"
-                      render={<Link href={`/vehicles/new?customerId=${customerId}`} />}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-11 text-primary"
+                      onClick={() => setVehicleModalOpen(true)}
                     >
-                      + Yeni Araç
+                      <Plus className="size-4" />
+                      Bu müşteriye yeni araç ekle
                     </Button>
                   </div>
+                )}
+                {customerId && customerLabel && (
+                  <InlineCreateModal
+                    open={vehicleModalOpen}
+                    onOpenChange={setVehicleModalOpen}
+                    fixedCustomer={{ id: customerId, label: customerLabel }}
+                    onCreated={onVehicleCreated}
+                  />
                 )}
               </CardContent>
             </Card>

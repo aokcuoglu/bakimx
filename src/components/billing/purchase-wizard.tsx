@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Form } from "@/components/ui/form"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -25,7 +28,6 @@ import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -186,11 +188,12 @@ export function PurchaseWizard({
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive-strong">
-                  {error}
-                </div>
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
+              <Form {...form}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={step}
@@ -208,10 +211,10 @@ export function PurchaseWizard({
                           <Button
                             key={c}
                             type="button"
-                            variant="ghost"
                             onClick={() => setCycle(c)}
+                            variant={cycle === c ? "default" : "ghost"}
                             className={cn(
-                              "h-11 flex-1 rounded-md px-4 text-sm font-medium md:h-9",
+                              "min-h-11 flex-1",
                               cycle === c
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
@@ -230,11 +233,11 @@ export function PurchaseWizard({
                             <Button
                               key={pkg.tier}
                               type="button"
-                              variant="outline"
                               onClick={() => setTier(pkg.tier)}
                               aria-pressed={selected}
+                              variant="outline"
                               className={cn(
-                                "relative h-auto min-h-14 w-full items-center justify-between whitespace-normal rounded-xl p-4 text-left",
+                                "relative h-auto min-h-16 w-full justify-between rounded-xl p-4 text-left whitespace-normal",
                                 selected
                                   ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                                   : "border-border hover:border-primary/40 hover:bg-muted/30",
@@ -290,7 +293,7 @@ export function PurchaseWizard({
                           <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}>
                             <Input {...register("workshopName" as never)} />
                           </Field>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Ad" error={fieldError(formState, "firstName")}>
                               <Input {...register("firstName" as never)} />
                             </Field>
@@ -304,7 +307,7 @@ export function PurchaseWizard({
                           <Field label="Şifre" error={fieldError(formState, "password")}>
                             <Input type="password" {...register("password" as never)} />
                           </Field>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Telefon" error={fieldError(formState, "phone")}>
                               <Input {...register("phone" as never)} />
                             </Field>
@@ -320,7 +323,7 @@ export function PurchaseWizard({
                       <Field label="Fatura ünvanı" error={fieldError(formState, "invoiceTitle")}>
                         <Input {...register("invoiceTitle" as never)} />
                       </Field>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <Field label="Vergi / TC no" error={fieldError(formState, "taxNumber")}>
                           <Input {...register("taxNumber" as never)} />
                         </Field>
@@ -377,7 +380,7 @@ export function PurchaseWizard({
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
                       <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
-                        <div className="mt-1.5 grid grid-cols-2 gap-2">
+                        <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
                           {(
                             [
                               { value: "card", label: "Kredi/Banka Kartı", icon: CreditCard },
@@ -390,11 +393,11 @@ export function PurchaseWizard({
                               <Button
                                 key={opt.value}
                                 type="button"
-                                variant="outline"
                                 onClick={() => setMethod(opt.value)}
                                 aria-pressed={selected}
+                                variant="outline"
                                 className={cn(
-                                  "h-auto min-h-12 items-center justify-start gap-2 whitespace-normal rounded-xl p-3 text-left text-sm font-medium",
+                                  "h-auto min-h-11 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
@@ -430,11 +433,12 @@ export function PurchaseWizard({
                         <Button
                           type="button"
                           size="lg"
-                          disabled={loading}                          onClick={submit}
+                          disabled={loading}
+                          onClick={submit}
                         >
                           {loading ? (
                             <>
-                              <BrandSpinner size={18} /> Gönderiliyor…
+                              <BrandSpinner size={20} /> Gönderiliyor…
                             </>
                           ) : method === "card" ? (
                             "Ödemeye geç"
@@ -447,6 +451,7 @@ export function PurchaseWizard({
                   )}
                 </motion.div>
               </AnimatePresence>
+              </Form>
             </>
           )}
         </div>
