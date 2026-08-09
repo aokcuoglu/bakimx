@@ -1,25 +1,15 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
-import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AppointmentCreateForm } from "@/components/appointments/appointment-create-form"
 
 export default async function NewAppointmentPage() {
-  const { user, workshop } = await getAppData()
+  const { workshop } = await getAppData()
 
-  const customers = await prisma.customer.findMany({
-    where: { workshopId: user.workshopId },
-    select: { id: true, firstName: true, lastName: true, fullName: true, companyName: true, type: true, phone: true },
-    orderBy: { createdAt: "desc" },
-  })
-
-  const vehicles = await prisma.vehicle.findMany({
-    where: { workshopId: user.workshopId },
-    select: { id: true, customerId: true, plate: true, brand: true, model: true },
-    orderBy: { createdAt: "desc" },
-  })
-
+  // Müşteri ve araç listeleri artık istemciye toptan indirilmiyor: müşteri
+  // sunucu tarafı arama uç noktasından, araçlar da seçilen müşteriye göre
+  // çekiliyor (#178).
   return (
     <AppShell constrained workshopName={workshop?.name} pageTitle="Yeni Randevu">
       <div className="space-y-5 sm:space-y-6">
@@ -39,24 +29,7 @@ export default async function NewAppointmentPage() {
           </p>
         </div>
 
-        <AppointmentCreateForm
-          customers={customers.map((c) => ({
-            id: c.id,
-            firstName: c.firstName,
-            lastName: c.lastName,
-            fullName: c.fullName,
-            companyName: c.companyName,
-            type: c.type,
-            phone: c.phone,
-          }))}
-          vehicles={vehicles.map((v) => ({
-            id: v.id,
-            customerId: v.customerId,
-            plate: v.plate,
-            brand: v.brand,
-            model: v.model,
-          }))}
-        />
+        <AppointmentCreateForm />
       </div>
     </AppShell>
   )

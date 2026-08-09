@@ -26,6 +26,7 @@ const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
 export function CustomerSearchOrCreate({
   onSelected,
   autoFocus,
+  inputId,
   initialName,
   initialType,
   initialCompanyName,
@@ -35,6 +36,8 @@ export function CustomerSearchOrCreate({
 }: {
   onSelected: (customerId: string, label: string) => void
   autoFocus?: boolean
+  /** Dış bir <label htmlFor> ile eşleşmesi için arama kutusuna sabit id verir. */
+  inputId?: string
   /** Pre-fills the "new customer" name (e.g. owner read from a ruhsat scan). */
   initialName?: string
   /** Pre-selects individual vs corporate in the create form (e.g. ruhsat corporate owner). */
@@ -241,6 +244,7 @@ export function CustomerSearchOrCreate({
       onValueChange={(r: CustomerHit | null) => { if (r) onSelected(r.customerId, r.label) }}
     >
       <ComboboxInput
+        id={inputId}
         autoFocus={autoFocus}
         placeholder="Müşteri adı veya telefon ile ara…"
         onKeyDown={(e) => {
