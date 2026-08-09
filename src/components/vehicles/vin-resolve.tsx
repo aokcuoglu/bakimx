@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Loader2, ScanLine, Check, BadgeCheck, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isValidVin, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
+import { isValidVin, MOCK_VIN_PROVIDER, type RuhsatHints, type VinCandidate, type VinResolution } from "@/lib/vin/types"
 
 export type { VinCandidate }
 
@@ -16,9 +17,22 @@ export type VinResolveState = {
   candidates: VinCandidate[]
   /** API returned 403 feature_locked → show the upgrade upsell instead of a raw error. */
   locked: boolean
+  /**
+   * The demo (mock) provider answered "not_found" — i.e. VIN_PROVIDER is not
+   * configured in this environment, so EVERY real VIN misses. Not a catalog miss;
+   * consumers must say so instead of "araç bulunamadı" (#179).
+   */
+  unconfigured: boolean
 }
 
-export const VIN_RESOLVE_IDLE: VinResolveState = { loading: false, error: "", notice: "", candidates: [], locked: false }
+export const VIN_RESOLVE_IDLE: VinResolveState = {
+  loading: false, error: "", notice: "", candidates: [], locked: false, unconfigured: false,
+}
+
+export const VIN_NOT_FOUND_NOTICE = "VIN katalogda bulunamadı — marka ve modeli manuel seçin."
+export const VIN_UNCONFIGURED_NOTICE =
+  "VIN sorgulama servisi bu ortamda yapılandırılmamış (demo modu) — şase sorgusu çalışmıyor, " +
+  "marka ve modeli manuel seçin."
 
 export interface VinResolveCallbacks {
   /** A brand-only or brand+model TecDoc hit. Always followed by onCandidate when a single engine variant auto-selects. */
@@ -54,7 +68,12 @@ export async function performVinResolve(
     }
     const result = data as VinResolution
     if (result.status === "not_found") {
-      return { ...VIN_RESOLVE_IDLE, notice: "VIN katalogda bulunamadı — marka ve modeli manuel seçin." }
+      // Mock provider → the miss says nothing about the catalog; it means the
+      // lookup never happened. Report the configuration gap, not a fake "yok".
+      if (result.provider === MOCK_VIN_PROVIDER) {
+        return { ...VIN_RESOLVE_IDLE, notice: VIN_UNCONFIGURED_NOTICE, unconfigured: true }
+      }
+      return { ...VIN_RESOLVE_IDLE, notice: VIN_NOT_FOUND_NOTICE }
     }
     if (result.brand) callbacks.onBrand?.(result.brand)
     if (result.model) callbacks.onModel?.(result.model)
@@ -141,6 +160,21 @@ export function VinLockedNotice() {
         Pro&apos;ya yükselt
       </Link>
     </div>
+  )
+}
+
+/**
+ * The resolver's textual outcome. A normal miss stays quiet muted text; an
+ * unconfigured provider gets a warning box, because "servis kapalı" is an
+ * actionable operations fact, not a fact about the customer's vehicle (#179).
+ */
+export function VinResolveNotice({ notice, unconfigured }: { notice: string; unconfigured: boolean }) {
+  if (!notice) return null
+  if (!unconfigured) return <p className="text-sm text-muted-foreground">{notice}</p>
+  return (
+    <Alert variant="warning">
+      <AlertDescription>{notice}</AlertDescription>
+    </Alert>
   )
 }
 

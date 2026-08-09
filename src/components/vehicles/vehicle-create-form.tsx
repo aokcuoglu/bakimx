@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Camera, ScanLine, Loader2 } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -25,7 +24,7 @@ import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, VEHICLE_TRANSMISSIONS, ocrVehicleTyp
 import { vehicleSchema, type VehicleFormValues } from "@/lib/validations/vehicle"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { RuhsattanOku } from "@/components/vehicles/ruhsattan-oku"
-import { VinResolveButton, VinCandidateList, VinLockedNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
+import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
 import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
 
@@ -59,7 +58,6 @@ type VehicleFormProps = {
     modelYear: number | null
     mileage: number | null
     vin: string | null
-    vinConfirmed: boolean
     color: string | null
     engineNo: string | null
     fuelType: string | null
@@ -88,7 +86,6 @@ function toValues(initial?: VehicleFormProps["initial"], prefillCustomerId?: str
     modelYear: initial?.modelYear ?? undefined,
     mileage: initial?.mileage ?? undefined,
     vin: initial?.vin || "",
-    vinConfirmed: initial?.vinConfirmed ?? false,
     color: initial?.color || "",
     engineNo: initial?.engineNo || "",
     fuelType: initial?.fuelType || "",
@@ -163,9 +160,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
 
     const formData = new FormData()
     for (const [key, value] of Object.entries(values)) {
-      if (key === "vinConfirmed") {
-        formData.set(key, value ? "on" : "")
-      } else if (key === "modelYear" || key === "mileage") {
+      if (key === "modelYear" || key === "mileage") {
         formData.set(key, value === undefined || value === null || (value as number | "") === "" ? "" : String(value))
       } else {
         formData.set(key, String(value ?? ""))
@@ -415,7 +410,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     <Loader2 className="size-3.5 animate-spin" /> VIN sorgulanıyor…
                   </p>
                 )}
-                {vinResolve.notice && <p className="text-sm text-muted-foreground">{vinResolve.notice}</p>}
+                <VinResolveNotice notice={vinResolve.notice} unconfigured={vinResolve.unconfigured} />
                 {vinResolve.error && (
                   <Alert variant="destructive">
                     <AlertDescription>{vinResolve.error}</AlertDescription>
@@ -430,24 +425,6 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     onDismiss={() => vinResolve.reset()}
                   />
                 )}
-
-                <FormField
-                  control={form.control}
-                  name="vinConfirmed"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2.5 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(c) => field.onChange(c)}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm text-foreground cursor-pointer">
-                        Şase numarası ruhsatla teyit edildi
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField

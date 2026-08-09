@@ -233,7 +233,8 @@ export function resolveModelLevelCandidates(
 export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}): Promise<VinResolution> {
   const lookup = await lookupVin(vin)
   const notFound: VinResolution = {
-    status: "not_found", brand: null, model: null, autoSelected: null, candidates: [], cached: lookup.cached,
+    status: "not_found", brand: null, model: null, autoSelected: null, candidates: [],
+    cached: lookup.cached, provider: lookup.provider,
   }
   if (lookup.status === "not_found") return notFound
 
@@ -270,6 +271,7 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
         autoSelected,
         candidates,
         cached: lookup.cached,
+        provider: lookup.provider,
       }
     }
 
@@ -290,6 +292,7 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
           autoSelected: null,
           candidates: [],
           cached: lookup.cached,
+          provider: lookup.provider,
         }
       }
     }
@@ -304,6 +307,7 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
           autoSelected: null,
           candidates: [],
           cached: lookup.cached,
+          provider: lookup.provider,
         }
       }
     }
@@ -387,5 +391,6 @@ export async function resolveVinToCatalog(vin: string, hints: RuhsatHints = {}):
     autoSelected,
     candidates,
     cached: lookup.cached,
+    provider: lookup.provider,
   }
 }

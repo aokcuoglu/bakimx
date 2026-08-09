@@ -126,4 +126,15 @@ export interface VinResolution {
   autoSelected: number | null
   candidates: VinCandidate[]
   cached: boolean
+  /**
+   * Which VIN provider answered ("mock" | "rapidapi"). Surfaced to the client so
+   * a `not_found` produced by the DEMO provider is not shown as "araç bulunamadı":
+   * without VIN_PROVIDER the resolver silently falls back to the mock and EVERY
+   * real VIN misses (#179). The UI needs to tell "servis yapılandırılmamış" apart
+   * from "katalogda gerçekten yok".
+   */
+  provider: string
 }
+
+/** Demo/fallback provider name — a `not_found` from it means "not configured". */
+export const MOCK_VIN_PROVIDER = "mock"

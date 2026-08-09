@@ -112,6 +112,174 @@ function emptyDraft(type: ItemType, source: "catalog" | "manual"): Row {
   }
 }
 
+/** Kalem satırı — kalıcılık katmanından bağımsız (bkz. PartsLaborEditor). */
+export type PartsLaborRow = Row
+
+/**
+ * Kalem düzenleyicinin SUNUM çekirdeği: composer'lar (katalog araması, TecDoc
+ * picker'ı, manuel parça diyalogu, işçilik autocomplete'i), masaüstü tablosu,
+ * mobil kart listesi ve parça detay modalı.
+ *
+ * Kalıcılık BİLMEZ. Satırları prop olarak alır, değişiklikleri `onAdd`/`onCell`/
+ * `onRemove` ile çağırana bildirir. İki adaptörü vardır:
+ * - `PartsLaborGrid` (iş emri): her çağrıyı `/api/orders/items` uçlarına yazar,
+ *   yani kalem anında kalıcılaşır ve `partId` set edilirse stok düşülür.
+ * - `QuoteItemsEditor` (teklif): değişiklikleri react-hook-form `useFieldArray`
+ *   durumunda tutar; kayıt yalnız teklif gönderilirken olur ve stok HİÇ hareket
+ *   etmez (bkz. src/lib/quotes/quote-stock-invariant.test.ts).
+ */
+export function PartsLaborEditor({
+  rows, vehicle, locked, loading, laborCatalog, orderId,
+  allowExternalLabor = true, showAttributes = true,
+  flash, onAdd, onCell, onRemove,
+}: {
+  rows: Row[]
+  vehicle?: PickerVehicle
+  locked: boolean
+  loading: boolean
+  laborCatalog: LaborCatalogRow[]
+  /** Yalnız iş emri tarafında dolu — dış alım (source=purchase) detay modalı için. */
+  orderId?: string
+  /** Dış işçilik yalnız iş emri kavramı; teklif kalemi tipi part|labor ile sınırlı. */
+  allowExternalLabor?: boolean
+  /** Marka/Kategori meta alanları — yalnız bunları saklayabilen tarafta gösterilir. */
+  showAttributes?: boolean
+  flash: { rowId: string; kind: FlashKind } | null
+  onAdd: (draft: Row) => Promise<boolean>
+  onCell: OnCell
+  onRemove: (row: Row) => void
+}) {
+  // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
+  const [detail, setDetail] = useState<DetailRequest | null>(null)
+
+  const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
+
+  return (
+    <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
+    <TooltipProvider>
+    <div className="space-y-4">
+      {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
+          "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
+      {!locked && (
+        <Tabs defaultValue="parca">
+          <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
+            <TabsTrigger value="parca" className="px-3 py-2 shrink-0">
+              <PackagePlus className="size-4" /> Parça
+            </TabsTrigger>
+            <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
+              <Wrench className="size-4" /> İşçilik
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="parca" className="pt-4">
+            <ComposerCard>
+              <UnifiedPartComposer vehicle={vehicle} onAdd={onAdd} disabled={loading} onShowDetail={setDetail} />
+            </ComposerCard>
+          </TabsContent>
+          <TabsContent value="iscilik" className="pt-4">
+            <ComposerCard>
+              <LaborComposer
+                onAdd={onAdd}
+                disabled={loading}
+                catalog={laborCatalog}
+                allowExternal={allowExternalLabor}
+              />
+            </ComposerCard>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {!locked && <Separator />}
+
+      {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
+      {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
+      <div className="hidden overflow-hidden rounded-lg border border-border md:block">
+        <Table className="min-w-[52rem] table-fixed">
+          <colgroup>
+            <col className="w-40" />{/* Tür */}
+            <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
+            <col className="w-24" />{/* Miktar */}
+            <col className="w-36" />{/* Birim Fiyat */}
+            <col className="w-28" />{/* Toplam */}
+            <col className="w-12" />{/* Sil */}
+          </colgroup>
+          <TableHeader className="bg-muted/60">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
+              <TableHead className={headCls}>Parça / İşçilik</TableHead>
+              <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
+              <TableHead className={cn(headCls, "text-right")}><span className="sr-only">İşlem</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6}>
+                  <EmptyItemsHint locked={locked} />
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <DesktopPartRow
+                  key={row.id}
+                  row={row}
+                  orderId={orderId}
+                  locked={locked}
+                  vehicle={vehicle}
+                  showAttributes={showAttributes}
+                  onCell={onCell}
+                  onRemove={onRemove}
+                  flash={flash?.rowId === row.id ? flash.kind : null}
+                  onShowDetail={setDetail}
+                />
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobil (<md): kart düzeni (mobil-first). */}
+      <div className="space-y-2 md:hidden">
+        {rows.length === 0 ? (
+          <EmptyItemsHint locked={locked} />
+        ) : (
+          rows.map((row) => (
+            <MobilePartRow
+              key={row.id}
+              row={row}
+              orderId={orderId}
+              locked={locked}
+              vehicle={vehicle}
+              showAttributes={showAttributes}
+              onCell={onCell}
+              onRemove={onRemove}
+              flash={flash?.rowId === row.id ? flash.kind : null}
+              onShowDetail={setDetail}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Parça detayı — TEK örnek; arama dropdown'ı, katalog picker'ı ve kalem
+          satırları buraya `setDetail` ile istek gönderir. */}
+      <PartDetailDialog
+        target={detail?.target ?? null}
+        onOpenChange={(open) => { if (!open) setDetail(null) }}
+        onSelect={detail?.onSelect}
+      />
+    </div>
+    </TooltipProvider>
+    </PartAttrOptionsProvider>
+  )
+}
+
+/**
+ * İŞ EMRİ adaptörü: PartsLaborEditor'ün her değişikliğini `/api/orders/items`
+ * uçlarına yazar — kalem ANINDA kalıcılaşır ve `__partId` doluysa sunucu stoktan
+ * düşer/rezerve eder. Teklif tarafı bu adaptörü KULLANMAZ (bkz. QuoteItemsEditor).
+ */
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog,
 }: {
@@ -127,8 +295,6 @@ export function PartsLaborGrid({
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
   const [rows, setRows] = useState<Row[]>(items.map(toRow))
-  // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
-  const [detail, setDetail] = useState<DetailRequest | null>(null)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   // Sessiz otosave'i / yeni eklemeyi görünür kılan geçici satır işareti:
@@ -263,117 +429,19 @@ export function PartsLaborGrid({
     } catch { onError("Kalem silinemedi") }
   }
 
-  const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
-
   return (
-    <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
-    <TooltipProvider>
-    <div className="space-y-4">
-      {/* Ekleme alanı: tab'lı composer (katalog / manuel). Satır biriktirmez —
-          "Ekle" ile aşağıdaki listeye düşürür ve sıfırlanır. Kilitli emirde gizli. */}
-      {!locked && (
-        <Tabs defaultValue="parca">
-          <TabsList variant="line" className="w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px sm:gap-2">
-            <TabsTrigger value="parca" className="px-3 py-2 shrink-0">
-              <PackagePlus className="size-4" /> Parça
-            </TabsTrigger>
-            <TabsTrigger value="iscilik" className="px-3 py-2 shrink-0">
-              <Wrench className="size-4" /> İşçilik
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="parca" className="pt-4">
-            <ComposerCard>
-              <UnifiedPartComposer vehicle={vehicle} onAdd={addItem} disabled={loading} onShowDetail={setDetail} />
-            </ComposerCard>
-          </TabsContent>
-          <TabsContent value="iscilik" className="pt-4">
-            <ComposerCard><LaborComposer onAdd={addItem} disabled={loading} catalog={laborCatalog} /></ComposerCard>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      {!locked && <Separator />}
-
-      {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
-      {/* Masaüstü (md+): gerçek shadcn Base <table> — dar ekranda yatay kaydırır. */}
-      <div className="hidden overflow-hidden rounded-lg border border-border md:block">
-        <Table className="min-w-[52rem] table-fixed">
-          <colgroup>
-            <col className="w-40" />{/* Tür */}
-            <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
-            <col className="w-24" />{/* Miktar */}
-            <col className="w-36" />{/* Birim Fiyat */}
-            <col className="w-28" />{/* Toplam */}
-            <col className="w-12" />{/* Sil */}
-          </colgroup>
-          <TableHeader className="bg-muted/60">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
-              <TableHead className={headCls}>Parça / İşçilik</TableHead>
-              <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
-              <TableHead className={cn(headCls, "text-right")}><span className="sr-only">İşlem</span></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6}>
-                  <EmptyItemsHint locked={locked} />
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <DesktopPartRow
-                  key={row.id}
-                  row={row}
-                  orderId={orderId}
-                  locked={locked}
-                  vehicle={vehicle}
-                  onCell={onCell}
-                  onRemove={removeRow}
-                  flash={flash?.rowId === row.id ? flash.kind : null}
-                  onShowDetail={setDetail}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Mobil (<md): kart düzeni (mobil-first). */}
-      <div className="space-y-2 md:hidden">
-        {rows.length === 0 ? (
-          <EmptyItemsHint locked={locked} />
-        ) : (
-          rows.map((row) => (
-            <MobilePartRow
-              key={row.id}
-              row={row}
-              orderId={orderId}
-              locked={locked}
-              vehicle={vehicle}
-              onCell={onCell}
-              onRemove={removeRow}
-              flash={flash?.rowId === row.id ? flash.kind : null}
-              onShowDetail={setDetail}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Parça detayı — TEK örnek; arama dropdown'ı, katalog picker'ı ve kalem
-          satırları buraya `setDetail` ile istek gönderir. */}
-      <PartDetailDialog
-        target={detail?.target ?? null}
-        onOpenChange={(open) => { if (!open) setDetail(null) }}
-        onSelect={detail?.onSelect}
-      />
-    </div>
-    </TooltipProvider>
-    </PartAttrOptionsProvider>
+    <PartsLaborEditor
+      rows={rows}
+      vehicle={vehicle}
+      locked={locked}
+      loading={loading}
+      laborCatalog={laborCatalog}
+      orderId={orderId}
+      flash={flash}
+      onAdd={addItem}
+      onCell={onCell}
+      onRemove={removeRow}
+    />
   )
 }
 
@@ -516,17 +584,20 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
 // ── İşçilik composer: İç (katalog öneri + serbest) / Dış (serbest) işçilik.
 // mode+nonce anahtarıyla remount → mod değişince ve her eklemede yerel state
 // (draft, arama kutusu) temiz sıfırlanır.
-function LaborComposer({ onAdd, disabled, catalog }: {
+function LaborComposer({ onAdd, disabled, catalog, allowExternal = true }: {
   onAdd: (draft: Row) => Promise<boolean>; disabled: boolean; catalog: LaborCatalogRow[]
+  /** Teklifte kapalı: QuoteItem tipi yalnız part|labor kabul eder. */
+  allowExternal?: boolean
 }) {
   const [nonce, setNonce] = useState(0)
   const [mode, setMode] = useState<"labor" | "external_labor">("labor")
+  const effectiveMode = allowExternal ? mode : "labor"
   return (
     <div className="space-y-3">
-      <LaborModeToggle mode={mode} onChange={setMode} disabled={disabled} />
+      {allowExternal && <LaborModeToggle mode={mode} onChange={setMode} disabled={disabled} />}
       <LaborComposerBody
-        key={`${mode}-${nonce}`}
-        mode={mode}
+        key={`${effectiveMode}-${nonce}`}
+        mode={effectiveMode}
         onAdd={onAdd}
         disabled={disabled}
         onAdded={() => setNonce((n) => n + 1)}
@@ -1436,11 +1507,13 @@ const META_FIELD_MOBILE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
-function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
+function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
   row: Row
-  orderId: string
+  /** Yalnız iş emrinde dolu — dış alım detay modalı orderId ister. */
+  orderId?: string
   locked: boolean
   vehicle?: PickerVehicle
+  showAttributes?: boolean
   onCell: OnCell
   onRemove: (row: Row) => void
   flash?: FlashKind | null
@@ -1448,7 +1521,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
   const type = row.type as ItemType
-  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
+  const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
     <TableRow className={cn(GHOST_ROW, "align-middle")}>
@@ -1458,7 +1531,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash
         <div className="flex items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          {row.source === "purchase" && (
+          {row.source === "purchase" && orderId && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
         </div>
@@ -1515,11 +1588,13 @@ function DesktopPartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash
 }
 
 // ── Mobil satırı: kart (çarşaf liste) ────────────────────────────────────────
-function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash, onShowDetail }: {
+function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
   row: Row
-  orderId: string
+  /** Yalnız iş emrinde dolu — dış alım detay modalı orderId ister. */
+  orderId?: string
   locked: boolean
   vehicle?: PickerVehicle
+  showAttributes?: boolean
   onCell: OnCell
   onRemove: (row: Row) => void
   flash?: FlashKind | null
@@ -1527,7 +1602,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash,
 }) {
   const ed = useRowEditor(row, vehicle, locked, onCell)
   const type = row.type as ItemType
-  const showMeta = ed.isPart && (ed.editable || !!row.brand || !!row.category)
+  const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3 pl-4 shadow-sm">
@@ -1539,7 +1614,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, onCell, onRemove, flash,
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          {row.source === "purchase" && (
+          {row.source === "purchase" && orderId && (
             <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
           )}
           <RowFlash kind={flash} />

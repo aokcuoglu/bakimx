@@ -1,5 +1,10 @@
 import { test, expect, afterEach } from "bun:test"
-import { performVinResolve, VIN_RESOLVE_IDLE } from "@/components/vehicles/vin-resolve"
+import {
+  performVinResolve,
+  VIN_RESOLVE_IDLE,
+  VIN_NOT_FOUND_NOTICE,
+  VIN_UNCONFIGURED_NOTICE,
+} from "@/components/vehicles/vin-resolve"
 import type { VinCandidate } from "@/lib/vin/types"
 
 const VIN = "SHSRD88604U201888"
@@ -20,11 +25,37 @@ const CANDIDATE: VinCandidate = {
 }
 
 test("not_found response returns the notice and calls no callbacks", async () => {
-  stubFetch(200, { status: "not_found", brand: null, model: null, autoSelected: null, candidates: [], cached: false })
+  stubFetch(200, { status: "not_found", brand: null, model: null, autoSelected: null, candidates: [], cached: false, provider: "rapidapi" })
   let called = false
   const state = await performVinResolve(VIN, {}, { onCandidate: () => { called = true } })
-  expect(state.notice).toBe("VIN katalogda bulunamadı — marka ve modeli manuel seçin.")
+  expect(state.notice).toBe(VIN_NOT_FOUND_NOTICE)
+  expect(state.unconfigured).toBe(false)
   expect(called).toBe(false)
+})
+
+// #179 — VIN_PROVIDER ayarlı değilken çözümleyici sessizce mock'a düşüyor ve HER
+// gerçek VIN "not_found" dönüyor. Kullanıcıya "araç bulunamadı" demek yanlış:
+// sorgu hiç yapılmadı. Sağlayıcı adı yanıtta taşınıp ayrı durum gösterilmeli.
+test("mock sağlayıcıdan gelen not_found yapılandırma uyarısına dönüşür", async () => {
+  stubFetch(200, { status: "not_found", brand: null, model: null, autoSelected: null, candidates: [], cached: false, provider: "mock" })
+  const state = await performVinResolve(VIN, {}, { onCandidate: () => {} })
+  expect(state.unconfigured).toBe(true)
+  expect(state.notice).toBe(VIN_UNCONFIGURED_NOTICE)
+  expect(state.notice).not.toBe(VIN_NOT_FOUND_NOTICE)
+})
+
+test("gerçek sağlayıcı bulduğunda yapılandırma uyarısı gösterilmez", async () => {
+  stubFetch(200, {
+    status: "resolved",
+    brand: { id: 45, name: "HONDA" },
+    model: { id: 4880, name: "CR-V II (RD_)" },
+    autoSelected: 16573,
+    candidates: [CANDIDATE],
+    cached: false,
+    provider: "mock",
+  })
+  const state = await performVinResolve(VIN, {}, { onCandidate: () => {} })
+  expect(state.unconfigured).toBe(false)
 })
 
 test("resolved with autoSelected calls onBrand/onModel/onCandidate and returns a recognized notice", async () => {
@@ -35,6 +66,7 @@ test("resolved with autoSelected calls onBrand/onModel/onCandidate and returns a
     autoSelected: 16573,
     candidates: [CANDIDATE],
     cached: false,
+    provider: "rapidapi",
   })
   const calls: string[] = []
   const state = await performVinResolve(VIN, {}, {
@@ -55,6 +87,7 @@ test("resolved without autoSelected (brand/model-only match) skips onCandidate",
     autoSelected: null,
     candidates: [],
     cached: false,
+    provider: "rapidapi",
   })
   let candidateCalled = false
   const state = await performVinResolve(VIN, {}, { onCandidate: () => { candidateCalled = true } })
@@ -71,6 +104,7 @@ test("ambiguous response returns the candidate list, calls no onCandidate", asyn
     autoSelected: null,
     candidates: [CANDIDATE, second],
     cached: false,
+    provider: "rapidapi",
   })
   let candidateCalled = false
   const state = await performVinResolve(VIN, {}, { onCandidate: () => { candidateCalled = true } })
@@ -92,5 +126,7 @@ test("network failure falls back to the generic retry message", async () => {
 })
 
 test("VIN_RESOLVE_IDLE is the zero state", () => {
-  expect(VIN_RESOLVE_IDLE).toEqual({ loading: false, error: "", notice: "", candidates: [], locked: false })
+  expect(VIN_RESOLVE_IDLE).toEqual({
+    loading: false, error: "", notice: "", candidates: [], locked: false, unconfigured: false,
+  })
 })
