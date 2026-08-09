@@ -4,11 +4,14 @@ import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
+import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Form } from "@/components/ui/form"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -185,11 +188,12 @@ export function PurchaseWizard({
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive-strong">
-                  {error}
-                </div>
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
+              <Form {...form}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={step}
@@ -204,19 +208,20 @@ export function PurchaseWizard({
                       <h2 className="text-lg font-bold text-foreground">Paket seçin</h2>
                       <div className="inline-flex w-full gap-1 rounded-lg border bg-muted/40 p-1">
                         {(["monthly", "yearly"] as const).map((c) => (
-                          <button
+                          <Button
                             key={c}
                             type="button"
                             onClick={() => setCycle(c)}
+                            variant={cycle === c ? "default" : "ghost"}
                             className={cn(
-                              "flex-1 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+                              "min-h-11 flex-1",
                               cycle === c
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
                             {c === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                       <div className="grid gap-3">
@@ -225,13 +230,14 @@ export function PurchaseWizard({
                           const selected = tier === pkg.tier
                           const minor = getPlanPriceMinor(pkg.tier, cycle)
                           return (
-                            <button
+                            <Button
                               key={pkg.tier}
                               type="button"
                               onClick={() => setTier(pkg.tier)}
                               aria-pressed={selected}
+                              variant="outline"
                               className={cn(
-                                "relative flex items-center justify-between rounded-xl border p-4 text-left transition-all",
+                                "relative h-auto min-h-16 w-full justify-between rounded-xl p-4 text-left whitespace-normal",
                                 selected
                                   ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                                   : "border-border hover:border-primary/40 hover:bg-muted/30",
@@ -260,7 +266,7 @@ export function PurchaseWizard({
                                   {cycle === "monthly" ? "/ay" : "/yıl"} · KDV dahil
                                 </p>
                               </div>
-                            </button>
+                            </Button>
                           )
                         })}
                       </div>
@@ -287,7 +293,7 @@ export function PurchaseWizard({
                           <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}>
                             <Input {...register("workshopName" as never)} />
                           </Field>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Ad" error={fieldError(formState, "firstName")}>
                               <Input {...register("firstName" as never)} />
                             </Field>
@@ -301,7 +307,7 @@ export function PurchaseWizard({
                           <Field label="Şifre" error={fieldError(formState, "password")}>
                             <Input type="password" {...register("password" as never)} />
                           </Field>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Telefon" error={fieldError(formState, "phone")}>
                               <Input {...register("phone" as never)} />
                             </Field>
@@ -317,7 +323,7 @@ export function PurchaseWizard({
                       <Field label="Fatura ünvanı" error={fieldError(formState, "invoiceTitle")}>
                         <Input {...register("invoiceTitle" as never)} />
                       </Field>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <Field label="Vergi / TC no" error={fieldError(formState, "taxNumber")}>
                           <Input {...register("taxNumber" as never)} />
                         </Field>
@@ -374,7 +380,7 @@ export function PurchaseWizard({
                       {/* Ödeme yöntemi seçimi — kart görünümlü iki seçenek */}
                       <div>
                         <Label className="text-xs">Ödeme yöntemi</Label>
-                        <div className="mt-1.5 grid grid-cols-2 gap-2">
+                        <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
                           {(
                             [
                               { value: "card", label: "Kredi/Banka Kartı", icon: CreditCard },
@@ -384,13 +390,14 @@ export function PurchaseWizard({
                             const selected = method === opt.value
                             const Icon = opt.icon
                             return (
-                              <button
+                              <Button
                                 key={opt.value}
                                 type="button"
                                 onClick={() => setMethod(opt.value)}
                                 aria-pressed={selected}
+                                variant="outline"
                                 className={cn(
-                                  "flex items-center gap-2 rounded-xl border p-3 text-left text-sm font-medium transition-all",
+                                  "h-auto min-h-11 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
@@ -398,7 +405,7 @@ export function PurchaseWizard({
                               >
                                 <Icon className="size-4 shrink-0 text-primary" />
                                 {opt.label}
-                              </button>
+                              </Button>
                             )
                           })}
                         </div>
@@ -426,11 +433,12 @@ export function PurchaseWizard({
                         <Button
                           type="button"
                           size="lg"
-                          disabled={loading}                          onClick={submit}
+                          disabled={loading}
+                          onClick={submit}
                         >
                           {loading ? (
                             <>
-                              <Loader2 className="size-4 animate-spin" /> Gönderiliyor…
+                              <BrandSpinner size={20} /> Gönderiliyor…
                             </>
                           ) : method === "card" ? (
                             "Ödemeye geç"
@@ -443,6 +451,7 @@ export function PurchaseWizard({
                   )}
                 </motion.div>
               </AnimatePresence>
+              </Form>
             </>
           )}
         </div>
