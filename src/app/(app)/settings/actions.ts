@@ -14,6 +14,7 @@ import {
   normalizeWhatsAppProvider,
   normalizeEmailProvider,
 } from "@/lib/validations/settings"
+import { normalizeContactNumber, normalizeSocialUrl } from "@/lib/workshop-contact"
 
 async function auditLog(workshopId: string, actorUserId: string | null, action: string, entityType: string) {
   await prisma.auditLog.create({
@@ -73,6 +74,15 @@ export async function updateBusinessProfileAction(formData: FormData) {
     taxOffice: formData.get("taxOffice") as string,
     invoiceTitle: formData.get("invoiceTitle") as string,
     logoUrl: formData.get("logoUrl") as string,
+    instagramUrl: formData.get("instagramUrl") as string,
+    facebookUrl: formData.get("facebookUrl") as string,
+    xUrl: formData.get("xUrl") as string,
+    tiktokUrl: formData.get("tiktokUrl") as string,
+    youtubeUrl: formData.get("youtubeUrl") as string,
+    linkedinUrl: formData.get("linkedinUrl") as string,
+    publicWhatsappNumber: formData.get("publicWhatsappNumber") as string,
+    secondaryPhone: formData.get("secondaryPhone") as string,
+    faxNumber: formData.get("faxNumber") as string,
   }
 
   const parsed = businessProfileSchema.safeParse(raw)
@@ -80,22 +90,46 @@ export async function updateBusinessProfileAction(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
 
-  await prisma.workshop.update({
-    where: { id: user.workshopId },
-    data: {
-      name: parsed.data.name,
-      phone: parsed.data.phone,
-      city: parsed.data.city,
-      district: parsed.data.district || null,
-      address: parsed.data.address,
-      email: parsed.data.email || null,
-      website: parsed.data.website || null,
-      taxNumber: parsed.data.taxNumber || null,
-      taxOffice: parsed.data.taxOffice || null,
-      invoiceTitle: parsed.data.invoiceTitle || null,
-      logoUrl: parsed.data.logoUrl || null,
-    },
-  })
+  // Müşteriye gösterilen iletişim bilgileri kanonik forma indirgenerek saklanır:
+  // sosyal adreslere şema eklenir, numaralar 10 haneye normalize edilir. Böylece
+  // her yüzey aynı değeri okur; render tarafı biçimlendirmeyi tekrar denemez.
+  const publicContact = {
+    instagramUrl: normalizeSocialUrl(parsed.data.instagramUrl),
+    facebookUrl: normalizeSocialUrl(parsed.data.facebookUrl),
+    xUrl: normalizeSocialUrl(parsed.data.xUrl),
+    tiktokUrl: normalizeSocialUrl(parsed.data.tiktokUrl),
+    youtubeUrl: normalizeSocialUrl(parsed.data.youtubeUrl),
+    linkedinUrl: normalizeSocialUrl(parsed.data.linkedinUrl),
+    publicWhatsappNumber: normalizeContactNumber(parsed.data.publicWhatsappNumber),
+    secondaryPhone: normalizeContactNumber(parsed.data.secondaryPhone),
+    faxNumber: normalizeContactNumber(parsed.data.faxNumber),
+  }
+
+  // Tek form iki tabloya yazıyor (Workshop + WorkshopSettings); yarısı kaydedilip
+  // yarısı kaydedilmemiş bir profil kalmasın diye ikisi tek işlemde gider.
+  await prisma.$transaction([
+    prisma.workshop.update({
+      where: { id: user.workshopId },
+      data: {
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        city: parsed.data.city,
+        district: parsed.data.district || null,
+        address: parsed.data.address,
+        email: parsed.data.email || null,
+        website: parsed.data.website || null,
+        taxNumber: parsed.data.taxNumber || null,
+        taxOffice: parsed.data.taxOffice || null,
+        invoiceTitle: parsed.data.invoiceTitle || null,
+        logoUrl: parsed.data.logoUrl || null,
+      },
+    }),
+    prisma.workshopSettings.upsert({
+      where: { workshopId: user.workshopId },
+      update: publicContact,
+      create: { workshopId: user.workshopId, ...publicContact },
+    }),
+  ])
 
   await auditLog(user.workshopId, user.id, "update_business_profile", "Workshop")
 

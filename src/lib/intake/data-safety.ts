@@ -92,10 +92,15 @@ export function sanitizeIntakeForPublic(
   void NEVER_PUBLIC_FIELDS
 
   const statusLabel = INTAKE_STATUS[intake.status as keyof typeof INTAKE_STATUS]?.label || intake.status
-  // Monetary amounts (line prices + totals) are financial data and are only
-  // exposed when the share explicitly enables showPaymentStatus. showOrderItems
-  // still controls whether the items (names/quantities) appear at all.
-  const showMoney = visibility.showPaymentStatus === true
+  // Kalem tutarları kalemin kendisiyle birlikte gider: `showOrderItems` hem
+  // adları/adetleri hem de tutarları yönetir. `showPaymentStatus` yalnızca
+  // "Ödendi / Ödenmedi" etiketini açar.
+  //
+  // Eskiden tutarlar `showPaymentStatus`e bağlıydı; o bayrak `false` varsayılana
+  // sahip ve intake paylaşım linki için onu `true` yapan HİÇBİR kod yolu yok
+  // (yalnızca araç pasaportu token'ında bir arayüzü var). Sonuç: müşteri
+  // çıktısındaki "Tutar" sütunu her zaman "—" basıyordu.
+  const showMoney = visibility.showOrderItems !== false
 
   const damageMarks = (visibility.showDamage !== false)
     ? intake.damageMarks.map((dm) => ({

@@ -23,6 +23,7 @@ import {
   type BusinessProfileFormValues,
 } from "@/lib/validations/settings"
 import { formatPhoneTR } from "@/lib/format"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 type WorkshopData = {
   id: string
@@ -39,7 +40,12 @@ type WorkshopData = {
   invoiceTitle: string | null
 }
 
-function toDefaults(workshop: WorkshopData): BusinessProfileFormValues {
+/**
+ * Müşteriye gösterilen iletişim / sosyal medya alanları `WorkshopSettings`
+ * üzerinde durur (#173); form bunları iş yeri bilgileriyle aynı gönderimde
+ * kaydeder.
+ */
+function toDefaults(workshop: WorkshopData, contact: WorkshopPublicContact | null): BusinessProfileFormValues {
   return {
     name: workshop.name || "",
     phone: formatPhoneTR(workshop.phone || ""),
@@ -52,16 +58,31 @@ function toDefaults(workshop: WorkshopData): BusinessProfileFormValues {
     taxNumber: workshop.taxNumber || "",
     taxOffice: workshop.taxOffice || "",
     invoiceTitle: workshop.invoiceTitle || "",
+    instagramUrl: contact?.instagramUrl || "",
+    facebookUrl: contact?.facebookUrl || "",
+    xUrl: contact?.xUrl || "",
+    tiktokUrl: contact?.tiktokUrl || "",
+    youtubeUrl: contact?.youtubeUrl || "",
+    linkedinUrl: contact?.linkedinUrl || "",
+    publicWhatsappNumber: formatPhoneTR(contact?.publicWhatsappNumber || ""),
+    secondaryPhone: formatPhoneTR(contact?.secondaryPhone || ""),
+    faxNumber: formatPhoneTR(contact?.faxNumber || ""),
   }
 }
 
-export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
+export function BusinessProfileForm({
+  workshop,
+  contact = null,
+}: {
+  workshop: WorkshopData
+  contact?: WorkshopPublicContact | null
+}) {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   const form = useForm<BusinessProfileFormValues, unknown, BusinessProfileFormValues>({
     resolver: typedResolver(businessProfileFormSchema),
-    defaultValues: toDefaults(workshop),
+    defaultValues: toDefaults(workshop, contact),
   })
 
   const city = form.watch("city")
@@ -257,6 +278,159 @@ export function BusinessProfileForm({ workshop }: { workshop: WorkshopData }) {
                       <FormLabel>Fatura Ünvanı</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Fatura ünvanı" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-foreground">İletişim & Sosyal Medya</h3>
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                Doldurduğunuz bilgiler müşteriye gönderilen servis özeti, araç pasaportu ve PDF çıktılarının alt
+                kısmında görünür. Boş bıraktığınız alan hiçbir çıktıda yer almaz.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="publicWhatsappNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp Hattı</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="tel"
+                          inputMode="tel"
+                          placeholder="0544 515 74 08"
+                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="secondaryPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>İkinci Telefon</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="tel"
+                          inputMode="tel"
+                          placeholder="0212 111 22 33"
+                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="faxNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Faks</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="tel"
+                          inputMode="tel"
+                          placeholder="0212 111 22 44"
+                          onChange={(e) => field.onChange(formatPhoneTR(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="instagramUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instagram</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="instagram.com/isyeriniz" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="facebookUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Facebook</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="facebook.com/isyeriniz" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="xUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>X</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="x.com/isyeriniz" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tiktokUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TikTok</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="tiktok.com/@isyeriniz" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="youtubeUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>YouTube</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="youtube.com/@isyeriniz" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="linkedinUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LinkedIn</FormLabel>
+                      <FormControl>
+                        <Input {...field} inputMode="url" placeholder="linkedin.com/company/isyeriniz" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

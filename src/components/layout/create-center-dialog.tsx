@@ -1,0 +1,87 @@
+"use client"
+
+import Link from "next/link"
+import { useState } from "react"
+import { BellRing, CalendarClock, FileText, Plus, Wrench, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { CREATE_OPTIONS } from "@/components/layout/create-center"
+
+const OPTION_ICONS = {
+  order: Wrench,
+  quote: FileText,
+  appointment: CalendarClock,
+  reminder: BellRing,
+} as const
+
+export function CreateCenterDialog() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button type="button" size="lg" className="h-11 w-11 px-0 sm:w-auto sm:px-3 md:h-8" aria-label="Yeni kayıt oluştur" />
+        }
+      >
+        <Plus className="size-4" />
+        <span className="hidden sm:inline">Oluştur</span>
+      </DialogTrigger>
+      <DialogContent showCloseButton={false} className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 overflow-y-auto rounded-b-none sm:top-1/2 sm:bottom-auto sm:max-w-xl sm:-translate-y-1/2 sm:rounded-xl">
+        <DialogClose
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="absolute top-1 right-1 size-11 md:top-2 md:right-2 md:size-9"
+              aria-label="Oluşturma merkezini kapat"
+            />
+          }
+        >
+          <X className="size-5" />
+        </DialogClose>
+        <DialogHeader>
+          <DialogTitle>Ne oluşturmak istiyorsunuz?</DialogTitle>
+          <DialogDescription>
+            Bir kayıt türü seçin. Bilgileri bir sonraki ekranda gireceksiniz.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2 sm:grid-cols-2" role="list" aria-label="Oluşturulabilecek kayıtlar">
+          {CREATE_OPTIONS.map((option) => {
+            const Icon = OPTION_ICONS[option.id]
+            return (
+              <div key={option.id} role="listitem">
+                <Button
+                  nativeButton={false}
+                  render={<Link href={option.href} onClick={() => setOpen(false)} />}
+                  variant="outline"
+                  size="lg"
+                  className="h-auto min-h-16 w-full justify-start gap-3 whitespace-normal p-3 text-left md:min-h-16"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="size-5" aria-hidden />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-foreground">{option.title}</span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                      {option.description}
+                    </span>
+                  </span>
+                </Button>
+              </div>
+            )
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-safety"
 import { renderIntakePrintoutHtml } from "@/lib/pdf/intake-printout"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +37,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
   const workshopSettings = await prisma.workshopSettings.findUnique({
     where: { workshopId: shareLink.workshopId },
-    select: { pdfLogoUrl: true, themeColor: true, accentColor: true, workOrderTemplate: true },
+    select: {
+      pdfLogoUrl: true,
+      themeColor: true,
+      accentColor: true,
+      workOrderTemplate: true,
+      ...WORKSHOP_PUBLIC_CONTACT_SELECT,
+    },
   })
 
   const visibility = {
@@ -57,6 +64,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     workshop,
     intakeForm: safeIntakeForm,
     branding: workshopSettings ? { pdfLogoUrl: workshopSettings.pdfLogoUrl, themeColor: workshopSettings.themeColor, accentColor: workshopSettings.accentColor } : undefined,
+    contact: pickWorkshopPublicContact(workshopSettings),
     customTemplate: workshopSettings?.workOrderTemplate || null,
     createdAt: shareLink.createdAt,
     photoCompletion,

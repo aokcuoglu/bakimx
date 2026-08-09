@@ -8,6 +8,7 @@ import { after } from "next/server"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin } from "@/lib/vin/types"
+import { deriveVinConfirmed } from "@/lib/vin/confirm"
 import { prefetchCommonVehicleParts, eagerPrefetchTarget } from "@/lib/tecdoc/prefetch"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
@@ -69,7 +70,6 @@ export async function createVehicleAction(formData: FormData) {
     modelYear: (formData.get("modelYear") as string) || undefined,
     mileage: (formData.get("mileage") as string) || undefined,
     vin: (formData.get("vin") as string || "").trim(),
-    vinConfirmed: formData.get("vinConfirmed") === "on",
     color: (formData.get("color") as string || "").trim(),
     engineNo: (formData.get("engineNo") as string || "").trim(),
     fuelType: (formData.get("fuelType") as string || "").trim(),
@@ -100,6 +100,9 @@ export async function createVehicleAction(formData: FormData) {
   const catalogError = await validateCatalogSelection(parsed.data)
   if (catalogError) return { error: catalogError }
 
+  // #179 — türetilir, istemciden ALINMAZ (bkz. deriveVinConfirmed).
+  const vinConfirmed = deriveVinConfirmed(parsed.data.vin)
+
   try {
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -112,7 +115,7 @@ export async function createVehicleAction(formData: FormData) {
         modelYear: parsed.data.modelYear || null,
         mileage: parsed.data.mileage || null,
         vin: parsed.data.vin || null,
-        vinConfirmed: parsed.data.vinConfirmed ?? false,
+        vinConfirmed,
         color: parsed.data.color || null,
         engineNo: parsed.data.engineNo || null,
         fuelType: parsed.data.fuelType || null,
@@ -133,7 +136,7 @@ export async function createVehicleAction(formData: FormData) {
 
     const prefetchId = eagerPrefetchTarget({
       catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
-      vinConfirmed: parsed.data.vinConfirmed ?? false,
+      vinConfirmed,
     })
     if (prefetchId != null) {
       after(() => prefetchCommonVehicleParts(prefetchId))
@@ -205,7 +208,6 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     modelYear: (formData.get("modelYear") as string) || undefined,
     mileage: (formData.get("mileage") as string) || undefined,
     vin: (formData.get("vin") as string || "").trim(),
-    vinConfirmed: formData.get("vinConfirmed") === "on",
     color: (formData.get("color") as string || "").trim(),
     engineNo: (formData.get("engineNo") as string || "").trim(),
     fuelType: (formData.get("fuelType") as string || "").trim(),
@@ -236,6 +238,13 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   const catalogError = await validateCatalogSelection(parsed.data)
   if (catalogError) return { error: catalogError }
 
+  // #179 — türetilir; elle "Teyit Et" ile işaretlenmiş standart-dışı şase,
+  // metin değişmediği sürece teyitli kalır (bkz. deriveVinConfirmed).
+  const vinConfirmed = deriveVinConfirmed(parsed.data.vin, {
+    vin: vehicle.vin,
+    vinConfirmed: vehicle.vinConfirmed,
+  })
+
   await prisma.vehicle.update({
     where: { id: vehicleId },
     data: {
@@ -247,7 +256,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
       modelYear: parsed.data.modelYear || null,
       mileage: parsed.data.mileage || null,
       vin: parsed.data.vin || null,
-      vinConfirmed: parsed.data.vinConfirmed ?? false,
+      vinConfirmed,
       color: parsed.data.color || null,
       engineNo: parsed.data.engineNo || null,
       fuelType: parsed.data.fuelType || null,
@@ -268,7 +277,7 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
 
   const prefetchId = eagerPrefetchTarget({
     catalogVehicleTypeId: parsed.data.catalogVehicleTypeId ?? null,
-    vinConfirmed: parsed.data.vinConfirmed ?? false,
+    vinConfirmed,
   })
   if (prefetchId != null) {
     after(() => prefetchCommonVehicleParts(prefetchId))

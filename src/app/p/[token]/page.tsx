@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { PublicVehiclePassportPage } from "@/components/vehicles/public-vehicle-passport"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const dynamic = "force-dynamic"
 
@@ -45,7 +46,13 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
 
   const workshopSettings = await prisma.workshopSettings.findUnique({
     where: { workshopId: passportToken.workshopId },
-    select: { publicPortalLogoUrl: true, passportLogoUrl: true, themeColor: true, accentColor: true },
+    select: {
+      publicPortalLogoUrl: true,
+      passportLogoUrl: true,
+      themeColor: true,
+      accentColor: true,
+      ...WORKSHOP_PUBLIC_CONTACT_SELECT,
+    },
   })
 
   const reminders = await prisma.maintenanceReminder.findMany({
@@ -199,6 +206,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
         themeColor: workshopSettings.themeColor,
         accentColor: workshopSettings.accentColor,
       } : null,
+      contact: pickWorkshopPublicContact(workshopSettings),
     },
   }
 

@@ -7,12 +7,23 @@ import { getSeatLimit, type PlanTier } from "@/lib/plan"
 /**
  * Workshop-scoped role-based access control (server-only — imports prisma).
  *
- * Hierarchy (rank): owner > manager > staff.
- *  - owner   : full control incl. team + (future) billing
- *  - manager : manage team (invite / change role of non-owners) + all operations
- *  - staff   : operational features only; no team management
+ * Roller (#183):
+ *  - owner   : Yönetici — her şey; kapalı iş emrini yeniden açabilen tek rol
+ *  - manager : Servis Müdürü — ekip, ayarlar, kayıtlar, iş emri, katalog, kasa
+ *  - usta    : Usta — kayıtlar, iş emri düzenleme/ilerletme, parça alımı
+ *  - cirak   : Çırak — yalnız parça alımı ve maliyet girme
+ *  - staff   : LEGACY — #183 öncesi kayıtlar; izinleri `usta` ile BİREBİR aynı
+ *              (mevcut kullanıcılar yetki kaybetmesin diye). Yeni atanamaz.
  *
- * Pure constants (labels/rank/assignable) live in `@/lib/roles` and are
+ * İzin kararı `ROLE_PERMISSIONS` matrisinden gelir; `ROLE_RANK` YALNIZ rol
+ * atamada ("kendinden yükseğini atayamazsın") kullanılır. İkisini karıştırmak,
+ * sırada yüksek görünen bir role istenmeyen izin verir.
+ *
+ * Kapı, server action'larda `requireWritableWorkshop(permission)` darboğazından
+ * geçer; izin zorunlu parametredir, böylece yeni action yazarken atlanamaz.
+ * Kapsamı `src/lib/rbac-coverage.test.ts` korur.
+ *
+ * Pure constants (labels/rank/assignable/matrix) live in `@/lib/roles` and are
  * re-exported here so existing server imports keep working.
  */
 export {

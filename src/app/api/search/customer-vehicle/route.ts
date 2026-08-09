@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { Prisma } from "@prisma/client"
 import { buildUnifiedResults } from "@/lib/search/unified-results"
+import { phoneSearchTerm } from "@/lib/search/phone-search"
 import { normalizePlate } from "@/lib/format"
 
 export async function GET(request: Request) {
@@ -18,6 +19,38 @@ export async function GET(request: Request) {
   const plateQ = normalizePlate(q)
   const plateClauses: Prisma.VehicleWhereInput[] =
     plateQ && plateQ !== q.toUpperCase() ? [{ plate: { contains: plateQ, mode: "insensitive" } }] : []
+
+  // Telefon araması iki yönden de biçime takılıyordu (#178): uygulama üzerinden
+  // açılan kayıtlarda telefon normalize saklanır ("5445157408") ama kullanıcı
+  // ekrandaki biçimi ("0544 515 74 08") yazar; eski/seed kayıtlarda ise tersi
+  // geçerli. Ham `contains` ikisini de kaçırır.
+  //
+  // Çözüm iki katmanlı:
+  //  1) Sorguyu rakamlara indirge (`phoneSearchTerm`) → normalize saklanan kaydı
+  //     bulur.
+  //  2) Kolonu da rakamlara indirgeyip karşılaştır → ayraçlı saklanan kaydı
+  //     bulur. Prisma `where`'i sütun üzerinde fonksiyon çağıramadığı için bu
+  //     tek adım raw SQL ile id'lere iner (aynı desen: tecdoc katalog araması).
+  //     Sorgu atölyeye sabitlenmiştir; `q` bind parametresidir.
+  // Üç harften kısa terimlerde 2. katman atlanır: hem gereksiz tarama olur hem
+  // de neredeyse tüm kayıtlar eşleşir.
+  const phoneQ = phoneSearchTerm(q)
+  const phoneDigitMatchIds =
+    phoneQ.length >= 3
+      ? (
+          await prisma.$queryRaw<{ id: string }[]>`
+            SELECT id FROM "Customer"
+            WHERE "workshopId" = ${user.workshopId}
+              AND regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${`%${phoneQ}%`}
+            LIMIT 8
+          `
+        ).map((r) => r.id)
+      : []
+
+  const phoneClauses: Prisma.CustomerWhereInput[] = [
+    ...(phoneQ && phoneQ !== q ? [{ phone: { contains: phoneQ } } satisfies Prisma.CustomerWhereInput] : []),
+    ...(phoneDigitMatchIds.length ? [{ id: { in: phoneDigitMatchIds } } satisfies Prisma.CustomerWhereInput] : []),
+  ]
 
   const customerSelect = Prisma.validator<Prisma.CustomerSelect>()({
     id: true,
@@ -39,6 +72,7 @@ export async function GET(request: Request) {
           { fullName: { contains: q, mode: "insensitive" } },
           { companyName: { contains: q, mode: "insensitive" } },
           { phone: { contains: q } },
+          ...phoneClauses,
         ],
       },
       select: customerSelect,

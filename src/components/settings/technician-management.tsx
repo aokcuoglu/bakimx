@@ -31,7 +31,11 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
           <HardHat className="size-5 text-muted-foreground" />
           <div>
             <h3 className="text-base font-semibold text-foreground">Teknisyenler & Ustalar</h3>
-            <p className="text-xs text-muted-foreground">İş emirlerine atama yapabileceğiniz personeli yönetin</p>
+            {/* Buradaki unvanlar (Usta/Teknisyen/…) Ekip kartındaki YETKİ rolleriyle
+                aynı adları taşıyor ama yetki vermez. Ayrım metinde açık olmalı (#274). */}
+            <p className="text-xs text-muted-foreground">
+              İş emirlerine atadığınız personel. Buradaki unvan yetki vermez, giriş hesabı da gerektirmez.
+            </p>
           </div>
         </div>
         <Button

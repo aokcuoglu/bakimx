@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useMemo, useActionState, startTransition } from "react"
+import { useState, useCallback, useEffect, useActionState, startTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -23,69 +23,42 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Plus, Trash2, Loader2, Calculator, User, X } from "lucide-react"
-import { StockStatusBadge } from "@/components/parts/stock-status-badge"
+import { Loader2, Calculator, User, X } from "lucide-react"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
-import {
-  Autocomplete,
-  AutocompleteContent,
-  AutocompleteEmpty,
-  AutocompleteInput,
-  AutocompleteItem,
-  AutocompleteList,
-} from "@/components/ui/autocomplete"
-import { formatPrice } from "@/lib/parts/format"
+import { QuoteItemsEditor } from "@/components/quotes/quote-items-editor"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { formatTRY } from "@/lib/format"
-import { liraToKurus, kurusToLira, percentToBps } from "@/lib/money"
+import { liraToKurus, percentToBps } from "@/lib/money"
 import { calculateOrderTotals } from "@/lib/totals"
-import { searchLaborItems } from "@/lib/labor/search"
 import type { LaborCatalogRow } from "@/lib/labor/types"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   quoteSchema,
   type QuoteFormValues,
 } from "@/lib/validations/quote"
 
+// Katalog/motor alanları TecDoc araması için gerekli (PickerVehicle ile aynı
+// şekil) — /api/customers/[id]/vehicles bunları döner.
 type Vehicle = {
   id: string
   plate: string
   brand: string
   model: string
+  catalogVehicleTypeId: number | null
+  vin: string | null
+  modelYear: number | null
+  engineDisplacement: string | null
+  enginePower: string | null
+  fuelType: string | null
+  firstRegistrationDate: string | null
 }
 
 type ActionState = {
   error?: string
   success?: boolean
   id?: string
-}
-
-type CatalogPart = {
-  id: string
-  name: string
-  sku: string | null
-  stockQty: number
-  criticalStockQty: number
-  salePrice: number | null
-  unit: string
-  isActive: boolean
-}
-
-const ITEM_TYPE_LABELS: Record<string, string> = {
-  part: "Parça",
-  labor: "İşçilik",
-}
-
-const defaultItem = {
-  type: "part" as const,
-  name: "",
-  quantity: 1,
-  unitPrice: null as number | null,
-  totalPrice: null as number | null,
-  note: "",
-  partId: "",
 }
 
 export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRow[] }) {
@@ -100,9 +73,6 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
   const [customerLabel, setCustomerLabel] = useState("")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [vehicleLoading, setVehicleLoading] = useState(false)
-  const [catalogSearch, setCatalogSearch] = useState("")
-  const [catalogResults, setCatalogResults] = useState<CatalogPart[]>([])
-  const [catalogLoading, setCatalogLoading] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"draft" | "sent">("sent")
 
   const form = useForm<QuoteFormValues, unknown, QuoteFormValues>({
@@ -121,15 +91,13 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
     },
   })
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  })
-
   const customerId = form.watch("customerId")
+  const vehicleId = form.watch("vehicleId")
   const discountAmount = form.watch("discountAmount")
   const taxRate = form.watch("taxRate")
   const itemsWatch = form.watch("items")
+  // Seçili araç kayıtlıysa kalem düzenleyicisi araca uygun katalog aramasını açar.
+  const selectedVehicle = vehicles.find((v) => v.id === vehicleId)
 
   useEffect(() => {
     if (state?.success && state.id) {
@@ -165,65 +133,17 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
     setVehicles([])
   }
 
-  function addItem() {
-    append({ ...defaultItem })
-  }
-
-  async function searchCatalog(query: string) {
-    if (query.length < 1) {
-      setCatalogResults([])
-      return
-    }
-    setCatalogLoading(true)
-    try {
-      const res = await fetch(`/api/parts/search?q=${encodeURIComponent(query)}`)
-      const data = await res.json()
-      if (data.parts) setCatalogResults(data.parts)
-    } catch {
-      /* ignore */
-    } finally {
-      setCatalogLoading(false)
-    }
-  }
-
-  function selectCatalogPart(part: CatalogPart) {
-    // Catalog prices are stored in kuruş; the form inputs hold TRY (lira).
-    const priceLira = part.salePrice != null ? kurusToLira(part.salePrice) : null
-    append({
-      ...defaultItem,
-      name: part.name,
-      unitPrice: priceLira,
-      totalPrice: priceLira,
-      note: part.sku ? `SKU: ${part.sku}` : "",
-      partId: part.id,
-    })
-    setCatalogSearch("")
-    setCatalogResults([])
-  }
-
-  function recomputeTotal(index: number) {
-    const current = form.getValues(`items.${index}`)
-    const qty = Number(current?.quantity) || 0
-    const price = Number(current?.unitPrice) || 0
-    // Koşulsuz yaz: fiyatsız/miktarsız durumda `null` yazılmazsa önceki
-    // kalemden kalan `totalPrice` satırda asılı kalır (bkz. code review bulgu I1)
-    // ve kuruşa çevrilirken açık totalPrice'ı önceleyen lineTotalKurus üzerinden
-    // teklife/PDF'e yanlış tutar sızar. Kuruşa yuvarlama (bulgu I2) zod'un
-    // `.multipleOf(0.01)` kısıtını kayan nokta artığından (ör. 64.07*9) korur.
-    const total = qty > 0 && price > 0 ? Math.round(qty * price * 100) / 100 : null
-    form.setValue(`items.${index}.totalPrice`, total, { shouldDirty: true })
-  }
-
   // PREVIEW ONLY — the server recomputes the authoritative totals from the line
-  // items. Form values are TRY (lira); convert to kuruş/bps and run the same
-  // money module the server uses, so the preview matches the saved result.
+  // items. Kalem tutarları zaten kuruş (#179); yalnız indirim/KDV alanları hâlâ
+  // TL/yüzde girildiği için burada çevrilir. Aynı money modülü sunucuda da
+  // çalıştığı için önizleme kaydedilen sonuçla birebir örtüşür.
   const preview = calculateOrderTotals(
     itemsWatch.map((i) => ({
       type: i.type,
       name: i.name,
       quantity: Number(i.quantity) || 0,
-      unitPrice: i.unitPrice != null ? liraToKurus(Number(i.unitPrice)) : null,
-      totalPrice: i.totalPrice != null ? liraToKurus(Number(i.totalPrice)) : null,
+      unitPrice: i.unitPrice ?? null,
+      totalPrice: i.totalPrice ?? null,
     })),
     {
       discountAmount: liraToKurus(Math.max(0, Number(discountAmount) || 0)),
@@ -253,19 +173,18 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
     formData.set("status", submitStatus)
     const cleanItems = values.items
       .filter((i) => i.name.trim())
-      .map((i) => {
-        const unitPrice = i.unitPrice != null && i.unitPrice > 0 ? liraToKurus(Number(i.unitPrice)) : undefined
-        const totalPrice = i.totalPrice != null && i.totalPrice > 0 ? liraToKurus(Number(i.totalPrice)) : undefined
-        return {
-          type: i.type,
-          name: i.name,
-          quantity: i.quantity,
-          unitPrice,
-          totalPrice,
-          note: i.note || undefined,
-          partId: i.partId || undefined,
-        }
-      })
+      .map((i) => ({
+        type: i.type,
+        name: i.name,
+        sku: i.sku || undefined,
+        unit: i.unit || undefined,
+        quantity: i.quantity,
+        // Kuruş — form ile sunucu aynı birimi konuşuyor, çevrim yok.
+        unitPrice: i.unitPrice != null && i.unitPrice > 0 ? i.unitPrice : undefined,
+        totalPrice: i.totalPrice != null && i.totalPrice > 0 ? i.totalPrice : undefined,
+        note: i.note || undefined,
+        partId: i.partId || undefined,
+      }))
     formData.set("items", JSON.stringify(cleanItems))
     startTransition(() => formAction(formData))
   }
@@ -423,228 +342,33 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold">Parça & İşçilik Kalemleri</CardTitle>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={addItem} className="gap-1">
-                      <Plus className="size-3.5" />
-                      Kalem Ekle
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle className="text-sm font-semibold">Parça &amp; İşçilik Kalemleri</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        value={catalogSearch}
-                        onChange={(e) => {
-                          setCatalogSearch(e.target.value)
-                          searchCatalog(e.target.value)
-                        }}
-                        placeholder="Katalogdan parça ara ve ekle..."
-                      />
-                      {catalogLoading && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70">
-                          Aranıyor...
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {catalogResults.length > 0 && (
-                    <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-background shadow-sm">
-                      {catalogResults.map((p) => (
-                        <Button
-                          key={p.id}
-                          type="button"
-                          variant="ghost"
-                          onClick={() => selectCatalogPart(p)}
-                          className="w-full justify-between rounded-none border-b border-border last:border-0 h-auto py-2 px-3"
-                        >
-                          <div className="min-w-0 flex-1 text-left">
-                            <span className="font-medium text-foreground">{p.name}</span>
-                            {p.sku && <span className="text-xs text-muted-foreground ml-2 font-mono">{p.sku}</span>}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
-                            {p.salePrice != null && (
-                              <span className="text-xs font-medium text-foreground">{formatPrice(p.salePrice)}</span>
-                            )}
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
+              <CardContent>
+                {/* #179 — iş emri detayındaki kalem deneyiminin aynısı: katalogdan
+                    (araç seçiliyse TecDoc) arayarak VEYA elle kalem ekleme, tür
+                    ayrımı, miktar/birim fiyat/toplam düzenleme. Teklif tarafı
+                    sunucuya YAZMAZ; satırlar forma yansır (bkz. QuoteItemsEditor). */}
+                <FormField
+                  control={form.control}
+                  name="items"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div>
+                          <QuoteItemsEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            vehicle={selectedVehicle}
+                            laborCatalog={laborCatalog}
+                            disabled={pending}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-
-                {fields.length === 0 && (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    Henüz kalem eklenmedi. &quot;Kalem Ekle&quot; butonuna tıklayarak başlayın.
-                  </div>
-                )}
-                {fields.map((itemField, index) => (
-                  <div key={itemField.id} className="rounded-lg border border-border bg-muted/50 p-3 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.type`}
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "part")}>
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Tip">
-                                      {(value: string | null) => (value ? ITEM_TYPE_LABELS[value] ?? value : null)}
-                                    </SelectValue>
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="part">Parça</SelectItem>
-                                    <SelectItem value="labor">İşçilik</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <span className="text-[11px] text-muted-foreground/70 font-mono">{itemField.id}</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => remove(index)}
-                        aria-label="Kalemi sil"
-                        className="text-muted-foreground/70 hover:text-destructive-strong hover:bg-destructive/10"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.name`}
-                        render={({ field }) => {
-                          const typeVal = form.getValues(`items.${index}.type`)
-                          return (
-                            <FormItem className="sm:col-span-2">
-                              <FormLabel className="text-[11px] text-muted-foreground">Ad</FormLabel>
-                              <FormControl>
-                                {typeVal === "labor" ? (
-                                  <LaborNameAutocomplete
-                                    laborCatalog={laborCatalog}
-                                    value={field.value ?? ""}
-                                    onValueChange={(v) => field.onChange(v)}
-                                    onSelect={(e) => {
-                                      field.onChange(e.name)
-                                      // Form TL tutar; katalog kuruş saklar. Fiyatsız kalem
-                                      // seçilirse önceki satırdan kalma fiyat yapışık kalmasın
-                                      // diye unitPrice sıfırlanır (else dalı).
-                                      form.setValue(
-                                        `items.${index}.unitPrice`,
-                                        e.defaultPriceKurus != null ? kurusToLira(e.defaultPriceKurus) : null,
-                                        { shouldDirty: true }
-                                      )
-                                      recomputeTotal(index)
-                                    }}
-                                  />
-                                ) : (
-                                  <Input
-                                    {...field}
-                                    placeholder="Fren balatası..."
-                                    className="h-8 text-sm"
-                                  />
-                                )}
-                              </FormControl>
-                            </FormItem>
-                          )
-                        }}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.quantity`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[11px] text-muted-foreground">Miktar</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => {
-                                  field.onChange(Number(e.target.value) || 1)
-                                  recomputeTotal(index)
-                                }}
-                                className="h-8 text-sm"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.unitPrice`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[11px] text-muted-foreground">Birim Fiyat ₺</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => {
-                                  field.onChange(e.target.value ? Number(e.target.value) : null)
-                                  recomputeTotal(index)
-                                }}
-                                className="h-8 text-sm"
-                                placeholder="0"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.totalPrice`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[11px] text-muted-foreground">Tutar ₺</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                className="h-8 text-sm"
-                                placeholder="0"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.note`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[11px] text-muted-foreground">Not</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Opsiyonel not..." className="h-8 text-sm" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                ))}
+                />
               </CardContent>
             </Card>
           </div>
@@ -761,68 +485,6 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
         </div>
       </form>
     </Form>
-  )
-}
-
-// İşçilik ad alanının katalog-önerili Autocomplete'i. Ayrı bileşene çıkarıldı
-// ki `useMemo` (arama sonucu bellek) kendi Fiber'ında güvenle çalışsın —
-// react-hook-form'un FormField render-prop'u içine hook koymak, üstteki
-// `form.watch("items")` her satırda re-render tetiklediğinde Rules of Hooks'u
-// ihlal eder (bkz. parts-labor-grid.tsx:419 LaborAutocompleteField, aynı desen).
-function LaborNameAutocomplete({
-  laborCatalog,
-  value,
-  onValueChange,
-  onSelect,
-}: {
-  laborCatalog: LaborCatalogRow[]
-  value: string
-  onValueChange: (v: string) => void
-  onSelect: (e: LaborCatalogRow) => void
-}) {
-  const items = useMemo(() => searchLaborItems(laborCatalog, value), [laborCatalog, value])
-  return (
-    <Autocomplete
-      items={items}
-      value={value}
-      filter={null}
-      autoHighlight
-      openOnInputClick
-      itemToStringValue={(e: LaborCatalogRow) => e.name}
-      onValueChange={onValueChange}
-    >
-      <AutocompleteInput
-        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
-        // (bkz. @base-ui/react/combobox ComboboxInput: `!mounted && key ===
-        // 'Escape'`) — kullanıcının henüz bir seçime dönüşmemiş yazdığı işçilik
-        // adı yok oluyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
-        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
-        // "false"). Aynı desen: customer-vehicle-picker.tsx (preventBaseUIHandler).
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
-            e.preventBaseUIHandler()
-          }
-        }}
-        render={<Input placeholder="Yağ değişimi..." className="h-8 text-sm" />}
-      />
-      <AutocompleteContent>
-        <AutocompleteEmpty>
-          Eşleşen işçilik yok — kendi kaleminizi yazabilirsiniz
-        </AutocompleteEmpty>
-        <AutocompleteList>
-          {(e: LaborCatalogRow) => (
-            <AutocompleteItem key={e.id} value={e} onClick={() => onSelect(e)}>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{e.name}</span>
-                {e.category && (
-                  <span className="block text-[11px] text-muted-foreground">{e.category}</span>
-                )}
-              </span>
-            </AutocompleteItem>
-          )}
-        </AutocompleteList>
-      </AutocompleteContent>
-    </Autocomplete>
   )
 }
 

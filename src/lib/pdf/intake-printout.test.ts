@@ -1,6 +1,7 @@
 import { expect, test, describe } from "bun:test"
 import { renderIntakePrintoutHtml, safeHexColor, DEFAULT_PRIMARY_COLOR } from "./intake-printout"
 import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-safety"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 const CREATED_AT = new Date("2026-07-05T08:59:00.000Z")
 
@@ -43,11 +44,16 @@ function buildIntake(overrides: Record<string, unknown> = {}) {
   )
 }
 
-function render(overrides: Record<string, unknown> = {}, branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }) {
+function render(
+  overrides: Record<string, unknown> = {},
+  branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null },
+  contact?: WorkshopPublicContact | null
+) {
   return renderIntakePrintoutHtml({
     workshop: { name: "KIZILDAĞ OTO", phone: "02121112233", city: "İstanbul", address: "Sanayi Sitesi 1", logoUrl: null },
     intakeForm: buildIntake(overrides),
     branding,
+    contact,
     customTemplate: null,
     createdAt: CREATED_AT,
     photoCompletion: { percentage: 0, requiredCompleted: 0, required: 8, total: 12, completed: 1, missingLabels: ["Ön sol"] },
@@ -130,6 +136,40 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).toContain("2 kalem")
   })
 
+  test("hiçbir kalemde tutar yoksa Tutar sütunu hiç basılmaz", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        items: [
+          { type: "part", name: "Manuel parça", quantity: 1, unitPrice: null, totalPrice: null },
+          { type: "part", name: "Filtre, kabin havası", quantity: 1, unitPrice: null, totalPrice: null },
+        ],
+      },
+    })
+    expect(html).toContain("Manuel parça")
+    expect(html).not.toContain("Tutar</th>")
+    // `.cell-amount` stylesheet'te tanımlı kalır; asıl kontrol hücrenin hiç
+    // basılmaması.
+    expect(html).not.toContain('<td class="cell cell-amount">')
+  })
+
+  test("tek bir kalemin tutarı varsa sütun kalır, fiyatsız satır — basar", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        items: [
+          { type: "part", name: "Filtre, kabin havası", quantity: 1, unitPrice: 50000, totalPrice: null },
+          { type: "part", name: "Manuel parça", quantity: 1, unitPrice: null, totalPrice: null },
+        ],
+      },
+    })
+    expect(html).toContain("Tutar</th>")
+    expect(html).toContain("₺500,00")
+    expect(html).toContain('<td class="cell cell-amount">—</td>')
+  })
+
   test("kalem adındaki HTML kaçırılır (XSS regresyonu)", () => {
     const html = render({
       order: {
@@ -154,5 +194,24 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).not.toContain("Hasar Kayıtları")
     expect(html).not.toContain("Servis Emri")
     expect(html).toContain("Süreç Zaman Çizelgesi")
+  })
+
+  test("iş yeri iletişim bilgileri adres/telefon satırının altında görünür", () => {
+    const html = render({}, undefined, {
+      publicWhatsappNumber: "5445157408",
+      instagramUrl: "https://instagram.com/kizildagoto",
+    })
+    expect(html).toContain("Tel: 02121112233")
+    expect(html.indexOf("WhatsApp: ")).toBeGreaterThan(html.indexOf("Tel: 02121112233"))
+    expect(html).toContain('href="https://wa.me/905445157408"')
+    expect(html).toContain("instagram.com/kizildagoto")
+  })
+
+  test("iletişim bilgisi girilmemişse hiçbir iz bırakmaz", () => {
+    const html = render({}, undefined, { instagramUrl: "", publicWhatsappNumber: null })
+    expect(html).not.toContain("WhatsApp")
+    expect(html).not.toContain("Instagram")
+    expect(html).not.toContain("Telefon 2")
+    expect(html).not.toContain("Faks")
   })
 })

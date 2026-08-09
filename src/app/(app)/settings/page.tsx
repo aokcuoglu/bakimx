@@ -69,6 +69,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     workOrderTemplate: settings.workOrderTemplate,
     servicePassportTemplate: settings.servicePassportTemplate,
     collectionReceiptTemplate: settings.collectionReceiptTemplate,
+    instagramUrl: settings.instagramUrl,
+    facebookUrl: settings.facebookUrl,
+    xUrl: settings.xUrl,
+    tiktokUrl: settings.tiktokUrl,
+    youtubeUrl: settings.youtubeUrl,
+    linkedinUrl: settings.linkedinUrl,
+    publicWhatsappNumber: settings.publicWhatsappNumber,
+    secondaryPhone: settings.secondaryPhone,
+    faxNumber: settings.faxNumber,
   }
 
   const serializedUser = {
@@ -117,8 +126,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const seatUsage = await getSeatUsage(user.workshopId)
   const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
 
+  // `wide` (max-w-5xl): sekiz sekmelik şerit `constrained` (768px) genişliğe
+  // sığmıyordu ve her masaüstünde kaydırma gerektiriyordu (#278).
   return (
-    <AppShell constrained workshopName={workshop.name} pageTitle="Ayarlar">
+    <AppShell wide workshopName={workshop.name} pageTitle="Ayarlar">
       <div className="space-y-5 sm:space-y-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ayarlar</h2>

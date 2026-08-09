@@ -148,15 +148,15 @@ export function CalendarView({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate("prev")} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground touch-manipulation" aria-label="Önceki">
+          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("prev")} aria-label="Önceki">
             <ChevronLeft className="size-5" />
-          </button>
+          </Button>
           <Button variant="outline" size="sm" onClick={goToToday}>
             Bugün
           </Button>
-          <button onClick={() => navigate("next")} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground touch-manipulation" aria-label="Sonraki">
+          <Button type="button" variant="ghost" size="icon" onClick={() => navigate("next")} aria-label="Sonraki">
             <ChevronRight className="size-5" />
-          </button>
+          </Button>
           <span className="text-base font-semibold text-foreground ml-2">
             {view === "month" ? formatMonthHeader(baseDate) : `${formatDayHeader(baseDate)}, ${baseDate.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}`}
           </span>
@@ -167,28 +167,28 @@ export function CalendarView({
             {(["day", "week", "month"] as ViewMode[]).map((v) => {
               const labels: Record<ViewMode, string> = { day: "Günlük", week: "Haftalık", month: "Aylık" }
               return (
-                <button
+                <Button
                   key={v}
+                  type="button"
+                  size="sm"
+                  variant={view === v ? "default" : "ghost"}
                   onClick={() => setView(v)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium transition-colors touch-manipulation",
-                    view === v ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
-                  )}
                 >
                   {labels[v]}
-                </button>
+                </Button>
               )
             })}
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="warning"
             onClick={handleCheckReminders}
             disabled={checking}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-warning hover:bg-warning/90 disabled:opacity-50 text-warning-foreground text-sm font-medium transition-colors touch-manipulation"
           >
             {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
             Hatırlatmaları Kontrol Et
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export function CalendarView({
               <span className="text-muted-foreground">{r.processed} işlendi, {r.sent} gönderildi{r.failed > 0 ? `, ${r.failed} başarısız` : ""}</span>
             </div>
           ))}
-          <button onClick={() => setCheckResult(null)} className="text-xs text-muted-foreground/70 hover:text-muted-foreground">Kapat</button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setCheckResult(null)}>Kapat</Button>
         </div>
       )}
 

@@ -4,7 +4,9 @@ import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import type { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
+import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { escapeHtml } from "@/lib/html-escape"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const DEFAULT_PRIMARY_COLOR = "#0B1F3A"
 export const DEFAULT_ACCENT_COLOR = "#2563EB"
@@ -24,6 +26,8 @@ type IntakePrintoutData = {
   workshop: { name: string; phone: string; city: string; address: string; logoUrl?: string | null }
   intakeForm: ReturnType<typeof sanitizeIntakeForPublic>
   branding?: { pdfLogoUrl: string | null; themeColor: string | null; accentColor: string | null }
+  /** Atölyenin müşteriye gösterdiği iletişim / sosyal medya bilgileri (#173). */
+  contact?: WorkshopPublicContact | null
   customTemplate?: string | null
   createdAt: Date
   photoCompletion: {
@@ -55,11 +59,18 @@ const lineTotalOf = (item: { quantity: number; unitPrice: number | null; totalPr
 const sumItems = (items: { quantity: number; unitPrice: number | null; totalPrice: number | null }[]) =>
   items.reduce((sum, item) => sum + (lineTotalOf(item) ?? 0), 0)
 
-/** Bir kalem grubunu (parça / işçilik / dış işçilik) tabloya çevirir. */
+/**
+ * Bir kalem grubunu (parça / işçilik / dış işçilik) tabloya çevirir.
+ *
+ * `showAmounts` false ise "Tutar" sütunu hiç basılmaz. Baştan sona "—" dolu bir
+ * fiyat sütunu, fiyatın bozuk geldiği izlenimi veriyordu; tutar bilgisi yoksa
+ * sütunu göstermemek daha dürüst.
+ */
 function itemsTable(
   title: string,
   items: { name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[],
-  toneClass: string
+  toneClass: string,
+  showAmounts: boolean
 ): string {
   if (items.length === 0) return ""
   const rows = items
@@ -68,7 +79,7 @@ function itemsTable(
       return `<tr>
         <td class="cell cell-name">${item.name}</td>
         <td class="cell cell-center">${item.quantity}</td>
-        <td class="cell cell-amount">${total != null ? formatTRY(total) : "—"}</td>
+        ${showAmounts ? `<td class="cell cell-amount">${total != null ? formatTRY(total) : "—"}</td>` : ""}
       </tr>`
     })
     .join("")
@@ -79,7 +90,7 @@ function itemsTable(
         <tr>
           <th class="th">Kalem</th>
           <th class="th th-center">Adet</th>
-          <th class="th th-amount">Tutar</th>
+          ${showAmounts ? `<th class="th th-amount">Tutar</th>` : ""}
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -103,7 +114,7 @@ function section(title: string, body: string, meta = ""): string {
  * ekranda görülen ile kâğıda basılan aynı olur.
  */
 export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
-  const { workshop, intakeForm, branding, customTemplate, createdAt, photoCompletion } = data
+  const { workshop, intakeForm, branding, contact, customTemplate, createdAt, photoCompletion } = data
   const primaryColor = safeHexColor(branding?.themeColor, DEFAULT_PRIMARY_COLOR)
   const accentColor = safeHexColor(branding?.accentColor, DEFAULT_ACCENT_COLOR)
   const logoUrl = branding?.pdfLogoUrl || workshop.logoUrl
@@ -225,13 +236,16 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       </div>`
     : ""
 
+  // Hiçbir kalemde tutar yoksa "Tutar" sütununu hiç basma.
+  const showAmounts = orderItems.some((item) => lineTotalOf(item) != null)
+
   const orderSection =
     intakeForm.order && orderItems.length > 0
       ? section(
           "Servis Emri",
-          `${itemsTable("Parçalar", parts, "tone-accent")}
-           ${itemsTable("İşçilik", labor, "tone-labor")}
-           ${itemsTable("Dış İşçilik", externalLabor, "tone-labor")}
+          `${itemsTable("Parçalar", parts, "tone-accent", showAmounts)}
+           ${itemsTable("İşçilik", labor, "tone-labor", showAmounts)}
+           ${itemsTable("Dış İşçilik", externalLabor, "tone-labor", showAmounts)}
            ${totalsBlock}
            ${intakeForm.order.paymentStatusLabel ? `<div class="meta-row"><span>Ödeme durumu: ${intakeForm.order.paymentStatusLabel}</span></div>` : ""}`,
           `${orderItems.length} kalem`
@@ -336,7 +350,8 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     "İş Yeri Bilgileri",
     `<div class="field-value">${safeWorkshopName}</div>
      <div class="field-sub">${safeWorkshopCity}, ${safeWorkshopAddress}</div>
-     <div class="field-sub">Tel: ${safeWorkshopPhone}</div>`
+     <div class="field-sub">Tel: ${safeWorkshopPhone}</div>
+     ${renderWorkshopContactHtml(contact, { fontSize: "10.5px" })}`
   )
 
   const documentTitle = `${intakeForm.vehicle.plate} • Araç Kabul ve İşlem Özeti`

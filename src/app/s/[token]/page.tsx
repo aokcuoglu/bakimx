@@ -4,6 +4,7 @@ import { PublicSharePage } from "@/components/intake/public-share-page"
 import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const dynamic = "force-dynamic"
 
@@ -37,7 +38,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
   const workshopSettings = await prisma.workshopSettings.findUnique({
     where: { workshopId: shareLink.workshopId },
-    select: { publicPortalLogoUrl: true, themeColor: true, accentColor: true },
+    select: { publicPortalLogoUrl: true, themeColor: true, accentColor: true, ...WORKSHOP_PUBLIC_CONTACT_SELECT },
   })
 
   const visibility = {
@@ -81,6 +82,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         themeColor: workshopSettings.themeColor,
         accentColor: workshopSettings.accentColor,
       } : null,
+      contact: pickWorkshopPublicContact(workshopSettings),
     },
     intakeForm: safeIntakeForm,
     photoCompletion,

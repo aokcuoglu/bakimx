@@ -14,6 +14,8 @@ import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/t
 import { ApprovalTimeline } from "@/components/intake/approval-timeline"
 import { GroupedPhotoGallery } from "@/components/intake/grouped-photo-gallery"
 import { BrandLogo } from "@/components/shared/brand-logo"
+import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 type SafeIntakeData = {
   status: string
@@ -75,6 +77,7 @@ type ShareLink = {
       themeColor: string | null
       accentColor: string | null
     } | null
+    contact: WorkshopPublicContact | null
   }
   intakeForm: SafeIntakeData
   photoCompletion: PhotoCompletionResult
@@ -104,7 +107,9 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
       workshopName: workshop.name,
       plate: intakeForm.vehicle.plate,
       statusLabel: intakeForm.statusLabel,
-      totalAmount: shareLink.showPaymentStatus && intakeForm.order ? orderItems.reduce((sum, item) => {
+      // Tutarlar kalemlerle birlikte gelir (bkz. sanitizeIntakeForPublic);
+      // showPaymentStatus yalnızca "Ödendi / Ödenmedi" etiketini yönetir.
+      totalAmount: shareLink.showOrderItems && intakeForm.order ? orderItems.reduce((sum, item) => {
         if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
         if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
         return sum
@@ -536,6 +541,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <Phone className="size-3.5" />
                 <span>{workshop.phone}</span>
               </div>
+              <WorkshopContactBlock contact={workshop.contact} />
             </div>
           </div>
         </div>

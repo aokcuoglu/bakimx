@@ -85,9 +85,9 @@ export function StandaloneServiceAdvisor() {
             AI Servis Danışmanı
           </CardTitle>
           {result && (
-            <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground/70 hover:text-muted-foreground p-1" aria-label={expanded ? "Daralt" : "Genişlet"}>
+            <Button type="button" variant="ghost" size="icon" onClick={() => setExpanded(!expanded)} aria-label={expanded ? "Daralt" : "Genişlet"}>
               {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </button>
+            </Button>
           )}
         </div>
       </CardHeader>

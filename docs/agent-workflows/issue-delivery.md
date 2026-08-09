@@ -12,7 +12,9 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 1. Understand the issue and define testable acceptance criteria.
 2. Implement the smallest complete solution in an isolated worktree.
 3. Validate and review the change in proportion to its risk.
-4. Push a branch and open a PR linked with `Closes #<number>`.
+4. Push a branch and open a PR that closes every tracker the work is filed in:
+   `Closes #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue
+   drives the delivery.
 5. Monitor required GitHub Actions, fix failures, and merge only when green.
 6. Verify the issue is closed and its Factory - BakimX project item is Done.
 7. Remove only the branch/worktree created for the issue.
@@ -52,7 +54,15 @@ Example shape (choose a unique path outside active worktrees):
 ```sh
 git fetch origin dev
 git worktree add -b issue/123-short-slug <safe-path> origin/dev
+bun run worktree:env -- <safe-path>
 ```
+
+The environment setup command links the primary checkout's ignored `.env.local`
+into the new worktree. Run it immediately after creating every issue worktree so
+`bun run dev` and `bun run dev:tunnel` use the configured development database.
+It refuses to overwrite an existing environment file and never copies secrets
+into Git history. If the primary checkout has no `.env.local`, stop and ask the
+user to configure it; do not rely on the build-safe placeholder database URL.
 
 ## 3. Plan and implementation
 
@@ -98,7 +108,28 @@ bun run build
   branch has drifted; never force-push shared work without explicit authorization.
 - Push the issue branch and open a PR targeting `dev`.
 - Complete the PR template. Include summary, risks, tests and manual QA evidence.
-- Put `Closes #123` in the PR body, not only in a commit or comment.
+- Link the PR from its body, not only from a commit or comment. Work that is
+  tracked in both systems needs **two closing lines**, one per tracker:
+
+  ```text
+  Closes #123
+  Closes BAK-7
+  ```
+
+  - `Closes #<github-number>` closes the GitHub issue on merge.
+  - `Closes <MULTICA-KEY>` links the PR to the Multica issue and moves it to Done
+    on merge. The key is the identifier Multica prints on the issue (`BAK-7`),
+    not its UUID.
+  - The two lines are not interchangeable and neither implies the other. A missing
+    GitHub line leaves the GitHub issue open; a missing Multica line leaves the
+    Multica issue unlinked, so its status has to be fixed by hand after every merge.
+- Put the Multica key where the connector can see it. It scans the PR **title,
+  branch name, and body**, but a key in the body only becomes a visible link when
+  it directly follows a closing keyword (`Closes` / `Fixes` / `Resolves`). A bare
+  key mentioned in prose is recorded as `reference_only` and never appears in the
+  Multica issue's Pull requests panel.
+- When a delivery has no Multica issue — the work started straight from a GitHub
+  issue — write the GitHub line only. Never invent a Multica key.
 - Start as draft while checks or review work remain; mark ready only when the
   implementation and evidence are complete.
 
@@ -118,12 +149,16 @@ bun run build
 
 - Confirm the merged PR contains the closing keyword and GitHub closed the issue.
 - Confirm the issue item in `Factory - BakimX` has Status `Done`.
+- When the delivery is tracked in Multica, confirm the Multica issue lists the PR
+  in its Pull requests panel and moved to Done on merge. An empty panel means the
+  key never registered as a link — fix it on the next PR, not by hand-linking this
+  one.
 - GitHub Projects' built-in workflow should set closed issues and merged PRs to
   Done. If it does not, inspect the project workflow configuration and report the
   failure; update the item manually only when authorized.
 - Do not close an issue manually before merge merely to make the board look done.
 - **Link the PR to the issue when the PR is opened, never after it is closed.**
-  `Closes #<number>` in the PR body creates the link at the right moment. Adding a
+  The `Closes` lines in the PR body create both links at the right moment. Adding a
   link from the issue's Development panel after the issue is already closed makes
   project automation overwrite `Done` with an in-progress status, and `Item closed`
   never fires again to correct it. On 2026-08-01 this stranded 14 closed issues in

@@ -24,6 +24,8 @@ import { formatTRY, formatMileage } from "@/lib/format"
 import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generatePassportWhatsAppText } from "@/lib/passport/data-safety"
 import { BrandLogo } from "@/components/shared/brand-logo"
+import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
+import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 type SafePassportVehicle = {
   plate: string
@@ -130,6 +132,7 @@ type PassportTokenInfo = {
     city: string
     address: string
     logoUrl: string | null
+    contact: WorkshopPublicContact | null
   }
 }
 
@@ -450,6 +453,7 @@ export function PublicVehiclePassportPage({
               <Phone className="size-3.5" />
               <span>{workshop.phone}</span>
             </div>
+            <WorkshopContactBlock contact={workshop.contact} />
           </div>
         </div>
 
