@@ -18,7 +18,21 @@
 #   3. Laptop sleep / network blips.
 # A keepalive prevents (1); a supervisor loop that re-resolves the task recovers
 # from all three within seconds.
+#
+# SELF-HEALING, PART 2 (2026-08-09): the supervisor above still could not
+# recover from the most common failure, because a reaped session does NOT end
+# the local process — `session-manager-plugin` keeps the socket bound and mute,
+# so `aws ssm start-session` never returns, `wait` never returns, and the
+# supervisor sits there forever while every query dies with
+# "Connection terminated due to connection timeout". The old keepalive could not
+# notice either: its unbounded `head -c 1` hung on the same dead socket, killing
+# the keepalive loop permanently on the first drop. The keepalive is now a
+# *bounded* health probe that recycles the session when the tunnel goes mute.
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/tunnel-health.sh
+. "$ROOT/scripts/tunnel-health.sh"
 
 ENV="${ENV:-dev}"
 PROFILE="${AWS_PROFILE:-bakimx-$ENV}"
@@ -26,8 +40,15 @@ REGION="${AWS_REGION:-eu-central-1}"
 LOCAL_PORT="${LOCAL_PORT:-5433}"
 CLUSTER="bakimx-$ENV-cluster"
 SERVICE="bakimx-$ENV-app-svc"
-# Comfortably inside the 20 min idle timeout, and cheap (one TCP round-trip).
-KEEPALIVE_SECS="${KEEPALIVE_SECS:-300}"
+# Health probe interval. Doubles as the keepalive (the probe is real traffic, so
+# it resets the 20 min idle timer) — hence comfortably inside it, and cheap
+# enough at one TCP round-trip to also give fast detection of a mute tunnel.
+# KEEPALIVE_SECS is still honoured for muscle memory.
+PROBE_SECS="${PROBE_SECS:-${KEEPALIVE_SECS:-60}}"
+# How long the far side may stay silent before a probe counts as a miss.
+PROBE_TIMEOUT="${PROBE_TIMEOUT:-5}"
+# Grace given to a freshly started session before it is probed at all.
+GRACE_SECS="${GRACE_SECS:-30}"
 RETRY_SECS="${RETRY_SECS:-5}"
 # session-manager-plugin her gelen TCP bağlantısı için bir
 # "Connection accepted for session [...]" satırı basar. Prisma'nın havuzu
@@ -36,13 +57,24 @@ RETRY_SECS="${RETRY_SECS:-5}"
 # ederken ham çıktı için TUNNEL_VERBOSE=1.
 VERBOSE="${TUNNEL_VERBOSE:-0}"
 
-if lsof -nP -iTCP:"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "✗ localhost:$LOCAL_PORT is already in use — tunnel already open?" >&2
-  exit 1
+if [ -n "$(tunnel_listener_pids "$LOCAL_PORT")" ]; then
+  if tunnel_alive "$LOCAL_PORT" "$PROBE_TIMEOUT"; then
+    echo "✗ localhost:$LOCAL_PORT is already in use by a HEALTHY tunnel — one is already open." >&2
+    exit 1
+  fi
+  echo "→ localhost:$LOCAL_PORT is held by a dead tunnel (accepts, never answers) — recycling it ..." >&2
+  if ! recycle_stale_tunnel "$LOCAL_PORT"; then
+    echo "✗ Could not free localhost:$LOCAL_PORT." >&2
+    exit 1
+  fi
 fi
 
 KEEPALIVE_PID=""
 SESSION_PID=""
+# The health probe runs in a background subshell, which therefore only ever sees
+# the SESSION_PID it was forked with (empty). The file is how it learns which
+# session to recycle.
+SESSION_PID_FILE="$(mktemp -t bakimx-tunnel)"
 cleanup() {
   trap - INT TERM
   [ -n "$KEEPALIVE_PID" ] && kill "$KEEPALIVE_PID" 2>/dev/null || true
@@ -56,24 +88,47 @@ cleanup() {
     pkill -P "$SESSION_PID" 2>/dev/null || true
     kill "$SESSION_PID" 2>/dev/null || true
   fi
+  # Even in the right order the plugin can outlive its parent (already
+  # reparented, or killed from outside). Leave nothing mute on the port.
+  sweep_orphan_tunnel "$LOCAL_PORT"
+  rm -f "$SESSION_PID_FILE" 2>/dev/null || true
   echo
   echo "→ Tunnel closed."
   exit "${1:-0}"
 }
 trap cleanup INT TERM
 
-# Postgres SSLRequest packet: 8 bytes, to which the server answers 'S' or 'N'.
-# Sending it through the tunnel counts as session activity and resets the idle
-# timer. bash's /dev/tcp keeps this dependency-free (no psql/nc needed).
-keepalive_loop() {
+# Bounded end-to-end probe (see scripts/tunnel-health.sh). It doubles as the
+# keepalive — the SSLRequest is real traffic, so it resets the idle timer — and
+# as the drop detector. When the far side goes mute the local session process is
+# still alive holding the port, so `wait` below would never return; killing it
+# here is what lets the supervisor loop reconnect.
+health_loop() {
+  local pid started now fails=0
   while true; do
-    sleep "$KEEPALIVE_SECS"
-    (
-      exec 3<>"/dev/tcp/127.0.0.1/$LOCAL_PORT" || exit 0
-      printf '\x00\x00\x00\x08\x04\xd2\x16\x2f' >&3
-      head -c 1 <&3 >/dev/null
-      exec 3<&-
-    ) 2>/dev/null || true
+    sleep "$PROBE_SECS"
+
+    # "<pid> <epoch>" — empty while the supervisor is between sessions.
+    read -r pid started < "$SESSION_PID_FILE" 2>/dev/null || true
+    if [ -z "${pid:-}" ] || [ -z "${started:-}" ]; then fails=0; continue; fi
+
+    # A session takes a few seconds to bind and register the port forward.
+    # Probing inside that window judges a healthy session as dead and kills it,
+    # which is how a single drop turned into a minutes-long reconnect storm.
+    now="$(date +%s)"
+    if [ "$((now - started))" -lt "$GRACE_SECS" ]; then fails=0; continue; fi
+    if [ -z "$(tunnel_listener_pids "$LOCAL_PORT")" ]; then fails=0; continue; fi
+
+    if tunnel_alive "$LOCAL_PORT" "$PROBE_TIMEOUT"; then fails=0; continue; fi
+
+    # One miss can be a slow round-trip; two in a row is a dead tunnel.
+    fails=$((fails + 1))
+    [ "$fails" -ge 2 ] || continue
+    fails=0
+
+    echo "✗ Tunnel stopped answering — recycling the session ..." >&2
+    pkill -P "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
   done
 }
 
@@ -99,11 +154,11 @@ resolve_target() {
   echo "ecs:${CLUSTER}_${task_id}_${runtime_id} $rds_host"
 }
 
-keepalive_loop &
+health_loop &
 KEEPALIVE_PID=$!
 
 echo "  (Ctrl-C to close. Keep this open while developing.)"
-echo "  Auto-reconnects if the session drops; keepalive every ${KEEPALIVE_SECS}s."
+echo "  Auto-reconnects if the session drops or goes mute; health probe every ${PROBE_SECS}s."
 echo
 
 # `set -e` must not kill the supervisor when a session ends or a resolve fails.
@@ -111,9 +166,18 @@ while true; do
   # Bu tünel yeniden bağlanmaya çalışırken başka bir tünel portu kapmış
   # olabilir; yukarıdaki açılış kontrolü yalnız ilk denemeyi kapsıyor. Bu
   # olmadan kaybeden taraf, asla bağlanamayacağı hâlde sonsuza dek döner.
-  if lsof -nP -iTCP:"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-    echo "✗ localhost:$LOCAL_PORT is now held by another process — another tunnel is open. Exiting." >&2
-    cleanup 1
+  if [ -n "$(tunnel_listener_pids "$LOCAL_PORT")" ]; then
+    if tunnel_alive "$LOCAL_PORT" "$PROBE_TIMEOUT"; then
+      echo "✗ localhost:$LOCAL_PORT is now held by a healthy tunnel — another one is open. Exiting." >&2
+      cleanup 1
+    fi
+    # Our own just-recycled session may still be releasing the socket, or a
+    # sibling supervisor died mute. Either way nothing can bind until it goes.
+    echo "→ Clearing the dead listener on localhost:$LOCAL_PORT ..." >&2
+    if ! recycle_stale_tunnel "$LOCAL_PORT"; then
+      echo "✗ Could not free localhost:$LOCAL_PORT. Exiting." >&2
+      cleanup 1
+    fi
   fi
 
   echo "→ Resolving RUNNING ECS task for $SERVICE ..."
@@ -148,8 +212,10 @@ while true; do
       > >(grep --line-buffered -Ev '^Connection accepted for session') 2>&1 &
   fi
   SESSION_PID=$!
+  echo "$SESSION_PID $(date +%s)" > "$SESSION_PID_FILE"
   wait "$SESSION_PID" 2>/dev/null || true
   SESSION_PID=""
+  : > "$SESSION_PID_FILE"
 
   echo "→ Session ended — reconnecting in ${RETRY_SECS}s (Ctrl-C to stop) ..." >&2
   sleep "$RETRY_SECS"
