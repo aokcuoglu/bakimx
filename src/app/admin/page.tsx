@@ -21,7 +21,7 @@ export default async function AdminHomePage() {
   const newSupportCount = leads.supportRows.filter((r) => r.status === "new").length
 
   const counters = [
-    { icon: Clock, value: pending.length, label: "onay bekliyor", href: "/admin/workshops", tone: "text-amber-600" },
+    { icon: Clock, value: pending.length, label: "onay bekliyor", href: "/admin/workshops", tone: "text-warning-strong" },
     { icon: Sparkles, value: requestCount, label: "paket talebi", href: "/admin/workshops", tone: "text-primary" },
     { icon: Landmark, value: billing.orderRows.length, label: "bekleyen havale", href: "/admin/billing", tone: "text-primary" },
     { icon: Building2, value: rows.length, label: "toplam iş yeri", href: "/admin/workshops", tone: "text-muted-foreground" },

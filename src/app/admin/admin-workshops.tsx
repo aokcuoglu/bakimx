@@ -25,14 +25,14 @@ const TIER_LABELS: Record<string, string> = {
 }
 
 const APPROVAL_BADGE: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-rose-100 text-rose-800",
+  pending: "bg-warning/10 text-warning-strong",
+  approved: "bg-success/10 text-success-strong",
+  rejected: "bg-destructive/10 text-destructive-strong",
 }
 const SUB_BADGE: Record<string, string> = {
-  trialing: "bg-blue-100 text-blue-800",
-  active: "bg-emerald-100 text-emerald-800",
-  past_due: "bg-amber-100 text-amber-800",
+  trialing: "bg-primary/10 text-primary",
+  active: "bg-success/10 text-success-strong",
+  past_due: "bg-warning/10 text-warning-strong",
   canceled: "bg-muted text-muted-foreground",
 }
 

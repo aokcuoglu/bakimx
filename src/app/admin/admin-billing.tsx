@@ -140,7 +140,7 @@ export function AdminBilling({
                   {s.billingCycle && ` · ${CYCLE_LABELS[s.billingCycle] ?? s.billingCycle}`}
                   {s.periodEnd && ` · bitiş ${s.periodEnd}`}
                   {s.daysLeft != null && (
-                    <span className={cn("ml-2 font-medium", s.daysLeft <= 7 ? "text-amber-600" : "text-foreground")}>{s.daysLeft} gün</span>
+                    <span className={cn("ml-2 font-medium", s.daysLeft <= 7 ? "text-warning-strong" : "text-foreground")}>{s.daysLeft} gün</span>
                   )}
                 </span>
               </div>
@@ -175,7 +175,7 @@ function MethodBadge({ method }: { method: string }) {
 function CopyMono({ value }: { value: string }) {
   const [copied, setCopied] = useState(false)
   return (
-    <button
+    <Button
       type="button"
       onClick={() => {
         navigator.clipboard?.writeText(value).then(() => {
@@ -183,11 +183,13 @@ function CopyMono({ value }: { value: string }) {
           setTimeout(() => setCopied(false), 1500)
         })
       }}
-      title="Kopyala"
-      className="font-mono text-[11px] text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+      variant="link"
+      size="sm"
+      aria-label="İşlem kimliğini kopyala"
+      className="h-auto p-0 font-mono text-[11px] text-muted-foreground"
     >
       {copied ? "Kopyalandı" : value}
-    </button>
+    </Button>
   )
 }
 
@@ -199,14 +201,17 @@ function PaymentAttempts({ txns }: { txns: AdminTxnRow[] }) {
 
   return (
     <div className="mt-2">
-      <button
+      <Button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        variant="link"
+        size="sm"
+        className="h-auto p-0 text-xs"
+        aria-expanded={open}
       >
         {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
         Ödeme denemeleri ({txns.length})
-      </button>
+      </Button>
       {open && (
         <div className="mt-2">
           <div className="hidden md:block rounded-lg border border-border bg-background overflow-hidden">
@@ -373,7 +378,7 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
         <div className="flex items-center gap-2 shrink-0">
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
           {done ? (
-            <span className="text-sm font-medium text-emerald-600">Aktivasyon tamamlandı</span>
+            <span className="text-sm font-medium text-success-strong">Aktivasyon tamamlandı</span>
           ) : (
             <Button type="button" disabled={pending} onClick={retry} size="sm">
               <RefreshCw className="size-3.5" /> Aktivasyonu Tekrar Dene
@@ -402,7 +407,7 @@ function RecentOrdersSection({ rows }: { rows: AdminOrderRow[] }) {
 function RecentOrderRow({ o }: { o: AdminOrderRow }) {
   const isCard = o.method === "card"
   const statusTone =
-    o.status === "confirmed" ? "text-emerald-600" : o.status === "cancelled" ? "text-muted-foreground" : "text-foreground"
+    o.status === "confirmed" ? "text-success-strong" : o.status === "cancelled" ? "text-muted-foreground" : "text-foreground"
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
