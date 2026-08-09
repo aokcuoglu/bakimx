@@ -50,6 +50,9 @@ const EXPIRED_NOTICE: Record<string, string> = {
     "Aboneliğiniz aktif değil. Devam etmek için giriş yapın ve paketinizi yenileyin.",
 }
 
+/** Giriş isteğinin istemci tarafı üst sınırı — sunucunun bağlantı sınırından uzun. */
+const LOGIN_TIMEOUT_MS = 20_000
+
 export function LoginForm({ expiredReason }: { expiredReason?: string | null }) {
   const router = useRouter()
   const expiredNotice = expiredReason ? EXPIRED_NOTICE[expiredReason] : undefined
@@ -80,6 +83,11 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
       const res = await fetch("/api/auth/login", {
         method: "POST",
         body: formData,
+        // Savunma katmanı: sunucu hiç cevap dönmezse (bkz. pg-connection.ts —
+        // ölü bir soket eskiden sorguyu sonsuza kadar asardı) buton sonsuza
+        // kadar "Giriş yapılıyor..." göstermesin. Sunucunun kendi bağlantı
+        // sınırından (10 sn) sonra devreye giren son çare.
+        signal: AbortSignal.timeout(LOGIN_TIMEOUT_MS),
       })
       const data = await res.json()
       if (data.success) {
@@ -92,8 +100,12 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
       } else {
         setError(data.error || "Giriş başarısız")
       }
-    } catch {
-      setError("Bir hata oluştu. Lütfen tekrar deneyin.")
+    } catch (err) {
+      setError(
+        err instanceof DOMException && err.name === "TimeoutError"
+          ? "Sunucuya ulaşılamıyor. Bağlantınızı kontrol edip tekrar deneyin."
+          : "Bir hata oluştu. Lütfen tekrar deneyin."
+      )
     } finally {
       setLoading(false)
     }
