@@ -27,39 +27,66 @@ const USER_SELECT = {
   isActive: true,
 } as const
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+/**
+ * Oturum çerezini + impersonation katmanını okur.
+ *
+ * Yalnızca ÇEREZ OKUMA hataları burada yutulur: istek kapsamı dışında (cron,
+ * script, build) `cookies()` fırlatır ve orada "oturum yok" doğru cevaptır.
+ * Veritabanı hataları bilerek bu kapsamın DIŞINDA bırakılmıştır — onlar
+ * `getCurrentUser()`'dan yukarı fırlar (bkz. auth-session-errors.test.ts).
+ */
+async function readSessionState() {
   try {
     const { getSession, getActiveImpersonation } = await import("@/lib/session")
-
-    // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
-    // whole app scopes to the target tenant via the returned workshopId — no
-    // per-query changes. The real admin identity stays on the overlay (audit).
-    const imp = await getActiveImpersonation()
-    if (imp) {
-      const target = await prisma.user.findUnique({
-        where: { id: imp.targetUserId },
-        select: USER_SELECT,
-      })
-      if (target) {
-        return { ...target, impersonatorAdminId: imp.adminUserId, impersonationReadOnly: imp.readOnly }
-      }
-      // Target vanished — fall through to the real session rather than 500.
-    }
-
+    const impersonation = await getActiveImpersonation()
     const session = await getSession()
-    if (!session?.userId) return null
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: USER_SELECT,
-    })
-
-    if (!user) return null
-
-    return user
+    return { session, impersonation }
   } catch {
     return null
   }
+}
+
+/**
+ * Etkin kullanıcı, ya da oturum yoksa null.
+ *
+ * DİKKAT — null "kimlik çözülemedi" demektir, "altyapı çökük" demek DEĞİLDİR.
+ * Bu ayrım kritiktir: eskiden DB hatası da null'a düşüyordu ve saniyelik bir
+ * kesinti, o an sitede olan herkesi çıkışa yolluyordu. Artık DB hatası yukarı
+ * fırlar ve hata sınırı "tekrar deneyin" ekranı gösterir.
+ */
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const state = await readSessionState()
+  if (!state) return null
+  const { session, impersonation } = state
+
+  // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
+  // whole app scopes to the target tenant via the returned workshopId — no
+  // per-query changes. The real admin identity stays on the overlay (audit).
+  if (impersonation) {
+    const target = await prisma.user.findUnique({
+      where: { id: impersonation.targetUserId },
+      select: USER_SELECT,
+    })
+    if (target) {
+      return {
+        ...target,
+        impersonatorAdminId: impersonation.adminUserId,
+        impersonationReadOnly: impersonation.readOnly,
+      }
+    }
+    // Target vanished — fall through to the real session rather than 500.
+  }
+
+  if (!session?.userId) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: USER_SELECT,
+  })
+
+  if (!user) return null
+
+  return user
 }
 
 export async function requireAuth(): Promise<AuthUser> {
