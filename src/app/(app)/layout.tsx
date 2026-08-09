@@ -10,6 +10,8 @@ import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recov
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
+import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
+import { getBuildSignature } from "@/lib/build-signature"
 
 export const metadata: Metadata = {
   title: "İş Yeri Paneli",
@@ -92,6 +94,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Bu belgeyi render eden build'in imzası — açık sekme eskidiğinde
+          engellemeyen "yenile" bildirimi için (bkz. version-update-notice.tsx). */}
+      <VersionUpdateNotice loadedSignature={getBuildSignature()} />
       {impersonation && <ImpersonationBanner workshopName={workshop.name} />}
       {readOnlyLocked && (
         <div className="bg-destructive text-destructive-foreground text-xs sm:text-sm px-4 py-2 text-center">
