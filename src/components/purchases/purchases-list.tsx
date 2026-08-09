@@ -7,7 +7,8 @@ import { StatCard } from "@/components/shared/stat-card"
 import { formatTRY } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
-import { Eye } from "lucide-react"
+import { EmptyState } from "@/components/shared/empty-state"
+import { Eye, PackageSearch } from "lucide-react"
 
 export type PurchaseRow = {
   id: string
@@ -58,8 +59,16 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
         <StatCard label="Bu Ay" value={kpis.thisMonthCount} accent="bg-warning/10 text-warning-strong border-warning/20" />
       </div>
 
+      {rows.length === 0 && (
+        <EmptyState
+          icon={PackageSearch}
+          title="Henüz satın alma kaydı yok"
+          description="İş emrine dışarıdan alınan bir parça eklendiğinde burada görünür."
+        />
+      )}
+
       {/* Masaüstü tablo */}
-      <div className="hidden lg:block rounded-lg border border-border bg-card overflow-hidden">
+      <div className={rows.length === 0 ? "hidden" : "hidden lg:block rounded-lg border border-border bg-card overflow-hidden"}>
         <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm">
             <thead className="bg-muted border-b border-border text-muted-foreground text-xs uppercase tracking-wider sticky top-0 z-10">
@@ -114,12 +123,14 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
       </div>
 
       {/* Mobil kart */}
-      <div className="lg:hidden space-y-2.5">
+      <div className={rows.length === 0 ? "hidden" : "lg:hidden space-y-2.5"}>
         {rows.map((r) => (
-          <button
+          <Button
+            type="button"
+            variant="outline"
             key={r.id}
             onClick={() => setSelected(r)}
-            className="w-full text-left rounded-lg border border-border bg-card p-3.5 touch-manipulation"
+            className="h-auto w-full justify-start whitespace-normal p-3.5 text-left"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -137,7 +148,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                 <span className="text-sm font-semibold text-foreground shrink-0">{formatTRY(r.purchasePriceKurus)}</span>
               )}
             </div>
-          </button>
+          </Button>
         ))}
       </div>
 

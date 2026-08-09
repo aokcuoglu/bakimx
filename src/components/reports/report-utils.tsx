@@ -2,6 +2,7 @@
 
 import { generateCSV, downloadCSV } from "@/lib/reports/export"
 import { formatTRY } from "@/lib/format"
+import { Button } from "@/components/ui/button"
 
 interface ReportHeaderProps {
   title: string
@@ -28,25 +29,29 @@ export function ReportHeader({ title, description, exportData }: ReportHeaderPro
       </div>
       <div className="flex items-center gap-2">
         {exportData && (
-          <button
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white hover:bg-muted text-foreground text-sm font-medium transition-colors"
+            className="gap-1.5"
           >
             <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             CSV İndir
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white hover:bg-muted text-foreground text-sm font-medium transition-colors"
+          className="gap-1.5"
         >
           <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
           Yazdır
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -77,7 +82,7 @@ export function StatCard({
   const displayValue = isCurrency && typeof value === "number" ? formatTRY(value) : value
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
       <p className={`text-2xl font-bold ${colors[accent]?.split(" ")[1] || "text-foreground"}`}>
         {displayValue}
@@ -94,7 +99,7 @@ export function BarChart({ data, label, valueKey = "count" }: { data: { label: s
 
   if (!hasData) {
     return (
-      <div className="rounded-lg border border-border bg-white p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <h4 className="text-sm font-semibold text-foreground mb-4">{label}</h4>
         <div className="flex items-center justify-center h-32 text-sm text-muted-foreground/70">Veri bulunmuyor.</div>
       </div>
@@ -102,7 +107,7 @@ export function BarChart({ data, label, valueKey = "count" }: { data: { label: s
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4 sm:p-6">
+    <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
       <h4 className="text-sm font-semibold text-foreground mb-4">{label}</h4>
       <div className="flex items-end gap-1.5 sm:gap-2 h-32 sm:h-40">
         {data.map((d, i) => {
@@ -137,14 +142,14 @@ export function ReportTable<T extends Record<string, unknown>>({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-white p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <p className="text-sm text-muted-foreground/70 text-center">Veri bulunmuyor.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
