@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react"
 import { requireAdmin } from "@/lib/admin"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { AdminNav } from "@/app/admin/admin-nav"
+import { Button } from "@/components/ui/button"
 
 export const metadata = { title: "BakimX Yönetim" }
 
@@ -27,9 +28,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Uygulamaya dön
             </Link>
             <form action={logoutAction}>
-              <button type="submit" className="text-muted-foreground hover:text-foreground">
+              <Button type="submit" variant="ghost" size="sm">
                 Çıkış
-              </button>
+              </Button>
             </form>
           </div>
         </div>

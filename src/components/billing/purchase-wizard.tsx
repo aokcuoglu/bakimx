@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
@@ -326,7 +327,13 @@ export function PurchaseWizard({
                       </div>
                       {isPublic && (
                         <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
-                          <input type="checkbox" {...register("kvkkConsent" as never)} className="mt-0.5" />
+                          <Controller
+                            control={form.control}
+                            name={"kvkkConsent" as never}
+                            render={({ field }) => (
+                              <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} aria-label="KVKK ve açık rıza metinlerini onayla" />
+                            )}
+                          />
                           <span>
                             <Link href="/kvkk" className="text-primary hover:underline" target="_blank">
                               Aydınlatma metni

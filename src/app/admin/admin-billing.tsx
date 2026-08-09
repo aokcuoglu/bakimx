@@ -13,7 +13,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { confirmBillingOrder, cancelBillingOrder, retryStuckActivation } from "@/app/admin/actions"
 
@@ -306,13 +306,13 @@ function OrderRow({ o }: { o: AdminOrderRow }) {
           {/* Kartlı akış otomatik — yanlışlıkla elle onaylanıp çifte aktivasyona
               yol açmasın diye kartlı bekleyen siparişte confirm butonu YOK. */}
           {!isCard && (
-            <button disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id))} className={cn(buttonVariants({ size: "sm" }), "gap-1")}>
+            <Button type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id))} size="sm">
               <Check className="size-3.5" /> Havale alındı
-            </button>
+            </Button>
           )}
-          <button disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id))} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1")}>
+          <Button type="button" disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id))} variant="outline" size="sm">
             <X className="size-3.5" /> İptal
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -375,9 +375,9 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
           {done ? (
             <span className="text-sm font-medium text-emerald-600">Aktivasyon tamamlandı</span>
           ) : (
-            <button disabled={pending} onClick={retry} className={cn(buttonVariants({ size: "sm" }), "gap-1")}>
+            <Button type="button" disabled={pending} onClick={retry} size="sm">
               <RefreshCw className="size-3.5" /> Aktivasyonu Tekrar Dene
-            </button>
+            </Button>
           )}
         </div>
       </div>

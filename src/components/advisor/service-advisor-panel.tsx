@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Sparkles,
   Loader2,
@@ -168,13 +169,15 @@ export function ServiceAdvisorPanel({
             AI Servis Danışmanı
           </CardTitle>
           {result && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setExpanded(!expanded)}
-              className="text-muted-foreground/70 hover:text-muted-foreground p-1"
               aria-label={expanded ? "Daralt" : "Genişlet"}
             >
               {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </button>
+            </Button>
           )}
         </div>
       </CardHeader>
@@ -234,22 +237,14 @@ export function ServiceAdvisorPanel({
                     const globalIndex = items.indexOf(item)
                     return (
                       <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
-                        <button
-                          onClick={() => toggleItem(globalIndex)}
-                          className={cn(
-                            "size-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                            item.selected ? "bg-primary border-primary" : "border-border bg-card"
-                          )}
-                        >
-                          {item.selected && <CheckCircle2 className="size-3 text-white" />}
-                        </button>
+                        <Checkbox checked={item.selected} onCheckedChange={() => toggleItem(globalIndex)} aria-label={`${item.label} önerisini seç`} />
                         {editMode === String(globalIndex) ? (
                           <Input
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onBlur={() => saveEdit(globalIndex)}
                             onKeyDown={(e) => e.key === "Enter" && saveEdit(globalIndex)}
-                            className="h-7 text-xs"
+                            className="text-xs"
                             autoFocus
                           />
                         ) : (
@@ -261,12 +256,12 @@ export function ServiceAdvisorPanel({
                         )}
                         {editMode !== String(globalIndex) && (
                           <div className="flex items-center gap-0.5 shrink-0">
-                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-primary rounded" aria-label="Düzenle">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => startEdit(globalIndex)} aria-label="Düzenle">
                               <Edit3 className="size-3" />
-                            </button>
-                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-destructive-strong rounded" aria-label="Yoksay">
+                            </Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(globalIndex)} className="text-destructive-strong" aria-label="Yoksay">
                               <X className="size-3" />
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -286,15 +281,7 @@ export function ServiceAdvisorPanel({
                     const globalIndex = items.indexOf(item)
                     return (
                       <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm">
-                        <button
-                          onClick={() => toggleItem(globalIndex)}
-                          className={cn(
-                            "size-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                            item.selected ? "bg-primary border-primary" : "border-border bg-card"
-                          )}
-                        >
-                          {item.selected && <CheckCircle2 className="size-3 text-white" />}
-                        </button>
+                        <Checkbox checked={item.selected} onCheckedChange={() => toggleItem(globalIndex)} aria-label={`${item.label} önerisini seç`} />
                         <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0", item.type === "labor" ? "bg-primary/10 text-foreground" : "bg-success/10 text-foreground")}>
                           {item.type === "labor" ? "İşçilik" : "Parça"}
                         </span>
@@ -304,7 +291,7 @@ export function ServiceAdvisorPanel({
                             onChange={(e) => setEditValue(e.target.value)}
                             onBlur={() => saveEdit(globalIndex)}
                             onKeyDown={(e) => e.key === "Enter" && saveEdit(globalIndex)}
-                            className="h-7 text-xs flex-1"
+                            className="flex-1 text-xs"
                             autoFocus
                           />
                         ) : (
@@ -314,12 +301,12 @@ export function ServiceAdvisorPanel({
                         )}
                         {editMode !== String(globalIndex) && (
                           <div className="flex items-center gap-0.5 shrink-0">
-                            <button onClick={() => startEdit(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-primary rounded" aria-label="Düzenle">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => startEdit(globalIndex)} aria-label="Düzenle">
                               <Edit3 className="size-3" />
-                            </button>
-                            <button onClick={() => removeItem(globalIndex)} className="p-1 text-muted-foreground/70 hover:text-destructive-strong rounded" aria-label="Kaldır">
+                            </Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(globalIndex)} className="text-destructive-strong" aria-label="Kaldır">
                               <X className="size-3" />
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
