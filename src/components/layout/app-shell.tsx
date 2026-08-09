@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch } from "@/components/layout/global-search-box"
+import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
 import {
   LayoutDashboard,
   Car,
@@ -15,7 +16,6 @@ import {
   Menu,
   X,
   Bell,
-  Plus,
   FileText,
   CalendarClock,
   BellRing,
@@ -227,13 +227,16 @@ export function AppShellChrome({
 
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="w-72 bg-navy text-navy-foreground border-r border-navy-foreground/10 p-0 flex flex-col" showCloseButton={false}>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-3 right-3 z-10 text-navy-foreground/60 hover:text-navy-foreground p-1.5 rounded-md hover:bg-navy-foreground/10 touch-manipulation"
+              className="absolute top-1 right-1 z-10 size-11 text-navy-foreground/60 hover:bg-navy-foreground/10 hover:text-navy-foreground md:top-2 md:right-2 md:size-9"
               aria-label="Menüyü kapat"
             >
               <X className="size-5" />
-            </button>
+            </Button>
             <div className="flex-1 overflow-y-auto">
               <SidebarContent pathname={pathname} onClose={() => setSidebarOpen(false)} />
             </div>
@@ -242,65 +245,36 @@ export function AppShellChrome({
 
         <div className={cn("flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden transition-[padding] duration-200 ease-in-out", desktopContentPadding)}>
           <header className="sticky top-0 z-30 bg-white border-b border-border">
-            <div className="flex items-center gap-3 px-4 sm:px-6 py-3">
-              <button
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-lg"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 -ml-2 rounded-md hover:bg-muted text-foreground touch-manipulation"
+                className="-ml-2 size-11 lg:hidden"
                 aria-label="Menüyü aç"
               >
                 <Menu className="size-5" />
-              </button>
+              </Button>
 
               {pageTitle && (
-                <div className="hidden sm:flex flex-col min-w-0 flex-1">
+                <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
                   <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">{pageTitle}</h1>
                 </div>
               )}
 
               {showGlobalSearch && (
-                <GlobalSearch className="flex-1 sm:max-w-md sm:mx-4" />
+                <div className="order-last w-full min-w-0 shrink-0 basis-full sm:order-none sm:min-w-48 sm:flex-1 sm:shrink sm:basis-auto sm:max-w-xl">
+                  <GlobalSearch className="w-full min-w-0" />
+                </div>
               )}
 
               {!showGlobalSearch && <div className="flex-1" />}
 
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link
-                  href="/orders/new"
-                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors touch-manipulation"
-                >
-                  <Plus className="size-4" />
-                  <span>Yeni İş Emri</span>
-                </Link>
-                <Link
-                  href="/quotes/new"
-                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
-                >
-                  <FileText className="size-4" />
-                  <span>Yeni Teklif</span>
-                </Link>
-                <Link
-                  href="/appointments/new"
-                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
-                >
-                  <CalendarClock className="size-4" />
-                  <span>Yeni Randevu</span>
-                </Link>
-                <Link
-                  href="/reminders/new"
-                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white border border-border hover:bg-muted text-foreground text-sm font-medium transition-colors touch-manipulation"
-                >
-                  <BellRing className="size-4" />
-                  <span>Yeni Hatırlatma</span>
-                </Link>
-                <Link
-                  href="/orders/new"
-                  className="sm:hidden inline-flex items-center justify-center size-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground touch-manipulation"
-                  aria-label="Yeni iş emri"
-                >
-                  <Plus className="size-4" />
-                </Link>
+              <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+                <CreateCenterDialog />
                 <Tooltip>
-                  <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" aria-label="Bildirimler" />}>
+                  <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
                     <Bell className="size-5" />
                   </TooltipTrigger>
                   <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
@@ -377,7 +351,7 @@ function UserMenu() {
   return (
     <form action="/api/auth/logout" method="POST">
       <Tooltip>
-        <TooltipTrigger render={<Button type="submit" variant="ghost" size="icon" aria-label="Çıkış Yap" />}>
+        <TooltipTrigger render={<Button type="submit" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Çıkış Yap" />}>
           <LogOut className="size-4" />
         </TooltipTrigger>
         <TooltipContent side="top">Çıkış Yap</TooltipContent>
@@ -430,8 +404,10 @@ function SidebarContent({
           (onToggleCollapse geçilen aside'da) render edilir; mobil Sheet'te değil. */}
       {onToggleCollapse && (
         <Tooltip>
-          <TooltipTrigger render={<button
+          <TooltipTrigger render={<Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={onToggleCollapse}
             aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
             className="absolute top-5 -right-3 z-40 flex items-center justify-center size-6 rounded-full bg-navy border border-navy-foreground/20 text-navy-foreground/70 shadow-sm transition-colors hover:bg-navy hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40"
@@ -502,10 +478,12 @@ function SidebarContent({
                 return (
                   <div key={item.href}>
                     {hasChildren ? (
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
                         onClick={() => toggleExpanded(item.href)}
                         className={cn(
-                          "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all w-full text-left",
+                          "group h-auto w-full justify-start gap-2.5 px-3 py-2 text-left",
                           isActive
                             ? "bg-primary/15 text-navy-foreground border-l-2 border-brand"
                             : "text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground",
@@ -517,7 +495,7 @@ function SidebarContent({
                         {isExpanded
                           ? <ChevronDown className="size-3.5 text-navy-foreground/55" />
                           : <ChevronRight className="size-3.5 text-navy-foreground/55" />}
-                      </button>
+                      </Button>
                     ) : (
                       <Link
                         href={item.href}
@@ -600,13 +578,14 @@ function SidebarContent({
           </form>
         ) : (
           <form action="/api/auth/logout" method="POST">
-            <button
+            <Button
               type="submit"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground transition-colors w-full touch-manipulation"
+              variant="ghost"
+              className="h-auto w-full justify-start gap-2.5 px-3 py-2 text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground"
             >
               <LogOut className="size-4" />
               Çıkış Yap
-            </button>
+            </Button>
           </form>
         )}
       </div>
