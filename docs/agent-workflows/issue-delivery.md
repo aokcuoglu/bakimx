@@ -54,7 +54,15 @@ Example shape (choose a unique path outside active worktrees):
 ```sh
 git fetch origin dev
 git worktree add -b issue/123-short-slug <safe-path> origin/dev
+bun run worktree:env -- <safe-path>
 ```
+
+The environment setup command links the primary checkout's ignored `.env.local`
+into the new worktree. Run it immediately after creating every issue worktree so
+`bun run dev` and `bun run dev:tunnel` use the configured development database.
+It refuses to overwrite an existing environment file and never copies secrets
+into Git history. If the primary checkout has no `.env.local`, stop and ask the
+user to configure it; do not rely on the build-safe placeholder database URL.
 
 ## 3. Plan and implementation
 

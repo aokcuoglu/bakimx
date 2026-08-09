@@ -14,8 +14,9 @@ actions, together with `AGENTS.md` and the relevant installed Next.js guide.
 1. Fetch the issue, comments, attachments, project state, and linked PRs. Add a
    missing issue to Factory - BakimX as Todo, then move it to In Progress.
 2. State acceptance criteria and identify blockers before editing.
-3. Create an isolated issue branch/worktree from the latest `origin/dev`; preserve
-   every unrelated local change and worktree.
+3. Create an isolated issue branch/worktree from the latest `origin/dev`, then
+   run `bun run worktree:env -- <worktree-path>` from the primary checkout before
+   development or browser QA; preserve every unrelated local change and worktree.
 4. Implement the smallest complete solution and add regression coverage.
 5. Run targeted checks, then tests, lint, typecheck, and build. Perform browser QA
    for affected UI flows.
