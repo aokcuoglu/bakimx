@@ -2,6 +2,12 @@ import { defineConfig, devices } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./e2e",
+  // `.e2e.ts` uzantısı bilinçli: Playwright'ın varsayılan `*.spec.ts` deseni
+  // `bun test`in de topladığı bir desen — aynı dosyayı iki koşucu birden alınca
+  // `bun test` "Playwright Test did not expect test() to be called here" ile
+  // patlıyor ve quality kapısını kırıyordu. Birim testleri `*.test.ts`,
+  // uçtan uca testler `*.e2e.ts`.
+  testMatch: "**/*.e2e.ts",
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
