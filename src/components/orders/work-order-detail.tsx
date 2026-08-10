@@ -52,6 +52,7 @@ import {
   Images,
   X,
   Wrench,
+  HardHat,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
@@ -62,6 +63,7 @@ import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
 import { findUnpricedItems } from "@/lib/orders/pricing-guard"
+import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cross-links"
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
@@ -1395,7 +1397,23 @@ export function WorkOrderDetail({
         </TabsContent>
 
         {/* TEKNİSYEN — teknisyen panelindeki ilerleme, salt okunur */}
-        <TabsContent value="teknisyen">
+        <TabsContent value="teknisyen" className="space-y-4">
+          {/* Panelin kendisi bilinçli olarak aksiyonsuz (bkz. technician-progress-panel).
+              İşaretleme teknisyen panelinde yapıldığı için geçiş linki panelin
+              dışında, sekmenin başında durur (BAK-23). */}
+          {canOpenTechnicianView(order.assignedTechnicianId) && (
+            <div className="flex justify-end">
+              <Button
+                nativeButton={false}
+                variant="outline"
+                size="sm"
+                render={<Link href={technicianOrderPath(order.id)} />}
+              >
+                <HardHat />
+                Teknisyen Panelinde Aç
+              </Button>
+            </div>
+          )}
           <TechnicianProgressPanel
             checklistItems={order.checklistItems}
             laborSessions={order.laborSessions}
