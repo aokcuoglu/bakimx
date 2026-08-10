@@ -51,6 +51,7 @@ export function PartSearchInput({
   searchDisabled,
   searchTitle,
   showCreate,
+  createLabel = "Oluştur",
   onCreate,
   onCreateEdit,
   refreshSignal,
@@ -87,6 +88,11 @@ export function PartSearchInput({
   searchTitle?: string
   /** Composer'da (bare DEĞİL): dropdown'da her zaman görünen "Oluştur/Oluştur & Düzenle" aksiyonları. */
   showCreate?: boolean
+  /**
+   * Serbest-metin aksiyonunun fiili. Kalem ekleyen composer'da "Oluştur";
+   * teknisyenin parça talebinde "Talep et" — eylem kalem değil talep yaratır.
+   */
+  createLabel?: string
   onCreate?: (name: string) => void
   onCreateEdit?: (name: string) => void
   /** Dışarıdan yeniden-arama sinyali: değeri değişince mevcut query yeniden sorgulanır (prefetch dolarken UI'ı tazelemek için). */
@@ -115,7 +121,7 @@ export function PartSearchInput({
             onClick={() => onCreate(t)}
           >
             <Plus className="size-4 text-primary" />
-            <span>Oluştur <span className="font-semibold">“{t}”</span></span>
+            <span>{createLabel} <span className="font-semibold">“{t}”</span></span>
           </Button>
         )}
         {onCreateEdit && (
