@@ -445,13 +445,10 @@ export function TechnicianOrderDetail({
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">
-          Yapılacak İşler
-          <span className="ml-2 text-xs font-normal text-muted-foreground/70">
-            {order.items.filter((i) => i.completedAt).length}/{order.items.length}
-          </span>
-        </h3>
-        <OrderItemsChecklist items={order.items} locked={locked} />
+        {/* Başlık ve sayaç bilerek bileşenin içinde: "Tümünü tamamla" ve tek tek
+            işaretleme iyimser durumla anında güncelleniyor, sayaç dışarıda
+            kalsaydı tiklerin gerisinde kalırdı (BAK-21). */}
+        <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
         {order.totals.hasAnyPrice && (
           <div className="mt-3 pt-3 border-t border-border space-y-1">
             {order.totals.discountAmount > 0 && (
