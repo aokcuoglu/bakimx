@@ -654,6 +654,52 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
 }
 
 /**
+ * İş emrindeki tamamlanmamış TÜM kalemleri tek dokunuşla "yapıldı" işaretler
+ * (BAK-21). On iki kalemi tek tek işaretlemek mobilde iş emrini kapatmanın en
+ * yavaş adımıydı.
+ *
+ * Yalnız `completedAt: null` satırlara dokunur: daha önce işaretlenmiş
+ * kalemlerin zaman damgası ve kim tamamladı bilgisi korunur, aksi hâlde toplu
+ * işlem gerçek tamamlama saatlerini eziyordu. Geri alma bilinçli olarak yok —
+ * toplu geri alma iş emri geçmişini sessizce silen, telafisi olmayan bir
+ * aksiyon olurdu; tek tek geri alma zaten mümkün.
+ *
+ * Attribution `toggleOrderItemCompletedAction` ile aynı: `completedById` iş
+ * emrinin atanmış ustası, eylemi yapan kullanıcı AuditLog'a yazılır.
+ */
+export async function completeAllOrderItemsAction(orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, assignedTechnicianId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { count } = await prisma.serviceOrderItem.updateMany({
+    where: { serviceOrderId: order.id, workshopId: user.workshopId, completedAt: null },
+    data: { completedAt: new Date(), completedById: order.assignedTechnicianId },
+  })
+
+  if (count > 0) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "ServiceOrder",
+      order.id,
+      "order_items_completed_all",
+      JSON.stringify({ orderId: order.id, count })
+    )
+  }
+
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath(`/orders/${order.id}`)
+  return { success: true, count }
+}
+
+/**
  * Teknisyenin parça talebini iş emri kalemine çevirir (ofis aksiyonu).
  * Fiyat alanları boş bırakılır — ofis kalem satırında girer.
  *
