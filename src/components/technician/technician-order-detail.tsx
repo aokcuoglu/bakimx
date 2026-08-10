@@ -11,7 +11,7 @@ import {
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2, ListChecks,
+  ImageOff, Loader2, ListChecks, FileText,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -47,6 +47,7 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
 import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import { workOrderPath } from "@/lib/technician/cross-links"
 import {
   countBlockingChecklist,
   countIncompleteItems,
@@ -224,8 +225,8 @@ export function TechnicianOrderDetail({
         <span className="text-foreground font-medium">{order.workOrderNo}</span>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">{order.workOrderNo}</h2>
             <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", statusColor)}>
@@ -239,6 +240,19 @@ export function TechnicianOrderDetail({
             </p>
           )}
         </div>
+        {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
+            kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
+            gidip aynı işi listede yeniden aramak gerekiyordu. */}
+        <Button
+          nativeButton={false}
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          render={<Link href={workOrderPath(order.id)} />}
+        >
+          <FileText />
+          İş Emri
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
