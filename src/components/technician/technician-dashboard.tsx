@@ -7,7 +7,9 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { TECHNICIAN_ROLES, ORDER_STATUS } from "@/lib/constants"
-import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useState, useTransition } from "react"
+import { TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type TechnicianInfo = {
@@ -56,7 +58,27 @@ export function TechnicianDashboard({
   stats: DashboardStats
   orders: OrderRow[]
 }) {
-  const [selectedId, setSelectedId] = useState(selectedTechnicianId)
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  // Seçim URL'de taşınır: sunucu KPI'ları ve iş emirlerini seçilen teknisyene
+  // göre yeniden sorgular. Yerel state yalnızca gezinme sürerken seçimi anında
+  // göstermek için tutulur; sunucudan yeni seçim gelince (ör. geri/ileri) ona
+  // hizalanır.
+  const [optimisticId, setOptimisticId] = useState(selectedTechnicianId)
+  const [lastServerId, setLastServerId] = useState(selectedTechnicianId)
+  if (lastServerId !== selectedTechnicianId) {
+    setLastServerId(selectedTechnicianId)
+    setOptimisticId(selectedTechnicianId)
+  }
+
+  function handleTechnicianChange(value: string | null) {
+    if (!value || value === optimisticId) return
+    setOptimisticId(value)
+    startTransition(() => {
+      router.replace(`/technician?${TECHNICIAN_PARAM}=${encodeURIComponent(value)}`, { scroll: false })
+    })
+  }
 
   const activeOrders = orders.filter((o) =>
     ["in_progress", "approved", "waiting_parts"].includes(o.status)
@@ -80,8 +102,8 @@ export function TechnicianDashboard({
           <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
         </div>
         <Select
-          value={selectedId}
-          onValueChange={(v) => setSelectedId(v ?? "")}
+          value={optimisticId}
+          onValueChange={handleTechnicianChange}
         >
           <SelectTrigger aria-label="Teknisyen seç">
             <SelectValue placeholder="Teknisyen seç">
@@ -104,59 +126,67 @@ export function TechnicianDashboard({
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {kpiCards.map((card) => {
-          const Icon = card.icon
-          return (
-            <div key={card.label} className="rounded-lg border border-border bg-white p-4">
-              <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
-                <Icon className="size-4" />
+      <div
+        aria-busy={isPending}
+        className={cn(
+          "space-y-5 sm:space-y-6 transition-opacity",
+          isPending && "opacity-60 pointer-events-none"
+        )}
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {kpiCards.map((card) => {
+            const Icon = card.icon
+            return (
+              <div key={card.label} className="rounded-lg border border-border bg-white p-4">
+                <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
+                  <Icon className="size-4" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{card.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
               </div>
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
+            )
+          })}
+        </div>
+
+        <section>
+          <h3 className="text-base font-semibold text-foreground mb-3">Aktif İşler</h3>
+          {activeOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Aktif iş bulunmuyor</div>
+          ) : (
+            <div className="space-y-2">
+              {activeOrders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
             </div>
-          )
-        })}
+          )}
+        </section>
+
+        <section>
+          <h3 className="text-base font-semibold text-foreground mb-3">Bekleyen İşler</h3>
+          {waitingOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Bekleyen iş bulunmuyor</div>
+          ) : (
+            <div className="space-y-2">
+              {waitingOrders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h3 className="text-base font-semibold text-foreground mb-3">Son Tamamlananlar</h3>
+          {completedOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Tamamlanan iş bulunmuyor</div>
+          ) : (
+            <div className="space-y-2">
+              {completedOrders.slice(0, 5).map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      <section>
-        <h3 className="text-base font-semibold text-foreground mb-3">Aktif İşler</h3>
-        {activeOrders.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">Aktif iş bulunmuyor</div>
-        ) : (
-          <div className="space-y-2">
-            {activeOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h3 className="text-base font-semibold text-foreground mb-3">Bekleyen İşler</h3>
-        {waitingOrders.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">Bekleyen iş bulunmuyor</div>
-        ) : (
-          <div className="space-y-2">
-            {waitingOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h3 className="text-base font-semibold text-foreground mb-3">Son Tamamlananlar</h3>
-        {completedOrders.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">Tamamlanan iş bulunmuyor</div>
-        ) : (
-          <div className="space-y-2">
-            {completedOrders.slice(0, 5).map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   )
 }
