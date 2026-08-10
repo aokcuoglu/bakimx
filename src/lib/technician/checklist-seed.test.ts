@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { shouldSeedChecklist } from "./checklist-seed"
-import { CHECKLIST_TEMPLATE, templateSortOrder } from "./checklist-template"
+import { CHECKLIST_TEMPLATE, missingTemplateItems, templateSortOrder } from "./checklist-template"
 import {
   countBlockingChecklist,
   START_GATE_CATEGORIES,
@@ -24,6 +24,21 @@ test("şablona yeni madde eklendiğinde eksik tamamlanır", () => {
 
 test("serbest maddeler şablon eksiğini kapatmaz", () => {
   expect(shouldSeedChecklist(assigned, [null, "serbest.madde"])).toBe(true)
+})
+
+/**
+ * Silme iş emrine özel: satır mezar taşı olarak kaldığı için anahtar hâlâ
+ * "var" sayılır ve madde bu iş emrine geri gelmez. Çağıran, silinen maddelerin
+ * anahtarlarını da geçirmek zorunda — aksi hâlde her okumada boşuna seed
+ * denenir.
+ */
+test("silinen şablon maddesi aynı iş emrinde yeniden seed edilmez", () => {
+  expect(shouldSeedChecklist(assigned, allKeys)).toBe(false)
+})
+
+test("şablon silmeden etkilenmez — yeni iş emri tüm maddeleri alır", () => {
+  // Yeni iş emrinin elinde hiç anahtar yok; silinenler dahil şablonun tamamı eksik.
+  expect(missingTemplateItems([]).map((t) => t.key)).toEqual(allKeys)
 })
 
 test("teknisyen atanmamışsa seed edilmez", () => {

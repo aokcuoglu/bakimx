@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -110,7 +111,7 @@ export async function getTechnicianOrders(
         },
       },
       assignedTechnician: { select: { fullName: true } },
-      checklistItems: { select: { isCompleted: true } },
+      checklistItems: { where: ACTIVE_CHECKLIST_ITEM, select: { isCompleted: true } },
       laborSessions: { select: { endTime: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -175,7 +176,7 @@ export async function getTechnicianOrderDetail(
       },
       items: { orderBy: { createdAt: "asc" } },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
-      checklistItems: { orderBy: { sortOrder: "asc" } },
+      checklistItems: { where: ACTIVE_CHECKLIST_ITEM, orderBy: { sortOrder: "asc" } },
       internalNotes: { orderBy: { createdAt: "desc" } },
       partsRequests: { orderBy: { createdAt: "desc" } },
       laborSessions: { orderBy: { startTime: "desc" } },
