@@ -40,6 +40,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       },
       items: { orderBy: { createdAt: "asc" } },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
+      // BİLİNÇLİ olarak `ACTIVE_CHECKLIST_ITEM` ile filtrelenmez: seed kararı
+      // silinen maddelerin `templateKey`ine muhtaç ve panel silinenleri "geri
+      // al" bölümünde gösteriyor. Ayrım bellekte `deletedAt` ile yapılır.
       checklistItems: { orderBy: { sortOrder: "asc" } },
       internalNotes: { orderBy: { createdAt: "desc" } },
       partsRequests: { orderBy: { createdAt: "desc" } },
@@ -163,6 +166,11 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       fuelType: order.intakeForm.vehicle.fuelType,
       transmission: order.intakeForm.vehicle.transmission,
       catalogVehicleTypeId: order.intakeForm.vehicle.catalogVehicleTypeId,
+      // Ruhsat ipuçları — parça talebindeki katalog picker'ı (PickerVehicle)
+      // doğru motor varyantını gösterebilsin diye taşınır.
+      engineDisplacement: order.intakeForm.vehicle.engineDisplacement,
+      enginePower: order.intakeForm.vehicle.enginePower,
+      firstRegistrationDate: order.intakeForm.vehicle.firstRegistrationDate,
     },
     intake: {
       id: order.intakeForm.id,
@@ -190,6 +198,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       note: p.note,
       createdAt: p.createdAt.toISOString(),
     })),
+    // Silinmiş maddeler de gönderilir: panel bunları "Silinen maddeler"
+    // bölümünde geri alınabilir gösterir, listeden/sayımdan `deletedAt` ile
+    // ayrılır (gates + ChecklistSection).
     checklistItems: checklistItems.map((c) => ({
       id: c.id,
       category: c.category,
@@ -199,6 +210,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       completedAt: c.completedAt ? c.completedAt.toISOString() : null,
       note: c.note,
       sortOrder: c.sortOrder,
+      deletedAt: c.deletedAt ? c.deletedAt.toISOString() : null,
     })),
     internalNotes: order.internalNotes.map((n) => ({
       id: n.id,
@@ -211,9 +223,13 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       partName: p.partName,
       partSku: p.partSku,
       brand: p.brand,
+      tecdocArticleId: p.tecdocArticleId,
       quantity: p.quantity,
       note: p.note,
       status: p.status,
+      // Ofis talebi kaleme çevirdiyse usta da görsün: "istediğim parça iş
+      // emrine girdi mi?" sorusu bugüne dek yalnız ofis ekranında yanıtlanıyordu.
+      convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
       createdAt: p.createdAt.toISOString(),
     })),
     laborSessions: order.laborSessions.map((l) => ({

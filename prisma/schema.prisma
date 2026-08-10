@@ -273,10 +273,11 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  auditLogs      AuditLog[]
-  sentInvites    Invite[]             @relation("InviteCreatedBy")
-  passwordResets PasswordResetToken[]
-  deletedPhotos  VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
+  auditLogs             AuditLog[]
+  sentInvites           Invite[]             @relation("InviteCreatedBy")
+  passwordResets        PasswordResetToken[]
+  deletedPhotos         VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
+  deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
 
   @@index([workshopId])
 }
@@ -1300,11 +1301,18 @@ model ChecklistItem {
   completedAt    DateTime?
   note           String?
   sortOrder      Int               @default(0)
-  /// Sistem şablonundan gelen madde mi — teknisyen silemez, kapılarda zorunlu sayılır.
+  /// Sistem şablonundan gelen madde mi — kapılarda zorunlu sayılır.
   isRequired     Boolean           @default(false)
   /// Şablon maddesinin sabit anahtarı (örn. "inspection.mileage_fuel").
   /// Dolu ⇒ şablondan geldi; seed'in idempotent olmasını sağlar. Serbest maddede null.
   templateKey    String?
+  /// Silme SOFT'tur ve YALNIZCA bu iş emrini etkiler: satır mezar taşı olarak
+  /// kalır, böylece seed silinen şablon maddesini geri getirmez (`templateKey`
+  /// hâlâ "var" sayılır). Yeni iş emirleri şablonun tamamını almaya devam eder.
+  /// Okuyan her sorgu `ACTIVE_CHECKLIST_ITEM` ile filtrelemek zorunda.
+  deletedAt      DateTime?
+  deletedById    String?
+  deletedBy      User?             @relation("ChecklistItemDeletedBy", fields: [deletedById], references: [id])
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -1312,6 +1320,7 @@ model ChecklistItem {
   @@index([serviceOrderId])
   @@index([category])
   @@index([isCompleted])
+  @@index([deletedAt])
   /// Aynı iş emrine aynı şablon maddesi ikinci kez seed edilemez (eşzamanlı
   /// atama yarışına karşı DB seviyesi koruma). Postgres'te templateKey NULL
   /// olan serbest maddeler bu kısıtla çakışmaz (NULL != NULL).

@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
-  Camera, Plus, Package, StickyNote, Timer,
+  Camera, Plus, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2, ListChecks, FileText,
+  ImageOff, Loader2, ListChecks, FileText, Undo2,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -24,21 +24,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
 import {
   ORDER_STATUS, CHECKLIST_CATEGORIES,
-  PARTS_REQUEST_STATUS,
   fuelTypeLabel, transmissionLabel,
 } from "@/lib/constants"
 import type { ChecklistCategoryKey } from "@/lib/constants"
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
   addChecklistItemAction, toggleChecklistItemAction, deleteChecklistItemAction,
+  restoreChecklistItemAction,
   addInternalNoteAction, deleteInternalNoteAction,
-  createPartsRequestAction, updatePartsRequestStatusAction,
   startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { PartSearchInput } from "@/components/parts/part-search-input"
-import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import {
+  PartsRequestSection,
+  type TechnicianPartsRequest,
+} from "@/components/technician/parts-request-section"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
@@ -86,13 +87,15 @@ type OrderData = {
   }
   items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
-  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null }
+  // engineDisplacement/enginePower/firstRegistrationDate: parça kataloğu
+  // bileşenlerinin beklediği PickerVehicle alanları (araç varyantı ipuçları).
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null; engineDisplacement: string | null; enginePower: string | null; firstRegistrationDate: string | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
-  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
+  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
-  partsRequests: { id: string; partName: string; partSku: string | null; brand: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
+  partsRequests: TechnicianPartsRequest[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
   paidAmount: number
   remainingAmount: number
@@ -131,9 +134,13 @@ export function TechnicianOrderDetail({
     .filter((l) => l.durationMinutes)
     .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
-  const inspectionItems = order.checklistItems.filter((c) => c.category === "inspection")
-  const repairItems = order.checklistItems.filter((c) => c.category === "repair")
-  const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
+  // Bu iş emrinden çıkarılan maddeler listeden düşer ama payload'da kalır:
+  // yanlışlıkla silineni "Silinen maddeler" bölümünden geri almak için.
+  const activeChecklist = order.checklistItems.filter((c) => !c.deletedAt)
+  const deletedChecklist = order.checklistItems.filter((c) => c.deletedAt)
+  const inspectionItems = activeChecklist.filter((c) => c.category === "inspection")
+  const repairItems = activeChecklist.filter((c) => c.category === "repair")
+  const deliveryItems = activeChecklist.filter((c) => c.category === "delivery")
   const checklistSummary = summarizeChecklist(order.checklistItems)
 
   // Kontrol listesi kapalı geldiği için, kapıya takılan teknisyen eksik
@@ -304,6 +311,12 @@ export function TechnicianOrderDetail({
                 orderId={order.id}
                 locked={locked}
               />
+              {activeChecklist.length === 0 && (
+                <p className="text-sm text-muted-foreground/70">
+                  Bu iş emrinde kontrol maddesi kalmadı.
+                </p>
+              )}
+              <DeletedChecklistItems items={deletedChecklist} locked={locked} />
               {locked ? (
                 <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
               ) : (
@@ -398,20 +411,21 @@ export function TechnicianOrderDetail({
         )}
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Package className="size-4 text-muted-foreground" />
-            Parça Talepleri
-          </h3>
-        </div>
-        <PartsRequestSection requests={order.partsRequests} orderId={order.id} locked={locked} />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
-        ) : (
-          <AddPartsRequestForm orderId={order.id} vehicleTypeId={order.vehicle.catalogVehicleTypeId} />
-        )}
-      </div>
+      <PartsRequestSection
+        orderId={order.id}
+        vehicle={{
+          id: order.vehicle.id,
+          catalogVehicleTypeId: order.vehicle.catalogVehicleTypeId,
+          vin: order.vehicle.vin,
+          modelYear: order.vehicle.modelYear,
+          engineDisplacement: order.vehicle.engineDisplacement,
+          enginePower: order.vehicle.enginePower,
+          fuelType: order.vehicle.fuelType,
+          firstRegistrationDate: order.vehicle.firstRegistrationDate,
+        }}
+        requests={order.partsRequests}
+        locked={locked}
+      />
 
       <div className="rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -448,13 +462,10 @@ export function TechnicianOrderDetail({
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">
-          Yapılacak İşler
-          <span className="ml-2 text-xs font-normal text-muted-foreground/70">
-            {order.items.filter((i) => i.completedAt).length}/{order.items.length}
-          </span>
-        </h3>
-        <OrderItemsChecklist items={order.items} locked={locked} />
+        {/* Başlık ve sayaç bilerek bileşenin içinde: "Tümünü tamamla" ve tek tek
+            işaretleme iyimser durumla anında güncelleniyor, sayaç dışarıda
+            kalsaydı tiklerin gerisinde kalırdı (BAK-21). */}
+        <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
         {order.totals.hasAnyPrice && (
           <div className="mt-3 pt-3 border-t border-border space-y-1">
             {order.totals.discountAmount > 0 && (
@@ -675,15 +686,22 @@ function ChecklistSection({
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
             </div>
-            {!locked && !item.isRequired && (
+            {/* Şablon maddeleri de silinebilir: atölye kullanmadığı kontrolü bu
+                iş emrinden çıkarabilmeli. Silme yalnız bu iş emrini etkiler,
+                şablon olduğu gibi kalır (bkz. deleteChecklistItemAction).
+                Görünürlük mobilde hover'a bağlı olamaz — dokunmatikte hover
+                yok, buton görünmez ama tıklanabilir kalıyordu. */}
+            {!locked && (
               <button
                 type="button"
+                aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
                 onClick={() => {
                   startTransition(async () => {
                     await deleteChecklistItemAction(item.id)
                   })
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity"
+                disabled={isPending}
+                className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -691,6 +709,74 @@ function ChecklistSection({
           </form>
         ))}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Bu iş emrinden çıkarılan maddeler — kapalı başlar, tek dokunuşla geri alınır.
+ *
+ * Silme soft olduğu için yanlış dokunuş kalıcı değil; bölüm olmasaydı silinen
+ * madde teknisyen için tamamen kaybolurdu (şablonda duruyor olması yalnız YENİ
+ * iş emirlerini ilgilendirir, bu iş emrine geri getirmez).
+ */
+function DeletedChecklistItems({
+  items, locked,
+}: {
+  items: OrderData["checklistItems"]
+  locked: boolean
+}) {
+  const [show, setShow] = useState(false)
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="mt-3 border-t border-border pt-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        onClick={() => setShow((v) => !v)}
+        aria-expanded={show}
+        className="px-1.5 text-muted-foreground"
+      >
+        Silinen maddeler ({items.length})
+      </Button>
+      {show && (
+        <ul className="mt-1 space-y-1">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center gap-2 py-1">
+              <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through">
+                {item.description}
+              </span>
+              {!locked && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  disabled={pendingId === item.id}
+                  aria-label={`"${item.description}" maddesini geri al`}
+                  onClick={() => {
+                    setPendingId(item.id)
+                    startTransition(async () => {
+                      await restoreChecklistItemAction(item.id)
+                      setPendingId(null)
+                    })
+                  }}
+                  className="shrink-0 text-primary"
+                >
+                  {pendingId === item.id
+                    ? <Loader2 className="size-3.5 animate-spin" />
+                    : <Undo2 className="size-3.5" />}
+                  Geri al
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -892,189 +978,6 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
         )}
       />
     </button>
-  )
-}
-
-function PartsRequestSection({
-  requests,
-  orderId: _orderId,
-  locked,
-}: {
-  requests: OrderData["partsRequests"]
-  orderId: string
-  locked: boolean
-}) {
-  const [isPending, startTransition] = useTransition()
-
-  if (requests.length === 0) return null
-
-  return (
-    <div className="space-y-2">
-      {requests.map((req) => {
-        const statusInfo = (PARTS_REQUEST_STATUS as Record<string, { label: string; color: string }>)[req.status]
-        const nextStatusMap: Record<string, string> = {
-          requested: "prepared",
-          prepared: "delivered",
-        }
-        const nextLabelMap: Record<string, string> = {
-          requested: "Hazırlandı",
-          prepared: "Teslim Edildi",
-        }
-
-        return (
-          <div key={req.id} className="flex items-start justify-between gap-3 py-2 px-3 rounded-lg bg-muted">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{req.partName}</span>
-                {req.partSku && <span className="text-xs text-muted-foreground">({req.partSku})</span>}
-                {req.brand && <span className="text-xs text-muted-foreground">{req.brand}</span>}
-                <span className="text-xs text-muted-foreground">×{req.quantity}</span>
-              </div>
-              {req.note && <p className="text-xs text-muted-foreground mt-0.5">{req.note}</p>}
-              <p className="text-[10px] text-muted-foreground/70 mt-0.5">{new Date(req.createdAt).toLocaleDateString("tr-TR")}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", statusInfo?.color)}>
-                {statusInfo?.label || req.status}
-              </span>
-              {!locked && nextStatusMap[req.status] && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    startTransition(async () => {
-                      await updatePartsRequestStatusAction(req.id, nextStatusMap[req.status])
-                    })
-                  }}
-                  disabled={isPending}
-                  className="touch-manipulation"
-                >
-                  <CheckCircle2 className="size-3" />
-                  {nextLabelMap[req.status]}
-                </Button>
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function AddPartsRequestForm({ orderId, vehicleTypeId }: { orderId: string; vehicleTypeId: number | null }) {
-  const [show, setShow] = useState(false)
-  const [partName, setPartName] = useState("")
-  const [partSku, setPartSku] = useState("")
-  const [brand, setBrand] = useState("")
-  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
-  const [quantity, setQuantity] = useState("1")
-  const [note, setNote] = useState("")
-  const [isPending, startTransition] = useTransition()
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
-      >
-        <Plus className="size-4" />
-        Parça Talep Et
-      </button>
-    )
-  }
-
-  return (
-    <form
-      action={() => {
-        const fd = new FormData()
-        fd.set("serviceOrderId", orderId)
-        fd.set("partName", partName)
-        fd.set("partSku", partSku)
-        fd.set("brand", brand)
-        fd.set("tecdocArticleId", tecdocArticleId != null ? String(tecdocArticleId) : "")
-        fd.set("quantity", quantity)
-        fd.set("note", note)
-        startTransition(async () => {
-          await createPartsRequestAction(fd)
-          setPartName("")
-          setPartSku("")
-          setBrand("")
-          setTecdocArticleId(null)
-          setQuantity("1")
-          setNote("")
-          setShow(false)
-        })
-      }}
-      className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
-    >
-      <PartSearchInput
-        value={partName}
-        sku={partSku || null}
-        vehicleTypeId={vehicleTypeId}
-        placeholder="Parça adı *"
-        onNameChange={(name) => {
-          setPartName(name)
-          // Serbest yazmaya dönülürse önceki katalog seçimi geçersizdir.
-          setTecdocArticleId(null)
-          setBrand("")
-        }}
-        onSelectArticle={(a: ArticleSearchResult) => {
-          setPartName(a.productName)
-          setPartSku(a.articleNo ?? "")
-          setBrand(a.supplierName ?? "")
-          setTecdocArticleId(a.tecdocArticleId ?? null)
-        }}
-        showClear={!!partName}
-        onClear={() => { setPartName(""); setPartSku(""); setBrand(""); setTecdocArticleId(null) }}
-      />
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={partSku}
-          onChange={(e) => {
-            setPartSku(e.target.value)
-            // Elle düzenlenen SKU önceki katalog seçimiyle uyuşmayabilir —
-            // Parça adı alanındaki koruyucunun ikizi (bkz. onNameChange).
-            setTecdocArticleId(null)
-            setBrand("")
-          }}
-          placeholder="SKU / OEM No"
-        />
-        <Input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          min="1"
-          className="w-20"
-        />
-      </div>
-      <Input
-        type="text"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Not (opsiyonel)"
-      />
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isPending || !partName.trim()}
-          className="touch-manipulation"
-        >
-          <Send className="size-3.5" />
-          Talep Et
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => { setShow(false); setPartName("") }}
-          className="touch-manipulation"
-        >
-          İptal
-        </Button>
-      </div>
-    </form>
   )
 }
 

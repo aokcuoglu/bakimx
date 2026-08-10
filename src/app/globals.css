@@ -59,6 +59,26 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --animate-check-pop: check-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-item-done: item-done 700ms ease-out;
+}
+
+/* Teknisyen "Yapılacak İşler" listesinde dokunma geri bildirimi (BAK-21).
+   Tik iyimser olarak ANINDA basılıyor; bu iki animasyon o anı görünür kılıyor —
+   kutu yerine otururken hafifçe büyüyor, satır kısa bir yeşil parlama bırakıyor.
+   Yoksa tik sessizce beliriyor ve teknisyen dokunuşunun geçtiğini anlamıyordu.
+   Kullanımda `motion-safe:` ile sarılı: hareket azaltma tercihinde çalışmaz,
+   tik yine anında görünür. */
+@keyframes check-pop {
+  0%   { transform: scale(0.55); opacity: 0.5; }
+  55%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes item-done {
+  0%   { background-color: color-mix(in oklab, var(--success) 28%, transparent); }
+  60%  { background-color: color-mix(in oklab, var(--success) 16%, transparent); }
+  100% { background-color: transparent; }
 }
 
 /* Mobil-öncelikli yardımcı sınıflar — gerçek safe-area inset'leri (önceden no-op'tu). */
