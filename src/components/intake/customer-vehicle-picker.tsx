@@ -16,6 +16,7 @@ import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info, Barcode } from "l
 import { InlineCreateModal, type InlineCreateResult } from "@/components/intake/inline-create-modal"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { PlateScanner } from "@/components/intake/plate-scanner"
+import { VinScanner } from "@/components/intake/vin-scanner"
 import { displayCustomerName, type UnifiedResult, type CustomerLite } from "@/lib/search/unified-results"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { normalizePlate } from "@/lib/format"
@@ -54,7 +55,8 @@ export function CustomerVehiclePicker({
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
   const [modalOpen, setModalOpen] = useState(false)
   const [ownerMode, setOwnerMode] = useState(false)
-  const [scannerOpen, setScannerOpen] = useState(false)
+  // Açık tarayıcı: plaka kamerası mı, cam altındaki şase (VIN) kamerası mı (#188).
+  const [scanner, setScanner] = useState<"plate" | "vin" | null>(null)
   const [comboOpen, setComboOpen] = useState(false)
   const [modalSeed, setModalSeed] = useState<{ plate?: string; vin?: string }>({})
 
@@ -124,10 +126,21 @@ export function CustomerVehiclePicker({
   // Kameradan okunan plaka: arama kutusuna yaz (mevcut debounce'lu arama tetiklenir)
   // ve açılır listeyi aç — eşleşen araç seçilebilir, yoksa "Oluştur" yolu görünür.
   function onPlateScanned(plate: string) {
-    setScannerOpen(false)
+    setScanner(null)
     setMode("plate")
     setSelected(null)
     setQuery(normalizePlate(plate))
+    setComboOpen(true)
+  }
+
+  // Camdan okunan şase: aynı yol — kutuya yazılır, kayıtlı araç varsa listede
+  // çıkar, yoksa boş durumdaki "VIN'den araç oluştur" düğmesi devreye girer.
+  // Kutuya yazmak aynı zamanda düzeltme imkânı bırakır (tek hane hatası).
+  function onVinScanned(vin: string) {
+    setScanner(null)
+    setMode("vin")
+    setSelected(null)
+    setQuery(normalizeVin(vin))
     setComboOpen(true)
   }
 
@@ -320,7 +333,7 @@ export function CustomerVehiclePicker({
                         <Button type="button" size="sm" onClick={() => openCreate({ vin: normalizeVin(query) })}><Plus className="size-4 mr-1" /> VIN&apos;den araç oluştur</Button>
                       </div>
                     ) : (
-                      <span className="py-2 text-sm text-muted-foreground">17 haneli VIN yazın</span>
+                      <span className="py-2 text-sm text-muted-foreground">17 haneli VIN yazın veya camdaki şaseyi kamerayla okutun</span>
                     )
                   ) : query.trim().length >= 1 ? (
                     <div className="flex w-full flex-wrap items-center gap-2 p-2">
@@ -347,16 +360,17 @@ export function CustomerVehiclePicker({
             <CustomerSearchOrCreate onSelected={enterCustomer} />
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:contents">
-          {/* Plakayı kamerayla tara — yalnızca plaka modunda */}
-          {mode === "plate" && (
+        <div className={`grid gap-2 sm:contents ${mode === "customer" ? "grid-cols-2" : "grid-cols-3"}`}>
+          {/* Kamerayla tara — plaka modunda plaka, VIN modunda camdaki şase (#188).
+              Müşteri modunda taranacak bir şey yok. */}
+          {mode !== "customer" && (
           <Button
             type="button"
             variant="outline"
             size="icon"
             className="size-11 md:size-9"
-            aria-label="Plakayı kamerayla tara"
-            onClick={() => setScannerOpen(true)}
+            aria-label={mode === "vin" ? "Camdaki şaseyi kamerayla tara" : "Plakayı kamerayla tara"}
+            onClick={() => setScanner(mode === "vin" ? "vin" : "plate")}
           >
             <ScanLine className="size-4" />
           </Button>
@@ -395,7 +409,8 @@ export function CustomerVehiclePicker({
         initialVin={modalSeed.vin}
         onCreated={onModalCreated}
       />
-      {scannerOpen && <PlateScanner onDetected={onPlateScanned} onClose={() => setScannerOpen(false)} />}
+      {scanner === "plate" && <PlateScanner onDetected={onPlateScanned} onClose={() => setScanner(null)} />}
+      {scanner === "vin" && <VinScanner onDetected={onVinScanned} onClose={() => setScanner(null)} />}
     </div>
   )
 }
