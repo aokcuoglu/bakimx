@@ -2,15 +2,15 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { typedResolver } from "@/lib/validations/resolver"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Camera, ScanLine, Loader2 } from "lucide-react"
+import { Camera, ScanLine, Loader2, Plus } from "lucide-react"
 import {
   Form,
   FormControl,
@@ -27,24 +27,15 @@ import { RuhsattanOku } from "@/components/vehicles/ruhsattan-oku"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, useVinResolve } from "@/components/vehicles/vin-resolve"
 import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
+import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
+import {
+  findCustomerOptionLabel,
+  toCustomerOptions,
+  withCustomerOption,
+  type CustomerLike,
+} from "@/lib/vehicles/customer-options"
 
-type Customer = {
-  id: string
-  firstName: string | null
-  lastName: string | null
-  fullName: string | null
-  companyName: string | null
-  type: string
-  phone: string
-}
-
-function customerLabel(c: Customer): string {
-  const name =
-    c.type === "corporate"
-      ? c.companyName || "Kurumsal Müşteri"
-      : c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
-  return `${name} — ${c.phone}`
-}
+type Customer = CustomerLike
 
 type VehicleFormProps = {
   customers: Customer[]
@@ -106,6 +97,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
   const router = useRouter()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  // Müşteri seçenekleri istemcide tutulur: form terk edilmeden oluşturulan
+  // müşteri anında listeye girip seçilebilsin (#186).
+  const [customerOptions, setCustomerOptions] = useState(() => toCustomerOptions(customers))
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
 
   const isEdit = mode === "edit" && initial?.id
 
@@ -185,6 +180,13 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
     }
   }
 
+  /** Modal'da seçilen/oluşturulan müşteri: listeye ekle, forma yaz, modalı kapat. */
+  function handleCustomerPicked(id: string, label: string) {
+    setCustomerOptions((current) => withCustomerOption(current, { id, label }))
+    form.setValue("customerId", id, { shouldValidate: true, shouldDirty: true })
+    setCustomerModalOpen(false)
+  }
+
   const handleCancel = () => {
     if (isEdit) {
       router.push(`/vehicles/${initial?.id}`)
@@ -214,21 +216,25 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Müşteri *</FormLabel>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v ?? "")}
+                        disabled={customerOptions.length === 0}
+                      >
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Müşteri seçin">
-                              {(value) => {
-                                const c = customers.find((x) => x.id === value)
-                                return c ? customerLabel(c) : "Müşteri seçin"
-                              }}
+                              {(value) =>
+                                findCustomerOptionLabel(customerOptions, value) ??
+                                (customerOptions.length === 0 ? "Henüz müşteri yok" : "Müşteri seçin")
+                              }
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {customers.map((c) => (
+                          {customerOptions.map((c) => (
                             <SelectItem key={c.id} value={c.id}>
-                              {customerLabel(c)}
+                              {c.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -237,11 +243,31 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     </FormItem>
                   )}
                 />
-                <div className="text-xs text-muted-foreground">
-                  <Link href="/customers/new" className="text-primary hover:text-primary/80 font-medium">
-                    + Yeni müşteri ekle
-                  </Link>
+                <div className="flex justify-start">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-11 text-primary"
+                    onClick={() => setCustomerModalOpen(true)}
+                  >
+                    <Plus className="size-4" />
+                    Yeni müşteri ekle
+                  </Button>
                 </div>
+                {/* Müşteri oluşturma sayfaya gitmeden burada yapılır; aksi halde
+                    girilen araç bilgileri kaybolurdu (#186). */}
+                <Dialog open={customerModalOpen} onOpenChange={setCustomerModalOpen}>
+                  <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Müşteri ekle</DialogTitle>
+                      <DialogDescription>
+                        Müşteriyi arayın; kayıtlı değilse buradan yeni oluşturun. Araç bilgileriniz korunur.
+                      </DialogDescription>
+                    </DialogHeader>
+                    {customerModalOpen && <CustomerSearchOrCreate autoFocus onSelected={handleCustomerPicked} />}
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 

@@ -32,20 +32,9 @@ export default async function NewVehiclePage({
           </div>
         </div>
 
-        {customers.length === 0 ? (
-          <div className="text-center py-16 px-4 text-muted-foreground bg-card border border-dashed border-border rounded-lg">
-            <p className="text-base font-medium text-foreground">Önce bir müşteri oluşturmalısınız</p>
-            <p className="text-sm mt-1">Araç eklemek için müşteri kaydı gereklidir</p>
-            <Link
-              href="/customers/new"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-            >
-              + Müşteri Oluştur
-            </Link>
-          </div>
-        ) : (
-          <VehicleCreateForm customers={customers} mode="create" prefillCustomerId={customerId} />
-        )}
+        {/* Hiç müşteri yokken de form açılır: müşteri kaydı formdan çıkmadan,
+            "Yeni müşteri ekle" ile aynı ekranda oluşturulur (#186). */}
+        <VehicleCreateForm customers={customers} mode="create" prefillCustomerId={customerId} />
 
         <div className="h-16 sm:hidden" />
       </div>
