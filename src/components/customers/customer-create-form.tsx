@@ -8,8 +8,6 @@ import {
   Building2,
   User as UserIcon,
   Save,
-  Mic,
-  Info,
   Mail,
   Phone,
   MessageCircle,
@@ -117,7 +115,7 @@ function toDefaults(initial?: CustomerFormInitial | CustomerFormInitialStrict): 
   }
 }
 
-export function CustomerCreateForm({ initial, mode = "create" }: { initial?: CustomerFormInitial | CustomerFormInitialStrict; mode?: "create" | "edit" }) {
+export function CustomerCreateForm({ initial, mode = "create", onCancel }: { initial?: CustomerFormInitial | CustomerFormInitialStrict; mode?: "create" | "edit"; onCancel?: () => void }) {
   const router = useRouter()
   const isEdit = mode === "edit" && !!initial?.id
 
@@ -703,25 +701,11 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                 />
               </div>
             </section>
-
-            <section className="rounded-lg border border-border bg-muted p-4 space-y-2">
-              <div className="flex items-start gap-2">
-                <Info className="size-4 text-muted-foreground/70 mt-0.5" />
-                <div className="text-xs text-muted-foreground">
-                  <p className="font-medium text-foreground">Sesle Doldur</p>
-                  <p className="mt-0.5">Sesle doldurma özelliği yakında. Şimdilik formu manuel doldurun.</p>
-                </div>
-              </div>
-              <Button type="button" variant="outline" size="sm" disabled className="w-full gap-1.5">
-                <Mic className="size-4" />
-                Sesle Doldur (Yakında)
-              </Button>
-            </section>
           </aside>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
+          <Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())} disabled={pending}>
             İptal
           </Button>
           <Button type="submit" disabled={pending} className="gap-1.5">

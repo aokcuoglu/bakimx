@@ -144,22 +144,20 @@ export function CustomerDetail({
   if (editing) {
     return (
       <div className="space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
-            <span className="mx-2">/</span>
-            <Link href={`/customers/${customer.id}`} className="hover:text-foreground">
-              {displayName}
-            </Link>
-            <span className="mx-2">/</span>
-            <span className="text-foreground font-medium">Düzenle</span>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => setEditing(false)} className="gap-1.5">
-            <X className="size-4" />
-            Vazgeç
-          </Button>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/customers" className="hover:text-foreground">Müşteriler</Link>
+          <span className="mx-2">/</span>
+          <Link
+            href={`/customers/${customer.id}`}
+            className="hover:text-foreground"
+            onClick={() => setEditing(false)}
+          >
+            {displayName}
+          </Link>
+          <span className="mx-2">/</span>
+          <span className="text-foreground font-medium">Düzenle</span>
         </div>
-        <CustomerCreateForm mode="edit" initial={customer} />
+        <CustomerCreateForm mode="edit" initial={customer} onCancel={() => setEditing(false)} />
       </div>
     )
   }
@@ -215,15 +213,6 @@ export function CustomerDetail({
                <Wrench className="size-4" />
                Yeni İş Emri
              </Button>
-            <button
-              type="button"
-              disabled
-              title="WhatsApp paylaşımı yakında"
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white text-muted-foreground/70 text-sm font-medium cursor-not-allowed touch-manipulation"
-            >
-              <MessageCircle className="size-4" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </button>
             <Button
               type="button"
               variant="outline"
