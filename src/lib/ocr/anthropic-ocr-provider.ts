@@ -1,5 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk"
-import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence, PartBoxOcrResult } from "./types"
+import type {
+  OcrProvider,
+  RegistrationOcrResult,
+  OcrFieldConfidence,
+  PartBoxOcrResult,
+  VinOcrResult,
+} from "./types"
 import { RegistrationFieldsSchema, toRegistrationResult } from "./registration-result"
 import { PartBoxFieldsSchema, toPartBoxResult } from "./part-box-result"
 import { z } from "zod"
@@ -148,6 +154,40 @@ const PARTBOX_SYSTEM_PROMPT =
   "bir etiketle (label) birlikte ayrı öğe olarak ver. Parça adını Türkçe yaz; emin değilsen kutudaki " +
   `orijinal ifadeyi koru. Sonucu yalnızca ${PARTBOX_TOOL_NAME} aracını çağırarak döndür.`
 
+const VIN_TOOL_NAME = "kaydet_sase_no"
+
+const VIN_TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    vin: {
+      type: "string",
+      description:
+        "Görseldeki 17 haneli şase numarası (VIN), boşluksuz ve büyük harf. " +
+        "Okunamıyorsa veya 17 hane değilse boş string döndür.",
+    },
+    confident: {
+      type: "boolean",
+      description: "17 hanenin tamamını net okuduysan true; tek bir karakterden bile şüphen varsa false.",
+    },
+  },
+  required: ["vin", "confident"],
+}
+
+const VIN_RESULT_SCHEMA = z.object({
+  vin: z.string().default(""),
+  confident: z.boolean().default(false),
+})
+
+const VIN_SYSTEM_PROMPT =
+  "Sen araç şase numarası (VIN) okuma uzmanısın. Görsel, aracın ön camının altındaki şase " +
+  "plakasının veya kaportaya vurulmuş şase numarasının fotoğrafıdır. " +
+  "VIN tam 17 hanedir ve ISO 3779 gereği içinde I, O, Q harfleri BULUNMAZ — bu konumlarda " +
+  "gördüğün karakterler 1 ve 0 rakamlarıdır. Yalnızca gördüğünü yaz, eksik haneyi TAMAMLAMA " +
+  "ve numara uydurma. Fotoğrafta 17 haneyi net okuyamıyorsan vin alanını boş bırak. " +
+  "Barkod, üretim tarihi, ağırlık gibi diğer satırları değil, yalnızca şase numarasını al. " +
+  `Sonucu yalnızca ${VIN_TOOL_NAME} aracını çağırarak döndür.`
+
 // Anthropic'in kabul ettiği görüntü MIME türleri; diğerleri jpeg'e çekilir (normalize zaten jpeg üretir).
 const SUPPORTED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"])
 
@@ -266,5 +306,48 @@ export class AnthropicOcrProvider implements OcrProvider {
 
     const fields = PartBoxFieldsSchema.parse(toolUse.input)
     return toPartBoxResult(fields, "anthropic")
+  }
+
+  async extractVin(imageBuffer: Buffer, mimeType: string): Promise<VinOcrResult> {
+    const mediaType = SUPPORTED_MEDIA_TYPES.has(mimeType) ? mimeType : "image/jpeg"
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 256,
+      system: VIN_SYSTEM_PROMPT,
+      tools: [
+        {
+          name: VIN_TOOL_NAME,
+          description: "Görselden okunan şase numarasını kaydet.",
+          input_schema: VIN_TOOL_INPUT_SCHEMA,
+        },
+      ],
+      tool_choice: { type: "tool", name: VIN_TOOL_NAME },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: imageBuffer.toString("base64"),
+              },
+            },
+            { type: "text", text: "Bu fotoğraftaki 17 haneli şase numarasını (VIN) oku." },
+          ],
+        },
+      ],
+    })
+
+    const toolUse = response.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === VIN_TOOL_NAME
+    )
+    // Araç çağrılmadıysa okuma başarısızdır; boş sonuç dön, HTTP katmanı 422 üretsin.
+    if (!toolUse) return { rawVin: "", confident: false, provider: "anthropic" }
+
+    const fields = VIN_RESULT_SCHEMA.parse(toolUse.input)
+    return { rawVin: fields.vin, confident: fields.confident, provider: "anthropic" }
   }
 }

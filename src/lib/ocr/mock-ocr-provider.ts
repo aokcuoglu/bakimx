@@ -1,4 +1,10 @@
-import type { OcrProvider, RegistrationOcrResult, OcrFieldConfidence, PartBoxOcrResult } from "./types"
+import type {
+  OcrProvider,
+  RegistrationOcrResult,
+  OcrFieldConfidence,
+  PartBoxOcrResult,
+  VinOcrResult,
+} from "./types"
 
 function field(value: string, confidence?: number): OcrFieldConfidence {
   return { value, confidence }
@@ -55,6 +61,13 @@ export class MockOcrProvider implements OcrProvider {
   async extractPartBox(_imageBuffer: Buffer, _mimeType: string): Promise<PartBoxOcrResult> {
     await new Promise((resolve) => setTimeout(resolve, 1200))
     return { ...MOCK_PARTBOX_DATA, provider: "mock" }
+  }
+
+  async extractVin(_imageBuffer: Buffer, _mimeType: string): Promise<VinOcrResult> {
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    // Ruhsat mock'uyla AYNI VIN: demo akışta cam taraması ile ruhsat taraması
+    // aynı araca düşsün (seed verisiyle de eşleşir).
+    return { rawVin: MOCK_REGISTRATION_DATA.vin.value, confident: true, provider: "mock" }
   }
 }
 
