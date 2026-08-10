@@ -11,7 +11,7 @@ import {
   Camera, Plus, Package, StickyNote, Timer,
   CheckSquare, Square, Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2, ListChecks,
+  ImageOff, Loader2, ListChecks, Undo2,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -31,6 +31,7 @@ import type { ChecklistCategoryKey } from "@/lib/constants"
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
   addChecklistItemAction, toggleChecklistItemAction, deleteChecklistItemAction,
+  restoreChecklistItemAction,
   addInternalNoteAction, deleteInternalNoteAction,
   createPartsRequestAction, updatePartsRequestStatusAction,
   startLaborSessionAction, stopLaborSessionAction,
@@ -89,7 +90,7 @@ type OrderData = {
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
-  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
+  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
   partsRequests: { id: string; partName: string; partSku: string | null; brand: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
@@ -130,9 +131,13 @@ export function TechnicianOrderDetail({
     .filter((l) => l.durationMinutes)
     .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
-  const inspectionItems = order.checklistItems.filter((c) => c.category === "inspection")
-  const repairItems = order.checklistItems.filter((c) => c.category === "repair")
-  const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
+  // Bu iş emrinden çıkarılan maddeler listeden düşer ama payload'da kalır:
+  // yanlışlıkla silineni "Silinen maddeler" bölümünden geri almak için.
+  const activeChecklist = order.checklistItems.filter((c) => !c.deletedAt)
+  const deletedChecklist = order.checklistItems.filter((c) => c.deletedAt)
+  const inspectionItems = activeChecklist.filter((c) => c.category === "inspection")
+  const repairItems = activeChecklist.filter((c) => c.category === "repair")
+  const deliveryItems = activeChecklist.filter((c) => c.category === "delivery")
   const checklistSummary = summarizeChecklist(order.checklistItems)
 
   // Kontrol listesi kapalı geldiği için, kapıya takılan teknisyen eksik
@@ -290,6 +295,12 @@ export function TechnicianOrderDetail({
                 orderId={order.id}
                 locked={locked}
               />
+              {activeChecklist.length === 0 && (
+                <p className="text-sm text-muted-foreground/70">
+                  Bu iş emrinde kontrol maddesi kalmadı.
+                </p>
+              )}
+              <DeletedChecklistItems items={deletedChecklist} locked={locked} />
               {locked ? (
                 <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
               ) : (
@@ -661,15 +672,22 @@ function ChecklistSection({
               </span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
             </div>
-            {!locked && !item.isRequired && (
+            {/* Şablon maddeleri de silinebilir: atölye kullanmadığı kontrolü bu
+                iş emrinden çıkarabilmeli. Silme yalnız bu iş emrini etkiler,
+                şablon olduğu gibi kalır (bkz. deleteChecklistItemAction).
+                Görünürlük mobilde hover'a bağlı olamaz — dokunmatikte hover
+                yok, buton görünmez ama tıklanabilir kalıyordu. */}
+            {!locked && (
               <button
                 type="button"
+                aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
                 onClick={() => {
                   startTransition(async () => {
                     await deleteChecklistItemAction(item.id)
                   })
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity"
+                disabled={isPending}
+                className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -677,6 +695,74 @@ function ChecklistSection({
           </form>
         ))}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Bu iş emrinden çıkarılan maddeler — kapalı başlar, tek dokunuşla geri alınır.
+ *
+ * Silme soft olduğu için yanlış dokunuş kalıcı değil; bölüm olmasaydı silinen
+ * madde teknisyen için tamamen kaybolurdu (şablonda duruyor olması yalnız YENİ
+ * iş emirlerini ilgilendirir, bu iş emrine geri getirmez).
+ */
+function DeletedChecklistItems({
+  items, locked,
+}: {
+  items: OrderData["checklistItems"]
+  locked: boolean
+}) {
+  const [show, setShow] = useState(false)
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="mt-3 border-t border-border pt-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        onClick={() => setShow((v) => !v)}
+        aria-expanded={show}
+        className="px-1.5 text-muted-foreground"
+      >
+        Silinen maddeler ({items.length})
+      </Button>
+      {show && (
+        <ul className="mt-1 space-y-1">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center gap-2 py-1">
+              <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through">
+                {item.description}
+              </span>
+              {!locked && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  disabled={pendingId === item.id}
+                  aria-label={`"${item.description}" maddesini geri al`}
+                  onClick={() => {
+                    setPendingId(item.id)
+                    startTransition(async () => {
+                      await restoreChecklistItemAction(item.id)
+                      setPendingId(null)
+                    })
+                  }}
+                  className="shrink-0 text-primary"
+                >
+                  {pendingId === item.id
+                    ? <Loader2 className="size-3.5 animate-spin" />
+                    : <Undo2 className="size-3.5" />}
+                  Geri al
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

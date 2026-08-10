@@ -4,10 +4,14 @@
  * için de kullanılır (tek doğruluk kaynağı, iki yerde kopya mantık yok).
  */
 
+import { isActiveChecklistItem } from "./checklist-visibility"
+
 export interface GateChecklistItem {
   category: string
   isCompleted: boolean
   isRequired: boolean
+  /** Bu iş emrinde silinmiş madde — kapıyı da özeti de etkilemez. */
+  deletedAt?: Date | string | null
 }
 
 export interface GateOrderItem {
@@ -19,11 +23,18 @@ export const START_GATE_CATEGORIES = ["inspection"] as const
 /** "Tamamla" kapısı: onarım ve teslim kontrolleri. */
 export const COMPLETE_GATE_CATEGORIES = ["repair", "delivery"] as const
 
+/**
+ * Silinen maddeler burada da elenir: çağıranın sorgusu `ACTIVE_CHECKLIST_ITEM`
+ * filtresini atlasa bile silinmiş bir madde kapıyı kilitli tutmasın — kullanıcı
+ * o maddeyi bilinçli olarak bu iş emrinden çıkardı.
+ */
 export function countBlockingChecklist(
   items: GateChecklistItem[],
   categories: readonly string[]
 ): number {
-  return items.filter((i) => i.isRequired && !i.isCompleted && categories.includes(i.category)).length
+  return items.filter(
+    (i) => isActiveChecklistItem(i) && i.isRequired && !i.isCompleted && categories.includes(i.category)
+  ).length
 }
 
 export function countIncompleteItems(items: GateOrderItem[]): number {
@@ -39,10 +50,11 @@ export function summarizeChecklist(items: GateChecklistItem[]): {
   completed: number
   missingRequired: number
 } {
+  const active = items.filter(isActiveChecklistItem)
   return {
-    total: items.length,
-    completed: items.filter((i) => i.isCompleted).length,
-    missingRequired: items.filter((i) => i.isRequired && !i.isCompleted).length,
+    total: active.length,
+    completed: active.filter((i) => i.isCompleted).length,
+    missingRequired: active.filter((i) => i.isRequired && !i.isCompleted).length,
   }
 }
 

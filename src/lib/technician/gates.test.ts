@@ -51,6 +51,29 @@ test("madde yoksa özet sıfırdır", () => {
   expect(summarizeChecklist([])).toEqual({ total: 0, completed: 0, missingRequired: 0 })
 })
 
+/**
+ * Bu iş emrinden çıkarılan madde ne kapıyı kilitler ne de özette görünür:
+ * kullanıcı o kontrolü bilinçli olarak istemedi. Satır DB'de durduğu için
+ * eleme hem sorguda hem burada yapılır — okuma yolunun biri filtreyi atlarsa
+ * kapı yine de doğru cevabı versin.
+ */
+test("silinen zorunlu madde kapıyı bloklamaz", () => {
+  const items = [
+    req("inspection", false),
+    { ...req("inspection", false), deletedAt: new Date() },
+  ]
+  expect(countBlockingChecklist(items, START_GATE_CATEGORIES)).toBe(1)
+})
+
+test("silinen madde özetin dışında kalır", () => {
+  const items = [
+    req("inspection", true),
+    req("repair", false),
+    { ...req("delivery", false), deletedAt: "2026-08-10T00:00:00.000Z" },
+  ]
+  expect(summarizeChecklist(items)).toEqual({ total: 2, completed: 1, missingRequired: 1 })
+})
+
 test("eksik yoksa başlama mesajı null", () => {
   expect(startWorkBlockMessage(0)).toBeNull()
 })

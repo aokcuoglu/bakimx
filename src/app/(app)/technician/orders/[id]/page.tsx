@@ -40,6 +40,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       },
       items: { orderBy: { createdAt: "asc" } },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
+      // BİLİNÇLİ olarak `ACTIVE_CHECKLIST_ITEM` ile filtrelenmez: seed kararı
+      // silinen maddelerin `templateKey`ine muhtaç ve panel silinenleri "geri
+      // al" bölümünde gösteriyor. Ayrım bellekte `deletedAt` ile yapılır.
       checklistItems: { orderBy: { sortOrder: "asc" } },
       internalNotes: { orderBy: { createdAt: "desc" } },
       partsRequests: { orderBy: { createdAt: "desc" } },
@@ -190,6 +193,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       note: p.note,
       createdAt: p.createdAt.toISOString(),
     })),
+    // Silinmiş maddeler de gönderilir: panel bunları "Silinen maddeler"
+    // bölümünde geri alınabilir gösterir, listeden/sayımdan `deletedAt` ile
+    // ayrılır (gates + ChecklistSection).
     checklistItems: checklistItems.map((c) => ({
       id: c.id,
       category: c.category,
@@ -199,6 +205,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       completedAt: c.completedAt ? c.completedAt.toISOString() : null,
       note: c.note,
       sortOrder: c.sortOrder,
+      deletedAt: c.deletedAt ? c.deletedAt.toISOString() : null,
     })),
     internalNotes: order.internalNotes.map((n) => ({
       id: n.id,

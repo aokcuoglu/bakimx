@@ -7,6 +7,10 @@ import { missingTemplateItems, templateSortOrder } from "./checklist-template"
  *
  * İdempotent: var olan `templateKey`ler atlanır — yeniden atama veya usta
  * değişikliği madde çoğaltmaz, işaretlenmiş maddeleri sıfırlamaz.
+ * "Var olan" sorgusu SİLİNMİŞ satırları da kapsar (`deletedAt` filtresi YOK) —
+ * kullanıcının bu iş emrinden çıkardığı şablon maddesi geri gelmemeli. Bu,
+ * silmenin neden soft olduğunun tek sebebi; filtre eklenirse silinen madde bir
+ * sonraki okumada yeniden doğar.
  * Satır-başına upsert yerine tek `createMany` (transaction süresi kritik).
  * `(serviceOrderId, templateKey)` üzerindeki DB unique kısıtı eşzamanlı iki
  * atamaya karşı son savunma hattı — `skipDuplicates` bu durumda sessizce
@@ -58,6 +62,11 @@ export interface SeedCandidateOrder {
  * (`countBlockingChecklist` var olan kayıtları sayar → 0 madde = 0 engel).
  * Aynı şey şablona yeni madde eklendiğinde de olurdu. Karar burada saf tutulur
  * ki hem okuma yolları hem kapılar aynı cevabı versin.
+ *
+ * `existingTemplateKeys` SİLİNMİŞ maddelerin anahtarlarını da içermeli: çağıran
+ * listeyi `ACTIVE_CHECKLIST_ITEM` ile filtreleyip anahtarları oradan toplarsa
+ * silinen madde "eksik" görünür ve her okumada boşuna transaction açılır
+ * (satır unique kısıt sayesinde geri gelmez ama karar yanlış olur).
  */
 export function shouldSeedChecklist(
   order: SeedCandidateOrder,
