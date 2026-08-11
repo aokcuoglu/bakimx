@@ -307,7 +307,9 @@ export function InlineCreateModal({
     >
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni araç</DialogTitle>
+          {/* Sahibi dışarıdan sabitlenmediyse bu diyalog müşteriyi de oluşturur —
+              başlık picker'daki "Yeni müşteri & araç ekle" düğmesiyle aynı şeyi söylesin. */}
+          <DialogTitle>{fixedCustomer ? "Yeni araç" : "Yeni müşteri & araç"}</DialogTitle>
           <DialogDescription>Ruhsatı tarayın veya bilgileri elle girin.</DialogDescription>
         </DialogHeader>
 
