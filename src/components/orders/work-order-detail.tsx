@@ -59,6 +59,7 @@ import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
+import { STANDARD_TAX_BPS } from "@/lib/orders/price-tax-mode"
 import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
@@ -369,6 +370,39 @@ export function WorkOrderDetail({
         setEditingMeta(false)
         router.refresh()
       } else setError(data.error || "Bilgiler güncellenemedi")
+    } catch {
+      setError("Bir hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * #311 — kalem düzenleyicisinde "KDV dahil" kipine geçen kullanıcı, iş emrinde
+   * KDV oranı tanımlı değilse tek tıkla standart %20'yi uygular. Diğer meta
+   * alanları KAYITLI değerlerinden gönderilir (metaDraft'tan değil): açık ama
+   * kaydedilmemiş bir fiyatlandırma düzenlemesi bu tıkla sessizce kalıcılaşmasın.
+   */
+  async function applyStandardTaxRate() {
+    setLoading(true)
+    setError("")
+    try {
+      const formData = new FormData()
+      formData.set("technicianName", order.technicianName ?? "")
+      formData.set(
+        "estimatedDeliveryAt",
+        order.estimatedDeliveryAt ? new Date(order.estimatedDeliveryAt).toISOString().slice(0, 16) : ""
+      )
+      formData.set("discountAmount", String(order.discountAmount ?? 0))
+      formData.set("taxRate", String(STANDARD_TAX_BPS))
+      formData.set("notes", order.notes ?? "")
+      const res = await fetch(`/api/orders/${order.id}/meta`, { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.success) {
+        setMetaDraft((draft) => ({ ...draft, taxRate: String(bpsToPercent(STANDARD_TAX_BPS)) }))
+        toast.success(`İş emrine %${bpsToPercent(STANDARD_TAX_BPS)} KDV uygulandı`)
+        router.refresh()
+      } else setError(data.error || "KDV oranı uygulanamadı")
     } catch {
       setError("Bir hata oluştu")
     } finally {
@@ -1102,7 +1136,7 @@ export function WorkOrderDetail({
               listede ekranın çok altında kalıyor, banner viewport dışında kalıp
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
-          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} />
+          <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} />
 
           {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
               kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}

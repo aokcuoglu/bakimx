@@ -28,6 +28,8 @@ export function QuoteItemsEditor({
   vehicle,
   laborCatalog,
   disabled = false,
+  taxRateBps,
+  onApplyStandardTax,
 }: {
   value: QuoteItemFormValues[]
   onChange: (items: QuoteItemFormValues[]) => void
@@ -35,6 +37,10 @@ export function QuoteItemsEditor({
   vehicle?: PickerVehicle
   laborCatalog: LaborCatalogRow[]
   disabled?: boolean
+  /** Teklif formundaki KDV oranı (bps) — kalemlerin KDV dahil gösterimi için (#311). */
+  taxRateBps?: number | null
+  /** KDV oranı 0 iken standart %20'yi teklif formuna yazar. */
+  onApplyStandardTax?: () => void
 }) {
   // Satırlar burada YAŞAR; form değeri türetilir. Ters yön (form → satır) bilerek
   // yok: her yazımda satırları yeniden kurmak düzenleme sırasında odak ve
@@ -106,6 +112,8 @@ export function QuoteItemsEditor({
       allowExternalLabor={false}
       // Marka/Kategori QuoteItem'da saklanamaz → düzenlenebilir gösterilmez.
       showAttributes={false}
+      taxRateBps={taxRateBps}
+      onApplyStandardTax={onApplyStandardTax}
       flash={flash}
       onAdd={addItem}
       onCell={onCell}

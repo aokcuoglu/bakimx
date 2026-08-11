@@ -16,6 +16,7 @@ import { Plus, Minus, Loader2 } from "lucide-react"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { validateQuickPartDraft } from "@/lib/parts/quick-part-draft"
 import { liraToKurus } from "@/lib/money"
+import { STANDARD_TAX_BPS, toStoredPriceKurus } from "@/lib/orders/price-tax-mode"
 
 export type ManualPartDraft = {
   name: string
@@ -53,11 +54,17 @@ export function ManualPartDialog({
   vehicleTypeId,
   submitting,
   onSubmit,
+  priceTaxIncluded = false,
+  priceTaxBps = STANDARD_TAX_BPS,
 }: {
   open: boolean
   onOpenChange: (b: boolean) => void
   initialName: string
   vehicleTypeId: number | null
+  /** #311 — kalem düzenleyicisi "KDV dahil" kipindeyse yazılan fiyat KDV'lidir. */
+  priceTaxIncluded?: boolean
+  /** KDV dahil kipinde net'e çevirmekte kullanılan oran (bps). */
+  priceTaxBps?: number
   submitting: boolean
   /** Hata mesajı döndürür (modal açık kalır) ya da başarıda null. */
   onSubmit: (d: ManualPartDraft) => Promise<string | null>
@@ -101,7 +108,12 @@ export function ManualPartDialog({
     }
     setError(null)
     const lira = Number(priceDraft)
-    const unitPrice = priceDraft && !Number.isNaN(lira) && lira >= 0 ? liraToKurus(lira) : null
+    // Saklanan tutar HER ZAMAN net (KDV hariç); KDV dahil kipinde yazılan tutar
+    // burada net'e indirilir (bkz. lib/orders/price-tax-mode).
+    const unitPrice =
+      priceDraft && !Number.isNaN(lira) && lira >= 0
+        ? toStoredPriceKurus(liraToKurus(lira), priceTaxIncluded ? "included" : "excluded", priceTaxBps)
+        : null
     const brand = brandText.trim() || null
     const category = categoryText.trim() || null
     // categoryId yalnız metin, seçilen katalog etiketiyle hâlâ birebir eşleşiyorsa geçerli.
@@ -206,7 +218,9 @@ export function ManualPartDialog({
               </div>
             </div>
             <div className="space-y-1">
-              <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>
+              <span className="block text-xs font-medium text-muted-foreground">
+                {priceTaxIncluded ? "Birim Fiyat (KDV dahil)" : "Birim Fiyat"}
+              </span>
               <InputGroup className="h-9 w-32">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
