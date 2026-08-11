@@ -55,11 +55,11 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   // Şablon maddeleri atama anında oluşur. Özellikten önce atanmış (veya şablona
   // sonradan madde eklenmiş) iş emirlerinde liste eksik kalırdı; burada gerçekten
   // eksik varken bir kez tamamlanır, sonraki açılışlarda hiç yazma olmaz.
-  // Kapılar da aynı tamamlamayı kendi içinde yapar — bu satır yalnızca teknisyen
-  // listeyi boş görmesin diyedir, güvenlik ona bağlı değildir.
+  // Kontrol listesi kapı olmadığı için (BAK-24) burası artık tek tamamlama
+  // noktası; hiçbir durum geçişi buna bağlı değil.
   // Render sırasındaki yazma sayfayı ASLA düşürmemeli: eşzamanlı iki istek
-  // unique kısıtına çarpabilir. Başarısızlıkta liste eksik görünür, kapılar
-  // yine de tamamlamayı kendi tarafında yapar.
+  // unique kısıtına çarpabilir. Başarısızlıkta liste eksik görünür, sayfa
+  // yine açılır; sonraki açılışta tamamlama yeniden denenir.
   const checklistItems = await ensureChecklistSeeded(
     prisma,
     user.workshopId,

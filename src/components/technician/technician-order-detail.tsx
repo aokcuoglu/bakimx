@@ -9,28 +9,26 @@ import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, StickyNote, Timer,
-  CheckSquare, Square, Trash2, Send,
+  Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2, ListChecks, FileText, Undo2,
+  ImageOff, Loader2, ListChecks, FileText,
 } from "lucide-react"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
+import { OrderChecklist, useChecklistState } from "@/components/technician/order-checklist"
 import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
 import {
-  ORDER_STATUS, CHECKLIST_CATEGORIES,
+  ORDER_STATUS,
   fuelTypeLabel, transmissionLabel,
 } from "@/lib/constants"
-import type { ChecklistCategoryKey } from "@/lib/constants"
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
-  addChecklistItemAction, toggleChecklistItemAction, deleteChecklistItemAction,
-  restoreChecklistItemAction,
   addInternalNoteAction, deleteInternalNoteAction,
   startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
@@ -40,7 +38,6 @@ import {
   PartsRequestSection,
   type TechnicianPartsRequest,
 } from "@/components/technician/parts-request-section"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
@@ -50,13 +47,13 @@ import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { workOrderPath } from "@/lib/technician/cross-links"
 import {
-  countBlockingChecklist,
+  countRemainingChecklist,
   countIncompleteItems,
-  startWorkBlockMessage,
+  startChecklistReminder,
+  completeChecklistReminder,
   completeWorkBlockMessage,
-  summarizeChecklist,
-  START_GATE_CATEGORIES,
-  COMPLETE_GATE_CATEGORIES,
+  START_REMINDER_CATEGORIES,
+  COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
 
 type OrderData = {
@@ -134,17 +131,14 @@ export function TechnicianOrderDetail({
     .filter((l) => l.durationMinutes)
     .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
-  // Bu iş emrinden çıkarılan maddeler listeden düşer ama payload'da kalır:
-  // yanlışlıkla silineni "Silinen maddeler" bölümünden geri almak için.
-  const activeChecklist = order.checklistItems.filter((c) => !c.deletedAt)
-  const deletedChecklist = order.checklistItems.filter((c) => c.deletedAt)
-  const inspectionItems = activeChecklist.filter((c) => c.category === "inspection")
-  const repairItems = activeChecklist.filter((c) => c.category === "repair")
-  const deliveryItems = activeChecklist.filter((c) => c.category === "delivery")
-  const checklistSummary = summarizeChecklist(order.checklistItems)
+  const locked = isOrderLocked(order.status as OrderStatus)
 
-  // Kontrol listesi kapalı geldiği için, kapıya takılan teknisyen eksik
-  // maddeleri göremiyordu: engel mesajı bölümü açıp oraya kaydırır.
+  // Kontrol listesinin iyimser durumu SAYFA seviyesinde: hem kart hem alttaki
+  // hatırlatma aynı sayıyı görsün, tik atıldığı anda ikisi birden güncellensin.
+  const checklist = useChecklistState(order.checklistItems, { orderId: order.id, locked })
+
+  // Kontrol listesi kapalı geldiği için, teknisyen eksik maddeleri göremiyordu:
+  // hatırlatma bölümü açıp oraya kaydırır.
   const [checklistOpen, setChecklistOpen] = useState<string[]>([])
   const checklistRef = useRef<HTMLDivElement>(null)
 
@@ -174,21 +168,23 @@ export function TechnicianOrderDetail({
   // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
   // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
   // ve "Beklemeye Al" sonrası işi teknisyenin kendi ekranından sürdürebilmesi gerek.
-  // Kabul kontrolü kapısı startWorkAction'da; buton yalnız görünürlüğü sağlar.
   const canStart = ["draft", "waiting_approval", "approved", "waiting_parts"].includes(order.status)
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
-  const locked = isOrderLocked(order.status as OrderStatus)
 
-  const startMissing = countBlockingChecklist(order.checklistItems, START_GATE_CATEGORIES)
-  const completeChecklistMissing = countBlockingChecklist(order.checklistItems, COMPLETE_GATE_CATEGORIES)
-  const completeItemsMissing = countIncompleteItems(order.items)
-  const startBlockedMessage = startWorkBlockMessage(startMissing)
-  const completeBlockedMessage = completeWorkBlockMessage(completeChecklistMissing, completeItemsMissing)
+  // Kontrol maddeleri artık kapı değil, hatırlatma (BAK-24): sayılar iyimser
+  // listeden okunur ki tik atıldığı anda düşsünler. Tek gerçek kapı iş
+  // kalemleri — "Tamamla" yalnız onlara takılır.
+  const startChecklistLeft = countRemainingChecklist(checklist.items, START_REMINDER_CATEGORIES)
+  const completeChecklistLeft = countRemainingChecklist(checklist.items, COMPLETE_REMINDER_CATEGORIES)
+  const startReminder = startChecklistReminder(startChecklistLeft)
+  const completeReminder = completeChecklistReminder(completeChecklistLeft)
+  const completeBlockedMessage = completeWorkBlockMessage(countIncompleteItems(order.items))
 
   function handleStartWork() {
     startTransition(async () => {
-      await startWorkAction(order.id)
+      const res = await startWorkAction(order.id)
+      if (res && "error" in res && res.error) toast.error(res.error)
       router.refresh()
     })
   }
@@ -202,7 +198,8 @@ export function TechnicianOrderDetail({
 
   function handleCompleteWork() {
     startTransition(async () => {
-      await completeWorkAction(order.id)
+      const res = await completeWorkAction(order.id)
+      if (res && "error" in res && res.error) toast.error(res.error)
       router.refresh()
     })
   }
@@ -269,63 +266,17 @@ export function TechnicianOrderDetail({
 
       <ComplaintCard complaint={order.intake.customerComplaint} />
 
-      {/* Kontrol listesi kapalı başlar — mobilde ekranın çoğunu kaplıyordu.
-          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür.
-          Kontrollü: alttaki engel mesajı da bu bölümü açıp buraya kaydırıyor. */}
-      <div ref={checklistRef} className="rounded-lg border border-border bg-white px-4 scroll-mt-4">
-        <Accordion value={checklistOpen} onValueChange={(v) => setChecklistOpen(v as string[])}>
-          <AccordionItem value="checklist" className="border-0">
-            <AccordionTrigger className="items-center py-3 hover:no-underline">
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
-                <ListChecks className="size-4 text-muted-foreground" />
-                Kontrol Listesi
-                <span className="text-xs font-normal text-muted-foreground/70">
-                  {checklistSummary.completed}/{checklistSummary.total}
-                </span>
-                {checklistSummary.missingRequired > 0 && (
-                  <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-warning/15 text-warning-foreground">
-                    {checklistSummary.missingRequired} zorunlu eksik
-                  </span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pb-4">
-              <ChecklistSection
-                title="Kontrol"
-                category="inspection"
-                items={inspectionItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              <ChecklistSection
-                title="Onarım"
-                category="repair"
-                items={repairItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              <ChecklistSection
-                title="Teslim"
-                category="delivery"
-                items={deliveryItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              {activeChecklist.length === 0 && (
-                <p className="text-sm text-muted-foreground/70">
-                  Bu iş emrinde kontrol maddesi kalmadı.
-                </p>
-              )}
-              <DeletedChecklistItems items={deletedChecklist} locked={locked} />
-              {locked ? (
-                <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
-              ) : (
-                <AddChecklistItemForm orderId={order.id} />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
+      {/* Kontrol listesi kapalı başlar — mobilde açıkken ekranın çoğunu
+          kaplıyordu. Başlıktaki ilerleme çubuğu ve kalan madde sayısı açmadan
+          da durumu anlatır; alttaki hatırlatma bölümü açıp buraya kaydırır. */}
+      <OrderChecklist
+        orderId={order.id}
+        state={checklist}
+        locked={locked}
+        open={checklistOpen}
+        onOpenChange={setChecklistOpen}
+        containerRef={checklistRef}
+      />
 
       <div className="rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -511,7 +462,7 @@ export function TechnicianOrderDetail({
             <Button
               size="lg"
               onClick={handleStartWork}
-              disabled={isPending || !!startBlockedMessage}
+              disabled={isPending}
               className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
             >
               <Play className="size-5" />
@@ -548,36 +499,39 @@ export function TechnicianOrderDetail({
             </div>
           )}
         </div>
-        {canStart && startBlockedMessage && (
-          <BlockedMessage message={startBlockedMessage} onReveal={startMissing > 0 ? revealChecklist : undefined} />
+        {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
+        {/* Kontrol maddeleri hiçbir butonu kilitlemez; hatırlatma yalnız listeyi
+            açıp oraya kaydırır. Engel mesajıyla karışmasın diye uyarı değil,
+            nötr tonda. */}
+        {canStart && startReminder && (
+          <ChecklistReminder message={startReminder} onReveal={revealChecklist} />
         )}
-        {canComplete && completeBlockedMessage && (
-          <BlockedMessage
-            message={completeBlockedMessage}
-            onReveal={completeChecklistMissing > 0 ? revealChecklist : undefined}
-          />
+        {canComplete && completeReminder && (
+          <ChecklistReminder message={completeReminder} onReveal={revealChecklist} />
         )}
       </div>
     </div>
   )
 }
 
+/** "Tamamla" engel mesajı — tek kapı kalan iş kalemleri. */
+function BlockedMessage({ message }: { message: string }) {
+  return <p className="text-xs text-warning-foreground text-center">{message}</p>
+}
+
 /**
- * "Tamire Başla / Tamamla" engel mesajı. Engelin sebebi eksik kontrol maddesiyse
- * mesaj tıklanabilir olur ve kapalı kontrol listesini açıp oraya kaydırır;
- * sebep yalnız eksik iş kalemiyse düz metin kalır (açacak bir liste yok).
+ * Kontrol listesi hatırlatması: iş emrini KİLİTLEMEZ, yalnız kapalı listeyi
+ * açıp oraya kaydırır. Zorunluluk kalkınca (BAK-24) tek görevi teknisyeni
+ * listeye davet etmek olduğu için uyarı sarısı değil, nötr ton kullanır.
  */
-function BlockedMessage({ message, onReveal }: { message: string; onReveal?: () => void }) {
-  if (!onReveal) {
-    return <p className="text-xs text-warning-foreground text-center">{message}</p>
-  }
+function ChecklistReminder({ message, onReveal }: { message: string; onReveal: () => void }) {
   return (
     <div className="flex justify-center">
       <Button
         variant="ghost"
         size="sm"
         onClick={onReveal}
-        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-warning-foreground whitespace-normal"
+        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-muted-foreground whitespace-normal"
       >
         <ListChecks className="size-3.5 shrink-0" />
         <span className="min-w-0 text-left">{message} — kontrol listesini aç</span>
@@ -632,226 +586,6 @@ function ComplaintCard({ complaint }: { complaint: string }) {
       <h3 className="text-sm font-semibold text-foreground mb-2">Müşteri Şikayeti</h3>
       <p className="text-sm text-foreground whitespace-pre-wrap">{complaint}</p>
     </div>
-  )
-}
-
-function ChecklistSection({
-  title, category, items, orderId: _orderId, locked,
-}: {
-  title: string
-  category: ChecklistCategoryKey
-  items: OrderData["checklistItems"]
-  orderId: string
-  locked: boolean
-}) {
-  const categoryInfo = (CHECKLIST_CATEGORIES as Record<string, { label: string; color: string }>)[category]
-  const [isPending, startTransition] = useTransition()
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="mb-3">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium", categoryInfo?.color)}>
-          {categoryInfo?.label || title}
-        </span>
-        <span className="text-xs text-muted-foreground/70">
-          {items.filter((i) => i.isCompleted).length}/{items.length}
-        </span>
-      </div>
-      <div className="space-y-1">
-        {items.map((item) => (
-          <form
-            key={item.id}
-            action={() => {
-              startTransition(async () => {
-                await toggleChecklistItemAction(item.id, !item.isCompleted)
-              })
-            }}
-            className="flex items-start gap-2 py-1.5 group"
-          >
-            <button
-              type="submit"
-              disabled={isPending || locked}
-              className="mt-0.5 touch-manipulation"
-            >
-              {item.isCompleted
-                ? <CheckSquare className="size-5 text-success-strong" />
-                : <Square className="size-5 text-muted-foreground/70 group-hover:text-muted-foreground" />
-              }
-            </button>
-            <div className="flex-1 min-w-0">
-              <span className={cn("text-sm", item.isCompleted ? "text-success-strong" : "text-foreground")}>
-                {item.description}
-              </span>
-              {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
-            </div>
-            {/* Şablon maddeleri de silinebilir: atölye kullanmadığı kontrolü bu
-                iş emrinden çıkarabilmeli. Silme yalnız bu iş emrini etkiler,
-                şablon olduğu gibi kalır (bkz. deleteChecklistItemAction).
-                Görünürlük mobilde hover'a bağlı olamaz — dokunmatikte hover
-                yok, buton görünmez ama tıklanabilir kalıyordu. */}
-            {!locked && (
-              <button
-                type="button"
-                aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
-                onClick={() => {
-                  startTransition(async () => {
-                    await deleteChecklistItemAction(item.id)
-                  })
-                }}
-                disabled={isPending}
-                className="shrink-0 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
-            )}
-          </form>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/**
- * Bu iş emrinden çıkarılan maddeler — kapalı başlar, tek dokunuşla geri alınır.
- *
- * Silme soft olduğu için yanlış dokunuş kalıcı değil; bölüm olmasaydı silinen
- * madde teknisyen için tamamen kaybolurdu (şablonda duruyor olması yalnız YENİ
- * iş emirlerini ilgilendirir, bu iş emrine geri getirmez).
- */
-function DeletedChecklistItems({
-  items, locked,
-}: {
-  items: OrderData["checklistItems"]
-  locked: boolean
-}) {
-  const [show, setShow] = useState(false)
-  const [pendingId, setPendingId] = useState<string | null>(null)
-  const [, startTransition] = useTransition()
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="mt-3 border-t border-border pt-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="xs"
-        onClick={() => setShow((v) => !v)}
-        aria-expanded={show}
-        className="px-1.5 text-muted-foreground"
-      >
-        Silinen maddeler ({items.length})
-      </Button>
-      {show && (
-        <ul className="mt-1 space-y-1">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 py-1">
-              <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through">
-                {item.description}
-              </span>
-              {!locked && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  disabled={pendingId === item.id}
-                  aria-label={`"${item.description}" maddesini geri al`}
-                  onClick={() => {
-                    setPendingId(item.id)
-                    startTransition(async () => {
-                      await restoreChecklistItemAction(item.id)
-                      setPendingId(null)
-                    })
-                  }}
-                  className="shrink-0 text-primary"
-                >
-                  {pendingId === item.id
-                    ? <Loader2 className="size-3.5 animate-spin" />
-                    : <Undo2 className="size-3.5" />}
-                  Geri al
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function AddChecklistItemForm({ orderId }: { orderId: string }) {
-  const [show, setShow] = useState(false)
-  const [category, setCategory] = useState<ChecklistCategoryKey>("inspection")
-  const [description, setDescription] = useState("")
-  const [isPending, startTransition] = useTransition()
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
-      >
-        <Plus className="size-4" />
-        Kontrol Maddesi Ekle
-      </button>
-    )
-  }
-
-  return (
-    <form
-      action={() => {
-        const fd = new FormData()
-        fd.set("serviceOrderId", orderId)
-        fd.set("category", category)
-        fd.set("description", description)
-        fd.set("sortOrder", "0")
-        startTransition(async () => {
-          await addChecklistItemAction(fd)
-          setDescription("")
-          setShow(false)
-        })
-      }}
-      className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
-    >
-      <ToggleGroup value={[category]} onValueChange={(v) => { if (v.length) setCategory(v[0] as ChecklistCategoryKey) }}>
-        {(["inspection", "repair", "delivery"] as ChecklistCategoryKey[]).map((cat) => {
-          const info = (CHECKLIST_CATEGORIES as Record<string, { label: string }>)[cat]
-          return (
-            <ToggleGroupItem key={cat} value={cat} className="px-3 py-1.5 text-xs">
-              {info?.label || cat}
-            </ToggleGroupItem>
-          )
-        })}
-      </ToggleGroup>
-      <Input
-        type="text"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Kontrol maddesi açıklaması..."
-        required
-      />
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isPending || !description.trim()}
-          className="touch-manipulation"
-        >
-          Ekle
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => { setShow(false); setDescription("") }}
-          className="touch-manipulation"
-        >
-          İptal
-        </Button>
-      </div>
-    </form>
   )
 }
 

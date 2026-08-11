@@ -22,10 +22,9 @@ const SRC = join(import.meta.dir, "..", "..")
 const INTENTIONALLY_UNFILTERED: Record<string, string> = {
   // Seed silinen maddeyi "var" saymalı, yoksa çıkarılan madde geri doğar.
   "lib/technician/checklist-seed.ts": "seed must see tombstones so removed template items never come back",
-  // Kapı okuması seed kararı için `templateKey`lere muhtaç; eleme `deletedAt`
-  // üzerinden gates'te yapılır. Sil/geri al aksiyonları da silinmiş satırı
-  // bulabilmeli (idempotanlık).
-  "app/(app)/technician/actions.ts": "gate read needs template keys of removed rows; delete/restore resolve tombstones",
+  // Sil/geri al aksiyonları silinmiş satırı bulabilmeli (idempotanlık); yazma
+  // tarafı `ACTIVE_CHECKLIST_ITEM` ile daraltılır.
+  "app/(app)/technician/actions.ts": "delete/restore resolve tombstones; writes still narrow with the filter",
   // Teknisyen paneli silinenleri "Geri al" bölümünde gösterir; ayrım bellekte.
   "app/(app)/technician/orders/[id]/page.tsx": "technician panel renders removed items in the restore section",
 }

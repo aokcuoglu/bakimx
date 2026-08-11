@@ -2,9 +2,9 @@ import { test, expect } from "bun:test"
 import { shouldSeedChecklist } from "./checklist-seed"
 import { CHECKLIST_TEMPLATE, missingTemplateItems, templateSortOrder } from "./checklist-template"
 import {
-  countBlockingChecklist,
-  START_GATE_CATEGORIES,
-  COMPLETE_GATE_CATEGORIES,
+  countRemainingChecklist,
+  START_REMINDER_CATEGORIES,
+  COMPLETE_REMINDER_CATEGORIES,
 } from "./gates"
 
 const assigned = { status: "in_progress" as const, assignedTechnicianId: "tech_1" }
@@ -56,22 +56,20 @@ test("taslak/onay bekleyen atanmış iş emri de seed edilir", () => {
 })
 
 /**
- * Asıl regresyon: boş kontrol listesi "0 engel" ürettiği için kapılar sessizce
- * açılıyordu. Seed sonrası her iki kapının da engellemesi şart — aksi hâlde
- * şablondan bir kategorinin tüm maddeleri silinse kapı yine sessizce açılır.
+ * Kontrol listesi artık kapı değil (BAK-24), ama seed hâlâ önemli: liste boş
+ * kalırsa teknisyene hatırlatılacak madde de kalmaz, iş emri kontrolsüz kapanır.
  */
-test("boş liste kapıları açar — bu yüzden seed kapıdan önce çalışmalı", () => {
-  expect(countBlockingChecklist([], START_GATE_CATEGORIES)).toBe(0)
-  expect(countBlockingChecklist([], COMPLETE_GATE_CATEGORIES)).toBe(0)
+test("boş listede hatırlatılacak madde yoktur", () => {
+  expect(countRemainingChecklist([], START_REMINDER_CATEGORIES)).toBe(0)
+  expect(countRemainingChecklist([], COMPLETE_REMINDER_CATEGORIES)).toBe(0)
 })
 
-test("seed edilmiş liste her iki kapıyı da bloklar", () => {
+test("seed edilmiş liste her iki aşamada da hatırlatma üretir", () => {
   const seeded = CHECKLIST_TEMPLATE.map((t) => ({
     category: t.category,
     isCompleted: false,
-    isRequired: true,
     sortOrder: templateSortOrder(t.key),
   }))
-  expect(countBlockingChecklist(seeded, START_GATE_CATEGORIES)).toBeGreaterThan(0)
-  expect(countBlockingChecklist(seeded, COMPLETE_GATE_CATEGORIES)).toBeGreaterThan(0)
+  expect(countRemainingChecklist(seeded, START_REMINDER_CATEGORIES)).toBeGreaterThan(0)
+  expect(countRemainingChecklist(seeded, COMPLETE_REMINDER_CATEGORIES)).toBeGreaterThan(0)
 })

@@ -58,10 +58,9 @@ export interface SeedCandidateOrder {
  * Şablon maddeleri bu iş emrinde tamamlanmalı mı?
  *
  * Seed uzun süre yalnızca atama anında çalıştı; özellikten ÖNCE atanmış iş
- * emirleri bu yüzden kalıcı olarak boş kaldı ve boş liste kapıyı da açtı
- * (`countBlockingChecklist` var olan kayıtları sayar → 0 madde = 0 engel).
- * Aynı şey şablona yeni madde eklendiğinde de olurdu. Karar burada saf tutulur
- * ki hem okuma yolları hem kapılar aynı cevabı versin.
+ * emirleri bu yüzden kalıcı olarak boş kaldı — liste boşsa teknisyene
+ * hatırlatılacak madde de kalmaz. Aynı şey şablona yeni madde eklendiğinde de
+ * olurdu. Karar burada saf tutulur ki her okuma yolu aynı cevabı versin.
  *
  * `existingTemplateKeys` SİLİNMİŞ maddelerin anahtarlarını da içermeli: çağıran
  * listeyi `ACTIVE_CHECKLIST_ITEM` ile filtreleyip anahtarları oradan toplarsa
@@ -82,9 +81,9 @@ export function shouldSeedChecklist(
  * Eksik şablon maddelerini tamamlar. Dönen `true`, çağıranın kontrol listesini
  * yeniden okuması gerektiğini söyler (elindeki liste artık eksik).
  *
- * Çağrı yerleri bilinçli olarak hem okuma (teknisyen detay sayfası) hem yazma
- * (işe başla / tamamla kapıları) tarafında: kapı tek başına güvenliği sağlar,
- * sayfa ise teknisyene listeyi ilk açılışta gösterir.
+ * Kontrol listesi kapı olmaktan çıktığından (BAK-24) tek çağrı yeri kaldı:
+ * teknisyen detay sayfası. Atama anında da seed edilir; ikisi birlikte listenin
+ * teknisyenin gördüğü her yerde dolu olmasını sağlar.
  */
 export async function ensureChecklistSeeded(
   db: Pick<PrismaClient, "$transaction">,
