@@ -6,6 +6,7 @@ export const RegistrationFieldsSchema = z.object({
   vin: z.string(),
   ownerName: z.string(),
   ownerSurname: z.string(),
+  identityOrTaxNumber: z.string().default(""),
   brand: z.string(),
   model: z.string(),
   vehicleType: z.string(),
@@ -36,6 +37,7 @@ export function toRegistrationResult(
     vin: field(data.vin.toUpperCase()),
     ownerName: field(data.ownerName),
     ownerSurname: field(data.ownerSurname),
+    identityOrTaxNumber: field(data.identityOrTaxNumber),
     brand: field(data.brand),
     model: field(data.model),
     vehicleType: field(data.vehicleType),
@@ -50,4 +52,3 @@ export function toRegistrationResult(
     rawText: rawText.trim(),
   }
 }
-

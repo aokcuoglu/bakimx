@@ -44,6 +44,7 @@ const CONFIDENCE_KEYS = [
   "vin",
   "ownerName",
   "ownerSurname",
+  "identityOrTaxNumber",
   "brand",
   "model",
   "vehicleType",
@@ -69,6 +70,10 @@ const TOOL_INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
     vin: { type: "string", description: "E ŞASE NO (VIN)" },
     ownerName: { type: "string", description: "C.1.2 ADI (araç sahibinin adı)" },
     ownerSurname: { type: "string", description: "C.1.1 SOYADI / TİCARİ ÜNVANI" },
+    identityOrTaxNumber: {
+      type: "string",
+      description: "C.4 T.C. KİMLİK / VERGİ NO (yalnız rakamlar)",
+    },
     brand: { type: "string", description: "D.1 MARKASI, ör. FORD" },
     model: { type: "string", description: "D.3 TİCARİ ADI'ndaki model adı, ör. FOCUS" },
     vehicleType: { type: "string", description: "D.5 CİNSİ, ör. OTOMOBİL (AA SEDAN)" },
@@ -106,6 +111,7 @@ const SYSTEM_PROMPT =
   "olmayan her alan için boş string döndür. TÜM tarihleri GG.AA.YYYY biçiminde (nokta ayraç) ver. " +
   "Silindir hacmini (P.1) yalnızca sayı olarak, motor gücünü (P.2) kW birimiyle yaz. " +
   "Yakıt cinsini (P.3: DİZEL/BENZİN/LPG) rengi (R: MAVİ vb.) ile KARIŞTIRMA. " +
+  "C.4 alanındaki T.C. kimlik/vergi numarasını yalnız rakamlarla yaz. " +
   "Emin olmadığın alanları uncertainFields dizisine ekle. Sonucu yalnızca " +
   `${TOOL_NAME} aracını çağırarak döndür.`
 

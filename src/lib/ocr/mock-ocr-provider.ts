@@ -15,6 +15,7 @@ const MOCK_REGISTRATION_DATA: Omit<RegistrationOcrResult, "provider"> = {
   vin: field("1HGBH41JXMN109186", 0.88),
   ownerName: field("Mehmet", 0.85),
   ownerSurname: field("Yılmaz", 0.87),
+  identityOrTaxNumber: field("11111111111", 0.93),
   brand: field("Toyota", 0.90),
   model: field("Corolla", 0.89),
   vehicleType: field("Binek", 0.82),
