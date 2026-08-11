@@ -86,6 +86,7 @@ export async function POST(request: Request) {
       vin: result.vin,
       ownerName: result.ownerName,
       ownerSurname: result.ownerSurname,
+      identityOrTaxNumber: result.identityOrTaxNumber,
       brand: result.brand,
       model: result.model,
       vehicleType: result.vehicleType,

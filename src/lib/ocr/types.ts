@@ -26,6 +26,7 @@ export interface RegistrationOcrResult {
   vin: OcrFieldConfidence
   ownerName: OcrFieldConfidence
   ownerSurname: OcrFieldConfidence
+  identityOrTaxNumber: OcrFieldConfidence
   brand: OcrFieldConfidence
   model: OcrFieldConfidence
   vehicleType: OcrFieldConfidence
