@@ -24,6 +24,7 @@
     "db:find-dupe-phones": "bunx tsx scripts/find-duplicate-phones.ts",
     "db:merge-customers": "bunx tsx scripts/merge-duplicate-customers.ts",
     "db:backfill-articles": "bunx tsx scripts/backfill-tecdoc-articles.ts",
+    "db:backfill-article-oems": "bunx tsx scripts/backfill-tecdoc-article-oems.ts",
     "db:prod-reset": "bunx tsx scripts/prod-reset.ts",
     "db:studio": "prisma studio",
     "workshop": "bun scripts/workshop-admin.ts",

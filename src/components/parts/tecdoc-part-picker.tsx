@@ -355,7 +355,7 @@ export function TecdocPartPicker({
   const scopeName = inCategory ? stack[stack.length - 1]?.name : null
   const searchPlaceholder = inCategory
     ? `${articles.length} parça içinde ara...`
-    : "Kategori, parça veya marka ara..."
+    : "Kategori, parça, marka veya OEM no ara..."
 
   return (
     <>
@@ -395,7 +395,7 @@ export function TecdocPartPicker({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={searchPlaceholder}
-                  aria-label="Kategori, parça veya marka ara"
+                  aria-label="Kategori, parça, marka veya OEM numarası ara"
                   className="pl-8"
                 />
               </div>

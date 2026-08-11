@@ -404,6 +404,12 @@ export function PartSearchInput({
                     {a.supplierName && <> · {a.supplierName}</>}
                     {a.categoryName && <> · {a.categoryName}</>}
                   </span>
+                  {/* OEM numarasıyla arandığında satırın neden çıktığı görünsün (#312). */}
+                  {a.matchedOems.length > 0 && (
+                    <span className="block text-[11px] text-muted-foreground truncate">
+                      OEM: <span className="font-mono">{a.matchedOems.join(", ")}</span>
+                    </span>
+                  )}
                 </span>
                 {onShowDetail && (
                   <button

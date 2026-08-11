@@ -9,16 +9,20 @@ import type { ArticleSummary } from "@/lib/tecdoc/types"
  *
  * Satır bir div: seçim butonu ile ⓘ butonu KARDEŞ olmalı (iç içe buton geçersiz
  * HTML). `context` verilirse üçüncü satırda küçük bir bağlam etiketi çıkar
- * (aramada parçanın hangi kategoriden geldiğini gösterir).
+ * (aramada parçanın hangi kategoriden geldiğini gösterir). `matchedOems` doluysa
+ * satır neden çıktığı görünsün diye eşleşen OEM numarası da yazılır (#312).
  */
 export function TecdocArticleRow({
   article,
   context,
+  matchedOems,
   onSelect,
   onShowDetail,
 }: {
   article: ArticleSummary
   context?: string | null
+  /** Sorguyla eşleşen OEM numaraları (aramada gelir; drill-down listesinde boş). */
+  matchedOems?: string[]
   onSelect: () => void
   onShowDetail?: (a: ArticleSummary) => void
 }) {
@@ -48,6 +52,11 @@ export function TecdocArticleRow({
             <span className="font-mono">{article.articleNo}</span>
             {article.supplierName && <> · {article.supplierName}</>}
           </span>
+          {matchedOems && matchedOems.length > 0 && (
+            <span className="block text-[11px] text-muted-foreground truncate">
+              OEM: <span className="font-mono">{matchedOems.join(", ")}</span>
+            </span>
+          )}
           {context && (
             <span className="block text-[11px] text-muted-foreground/70 truncate">{context}</span>
           )}
