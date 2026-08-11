@@ -29,7 +29,8 @@ import { QuoteItemsEditor } from "@/components/quotes/quote-items-editor"
 import { cn } from "@/lib/utils"
 import { createQuoteAction } from "@/app/(app)/quotes/actions"
 import { formatTRY } from "@/lib/format"
-import { liraToKurus, percentToBps } from "@/lib/money"
+import { bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
+import { STANDARD_TAX_BPS } from "@/lib/orders/price-tax-mode"
 import { calculateOrderTotals } from "@/lib/totals"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import { useForm } from "react-hook-form"
@@ -417,6 +418,15 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                             vehicle={selectedVehicle}
                             laborCatalog={laborCatalog}
                             disabled={pending}
+                            // #311 — kalemler KDV dahil girilebilsin diye formdaki
+                            // KDV oranı düzenleyiciye taşınır; oran sıfırlanmışsa
+                            // düzenleyici tek tıkla standart %20'yi geri yazar.
+                            taxRateBps={percentToBps(Number(taxRate) || 0)}
+                            onApplyStandardTax={() =>
+                              form.setValue("taxRate", String(bpsToPercent(STANDARD_TAX_BPS)), {
+                                shouldDirty: true,
+                              })
+                            }
                           />
                         </div>
                       </FormControl>

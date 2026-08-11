@@ -187,6 +187,8 @@ export function PartsLaborCard({
   onLoading,
   loading,
   laborCatalog,
+  taxRateBps,
+  onApplyStandardTax,
 }: {
   orderId: string
   status: string
@@ -196,6 +198,10 @@ export function PartsLaborCard({
   onLoading: (b: boolean) => void
   loading: boolean
   laborCatalog: LaborCatalogRow[]
+  /** İş emrinin KDV oranı (bps) — kalem tutarlarının KDV dahil gösterimi için (#311). */
+  taxRateBps?: number | null
+  /** KDV oranı tanımsızken standart %20'yi iş emrine uygular. */
+  onApplyStandardTax?: () => void
 }) {
   return (
     <Card>
@@ -218,6 +224,8 @@ export function PartsLaborCard({
           onLoading={onLoading}
           loading={loading}
           laborCatalog={laborCatalog}
+          taxRateBps={taxRateBps}
+          onApplyStandardTax={onApplyStandardTax}
         />
       </CardContent>
     </Card>

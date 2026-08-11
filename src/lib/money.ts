@@ -147,6 +147,25 @@ export function applyRateBps(amountKurus: number, bps: number): number {
   return mulDivRound(amountKurus, Math.max(0, Math.trunc(bps)), 10000)
 }
 
+/**
+ * Gross (KDV DAHİL) amount for a net base at a given rate in bps.
+ * grossFromNetKurus(10000, 2000) -> 12000 (₺100 + %20 KDV = ₺120).
+ */
+export function grossFromNetKurus(netKurus: number, bps: number): number {
+  return addKurus(netKurus, applyTaxBps(netKurus, bps))
+}
+
+/**
+ * Net (KDV HARİÇ) base behind a gross amount at a given rate in bps — the
+ * inverse of `grossFromNetKurus`, so `grossFromNetKurus(netFromGrossKurus(g)) === g`
+ * for every non-negative kuruş amount (see money.test.ts).
+ * netFromGrossKurus(12000, 2000) -> 10000 (₺120 KDV dahil = ₺100 + KDV).
+ */
+export function netFromGrossKurus(grossKurus: number, bps: number): number {
+  const rate = Math.max(0, Math.trunc(bps))
+  return mulDivRound(grossKurus, 10000, 10000 + rate)
+}
+
 // ---------------------------------------------------------------------------
 // bps helpers
 // ---------------------------------------------------------------------------

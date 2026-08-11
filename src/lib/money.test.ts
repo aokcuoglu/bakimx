@@ -14,6 +14,8 @@ import {
   applyRateBps,
   percentToBps,
   bpsToPercent,
+  grossFromNetKurus,
+  netFromGrossKurus,
 } from "@/lib/money"
 
 // ---------------------------------------------------------------------------
@@ -159,6 +161,32 @@ test("applyRateBps applies a customer discount rate", () => {
   expect(applyRateBps(25000, 1000)).toBe(2500)
   // %5,5 of ₺123,45 = 679.0... -> ₺6,79
   expect(applyRateBps(12345, 550)).toBe(679)
+})
+
+// ---------------------------------------------------------------------------
+// gross <-> net (KDV dahil / hariç)
+// ---------------------------------------------------------------------------
+
+test("grossFromNetKurus adds the tax on top of a net base", () => {
+  expect(grossFromNetKurus(10000, 2000)).toBe(12000) // ₺100 + %20 = ₺120
+  expect(grossFromNetKurus(350000, 2000)).toBe(420000) // ₺3.500 + %20 = ₺4.200
+  expect(grossFromNetKurus(10000, 0)).toBe(10000) // rate 0 is a no-op
+})
+
+test("netFromGrossKurus strips the tax out of a gross amount", () => {
+  expect(netFromGrossKurus(12000, 2000)).toBe(10000) // ₺120 KDV dahil = ₺100
+  expect(netFromGrossKurus(350000, 2000)).toBe(291667) // ₺3.500 KDV dahil = ₺2.916,67
+  expect(netFromGrossKurus(11000, 1000)).toBe(10000) // %10
+  expect(netFromGrossKurus(10000, 0)).toBe(10000)
+})
+
+test("gross/net round-trips exactly on the ₺0,10 grid at %20", () => {
+  // Full-lira and 10-kuruş prices — how a workshop actually types them — come
+  // back unchanged. Odd sub-lira gross amounts can drift 1 kuruş because not
+  // every gross value is reachable from an integer net base.
+  for (let gross = 0; gross <= 500_00; gross += 10) {
+    expect(grossFromNetKurus(netFromGrossKurus(gross, 2000), 2000)).toBe(gross)
+  }
 })
 
 // ---------------------------------------------------------------------------
