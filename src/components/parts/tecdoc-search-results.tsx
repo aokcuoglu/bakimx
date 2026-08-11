@@ -122,6 +122,7 @@ export function TecdocSearchResults({
               key={a.tecdocArticleId}
               article={a}
               context={a.categoryName || null}
+              matchedOems={a.matchedOems}
               onSelect={() => onArticleSelect(a)}
               onShowDetail={onShowDetail}
             />
@@ -136,8 +137,9 @@ export function TecdocSearchResults({
             &ldquo;{query}&rdquo; için sonuç bulunamadı.
           </p>
           <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
-            Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır. Aradığınız parçayı
-            kategorilerden ilerleyerek getirebilirsiniz.
+            Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır; OEM numarası ise
+            detayı bir kez açılmış parçalarda aranır. Aradığınız parçayı kategorilerden
+            ilerleyerek getirebilirsiniz.
           </p>
         </div>
       )}

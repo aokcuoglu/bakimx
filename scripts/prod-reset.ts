@@ -93,6 +93,7 @@ export const KEEP_TABLES = [
   "vehicle_type_details",
   "tecdoc_cache",
   "tecdoc_articles",
+  "tecdoc_article_oems",
   "vin_lookups",
   "DemoRequest",
   "SupportRequest",

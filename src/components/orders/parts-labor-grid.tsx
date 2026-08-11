@@ -859,7 +859,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         supplierId={filter.supplierId ?? null}
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
-        placeholder="Parça no, adı veya marka ara…"
+        placeholder="Parça no, adı, marka veya OEM ara…"
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
         onSelectStockPart={(p) => setStockConfirm(p)}

@@ -1658,6 +1658,31 @@ model TecdocArticle {
   @@map("tecdoc_articles")
 }
 
+/// Bir parçanın OEM (araç üreticisi) referans numaraları — parça detayında zaten
+/// gösteriliyordu, arama yapılabilsin diye ayrıca satır olarak saklanır (#312).
+/// Global (NOT tenant-scoped) — `tecdoc_articles` gibi katalog referans verisi.
+/// Kaynak: `article-detail` yanıtı; detay bir kez faturalanıp kalıcı cache'lendiği
+/// için bu tablo ek RapidAPI maliyeti getirmez (bkz. getArticleDetail).
+/// Kapsam best-effort: yalnız detayı bir kez getirilmiş parçaların numaraları
+/// aranabilir; eski cache satırları `db:backfill-article-oems` ile doldurulur.
+model TecdocArticleOem {
+  id              BigInt   @id @default(autoincrement())
+  tecdocArticleId Int      @map("tecdoc_article_id")
+  /// OEM markası ("FORD") — eşleşen numaranın kaynağı olarak gösterilir.
+  brand           String
+  /// Görüntülenen hâli ("KK2Q-6C301-CA").
+  oemNo           String   @map("oem_no")
+  /// `normalizePartSearchTerm` ile üretilmiş ayraç/harf duyarsız arama anahtarı
+  /// ("kk2q6c301ca") — sorgu tarafı da aynı anahtarı üretir (bkz. lib/tr-search).
+  searchKey       String   @map("search_key")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([tecdocArticleId, oemNo])
+  @@index([tecdocArticleId])
+  @@index([searchKey])
+  @@map("tecdoc_article_oems")
+}
+
 enum VinLookupStatus {
   found
   not_found

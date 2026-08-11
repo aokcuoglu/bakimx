@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { FOLD_FROM, FOLD_TO, normalizePartSearchTerm } from "@/lib/tr-search"
 import { countRapidApiCallsThisMonth, rapidApiMonthlyCap } from "@/lib/rapidapi-quota"
 import { getTecdocProvider } from "./provider"
+import { buildArticleOemRows } from "./oems"
 import {
   dedupeBrands,
   normalizeArticleDetail,
@@ -19,6 +20,7 @@ import {
   type ArticleCompatibility,
   type ArticleCrossRef,
   type ArticleDetail,
+  type ArticleOem,
   type ArticleSummary,
   type CategoryNode,
   type PartBrandSummary,
@@ -186,7 +188,36 @@ export async function getArticleDetail(articleId: number): Promise<ArticleDetail
     provider.name,
     () => provider.getArticleDetail(articleId)
   )
-  return normalizeArticleDetail(raw, articleId)
+  const detail = normalizeArticleDetail(raw, articleId)
+
+  // OEM numaralarını aranabilir satırlara indir (#312). Cache isabetinde de
+  // çalışır — tablo detay ucundan SONRA geldiği için eski cache'ler ancak böyle
+  // (ya da `db:backfill-article-oems` ile) dolar. Mock veri persist EDİLMEZ:
+  // sağlayıcı hangi articleId istenirse istensin aynı örneği döndürüyor, gerçek
+  // parçaların numaralarını gölgelerdi (bkz. persistArticles'taki aynı kural).
+  if (provider.name !== "mock" && detail.oems.length > 0) {
+    try {
+      await persistArticleOems(articleId, detail.oems)
+    } catch (err) {
+      // Arama indeksi eksik kalabilir; parça detayı yine açılmalı.
+      console.error(`[tecdoc] OEM persist failed (article=${articleId})`, err)
+    }
+  }
+
+  return detail
+}
+
+/**
+ * Parçanın OEM numaralarını `tecdoc_article_oems`'e yazar — idempotent
+ * (`skipDuplicates`), tek statement. `articleId` çağıranın istediği kimliktir:
+ * `tecdoc_articles.tecdoc_article_id` ile aynı değer olmalı ki arama JOIN'i tutsun
+ * (sağlayıcı gövdede kimliği boş bırakabiliyor — bkz. normalizeArticleDetail).
+ */
+export async function persistArticleOems(articleId: number, oems: ArticleOem[]): Promise<number> {
+  const rows = buildArticleOemRows(articleId, oems)
+  if (rows.length === 0) return 0
+  const res = await prisma.tecdocArticleOem.createMany({ data: rows, skipDuplicates: true })
+  return res.count
 }
 
 /** Muadil / çapraz referanslar — ayrı (tembel) çağrı, kullanıcı bölümü açınca. */
@@ -271,8 +302,31 @@ export async function getCategoryBrands(vehicleId: number, categoryId: number): 
   return dedupeBrands(articles.map((a) => ({ supplierId: a.supplierId, supplierName: a.supplierName })))
 }
 
-/** Arama sonucu — parça özeti + (satırı doldurmak için) kategori kimliği/adı. */
-export type ArticleSearchResult = ArticleSummary & { categoryId: number; categoryName: string }
+/**
+ * Arama sonucu — parça özeti + (satırı doldurmak için) kategori kimliği/adı +
+ * sorguyla eşleşen OEM numaraları (#312). `matchedOems` yalnız kullanıcı bir OEM
+ * numarası yazdığında dolar; satırda "neden bu parça çıktı" cevabını verir.
+ */
+export type ArticleSearchResult = ArticleSummary & {
+  categoryId: number
+  categoryName: string
+  matchedOems: string[]
+}
+
+/** Bir parça için satırda gösterilecek en fazla eşleşen OEM numarası. */
+const MATCHED_OEM_LIMIT = 2
+
+/**
+ * Kolonu JS'teki `normalizePartSearchTerm` ile AYNI anahtara indirger (Prisma
+ * where'i kolon üzerinde fonksiyon çağıramaz → yalnız $queryRaw içinde kullanılır).
+ * Katlama tablosu iki uçta ortak (FOLD_FROM/FOLD_TO).
+ */
+const fold = (col: string) =>
+  Prisma.sql`regexp_replace(translate(lower(${Prisma.raw(col)}), ${FOLD_FROM}, ${FOLD_TO}), '[^a-z0-9]', '', 'g')`
+
+/** OEM satırı bu terimle eşleşiyor mu — numara (yazarken katlanmış) ya da marka. */
+const oemTermMatch = (pattern: string) =>
+  Prisma.sql`(o.search_key LIKE ${pattern} OR ${fold("o.brand")} LIKE ${pattern})`
 
 /**
  * Süreç-içi memo: kategori ağacı değişmeyen referans veridir (cachedFetch satırı
@@ -325,11 +379,13 @@ async function getCachedCategoryNames(vehicleId: number): Promise<Map<number, st
 }
 
 /**
- * Bu araç için cache'lenmiş parçalarda parça NUMARASI, ADI, MARKASI (supplier) veya
- * KATEGORİ ADI ile arama — SADECE DB okur (provider fetch YOK, kotasız).
- * Sağlayıcıda numara-arama ucu olmadığı için best-effort: yalnız daha önce göz
- * atılmış (persist edilmiş) kategorilerdeki parçaları bulur. Kategori adı cache'li
- * ağaçtan çözülür (bkz. getCachedCategoryNames).
+ * Bu araç için cache'lenmiş parçalarda parça NUMARASI, ADI, MARKASI (supplier),
+ * KATEGORİ ADI veya OEM NUMARASI ile arama — SADECE DB okur (provider fetch YOK,
+ * kotasız). Sağlayıcıda numara-arama ucu olmadığı için best-effort: yalnız daha
+ * önce göz atılmış (persist edilmiş) kategorilerdeki parçaları bulur. Kategori adı
+ * cache'li ağaçtan çözülür (bkz. getCachedCategoryNames); OEM numaraları
+ * `tecdoc_article_oems`'ten gelir (yalnız detayı bir kez getirilmiş parçalar —
+ * bkz. getArticleDetail / db:backfill-article-oems).
  */
 export async function searchVehicleArticles(
   vehicleId: number,
@@ -357,10 +413,17 @@ export async function searchVehicleArticles(
   // LIMIT'li kaldığı için maliyet düşük.
   //
   // Terim başına AND, alan başına OR: boşlukla ayrılan her terim numara/ad/MARKA/
-  // KATEGORİ alanlarından herhangi birinde eşleşmeli. Böylece "marka" yazınca da
+  // KATEGORİ/OEM alanlarından herhangi birinde eşleşmeli. Böylece "marka" yazınca da
   // ("bbr"), marka+ad birlikte yazınca da ("bbr kabin filtre") süzülür. Tek terim
   // durumunda bu, eski tek-parça eşleşmesinin üst kümesidir (terim, tüm sorgunun
   // normalize hâlinin alt-dizesi) → daralma/regresyon yok.
+  //
+  // OEM dalı ayrı tabloya EXISTS ile bağlanır: bir parçanın onlarca numarası
+  // olabildiği için JOIN satırları çoğaltırdı. `search_key` yazarken katlandığı
+  // için numarada fold'a gerek yok — "KK2Q 6C301 CA" da "kk2q-6c301-ca" da aynı
+  // "kk2q6c301ca" anahtarına iner (bkz. buildArticleOemRows). OEM MARKASI da
+  // eşleşir: detay ekranındaki çip "FORD KK2Q-6C301-CA" yazıyor, kullanıcı çoğu
+  // zaman tamamını kopyalıyor — marka terimi eşleşmeseydi sonuç boş dönerdi.
   const terms = q.length >= 2 ? q.split(/\s+/).map(normalizePartSearchTerm).filter(Boolean) : []
   const conditions: Prisma.Sql[] = [Prisma.sql`vehicle_type_id = ${vehicleId}`]
   if (supplierId != null) conditions.push(Prisma.sql`supplier_id = ${supplierId}`)
@@ -373,14 +436,16 @@ export async function searchVehicleArticles(
   const foldedCategories = categoryNames
     ? [...categoryNames].map(([id, name]) => [id, normalizePartSearchTerm(name)] as const)
     : []
-  const fold = (col: string) =>
-    Prisma.sql`regexp_replace(translate(lower(${Prisma.raw(col)}), ${FOLD_FROM}, ${FOLD_TO}), '[^a-z0-9]', '', 'g')`
   for (const term of terms) {
     const pattern = `%${term}%` // term zaten harf/rakama indirgendi → LIKE joker'i (% _) içermez
     const branches: Prisma.Sql[] = [
       Prisma.sql`${fold("article_no")} LIKE ${pattern}`,
       Prisma.sql`${fold("product_name")} LIKE ${pattern}`,
       Prisma.sql`${fold("supplier_name")} LIKE ${pattern}`,
+      Prisma.sql`EXISTS (
+        SELECT 1 FROM tecdoc_article_oems o
+        WHERE o.tecdoc_article_id = tecdoc_articles.tecdoc_article_id AND ${oemTermMatch(pattern)}
+      )`,
     ]
     const catIds = foldedCategories.filter(([, name]) => name.includes(term)).map(([id]) => id)
     if (catIds.length > 0) branches.push(Prisma.sql`category_id IN (${Prisma.join(catIds)})`)
@@ -421,6 +486,7 @@ export async function searchVehicleArticles(
   // kalır ama parça sonucu yine döner.
   categoryNames ??= await getCachedCategoryNames(vehicleId)
   const nameById = categoryNames
+  const oemsByArticle = await findMatchedOems(rows.map((r) => r.tecdocArticleId), terms)
   return rows.map((r) => ({
     tecdocArticleId: r.tecdocArticleId,
     articleNo: r.articleNo,
@@ -430,7 +496,32 @@ export async function searchVehicleArticles(
     imageUrl: r.imageUrl,
     categoryId: r.categoryId,
     categoryName: nameById.get(r.categoryId) ?? "",
+    matchedOems: oemsByArticle.get(r.tecdocArticleId) ?? [],
   }))
+}
+
+/**
+ * Dönen parçaların sorguyla eşleşen OEM numaraları (parça başına en fazla
+ * MATCHED_OEM_LIMIT). Ayrı sorgu: ana sorguda JOIN etmek DISTINCT ON'lu satırları
+ * çoğaltırdı. Sonuç kümesi zaten LIMIT'li olduğu için maliyeti düşük; hiçbir terim
+ * OEM'e uymuyorsa harita boş döner ve satırda hiçbir şey gösterilmez.
+ */
+async function findMatchedOems(articleIds: number[], terms: string[]): Promise<Map<number, string[]>> {
+  const byArticle = new Map<number, string[]>()
+  if (articleIds.length === 0 || terms.length === 0) return byArticle
+  const rows = await prisma.$queryRaw<Array<{ tecdocArticleId: number; oemNo: string }>>(Prisma.sql`
+    SELECT o.tecdoc_article_id AS "tecdocArticleId", o.oem_no AS "oemNo"
+    FROM tecdoc_article_oems o
+    WHERE o.tecdoc_article_id IN (${Prisma.join(articleIds)})
+      AND (${Prisma.join(terms.map((t) => oemTermMatch(`%${t}%`)), " OR ")})
+    ORDER BY o.oem_no ASC
+  `)
+  for (const r of rows) {
+    const list = byArticle.get(r.tecdocArticleId)
+    if (!list) byArticle.set(r.tecdocArticleId, [r.oemNo])
+    else if (list.length < MATCHED_OEM_LIMIT) list.push(r.oemNo)
+  }
+  return byArticle
 }
 
 /**

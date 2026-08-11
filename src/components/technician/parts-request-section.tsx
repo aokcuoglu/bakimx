@@ -218,7 +218,7 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
           value={query}
           sku={null}
           vehicleTypeId={vehicle.catalogVehicleTypeId}
-          placeholder="Parça no, adı veya marka ara…"
+          placeholder="Parça no, adı, marka veya OEM ara…"
           onNameChange={setQuery}
           onSelectArticle={(a) => pick({ kind: "catalog", article: a })}
           onSelectStockPart={(p) => pick({ kind: "stock", part: p })}
@@ -299,6 +299,7 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
                 imageUrl: null,
                 categoryId: sel.categoryId,
                 categoryName: sel.categoryName,
+                matchedOems: [],
               },
             })
             setTecdocOpen(false)
@@ -306,7 +307,7 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
           onShowDetail={(a) => {
             // Picker satırı kategori taşımaz (ArticleSummary); seçilirse kategori
             // boş kalır — talepte kategori zaten gösterilmiyor.
-            const article: ArticleSearchResult = { ...a, categoryId: 0, categoryName: "" }
+            const article: ArticleSearchResult = { ...a, categoryId: 0, categoryName: "", matchedOems: [] }
             setDetail({
               target: detailTarget(article, vehicle),
               onSelect: () => { pick({ kind: "catalog", article }); setTecdocOpen(false) },
