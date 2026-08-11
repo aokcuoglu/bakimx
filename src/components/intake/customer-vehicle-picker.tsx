@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +12,9 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info, Barcode } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Loader2, Car, User, Plus, X, UserCog, ScanLine, Info } from "lucide-react"
 import { InlineCreateModal, type InlineCreateResult } from "@/components/intake/inline-create-modal"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import { PlateScanner } from "@/components/intake/plate-scanner"
@@ -24,6 +26,7 @@ import { isValidVin, normalizeVin } from "@/lib/vin/types"
 import { searchQueryFor, visibleResultsFor, type PickerSearchMode } from "@/lib/vin/search"
 
 type CustVehicle = { id: string; plate: string; brand: string; model: string }
+type VehicleResult = Extract<UnifiedResult, { kind: "vehicle" }>
 type Mode = PickerSearchMode // "plate" | "customer" | "vin"
 type Selected =
   | { kind: "vehicle"; customerId: string; vehicleId: string; label: string; sublabel: string }
@@ -31,14 +34,24 @@ type Selected =
   | null
 
 const SEARCH_ENDPOINT = "/api/search/customer-vehicle"
+const RECENT_ENDPOINT = "/api/vehicles/recent"
+
+// Etiketler görünür metnin kendisidir; `aria-label` yalnızca onu genişletir
+// (görünen metni içermeyen bir erişilebilir ad WCAG 2.5.3'e takılır).
+const SEARCH_MODES: { value: Mode; label: string }[] = [
+  { value: "plate", label: "Plaka" },
+  { value: "vin", label: "Şase (VIN)" },
+  { value: "customer", label: "Müşteri" },
+]
 
 /**
  * Birleşik müşteri+araç seçici. Varsayılan modda tek kutu hem plakayı hem
  * müşteriyi arar ve ikisini tek listede gösterir (#152); araç seçilirse doğrudan,
- * müşteri seçilirse o müşterinin araç listesi üzerinden devam edilir. VIN modu
- * (barkod ikonu) ve müşteri modu (kişi ikonu — yeni müşteri oluşturma yolu)
- * ayrı toggle olarak kalır. Seçimi `onChange` ile dışarı iter; `value` yalnızca
- * dış reset'i yansıtır (id'lerden etiketli seçim kurmaz — Faz 3'e ertelendi).
+ * müşteri seçilirse o müşterinin araç listesi üzerinden devam edilir. Şase (VIN)
+ * ve müşteri modları etiketli bir mod anahtarıyla seçilir — eskiden bunlar
+ * yazısız ikon düğmeleriydi ve ne yaptıkları ekrandan anlaşılmıyordu (#309).
+ * Seçimi `onChange` ile dışarı iter; `value` yalnızca dış reset'i yansıtır
+ * (id'lerden etiketli seçim kurmaz — Faz 3'e ertelendi).
  */
 export function CustomerVehiclePicker({
   value,
@@ -59,6 +72,7 @@ export function CustomerVehiclePicker({
   const [scanner, setScanner] = useState<"plate" | "vin" | null>(null)
   const [comboOpen, setComboOpen] = useState(false)
   const [modalSeed, setModalSeed] = useState<{ plate?: string; vin?: string }>({})
+  const [recent, setRecent] = useState<VehicleResult[]>([])
 
   const fixedCustomer = useMemo(
     () => (selected?.kind === "customer" ? { id: selected.customerId, label: selected.label } : undefined),
@@ -119,6 +133,29 @@ export function CustomerVehiclePicker({
 
   const modeResults = visibleResultsFor(mode, results)
 
+  // "Son araçlar" kısayolu (#309): kayıtlı bir aracı seçmek için önce doğru
+  // plakayı hatırlayıp yazmak gerekiyordu — boş kutunun altında hiçbir şey yoktu.
+  // Yalnızca kutu boş ve seçim yokken görünür; müşteri modunun kendi akışı var.
+  const showRecent = !selected && !query.trim() && mode !== "customer"
+  const recentRequested = useRef(false)
+
+  useEffect(() => {
+    if (!showRecent || recentRequested.current) return
+    recentRequested.current = true
+    let active = true
+    fetch(RECENT_ENDPOINT)
+      .then((r) => r.json())
+      .then((d: unknown) => {
+        if (!active) return
+        const list = Array.isArray((d as { results?: unknown })?.results)
+          ? (d as { results: UnifiedResult[] }).results
+          : []
+        setRecent(list.filter((r): r is VehicleResult => r.kind === "vehicle"))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [showRecent])
+
   function switchMode(m: Mode) { setMode(m); setQuery(""); setResults([]) }
 
   function openCreate(seed: { plate?: string; vin?: string }) { setModalSeed(seed); setModalOpen(true) }
@@ -144,7 +181,7 @@ export function CustomerVehiclePicker({
     setComboOpen(true)
   }
 
-  function pickVehicle(r: Extract<UnifiedResult, { kind: "vehicle" }>) {
+  function pickVehicle(r: VehicleResult) {
     setSelected({ kind: "vehicle", customerId: r.customerId, vehicleId: r.vehicleId, label: r.label, sublabel: r.sublabel })
     onChange({ customerId: r.customerId, vehicleId: r.vehicleId })
     setQuery(""); setResults([])
@@ -256,11 +293,13 @@ export function CustomerVehiclePicker({
   }
 
   // ——— Arama (mod-geçişli) ———
-  // Plaka modu → araç Combobox'ı (yalnızca vehicle sonuçları). Müşteri modu → CustomerSearchOrCreate.
-  // Sağdaki kişi ikonu modu değiştirir. Mevcut effect/`results`/`loading` yalnızca plaka modunda kullanılır.
+  // Plaka modu → araç Combobox'ı (araç + müşteri sonuçları). Müşteri modu → CustomerSearchOrCreate.
+  // Mod, kutunun üstündeki etiketli anahtarla değişir. Mevcut effect/`results`/`loading`
+  // yalnızca plaka ve şase modlarında kullanılır.
   return (
     <div className="space-y-2">
-      {/* Belirgin başlangıç: ruhsattan yeni müşteri & araç oluştur (OCR ile ön-doldur). */}
+      {/* Yeni araç girişi: tek düğme, iki yol. Eskiden yalnızca "Ruhsat tara"
+          yazıyordu; elle giriş yapılabildiği ekrandan anlaşılmıyordu (#309). */}
       <Button
         type="button"
         variant="outline"
@@ -268,19 +307,41 @@ export function CustomerVehiclePicker({
         className="h-auto w-full justify-start gap-3 whitespace-normal border-2 border-dashed border-primary/30 bg-primary/5 p-3 text-left hover:border-primary hover:bg-primary/10"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <ScanLine className="size-5" />
+          <Plus className="size-5" />
         </span>
         <span className="min-w-0">
-          <span className="block text-sm font-semibold text-foreground">Ruhsat tara — yeni müşteri & araç</span>
-          <span className="block text-xs text-muted-foreground">Ruhsatı okutun, alanlar otomatik dolsun.</span>
+          <span className="block text-sm font-semibold text-foreground">Yeni müşteri &amp; araç ekle</span>
+          <span className="block text-xs text-muted-foreground">Ruhsatı tarayın, alanlar otomatik dolsun — ya da bilgileri elle girin.</span>
         </span>
       </Button>
 
       <div className="relative flex items-center gap-2 py-0.5 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" /> veya plaka/müşteri ile ara <span className="h-px flex-1 bg-border" />
+        <span className="h-px flex-1 bg-border" /> veya kayıtlı araçlardan seçin <span className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="flex min-w-0 flex-col items-stretch gap-2 sm:flex-row">
+      {/* Etiketli mod anahtarı: hangi alanla arandığı yazıyla görünür. */}
+      <ToggleGroup
+        variant="outline"
+        className="w-full"
+        aria-label="Arama alanı"
+        value={[mode]}
+        onValueChange={(v: string[]) => { if (v.length) switchMode(v[0] as Mode) }}
+      >
+        {SEARCH_MODES.map((m) => (
+          <ToggleGroupItem
+            key={m.value}
+            value={m.value}
+            aria-label={`${m.label} ile ara`}
+            // h-11/md:h-9: mobil dokunma alanı kuralı (docs/ui-control-sizing.md);
+            // Toggle'ın kendi ölçüleri masaüstü yoğunluğuna göre.
+            className="h-11 flex-1 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary md:h-9"
+          >
+            {m.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+
+      <div className="flex min-w-0 items-stretch gap-2">
         <div className="min-w-0 flex-1">
           {mode === "plate" || mode === "vin" ? (
             <Combobox
@@ -338,7 +399,7 @@ export function CustomerVehiclePicker({
                   ) : query.trim().length >= 1 ? (
                     <div className="flex w-full flex-wrap items-center gap-2 p-2">
                       <span className="text-xs text-muted-foreground">«{query.trim()}» yok —</span>
-                      <Button type="button" size="sm" onClick={() => openCreate({ plate: query.trim() })}><Plus className="size-4 mr-1" /> Oluştur</Button>
+                      <Button type="button" size="sm" onClick={() => openCreate({ plate: query.trim() })}><Plus className="size-4 mr-1" /> Yeni araç oluştur</Button>
                     </div>
                   ) : (
                     <span className="py-2 text-sm text-muted-foreground">Plaka veya müşteri adı yazın</span>
@@ -360,47 +421,49 @@ export function CustomerVehiclePicker({
             <CustomerSearchOrCreate onSelected={enterCustomer} />
           )}
         </div>
-        <div className={`grid gap-2 sm:contents ${mode === "customer" ? "grid-cols-2" : "grid-cols-3"}`}>
-          {/* Kamerayla tara — plaka modunda plaka, VIN modunda camdaki şase (#188).
-              Müşteri modunda taranacak bir şey yok. */}
-          {mode !== "customer" && (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-11 md:size-9"
-            aria-label={mode === "vin" ? "Camdaki şaseyi kamerayla tara" : "Plakayı kamerayla tara"}
-            onClick={() => setScanner(mode === "vin" ? "vin" : "plate")}
-          >
-            <ScanLine className="size-4" />
-          </Button>
-          )}
-          {/* Mod toggle: VIN ikonu — aktifse VIN modu (plaka toggle) */}
-          <Button
-          type="button"
-          variant={mode === "vin" ? "default" : "outline"}
-          size="icon"
-          className="size-11 md:size-9"
-          aria-label={mode === "vin" ? "Plaka aramaya dön" : "VIN ile ara"}
-          aria-pressed={mode === "vin"}
-          onClick={() => switchMode(mode === "vin" ? "plate" : "vin")}
-        >
-          <Barcode className="size-4" />
-          </Button>
-          {/* Mod toggle: kişi ikonu — aktifse müşteri modu */}
-          <Button
-          type="button"
-          variant={mode === "customer" ? "default" : "outline"}
-          size="icon"
-          className="size-11 md:size-9"
-          aria-label={mode === "customer" ? "Plaka aramaya dön" : "Müşteri ara"}
-          aria-pressed={mode === "customer"}
-          onClick={() => switchMode(mode === "customer" ? "plate" : "customer")}
-        >
-          <User className="size-4" />
-          </Button>
-        </div>
+        {/* Kamerayla tara — plaka modunda plaka, şase modunda camdaki VIN (#188).
+            Müşteri modunda taranacak bir şey yok. İpucu metni ne yaptığını söyler. */}
+        {mode !== "customer" && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={mode === "vin" ? "Camdaki şaseyi kamerayla tara" : "Plakayı kamerayla tara"}
+                  onClick={() => setScanner(mode === "vin" ? "vin" : "plate")}
+                />
+              }
+            >
+              <ScanLine className="size-4" />
+            </TooltipTrigger>
+            <TooltipContent>{mode === "vin" ? "Camdaki şaseyi kamerayla tara" : "Plakayı kamerayla tara"}</TooltipContent>
+          </Tooltip>
+        )}
       </div>
+
+      {/* Yazmadan seçim: son işlem gören / son eklenen araçlar. */}
+      {showRecent && recent.length > 0 && (
+        <div className="space-y-1 pt-1">
+          <p className="text-xs font-medium text-muted-foreground">Son araçlar</p>
+          {recent.map((r) => (
+            <Button
+              key={r.vehicleId}
+              type="button"
+              variant="outline"
+              className="h-auto w-full justify-start gap-2 whitespace-normal py-2 text-left"
+              onClick={() => pickVehicle(r)}
+            >
+              <Car className="size-4 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground">{r.label}</span>
+                <span className="block text-xs text-muted-foreground">{r.sublabel}</span>
+              </span>
+            </Button>
+          ))}
+        </div>
+      )}
 
       <InlineCreateModal
         open={modalOpen}
