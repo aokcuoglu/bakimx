@@ -31,6 +31,7 @@ const PROTECTED_API_PREFIX = [
   "/api/smart-capture", "/api/reminders", "/api/suppliers",
   "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
   "/api/advisor", "/api/billing", "/api/communications", "/api/calendar",
+  "/api/catalog",
 ]
 
 function isPublicPage(pathname: string): boolean {
