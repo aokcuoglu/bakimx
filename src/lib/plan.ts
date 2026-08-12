@@ -93,7 +93,14 @@ const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 // During the trial a workshop is on the `pro` tier, so premium features remain
 // locked behind an upgrade. `starter` min tier = enabled for every plan (the
 // gate then only serves as a per-tenant kill switch via feature overrides).
-export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup" | "partsCatalog"
+export type GatedFeature =
+  | "eInvoice"
+  | "aiAdvisor"
+  | "multiBranch"
+  | "rbac"
+  | "vinLookup"
+  | "partsCatalog"
+  | "bakimxCatalog"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
@@ -101,6 +108,11 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   rbac: "premium",
   vinLookup: "pro",
   partsCatalog: "starter",
+  // BakımX'in KENDİ kataloğu: sorgu bizim DB'mize gidiyor, dış kota yakmıyor —
+  // bu yüzden `partsCatalog` (TecDoc/RapidAPI) kapısının arkasına konmaz ve
+  // taban katman `starter`. Kapı yalnız atölye bazında kapatma düğmesi olarak
+  // durur (bkz. /admin/flags, resolveFeature).
+  bakimxCatalog: "starter",
 }
 
 type WorkshopPlanFields = Pick<
