@@ -51,6 +51,7 @@ export type AdminCapability =
   | "impersonate"
   | "manageFlags"
   | "exportData"
+  | "manageCatalog"
 
 export interface AdminContext {
   user: AuthUser
