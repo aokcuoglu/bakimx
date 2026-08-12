@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -1364,14 +1364,17 @@ function TypeChip({ type }: { type: ItemType }) {
   )
 }
 
-// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım. Tooltip
-// masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
+// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım / BakımX.
+// Tooltip masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
 function SourceBadge({ source }: { source: OrderItem["source"] }) {
   if (!source) return null
   const map = {
     catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
     manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
     purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
+    // Kalem yazan akış BAK-35 ile geliyor; rozet şimdiden eşlenir ki enum değeri
+    // yazılmaya başladığında map[source] undefined dönüp satırı patlatmasın.
+    bakimx: { Icon: Store, label: "BakımX kataloğundan eklendi", cls: "text-primary" },
   } as const
   const { Icon, label, cls } = map[source]
   return (
