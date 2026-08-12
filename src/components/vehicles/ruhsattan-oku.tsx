@@ -49,6 +49,12 @@ type Props = {
   title?: string
   description?: string
   className?: string
+  /**
+   * `hero`: sihirbazın ruhsat adımı için tam genişlikte, sürükle-bırak kabul eden
+   * büyük yükleme alanı (#309 — dar şerit yüzünden ruhsat yükleme yeri bulunamıyordu).
+   * `inline` (varsayılan): form içine sıkışan ince şerit.
+   */
+  variant?: "inline" | "hero"
 }
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
@@ -65,10 +71,12 @@ export function RuhsattanOku({
   title = "Ruhsattan otomatik doldur",
   description = "Tarayın; alanlar otomatik dolsun, sonra kontrol edin.",
   className = "",
+  variant = "inline",
 }: Props) {
   const [scannerOpen, setScannerOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function openScanner(open: boolean) {
@@ -150,6 +158,72 @@ export function RuhsattanOku({
     }
   }
 
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept={ACCEPT}
+      className="hidden"
+      onChange={(e) => { const f = e.target.files?.[0]; if (f) runOcr(f); e.target.value = "" }}
+    />
+  )
+
+  if (variant === "hero") {
+    return (
+      <div
+        className={`rounded-xl border-2 border-dashed p-6 text-center transition-colors sm:p-10 ${
+          dragging ? "border-primary bg-primary/10" : "border-primary/30 bg-primary/5"
+        } ${className}`.trim()}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragging(false)
+          const f = e.dataTransfer.files?.[0]
+          if (f) runOcr(f)
+        }}
+      >
+        {scannerOpen && (
+          <RegistrationScanner
+            onCapture={(file) => { openScanner(false); runOcr(file) }}
+            onClose={() => openScanner(false)}
+          />
+        )}
+
+        {busy ? (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm font-medium text-foreground">Ruhsat okunuyor…</p>
+            <p className="text-xs text-muted-foreground">Alanlar otomatik dolacak, sonra kontrol edeceksiniz.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <ScanLine className="size-8" />
+            </span>
+            <div className="space-y-1">
+              <p className="text-base font-semibold text-foreground">{title}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
+              <Button type="button" className="flex-1 gap-2" onClick={() => openScanner(true)}>
+                <Camera className="size-4" /> Kamera ile çek
+              </Button>
+              <Button type="button" variant="outline" className="flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="size-4" /> Dosyadan seç
+              </Button>
+            </div>
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              Ruhsat fotoğrafını bu alana sürükleyip bırakabilirsiniz.
+            </p>
+          </div>
+        )}
+        {fileInput}
+        {error && <p className="mt-3 text-sm text-destructive-strong">{error}</p>}
+      </div>
+    )
+  }
+
   return (
     <div className={`rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 ${className}`.trim()}>
       {scannerOpen && (
@@ -178,13 +252,7 @@ export function RuhsattanOku({
               <Upload className="size-4" /> Dosyadan
             </Button>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT}
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) runOcr(f); e.target.value = "" }}
-          />
+          {fileInput}
         </>
       )}
 

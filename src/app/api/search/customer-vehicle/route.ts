@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client"
 import { buildUnifiedResults } from "@/lib/search/unified-results"
 import { phoneSearchTerm } from "@/lib/search/phone-search"
 import { normalizePlate } from "@/lib/format"
+import { plateSearchTerm } from "@/lib/search/plate-search"
 
 export async function GET(request: Request) {
   const user = await requireAuth()
@@ -19,6 +20,23 @@ export async function GET(request: Request) {
   const plateQ = normalizePlate(q)
   const plateClauses: Prisma.VehicleWhereInput[] =
     plateQ && plateQ !== q.toUpperCase() ? [{ plate: { contains: plateQ, mode: "insensitive" } }] : []
+
+  // Ters yön: sorgu bitişik ("34ABC123") ama kayıt ayraçlı ("34 ABC 123") ise
+  // yukarıdaki iki `contains` de kaçırır. Telefondaki desenin aynısı — kolonu da
+  // sadeleştirip karşılaştırmak Prisma `where`'inden yapılamadığı için tek adım
+  // raw SQL ile id'lere iner. Sorgu atölyeye sabitli, `term` bind parametresi.
+  const plateTerm = plateSearchTerm(q)
+  const plateNormalizedIds = plateTerm
+    ? (
+        await prisma.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "Vehicle"
+          WHERE "workshopId" = ${user.workshopId}
+            AND regexp_replace(upper(plate), '[^A-Z0-9ĞÜŞİÖÇ]', '', 'g') LIKE ${`%${plateTerm}%`}
+          LIMIT 8
+        `
+      ).map((r) => r.id)
+    : []
+  if (plateNormalizedIds.length) plateClauses.push({ id: { in: plateNormalizedIds } })
 
   // Telefon araması iki yönden de biçime takılıyordu (#178): uygulama üzerinden
   // açılan kayıtlarda telefon normalize saklanır ("5445157408") ama kullanıcı
