@@ -842,6 +842,10 @@ model ServiceOrderItem {
   // TecDoc article linkage when the part was picked from the vehicle catalog
   // (no FK — external id). Enables future reorder/OEM cross-reference.
   tecdocArticleId    Int?
+  // Kalem bir BakımX katalog ürününden geldiyse o ürünün id'si. FK YOK:
+  // fiyat kalemde donmuş bir anlık görüntüdür, ürün kartı sonradan silinse
+  // veya pasifleşse bile geçmiş iş emri satırı olduğu gibi kalmalı.
+  bakimxProductId    String?
   // Kalemin nasıl eklendiği: katalog akışı mı serbest/manuel mi, yoksa
   // teknisyenin dışarıdan satın aldığı (purchase) parça mı. Yalnız açıklayıcı
   // (rozet + raporlama); eski satırlarda null → rozetsiz.
@@ -877,6 +881,7 @@ model ServiceOrderItem {
   @@index([workshopId, source])
   @@index([supplierId])
   @@index([serviceOrderId, completedAt])
+  @@index([bakimxProductId])
 }
 
 enum OrderItemType {
@@ -889,6 +894,7 @@ enum OrderItemSource {
   catalog
   manual
   purchase
+  bakimx
 }
 
 model Quote {
@@ -934,27 +940,31 @@ enum QuoteStatus {
 }
 
 model QuoteItem {
-  id         String         @id @default(cuid())
-  workshopId String
-  workshop   Workshop       @relation(fields: [workshopId], references: [id])
-  quoteId    String
-  quote      Quote          @relation(fields: [quoteId], references: [id])
-  type       QuoteItemType
-  name       String
-  sku        String?
-  unit       String?
-  quantity   Int            @default(1)
-  unitPrice  Int? // kuruş
-  totalPrice Int? // kuruş
-  partId     String?
-  part       PartStockItem? @relation(fields: [partId], references: [id])
-  note       String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id              String         @id @default(cuid())
+  workshopId      String
+  workshop        Workshop       @relation(fields: [workshopId], references: [id])
+  quoteId         String
+  quote           Quote          @relation(fields: [quoteId], references: [id])
+  type            QuoteItemType
+  name            String
+  sku             String?
+  unit            String?
+  quantity        Int            @default(1)
+  unitPrice       Int? // kuruş
+  totalPrice      Int? // kuruş
+  partId          String?
+  part            PartStockItem? @relation(fields: [partId], references: [id])
+  // ServiceOrderItem.bakimxProductId ile aynı sözleşme: FK yok, teklif satırı
+  // ürün kartından bağımsız yaşar.
+  bakimxProductId String?
+  note            String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([workshopId])
   @@index([quoteId])
   @@index([partId])
+  @@index([bakimxProductId])
 }
 
 enum QuoteItemType {
@@ -1786,4 +1796,211 @@ model VehicleTypeDetail {
 
   @@index([vehicleTypeId])
   @@map("vehicle_type_details")
+}
+
+// ---------------------------------------------------------------------------
+// BakımX kendi ürün kataloğu (BAK-30 tasarımı, Faz 1)
+//
+// Bu bloktaki tabloların hiçbiri `workshopId` TAŞIMAZ — sahibi BakımX'tir ve
+// tüm atölyelere aynı satırlar görünür. Üç parça kaynağının ayrımı:
+//   - `TecdocArticle`  → ücretli RapidAPI feed'inin salt-okunur önbelleği, araca bağlı
+//   - `PartStockItem`  → atölyenin KENDİ stoğu, tenant'a özel
+//   - `BakimxProduct`  → BakımX'in kendi ürünü, araçtan bağımsız, fiyat/stoğu bizde
+//
+// Tenant izolasyonu kuralı burada "her sorguda workshopId" değil, "okuma yolunda
+// DAİMA public DTO"dur: `costPriceKurus` ve içe aktarım geçmişi atölye yüzeyine
+// asla çıkmaz (bkz. BAK-33).
+// ---------------------------------------------------------------------------
+
+/// Ürünün hangi araçlarda listeleneceği.
+enum BakimxFitmentScope {
+  /// Her araçta (ve araç kataloğa hiç bağlı değilken de) listelenir — Faz 1'in tek değeri.
+  universal
+  /// Yalnız `bakimx_product_fitments` satırlarındaki araçlarda listelenir — Faz 2.
+  vehicle_linked
+}
+
+/// İçe aktarım partisinin yazma modu.
+enum BakimxImportMode {
+  /// Tam ürün kartı (yeni ürün açar, mevcudu tüm alanlarıyla günceller).
+  upsert
+  /// Yalnız fiyat + stok kolonlarını günceller; ad/açıklama/görsel korunur.
+  price_stock_only
+}
+
+enum BakimxImportStatus {
+  pending
+  previewed
+  applied
+  failed
+  cancelled
+}
+
+/// Marka bazlı gruplama ("Mutlu", "Petrol Ofisi"...). Bir markanın tüm ürünlerini
+/// tek anahtarla pasifleştirebilmek ve fiyat listesini markaya bağlı yükleyebilmek için.
+model BakimxProductBrand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  logoUrl   String?  @map("logo_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products BakimxProduct[]
+  imports  BakimxProductImport[]
+
+  @@index([isActive])
+  @@map("bakimx_product_brands")
+}
+
+/// BakımX'in KENDİ ürün kartı — global (tenant-scoped DEĞİL).
+/// Fiyat sözleşmesi: `src/lib/money.ts` (kuruş, tam sayı; lira dönüşümü yalnız UI sınırında).
+model BakimxProduct {
+  id  String @id @default(cuid())
+  /// İçe aktarımın idempotent anahtarı: aynı dosya iki kez yüklenirse ikinci sefer
+  /// 0 yeni / N güncelleme üretir (bkz. BAK-34).
+  sku String @unique
+
+  name             String
+  brandId          String             @map("brand_id")
+  brand            BakimxProductBrand @relation(fields: [brandId], references: [id])
+  /// Denormalize marka adı — liste/arama join'siz render etsin ve `searchKey`
+  /// üretimi tek satırdan beslensin diye ürün kartında da tutulur.
+  brandName        String             @map("brand_name")
+  /// İç taksonomi yaprağı ("aku", "yag-filtresi"). TecDoc ağacından bağımsız.
+  categoryKey      String?            @map("category_key")
+  /// Opsiyonel TecDoc kategori köprüsü — dolu ise ürün Faz 2'de TecDoc ağacının
+  /// o yaprağında da listelenir.
+  tecdocCategoryId Int?               @map("tecdoc_category_id")
+  /// Muadil eşleştirme için OEM numaraları (Faz 2). Faz 1'de yalnız `searchKey`'i besler.
+  oemNumbers       String[]           @default([]) @map("oem_numbers")
+  barcode          String?
+  unit             String             @default("adet")
+  description      String?
+  imageUrl         String?            @map("image_url")
+  specsJson        Json?              @map("specs_json")
+  /// `normalizePartSearchTerm` ile üretilmiş ayraç/harf duyarsız arama anahtarı:
+  /// name + brandName + sku + oemNumbers. Sorgu tarafı da aynı anahtarı üretir
+  /// (bkz. src/lib/parts/bakimx-search-key.ts ve src/lib/tr-search.ts).
+  /// Ürün araca göre ön-filtrelenemediği için (global katalog) arama bu tek
+  /// kolon üzerinden yürür.
+  searchKey        String             @map("search_key")
+
+  // --- Fiyat (kuruş; KDV HARİÇ saklanır) ---
+  /// Atölyenin BakımX'ten ALIŞ fiyatı, KDV hariç. İş emri kaleminde
+  /// `purchasePriceKurus`'a yazılır, `unitPrice` bundan ön-doldurulup atölyenin
+  /// kendi marjıyla düzenlenir (bkz. BAK-35).
+  workshopPriceKurus Int    @map("workshop_price_kurus")
+  /// KDV oranı bps (2000 = %20); fiyat hariç saklandığı için oran ayrı kolonda.
+  vatRateBps         Int    @default(2000) @map("vat_rate_bps")
+  /// BakımX'in İÇ maliyeti — atölye yüzeyine ASLA çıkmaz, public DTO'ya alınmaz.
+  costPriceKurus     Int?   @map("cost_price_kurus")
+  currency           String @default("TRY")
+
+  // --- Stok (tek global havuz; depo/şube kırılımı yok) ---
+  /// Faz 1'de yalnız BİLGİLENDİRME: kalem eklendiğinde stok düşülmez, rezervasyon
+  /// yoktur (gerçek düşüm sipariş/tedarik akışıyla, Faz 2).
+  stockQty      Int     @default(0) @map("stock_qty")
+  lowStockQty   Int     @default(0) @map("low_stock_qty")
+  /// Stok 0 iken de "siparişe açık" gösterilir.
+  backorderable Boolean @default(false)
+  leadTimeDays  Int?    @map("lead_time_days")
+
+  // --- Görünürlük ---
+  fitmentScope BakimxFitmentScope @default(universal) @map("fitment_scope")
+  isActive     Boolean            @default(true) @map("is_active")
+  publishedAt  DateTime?          @map("published_at")
+
+  /// Ürünü en son yazan içe aktarım partisi (FK yok: parti kaydı arşivlense de
+  /// ürün kartı yaşamaya devam eder).
+  lastImportId    String?  @map("last_import_id")
+  updatedByUserId String?  @map("updated_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  fitments BakimxProductFitment[]
+
+  @@index([brandId])
+  @@index([isActive, fitmentScope])
+  @@index([categoryKey])
+  @@index([barcode])
+  @@index([searchKey])
+  @@index([lastImportId])
+  @@map("bakimx_products")
+}
+
+/// Ürün ↔ araç tipi bağı — yalnız `fitmentScope = vehicle_linked` ürünler için.
+/// Faz 1'de tablo BOŞ kalır; Faz 2'de "bu akü şu motorlara uyar" dendiğinde
+/// şema değişikliği gerekmesin diye şimdiden açılır.
+/// `vehicleTypeId` FK'sız tutulur — `tecdoc_articles` ile aynı sözleşme: araç
+/// kataloğu dışarıdan içe aktarılan referans veridir.
+model BakimxProductFitment {
+  id            String        @id @default(cuid())
+  productId     String        @map("product_id")
+  product       BakimxProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vehicleTypeId Int           @map("vehicle_type_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@unique([productId, vehicleTypeId])
+  @@index([vehicleTypeId])
+  @@map("bakimx_product_fitments")
+}
+
+/// Excel/CSV içe aktarım partisi — her yükleme denetlenebilir ve geri izlenebilir
+/// (GitHub #211, bkz. BAK-34). Akış: yükle → ön izleme (dry-run) → uygula.
+model BakimxProductImport {
+  id       String              @id @default(cuid())
+  brandId  String?             @map("brand_id")
+  brand    BakimxProductBrand? @relation(fields: [brandId], references: [id])
+  fileName String              @map("file_name")
+  /// Kaynak dosyanın storage anahtarı (src/lib/storage) — parti sonradan denetlenebilsin diye saklanır.
+  fileKey  String?             @map("file_key")
+
+  mode   BakimxImportMode   @default(upsert)
+  status BakimxImportStatus @default(pending)
+
+  /// Marka fiyat listeleri sık sık KDV DAHİL gelir; işaretliyse değerler
+  /// yüklenirken hariçe çevrilir (aksi hâlde katalog `vatRateBps` kadar şişer).
+  pricesIncludeVat Boolean @default(false) @map("prices_include_vat")
+
+  totalRows    Int   @default(0) @map("total_rows")
+  createdCount Int   @default(0) @map("created_count")
+  updatedCount Int   @default(0) @map("updated_count")
+  skippedCount Int   @default(0) @map("skipped_count")
+  errorCount   Int   @default(0) @map("error_count")
+  /// Satır no + hata mesajı; kısmi/sessiz uygulama yok, hatalar kullanıcıya dönülür.
+  errorsJson   Json? @map("errors_json")
+
+  createdByUserId String    @map("created_by_user_id")
+  appliedAt       DateTime? @map("applied_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([brandId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bakimx_product_imports")
+}
+
+/// Global katalog denetim kaydı.
+/// Mevcut `AuditLog` KULLANILAMAZ: `workshopId` zorunlu ve admin tarafındaki
+/// katalog değişikliği bir atölyeye ait değil.
+model BakimxCatalogAudit {
+  id          String @id @default(cuid())
+  actorUserId String @map("actor_user_id")
+  /// "product" | "brand" | "import"
+  entityType  String @map("entity_type")
+  entityId    String @map("entity_id")
+  /// "create" | "update" | "price_change" | "stock_change" | "import_apply"
+  action      String
+
+  beforeJson Json?    @map("before_json")
+  afterJson  Json?    @map("after_json")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("bakimx_catalog_audit")
 }

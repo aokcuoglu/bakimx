@@ -50,8 +50,10 @@ export type OrderItem = {
   categoryId: number | null
   // TecDoc katalog bağlantısı — doluysa satırda parça detayı (ⓘ) açılabilir.
   tecdocArticleId?: number | null
-  // Kalemin nasıl eklendiği (katalog/manuel/dış alım); eski satırlarda null.
-  source: "catalog" | "manual" | "purchase" | null
+  // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX kataloğu); eski
+  // satırlarda null. "bakimx" değeri şemada açık ama kalem yazan akış Faz 2'de
+  // geliyor (BAK-35) — rozet bugünden tanıyor ki eski istemci satırı yutmasın.
+  source: "catalog" | "manual" | "purchase" | "bakimx" | null
   // Dış alım (source=purchase) alanları; diğer kalemlerde/draft'ta bulunmaz.
   purchasePriceKurus?: number | null
   supplierName?: string | null

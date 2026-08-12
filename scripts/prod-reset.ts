@@ -95,6 +95,13 @@ export const KEEP_TABLES = [
   "tecdoc_articles",
   "tecdoc_article_oems",
   "vin_lookups",
+  // BakımX'in KENDİ ürün kataloğu: global, kiracıya ait değil — reset korumalı
+  // (aksi hâlde prod sıfırlaması BakımX'in ürün/fiyat verisini de siler).
+  "bakimx_product_brands",
+  "bakimx_products",
+  "bakimx_product_fitments",
+  "bakimx_product_imports",
+  "bakimx_catalog_audit",
   "DemoRequest",
   "SupportRequest",
   "_prisma_migrations",
