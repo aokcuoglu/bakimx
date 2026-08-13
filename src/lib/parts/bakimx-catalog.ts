@@ -56,6 +56,12 @@ export interface BakimxProductSummary {
   brandId: string
   brandName: string
   categoryKey: string | null
+  /**
+   * `categoryKey`'in iç taksonomideki okunur karşılığı; kategorisiz üründe null.
+   * Türetilmiş alan — atölye yüzeyinin taksonomiyi yeniden yazmaması için burada
+   * hesaplanır (kalem `category` metnini de bu besler, bkz. bakimx-item.ts).
+   */
+  categoryLabel: string | null
   barcode: string | null
   unit: string
   description: string | null
@@ -81,6 +87,7 @@ export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProd
     brandId: row.brandId,
     brandName: row.brandName,
     categoryKey: row.categoryKey,
+    categoryLabel: row.categoryKey ? bakimxCategoryLabel(row.categoryKey) : null,
     barcode: row.barcode,
     unit: row.unit,
     description: row.description,
@@ -145,6 +152,20 @@ export async function searchBakimxProducts(
   })
 
   return rows.map(toBakimxProductSummary)
+}
+
+/**
+ * Tek ürünü ATÖLYE GÖRÜNÜRLÜĞÜ filtresiyle okur — kalem yazan yol (BAK-35) bunu
+ * kullanır. İstemcinin gönderdiği ad/fiyat/kategori GÜVENİLMEZ: kalem alanları
+ * buradan dönen satırdan türetilir (bkz. bakimx-item.ts), böylece pasifleşmiş
+ * ürün eklenemez ve fiyat istemciden uydurulamaz.
+ */
+export async function getVisibleBakimxProduct(id: string): Promise<BakimxProductSummary | null> {
+  const row = await prisma.bakimxProduct.findFirst({
+    where: { ...VISIBLE_PRODUCT, id },
+    select: BAKIMX_PRODUCT_SUMMARY_SELECT,
+  })
+  return row ? toBakimxProductSummary(row) : null
 }
 
 /** İstemci sınırı ÖNERİR, server kırpar (güvenilmez girdi). */

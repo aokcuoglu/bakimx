@@ -5,7 +5,8 @@ import { calculateOrderTotals } from "@/lib/totals"
 function row(over: Partial<QuoteEditorRow> = {}): QuoteEditorRow {
   return {
     id: "q0", type: "part", name: "Fren balatası", sku: "P-1", unit: "adet",
-    quantity: 2, unitPrice: 15000, totalPrice: null, note: null, partId: null, ...over,
+    quantity: 2, unitPrice: 15000, totalPrice: null, note: null, partId: null,
+    bakimxProductId: null, ...over,
   }
 }
 
@@ -32,6 +33,18 @@ test("sıfır fiyat null'a düşer — tutar girilmemiş sayılır", () => {
 test("stok kartı bağı korunur — teklif kalemi partId taşıyabilir", () => {
   expect(rowToQuoteItem(row({ partId: "part-7" })).partId).toBe("part-7")
   expect(rowToQuoteItem(row({ partId: null })).partId).toBe("")
+})
+
+/**
+ * BAK-35 — BakımX bağı teklif satırında yaşar ve `partId`'den AYRI durur: stok
+ * bağı kuran alan partId'dir, BakımX ürünü hiçbir aşamada stok hareketi doğurmaz.
+ */
+test("BakımX bağı taşınır ve stok bağıyla karışmaz", () => {
+  const item = rowToQuoteItem(row({ bakimxProductId: "bx-1" }))
+  expect(item.bakimxProductId).toBe("bx-1")
+  expect(item.partId).toBe("")
+  expect(rowToQuoteItem(row({ bakimxProductId: null })).bakimxProductId).toBe("")
+  expect(quoteItemToRow(item, "q9").bakimxProductId).toBe("bx-1")
 })
 
 test("adsız satırlar teklife yazılmaz", () => {

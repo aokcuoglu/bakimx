@@ -67,6 +67,8 @@ import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import { bakimxLineItemFields } from "@/lib/parts/bakimx-item"
 import { createQuickPartAction, ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -75,7 +77,8 @@ const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İ
 // brandSupplierId: yalnız runtime — marka→kategori best-effort filtresi için
 // seçili markanın TecDoc supplierId'sini taşır; ASLA persist edilmez.
 // __partId: atölyenin kendi stok kartına bağ. Set edilirse sunucu stok düşümü
-// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli.
+// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli. BakımX kaleminde
+// bu alan DAİMA boştur (bkz. lib/parts/bakimx-item.ts).
 type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null; __partId?: string | null }
 
 // Satır-yerel arama filtresi (persist EDİLMEZ). Combobox seçimi buraya yazar;
@@ -139,9 +142,13 @@ function toDetailTarget(
 
 function toRow(i: OrderItem): Row { return { ...i } }
 
+/** Composer'ın yazabildiği kaynaklar (dış alım kendi akışından gelir). */
+type DraftSource = "catalog" | "manual" | "bakimx"
+
 // Composer'ın boş taslağı (tek satırlık ekleme formu için — listede birikmez).
-// source: kalemin kaynağı (katalog composer → "catalog", manuel → "manual").
-function emptyDraft(type: ItemType, source: "catalog" | "manual"): Row {
+// source: kalemin kaynağı (katalog composer → "catalog", manuel → "manual",
+// BakımX kataloğu → "bakimx").
+function emptyDraft(type: ItemType, source: DraftSource): Row {
   return {
     id: "composer", type, name: "", sku: null, unit: "adet",
     quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
@@ -486,6 +493,10 @@ export function PartsLaborGrid({
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
+    // BakımX katalog bağı. Sunucu ürünü bu id ile DB'den okur ve kalemin
+    // ad/parça no/marka/kategori/alış fiyatı alanlarını oradan yazar — buradan
+    // gönderilen değerler yalnız iyimser satır içindir (bkz. addOrderItemAction).
+    if (draft.bakimxProductId) fd.set("bakimxProductId", draft.bakimxProductId)
     // Stok kartına bağlıysa sunucu stoğu düşürür (bkz. Row.__partId).
     if (draft.__partId) fd.set("partId", draft.__partId)
     try {
@@ -894,8 +905,31 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     }
   }
 
+  /**
+   * BakımX ürünü → kalem taslağı (BAK-35). Alanların TAMAMI `bakimxLineItemFields`
+   * ten gelir: `partId` yok (BakımX stoğu atölyenin stoğu değil, düşüm
+   * tetiklenmez), `categoryId` null (o kolon TecDoc düğüm id'si), fiyat
+   * `purchasePriceKurus`'a yazılıp `unitPrice`'a ön-doldurulur. Gerekçeler tek
+   * yerde: src/lib/parts/bakimx-item.ts.
+   */
+  function bakimxDraft(p: BakimxProductSummary): Partial<Row> & { source: "bakimx" } {
+    const fields = bakimxLineItemFields(p)
+    return {
+      source: fields.source,
+      name: fields.name,
+      sku: fields.sku,
+      brand: fields.brand,
+      category: fields.category,
+      categoryId: fields.categoryId,
+      unit: fields.unit,
+      bakimxProductId: fields.bakimxProductId,
+      purchasePriceKurus: fields.purchasePriceKurus,
+      unitPrice: fields.unitPrice,
+    }
+  }
+
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
-  async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
+  async function add(partial: Partial<Row> & { source: DraftSource }): Promise<boolean> {
     if (submittingRef.current || !partial.name?.trim()) return false
     submittingRef.current = true
     setSubmitting(true)
@@ -972,7 +1006,8 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
         <div className="space-y-2 rounded-lg bg-muted/60 px-3 py-2">
           <p className="text-xs text-muted-foreground">
-            Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
+            Araç katalogla eşleşmediği için araca özel parça araması sınırlı — BakımX ürünleri ve
+            kendi stok kartlarınız yine aranabilir, ya da parçayı{" "}
             <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
           </p>
           {vehicle && <VinLinkPrompt vehicle={vehicle} />}
@@ -990,15 +1025,18 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
         onSelectStockPart={(p) => setStockConfirm(p)}
+        onSelectBakimxProduct={(p) => void add(bakimxDraft(p))}
         onShowDetail={(a) =>
           onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
         onCommit={() => { if (name.trim()) void add({ source: "manual", name }) }}
         onClear={() => { setName(""); setFilter({}) }}
         showClear={!!name}
-        onSearchClick={linked ? () => setTecdocOpen(true) : undefined}
-        searchDisabled={!linked}
-        searchTitle={linked ? "TecDoc kataloğundan seç" : "Araç TecDoc'ta eşleşmedi"}
+        // BAK-35 — seçici araç kataloğa bağlı olmasa da açılabilir: BakımX dalı
+        // araçtan bağımsız çalışır, modal içinde VIN bağlama yolu da duruyor.
+        onSearchClick={vehicle ? () => setTecdocOpen(true) : undefined}
+        searchDisabled={!vehicle}
+        searchTitle={linked ? "Katalogdan seç" : "BakımX ürünlerinden seç"}
         showCreate
         onCreate={(text) => void add({ source: "manual", name: text })}
         onCreateEdit={(text) => { setName(text); createdPartSkuRef.current = null; setDialogOpen(true) }}
@@ -1047,13 +1085,19 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         </p>
       )}
 
-      {/* Tam TecDoc katalog picker (🔍) — yalnız araç kataloğa bağlıysa. */}
-      {linked && (
+      {/* Katalog picker (🔍). TecDoc dalı yalnız araç kataloğa bağlıysa dolar;
+          BakımX dalı her koşulda çalışır (BAK-35), bu yüzden picker artık
+          `linked` şartına bağlı DEĞİL. */}
+      {vehicle && (
         <TecdocPartPicker
           vehicle={vehicle}
           hideTrigger
           open={tecdocOpen}
           onOpenChange={setTecdocOpen}
+          onSelectBakimx={(p) => {
+            void add(bakimxDraft(p))
+            setTecdocOpen(false)
+          }}
           onSelect={(sel) => {
             void add({
               source: "catalog",
@@ -1133,12 +1177,13 @@ function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
-  // Katalogdan (TecDoc) seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve
-  // marka katalog verisidir — elle değiştirilirse satır artık gerçek parçayı
-  // göstermez (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret
-  // eder). Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
-  // (updateOrderItemAction). tecdocArticleId YALNIZ katalog seçiminde dolar.
-  const identityLocked = isPart && row.tecdocArticleId != null
+  // Katalogdan seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve marka
+  // katalog verisidir — elle değiştirilirse satır artık gerçek parçayı göstermez
+  // (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret eder).
+  // Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
+  // (updateOrderItemAction). `tecdocArticleId` YALNIZ TecDoc seçiminde,
+  // `bakimxProductId` YALNIZ BakımX seçiminde dolar; ikisi de katalog kimliği.
+  const identityLocked = isPart && (row.tecdocArticleId != null || row.bakimxProductId != null)
   const linked = vehicle?.catalogVehicleTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
@@ -1184,9 +1229,11 @@ type RowEditor = ReturnType<typeof useRowEditor>
 // sessizce eski haline dönüyordu) → yanıltıcı affordance kaldırıldı.
 // Her iki durumda da ad hatalıysa satır silinip yeniden eklenir.
 function PartIdentity({ row }: { row: Row }) {
-  const title = row.tecdocArticleId != null
-    ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
-    : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
+  const title = row.bakimxProductId != null
+    ? "BakımX kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
+    : row.tecdocArticleId != null
+      ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+      : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
   return (
     <div
       className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
@@ -1372,8 +1419,6 @@ function SourceBadge({ source }: { source: OrderItem["source"] }) {
     catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
     manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
     purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
-    // Kalem yazan akış BAK-35 ile geliyor; rozet şimdiden eşlenir ki enum değeri
-    // yazılmaya başladığında map[source] undefined dönüp satırı patlatmasın.
     bakimx: { Icon: Store, label: "BakımX kataloğundan eklendi", cls: "text-primary" },
   } as const
   const { Icon, label, cls } = map[source]
@@ -1475,6 +1520,12 @@ function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => voi
 // TecDoc modal — yalnız part satırı VE araç TecDoc'ta eşleşmişse mount edilir
 // (eşleşmemişse picker VinLinkPrompt döner; 🔍 butonu zaten disabled). Portal
 // ile render olduğu için <td>/kart/composer içine yerleştirmek güvenli.
+//
+// `onSelectBakimx` BİLEREK verilmez: bu seçici MEVCUT satırın parçasını
+// değiştiriyor ve o yol PATCH'ten geçiyor. BakımX kalemi yalnız yazma anında
+// tutarlı kurulabilir (alış fiyatı + `bakimxProductId` + `partId` boşluğu, bkz.
+// bakimx-item.ts); PATCH bu alanları taşımadığı için satır yarı BakımX kalırdı.
+// BakımX ürünü eklemek composer'dan (yukarıdaki 🔍 / arama) yapılır.
 function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onShowDetail: OnShowDetail
 }) {

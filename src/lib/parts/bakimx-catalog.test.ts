@@ -229,6 +229,15 @@ describe("public DTO (tek savunma hattı)", () => {
     expect(summary.workshopPriceKurus).toBe(248_000)
     expect(summary.vatRateBps).toBe(2000)
   })
+
+  /**
+   * BAK-35 — kategori ETİKETİ de DTO'dan gelir: atölye yüzeyi (öneri satırı,
+   * seçici, kalem `category` metni) taksonomiyi yeniden yazmak zorunda kalmasın.
+   */
+  it("kategori etiketi türetilir; kategorisiz üründe null kalır", () => {
+    expect(toBakimxProductSummary(ROWS[0]).categoryLabel).toBe("Akü")
+    expect(toBakimxProductSummary({ ...ROWS[0], categoryKey: null }).categoryLabel).toBeNull()
+  })
 })
 
 describe("searchBakimxProducts", () => {
