@@ -41,7 +41,7 @@ export async function createQuoteAction(formData: FormData) {
 
   // Parse + validate the line items first; the server is the single authority
   // over totals, so we never trust a client-sent grandTotal.
-  const lineItems: Array<{ type: "part" | "labor"; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null }> = []
+  const lineItems: Array<{ type: "part" | "labor"; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null; bakimxProductId: string | null }> = []
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
     let items: Array<Record<string, unknown>>
@@ -63,6 +63,9 @@ export async function createQuoteAction(formData: FormData) {
           totalPrice: parsedItem.data.totalPrice ?? null,
           note: parsedItem.data.note || null,
           partId: parsedItem.data.partId || null,
+          // BAK-35 — BakımX kalemi stok bağı KURMAZ; kaynak bilgisi teklif
+          // satırında durur ve çevrimde iş emri kalemine taşınır.
+          bakimxProductId: parsedItem.data.bakimxProductId || null,
         })
       }
     }
@@ -110,6 +113,7 @@ export async function createQuoteAction(formData: FormData) {
         totalPrice: item.totalPrice,
         note: item.note,
         partId: item.partId,
+        bakimxProductId: item.bakimxProductId,
       },
     })
   }
@@ -256,9 +260,15 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
           totalPrice: item.totalPrice,
           note: item.note,
           partId: item.partId,
+          // BAK-35 — BakımX bağı ve rozeti çevrimde kaybolmasın. Alış fiyatı
+          // QuoteItem'da tutulmadığı için taşınamaz: teklif satırında yalnız
+          // teklif edilen SATIŞ fiyatı vardır.
+          bakimxProductId: item.bakimxProductId,
+          source: item.bakimxProductId ? "bakimx" : undefined,
         },
       })
-      // Teklif stok düşMEMİŞTİ — çevrim sırasında iş emrine düş.
+      // Teklif stok düşMEMİŞTİ — çevrim sırasında iş emrine düş. BakımX kaleminin
+      // partId'si zaten yoktur (BakımX stoğu atölyenin stoğu değil).
       if (item.type === "part" && item.partId && item.quantity > 0) {
         await reserveStockInTx(
           tx,

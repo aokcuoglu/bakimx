@@ -10,6 +10,10 @@ import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
+import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
+import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { resolveFeature } from "@/lib/features"
+import type { PlanTier } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
@@ -56,13 +60,14 @@ export async function createServiceOrderAction(intakeFormId: string) {
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
   unit: z.string().optional(),
-  // Kalemin kaynağı: katalog akışı mı manuel mi (yalnız açıklayıcı/rozet).
-  source: z.enum(["catalog", "manual"]).optional(),
+  // Kalemin kaynağı: katalog akışı mı, manuel mi, BakımX kataloğu mu. Rozet +
+  // raporlama içindir; `bakimx` gönderilse bile ürün doğrulanamazsa yazılmaz.
+  source: z.enum(["catalog", "manual", "bakimx"]).optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user, workshop } = await requireWritableWorkshop("order.edit")
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
@@ -80,6 +85,7 @@ export async function addOrderItemAction(formData: FormData) {
     category: formData.get("category") as string,
     categoryId: formData.get("categoryId") as string,
     source: formData.get("source") as string,
+    bakimxProductId: formData.get("bakimxProductId") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -97,6 +103,7 @@ export async function addOrderItemAction(formData: FormData) {
     category: raw.category || undefined,
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
     source: raw.source || undefined,
+    bakimxProductId: raw.bakimxProductId || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -119,6 +126,27 @@ export async function addOrderItemAction(formData: FormData) {
     if (!part) return { error: "Parça bulunamadı veya pasif" }
   }
 
+  // BakımX katalog kalemi (BAK-35). Ürün sunucuda okunur ve kalemin kimlik +
+  // fiyat alanları ORADAN türetilir: istemcinin gönderdiği ad/fiyat yazılmaz,
+  // pasifleşmiş ya da yayından kalkmış ürün eklenemez, kapı kapalı atölye bu
+  // yoldan katalog kalemi yazamaz. Alan kuralları (partId/categoryId boş, fiyat
+  // `purchasePriceKurus`'a) tek yerde: lib/parts/bakimx-item.ts.
+  let bakimxFields: BakimxLineItemFields | null = null
+  if (parsed.data.bakimxProductId) {
+    // Katalog ürünü yalnız PARÇA kalemi olabilir; işçiliğe ürün bağı takılırsa
+    // rozet ve raporlama anlamsızlaşır.
+    if (parsed.data.type !== "part") return { error: "BakımX ürünü yalnız parça kalemine eklenebilir" }
+    const gateOpen = await resolveFeature(
+      workshop.id,
+      workshop.planTier as PlanTier,
+      "bakimxCatalog",
+    )
+    if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
+    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId)
+    if (!product) return { error: "BakımX ürünü bulunamadı veya yayından kaldırılmış" }
+    bakimxFields = bakimxLineItemFields(product)
+  }
+
   let createdItemId: string | null = null
   try {
     createdItemId = await prisma.$transaction(async (tx) => {
@@ -127,23 +155,30 @@ export async function addOrderItemAction(formData: FormData) {
           workshopId: user.workshopId,
           serviceOrderId: raw.serviceOrderId,
           type: parsed.data.type,
-          name: parsed.data.name,
-          sku: parsed.data.sku || null,
-          unit: parsed.data.unit || null,
+          // BakımX kaleminde kimlik/fiyat alanları ürün kaydından gelir; kalan
+          // her şey (miktar, not, satış fiyatı) kullanıcınındır.
+          name: bakimxFields?.name ?? parsed.data.name,
+          sku: bakimxFields?.sku ?? parsed.data.sku ?? null,
+          unit: bakimxFields?.unit ?? parsed.data.unit ?? null,
           quantity: parsed.data.quantity,
-          unitPrice: parsed.data.unitPrice ?? null,
+          unitPrice: parsed.data.unitPrice ?? bakimxFields?.unitPrice ?? null,
           totalPrice: parsed.data.totalPrice ?? null,
           note: parsed.data.note || null,
-          tecdocArticleId: parsed.data.tecdocArticleId ?? null,
-          partId: partId,
-          brand: parsed.data.brand || null,
-          category: parsed.data.category || null,
-          categoryId: parsed.data.categoryId ?? null,
-          source: parsed.data.source ?? null,
+          tecdocArticleId: bakimxFields ? null : parsed.data.tecdocArticleId ?? null,
+          // BakımX stoğu atölyenin stoğu DEĞİL → bağ kurulmaz, stok düşmez.
+          partId: bakimxFields ? null : partId,
+          brand: bakimxFields ? bakimxFields.brand : parsed.data.brand || null,
+          category: bakimxFields ? bakimxFields.category : parsed.data.category || null,
+          // BakımX'te null: o kolon TecDoc düğüm id'si, iç taksonomi anahtarı oraya yazılmaz.
+          categoryId: bakimxFields ? null : parsed.data.categoryId ?? null,
+          bakimxProductId: bakimxFields?.bakimxProductId ?? null,
+          // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
+          purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
+          source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
-      if (partId && parsed.data.type === "part") {
+      if (!bakimxFields && partId && parsed.data.type === "part") {
         await reserveStockInTx(
           tx,
           user.workshopId,

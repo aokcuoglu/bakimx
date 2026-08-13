@@ -50,11 +50,15 @@ export type OrderItem = {
   categoryId: number | null
   // TecDoc katalog bağlantısı — doluysa satırda parça detayı (ⓘ) açılabilir.
   tecdocArticleId?: number | null
+  // BakımX ürün kataloğu bağlantısı (BAK-35) — doluysa satırın kimliği katalogdan
+  // gelir ve düzenlenemez. FK değildir: fiyat kalemde donmuş anlık görüntüdür.
+  bakimxProductId?: string | null
   // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX kataloğu); eski
-  // satırlarda null. "bakimx" değeri şemada açık ama kalem yazan akış Faz 2'de
-  // geliyor (BAK-35) — rozet bugünden tanıyor ki eski istemci satırı yutmasın.
+  // satırlarda null.
   source: "catalog" | "manual" | "purchase" | "bakimx" | null
-  // Dış alım (source=purchase) alanları; diğer kalemlerde/draft'ta bulunmaz.
+  // Alış fiyatı (kuruş, KDV hariç). İki kaynakta dolar: dış alım (source=purchase)
+  // ve BakımX kalemi (source=bakimx). unitPrice bundan ön-doldurulur, sonra ayrı
+  // düzenlenir.
   purchasePriceKurus?: number | null
   supplierName?: string | null
   supplierId?: string | null

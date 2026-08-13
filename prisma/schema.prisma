@@ -850,9 +850,15 @@ model ServiceOrderItem {
   // teknisyenin dışarıdan satın aldığı (purchase) parça mı. Yalnız açıklayıcı
   // (rozet + raporlama); eski satırlarda null → rozetsiz.
   source             OrderItemSource?
-  // --- Dış alım (source=purchase) alanları: teknisyenin firmadan aldığı parça ---
-  // Alış maliyeti (kuruş). Satış unitPrice'ından bağımsızdır; oluşturmada
-  // unitPrice buradan otomatik doldurulur, sonrasında ayrı düzenlenebilir.
+  // --- Alış fiyatı + dış alım (source=purchase) alanları ---
+  // Alış maliyeti (kuruş, KDV HARİÇ). Satış unitPrice'ından bağımsızdır;
+  // oluşturmada unitPrice buradan otomatik doldurulur, sonrasında ayrı
+  // düzenlenebilir. İki kaynakta dolar:
+  //   • source=purchase → teknisyenin firmadan aldığı parçanın fatura tutarı,
+  //     aşağıdaki tedarikçi/tarih/fotoğraf alanlarıyla birlikte.
+  //   • source=bakimx   → atölyenin BakımX'ten alış fiyatı (bakimx_products
+  //     .workshop_price_kurus'un anlık görüntüsü). Tedarikçi alanları BOŞ kalır;
+  //     kaynak bakimx_product_id ile bellidir (bkz. src/lib/parts/bakimx-item.ts).
   purchasePriceKurus Int?
   // Tedarikçi adı serbest metin olarak DAİMA yazılır (supplierId seçilse bile)
   // ki liste ekranı join olmadan render edebilsin.
