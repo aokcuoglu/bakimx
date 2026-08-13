@@ -107,3 +107,17 @@ export const ASSIGNABLE_ROLES: UserRole[] = ["cirak", "usta", "manager", "owner"
 export function rolesUpTo(role: UserRole): UserRole[] {
   return ASSIGNABLE_ROLES.filter((r) => ROLE_RANK[r] <= ROLE_RANK[role])
 }
+
+/**
+ * E-posta zorunlu roller (BAK-40). Fatura, şifre sıfırlama ve sistem bildirimleri
+ * bu kişilere gider; kullanıcı adıyla açılmış bir hesabın e-posta eklenmeden
+ * buraya terfi etmesi, atölyeyi kurtarılamaz bir yönetici hesabıyla bırakır.
+ *
+ * Aynı kural migration'da DB CHECK kısıtı olarak da duruyor — bu liste onun
+ * uygulama tarafındaki, kullanıcıya anlamlı hata verebilen ikizi.
+ */
+export const ROLES_REQUIRING_EMAIL: readonly UserRole[] = ["owner", "manager"]
+
+export function roleRequiresEmail(role: UserRole): boolean {
+  return ROLES_REQUIRING_EMAIL.includes(role)
+}

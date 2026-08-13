@@ -7,7 +7,12 @@ datasource db {
 }
 
 model Workshop {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
+  // Tenant giriş kodu (BAK-40). E-postasız kullanıcı `/w/<loginCode>` ile kendi
+  // atölyesini seçer; kullanıcı adları YALNIZ bu tenant içinde benzersizdir.
+  // Format: küçük harf `a-z0-9-`, 3–20 karakter (bkz. `src/lib/workshop-code.ts`).
+  // v1'de uygulama içinden DEĞİŞTİRİLEMEZ — yazdırılmış QR kartları ölmesin.
+  loginCode    String   @unique
   name         String
   phone        String
   city         String
@@ -258,9 +263,17 @@ model WorkshopSettings {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
+  id String @id @default(cuid())
+  // BAK-40: e-postasız usta/çırak hesabı açılabilsin diye NULLABLE. Postgres
+  // birden çok NULL'a izin verdiği için @unique korunur. `owner`/`manager`
+  // rollerinde DOLU olması DB CHECK'i ile zorunlu tutulur.
+  email      String?  @unique
+  // Tenant içi giriş adı — küçük harfe normalize edilmiş saklanır. Global DEĞİL:
+  // her atölyede bir "ahmet" olabilir.
+  username   String?
   password   String
+  // Sahibin ürettiği geçici şifreyle ilk girişte şifre değiştirmeye zorlar (P1).
+  mustChangePassword Boolean @default(false)
   firstName  String?
   lastName   String?
   workshopId String
@@ -279,6 +292,10 @@ model User {
   deletedPhotos         VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
   deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
 
+  // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
+  // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
+  // bunları ifade edemediği için burada yalnızca not olarak geçer.
+  @@unique([workshopId, username])
   @@index([workshopId])
 }
 

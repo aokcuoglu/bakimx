@@ -46,7 +46,9 @@ export default async function AdminAuditPage({
       skip: (page - 1) * PAGE_SIZE,
       include: {
         workshop: { select: { name: true } },
-        actorUser: { select: { email: true } },
+        // `username` şart: e-postasız bir kullanıcının işlemi "sistem" diye
+        // görünürse denetim kaydı yanlış kişiye yazılmış olur (BAK-40).
+        actorUser: { select: { email: true, username: true } },
       },
     }),
     prisma.auditLog.count({ where }),
@@ -133,7 +135,9 @@ export default async function AdminAuditPage({
                       {l.workshop?.name ?? l.workshopId}
                     </Link>
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">{l.actorUser?.email ?? "sistem"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {l.actorUser ? (l.actorUser.email ?? l.actorUser.username ?? "—") : "sistem"}
+                  </td>
                   <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{l.metadataJson ?? "—"}</td>
                 </tr>
               ))}

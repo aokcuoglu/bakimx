@@ -18,6 +18,7 @@ import { generateInviteToken, inviteExpiry, buildInviteUrl, isInviteExpired } fr
 import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import { escapeHtml } from "@/lib/html-escape"
 import { sendEmailDirect } from "@/lib/communications"
+import { roleAllowedForUser } from "@/lib/user-identity"
 
 type Ok = { ok: true; inviteUrl?: string }
 type Err = { ok: false; error: string }
@@ -75,7 +76,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
     const { email, role } = parsed.data
 
     assertCanAssignRole(user.role, role)
-    if (email === user.email.toLowerCase()) return fail("Kendinizi davet edemezsiniz.")
+    if (user.email && email === user.email.toLowerCase()) return fail("Kendinizi davet edemezsiniz.")
 
     // Global e-mail uniqueness: an account can belong to only one workshop.
     const existing = await prisma.user.findUnique({
@@ -240,12 +241,22 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
 
     const target = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, workshopId: true, role: true },
+      select: { id: true, workshopId: true, role: true, email: true },
     })
     assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
     // Cannot modify someone outranking you (e.g. a manager touching an owner).
     if (ROLE_RANK[target!.role] > ROLE_RANK[user.role]) {
       return fail("Bu kullanıcıyı düzenleme yetkiniz yok.")
+    }
+
+    // Rol yükseltme kapısı (BAK-40): kullanıcı adıyla açılmış e-postasız bir
+    // hesap, e-posta eklenmeden owner/manager olamaz — fatura, şifre sıfırlama
+    // ve sistem bildirimleri oraya gidiyor. DB'deki CHECK aynı kuralı zorluyor;
+    // burası kullanıcıya ham kısıt hatası yerine anlaşılır bir cevap verir.
+    if (!roleAllowedForUser(newRole, target!)) {
+      return fail(
+        `${ROLE_LABELS[newRole]} rolü için e-posta adresi zorunludur. Önce kullanıcıya e-posta ekleyin.`
+      )
     }
 
     // Last-owner protection: never demote the only remaining active owner.

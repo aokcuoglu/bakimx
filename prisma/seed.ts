@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import bcrypt from "bcryptjs"
 import { buildPoolConfig } from "../src/lib/pg-connection"
+import { workshopCodeCandidate } from "../src/lib/workshop-code"
 
 // Prisma 7 + tsx don't auto-load .env.local (mirrors prisma.config.ts). Load it before
 // reading DATABASE_URL; never overrides real env, so the prod NODE_ENV guard below is unaffected.
@@ -37,6 +38,9 @@ async function main() {
   if (!workshop) {
     workshop = await prisma.workshop.create({
       data: {
+        // Giriş kodu üretimi tek modülden geçer (BAK-40) — seed de kodsuz
+        // workshop bırakmamalı, yoksa `/w/<kod>` akışı demo veride denenemez.
+        loginCode: workshopCodeCandidate("Demo Oto Servis"),
         name: "Demo Oto Servis",
         phone: "0555 123 4567",
         city: "İstanbul",
@@ -67,6 +71,30 @@ async function main() {
     console.log(`✅ User created: ${user.id}`)
   } else {
     console.log(`ℹ️  User exists: ${user.id}`)
+  }
+
+  // BAK-40 — e-postasız usta hesabı. Kullanıcı adı yolunu demo veride
+  // denenebilir kılar: iş yeri kodu + `usta` + admin123456.
+  const ustaUsername = "usta"
+  const existingUsta = await prisma.user.findUnique({
+    where: { workshopId_username: { workshopId: workshop.id, username: ustaUsername } },
+    select: { id: true },
+  })
+  if (!existingUsta) {
+    const usta = await prisma.user.create({
+      data: {
+        email: null,
+        username: ustaUsername,
+        password: hashedPassword,
+        firstName: "Kemal",
+        lastName: "Usta",
+        workshopId: workshop.id,
+        role: "usta",
+      },
+    })
+    console.log(`✅ E-postasız usta created: ${usta.id} (${workshop.loginCode} / ${ustaUsername})`)
+  } else {
+    console.log(`ℹ️  E-postasız usta exists: ${existingUsta.id}`)
   }
 
   let customer = await prisma.customer.findFirst({
