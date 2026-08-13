@@ -6,6 +6,9 @@ import {
   isPlanExpiredLock,
   PlanWriteLockedError,
   PLAN_EXPIRED_LOCK_REASONS,
+  PLAN_SEATS,
+  getSeatLimit,
+  seatLimitMessage,
 } from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
@@ -192,4 +195,28 @@ test("isPlanExpiredLock excludes the approval gate and unlocked plans", () => {
   expect(isPlanExpiredLock(getPlanState(wsFields()).lockReason)).toBe(false)
   expect(isPlanExpiredLock(null)).toBe(false)
   expect(isPlanExpiredLock("1")).toBe(false)
+})
+
+test("starter paketi tek koltuk taşır — alt kullanıcı açılamaz", () => {
+  // BAK-37'nin en kritik UX noktası: starter'daki atölyede sahibin kendisi tek
+  // koltuğu doldurur, yani hiç usta/çırak ekleyemez.
+  expect(PLAN_SEATS.starter).toBe(1)
+  expect(getSeatLimit("starter")).toBe(1)
+  expect(getSeatLimit("starter", 2)).toBe(3)
+})
+
+test("koltuk limiti mesajı sayıları ve yükseltme çıkışını söyler", () => {
+  const message = seatLimitMessage("pro", 5, 5)
+  expect(message).toContain("(5/5)")
+  expect(message).toContain("yükseltin")
+  // Sessiz bir "işlem başarısız" kabul edilemez — metin ne yapılacağını söylemeli.
+  expect(message).not.toBe("İşlem başarısız")
+})
+
+test("tek koltuklu pakette mesaj nedeni açıkça anlatır", () => {
+  const message = seatLimitMessage("starter", 1, 1)
+  expect(message).toContain("(1/1)")
+  expect(message).toContain("Başlangıç")
+  expect(message).toContain("tek kullanıcı")
+  expect(message).toContain("yükseltmeniz")
 })

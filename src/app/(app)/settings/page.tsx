@@ -29,6 +29,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const serializedWorkshop = {
     id: workshop.id,
     name: workshop.name,
+    loginCode: workshop.loginCode,
     phone: workshop.phone,
     city: workshop.city,
     district: workshop.district,

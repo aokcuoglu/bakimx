@@ -17,6 +17,8 @@
  * Saf modül — prisma/DOM bağımlılığı yok, client bileşenlerinden de import edilebilir.
  */
 
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
+
 export const WORKSHOP_CODE_MIN_LENGTH = 3
 export const WORKSHOP_CODE_MAX_LENGTH = 20
 
@@ -131,10 +133,14 @@ export function workshopCodeCandidate(name: string, attempt: number = 0): string
   return `${trimmed}-${randomSuffix()}`
 }
 
-/** Prisma `P2002` hatası `Workshop.loginCode` çakışması mı? */
+/**
+ * Prisma `P2002` hatası `Workshop.loginCode` çakışması mı?
+ *
+ * Kısıt bilgisinin hangi alanda durduğu istemci kurulumuna göre değişiyor —
+ * gerekçe ve şekiller `@/lib/prisma-errors` içinde. Yalnız `meta.target`'a bakan
+ * eski kontrol sürücü adaptörlü istemcide SESSİZCE hep `false` dönüyordu, yani
+ * çakışmada yeniden deneme döngüsü hiç devreye girmiyordu (BAK-37).
+ */
 export function isLoginCodeConflict(error: unknown): boolean {
-  const e = error as { code?: string; meta?: { target?: string[] | string } }
-  if (e?.code !== "P2002") return false
-  const target = Array.isArray(e.meta?.target) ? e.meta.target.join(",") : String(e.meta?.target ?? "")
-  return target.toLowerCase().includes("logincode")
+  return isUniqueConstraintError(error, "logincode")
 }

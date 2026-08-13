@@ -4,11 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Lock, Store, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { isEmailIdentifier } from "@/lib/user-identity"
 
 const formVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -68,17 +69,25 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  // Tek kimlik alanı (BAK-40 sözleşmesi): `@` varsa e-posta yolu HİÇ değişmeden
+  // çalışır; yoksa kullanıcı adı yoludur ve iş yeri kodu alanı progresif açılır.
+  const [identifier, setIdentifier] = useState("")
+  const usesUsername = identifier.trim().length > 0 && !isEmailIdentifier(identifier)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
+    const value = (formData.get("identifier") as string) ?? ""
     const password = formData.get("password") as string
 
-    if (!email?.trim()) {
-      setError("E-posta adresi zorunludur")
+    if (!value.trim()) {
+      setError("E-posta adresi veya kullanıcı adı zorunludur")
+      return
+    }
+    if (!isEmailIdentifier(value) && !((formData.get("workshopCode") as string) ?? "").trim()) {
+      setError("Kullanıcı adıyla giriş için iş yeri kodu gereklidir")
       return
     }
     if (!password) {
@@ -149,22 +158,53 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
-            E-posta
+          <Label htmlFor="identifier" className="text-sm font-medium text-muted-foreground">
+            E-posta veya kullanıcı adı
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="ornek@email.com"
+              id="identifier"
+              name="identifier"
+              // `type="email"` DEĞİL: tarayıcı doğrulaması kullanıcı adını reddederdi.
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="ornek@email.com veya kullanıcı adınız"
               required
               className="pl-9"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
             />
           </div>
         </div>
+
+        {/* Kullanıcı adları YALNIZ iş yeri içinde benzersiz — kod olmadan hangi
+            hesap olduğu çözülemez. E-posta girenlere hiç gösterilmez. */}
+        {usesUsername && (
+          <div className="space-y-2">
+            <Label htmlFor="workshopCode" className="text-sm font-medium text-muted-foreground">
+              İş yeri kodu
+            </Label>
+            <div className="relative">
+              <Store className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+              <Input
+                id="workshopCode"
+                name="workshopCode"
+                type="text"
+                autoComplete="organization"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="ornek-oto-servis"
+                className="pl-9"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              İş yerinizin size verdiği kod. Bilmiyorsanız iş yeri yöneticinize sorun.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium text-muted-foreground">

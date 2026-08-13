@@ -7,6 +7,7 @@ import {
   isValidUsername,
   normalizeUsername,
   roleAllowedForUser,
+  suggestUsername,
 } from "./user-identity"
 import { ROLES_REQUIRING_EMAIL, roleRequiresEmail } from "./roles"
 import type { UserRole } from "@prisma/client"
@@ -81,4 +82,32 @@ test("şifre sıfırlama: e-postasız kullanıcı bu akışta eşleşmez", () =>
   expect(canReceivePasswordReset({ email: "ahmet@bakimx.com", isActive: false })).toBe(false)
   expect(canReceivePasswordReset(null)).toBe(false)
   expect(canReceivePasswordReset(undefined)).toBe(false)
+})
+
+test("kullanıcı adı önerisi Türkçe adları ASCII'ye indirger", () => {
+  expect(suggestUsername("Mehmet", "Yılmaz")).toBe("mehmet.yilmaz")
+  expect(suggestUsername("Şükrü", "Çağdaş")).toBe("sukru.cagdas")
+  expect(suggestUsername("İSMAİL", "IŞIK")).toBe("ismail.isik")
+})
+
+test("kullanıcı adı önerisi harf/rakam dışını atar ve tek ada da çalışır", () => {
+  expect(suggestUsername("Ali Rıza", "Öz-Türk")).toBe("aliriza.ozturk")
+  expect(suggestUsername("Ahmet", "")).toBe("ahmet")
+  expect(suggestUsername("", "Yılmaz")).toBe("yilmaz")
+})
+
+test("kullanıcı adı önerisi üretilemiyorsa boş döner", () => {
+  // Boş bırakmak, forma geçersiz bir değer yazmaktan dürüsttür — sahip kendisi girer.
+  expect(suggestUsername("🚗", "🚙")).toBe("")
+  expect(suggestUsername("", "")).toBe("")
+  // 3 karakter alt sınırının altında kalan öneri de kabul edilmez.
+  expect(suggestUsername("A", "")).toBe("")
+  // "A B" → "a.b" 3 karakterdir ve geçerlidir; sınır burada.
+  expect(suggestUsername("A", "B")).toBe("a.b")
+})
+
+test("önerilen kullanıcı adı her zaman geçerli ve uzunluk sınırında", () => {
+  const suggestion = suggestUsername("Abdurrahmangazi", "Küçükoğlulları")
+  expect(suggestion.length).toBeLessThanOrEqual(USERNAME_MAX_LENGTH)
+  expect(isValidUsername(suggestion)).toBe(true)
 })

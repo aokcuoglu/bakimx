@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db"
 import { getPlanState, isPlanExpiredLock } from "@/lib/plan"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
+import { ForcePasswordChange } from "@/components/auth/force-password-change"
 import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
@@ -79,6 +80,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           hasPendingOrder={!!pendingOrder}
         />
       </>
+    )
+  }
+
+  // Geçici şifre kapısı (BAK-37). Plan kilidinden SONRA gelir — sıralama
+  // `requireWritableWorkshop` ile aynı: önce plan, sonra şifre. Kapı burada tek
+  // bir yerde durur (plan kilidi kalıbı), tek tek sayfalara serpiştirilmez.
+  // Kurucu impersonation'ı muaf: kilitli hesabı inceleyen kurucudan başkasının
+  // şifresini belirlemesi istenemez.
+  if (user.mustChangePassword && !impersonation) {
+    return (
+      <ForcePasswordChange
+        displayName={[user.firstName, user.lastName].filter(Boolean).join(" ")}
+      />
     )
   }
 
