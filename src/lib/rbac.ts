@@ -2,7 +2,7 @@ import { Prisma, type UserRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import type { AuthUser } from "@/lib/auth"
 import { ROLE_RANK, roleCan, type Permission } from "@/lib/roles"
-import { getSeatLimit, type PlanTier } from "@/lib/plan"
+import { getSeatLimit, seatLimitMessage, type PlanTier } from "@/lib/plan"
 
 /**
  * Workshop-scoped role-based access control (server-only — imports prisma).
@@ -118,6 +118,27 @@ export async function getSeatUsage(
 }
 
 /**
+ * Koltuk limiti hatası ayrı tip (BAK-37): çağıran taraf bunu tanıyıp kullanıcıya
+ * düz bir hata satırı yerine "paketi yükselt" yönlendirmesi gösterebilsin,
+ * beklenmeyen hatalarla karışmasın. Mesaj `seatLimitMessage` ile üretilir —
+ * `starter` paketinde limit 1 olduğu için o atölye HİÇ alt kullanıcı açamaz ve
+ * bunu açıkça söylemek zorundayız.
+ */
+export class SeatLimitError extends Error {
+  readonly used: number
+  readonly limit: number
+  readonly tier: PlanTier
+
+  constructor(tier: PlanTier, used: number, limit: number) {
+    super(seatLimitMessage(tier, used, limit))
+    this.name = "SeatLimitError"
+    this.tier = tier
+    this.used = used
+    this.limit = limit
+  }
+}
+
+/**
  * Throws if adding ONE more seat would exceed the workshop's limit. Must be
  * called INSIDE a transaction that has already locked the Workshop row
  * (`SELECT ... FOR UPDATE`) so concurrent seat-consuming ops serialize.
@@ -140,9 +161,10 @@ export async function assertSeatAvailableTx(
   const livePending = await tx.invite.count({
     where: { workshopId, status: "pending", expiresAt: { gt: new Date() } },
   })
-  if (activeUsers + livePending >= getSeatLimit(ws.planTier as PlanTier, ws.extraSeats)) {
-    throw new Error(
-      "Koltuk limitiniz dolu. Önce bir koltuk boşaltın ya da paketinizi yükseltin."
-    )
+  const tier = (ws.planTier as PlanTier) ?? "starter"
+  const limit = getSeatLimit(tier, ws.extraSeats)
+  const used = activeUsers + livePending
+  if (used >= limit) {
+    throw new SeatLimitError(tier, used, limit)
   }
 }

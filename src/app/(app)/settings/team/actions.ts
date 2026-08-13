@@ -1,28 +1,53 @@
 "use server"
 
 import { z } from "zod/v4"
+import bcrypt from "bcryptjs"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { UserRole } from "@prisma/client"
-import { requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
+import { requireAuth, requireWritableWorkshop, assertWorkshopAccess } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import {
   assertCanManageTeam,
   assertCanAssignRole,
   assertSeatAvailableTx,
+  SeatLimitError,
   ROLE_LABELS,
   ROLE_RANK,
 } from "@/lib/rbac"
 import { generateInviteToken, inviteExpiry, buildInviteUrl, isInviteExpired } from "@/lib/invite"
 import { getSeatLimit, type PlanTier } from "@/lib/plan"
 import { escapeHtml } from "@/lib/html-escape"
+import { rateLimit } from "@/lib/rate-limit"
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import { sendEmailDirect } from "@/lib/communications"
-import { roleAllowedForUser } from "@/lib/user-identity"
+import {
+  isValidUsername,
+  normalizeUsername,
+  roleAllowedForUser,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from "@/lib/user-identity"
+import { generateTempPassword } from "@/lib/temp-password"
 
 type Ok = { ok: true; inviteUrl?: string }
-type Err = { ok: false; error: string }
+/**
+ * `code` yalnız arayüzün AYRI davranması gereken hatalar için doldurulur —
+ * koltuk limiti düz bir hata satırı değil, paket yükseltme yönlendirmesi
+ * göstermeli (BAK-37).
+ */
+type ErrCode = "seat_limit"
+type Err = { ok: false; error: string; code?: ErrCode }
 type Result = Ok | Err
+
+/** Geçici şifre YALNIZ bu cevapta görünür; DB'de bcrypt özeti durur, log'a hiç düşmez. */
+export type IssuedCredentials = {
+  fullName: string
+  username: string
+  tempPassword: string
+}
+type CredentialsResult = { ok: true; credentials: IssuedCredentials } | Err
 
 const roleSchema = z.enum(["staff", "manager", "owner"])
 const inviteSchema = z.object({
@@ -30,8 +55,52 @@ const inviteSchema = z.object({
   role: roleSchema.default("staff"),
 })
 
-function fail(error: string): Err {
-  return { ok: false, error }
+/**
+ * E-postasız yoldan açılabilen roller. `owner`/`manager` BİLEREK yok: onlarda
+ * e-posta zorunludur (BAK-40 kuralı, DB CHECK'i ile de zorlanır) ve e-posta
+ * davetiyle gelirler.
+ */
+const localMemberRoleSchema = z.enum(["usta", "cirak"])
+
+const localMemberSchema = z.object({
+  firstName: z.string().trim().min(1, "Ad zorunludur").max(60),
+  lastName: z.string().trim().min(1, "Soyad zorunludur").max(60),
+  username: z
+    .string()
+    .trim()
+    .min(USERNAME_MIN_LENGTH, `Kullanıcı adı en az ${USERNAME_MIN_LENGTH} karakter olmalıdır`)
+    .max(USERNAME_MAX_LENGTH, `Kullanıcı adı en fazla ${USERNAME_MAX_LENGTH} karakter olabilir`),
+  role: localMemberRoleSchema,
+})
+
+const USERNAME_FORMAT_MESSAGE =
+  "Kullanıcı adı yalnız küçük harf, rakam, nokta, tire ve alt tire içerebilir."
+const USERNAME_TAKEN_MESSAGE = "Bu kullanıcı adı iş yerinizde zaten kullanılıyor."
+
+function fail(error: string, code?: ErrCode): Err {
+  return code ? { ok: false, error, code } : { ok: false, error }
+}
+
+/**
+ * Bilinen hataları (`SeatLimitError`, kapı hataları) kullanıcının okuyabileceği
+ * cevaba çevirir.
+ *
+ * Prisma hatalarının mesajı BİLEREK dışarı verilmez: kullanıcıya "Unique
+ * constraint failed on the fields: (`workshopId`, `username`)" göstermek hem
+ * anlamsız hem de şema detayı sızdırır. Onlar `code` taşıdıkları için ayırt
+ * edilir (davet kabul akışındaki desenin aynısı) ve sunucuya loglanır.
+ */
+function toErr(e: unknown, fallback = "İşlem başarısız"): Err {
+  if (e instanceof SeatLimitError) return fail(e.message, "seat_limit")
+  const code = (e as { code?: string })?.code
+  if (e instanceof Error && !code) return fail(e.message || fallback)
+  console.error("[team-actions] beklenmeyen hata:", e)
+  return fail(fallback)
+}
+
+/** Prisma benzersizlik ihlali `User.username` üzerinde mi? */
+function isUsernameConflict(error: unknown): boolean {
+  return isUniqueConstraintError(error, "username")
 }
 
 async function requestOrigin(): Promise<string> {
@@ -118,11 +187,10 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
           where: { workshopId: user.workshopId, status: "pending", expiresAt: { gt: now } },
         })
         const used = activeUsers + pendingInvites
-        const limit = getSeatLimit((ws!.planTier as PlanTier) ?? "starter", ws!.extraSeats)
+        const tier = (ws!.planTier as PlanTier) ?? "starter"
+        const limit = getSeatLimit(tier, ws!.extraSeats)
         if (used >= limit) {
-          throw new Error(
-            `Koltuk limitinize ulaştınız (${used}/${limit}). Daha fazla kullanıcı için paketinizi yükseltin ya da ek koltuk için iletişime geçin.`
-          )
+          throw new SeatLimitError(tier, used, limit)
         }
       }
 
@@ -163,7 +231,7 @@ export async function inviteMemberAction(formData: FormData): Promise<Result> {
     revalidatePath("/settings")
     return { ok: true, inviteUrl: url }
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "İşlem başarısız")
+    return toErr(e)
   }
 }
 
@@ -205,7 +273,7 @@ export async function resendInviteAction(inviteId: string): Promise<Result> {
     revalidatePath("/settings")
     return { ok: true, inviteUrl: url }
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "İşlem başarısız")
+    return toErr(e)
   }
 }
 
@@ -223,7 +291,7 @@ export async function revokeInviteAction(inviteId: string): Promise<Result> {
     revalidatePath("/settings")
     return { ok: true }
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "İşlem başarısız")
+    return toErr(e)
   }
 }
 
@@ -287,7 +355,7 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
     revalidatePath("/settings")
     return { ok: true }
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "İşlem başarısız")
+    return toErr(e)
   }
 }
 
@@ -335,6 +403,200 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
     revalidatePath("/settings")
     return { ok: true }
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "İşlem başarısız")
+    return toErr(e)
+  }
+}
+
+/**
+ * Kullanıcı adı bu iş yerinde müsait mi? (BAK-37)
+ *
+ * Salt-okunur; formda debounce ile çağrılır. Kapsam KENDİ tenant'ı olduğu için
+ * bilgi sızıntısı yok — sahibin zaten ekip listesinde gördüğü şeyi söylüyor.
+ * Yine de `team.manage` isteriz: kullanıcı adı listesi, davet edilmemiş birinin
+ * işine yarayacak bir bilgi değil.
+ */
+export async function checkUsernameAvailabilityAction(
+  value: string
+): Promise<{ available: boolean; error?: string }> {
+  const user = await requireAuth()
+  try {
+    assertCanManageTeam(user)
+  } catch {
+    return { available: false, error: "Bu işlem için yetkiniz yok." }
+  }
+
+  // Tuş başına bir sorgu atılmasın diye üst sınır; form zaten debounce'lu.
+  if (!rateLimit(`username-check:${user.id}`, 60, 60_000).allowed) {
+    return { available: false, error: "Çok fazla deneme. Bir dakika sonra tekrar deneyin." }
+  }
+
+  const username = normalizeUsername(value)
+  if (username.length < USERNAME_MIN_LENGTH) {
+    return { available: false, error: `En az ${USERNAME_MIN_LENGTH} karakter olmalıdır` }
+  }
+  if (username.length > USERNAME_MAX_LENGTH) {
+    return { available: false, error: `En fazla ${USERNAME_MAX_LENGTH} karakter olabilir` }
+  }
+  if (!isValidUsername(username)) {
+    return { available: false, error: USERNAME_FORMAT_MESSAGE }
+  }
+
+  const taken = await prisma.user.findUnique({
+    where: { workshopId_username: { workshopId: user.workshopId, username } },
+    select: { id: true },
+  })
+  return taken ? { available: false, error: USERNAME_TAKEN_MESSAGE } : { available: true }
+}
+
+/**
+ * E-postası olmayan bir usta/çırak hesabı açar ve TEK SEFERLİK geçici şifresini
+ * döndürür (BAK-37).
+ *
+ * Mevcut e-posta davet akışı (`inviteMemberAction`) olduğu gibi duruyor — büro
+ * personeli ve müdürler oradan gelir. İkisi yan yana çalışır.
+ *
+ * Koltuk davranışı değişmiyor: kullanıcı adıyla giren personel de NORMAL koltuk
+ * sayılır, aynı `assertSeatAvailableTx` kapısından geçer. Bu kritik: `starter`
+ * paketinde limit 1'dir, yani o atölye hiç alt kullanıcı açamaz ve hata mesajı
+ * bunu açıkça söyleyip yükseltmeye yönlendirir (bkz. `seatLimitMessage`).
+ */
+export async function createLocalMemberAction(formData: FormData): Promise<CredentialsResult> {
+  const { user } = await requireWritableWorkshop("team.manage")
+  try {
+    assertCanManageTeam(user)
+
+    const parsed = localMemberSchema.safeParse({
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      username: String(formData.get("username") ?? ""),
+      role: String(formData.get("role") ?? "usta"),
+    })
+    if (!parsed.success) {
+      return fail(parsed.error.issues[0]?.message ?? "Geçersiz bilgiler")
+    }
+    const { firstName, lastName, role } = parsed.data
+    const username = normalizeUsername(parsed.data.username)
+    if (!isValidUsername(username)) return fail(USERNAME_FORMAT_MESSAGE)
+
+    // Rol kapısı korunur: kimse kendinden yüksek rol atayamaz. `owner`/`manager`
+    // zaten şemadan geçemez (e-posta zorunlu).
+    assertCanAssignRole(user.role, role)
+
+    // Şifre yalnız BURADA düz metin olarak var: hash'i DB'ye, kendisi tek bir
+    // cevapla arayüze gider. Hiçbir log/audit satırına yazılmaz.
+    const tempPassword = generateTempPassword()
+    const passwordHash = await bcrypt.hash(tempPassword, 12)
+
+    const created = await prisma.$transaction(async (tx) => {
+      // Koltuk tüketen tüm işlemler tek kaynağa serileşsin (mevcut desen).
+      await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id = ${user.workshopId} FOR UPDATE`
+      await assertSeatAvailableTx(tx, user.workshopId)
+
+      return tx.user.create({
+        data: {
+          email: null,
+          username,
+          password: passwordHash,
+          firstName,
+          lastName,
+          workshopId: user.workshopId,
+          role,
+          isActive: true,
+          mustChangePassword: true,
+        },
+        select: { id: true, firstName: true, lastName: true, username: true },
+      })
+    })
+
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "User",
+      created.id,
+      "member_created_local",
+      JSON.stringify({ username, role })
+    )
+
+    revalidatePath("/settings")
+    return {
+      ok: true,
+      credentials: {
+        fullName: `${firstName} ${lastName}`.trim(),
+        username,
+        tempPassword,
+      },
+    }
+  } catch (e) {
+    if (isUsernameConflict(e)) return fail(USERNAME_TAKEN_MESSAGE)
+    return toErr(e, "Kullanıcı oluşturulamadı")
+  }
+}
+
+/**
+ * E-postasız bir üyenin şifresini sıfırlar: yeni geçici şifre üretilir ve
+ * `mustChangePassword` tekrar dolar (BAK-37).
+ *
+ * Bu yol e-posta davetiyle gelmiş üyeler için KAPALIDIR — onların "şifremi
+ * unuttum" akışı var ve panelden şifre üretmek, e-postası olan bir hesabı
+ * sahibine haber vermeden devralmanın kısa yolu olurdu.
+ */
+export async function resetMemberPasswordAction(userId: string): Promise<CredentialsResult> {
+  const { user } = await requireWritableWorkshop("team.manage")
+  try {
+    assertCanManageTeam(user)
+    if (userId === user.id) {
+      return fail("Kendi şifrenizi buradan sıfırlayamazsınız.")
+    }
+
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        workshopId: true,
+        role: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+      },
+    })
+    assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
+    if (ROLE_RANK[target!.role] > ROLE_RANK[user.role]) {
+      return fail("Bu kullanıcıyı düzenleme yetkiniz yok.")
+    }
+    if (target!.email || !target!.username) {
+      return fail(
+        "Bu kullanıcının e-posta adresi var; şifresini “Şifremi unuttum” ile kendisi sıfırlayabilir."
+      )
+    }
+
+    const tempPassword = generateTempPassword()
+    const passwordHash = await bcrypt.hash(tempPassword, 12)
+    await prisma.user.update({
+      where: { id: target!.id },
+      data: { password: passwordHash, mustChangePassword: true },
+    })
+
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "User",
+      target!.id,
+      "member_password_reset",
+      JSON.stringify({ username: target!.username })
+    )
+
+    revalidatePath("/settings")
+    return {
+      ok: true,
+      credentials: {
+        fullName:
+          `${target!.firstName ?? ""} ${target!.lastName ?? ""}`.trim() || target!.username!,
+        username: target!.username!,
+        tempPassword,
+      },
+    }
+  } catch (e) {
+    return toErr(e, "Şifre sıfırlanamadı")
   }
 }

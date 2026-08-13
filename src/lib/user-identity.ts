@@ -13,6 +13,7 @@
 
 import type { UserRole } from "@prisma/client"
 import { roleRequiresEmail } from "@/lib/roles"
+import { FOLD_FROM, FOLD_TO } from "@/lib/tr-search"
 
 export const USERNAME_MIN_LENGTH = 3
 export const USERNAME_MAX_LENGTH = 32
@@ -33,6 +34,43 @@ export function isValidUsername(value: string): boolean {
   const username = normalizeUsername(value)
   if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) return false
   return USERNAME_PATTERN.test(username)
+}
+
+/**
+ * Ad/soyad parçasını kullanıcı adında kullanılabilir ASCII'ye indirir.
+ * Türkçe küçültme ÖNCE gelir ("I" → "ı" → "i"), aksanlar `tr-search` tablosuyla
+ * katlanır, kalan her şey atılır.
+ */
+function foldNameSegment(value: string): string {
+  let out = ""
+  for (const ch of value.toLocaleLowerCase("tr").normalize("NFD")) {
+    const index = FOLD_FROM.indexOf(ch)
+    if (index >= 0) {
+      out += FOLD_TO[index]
+      continue
+    }
+    if (ch >= "a" && ch <= "z") out += ch
+    else if (ch >= "0" && ch <= "9") out += ch
+  }
+  return out
+}
+
+/**
+ * Ad-soyaddan kullanıcı adı önerisi: "Mehmet Yılmaz" → "mehmet.yilmaz" (BAK-37).
+ *
+ * Sahip formu doldururken kullanıcı adını sıfırdan uydurmak zorunda kalmasın;
+ * öneri her zaman düzenlenebilir ve benzersizliğe DB karar verir. Öneri geçerli
+ * bir kullanıcı adına inmiyorsa boş döner — hatalı bir değeri forma yazmaktansa
+ * alanı boş bırakmak dürüst davranıştır.
+ */
+export function suggestUsername(
+  firstName?: string | null,
+  lastName?: string | null
+): string {
+  const parts = [firstName ?? "", lastName ?? ""].map(foldNameSegment).filter(Boolean)
+  if (parts.length === 0) return ""
+  const candidate = parts.join(".").slice(0, USERNAME_MAX_LENGTH).replace(/[._-]+$/, "")
+  return isValidUsername(candidate) ? candidate : ""
 }
 
 /**

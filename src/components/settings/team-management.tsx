@@ -9,6 +9,7 @@ import {
   Mail,
   Copy,
   Check,
+  KeyRound,
   Loader2,
   RotateCw,
   X,
@@ -29,10 +30,22 @@ import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_RANK, rolesUpTo } from "@/lib/role
 import {
   inviteMemberAction,
   resendInviteAction,
+  resetMemberPasswordAction,
   revokeInviteAction,
   updateMemberRoleAction,
   setMemberActiveAction,
 } from "@/app/(app)/settings/team/actions"
+import { AddLocalMemberForm } from "@/components/settings/add-local-member-form"
+import {
+  MemberCredentialsDialog,
+  type IssuedCredentials,
+} from "@/components/settings/member-credentials-dialog"
+
+/**
+ * E-postasız yoldan açılabilen roller (BAK-37). `owner`/`manager` bilerek yok —
+ * onlarda e-posta zorunlu, e-posta davetiyle gelirler.
+ */
+const LOCAL_MEMBER_ROLES: UserRole[] = ["usta", "cirak"]
 
 export type TeamMember = {
   id: string
@@ -66,6 +79,15 @@ function memberIdentity(m: TeamMember) {
   return m.email ?? m.username ?? "—"
 }
 
+/**
+ * Şifresi panelden sıfırlanabilen üye: e-postası olmayan, kullanıcı adıyla giren
+ * hesap. E-postası olan üye "şifremi unuttum" akışını kullanır — panelden şifre
+ * üretmek, o hesabı sahibine haber vermeden devralmanın kısa yolu olurdu.
+ */
+function isLocalMember(m: TeamMember) {
+  return !m.email && Boolean(m.username)
+}
+
 function memberName(m: TeamMember) {
   const n = `${m.firstName ?? ""} ${m.lastName ?? ""}`.trim()
   return n || memberIdentity(m)
@@ -79,6 +101,8 @@ export function TeamManagement({
   canManage,
   seatUsed,
   seatLimit,
+  workshopName,
+  loginCode,
 }: {
   members: TeamMember[]
   invites: PendingInvite[]
@@ -87,12 +111,18 @@ export function TeamManagement({
   canManage: boolean
   seatUsed: number
   seatLimit: number
+  workshopName: string
+  /** `Workshop.loginCode` — kullanıcı adıyla girişte hangi tenant olduğunu çözer. */
+  loginCode: string
 }) {
   const atLimit = seatUsed >= seatLimit
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [showInvite, setShowInvite] = useState(false)
+  const [showAddLocal, setShowAddLocal] = useState(false)
+  /** Dolu olduğu sürece geçici şifre penceresi açık kalır — kapanınca kaybolur. */
+  const [issued, setIssued] = useState<IssuedCredentials | null>(null)
   const [inviteEmail, setInviteEmail] = useState("")
   // Varsayılan "staff" idi; #183'te bu rol LEGACY oldu ve atanabilir listesinden
   // çıkarıldı. Varsayılan güncellenmediği için davet formu, seçenekler arasında
@@ -103,8 +133,17 @@ export function TeamManagement({
   const [copied, setCopied] = useState(false)
 
   const assignable = rolesUpTo(currentUserRole)
+  // Rol atama kuralı korunur: kimse kendinden yüksek rol açamaz.
+  const localAssignable = LOCAL_MEMBER_ROLES.filter((r) => assignable.includes(r))
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string; inviteUrl?: string }>, onOk?: (r: { inviteUrl?: string }) => void) {
+  type ActionResult = {
+    ok: boolean
+    error?: string
+    inviteUrl?: string
+    credentials?: IssuedCredentials
+  }
+
+  function run(fn: () => Promise<ActionResult>, onOk?: (r: ActionResult) => void) {
     setError("")
     startTransition(async () => {
       const res = await fn()
@@ -155,20 +194,43 @@ export function TeamManagement({
           </div>
         </div>
         {canManage && (
-          <Button
-            size="lg"
-            onClick={() => setShowInvite((s) => !s)}
-            className="shrink-0 touch-manipulation"
-          >
-            <UserPlus className="size-4" />
-            Davet Et
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            {/* İki yol yan yana: e-postası olan davetle, olmayan geçici şifreyle gelir. */}
+            {localAssignable.length > 0 && (
+              <Button
+                size="lg"
+                onClick={() => {
+                  setShowAddLocal((s) => !s)
+                  setShowInvite(false)
+                }}
+                className="touch-manipulation"
+              >
+                <UserPlus className="size-4" />
+                Kullanıcı Ekle
+              </Button>
+            )}
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => {
+                setShowInvite((s) => !s)
+                setShowAddLocal(false)
+              }}
+              className="touch-manipulation"
+            >
+              <Mail className="size-4" />
+              Davet Et
+            </Button>
+          </div>
         )}
       </div>
 
       {canManage && atLimit && (
         <div className="mb-4 p-3 rounded-lg border border-warning/20 bg-warning/10 text-sm text-warning-strong">
-          Koltuk limitiniz dolu ({seatUsed}/{seatLimit}). Yeni kullanıcı davet etmek için{" "}
+          Koltuk limitiniz dolu ({seatUsed}/{seatLimit}).
+          {seatLimit <= 1
+            ? " Paketiniz tek kullanıcı içeriyor — ekibinize kullanıcı eklemek için "
+            : " Yeni kullanıcı eklemek ya da davet etmek için "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">
             paketinizi yükseltin
           </Link>{" "}
@@ -202,6 +264,18 @@ export function TeamManagement({
             </Button>
           </div>
         </div>
+      )}
+
+      {showAddLocal && canManage && localAssignable.length > 0 && (
+        <AddLocalMemberForm
+          assignableRoles={localAssignable}
+          onCancel={() => setShowAddLocal(false)}
+          onCreated={(credentials) => {
+            setShowAddLocal(false)
+            setIssued(credentials)
+            router.refresh()
+          }}
+        />
       )}
 
       {showInvite && canManage && (
@@ -306,7 +380,7 @@ export function TeamManagement({
               </div>
 
               {manageable && (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <Select
                     items={ROLE_LABELS}
                     value={m.role}
@@ -322,6 +396,25 @@ export function TeamManagement({
                       ))}
                     </SelectContent>
                   </Select>
+                  {/* E-postasız üyenin "şifremi unuttum" yolu yok — sıfırlama
+                      buradan geçer ve yeni geçici şifre üretir. */}
+                  {isLocalMember(m) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        run(
+                          () => resetMemberPasswordAction(m.id),
+                          (r) => r.credentials && setIssued(r.credentials)
+                        )
+                      }
+                      disabled={isPending}
+                      className="touch-manipulation"
+                    >
+                      <KeyRound className="size-3.5" /> Şifre Sıfırla
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -385,6 +478,14 @@ export function TeamManagement({
           </div>
         </div>
       )}
+
+      {/* Geçici şifre YALNIZ burada görünür; pencere kapanınca geri getirilemez. */}
+      <MemberCredentialsDialog
+        credentials={issued}
+        workshopName={workshopName}
+        loginCode={loginCode}
+        onClose={() => setIssued(null)}
+      />
     </div>
   )
 }

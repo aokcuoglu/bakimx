@@ -50,7 +50,12 @@ export async function POST(request: Request) {
     if (consume.count === 0) return false // already consumed by a concurrent request
     await tx.user.update({
       where: { id: record.userId },
-      data: { password: passwordHash },
+      data: {
+        password: passwordHash,
+        // Kullanıcı şifresini kendi belirledi — geçici şifre kapısı burada da
+        // düşmeli, yoksa sıfırlamadan sonra hâlâ değiştirme ekranında kalır (BAK-37).
+        mustChangePassword: false,
+      },
     })
     return true
   })

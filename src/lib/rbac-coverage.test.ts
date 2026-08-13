@@ -38,6 +38,10 @@ const ALLOWLIST = new Map<string, string>([
     "invite/[token]/actions.ts::acceptInviteAction",
     "Daveti kabul eden kullanıcı henüz atölye üyesi değildir; rol kapısı uygulanamaz.",
   ],
+  [
+    "(app)/account/actions.ts::changeOwnPasswordAction",
+    "Kendi şifresini değiştirme kimlik işlemidir, izin gerektirmez. Kapı geçici şifreli kullanıcıyı reddettiği için (assertPasswordChanged) buradan geçseydi kilit hiç açılamazdı; mevcut şifre bcrypt ile ayrıca doğrulanır.",
+  ],
 ])
 
 const MUTATION = /\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\(/

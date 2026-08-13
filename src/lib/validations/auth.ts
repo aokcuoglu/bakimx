@@ -42,6 +42,26 @@ export const forgotPasswordSchema = z.object({
   email: z.email("Geçerli bir e-posta adresi giriniz"),
 })
 
+/**
+ * Kullanıcının KENDİ şifresini değiştirmesi (BAK-37). Mevcut şifre bilerek
+ * zorunlu: geçici şifre ekranı ortak bir tablette açık kalabilir ve o hâliyle
+ * yanından geçen birinin hesabı devralmasına izin vermemeli.
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Mevcut şifrenizi giriniz"),
+    password: z.string().min(8, "Yeni şifre en az 8 karakter olmalıdır"),
+    confirmPassword: z.string().min(8, "Yeni şifre en az 8 karakter olmalıdır"),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Şifreler eşleşmiyor",
+    path: ["confirmPassword"],
+  })
+  .refine((d) => d.password !== d.currentPassword, {
+    message: "Yeni şifre mevcut şifrenizden farklı olmalıdır",
+    path: ["password"],
+  })
+
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1, "Geçersiz sıfırlama bağlantısı"),

@@ -14,6 +14,11 @@ export interface AuthUser {
   lastName: string | null
   role: UserRole
   isActive: boolean
+  /**
+   * Sahibin ürettiği geçici şifreyle açılmış/sıfırlanmış hesap — kullanıcı
+   * şifresini değiştirene kadar uygulamayı kullanamaz (BAK-37).
+   */
+  mustChangePassword: boolean
   /** Set when this is a founder impersonation context (the real admin's id). */
   impersonatorAdminId?: string
   /** True when the impersonation context forbids tenant-data writes. */
@@ -29,6 +34,7 @@ const USER_SELECT = {
   lastName: true,
   role: true,
   isActive: true,
+  mustChangePassword: true,
 } as const
 
 /**
@@ -138,15 +144,43 @@ export async function getCurrentUserWithWorkshop() {
  * yazmayı unutmak sessiz bir yetki açığı olurdu. Zorunlu olduğu için derleyici
  * her çağrı yerini sınıflandırmaya zorlar.
  *
- * Sıra önemli: önce plan/abonelik yazma kilidi, sonra rol kapısı. Böylece plan
- * biten atölyede rol ne olursa olsun yazma yine kapalı.
+ * Sıra önemli: önce plan/abonelik yazma kilidi, sonra geçici şifre kapısı, sonra
+ * rol kapısı. Böylece plan biten atölyede rol ne olursa olsun yazma yine kapalı.
  */
 export async function requireWritableWorkshop(permission: Permission) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
   assertWriteAccess(workshop)
+  assertPasswordChanged(user)
   const { assertCan } = await import("@/lib/rbac")
   assertCan(user, permission)
   return { user, workshop }
+}
+
+/**
+ * Geçici şifre kapısının SUNUCU tarafı (BAK-37).
+ *
+ * `(app)/layout.tsx` tam ekran şifre değiştirme ekranını gösterir, ama o yalnız
+ * UX katmanıdır: geçici şifreyle açılmış bir oturum çerezini alıp server
+ * action'lara doğrudan istek atmak HTML'i hiç görmez. Plan kilidinde
+ * (`assertWriteAccess`) öğrenilen ders burada da geçerli — kapı yazma yolunun
+ * kendisinde durmalı.
+ *
+ * Kendi şifresini değiştirme action'ı bu kapıdan BİLEREK geçmez
+ * (`(app)/account/actions.ts`): geçmesi gerekseydi kullanıcı kilidi hiç açamazdı.
+ */
+export function assertPasswordChanged(user: AuthUser): void {
+  // Kurucu impersonation'ı muaf: kilitli hesabı incelerken kurucunun elini
+  // bağlamaz, zaten kendi salt-okunur bayrağıyla sınırlı.
+  if (user.mustChangePassword && !user.impersonatorAdminId) {
+    throw new PasswordChangeRequiredError()
+  }
+}
+
+export class PasswordChangeRequiredError extends Error {
+  constructor() {
+    super("Devam etmeden önce geçici şifrenizi değiştirmeniz gerekiyor.")
+    this.name = "PasswordChangeRequiredError"
+  }
 }
 
 /**
