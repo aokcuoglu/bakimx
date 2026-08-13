@@ -1,15 +1,26 @@
-export function generateCSV(headers: string[], rows: (string | number | null)[][]): string {
+/**
+ * RFC 4180 CSV üretir. `delimiter` varsayılan olarak virgüldür; Türkçe Excel'de
+ * çift tıklamayla açılacak dosyalar (katalog içe aktarım şablonu, BAK-34)
+ * noktalı virgül ister. Kaçırma kuralı ayraçla birlikte değişir — aksi hâlde
+ * `;` ayraçlı bir dosyada içinde noktalı virgül geçen alan tırnaklanmaz ve
+ * kolonlar kayar.
+ */
+export function generateCSV(
+  headers: string[],
+  rows: (string | number | null)[][],
+  delimiter: string = ",",
+): string {
   const escapeField = (value: string | number | null): string => {
     if (value === null || value === undefined) return ""
     const str = String(value)
-    if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+    if (str.includes(delimiter) || str.includes('"') || str.includes("\n") || str.includes("\r")) {
       return `"${str.replace(/"/g, '""')}"`
     }
     return str
   }
 
-  const headerLine = headers.map(escapeField).join(",")
-  const dataLines = rows.map((row) => row.map(escapeField).join(","))
+  const headerLine = headers.map(escapeField).join(delimiter)
+  const dataLines = rows.map((row) => row.map(escapeField).join(delimiter))
   return [headerLine, ...dataLines].join("\n")
 }
 
