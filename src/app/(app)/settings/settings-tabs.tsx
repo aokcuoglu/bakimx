@@ -99,7 +99,9 @@ type SettingsData = {
 
 type UserData = {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) hesaplarda NULL — BAK-40. */
+  email: string | null
+  username: string | null
   workshopId: string
   firstName: string | null
   lastName: string | null

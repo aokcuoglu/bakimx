@@ -9,6 +9,7 @@ import { newApplicationAdminEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { canResumeVerification } from "@/lib/billing/verify-resume"
 import { sendVerifyEmail } from "@/lib/billing/verify-email"
+import { isLoginCodeConflict, workshopCodeCandidate } from "@/lib/workshop-code"
 
 /**
  * Self-serve workshop registration (email-verification gated trial).
@@ -23,6 +24,8 @@ import { sendVerifyEmail } from "@/lib/billing/verify-email"
 
 const REGISTER_MAX_ATTEMPTS = 5
 const REGISTER_WINDOW_MS = 10 * 60_000 // 10 minutes
+/** İş yeri giriş kodu çakışmasında kaç kez yeni aday denenir (BAK-40). */
+const MAX_LOGIN_CODE_RETRIES = 5
 
 const GENERIC_ERROR = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
 const EMAIL_IN_USE_ERROR = "Bu e-posta adresi ile zaten bir hesap mevcut. Giriş yapmayı deneyin."
@@ -101,38 +104,58 @@ export async function POST(request: Request) {
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
 
-    const workshop = await prisma.$transaction(async (tx) => {
-      const ws = await tx.workshop.create({
-        data: {
-          name: data.workshopName,
-          phone: data.phone,
-          city: data.city,
-          address: data.address,
-          email: data.email,
-          // Approval-gated trial: pending until the e-mail is verified. The trial
-          // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
-          approvalStatus: "pending",
-          subscriptionStatus: "trialing",
-          trialStartedAt: null,
-          trialEndsAt: null,
-          planTier: "pro",
-          settings: { create: {} },
-        },
-      })
+    // İş yeri giriş kodu çakışırsa (aynı isimli ikinci atölye) sonraki adayla
+    // sınırlı sayıda yeniden dene — checkout'takiyle aynı P2002 deseni.
+    const createWorkshopWithLoginCode = async () => {
+      for (let attempt = 0; attempt < MAX_LOGIN_CODE_RETRIES; attempt++) {
+        const loginCode = workshopCodeCandidate(data.workshopName, attempt)
+        try {
+          return await prisma.$transaction(async (tx) => {
+            const ws = await tx.workshop.create({
+              data: {
+                loginCode,
+                name: data.workshopName,
+                phone: data.phone,
+                city: data.city,
+                address: data.address,
+                email: data.email,
+                // Approval-gated trial: pending until the e-mail is verified. The trial
+                // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
+                approvalStatus: "pending",
+                subscriptionStatus: "trialing",
+                trialStartedAt: null,
+                trialEndsAt: null,
+                planTier: "pro",
+                settings: { create: {} },
+              },
+            })
 
-      await tx.user.create({
-        data: {
-          email: data.email,
-          password: passwordHash,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          workshopId: ws.id,
-          // The self-serve registrant is the workshop's first user → owner.
-          role: "owner",
-        },
-      })
-      return ws
-    })
+            await tx.user.create({
+              data: {
+                email: data.email,
+                password: passwordHash,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                workshopId: ws.id,
+                // The self-serve registrant is the workshop's first user → owner.
+                role: "owner",
+              },
+            })
+            return ws
+          })
+        } catch (err) {
+          if (isLoginCodeConflict(err)) continue
+          throw err // e-posta çakışması dâhil diğer her şey dış catch'e
+        }
+      }
+      return null
+    }
+
+    const workshop = await createWorkshopWithLoginCode()
+    if (!workshop) {
+      console.error("[register] login code generation exhausted for:", data.workshopName)
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 })
+    }
 
     // Doğrulama e-postası — akışın kilit taşı. Workshop+User zaten commit edildi;
     // gönderim başarısızsa 500 döner ve kullanıcı aynı bilgilerle tekrar POST edince

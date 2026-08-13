@@ -6,10 +6,14 @@ import { headers } from "next/headers"
 import {
   verifyCredentials,
   loginRateLimit,
+  loginAccountRateLimit,
+  resolveWorkshopIdByLoginCode,
   clientIpFromHeaders,
+  INVALID_CREDENTIALS_MESSAGE,
   PLAN_EXPIRED_LOGIN_REDIRECT,
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
+import { isEmailIdentifier } from "@/lib/user-identity"
 import { redirect } from "next/navigation"
 
 // NOTE: self-serve signup (see /register) creates a workshop in `pending` status.
@@ -19,8 +23,13 @@ import { redirect } from "next/navigation"
 // seed / admin.
 
 export async function loginAction(formData: FormData) {
+  // `identifier` yeni alan adı; `email` geriye dönük uyumluluk için korunur.
+  const workshopCode = ((formData.get("workshopCode") as string) || "").trim().toLowerCase()
   const raw = {
-    email: (formData.get("email") as string || "").trim().toLowerCase(),
+    identifier: ((formData.get("identifier") ?? formData.get("email")) as string || "")
+      .trim()
+      .toLowerCase(),
+    workshopCode: workshopCode || undefined,
     password: formData.get("password") as string,
   }
 
@@ -35,7 +44,24 @@ export async function loginAction(formData: FormData) {
     return { error: TOO_MANY_ATTEMPTS_MESSAGE }
   }
 
-  const result = await verifyCredentials(parsed.data.email, parsed.data.password)
+  // Kullanıcı adı yolu tenant'sız çözülemez; kodu önce iş yerine çevir.
+  let workshopId: string | null = null
+  if (!isEmailIdentifier(parsed.data.identifier)) {
+    workshopId = await resolveWorkshopIdByLoginCode(parsed.data.workshopCode ?? "")
+    // Bilinmeyen kod da jenerik hata döner (atölye enumerasyonu yok).
+    if (!workshopId) return { error: INVALID_CREDENTIALS_MESSAGE }
+  }
+
+  const accountLimit = loginAccountRateLimit(parsed.data.identifier, workshopId)
+  if (!accountLimit.allowed) {
+    return { error: TOO_MANY_ATTEMPTS_MESSAGE }
+  }
+
+  const result = await verifyCredentials({
+    identifier: parsed.data.identifier,
+    password: parsed.data.password,
+    workshopId,
+  })
   if (!result.ok) {
     return { error: result.error }
   }
@@ -51,6 +77,7 @@ export async function loginAction(formData: FormData) {
   return {
     success: true,
     redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+    mustChangePassword: result.mustChangePassword,
   }
 }
 

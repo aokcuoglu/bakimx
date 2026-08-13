@@ -178,7 +178,8 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
             {workshop.users.map((u) => (
               <div key={u.id} className="flex items-center justify-between text-sm">
                 <span className={cn("text-foreground", !u.isActive && "text-muted-foreground line-through")}>
-                  {u.email}
+                  {/* E-postasız üye kullanıcı adıyla listelenir (BAK-40). */}
+                  {u.email ?? u.username ?? "—"}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Badge className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role] ?? u.role}</Badge>

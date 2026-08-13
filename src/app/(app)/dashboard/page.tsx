@@ -89,7 +89,7 @@ export default async function DashboardPage() {
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold">
-                Hoş Geldiniz, {user.firstName || user.email}
+                Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
               </h2>
               <p className="text-sm text-white/70 mt-1">
                 {workshop?.name} &bull;{" "}

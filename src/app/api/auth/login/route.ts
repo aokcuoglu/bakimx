@@ -4,29 +4,43 @@ import { getSession } from "@/lib/session"
 import {
   verifyCredentials,
   loginRateLimit,
+  loginAccountRateLimit,
+  resolveWorkshopIdByLoginCode,
   clientIpFromHeaders,
+  INVALID_CREDENTIALS_MESSAGE,
   PLAN_EXPIRED_LOGIN_REDIRECT,
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
+import { isEmailIdentifier } from "@/lib/user-identity"
+
+function tooManyAttempts(retryAfterMs: number) {
+  return NextResponse.json(
+    { error: TOO_MANY_ATTEMPTS_MESSAGE },
+    { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
+  )
+}
 
 export async function POST(request: Request) {
   try {
     const ip = clientIpFromHeaders(request.headers)
     const limit = loginRateLimit(ip)
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: TOO_MANY_ATTEMPTS_MESSAGE },
-        { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } }
-      )
-    }
+    if (!limit.allowed) return tooManyAttempts(limit.retryAfterMs)
 
     const formData = await request.formData()
+    // `identifier` yeni alan adı; `email` geriye dönük uyumluluk için korunur
+    // (mevcut giriş formu ve entegrasyonlar hâlâ onu gönderiyor).
     const raw = {
-      email: (formData.get("email") as string || "").trim().toLowerCase(),
+      identifier: ((formData.get("identifier") ?? formData.get("email")) as string || "")
+        .trim()
+        .toLowerCase(),
+      workshopCode: ((formData.get("workshopCode") as string) || "").trim().toLowerCase(),
       password: formData.get("password") as string,
     }
 
-    const parsed = loginSchema.safeParse(raw)
+    const parsed = loginSchema.safeParse({
+      ...raw,
+      workshopCode: raw.workshopCode || undefined,
+    })
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" },
@@ -34,7 +48,26 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await verifyCredentials(parsed.data.email, parsed.data.password)
+    // Kullanıcı adı yolunda tenant'ı önce çöz: hesap bazlı limit kovası da,
+    // kullanıcı araması da `(workshopId, username)` ikilisine bağlı.
+    let workshopId: string | null = null
+    if (!isEmailIdentifier(parsed.data.identifier)) {
+      workshopId = await resolveWorkshopIdByLoginCode(parsed.data.workshopCode ?? "")
+      // Bilinmeyen iş yeri kodu da jenerik hata döner — var olan atölyeleri
+      // sayan bir oracle bırakmayalım.
+      if (!workshopId) {
+        return NextResponse.json({ error: INVALID_CREDENTIALS_MESSAGE }, { status: 400 })
+      }
+    }
+
+    const accountLimit = loginAccountRateLimit(parsed.data.identifier, workshopId)
+    if (!accountLimit.allowed) return tooManyAttempts(accountLimit.retryAfterMs)
+
+    const result = await verifyCredentials({
+      identifier: parsed.data.identifier,
+      password: parsed.data.password,
+      workshopId,
+    })
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
@@ -52,6 +85,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+      mustChangePassword: result.mustChangePassword,
     })
   } catch (error) {
     console.error("Login handler error:", error)

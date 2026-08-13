@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
+import { workshopCodeCandidate } from "@/lib/workshop-code"
 import type { BillingCycle } from "@prisma/client"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 
@@ -71,10 +72,15 @@ export async function POST(request: Request) {
 
     for (let attempt = 0; attempt < MAX_REF_RETRIES; attempt++) {
       const reference = generateOrderReference()
+      // İş yeri giriş kodu (BAK-40). İlk deneme sade slug'ı ister; çakışma
+      // olursa sonraki tur rastgele sonekli adayı dener — `reference` ile aynı
+      // P2002-yeniden-dene döngüsünü paylaşır.
+      const loginCode = workshopCodeCandidate(data.workshopName, attempt)
       try {
         await prisma.$transaction(async (tx) => {
           const workshop = await tx.workshop.create({
             data: {
+              loginCode,
               name: data.workshopName,
               phone: data.phone,
               city: data.city,
@@ -125,7 +131,7 @@ export async function POST(request: Request) {
         if (e.code === "P2002") {
           const target = Array.isArray(e.meta?.target) ? e.meta.target.join(",") : String(e.meta?.target ?? "")
           if (target.toLowerCase().includes("email")) throw err // duplicate email → outer catch maps to 409
-          continue // reference collision (or unknown unique) → retry, bounded
+          continue // reference / loginCode collision (or unknown unique) → retry, bounded
         }
         throw err
       }

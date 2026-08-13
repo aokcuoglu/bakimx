@@ -36,7 +36,9 @@ import {
 
 export type TeamMember = {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) üyelerde NULL — BAK-40. */
+  email: string | null
+  username: string | null
   firstName: string | null
   lastName: string | null
   role: UserRole
@@ -59,9 +61,14 @@ const ROLE_BADGE: Record<UserRole, string> = {
   staff: "bg-muted text-muted-foreground border-border",
 }
 
+/** Kimlik satırı: e-posta yoksa kullanıcı adı gösterilir, kutu boş kalmaz. */
+function memberIdentity(m: TeamMember) {
+  return m.email ?? m.username ?? "—"
+}
+
 function memberName(m: TeamMember) {
   const n = `${m.firstName ?? ""} ${m.lastName ?? ""}`.trim()
-  return n || m.email
+  return n || memberIdentity(m)
 }
 
 export function TeamManagement({
@@ -294,7 +301,7 @@ export function TeamManagement({
                       <span className="text-[10px] font-medium text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Pasif</span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{memberIdentity(m)}</p>
                 </div>
               </div>
 

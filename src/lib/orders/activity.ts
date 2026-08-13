@@ -40,12 +40,18 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   other: "Diğer",
 }
 
-type ActorRef = { firstName: string | null; lastName: string | null; email: string } | null
+type ActorRef = {
+  firstName: string | null
+  lastName: string | null
+  // E-postasız (kullanıcı adıyla açılmış) hesaplar için ikisi de NULL olabilir.
+  email: string | null
+  username: string | null
+} | null
 
 function formatActor(actor: ActorRef): string {
   if (!actor) return "Sistem"
   const name = [actor.firstName, actor.lastName].filter(Boolean).join(" ").trim()
-  return name || actor.email
+  return name || actor.email || actor.username || "Kullanıcı"
 }
 
 function safeParse(json: string | null): Record<string, unknown> {
@@ -223,7 +229,9 @@ export async function getOrderActivity({
 
   const rows = await prisma.auditLog.findMany({
     where: { workshopId, OR: or },
-    include: { actorUser: { select: { firstName: true, lastName: true, email: true } } },
+    include: {
+      actorUser: { select: { firstName: true, lastName: true, email: true, username: true } },
+    },
     orderBy: { createdAt: "desc" },
   })
 

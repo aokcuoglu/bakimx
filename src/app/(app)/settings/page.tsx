@@ -83,6 +83,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const serializedUser = {
     id: user.id,
     email: user.email,
+    username: user.username,
     workshopId: user.workshopId,
     firstName: user.firstName,
     lastName: user.lastName,
@@ -93,7 +94,16 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const [members, invites, technicians] = await Promise.all([
     prisma.user.findMany({
       where: { workshopId: user.workshopId },
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, isActive: true },
+      // `username` de çekiliyor: e-postasız üye listede kimliksiz görünmesin.
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+      },
       orderBy: { createdAt: "asc" },
     }),
     prisma.invite.findMany({

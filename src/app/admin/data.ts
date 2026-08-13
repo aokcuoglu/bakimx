@@ -21,7 +21,14 @@ export async function getWorkshopRows(): Promise<AdminWorkshopRow[]> {
       trialEndsAt: true,
       extraSeats: true,
       createdAt: true,
-      users: { select: { email: true }, take: 1, orderBy: { createdAt: "asc" } },
+      // İlk kullanıcı artık e-postasız olabilir (BAK-40); sütun "iletişim
+      // e-postası" gösterdiği için e-postası olan ilk üyeyi seçiyoruz.
+      users: {
+        where: { email: { not: null } },
+        select: { email: true },
+        take: 1,
+        orderBy: { createdAt: "asc" },
+      },
     },
   })
 

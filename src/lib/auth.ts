@@ -5,7 +5,10 @@ import type { Permission } from "@/lib/roles"
 
 export interface AuthUser {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) hesaplarda NULL — BAK-40. */
+  email: string | null
+  /** Tenant içi giriş adı; e-posta ile açılmış hesaplarda NULL. */
+  username: string | null
   workshopId: string
   firstName: string | null
   lastName: string | null
@@ -20,6 +23,7 @@ export interface AuthUser {
 const USER_SELECT = {
   id: true,
   email: true,
+  username: true,
   workshopId: true,
   firstName: true,
   lastName: true,
