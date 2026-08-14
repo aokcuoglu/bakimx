@@ -78,6 +78,37 @@ export function fetchBakimxCategories(): Promise<BakimxFetchResult<BakimxCategor
   return getJson<BakimxCategoryNode[]>("/api/catalog/bakimx/categories", "categories")
 }
 
+export interface BakimxMatchResult {
+  matches: Record<string, BakimxProductSummary>
+}
+
+export async function fetchBakimxMatches(
+  articleNumbers: string[],
+): Promise<BakimxFetchResult<Record<string, BakimxProductSummary>>> {
+  if (gateLocked) return { status: "locked" }
+  if (articleNumbers.length === 0) return { status: "ok", data: {} }
+
+  try {
+    const res = await fetch("/api/catalog/bakimx/match", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ articleNumbers }),
+    })
+    if (res.status === 403) {
+      gateLocked = true
+      return { status: "locked" }
+    }
+    if (!res.ok) return { status: "error" }
+    const body = (await res.json()) as Record<string, unknown>
+    const data = body?.matches
+    return typeof data === "object" && data !== null
+      ? { status: "ok", data: data as Record<string, BakimxProductSummary> }
+      : { status: "error" }
+  } catch {
+    return { status: "error" }
+  }
+}
+
 /** Satır içi arama ile aynı eşik: 2 karakterden kısa sorgu sunucuya gitmez. */
 export const BAKIMX_MIN_SEARCH_LEN = 2
 /** Açılır listede BakımX'e ayrılan yer — TecDoc satırlarını aşağı itmesin. */

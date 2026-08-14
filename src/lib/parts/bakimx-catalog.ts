@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { bakimxProductSearchTerms } from "./bakimx-search-key"
+import { normalizePartNo } from "./suggestions"
 
 /**
  * BakımX ürün kataloğunun ATÖLYE (okuma) tarafı — BAK-33.
@@ -218,6 +219,47 @@ export function humanizeCategoryKey(key: string): string {
 
 export function bakimxCategoryLabel(key: string): string {
   return BAKIMX_CATEGORY_LABELS[key] ?? humanizeCategoryKey(key)
+}
+
+/**
+ * TecDoc `articleNo` ile BakımX ürünlerini eşleştir — Faz 2'de TecDoc satırında
+ * fiyat rozeti göstermek için. `articleNumbers` sağlanırsa, her biri `sku` ya da
+ * `oemNumbers` içinde (normalize edilerek) eşleşip eşleşmediğine bakılır.
+ *
+ * Yanıt `{ articleNo → BakimxProductSummary }` haritasıdır; eşleşmeyen
+ * `articleNo` haritaya girmez.
+ */
+export async function matchBakimxProductsByPartNumbers(
+  articleNumbers: string[],
+): Promise<Record<string, BakimxProductSummary>> {
+  if (articleNumbers.length === 0) return {}
+
+  const normalized = articleNumbers.map(normalizePartNo).filter(Boolean)
+  if (normalized.length === 0) return {}
+
+  const rows = await prisma.bakimxProduct.findMany({
+    where: {
+      ...VISIBLE_PRODUCT,
+      OR: [
+        { sku: { in: normalized } },
+        { oemNumbers: { hasSome: normalized } },
+      ],
+    },
+    select: BAKIMX_PRODUCT_SUMMARY_SELECT,
+  })
+
+  const result: Record<string, BakimxProductSummary> = {}
+  for (const row of rows) {
+    const product = toBakimxProductSummary(row)
+    const match = articleNumbers.find((no) => {
+      const noNorm = normalizePartNo(no)
+      if (noNorm === normalizePartNo(row.sku)) return true
+      return row.oemNumbers.some((oem) => noNorm === normalizePartNo(oem))
+    })
+    if (match) result[match] = product
+  }
+
+  return result
 }
 
 /**
