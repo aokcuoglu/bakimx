@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
 import { WorkshopLoginForm } from "@/components/auth/workshop-login-form"
 
@@ -7,13 +6,16 @@ export const metadata = {
   description: "İş yerinize özel giriş ekranı",
 }
 
-interface Props {
-  params: { code: string }
-  searchParams: { redirect?: string }
-}
-
-export default async function WorkshopLoginPage({ params, searchParams }: Props) {
-  const code = params.code.toLowerCase()
+export default async function WorkshopLoginPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>
+  searchParams: Promise<{ redirect?: string }>
+}) {
+  const { code: rawCode } = await params
+  const { redirect } = await searchParams
+  const code = rawCode.toLowerCase()
 
   const workshop = await prisma.workshop.findUnique({
     where: { loginCode: code },
@@ -59,7 +61,7 @@ export default async function WorkshopLoginPage({ params, searchParams }: Props)
             </p>
           </div>
 
-          <WorkshopLoginForm workshopCode={code} redirect={searchParams.redirect} />
+          <WorkshopLoginForm workshopCode={code} redirect={redirect} />
         </div>
       </div>
     </div>
