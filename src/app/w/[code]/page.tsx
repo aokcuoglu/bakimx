@@ -1,5 +1,3 @@
-"use server"
-
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db"
 import { WorkshopLoginForm } from "@/components/auth/workshop-login-form"
