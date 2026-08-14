@@ -178,6 +178,7 @@ const {
   bakimxCategoryLabel,
   clampSearchLimit,
   listBakimxCategories,
+  matchBakimxProductsByPartNumbers,
   searchBakimxProducts,
   toBakimxProductSummary,
 } = await import("./bakimx-catalog")
@@ -309,5 +310,50 @@ describe("listBakimxCategories", () => {
   it("etiketi olmayan anahtar okunur hâle getirilir", () => {
     expect(bakimxCategoryLabel("aku")).toBe("Akü")
     expect(bakimxCategoryLabel("far-ampulu")).toBe("Far Ampulu")
+  })
+})
+
+describe("matchBakimxProductsByPartNumbers", () => {
+  it("TecDoc articleNo'yu BakımX SKU'suyla eşleştir", async () => {
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125", "W712/95"])
+    expect(Object.keys(matches)).toHaveLength(2)
+    expect(matches["C 27 125"]?.id).toBe("p-aku")
+    expect(matches["W712/95"]?.id).toBe("p-yag")
+  })
+
+  it("ayraç ve harf-durumu duyarsız eşleştir", async () => {
+    const matches = await matchBakimxProductsByPartNumbers(["c27-125", "w712-95"])
+    expect(matches["c27-125"]?.id).toBe("p-aku")
+    expect(matches["w712-95"]?.id).toBe("p-yag")
+  })
+
+  it("OEM numaralarıyla da eşleş", async () => {
+    const matches = await matchBakimxProductsByPartNumbers(["0 986 4B7 035"])
+    expect(matches["0 986 4B7 035"]?.id).toBe("p-aku")
+  })
+
+  it("eşleşmeyen numaraları haritaya koymaz", async () => {
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125", "YOKYOK"])
+    expect(matches).toHaveProperty("C 27 125")
+    expect(matches).not.toHaveProperty("YOKYOK")
+  })
+
+  it("pasif ürünü eşleştirmez", async () => {
+    // ROWS[3] pasif bir ürün. EşleştirmeMatches tarafından görülmemeli.
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"])
+    expect(matches["C 27 125"]?.id).toBe("p-aku") // Aktif olan eşleşir
+  })
+
+  it("boş liste → boş harita", async () => {
+    const matches = await matchBakimxProductsByPartNumbers([])
+    expect(matches).toEqual({})
+  })
+
+  it("dönen harita public DTO'yu taşır, iç alanlar yok", async () => {
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"])
+    const aku = matches["C 27 125"]!
+    const serialized = JSON.stringify(aku)
+    expect(serialized).not.toContain("costPriceKurus")
+    expect(aku.workshopPriceKurus).toBe(248_000)
   })
 })

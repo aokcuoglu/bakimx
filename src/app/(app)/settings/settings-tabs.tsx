@@ -219,7 +219,6 @@ export function SettingsTabs({
               seatLimit={seatLimit}
               workshopName={workshop.name}
               loginCode={workshop.loginCode}
-              logoUrl={workshop.logoUrl || undefined}
             />
             <TechnicianManagement technicians={technicians} />
           </div>

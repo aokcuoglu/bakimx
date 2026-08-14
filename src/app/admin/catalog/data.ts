@@ -90,32 +90,16 @@ function buildWhere(filters: CatalogFilters): Prisma.BakimxProductWhereInput {
   return where
 }
 
-export interface PaginationInfo {
-  currentPage: number
-  pageSize: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-}
-
 export async function getCatalogProducts(
   filters: CatalogFilters,
-  page: number = 1,
-): Promise<{
-  rows: AdminCatalogProductRow[]
-  total: number
-  pagination: PaginationInfo
-}> {
+): Promise<{ rows: AdminCatalogProductRow[]; total: number; truncated: boolean }> {
   const where = buildWhere(filters)
-  const pageNum = Math.max(1, page)
-  const skip = (pageNum - 1) * CATALOG_PAGE_SIZE
 
   const [total, products] = await Promise.all([
     prisma.bakimxProduct.count({ where }),
     prisma.bakimxProduct.findMany({
       where,
       orderBy: [{ brandName: "asc" }, { name: "asc" }],
-      skip,
       take: CATALOG_PAGE_SIZE,
       select: {
         id: true,
@@ -136,25 +120,13 @@ export async function getCatalogProducts(
     }),
   ])
 
-  const totalPages = Math.ceil(total / CATALOG_PAGE_SIZE)
-
   const rows: AdminCatalogProductRow[] = products.map((p) => ({
     ...p,
     categoryLabel: bakimxCategoryLabel(p.categoryKey),
     updatedAt: p.updatedAt.toISOString(),
   }))
 
-  return {
-    rows,
-    total,
-    pagination: {
-      currentPage: pageNum,
-      pageSize: CATALOG_PAGE_SIZE,
-      totalPages,
-      hasNextPage: pageNum < totalPages,
-      hasPrevPage: pageNum > 1,
-    },
-  }
+  return { rows, total, truncated: total > rows.length }
 }
 
 export interface CatalogBrandOption {
