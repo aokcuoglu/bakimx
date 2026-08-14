@@ -229,6 +229,34 @@
   --sidebar-ring: oklch(0.63 0.20 258);
 }
 
+/* Toast şekillendirmesi — sürüm güncelleme bildirimi (BAK-51).
+   Sonner toastları mobil ekranda okunmuş değildi: çok dar, metin sıkışmış,
+   düğmeler ve başlık okunaksız boyuttaydı. Güncellenmiş tasarım:
+   - Geniş padding ve boşluk
+   - Kontrastlı başlık ve açıklama metni
+   - Büyür, okunabilir düğmeler
+   - Düzgün metin kaydırma ve hizalama */
+.cn-toast {
+  @apply gap-3 rounded-lg border border-border bg-popover px-4 py-3 shadow-lg;
+  min-width: 20rem;
+}
+
+.cn-toast [class*="title"] {
+  @apply font-semibold text-base text-foreground;
+}
+
+.cn-toast [class*="description"] {
+  @apply text-sm text-foreground/85 leading-relaxed;
+}
+
+.cn-toast button:has(svg) {
+  @apply size-6 rounded-md p-0 transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80;
+}
+
+.cn-toast [class*="action"] {
+  @apply inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

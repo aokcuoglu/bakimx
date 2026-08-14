@@ -57,13 +57,13 @@ export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: stri
       if (!isOutdatedBuild(loadedSignature, data)) return
 
       notified.current = true
-      toast.info("Yeni sürüm yayınlandı", {
+      toast.info("Yeni sürüm kullanılabilir", {
         id: TOAST_ID,
-        description: "Sayfayı yenilediğinizde güncel sürüme geçersiniz. Açık formlarınızı kaydettikten sonra yenileyin.",
+        description: "Sayfayı yenileyerek güncel sürüme geçebilirsiniz. Lütfen açık formlarınızı öncesinde kaydedin.",
         duration: Infinity,
         closeButton: true,
         action: {
-          label: "Yenile",
+          label: "Şimdi Yenile",
           onClick: () => window.location.reload(),
         },
       })
