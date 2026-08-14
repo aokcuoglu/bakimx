@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
@@ -28,7 +28,6 @@ import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { slugifyWorkshopCode } from "@/lib/workshop-code"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -84,7 +83,6 @@ export function PurchaseWizard({
             firstName: "",
             lastName: "",
             workshopName: "",
-            loginCode: "",
             phone: "",
             city: "",
             address: "",
@@ -94,18 +92,8 @@ export function PurchaseWizard({
     } as never,
     mode: "onChange",
   })
-  const { register, trigger, getValues, formState, watch, setValue } = form
+  const { register, trigger, getValues, formState } = form
   const reduce = useReducedMotion()
-  const workshopName = (watch("workshopName") ?? "") as string
-
-  useEffect(() => {
-    if (isPublic && workshopName && !form.getValues("loginCode")) {
-      const suggested = slugifyWorkshopCode(workshopName)
-      if (suggested) {
-        setValue("loginCode" as never, suggested as never)
-      }
-    }
-  }, [isPublic, workshopName, form, setValue])
 
   async function next(fields: string[]) {
     setError("")
@@ -305,9 +293,6 @@ export function PurchaseWizard({
                           <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}>
                             <Input {...register("workshopName" as never)} />
                           </Field>
-                          <Field label="İş yeri giriş kodu" error={fieldError(formState, "loginCode")} hint="Daha sonra değiştirilemez. Kullanıcılar /w/kodunuz adresinden giriş yapacaklar.">
-                            <Input {...register("loginCode" as never)} placeholder="ör. mehmet-oto" />
-                          </Field>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Ad" error={fieldError(formState, "firstName")}>
                               <Input {...register("firstName" as never)} />
@@ -373,11 +358,10 @@ export function PurchaseWizard({
                         </Button>
                         <Button
                           type="button"
-                          size="lg"
-                          onClick={() =>
+                          size="lg"                          onClick={() =>
                             next(
                               isPublic
-                                ? ["workshopName", "loginCode", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
+                                ? ["workshopName", "firstName", "lastName", "email", "password", "phone", "city", "address", "invoiceTitle", "taxNumber", "kvkkConsent"]
                                 : ["invoiceTitle", "taxNumber"],
                             )
                           }
@@ -537,12 +521,11 @@ function DonePanel({
   )
 }
 
-function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       {children}
-      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
       {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
       <p className="min-h-[16px] text-xs leading-4 text-destructive-strong">{error ?? ""}</p>
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
@@ -9,6 +9,7 @@ import { BakimxProductRow } from "./bakimx-product-row"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
+import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
 
 /**
  * Parça seçicinin global arama sonuçları: KATEGORİLER (ağaçtan, client-side) +
@@ -55,6 +56,26 @@ export function TecdocSearchResults({
   onArticleSelect: (a: ArticleSearchResult) => void
   onShowDetail?: (a: ArticleSummary) => void
 }) {
+  const [bakimxMatches, setBakimxMatches] = useState<Record<string, BakimxProductSummary>>({})
+  const lastArticlesRef = useRef<typeof articles>(null)
+
+  useEffect(() => {
+    if (!articles?.length) return
+    if (lastArticlesRef.current === articles) return
+
+    lastArticlesRef.current = articles
+    let active = true
+    const articleNumbers = articles.map((a) => a.articleNo)
+    void fetchBakimxMatches(articleNumbers).then((result) => {
+      if (!active) return
+      setBakimxMatches(result.status === "ok" ? result.data : {})
+    })
+
+    return () => {
+      active = false
+    }
+  }, [articles])
+
   const brands = useMemo(() => {
     if (!articles) return []
     const counts = new Map<string, number>()
@@ -146,6 +167,7 @@ export function TecdocSearchResults({
               article={a}
               context={a.categoryName || null}
               matchedOems={a.matchedOems}
+              bakimxMatch={bakimxMatches[a.articleNo] || null}
               onSelect={() => onArticleSelect(a)}
               onShowDetail={onShowDetail}
             />

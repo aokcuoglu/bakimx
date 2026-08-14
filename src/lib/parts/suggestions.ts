@@ -95,6 +95,6 @@ export function buildPartSuggestions(
 }
 
 /** "C 27 125" ↔ "c27125" aynı parçadır; ayraç ve harf durumu elenir. */
-function normalizePartNo(value: string | null | undefined): string {
+export function normalizePartNo(value: string | null | undefined): string {
   return (value || "").toLowerCase().replace(/[^a-z0-9]/g, "")
 }
