@@ -16,12 +16,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { formatKurus, grossFromNetKurus } from "@/lib/money"
 import { BAKIMX_CATEGORIES, bakimxStockStatus } from "@/lib/catalog/bakimx-catalog"
 import { BULK_SELECTION_LIMIT } from "@/lib/validations/bakimx-product"
-import type { AdminCatalogProductRow, CatalogBrandOption, CatalogFilters } from "@/app/admin/catalog/data"
+import type { AdminCatalogProductRow, CatalogBrandOption, CatalogFilters, PaginationInfo } from "@/app/admin/catalog/data"
 import {
   bulkSetBakimxProductActiveAction,
   bulkUpdateBakimxProductPricesAction,
   bulkUpdateBakimxProductStockAction,
 } from "@/app/admin/catalog/actions"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 const STATUS_LABELS: Record<string, string> = {
   all: "Tüm durumlar",
@@ -40,13 +41,13 @@ const STOCK_BADGE: Record<string, { label: string; className: string }> = {
 export function CatalogList({
   rows,
   total,
-  truncated,
+  pagination,
   brands,
   filters,
 }: {
   rows: AdminCatalogProductRow[]
   total: number
-  truncated: boolean
+  pagination: PaginationInfo
   brands: CatalogBrandOption[]
   filters: CatalogFilters
 }) {
@@ -61,13 +62,17 @@ export function CatalogList({
   const allSelected = rows.length > 0 && rows.every((r) => selectedSet.has(r.id))
   const hasFilters = Boolean(filters.q || filters.brandId || filters.categoryKey || filters.status !== "all")
 
-  function pushFilters(next: Partial<CatalogFilters>) {
-    const merged = { ...filters, ...next }
+  function pushFilters(next: Partial<CatalogFilters> & { page?: number } = {}) {
+    const { page: nextPage, ...nextFilters } = next
+    const merged = { ...filters, ...nextFilters }
     const params = new URLSearchParams()
     if (merged.q) params.set("q", merged.q)
     if (merged.brandId) params.set("brand", merged.brandId)
     if (merged.categoryKey) params.set("category", merged.categoryKey)
     if (merged.status !== "all") params.set("status", merged.status)
+    // Filtre değişikliğinde sayfa 1'e sıfırla; sayfa değişikliğinde ise nextPage'i kullan
+    const pageToSet = nextPage !== undefined ? nextPage : 1
+    if (pageToSet > 1) params.set("page", String(pageToSet))
     const qs = params.toString()
     setSelected([])
     router.push(`/admin/catalog${qs ? `?${qs}` : ""}`)
@@ -320,11 +325,33 @@ export function CatalogList({
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        {truncated
-          ? `${total} üründen ilk ${rows.length} tanesi gösteriliyor — aramayı daraltın.`
-          : `${total} ürün`}
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          {total === 0
+            ? "Ürün yok"
+            : `${total} ürün — sayfa ${pagination.currentPage} / ${pagination.totalPages}`}
+        </p>
+        {pagination.totalPages > 1 && (
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasPrevPage}
+              onClick={() => pushFilters({ page: Math.max(1, pagination.currentPage - 1) })}
+            >
+              <ChevronLeft className="size-3.5 mr-1" /> Önceki
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasNextPage}
+              onClick={() => pushFilters({ page: pagination.currentPage + 1 })}
+            >
+              Sonraki <ChevronRight className="size-3.5 ml-1" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Yalnız açıkken monte edilir — her açılış boş bir formla başlar. */}
       {priceOpen && (
@@ -378,7 +405,7 @@ function BulkPriceDialog({
         </DialogHeader>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Seçilen {count} ürünün KDV hariç fiyatı bu oranda değişir. Zam için pozitif, indirim için negatif değer girin.
+            Bu sayfada seçilen {count} ürünün KDV hariç fiyatı bu oranda değişir. Zam için pozitif, indirim için negatif değer girin.
           </p>
           <Input
             type="number"
@@ -388,6 +415,9 @@ function BulkPriceDialog({
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
+          <p className="text-xs text-muted-foreground rounded-md bg-muted p-2">
+            💡 Toplu işlemler yalnız bu sayfadaki seçili ürünlere uygulanır. Diğer sayfaları de güncellemek için o sayfalarda da ürünleri seçin.
+          </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
@@ -426,7 +456,7 @@ function BulkStockDialog({
           <DialogTitle>Toplu stok güncelleme</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Seçilen {count} ürünün stok adedi güncellenir.</p>
+          <p className="text-sm text-muted-foreground">Bu sayfada seçilen {count} ürünün stok adedi güncellenir.</p>
           <Select value={mode} onValueChange={(v) => setMode((v ?? "set") as "set" | "increase" | "decrease")}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="İşlem">
@@ -450,6 +480,9 @@ function BulkStockDialog({
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
+          <p className="text-xs text-muted-foreground rounded-md bg-muted p-2">
+            💡 Toplu işlemler yalnız bu sayfadaki seçili ürünlere uygulanır. Diğer sayfaları da güncellemek için o sayfalarda da ürünleri seçin.
+          </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
