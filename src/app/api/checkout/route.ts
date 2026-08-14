@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
-import { workshopCodeCandidate } from "@/lib/workshop-code"
+import { workshopCodeCandidate, isLoginCodeConflict } from "@/lib/workshop-code"
 import type { BillingCycle } from "@prisma/client"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 
@@ -72,10 +72,12 @@ export async function POST(request: Request) {
 
     for (let attempt = 0; attempt < MAX_REF_RETRIES; attempt++) {
       const reference = generateOrderReference()
-      // İş yeri giriş kodu (BAK-40). İlk deneme sade slug'ı ister; çakışma
-      // olursa sonraki tur rastgele sonekli adayı dener — `reference` ile aynı
-      // P2002-yeniden-dene döngüsünü paylaşır.
-      const loginCode = workshopCodeCandidate(data.workshopName, attempt)
+      // P2: Kullanıcı tarafından sağlanan loginCode'u ister, çakışma olursa
+      // otomatik alternatif üret (workshop adından). P0'daki auto-generation
+      // mantığını koru ama şimdi kullanıcı seçimine öncelik ver.
+      const loginCode = attempt === 0 && data.loginCode
+        ? data.loginCode
+        : workshopCodeCandidate(data.workshopName, attempt)
       try {
         await prisma.$transaction(async (tx) => {
           const workshop = await tx.workshop.create({
