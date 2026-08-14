@@ -25,6 +25,12 @@ export type QuoteEditorRow = {
   note: string | null
   /** Atölyenin kendi stok kartı. Teklifte SADECE bağ kurar; stok hareketi yaratmaz. */
   partId: string | null
+  /**
+   * BakımX katalog ürünü (BAK-35). `partId`'nin aksine hiçbir aşamada stok
+   * hareketi doğurmaz — BakımX stoğu atölyenin stoğu değildir. Teklif iş emrine
+   * çevrilirken kaleme taşınır, böylece kaynağı çevrimden sonra da bellidir.
+   */
+  bakimxProductId: string | null
 }
 
 /** Düzenleyici yalnız part|labor üretmelidir; beklenmedik tip parçaya düşer. */
@@ -44,6 +50,7 @@ export function rowToQuoteItem(row: QuoteEditorRow): QuoteItemFormValues {
     totalPrice: row.totalPrice != null && row.totalPrice > 0 ? Math.trunc(row.totalPrice) : null,
     note: row.note ?? "",
     partId: row.partId ?? "",
+    bakimxProductId: row.bakimxProductId ?? "",
   }
 }
 
@@ -60,6 +67,7 @@ export function quoteItemToRow(item: QuoteItemFormValues, id: string): QuoteEdit
     totalPrice: item.totalPrice ?? null,
     note: item.note || null,
     partId: item.partId || null,
+    bakimxProductId: item.bakimxProductId || null,
   }
 }
 

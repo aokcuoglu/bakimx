@@ -7,6 +7,7 @@ import { getPlanPackage } from "@/lib/plans-catalog"
 import { TAMI_ERROR_MESSAGES } from "@/lib/tami/errors"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
+import { Button } from "@/components/ui/button"
 import { revealedCardSuffix } from "@/lib/billing/payment-helpers"
 import type { PlanTier } from "@/lib/plan"
 
@@ -106,12 +107,9 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Ödeme referansı eksik. Lütfen satın alma adımlarını yeniden başlatın.
           </p>
-          <Link
-            href="/satin-al"
-            className="mt-6 inline-flex items-center text-sm font-medium text-primary hover:underline"
-          >
+          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
             Satın alma sayfasına git
-          </Link>
+          </Button>
         </div>
       </Shell>
     )
@@ -127,12 +125,9 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Bu referansa ait bir sipariş bulunamadı. Bağlantıyı kontrol edin veya yeniden deneyin.
           </p>
-          <Link
-            href="/satin-al"
-            className="mt-6 inline-flex items-center text-sm font-medium text-primary hover:underline"
-          >
+          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
             Satın alma sayfasına git
-          </Link>
+          </Button>
         </div>
       </Shell>
     )
@@ -172,12 +167,9 @@ export default async function PaymentResultPage({
               </span>
             </p>
           )}
-          <Link
-            href="/login"
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 md:h-9"
-          >
+          <Button nativeButton={false} render={<Link href="/login" />} size="lg" className="mt-6 w-full">
             Uygulamaya Git
-          </Link>
+          </Button>
         </div>
       </Shell>
     )
@@ -193,12 +185,9 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Bu sipariş iptal edilmiş. Dilerseniz yeni bir satın alma başlatabilirsiniz.
           </p>
-          <Link
-            href="/satin-al"
-            className="mt-6 inline-flex items-center text-sm font-medium text-primary hover:underline"
-          >
+          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
             Yeni satın alma başlat
-          </Link>
+          </Button>
         </div>
       </Shell>
     )

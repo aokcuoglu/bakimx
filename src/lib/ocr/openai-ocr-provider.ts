@@ -13,6 +13,7 @@ const JSON_SCHEMA = {
     vin: { type: "string" },
     ownerName: { type: "string" },
     ownerSurname: { type: "string" },
+    identityOrTaxNumber: { type: "string" },
     brand: { type: "string" },
     model: { type: "string" },
     vehicleType: { type: "string" },
@@ -26,6 +27,7 @@ const JSON_SCHEMA = {
     "vin",
     "ownerName",
     "ownerSurname",
+    "identityOrTaxNumber",
     "brand",
     "model",
     "vehicleType",
@@ -99,6 +101,7 @@ export class OpenAiOcrProvider implements OcrProvider {
                   "D.1 MARKASI brand, D.3 TİCARİ ADI model, D.5 CİNSİ vehicleType, " +
                   "D.4 MODEL YILI modelYear, P.5 MOTOR NO engineNo, E ŞASE NO vin, " +
                   "C.1.2 ADI ownerName, C.1.1 SOYADI/TİCARİ ÜNVANI ownerSurname ve " +
+                  "C.4 T.C. KİMLİK/VERGİ NO identityOrTaxNumber (yalnız rakamlar), " +
                   "I TESCİL TARİHİ registrationDate alanına karşılık gelir.",
               },
             ],

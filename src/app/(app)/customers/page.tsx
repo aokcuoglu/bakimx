@@ -3,8 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Plus, Wallet, FileSpreadsheet, Info } from "lucide-react"
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { Plus, Wallet, Info } from "lucide-react"
 import { CustomerListWithDelete } from "@/components/customers/customer-list-with-delete"
 import { type CustomerRow } from "@/components/customers/customer-list"
 import { summarizeCustomerOrders } from "@/lib/customer-totals"
@@ -125,17 +124,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               <Wallet className="size-4" />
               Bakiye Özeti
             </Button>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button variant="outline" size="default" disabled />
-                }
-              >
-                <FileSpreadsheet className="size-4" />
-                <span className="hidden sm:inline">Excel</span>
-              </TooltipTrigger>
-              <TooltipContent side="top">Excel içe aktarma yakında</TooltipContent>
-            </Tooltip>
             <Button
               nativeButton={false}
               size="default"
@@ -149,7 +137,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
         <div className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="size-3.5 mt-0.5 shrink-0" />
-          <span>Excel içe aktarma yakında. Bakiye Özeti sayfası henüz temel düzeydedir ve ödeme/tahsilat modülü aktifleştiğinde gerçek değerlere geçecektir.</span>
+          <span>Bakiye Özeti sayfası henüz temel düzeydedir ve ödeme/tahsilat modülü aktifleştiğinde gerçek değerlere geçecektir.</span>
         </div>
 
         <CustomerListWithDelete

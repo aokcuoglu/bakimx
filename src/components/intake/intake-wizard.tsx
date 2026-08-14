@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, ChevronRight, User, ClipboardList, Camera, Car, Gauge, Plus } from "lucide-react"
+import { Check, User, ClipboardList, Camera, Car, Gauge, Plus } from "lucide-react"
 import {
   Form,
   FormControl,
@@ -20,7 +20,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useForm } from "react-hook-form"
 import { intakeSchema, type IntakeFormValues } from "@/lib/validations/intake"
 import { typedResolver } from "@/lib/validations/resolver"
-import { CustomerVehiclePicker } from "@/components/intake/customer-vehicle-picker"
+import { VehicleEntryWizard } from "@/components/intake/vehicle-entry-wizard"
+import { WizardStepper } from "@/components/intake/wizard-ui"
 import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
@@ -160,7 +161,7 @@ export function IntakeWizard({
   // değişikliğinden habersiz kalıyor ve "Detay" linkiyle çıkıp geri dönüldüğünde
   // eski (param'sız) önbelleklenmiş render'ı geri getiriyor. router.replace ile
   // sunucu bileşeni bu param'ları prefillCustomerId/prefillVehicleId olarak okuyup
-  // CustomerVehiclePicker'ın zaten var olan rehydrate mekanizmasını besler.
+  // VehicleEntryWizard'ın zaten var olan rehydrate mekanizmasını besler.
   function syncSelectionToUrl(customerId: string, vehicleId: string) {
     const params = new URLSearchParams(searchParams.toString())
     if (customerId) params.set("customerId", customerId)
@@ -229,71 +230,49 @@ export function IntakeWizard({
     }
   }
 
+  // Sihirbaz rayı: üst seviye üç adım. Araç girişinin kendi alt adımları
+  // (yöntem → yakalama → araç → müşteri → onay) 1. adımın içinde yaşar (#309).
+  const railSteps = STEPS.map((s) => ({ id: String(s.id), label: s.label }))
+  const railCompleted = [...completedSteps].map(String)
+
   return (
     <Form {...form}>
-      <div className="space-y-6">
-        {source === "registration" && selectedCustomerId && selectedVehicleId && (
-          <Alert className="border-primary/30 bg-primary/5 text-primary">
-            <Check className="size-4" />
-            <AlertDescription>Ruhsattan kaydedilen müşteri ve araç seçildi. Kabul detaylarından devam edin.</AlertDescription>
-          </Alert>
-        )}
-        {/* Progress indicator */}
-        <div className="bg-card border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium">
-              Adım {STEPS.findIndex((s) => s.id === step) + 1} / {STEPS.length}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {STEPS.find((s) => s.id === step)?.label}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            {STEPS.map((s) => {
-              const isComplete = completedSteps.has(s.id)
-              const isCurrent = s.id === step
-              const isPast = s.id < step
-              return (
-                <div
-                  key={s.id}
-                  className={`flex-1 h-1.5 rounded-full transition-colors ${
-                    isComplete ? "bg-primary" : isCurrent ? "bg-primary" : isPast ? "bg-primary/30" : "bg-muted"
-                  }`}
-                />
-              )
-            })}
-          </div>
-        </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
+        <WizardStepper
+          className="lg:sticky lg:top-20"
+          steps={railSteps}
+          currentId={String(step)}
+          completedIds={railCompleted}
+          onStepClick={(id) => setStep(Number(id))}
+        />
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <div className="space-y-6">
+          {source === "registration" && selectedCustomerId && selectedVehicleId && (
+            <Alert className="border-primary/30 bg-primary/5 text-primary">
+              <Check className="size-4" />
+              <AlertDescription>Ruhsattan kaydedilen müşteri ve araç seçildi. Kabul detaylarından devam edin.</AlertDescription>
+            </Alert>
+          )}
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
         {/* Step 1: Customer & Vehicle */}
         {step === 1 && (
           <Card>
-            <CardHeader><CardTitle>Müşteri & Araç</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <CustomerVehiclePicker
+            <CardContent className="space-y-4 pt-6">
+              <VehicleEntryWizard
                 value={{ customerId: selectedCustomerId, vehicleId: selectedVehicleId }}
                 onChange={(v) => {
                   form.setValue("selectedCustomerId", v.customerId, { shouldValidate: true })
                   form.setValue("selectedVehicleId", v.vehicleId, { shouldValidate: true })
                   syncSelectionToUrl(v.customerId, v.vehicleId)
                 }}
+                onComplete={() => setStep(3)}
               />
-              <div className="pt-4 flex justify-end">
-                <Button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  disabled={!selectedCustomerId || !selectedVehicleId}
-                  className="h-11 gap-2 px-5 md:h-9"
-                >
-                  Devam <ChevronRight className="size-4" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -302,7 +281,7 @@ export function IntakeWizard({
             detayları, sağ=aracın salt-görüntü geçmiş/bilgi özeti. Mobilde alt alta yığılır
             (araç bilgileri formun altına düşer). */}
         {step === 3 && (
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
             {/* Bölüm-1: Kabul detayları */}
             <Card>
               <CardHeader><CardTitle>Kabul Detayları</CardTitle></CardHeader>
@@ -538,6 +517,7 @@ export function IntakeWizard({
           </Card>
         )}
 
+        </div>
       </div>
     </Form>
   )

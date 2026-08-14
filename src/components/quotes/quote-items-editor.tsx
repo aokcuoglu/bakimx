@@ -28,6 +28,8 @@ export function QuoteItemsEditor({
   vehicle,
   laborCatalog,
   disabled = false,
+  taxRateBps,
+  onApplyStandardTax,
 }: {
   value: QuoteItemFormValues[]
   onChange: (items: QuoteItemFormValues[]) => void
@@ -35,6 +37,10 @@ export function QuoteItemsEditor({
   vehicle?: PickerVehicle
   laborCatalog: LaborCatalogRow[]
   disabled?: boolean
+  /** Teklif formundaki KDV oranı (bps) — kalemlerin KDV dahil gösterimi için (#311). */
+  taxRateBps?: number | null
+  /** KDV oranı 0 iken standart %20'yi teklif formuna yazar. */
+  onApplyStandardTax?: () => void
 }) {
   // Satırlar burada YAŞAR; form değeri türetilir. Ters yön (form → satır) bilerek
   // yok: her yazımda satırları yeniden kurmak düzenleme sırasında odak ve
@@ -106,6 +112,8 @@ export function QuoteItemsEditor({
       allowExternalLabor={false}
       // Marka/Kategori QuoteItem'da saklanamaz → düzenlenebilir gösterilmez.
       showAttributes={false}
+      taxRateBps={taxRateBps}
+      onApplyStandardTax={onApplyStandardTax}
       flash={flash}
       onAdd={addItem}
       onCell={onCell}
@@ -129,7 +137,9 @@ function toEditorRow(row: QuoteEditorRow): PartsLaborRow {
     brand: null,
     category: null,
     categoryId: null,
-    source: null,
+    // BakımX kalemi rozetini ve kimlik kilidini çevrimden önce de korur (BAK-35).
+    source: row.bakimxProductId ? "bakimx" : null,
+    bakimxProductId: row.bakimxProductId,
     __partId: row.partId,
   }
 }
@@ -147,5 +157,6 @@ function fromEditorRow(row: PartsLaborRow): QuoteEditorRow {
     totalPrice: row.totalPrice,
     note: row.note,
     partId: row.__partId ?? null,
+    bakimxProductId: row.bakimxProductId ?? null,
   }
 }

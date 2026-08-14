@@ -24,14 +24,22 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
 }
 
 /**
+ * Yönetici her zaman e-postalı bir hesaptır — üyelik ADMIN_EMAILS üzerinden
+ * kurulur. Tip bunu taşır ki `confirmedByEmail` gibi denetim alanları
+ * `user.email` nullable olduğu hâlde (BAK-40) ekstra kontrol istemesin.
+ */
+export type AdminUser = AuthUser & { email: string }
+
+/**
  * Use in admin pages AND admin server actions. Throws notFound() (404) for
  * non-admins so the console's existence isn't revealed. Returns the admin user.
  */
-export async function requireAdmin(): Promise<AuthUser> {
+export async function requireAdmin(): Promise<AdminUser> {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
-  if (!isAdminEmail(user.email)) notFound()
-  return user
+  // `isAdminEmail` zaten null'a false döner; ikinci kontrol yalnız daraltma için.
+  if (!user.email || !isAdminEmail(user.email)) notFound()
+  return { ...user, email: user.email }
 }
 
 /**
@@ -51,6 +59,7 @@ export type AdminCapability =
   | "impersonate"
   | "manageFlags"
   | "exportData"
+  | "manageCatalog"
 
 export interface AdminContext {
   user: AuthUser

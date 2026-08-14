@@ -15,9 +15,13 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
-import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert } from "lucide-react"
+import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatTRY } from "@/lib/format"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
+import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
 import {
   buildPartSuggestions,
   suggestionKey,
@@ -27,12 +31,16 @@ import {
 } from "@/lib/parts/suggestions"
 
 /**
- * "Parça adı" alanı: serbest metin + (araç kataloğa bağlıysa) cache'lenmiş
- * parçalarda numara/ad/marka/kategori ile canlı arama (boşlukla ayrılan terimler
- * AND'lenir — bkz. searchVehicleArticles). Yazarken free-text `onNameChange` ile
- * korunur (katalogda olmayan ad da yazılabilir); bir öneri seçilince
- * `onSelectArticle` ile satır doldurulur. autoHighlight → Enter ilk sonucu seçer.
- * Araç kataloğa bağlı değilse düz Input gibi davranır.
+ * "Parça adı" alanı: serbest metin + üç kaynakta canlı arama — araç kataloğa
+ * bağlıysa cache'lenmiş TecDoc parçaları (numara/ad/marka/kategori; boşlukla
+ * ayrılan terimler AND'lenir, bkz. searchVehicleArticles), BakımX ürün kataloğu
+ * ve atölyenin kendi stok kartları. Yazarken free-text `onNameChange` ile
+ * korunur (katalogda olmayan ad da yazılabilir); bir öneri seçilince ilgili
+ * `onSelect*` geri çağırımı satırı doldurur. autoHighlight → Enter ilk sonucu
+ * seçer.
+ *
+ * BakımX ve stok aramaları araç kataloğa bağlı OLMASA DA çalışır (BakımX
+ * ürünleri araçtan bağımsız); yalnız üçü de kapalıysa bileşen düz Input'a düşer.
  */
 export function PartSearchInput({
   value,
@@ -51,12 +59,14 @@ export function PartSearchInput({
   searchDisabled,
   searchTitle,
   showCreate,
+  createLabel = "Oluştur",
   onCreate,
   onCreateEdit,
   refreshSignal,
   onResultsCount,
   onShowDetail,
   onSelectStockPart,
+  onSelectBakimxProduct,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -76,6 +86,11 @@ export function PartSearchInput({
    * aranmaz — bileşenin eski davranışı korunur.
    */
   onSelectStockPart?: (p: StockPartLite) => void
+  /**
+   * BakımX katalog ürünü seçildi (BAK-35). Verilmezse BakımX hiç aranmaz —
+   * kalemi yazamayan çağıran (ör. parça talebi) ürün de göstermemeli.
+   */
+  onSelectBakimxProduct?: (p: BakimxProductSummary) => void
   /** Serbest-metin adı kalıcılaştır (yalnız katalogsuz modda blur'da; katalogda seçim kalıcılaştırır). */
   onCommit?: () => void
   /** Parça seçimini (ad/SKU/marka/kategori) temizler; showClear ile gösterilir. */
@@ -87,6 +102,11 @@ export function PartSearchInput({
   searchTitle?: string
   /** Composer'da (bare DEĞİL): dropdown'da her zaman görünen "Oluştur/Oluştur & Düzenle" aksiyonları. */
   showCreate?: boolean
+  /**
+   * Serbest-metin aksiyonunun fiili. Kalem ekleyen composer'da "Oluştur";
+   * teknisyenin parça talebinde "Talep et" — eylem kalem değil talep yaratır.
+   */
+  createLabel?: string
   onCreate?: (name: string) => void
   onCreateEdit?: (name: string) => void
   /** Dışarıdan yeniden-arama sinyali: değeri değişince mevcut query yeniden sorgulanır (prefetch dolarken UI'ı tazelemek için). */
@@ -115,7 +135,7 @@ export function PartSearchInput({
             onClick={() => onCreate(t)}
           >
             <Plus className="size-4 text-primary" />
-            <span>Oluştur <span className="font-semibold">“{t}”</span></span>
+            <span>{createLabel} <span className="font-semibold">“{t}”</span></span>
           </Button>
         )}
         {onCreateEdit && (
@@ -254,15 +274,26 @@ export function PartSearchInput({
     }
   }, [query, onSelectStockPart])
 
-  const suggestions = buildPartSuggestions(results, stockResults)
+  // BakımX ürün kataloğu (BAK-35). TecDoc'tan BAĞIMSIZ: ürünler araçtan bağımsız
+  // olduğu için araç kataloğa bağlı olmasa da aranır. Kapı kapalıysa hook boş
+  // liste döner ve satırlar hiç render edilmez — hata gösterilmez (bkz.
+  // bakimx-client.ts).
+  const { products: bakimxResults } = useBakimxProductSearch({
+    enabled: !!onSelectBakimxProduct,
+    q: query,
+    limit: BAKIMX_SUGGESTION_LIMIT,
+  })
 
-  // Araç kataloğa bağlı değil VE stok araması da yok → arama yapacak bir şey
-  // kalmaz, düz metin girişi + (composer'da) create aksiyonları.
+  const suggestions = buildPartSuggestions(results, bakimxResults, stockResults)
+
+  // Araç kataloğa bağlı değil VE ne BakımX ne stok araması var → arama yapacak
+  // bir şey kalmaz, düz metin girişi + (composer'da) create aksiyonları.
   //
-  // Stok araması varsa düz input'a DÜŞÜLMEZ: katalogsuz araç, atölyenin kendi
-  // stok kartlarının en çok işe yaradığı durum (#181). Bu erken dönüş yüzünden
-  // stok sonuçları hiç görünmüyordu.
-  if (vehicleTypeId == null && !onSelectStockPart) {
+  // Stok/BakımX araması varsa düz input'a DÜŞÜLMEZ: katalogsuz araç, atölyenin
+  // kendi stok kartlarının (#181) ve araçtan bağımsız BakımX ürünlerinin en çok
+  // işe yaradığı durum. Bu erken dönüş yüzünden stok sonuçları hiç
+  // görünmüyordu.
+  if (vehicleTypeId == null && !onSelectStockPart && !onSelectBakimxProduct) {
     const inputGroup = (
       <InputGroup>
         {skuChip}
@@ -349,7 +380,35 @@ export function PartSearchInput({
             )}
           </AutocompleteEmpty>
           <AutocompleteList>
-            {(s: PartSuggestion) => (s.kind === "stock" ? (
+            {(s: PartSuggestion) => (s.kind === "bakimx" ? (
+              // BAK-35 — BakımX kataloğu: araca bağlı değil ama satılabilirliği ve
+              // fiyatı bizde kayıtlı. Gösterilen tutar ATÖLYENİN ALIŞ fiyatıdır
+              // (KDV hariç); etiketi kaldırmayın, satış fiyatı sanılırsa atölye
+              // kendi marjını unutur.
+              <AutocompleteItem
+                key={suggestionKey(s)}
+                value={s}
+                onClick={() => onSelectBakimxProduct?.(s.product)}
+              >
+                <span className="size-8 shrink-0 rounded bg-primary/10 flex items-center justify-center">
+                  <Store className="size-4 text-primary" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{s.product.name}</span>
+                  <span className="block text-xs text-muted-foreground truncate">
+                    <span className="font-mono">{s.product.sku}</span>
+                    {s.product.brandName && <> · {s.product.brandName}</>}
+                    {s.product.categoryLabel && <> · {s.product.categoryLabel}</>}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground truncate">
+                    <span className="font-semibold text-foreground">
+                      Alış: {formatTRY(s.product.workshopPriceKurus)}
+                    </span>
+                    <> · KDV hariç · {bakimxStockLabel(s.product)}</>
+                  </span>
+                </span>
+              </AutocompleteItem>
+            ) : s.kind === "stock" ? (
               // #181 — atölyenin kendi stok kartı: araca bağlı DEĞİL, ünlemle
               // ayrışsın ki kullanıcı listeden anlasın. Onay akışı çağıranda (#157).
               <AutocompleteItem
@@ -398,6 +457,12 @@ export function PartSearchInput({
                     {a.supplierName && <> · {a.supplierName}</>}
                     {a.categoryName && <> · {a.categoryName}</>}
                   </span>
+                  {/* OEM numarasıyla arandığında satırın neden çıktığı görünsün (#312). */}
+                  {a.matchedOems.length > 0 && (
+                    <span className="block text-[11px] text-muted-foreground truncate">
+                      OEM: <span className="font-mono">{a.matchedOems.join(", ")}</span>
+                    </span>
+                  )}
                 </span>
                 {onShowDetail && (
                   <button

@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Eye, Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { startImpersonation } from "@/app/admin/impersonation-actions"
 
 /** Founder action to enter a read-only impersonation of a workshop. On success
@@ -23,16 +22,17 @@ export function ImpersonateButton({ workshopId }: { workshopId: string }) {
 
   return (
     <div className="flex flex-col gap-1">
-      <button
+      <Button
         type="button"
         disabled={pending}
         onClick={run}
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
-        title="Bu iş yerinin sahibi olarak salt-okunur giriş yap"
+        variant="outline"
+        size="sm"
+        aria-label="Bu iş yerini salt okunur müşteri görünümünde aç"
       >
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
         Müşteri gibi gör
-      </button>
+      </Button>
       {error && <p className="text-xs text-destructive-strong">{error}</p>}
     </div>
   )

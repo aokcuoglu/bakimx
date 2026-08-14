@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { Check, X, Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   approveWorkshop,
   rejectWorkshop,
@@ -47,55 +47,54 @@ export function WorkshopActions({ w }: { w: WorkshopActionState }) {
 
         {w.approvalStatus === "pending" ? (
           <>
-            <button
+            <Button
               disabled={pending}
               onClick={() => run(() => approveWorkshop(w.id))}
-              className={cn(buttonVariants({ size: "sm" }), "gap-1")}
+              size="sm"
             >
               <Check className="size-3.5" /> Onayla
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={pending}
               onClick={() => run(() => rejectWorkshop(w.id))}
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1")}
+              variant="outline"
+              size="sm"
             >
               <X className="size-3.5" /> Reddet
-            </button>
+            </Button>
           </>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground mr-0.5">Plan ata:</span>
             {TIERS.map((t) => (
-              <button
+              <Button
                 key={t}
                 disabled={pending}
                 onClick={() => run(() => activateWorkshopPlan(w.id, t, "active"))}
-                className={cn(
-                  buttonVariants({
-                    variant: w.requestedPlanTier === t ? "default" : "outline",
-                    size: "sm",
-                  }),
-                )}
-                title={`${TIER_LABELS[t]} olarak etkinleştir`}
+                variant={w.requestedPlanTier === t ? "default" : "outline"}
+                size="sm"
+                aria-label={`${TIER_LABELS[t]} planını etkinleştir`}
               >
                 {TIER_LABELS[t]}
-              </button>
+              </Button>
             ))}
             <span className="text-xs text-muted-foreground ml-2">Ek koltuk:</span>
-            <input
+            <Input
               type="number"
               min={0}
               value={seats}
               onChange={(e) => setSeats(e.target.value)}
-              className="h-8 w-16 rounded-lg border border-border bg-white px-2 text-xs"
+              className="w-20"
+              aria-label="Ek koltuk sayısı"
             />
-            <button
+            <Button
               disabled={pending}
               onClick={() => run(() => setWorkshopExtraSeats(w.id, Number.parseInt(seats, 10) || 0))}
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              variant="outline"
+              size="sm"
             >
               Uygula
-            </button>
+            </Button>
           </div>
         )}
       </div>

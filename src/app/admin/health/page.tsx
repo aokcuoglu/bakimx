@@ -24,7 +24,7 @@ export default async function AdminHealthPage() {
   const usageTone =
     usage.pct >= 90 ? "rose" : usage.pct >= 70 ? "amber" : "emerald"
   const usageBar =
-    usageTone === "rose" ? "bg-rose-500" : usageTone === "amber" ? "bg-amber-500" : "bg-emerald-500"
+    usageTone === "rose" ? "bg-destructive/100" : usageTone === "amber" ? "bg-warning/100" : "bg-success/100"
 
   return (
     <div className="space-y-6">
@@ -37,15 +37,15 @@ export default async function AdminHealthPage() {
       <div
         className={cn(
           "flex items-center gap-2 rounded-lg border px-4 py-3 text-sm",
-          summary.ok ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200",
+          summary.ok ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20",
         )}
       >
         {summary.ok ? (
-          <CheckCircle2 className="size-5 text-emerald-600" />
+          <CheckCircle2 className="size-5 text-success-strong" />
         ) : (
-          <AlertTriangle className="size-5 text-amber-600" />
+          <AlertTriangle className="size-5 text-warning-strong" />
         )}
-        <span className={cn("font-medium", summary.ok ? "text-emerald-800" : "text-amber-800")}>
+        <span className={cn("font-medium", summary.ok ? "text-success-strong" : "text-warning-strong")}>
           {summary.ok ? "Tüm sistemler sağlıklı" : "Dikkat gerektiren durumlar var"}
         </span>
       </div>
@@ -63,7 +63,7 @@ export default async function AdminHealthPage() {
             <span
               className={cn(
                 "font-medium",
-                summary.cronStale || summary.cronStatus === "error" ? "text-amber-600" : "text-emerald-600",
+                summary.cronStale || summary.cronStatus === "error" ? "text-warning-strong" : "text-success-strong",
               )}
             >
               {summary.cronStale ? "Bayat" : summary.cronStatus === "error" ? "Hata" : "Güncel"}
@@ -88,9 +88,9 @@ export default async function AdminHealthPage() {
             {detail.configChecks.map((c) => (
               <div key={c.label} className="flex items-start gap-2 text-sm">
                 {c.ok ? (
-                  <CheckCircle2 className="size-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <CheckCircle2 className="size-4 text-success-strong mt-0.5 shrink-0" />
                 ) : (
-                  <XCircle className="size-4 text-rose-600 mt-0.5 shrink-0" />
+                  <XCircle className="size-4 text-destructive-strong mt-0.5 shrink-0" />
                 )}
                 <span>
                   <span className="text-foreground">{c.label}</span>
@@ -113,7 +113,7 @@ export default async function AdminHealthPage() {
           <span
             className={cn(
               "text-sm font-semibold tabular-nums",
-              usageTone === "rose" ? "text-rose-600" : usageTone === "amber" ? "text-amber-600" : "text-emerald-600",
+              usageTone === "rose" ? "text-destructive-strong" : usageTone === "amber" ? "text-warning-strong" : "text-success-strong",
             )}
           >
             %{usage.pct.toFixed(1)}
@@ -138,7 +138,7 @@ export default async function AdminHealthPage() {
         </div>
 
         <p className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
-          <AlertTriangle className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
+          <AlertTriangle className="size-3.5 shrink-0 text-warning-strong mt-0.5" />
           <span>
             Yalnızca bu uygulamanın kaydettiği çağrıları sayar. Hatalı çağrılar faturalanır ama cache&apos;lenmez ve{" "}
             <code className="font-mono">migrate reset</code> bu satırları siler — gerçek sayı için RapidAPI panosuna

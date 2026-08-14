@@ -12,6 +12,7 @@ import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
 import type { RuhsatHints } from "@/lib/vin/types"
 import type { Customer, Prisma, Vehicle } from "@prisma/client"
+import { classifyCustomerTaxIdentity } from "@/lib/ocr/customer-tax-identity"
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
     const vehicleType = clean(confirmedFields.vehicleType)
     const modelYear = parseModelYear(confirmedFields.modelYear)
     const engineNo = clean(confirmedFields.engineNo).toUpperCase()
+    const taxIdentity = classifyCustomerTaxIdentity(confirmedFields.identityOrTaxNumber)
 
     if (!plate) {
       return NextResponse.json({ error: "Plaka alanı zorunludur" }, { status: 400 })
@@ -182,10 +184,29 @@ export async function POST(request: Request) {
                 phone,
                 source: "walk_in",
                 notes: "Ruhsat okuma ile oluşturuldu.",
+                identityNumber: taxIdentity.identityNumber,
+                taxNumber: taxIdentity.taxNumber,
               },
             })
             customerCreated = true
           }
+        }
+
+        if (
+          (!customer.identityNumber && taxIdentity.identityNumber) ||
+          (!customer.taxNumber && taxIdentity.taxNumber)
+        ) {
+          customer = await tx.customer.update({
+            where: { id: customer.id },
+            data: {
+              ...(!customer.identityNumber && taxIdentity.identityNumber
+                ? { identityNumber: taxIdentity.identityNumber }
+                : {}),
+              ...(!customer.taxNumber && taxIdentity.taxNumber
+                ? { taxNumber: taxIdentity.taxNumber }
+                : {}),
+            },
+          })
         }
 
         let vehicle: Vehicle

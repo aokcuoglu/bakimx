@@ -101,14 +101,14 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
   const ownerEmail = workshop.users.find((u) => u.role === "owner")?.email ?? workshop.users[0]?.email ?? null
 
   const APPROVAL_BADGE: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-800",
-    approved: "bg-emerald-100 text-emerald-800",
-    rejected: "bg-rose-100 text-rose-800",
+    pending: "bg-warning/10 text-warning-strong",
+    approved: "bg-success/10 text-success-strong",
+    rejected: "bg-destructive/10 text-destructive-strong",
   }
   const SUB_BADGE: Record<string, string> = {
-    trialing: "bg-blue-100 text-blue-800",
-    active: "bg-emerald-100 text-emerald-800",
-    past_due: "bg-amber-100 text-amber-800",
+    trialing: "bg-primary/10 text-primary",
+    active: "bg-success/10 text-success-strong",
+    past_due: "bg-warning/10 text-warning-strong",
     canceled: "bg-muted text-muted-foreground",
   }
 
@@ -133,10 +133,10 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               {ownerEmail && <span> · {ownerEmail}</span>}
             </p>
             {plan.isTrialing && plan.trialDaysLeft != null && (
-              <p className="text-sm text-blue-700 mt-1">Deneme: {plan.trialDaysLeft} gün kaldı</p>
+              <p className="text-sm text-primary mt-1">Deneme: {plan.trialDaysLeft} gün kaldı</p>
             )}
             {plan.subscriptionDaysLeft != null && (
-              <p className={cn("text-sm mt-1", plan.subscriptionDaysLeft <= 7 ? "text-amber-600" : "text-muted-foreground")}>
+              <p className={cn("text-sm mt-1", plan.subscriptionDaysLeft <= 7 ? "text-warning-strong" : "text-muted-foreground")}>
                 Abonelik: {plan.subscriptionDaysLeft} gün kaldı
               </p>
             )}
@@ -178,11 +178,12 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
             {workshop.users.map((u) => (
               <div key={u.id} className="flex items-center justify-between text-sm">
                 <span className={cn("text-foreground", !u.isActive && "text-muted-foreground line-through")}>
-                  {u.email}
+                  {/* E-postasız üye kullanıcı adıyla listelenir (BAK-40). */}
+                  {u.email ?? u.username ?? "—"}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Badge className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role] ?? u.role}</Badge>
-                  {!u.isActive && <Badge className="bg-rose-100 text-rose-800">pasif</Badge>}
+                  {!u.isActive && <Badge className="bg-destructive/10 text-destructive-strong">pasif</Badge>}
                 </span>
               </div>
             ))}
@@ -212,7 +213,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{formatMinor(o.amountMinor)}</span>
-                    <Badge className={o.status === "confirmed" ? "bg-emerald-100 text-emerald-800" : o.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-amber-100 text-amber-800"}>
+                    <Badge className={o.status === "confirmed" ? "bg-success/10 text-success-strong" : o.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-warning/10 text-warning-strong"}>
                       {ORDER_STATUS_LABELS[o.status] ?? o.status}
                     </Badge>
                   </span>
@@ -254,7 +255,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                       {c.type} · {c.templateKey ?? "—"}
                     </span>
                     <span className="flex items-center gap-2 text-xs">
-                      <Badge className={c.status === "failed" ? "bg-rose-100 text-rose-800" : c.status === "sent" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}>
+                      <Badge className={c.status === "failed" ? "bg-destructive/10 text-destructive-strong" : c.status === "sent" ? "bg-success/10 text-success-strong" : "bg-muted text-muted-foreground"}>
                         {c.status}
                       </Badge>
                       <span className="text-muted-foreground">{c.sentAt.toLocaleDateString("tr-TR")}</span>
@@ -287,7 +288,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                   <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-foreground">{s.provider} · {s.direction}</span>
                     <span className="flex items-center gap-2 text-xs">
-                      <Badge className={s.status === "failed" ? "bg-rose-100 text-rose-800" : "bg-muted text-muted-foreground"}>
+                      <Badge className={s.status === "failed" ? "bg-destructive/10 text-destructive-strong" : "bg-muted text-muted-foreground"}>
                         {s.status}
                       </Badge>
                       <span className="text-muted-foreground">{s.syncedAt.toLocaleDateString("tr-TR")}</span>

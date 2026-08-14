@@ -11,7 +11,9 @@ type WorkshopData = {
 
 type UserData = {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) hesaplarda NULL — BAK-40. */
+  email: string | null
+  username: string | null
   workshopId: string
   firstName: string | null
   lastName: string | null
@@ -68,9 +70,12 @@ export function SecurityInfo({ workshop, user }: { workshop: WorkshopData; user:
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad Soyad</div>
               <div className="text-sm text-foreground">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</div>
             </div>
+            {/* E-postasız hesap kullanıcı adıyla girer — kutu boş kalmasın. */}
             <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">E-posta</div>
-              <div className="text-sm text-foreground">{user.email}</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {user.email ? "E-posta" : "Kullanıcı Adı"}
+              </div>
+              <div className="text-sm text-foreground">{user.email ?? user.username ?? "—"}</div>
             </div>
             <div className="p-4 rounded-lg bg-muted border border-border space-y-1">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kullanıcı ID</div>

@@ -20,6 +20,9 @@ export const serviceOrderItemSchema = z.object({
   category: z.string().optional(),
   // TecDoc kategori düğüm id'si; serbest metin kategoride gönderilmez.
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().optional(),
+  // BakımX katalog ürünü (BAK-35). Doluysa kalemin kimlik/fiyat alanları SUNUCUDA
+  // ürün kaydından türetilir — istemciden gelen ad/fiyat yazılmaz.
+  bakimxProductId: z.string().optional(),
 })
 
 /**

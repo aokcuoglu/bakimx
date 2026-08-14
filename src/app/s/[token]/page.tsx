@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
-import { notFound } from "next/navigation"
 import { PublicSharePage } from "@/components/intake/public-share-page"
+import { PublicLinkState } from "@/components/shared/public-link-state"
 import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
@@ -30,9 +30,9 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     },
   })
 
-  if (!shareLink || !shareLink.isActive || (shareLink.expiresAt && shareLink.expiresAt < new Date())) {
-    notFound()
-  }
+  if (!shareLink) return <PublicLinkState problem="invalid" />
+  if (!shareLink.isActive) return <PublicLinkState problem="inactive" />
+  if (shareLink.expiresAt && shareLink.expiresAt < new Date()) return <PublicLinkState problem="expired" />
 
   const { intakeForm, workshop } = shareLink
 

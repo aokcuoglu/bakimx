@@ -185,19 +185,15 @@ function AddTechnicianForm({
       </div>
       <div className="flex flex-wrap gap-2">
         {(Object.entries(TECHNICIAN_ROLES) as [TechnicianRoleKey, { label: string; color: string }][]).map(([key, info]) => (
-          <button
+          <Button
             key={key}
             type="button"
             onClick={() => setRole(key)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation",
-              role === key
-                ? "bg-primary text-primary-foreground"
-                : "bg-white border border-border text-muted-foreground hover:bg-muted"
-            )}
+            variant={role === key ? "default" : "outline"}
+            size="sm"
           >
             {info.label}
-          </button>
+          </Button>
         ))}
       </div>
       <div className="flex gap-2">

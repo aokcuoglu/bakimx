@@ -33,17 +33,17 @@ export async function HealthBand() {
       className={cn(
         "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm transition-colors",
         summary.ok
-          ? "bg-emerald-50 border-emerald-200 hover:border-emerald-300"
-          : "bg-amber-50 border-amber-200 hover:border-amber-300",
+          ? "bg-success/10 border-success/20 hover:border-success/20"
+          : "bg-warning/10 border-warning/20 hover:border-warning/20",
       )}
     >
       <span className="flex items-center gap-2">
         {summary.ok ? (
-          <CheckCircle2 className="size-4 text-emerald-600" />
+          <CheckCircle2 className="size-4 text-success-strong" />
         ) : (
-          <AlertTriangle className="size-4 text-amber-600" />
+          <AlertTriangle className="size-4 text-warning-strong" />
         )}
-        <span className={cn("font-medium", summary.ok ? "text-emerald-800" : "text-amber-800")}>
+        <span className={cn("font-medium", summary.ok ? "text-success-strong" : "text-warning-strong")}>
           {summary.ok ? "Sistem sağlıklı" : items.join(" · ")}
         </span>
       </span>

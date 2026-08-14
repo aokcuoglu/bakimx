@@ -50,9 +50,15 @@ export type OrderItem = {
   categoryId: number | null
   // TecDoc katalog bağlantısı — doluysa satırda parça detayı (ⓘ) açılabilir.
   tecdocArticleId?: number | null
-  // Kalemin nasıl eklendiği (katalog/manuel/dış alım); eski satırlarda null.
-  source: "catalog" | "manual" | "purchase" | null
-  // Dış alım (source=purchase) alanları; diğer kalemlerde/draft'ta bulunmaz.
+  // BakımX ürün kataloğu bağlantısı (BAK-35) — doluysa satırın kimliği katalogdan
+  // gelir ve düzenlenemez. FK değildir: fiyat kalemde donmuş anlık görüntüdür.
+  bakimxProductId?: string | null
+  // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX kataloğu); eski
+  // satırlarda null.
+  source: "catalog" | "manual" | "purchase" | "bakimx" | null
+  // Alış fiyatı (kuruş, KDV hariç). İki kaynakta dolar: dış alım (source=purchase)
+  // ve BakımX kalemi (source=bakimx). unitPrice bundan ön-doldurulur, sonra ayrı
+  // düzenlenir.
   purchasePriceKurus?: number | null
   supplierName?: string | null
   supplierId?: string | null
@@ -187,6 +193,8 @@ export function PartsLaborCard({
   onLoading,
   loading,
   laborCatalog,
+  taxRateBps,
+  onApplyStandardTax,
 }: {
   orderId: string
   status: string
@@ -196,6 +204,10 @@ export function PartsLaborCard({
   onLoading: (b: boolean) => void
   loading: boolean
   laborCatalog: LaborCatalogRow[]
+  /** İş emrinin KDV oranı (bps) — kalem tutarlarının KDV dahil gösterimi için (#311). */
+  taxRateBps?: number | null
+  /** KDV oranı tanımsızken standart %20'yi iş emrine uygular. */
+  onApplyStandardTax?: () => void
 }) {
   return (
     <Card>
@@ -218,6 +230,8 @@ export function PartsLaborCard({
           onLoading={onLoading}
           loading={loading}
           laborCatalog={laborCatalog}
+          taxRateBps={taxRateBps}
+          onApplyStandardTax={onApplyStandardTax}
         />
       </CardContent>
     </Card>

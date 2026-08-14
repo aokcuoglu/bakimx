@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { cn } from "@/lib/utils"
@@ -41,9 +41,20 @@ import {
   AutocompleteItem,
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
+import { Checkbox } from "@/components/ui/checkbox"
 import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
-import { liraToKurus, kurusToLira } from "@/lib/money"
+import { bpsToPercent, liraToKurus, kurusToLira } from "@/lib/money"
+import {
+  STANDARD_TAX_BPS,
+  effectiveTaxBps,
+  readPriceTaxMode,
+  toDisplayPriceKurus,
+  toDisplayPriceKurusOrNull,
+  toStoredPriceKurus,
+  writePriceTaxMode,
+  type PriceTaxMode,
+} from "@/lib/orders/price-tax-mode"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/orders/order-management-panel"
@@ -56,6 +67,8 @@ import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import { bakimxLineItemFields } from "@/lib/parts/bakimx-item"
 import { createQuickPartAction, ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -64,7 +77,8 @@ const TYPE_LABELS: Record<ItemType, string> = { part: "Yedek Parça", labor: "İ
 // brandSupplierId: yalnız runtime — marka→kategori best-effort filtresi için
 // seçili markanın TecDoc supplierId'sini taşır; ASLA persist edilmez.
 // __partId: atölyenin kendi stok kartına bağ. Set edilirse sunucu stok düşümü
-// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli.
+// yapar ve stok yetmezse eklemeyi TÜMÜYLE reddeder — bilinçli. BakımX kaleminde
+// bu alan DAİMA boştur (bkz. lib/parts/bakimx-item.ts).
 type Row = OrderItem & { __draft?: boolean; __saving?: boolean; tempId?: string; brandSupplierId?: number | null; __partId?: string | null }
 
 // Satır-yerel arama filtresi (persist EDİLMEZ). Combobox seçimi buraya yazar;
@@ -86,6 +100,32 @@ const FLASH_LABELS: Record<FlashKind, string> = { saved: "Kaydedildi", added: "E
 type DetailRequest = { target: PartDetailTarget; onSelect?: () => void }
 type OnShowDetail = (req: DetailRequest) => void
 
+/**
+ * Fiyat kipi bağlamı (#311): kalem tutarları KDV DAHİL mi girilip gösteriliyor?
+ * Composer, masaüstü satırı ve mobil kart aynı kipi buradan okur — prop olarak
+ * on hücreden geçirmek yerine tek yerden. Saklanan `unitPrice` her koşulda
+ * NET'tir; kip yalnız giriş/gösterim çevrimidir (bkz. lib/orders/price-tax-mode).
+ */
+type PriceTaxState = {
+  mode: PriceTaxMode
+  setMode: (mode: PriceTaxMode) => void
+  /** Çevrimde kullanılan oran (bps) — belgenin oranı, yoksa standart %20. */
+  taxBps: number
+  /** Belgede KDV oranı tanımlı mı? Değilse KDV dahil kipinde uyarı gösterilir. */
+  documentTaxSet: boolean
+}
+
+const PriceTaxContext = createContext<PriceTaxState>({
+  mode: "excluded",
+  setMode: () => {},
+  taxBps: STANDARD_TAX_BPS,
+  documentTaxSet: false,
+})
+
+function usePriceTax(): PriceTaxState {
+  return useContext(PriceTaxContext)
+}
+
 /** Katalog parçası (arama sonucu / picker satırı) → modal hedefi. */
 function toDetailTarget(
   a: { tecdocArticleId: number; productName: string; articleNo: string; supplierName: string },
@@ -102,9 +142,13 @@ function toDetailTarget(
 
 function toRow(i: OrderItem): Row { return { ...i } }
 
+/** Composer'ın yazabildiği kaynaklar (dış alım kendi akışından gelir). */
+type DraftSource = "catalog" | "manual" | "bakimx"
+
 // Composer'ın boş taslağı (tek satırlık ekleme formu için — listede birikmez).
-// source: kalemin kaynağı (katalog composer → "catalog", manuel → "manual").
-function emptyDraft(type: ItemType, source: "catalog" | "manual"): Row {
+// source: kalemin kaynağı (katalog composer → "catalog", manuel → "manual",
+// BakımX kataloğu → "bakimx").
+function emptyDraft(type: ItemType, source: DraftSource): Row {
   return {
     id: "composer", type, name: "", sku: null, unit: "adet",
     quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
@@ -131,6 +175,7 @@ export type PartsLaborRow = Row
 export function PartsLaborEditor({
   rows, vehicle, locked, loading, laborCatalog, orderId,
   allowExternalLabor = true, showAttributes = true,
+  taxRateBps, onApplyStandardTax,
   flash, onAdd, onCell, onRemove,
 }: {
   rows: Row[]
@@ -144,6 +189,10 @@ export function PartsLaborEditor({
   allowExternalLabor?: boolean
   /** Marka/Kategori meta alanları — yalnız bunları saklayabilen tarafta gösterilir. */
   showAttributes?: boolean
+  /** Belgenin (iş emri / teklif) KDV oranı — bps. Tanımsız/0 ise standart %20 varsayılır. */
+  taxRateBps?: number | null
+  /** Belgede KDV oranı yokken "KDV dahil" kipinde sunulan tek tık: %20'yi belgeye uygula. */
+  onApplyStandardTax?: () => void
   flash: { rowId: string; kind: FlashKind } | null
   onAdd: (draft: Row) => Promise<boolean>
   onCell: OnCell
@@ -152,9 +201,34 @@ export function PartsLaborEditor({
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
 
+  // Fiyat kipi (#311). Sunucuda ve ilk render'da HER ZAMAN "excluded" —
+  // localStorage yalnız mount sonrası okunur, yoksa hidrasyon uyuşmazlığı olur.
+  const [priceMode, setPriceMode] = useState<PriceTaxMode>("excluded")
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPriceMode(readPriceTaxMode())
+  }, [])
+  const setPriceModePersisted = useCallback((mode: PriceTaxMode) => {
+    setPriceMode(mode)
+    writePriceTaxMode(mode)
+  }, [])
+  const priceTax = useMemo<PriceTaxState>(
+    () => ({
+      mode: priceMode,
+      setMode: setPriceModePersisted,
+      taxBps: effectiveTaxBps(taxRateBps),
+      documentTaxSet: (taxRateBps ?? 0) > 0,
+    }),
+    [priceMode, setPriceModePersisted, taxRateBps]
+  )
+
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
+  const taxNote = priceTax.mode === "included"
+    ? <span className="block text-[10px] font-normal normal-case tracking-normal">KDV dahil</span>
+    : null
 
   return (
+    <PriceTaxContext.Provider value={priceTax}>
     <PartAttrOptionsProvider vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}>
     <TooltipProvider>
     {/* min-w-0: düzenleyici bir grid/flex hücresinin içine konduğunda (teklif
@@ -198,6 +272,11 @@ export function PartsLaborEditor({
 
       {!locked && <Separator />}
 
+      {/* #311 — KDV dahil/hariç anahtarı. Fiyat sütunlarının hemen üstünde durur:
+          işaretliyken hem YAZILAN hem GÖSTERİLEN tutarlar KDV dahildir, böylece
+          müşteriye söylenecek fiyat mental hesap yapmadan okunur. */}
+      <PriceTaxToggleRow onApplyStandardTax={onApplyStandardTax} />
+
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
       {/* Geniş kapsayıcı (≥52rem): gerçek shadcn Base <table>. Eşik tablonun kendi
           min genişliği; altında tablo zaten yatay kaydırmaya düşerdi, onun yerine
@@ -217,8 +296,10 @@ export function PartsLaborEditor({
               <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
+              {/* KDV dahil kipinde başlık ikinci satıra not düşer: tek satıra
+                  eklenen "(KDV dahil)" iki dar kolonda taşıp birbirine giriyordu. */}
+              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat{taxNote}</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Toplam{taxNote}</TableHead>
               <TableHead className={cn(headCls, "text-right")}><span className="sr-only">İşlem</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -282,6 +363,49 @@ export function PartsLaborEditor({
     </div>
     </TooltipProvider>
     </PartAttrOptionsProvider>
+    </PriceTaxContext.Provider>
+  )
+}
+
+/**
+ * KDV dahil/hariç anahtarı + belgede KDV oranı yokken çıkan uyarı (#311).
+ *
+ * Kip yalnız düzenleyicinin GÖSTERİMİNİ ve GİRİŞİNİ çevirir; KDV'yi Genel
+ * Toplam'a ekleyen tek yer belgenin `taxRate` alanıdır. Belgede oran yoksa
+ * düzenleyici standart %20 ile hesap gösterir ve farkı gizlemek yerine söyler —
+ * `onApplyStandardTax` verilmişse tek tıkla oranı belgeye yazdırır.
+ */
+function PriceTaxToggleRow({ onApplyStandardTax }: { onApplyStandardTax?: () => void }) {
+  const { mode, setMode, taxBps, documentTaxSet } = usePriceTax()
+  const checkboxId = useId()
+  const inclusive = mode === "included"
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-end">
+        <label
+          htmlFor={checkboxId}
+          className="inline-flex cursor-pointer touch-manipulation items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-2 text-sm text-foreground"
+        >
+          <Checkbox
+            id={checkboxId}
+            checked={inclusive}
+            onCheckedChange={(checked) => setMode(checked ? "included" : "excluded")}
+          />
+          <span>Tutarlar KDV dahil (%{bpsToPercent(taxBps)})</span>
+        </label>
+      </div>
+      {inclusive && !documentTaxSet && (
+        <p className="flex flex-wrap items-center justify-end gap-x-1.5 gap-y-1 text-xs text-warning-strong">
+          <Info className="size-3.5 shrink-0" />
+          <span>Bu belgede KDV oranı tanımlı değil — kalemler %{bpsToPercent(taxBps)} varsayılarak gösteriliyor.</span>
+          {onApplyStandardTax && (
+            <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={onApplyStandardTax}>
+              Genel Toplam&apos;a %{bpsToPercent(STANDARD_TAX_BPS)} KDV uygula
+            </Button>
+          )}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -291,7 +415,7 @@ export function PartsLaborEditor({
  * düşer/rezerve eder. Teklif tarafı bu adaptörü KULLANMAZ (bkz. QuoteItemsEditor).
  */
 export function PartsLaborGrid({
-  orderId, status, items, vehicle, onError, loading, laborCatalog,
+  orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
 }: {
   orderId: string
   status: string
@@ -301,6 +425,10 @@ export function PartsLaborGrid({
   onLoading: (b: boolean) => void
   loading: boolean
   laborCatalog: LaborCatalogRow[]
+  /** İş emrinin KDV oranı (bps) — KDV dahil/hariç gösterimi için. */
+  taxRateBps?: number | null
+  /** İş emrinde KDV oranı yokken standart %20'yi uygulayan geri çağırım. */
+  onApplyStandardTax?: () => void
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -365,6 +493,10 @@ export function PartsLaborGrid({
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
+    // BakımX katalog bağı. Sunucu ürünü bu id ile DB'den okur ve kalemin
+    // ad/parça no/marka/kategori/alış fiyatı alanlarını oradan yazar — buradan
+    // gönderilen değerler yalnız iyimser satır içindir (bkz. addOrderItemAction).
+    if (draft.bakimxProductId) fd.set("bakimxProductId", draft.bakimxProductId)
     // Stok kartına bağlıysa sunucu stoğu düşürür (bkz. Row.__partId).
     if (draft.__partId) fd.set("partId", draft.__partId)
     try {
@@ -447,6 +579,8 @@ export function PartsLaborGrid({
       loading={loading}
       laborCatalog={laborCatalog}
       orderId={orderId}
+      taxRateBps={taxRateBps}
+      onApplyStandardTax={onApplyStandardTax}
       flash={flash}
       onAdd={addItem}
       onCell={onCell}
@@ -625,6 +759,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
   const onCell: OnCell = (_row, patch) => setDraft((d) => ({ ...d, ...patch }))
   // İşçilikte araç bağı yok; useRowEditor yalnız fiyat/toplam mantığı için.
   const ed = useRowEditor(draft, undefined, false, onCell)
+  const { mode: priceMode } = usePriceTax()
   const isExternal = mode === "external_labor"
 
   async function submit() {
@@ -659,12 +794,12 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
         <Field label="Miktar">
           <QtyStepper row={draft} editable onCell={onCell} />
         </Field>
-        <Field label="Birim Fiyat">
+        <Field label={priceMode === "included" ? "Birim Fiyat (KDV dahil)" : "Birim Fiyat"}>
           <PriceField row={draft} ed={ed} wide />
         </Field>
       </div>
       <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center sm:gap-3">
-        <TotalPreview lineTotal={ed.lineTotal} />
+        <TotalPreview lineTotal={ed.displayLineTotal} />
         <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
       </div>
     </div>
@@ -684,6 +819,9 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
   const [tecdocOpen, setTecdocOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // "Oluştur & Düzenle" modalındaki fiyat alanı da listeyle aynı KDV kipinde
+  // çalışır — aksi hâlde aynı ekranda iki farklı fiyat anlamı olurdu (#311).
+  const priceTax = usePriceTax()
   const submittingRef = useRef(false)
   // Bu modal oturumunda açılan stok kartının kodu (yeniden denemede ikinci kart
   // açılmasını engeller). Modal her açılışta sıfırlanır.
@@ -767,8 +905,31 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     }
   }
 
+  /**
+   * BakımX ürünü → kalem taslağı (BAK-35). Alanların TAMAMI `bakimxLineItemFields`
+   * ten gelir: `partId` yok (BakımX stoğu atölyenin stoğu değil, düşüm
+   * tetiklenmez), `categoryId` null (o kolon TecDoc düğüm id'si), fiyat
+   * `purchasePriceKurus`'a yazılıp `unitPrice`'a ön-doldurulur. Gerekçeler tek
+   * yerde: src/lib/parts/bakimx-item.ts.
+   */
+  function bakimxDraft(p: BakimxProductSummary): Partial<Row> & { source: "bakimx" } {
+    const fields = bakimxLineItemFields(p)
+    return {
+      source: fields.source,
+      name: fields.name,
+      sku: fields.sku,
+      brand: fields.brand,
+      category: fields.category,
+      categoryId: fields.categoryId,
+      unit: fields.unit,
+      bakimxProductId: fields.bakimxProductId,
+      purchasePriceKurus: fields.purchasePriceKurus,
+      unitPrice: fields.unitPrice,
+    }
+  }
+
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
-  async function add(partial: Partial<Row> & { source: "catalog" | "manual" }): Promise<boolean> {
+  async function add(partial: Partial<Row> & { source: DraftSource }): Promise<boolean> {
     if (submittingRef.current || !partial.name?.trim()) return false
     submittingRef.current = true
     setSubmitting(true)
@@ -845,7 +1006,8 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         // TecdocPartPicker içinde ve o da `linked` iken basılıyordu).
         <div className="space-y-2 rounded-lg bg-muted/60 px-3 py-2">
           <p className="text-xs text-muted-foreground">
-            Araç katalogla eşleşmediği için katalog araması sınırlı — parçayı{" "}
+            Araç katalogla eşleşmediği için araca özel parça araması sınırlı — BakımX ürünleri ve
+            kendi stok kartlarınız yine aranabilir, ya da parçayı{" "}
             <span className="font-semibold text-foreground">Oluştur</span> ile elle ekleyebilirsiniz.
           </p>
           {vehicle && <VinLinkPrompt vehicle={vehicle} />}
@@ -859,19 +1021,22 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         supplierId={filter.supplierId ?? null}
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
-        placeholder="Parça no, adı veya marka ara…"
+        placeholder="Parça no, adı, marka veya OEM ara…"
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
         onSelectStockPart={(p) => setStockConfirm(p)}
+        onSelectBakimxProduct={(p) => void add(bakimxDraft(p))}
         onShowDetail={(a) =>
           onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
         onCommit={() => { if (name.trim()) void add({ source: "manual", name }) }}
         onClear={() => { setName(""); setFilter({}) }}
         showClear={!!name}
-        onSearchClick={linked ? () => setTecdocOpen(true) : undefined}
-        searchDisabled={!linked}
-        searchTitle={linked ? "TecDoc kataloğundan seç" : "Araç TecDoc'ta eşleşmedi"}
+        // BAK-35 — seçici araç kataloğa bağlı olmasa da açılabilir: BakımX dalı
+        // araçtan bağımsız çalışır, modal içinde VIN bağlama yolu da duruyor.
+        onSearchClick={vehicle ? () => setTecdocOpen(true) : undefined}
+        searchDisabled={!vehicle}
+        searchTitle={linked ? "Katalogdan seç" : "BakımX ürünlerinden seç"}
         showCreate
         onCreate={(text) => void add({ source: "manual", name: text })}
         onCreateEdit={(text) => { setName(text); createdPartSkuRef.current = null; setDialogOpen(true) }}
@@ -920,13 +1085,19 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         </p>
       )}
 
-      {/* Tam TecDoc katalog picker (🔍) — yalnız araç kataloğa bağlıysa. */}
-      {linked && (
+      {/* Katalog picker (🔍). TecDoc dalı yalnız araç kataloğa bağlıysa dolar;
+          BakımX dalı her koşulda çalışır (BAK-35), bu yüzden picker artık
+          `linked` şartına bağlı DEĞİL. */}
+      {vehicle && (
         <TecdocPartPicker
           vehicle={vehicle}
           hideTrigger
           open={tecdocOpen}
           onOpenChange={setTecdocOpen}
+          onSelectBakimx={(p) => {
+            void add(bakimxDraft(p))
+            setTecdocOpen(false)
+          }}
           onSelect={(sel) => {
             void add({
               source: "catalog",
@@ -966,6 +1137,8 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         vehicleTypeId={vehicle?.catalogVehicleTypeId ?? null}
         submitting={submitting}
         onSubmit={submitManualDraft}
+        priceTaxIncluded={priceTax.mode === "included"}
+        priceTaxBps={priceTax.taxBps}
       />
     </div>
   )
@@ -989,10 +1162,12 @@ function EmptyItemsHint({ locked }: { locked: boolean }) {
 }
 
 function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
+  const { mode } = usePriceTax()
   if (lineTotal == null) return null
   return (
     <span className="text-sm text-muted-foreground">
-      Toplam: <span className="font-semibold tabular-nums text-foreground">{formatTRY(lineTotal)}</span>
+      Toplam{mode === "included" ? " (KDV dahil)" : ""}:{" "}
+      <span className="font-semibold tabular-nums text-foreground">{formatTRY(lineTotal)}</span>
     </span>
   )
 }
@@ -1002,12 +1177,13 @@ function TotalPreview({ lineTotal }: { lineTotal: number | null }) {
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
-  // Katalogdan (TecDoc) seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve
-  // marka katalog verisidir — elle değiştirilirse satır artık gerçek parçayı
-  // göstermez (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret
-  // eder). Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
-  // (updateOrderItemAction). tecdocArticleId YALNIZ katalog seçiminde dolar.
-  const identityLocked = isPart && row.tecdocArticleId != null
+  // Katalogdan seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve marka
+  // katalog verisidir — elle değiştirilirse satır artık gerçek parçayı göstermez
+  // (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret eder).
+  // Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
+  // (updateOrderItemAction). `tecdocArticleId` YALNIZ TecDoc seçiminde,
+  // `bakimxProductId` YALNIZ BakımX seçiminde dolar; ikisi de katalog kimliği.
+  const identityLocked = isPart && (row.tecdocArticleId != null || row.bakimxProductId != null)
   const linked = vehicle?.catalogVehicleTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
@@ -1018,19 +1194,27 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
     ? row.totalPrice
     : (row.unitPrice != null && row.unitPrice > 0 ? row.unitPrice * row.quantity : null)
 
-  function startPrice() { setPriceDraft(row.unitPrice != null ? String(kurusToLira(row.unitPrice)) : ""); setEditingPrice(true) }
+  // #311 — saklanan tutar NET'tir; KDV dahil kipinde kullanıcı KDV'li tutarı
+  // görür ve KDV'li yazar. Çevrim tek yönde burada kapanır: gösterimde net→brüt,
+  // commit'te brüt→net.
+  const { mode: priceMode, taxBps } = usePriceTax()
+  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, priceMode, taxBps)
+  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, priceMode, taxBps)
+
+  function startPrice() { setPriceDraft(displayUnitPrice != null ? String(kurusToLira(displayUnitPrice)) : ""); setEditingPrice(true) }
   function commitPrice() {
     setEditingPrice(false)
     const lira = Number(priceDraft)
     if (!priceDraft || Number.isNaN(lira) || lira < 0) return
-    const kurus = liraToKurus(lira)
+    const kurus = toStoredPriceKurus(liraToKurus(lira), priceMode, taxBps)
     if (kurus !== row.unitPrice) onCell(row, { unitPrice: kurus })
   }
 
   return {
     isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
-    tecdocOpen, setTecdocOpen, lineTotal, startPrice, commitPrice,
+    tecdocOpen, setTecdocOpen, lineTotal, displayLineTotal, displayUnitPrice,
+    startPrice, commitPrice,
   }
 }
 
@@ -1045,9 +1229,11 @@ type RowEditor = ReturnType<typeof useRowEditor>
 // sessizce eski haline dönüyordu) → yanıltıcı affordance kaldırıldı.
 // Her iki durumda da ad hatalıysa satır silinip yeniden eklenir.
 function PartIdentity({ row }: { row: Row }) {
-  const title = row.tecdocArticleId != null
-    ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
-    : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
+  const title = row.bakimxProductId != null
+    ? "BakımX kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
+    : row.tecdocArticleId != null
+      ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+      : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
   return (
     <div
       className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
@@ -1173,7 +1359,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
   if (!ed.editable) {
     return (
       <span data-slot="price-field" className={cn("text-sm tabular-nums", row.unitPrice == null && "text-muted-foreground/70")}>
-        {row.unitPrice != null ? formatTRY(row.unitPrice) : "—"}
+        {ed.displayUnitPrice != null ? formatTRY(ed.displayUnitPrice) : "—"}
       </span>
     )
   }
@@ -1187,7 +1373,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
         step="0.01"
         placeholder="Fiyat"
         className="text-sm tabular-nums"
-        value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? String(kurusToLira(row.unitPrice)) : ""}
+        value={ed.editingPrice ? ed.priceDraft : ed.displayUnitPrice != null ? String(kurusToLira(ed.displayUnitPrice)) : ""}
         onFocus={() => { if (!ed.editingPrice) ed.startPrice() }}
         onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
         onBlur={ed.commitPrice}
@@ -1225,14 +1411,15 @@ function TypeChip({ type }: { type: ItemType }) {
   )
 }
 
-// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım. Tooltip
-// masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
+// Kalemin kaynağını gösteren küçük rozet: katalog / manuel / dış alım / BakımX.
+// Tooltip masaüstünde hover, mobilde dokun(focus)-ile açılır. source=null → rozet yok.
 function SourceBadge({ source }: { source: OrderItem["source"] }) {
   if (!source) return null
   const map = {
     catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
     manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
     purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
+    bakimx: { Icon: Store, label: "BakımX kataloğundan eklendi", cls: "text-primary" },
   } as const
   const { Icon, label, cls } = map[source]
   return (
@@ -1333,6 +1520,12 @@ function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => voi
 // TecDoc modal — yalnız part satırı VE araç TecDoc'ta eşleşmişse mount edilir
 // (eşleşmemişse picker VinLinkPrompt döner; 🔍 butonu zaten disabled). Portal
 // ile render olduğu için <td>/kart/composer içine yerleştirmek güvenli.
+//
+// `onSelectBakimx` BİLEREK verilmez: bu seçici MEVCUT satırın parçasını
+// değiştiriyor ve o yol PATCH'ten geçiyor. BakımX kalemi yalnız yazma anında
+// tutarlı kurulabilir (alış fiyatı + `bakimxProductId` + `partId` boşluğu, bkz.
+// bakimx-item.ts); PATCH bu alanları taşımadığı için satır yarı BakımX kalırdı.
+// BakımX ürünü eklemek composer'dan (yukarıdaki 🔍 / arama) yapılır.
 function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
   row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell; onShowDetail: OnShowDetail
 }) {
@@ -1583,7 +1776,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
       <TableCell className="py-3.5">
         <div className="flex items-center justify-end gap-1.5">
           <RowFlash kind={flash} iconOnly />
-          <TotalField lineTotal={ed.lineTotal} strong />
+          <TotalField lineTotal={ed.displayLineTotal} strong />
         </div>
       </TableCell>
 
@@ -1658,7 +1851,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         <div className="ml-auto flex items-center gap-2">
           <PriceField row={row} ed={ed} />
           <span className="text-sm text-muted-foreground">=</span>
-          <TotalField lineTotal={ed.lineTotal} strong />
+          <TotalField lineTotal={ed.displayLineTotal} strong />
         </div>
       </div>
     </div>

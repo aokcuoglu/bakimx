@@ -8,38 +8,36 @@ import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
-  Camera, Plus, Package, StickyNote, Timer,
-  CheckSquare, Square, Trash2, Send,
+  Camera, Plus, StickyNote, Timer,
+  Trash2, Send,
   User, Phone, Car, CheckCircle2, ShoppingCart,
-  ImageOff, Loader2, ListChecks,
+  ImageOff, Loader2, ListChecks, FileText,
 } from "lucide-react"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
+import { OrderChecklist, useChecklistState } from "@/components/technician/order-checklist"
 import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
 import {
-  ORDER_STATUS, CHECKLIST_CATEGORIES,
-  PARTS_REQUEST_STATUS,
+  ORDER_STATUS,
   fuelTypeLabel, transmissionLabel,
 } from "@/lib/constants"
-import type { ChecklistCategoryKey } from "@/lib/constants"
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
-  addChecklistItemAction, toggleChecklistItemAction, deleteChecklistItemAction,
   addInternalNoteAction, deleteInternalNoteAction,
-  createPartsRequestAction, updatePartsRequestStatusAction,
   startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { PartSearchInput } from "@/components/parts/part-search-input"
-import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  PartsRequestSection,
+  type TechnicianPartsRequest,
+} from "@/components/technician/parts-request-section"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
@@ -47,14 +45,15 @@ import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { partNameWithBrand } from "@/lib/ocr/part-box-result"
 import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
+import { workOrderPath } from "@/lib/technician/cross-links"
 import {
-  countBlockingChecklist,
+  countRemainingChecklist,
   countIncompleteItems,
-  startWorkBlockMessage,
+  startChecklistReminder,
+  completeChecklistReminder,
   completeWorkBlockMessage,
-  summarizeChecklist,
-  START_GATE_CATEGORIES,
-  COMPLETE_GATE_CATEGORIES,
+  START_REMINDER_CATEGORIES,
+  COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
 
 type OrderData = {
@@ -85,13 +84,15 @@ type OrderData = {
   }
   items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
-  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null }
+  // engineDisplacement/enginePower/firstRegistrationDate: parça kataloğu
+  // bileşenlerinin beklediği PickerVehicle alanları (araç varyantı ipuçları).
+  vehicle: { id: string; plate: string; brand: string; model: string; modelYear: number | null; mileage: number | null; vin: string | null; color: string | null; fuelType: string | null; transmission: string | null; catalogVehicleTypeId: number | null; engineDisplacement: string | null; enginePower: string | null; firstRegistrationDate: string | null }
   intake: { id: string; status: string; mileageAtIntake: number | null; customerComplaint: string; internalNote: string | null; createdAt: string }
   damageMarks: { id: string; zone: string; damageType: string; severity: string; note: string | null }[]
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string; serviceOrderId: string | null; serviceOrderItemId: string | null; note: string | null; createdAt: string }[]
-  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number }[]
+  checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
-  partsRequests: { id: string; partName: string; partSku: string | null; brand: string | null; quantity: number; note: string | null; status: string; createdAt: string }[]
+  partsRequests: TechnicianPartsRequest[]
   laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
   paidAmount: number
   remainingAmount: number
@@ -130,13 +131,14 @@ export function TechnicianOrderDetail({
     .filter((l) => l.durationMinutes)
     .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
-  const inspectionItems = order.checklistItems.filter((c) => c.category === "inspection")
-  const repairItems = order.checklistItems.filter((c) => c.category === "repair")
-  const deliveryItems = order.checklistItems.filter((c) => c.category === "delivery")
-  const checklistSummary = summarizeChecklist(order.checklistItems)
+  const locked = isOrderLocked(order.status as OrderStatus)
 
-  // Kontrol listesi kapalı geldiği için, kapıya takılan teknisyen eksik
-  // maddeleri göremiyordu: engel mesajı bölümü açıp oraya kaydırır.
+  // Kontrol listesinin iyimser durumu SAYFA seviyesinde: hem kart hem alttaki
+  // hatırlatma aynı sayıyı görsün, tik atıldığı anda ikisi birden güncellensin.
+  const checklist = useChecklistState(order.checklistItems, { orderId: order.id, locked })
+
+  // Kontrol listesi kapalı geldiği için, teknisyen eksik maddeleri göremiyordu:
+  // hatırlatma bölümü açıp oraya kaydırır.
   const [checklistOpen, setChecklistOpen] = useState<string[]>([])
   const checklistRef = useRef<HTMLDivElement>(null)
 
@@ -166,21 +168,23 @@ export function TechnicianOrderDetail({
   // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
   // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
   // ve "Beklemeye Al" sonrası işi teknisyenin kendi ekranından sürdürebilmesi gerek.
-  // Kabul kontrolü kapısı startWorkAction'da; buton yalnız görünürlüğü sağlar.
   const canStart = ["draft", "waiting_approval", "approved", "waiting_parts"].includes(order.status)
   const canHold = order.status === "in_progress"
   const canComplete = order.status === "in_progress" || order.status === "waiting_parts"
-  const locked = isOrderLocked(order.status as OrderStatus)
 
-  const startMissing = countBlockingChecklist(order.checklistItems, START_GATE_CATEGORIES)
-  const completeChecklistMissing = countBlockingChecklist(order.checklistItems, COMPLETE_GATE_CATEGORIES)
-  const completeItemsMissing = countIncompleteItems(order.items)
-  const startBlockedMessage = startWorkBlockMessage(startMissing)
-  const completeBlockedMessage = completeWorkBlockMessage(completeChecklistMissing, completeItemsMissing)
+  // Kontrol maddeleri artık kapı değil, hatırlatma (BAK-24): sayılar iyimser
+  // listeden okunur ki tik atıldığı anda düşsünler. Tek gerçek kapı iş
+  // kalemleri — "Tamamla" yalnız onlara takılır.
+  const startChecklistLeft = countRemainingChecklist(checklist.items, START_REMINDER_CATEGORIES)
+  const completeChecklistLeft = countRemainingChecklist(checklist.items, COMPLETE_REMINDER_CATEGORIES)
+  const startReminder = startChecklistReminder(startChecklistLeft)
+  const completeReminder = completeChecklistReminder(completeChecklistLeft)
+  const completeBlockedMessage = completeWorkBlockMessage(countIncompleteItems(order.items))
 
   function handleStartWork() {
     startTransition(async () => {
-      await startWorkAction(order.id)
+      const res = await startWorkAction(order.id)
+      if (res && "error" in res && res.error) toast.error(res.error)
       router.refresh()
     })
   }
@@ -194,7 +198,8 @@ export function TechnicianOrderDetail({
 
   function handleCompleteWork() {
     startTransition(async () => {
-      await completeWorkAction(order.id)
+      const res = await completeWorkAction(order.id)
+      if (res && "error" in res && res.error) toast.error(res.error)
       router.refresh()
     })
   }
@@ -224,8 +229,8 @@ export function TechnicianOrderDetail({
         <span className="text-foreground font-medium">{order.workOrderNo}</span>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">{order.workOrderNo}</h2>
             <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", statusColor)}>
@@ -239,6 +244,19 @@ export function TechnicianOrderDetail({
             </p>
           )}
         </div>
+        {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
+            kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
+            gidip aynı işi listede yeniden aramak gerekiyordu. */}
+        <Button
+          nativeButton={false}
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          render={<Link href={workOrderPath(order.id)} />}
+        >
+          <FileText />
+          İş Emri
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -248,57 +266,17 @@ export function TechnicianOrderDetail({
 
       <ComplaintCard complaint={order.intake.customerComplaint} />
 
-      {/* Kontrol listesi kapalı başlar — mobilde ekranın çoğunu kaplıyordu.
-          Başlıkta ilerleme ve kalan zorunlu madde sayısı açmadan görünür.
-          Kontrollü: alttaki engel mesajı da bu bölümü açıp buraya kaydırıyor. */}
-      <div ref={checklistRef} className="rounded-lg border border-border bg-white px-4 scroll-mt-4">
-        <Accordion value={checklistOpen} onValueChange={(v) => setChecklistOpen(v as string[])}>
-          <AccordionItem value="checklist" className="border-0">
-            <AccordionTrigger className="items-center py-3 hover:no-underline">
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
-                <ListChecks className="size-4 text-muted-foreground" />
-                Kontrol Listesi
-                <span className="text-xs font-normal text-muted-foreground/70">
-                  {checklistSummary.completed}/{checklistSummary.total}
-                </span>
-                {checklistSummary.missingRequired > 0 && (
-                  <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-warning/15 text-warning-foreground">
-                    {checklistSummary.missingRequired} zorunlu eksik
-                  </span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pb-4">
-              <ChecklistSection
-                title="Kontrol"
-                category="inspection"
-                items={inspectionItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              <ChecklistSection
-                title="Onarım"
-                category="repair"
-                items={repairItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              <ChecklistSection
-                title="Teslim"
-                category="delivery"
-                items={deliveryItems}
-                orderId={order.id}
-                locked={locked}
-              />
-              {locked ? (
-                <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez</p>
-              ) : (
-                <AddChecklistItemForm orderId={order.id} />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
+      {/* Kontrol listesi kapalı başlar — mobilde açıkken ekranın çoğunu
+          kaplıyordu. Başlıktaki ilerleme çubuğu ve kalan madde sayısı açmadan
+          da durumu anlatır; alttaki hatırlatma bölümü açıp buraya kaydırır. */}
+      <OrderChecklist
+        orderId={order.id}
+        state={checklist}
+        locked={locked}
+        open={checklistOpen}
+        onOpenChange={setChecklistOpen}
+        containerRef={checklistRef}
+      />
 
       <div className="rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -384,20 +362,21 @@ export function TechnicianOrderDetail({
         )}
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Package className="size-4 text-muted-foreground" />
-            Parça Talepleri
-          </h3>
-        </div>
-        <PartsRequestSection requests={order.partsRequests} orderId={order.id} locked={locked} />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrinde parça talep edilemez</p>
-        ) : (
-          <AddPartsRequestForm orderId={order.id} vehicleTypeId={order.vehicle.catalogVehicleTypeId} />
-        )}
-      </div>
+      <PartsRequestSection
+        orderId={order.id}
+        vehicle={{
+          id: order.vehicle.id,
+          catalogVehicleTypeId: order.vehicle.catalogVehicleTypeId,
+          vin: order.vehicle.vin,
+          modelYear: order.vehicle.modelYear,
+          engineDisplacement: order.vehicle.engineDisplacement,
+          enginePower: order.vehicle.enginePower,
+          fuelType: order.vehicle.fuelType,
+          firstRegistrationDate: order.vehicle.firstRegistrationDate,
+        }}
+        requests={order.partsRequests}
+        locked={locked}
+      />
 
       <div className="rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -434,13 +413,10 @@ export function TechnicianOrderDetail({
       </div>
 
       <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">
-          Yapılacak İşler
-          <span className="ml-2 text-xs font-normal text-muted-foreground/70">
-            {order.items.filter((i) => i.completedAt).length}/{order.items.length}
-          </span>
-        </h3>
-        <OrderItemsChecklist items={order.items} locked={locked} />
+        {/* Başlık ve sayaç bilerek bileşenin içinde: "Tümünü tamamla" ve tek tek
+            işaretleme iyimser durumla anında güncelleniyor, sayaç dışarıda
+            kalsaydı tiklerin gerisinde kalırdı (BAK-21). */}
+        <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
         {order.totals.hasAnyPrice && (
           <div className="mt-3 pt-3 border-t border-border space-y-1">
             {order.totals.discountAmount > 0 && (
@@ -486,7 +462,7 @@ export function TechnicianOrderDetail({
             <Button
               size="lg"
               onClick={handleStartWork}
-              disabled={isPending || !!startBlockedMessage}
+              disabled={isPending}
               className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
             >
               <Play className="size-5" />
@@ -523,36 +499,39 @@ export function TechnicianOrderDetail({
             </div>
           )}
         </div>
-        {canStart && startBlockedMessage && (
-          <BlockedMessage message={startBlockedMessage} onReveal={startMissing > 0 ? revealChecklist : undefined} />
+        {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
+        {/* Kontrol maddeleri hiçbir butonu kilitlemez; hatırlatma yalnız listeyi
+            açıp oraya kaydırır. Engel mesajıyla karışmasın diye uyarı değil,
+            nötr tonda. */}
+        {canStart && startReminder && (
+          <ChecklistReminder message={startReminder} onReveal={revealChecklist} />
         )}
-        {canComplete && completeBlockedMessage && (
-          <BlockedMessage
-            message={completeBlockedMessage}
-            onReveal={completeChecklistMissing > 0 ? revealChecklist : undefined}
-          />
+        {canComplete && completeReminder && (
+          <ChecklistReminder message={completeReminder} onReveal={revealChecklist} />
         )}
       </div>
     </div>
   )
 }
 
+/** "Tamamla" engel mesajı — tek kapı kalan iş kalemleri. */
+function BlockedMessage({ message }: { message: string }) {
+  return <p className="text-xs text-warning-foreground text-center">{message}</p>
+}
+
 /**
- * "Tamire Başla / Tamamla" engel mesajı. Engelin sebebi eksik kontrol maddesiyse
- * mesaj tıklanabilir olur ve kapalı kontrol listesini açıp oraya kaydırır;
- * sebep yalnız eksik iş kalemiyse düz metin kalır (açacak bir liste yok).
+ * Kontrol listesi hatırlatması: iş emrini KİLİTLEMEZ, yalnız kapalı listeyi
+ * açıp oraya kaydırır. Zorunluluk kalkınca (BAK-24) tek görevi teknisyeni
+ * listeye davet etmek olduğu için uyarı sarısı değil, nötr ton kullanır.
  */
-function BlockedMessage({ message, onReveal }: { message: string; onReveal?: () => void }) {
-  if (!onReveal) {
-    return <p className="text-xs text-warning-foreground text-center">{message}</p>
-  }
+function ChecklistReminder({ message, onReveal }: { message: string; onReveal: () => void }) {
   return (
     <div className="flex justify-center">
       <Button
         variant="ghost"
         size="sm"
         onClick={onReveal}
-        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-warning-foreground whitespace-normal"
+        className="h-auto max-w-full gap-1.5 py-1 text-xs font-normal text-muted-foreground whitespace-normal"
       >
         <ListChecks className="size-3.5 shrink-0" />
         <span className="min-w-0 text-left">{message} — kontrol listesini aç</span>
@@ -607,151 +586,6 @@ function ComplaintCard({ complaint }: { complaint: string }) {
       <h3 className="text-sm font-semibold text-foreground mb-2">Müşteri Şikayeti</h3>
       <p className="text-sm text-foreground whitespace-pre-wrap">{complaint}</p>
     </div>
-  )
-}
-
-function ChecklistSection({
-  title, category, items, orderId: _orderId, locked,
-}: {
-  title: string
-  category: ChecklistCategoryKey
-  items: OrderData["checklistItems"]
-  orderId: string
-  locked: boolean
-}) {
-  const categoryInfo = (CHECKLIST_CATEGORIES as Record<string, { label: string; color: string }>)[category]
-  const [isPending, startTransition] = useTransition()
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="mb-3">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium", categoryInfo?.color)}>
-          {categoryInfo?.label || title}
-        </span>
-        <span className="text-xs text-muted-foreground/70">
-          {items.filter((i) => i.isCompleted).length}/{items.length}
-        </span>
-      </div>
-      <div className="space-y-1">
-        {items.map((item) => (
-          <form
-            key={item.id}
-            action={() => {
-              startTransition(async () => {
-                await toggleChecklistItemAction(item.id, !item.isCompleted)
-              })
-            }}
-            className="flex items-start gap-2 py-1.5 group"
-          >
-            <button
-              type="submit"
-              disabled={isPending || locked}
-              className="mt-0.5 touch-manipulation"
-            >
-              {item.isCompleted
-                ? <CheckSquare className="size-5 text-success-strong" />
-                : <Square className="size-5 text-muted-foreground/70 group-hover:text-muted-foreground" />
-              }
-            </button>
-            <div className="flex-1 min-w-0">
-              <span className={cn("text-sm", item.isCompleted ? "text-success-strong" : "text-foreground")}>
-                {item.description}
-              </span>
-              {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
-            </div>
-            {!locked && !item.isRequired && (
-              <button
-                type="button"
-                onClick={() => {
-                  startTransition(async () => {
-                    await deleteChecklistItemAction(item.id)
-                  })
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/70 hover:text-destructive-strong transition-opacity"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
-            )}
-          </form>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AddChecklistItemForm({ orderId }: { orderId: string }) {
-  const [show, setShow] = useState(false)
-  const [category, setCategory] = useState<ChecklistCategoryKey>("inspection")
-  const [description, setDescription] = useState("")
-  const [isPending, startTransition] = useTransition()
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
-      >
-        <Plus className="size-4" />
-        Kontrol Maddesi Ekle
-      </button>
-    )
-  }
-
-  return (
-    <form
-      action={() => {
-        const fd = new FormData()
-        fd.set("serviceOrderId", orderId)
-        fd.set("category", category)
-        fd.set("description", description)
-        fd.set("sortOrder", "0")
-        startTransition(async () => {
-          await addChecklistItemAction(fd)
-          setDescription("")
-          setShow(false)
-        })
-      }}
-      className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
-    >
-      <ToggleGroup value={[category]} onValueChange={(v) => { if (v.length) setCategory(v[0] as ChecklistCategoryKey) }}>
-        {(["inspection", "repair", "delivery"] as ChecklistCategoryKey[]).map((cat) => {
-          const info = (CHECKLIST_CATEGORIES as Record<string, { label: string }>)[cat]
-          return (
-            <ToggleGroupItem key={cat} value={cat} className="px-3 py-1.5 text-xs">
-              {info?.label || cat}
-            </ToggleGroupItem>
-          )
-        })}
-      </ToggleGroup>
-      <Input
-        type="text"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Kontrol maddesi açıklaması..."
-        required
-      />
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isPending || !description.trim()}
-          className="touch-manipulation"
-        >
-          Ekle
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => { setShow(false); setDescription("") }}
-          className="touch-manipulation"
-        >
-          İptal
-        </Button>
-      </div>
-    </form>
   )
 }
 
@@ -878,189 +712,6 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
         )}
       />
     </button>
-  )
-}
-
-function PartsRequestSection({
-  requests,
-  orderId: _orderId,
-  locked,
-}: {
-  requests: OrderData["partsRequests"]
-  orderId: string
-  locked: boolean
-}) {
-  const [isPending, startTransition] = useTransition()
-
-  if (requests.length === 0) return null
-
-  return (
-    <div className="space-y-2">
-      {requests.map((req) => {
-        const statusInfo = (PARTS_REQUEST_STATUS as Record<string, { label: string; color: string }>)[req.status]
-        const nextStatusMap: Record<string, string> = {
-          requested: "prepared",
-          prepared: "delivered",
-        }
-        const nextLabelMap: Record<string, string> = {
-          requested: "Hazırlandı",
-          prepared: "Teslim Edildi",
-        }
-
-        return (
-          <div key={req.id} className="flex items-start justify-between gap-3 py-2 px-3 rounded-lg bg-muted">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{req.partName}</span>
-                {req.partSku && <span className="text-xs text-muted-foreground">({req.partSku})</span>}
-                {req.brand && <span className="text-xs text-muted-foreground">{req.brand}</span>}
-                <span className="text-xs text-muted-foreground">×{req.quantity}</span>
-              </div>
-              {req.note && <p className="text-xs text-muted-foreground mt-0.5">{req.note}</p>}
-              <p className="text-[10px] text-muted-foreground/70 mt-0.5">{new Date(req.createdAt).toLocaleDateString("tr-TR")}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", statusInfo?.color)}>
-                {statusInfo?.label || req.status}
-              </span>
-              {!locked && nextStatusMap[req.status] && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    startTransition(async () => {
-                      await updatePartsRequestStatusAction(req.id, nextStatusMap[req.status])
-                    })
-                  }}
-                  disabled={isPending}
-                  className="touch-manipulation"
-                >
-                  <CheckCircle2 className="size-3" />
-                  {nextLabelMap[req.status]}
-                </Button>
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function AddPartsRequestForm({ orderId, vehicleTypeId }: { orderId: string; vehicleTypeId: number | null }) {
-  const [show, setShow] = useState(false)
-  const [partName, setPartName] = useState("")
-  const [partSku, setPartSku] = useState("")
-  const [brand, setBrand] = useState("")
-  const [tecdocArticleId, setTecdocArticleId] = useState<number | null>(null)
-  const [quantity, setQuantity] = useState("1")
-  const [note, setNote] = useState("")
-  const [isPending, startTransition] = useTransition()
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
-      >
-        <Plus className="size-4" />
-        Parça Talep Et
-      </button>
-    )
-  }
-
-  return (
-    <form
-      action={() => {
-        const fd = new FormData()
-        fd.set("serviceOrderId", orderId)
-        fd.set("partName", partName)
-        fd.set("partSku", partSku)
-        fd.set("brand", brand)
-        fd.set("tecdocArticleId", tecdocArticleId != null ? String(tecdocArticleId) : "")
-        fd.set("quantity", quantity)
-        fd.set("note", note)
-        startTransition(async () => {
-          await createPartsRequestAction(fd)
-          setPartName("")
-          setPartSku("")
-          setBrand("")
-          setTecdocArticleId(null)
-          setQuantity("1")
-          setNote("")
-          setShow(false)
-        })
-      }}
-      className="mt-3 p-3 rounded-lg bg-muted border border-border space-y-2"
-    >
-      <PartSearchInput
-        value={partName}
-        sku={partSku || null}
-        vehicleTypeId={vehicleTypeId}
-        placeholder="Parça adı *"
-        onNameChange={(name) => {
-          setPartName(name)
-          // Serbest yazmaya dönülürse önceki katalog seçimi geçersizdir.
-          setTecdocArticleId(null)
-          setBrand("")
-        }}
-        onSelectArticle={(a: ArticleSearchResult) => {
-          setPartName(a.productName)
-          setPartSku(a.articleNo ?? "")
-          setBrand(a.supplierName ?? "")
-          setTecdocArticleId(a.tecdocArticleId ?? null)
-        }}
-        showClear={!!partName}
-        onClear={() => { setPartName(""); setPartSku(""); setBrand(""); setTecdocArticleId(null) }}
-      />
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={partSku}
-          onChange={(e) => {
-            setPartSku(e.target.value)
-            // Elle düzenlenen SKU önceki katalog seçimiyle uyuşmayabilir —
-            // Parça adı alanındaki koruyucunun ikizi (bkz. onNameChange).
-            setTecdocArticleId(null)
-            setBrand("")
-          }}
-          placeholder="SKU / OEM No"
-        />
-        <Input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          min="1"
-          className="w-20"
-        />
-      </div>
-      <Input
-        type="text"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Not (opsiyonel)"
-      />
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isPending || !partName.trim()}
-          className="touch-manipulation"
-        >
-          <Send className="size-3.5" />
-          Talep Et
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={() => { setShow(false); setPartName("") }}
-          className="touch-manipulation"
-        >
-          İptal
-        </Button>
-      </div>
-    </form>
   )
 }
 

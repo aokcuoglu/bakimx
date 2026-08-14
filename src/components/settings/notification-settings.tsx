@@ -5,6 +5,7 @@ import type { TemplateChannel } from "@/lib/communications/templates"
 import { NOTIFICATION_PROVIDER_LABELS } from "@/lib/provider-labels"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 
 type TemplateData = {
   key: string
@@ -157,13 +158,14 @@ export function NotificationSettings({
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type={ch === "email" ? "email" : "tel"}
                     inputMode={ch === "email" ? "email" : "tel"}
                     value={testRecipient[ch]}
                     onChange={(e) => setTestRecipient((prev) => ({ ...prev, [ch]: e.target.value }))}
                     placeholder={TEST_RECIPIENT_PLACEHOLDER[ch]}
-                    className="min-w-0 flex-1 rounded-md border border-border bg-white px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="min-w-0 flex-1"
+                    aria-label={`${CHANNEL_LABELS[ch]} test alıcısı`}
                   />
                   <Button
                     type="button"
@@ -198,10 +200,12 @@ export function NotificationSettings({
       <div className="space-y-3">
         {templates.map((template) => (
           <div key={template.key} className="bg-white rounded-lg border border-border overflow-hidden">
-            <button
+            <Button
               type="button"
               onClick={() => setExpandedKey(expandedKey === template.key ? null : template.key)}
-              className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted transition-colors"
+              variant="ghost"
+              className="h-auto w-full justify-between rounded-none px-5 py-4"
+              aria-expanded={expandedKey === template.key}
             >
               <div className="text-left">
                 <h3 className="text-sm font-semibold text-foreground">{template.label}</h3>
@@ -220,7 +224,7 @@ export function NotificationSettings({
                 </div>
                 <svg className={`size-4 text-muted-foreground/70 transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
-            </button>
+            </Button>
 
             {expandedKey === template.key && (
               <div className="border-t border-border px-5 py-4 space-y-4">
@@ -237,23 +241,25 @@ export function NotificationSettings({
                         </span>
                         <div className="flex gap-2">
                           {savedContent && (
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleReset(template.key, ch)}
                               disabled={saving}
-                              className="text-xs text-muted-foreground hover:text-destructive-strong transition-colors disabled:opacity-50"
+                              variant="ghost"
+                              size="sm"
                             >
                               Varsayılana Sıfırla
-                            </button>
+                            </Button>
                           )}
                           {!isEditing && (
-                            <button
+                            <Button
                               type="button"
                               onClick={() => startEdit(template.key, ch)}
-                              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                              variant="ghost"
+                              size="sm"
                             >
                               Düzenle
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </div>

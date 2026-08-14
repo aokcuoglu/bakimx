@@ -7,6 +7,10 @@ import { missingTemplateItems, templateSortOrder } from "./checklist-template"
  *
  * İdempotent: var olan `templateKey`ler atlanır — yeniden atama veya usta
  * değişikliği madde çoğaltmaz, işaretlenmiş maddeleri sıfırlamaz.
+ * "Var olan" sorgusu SİLİNMİŞ satırları da kapsar (`deletedAt` filtresi YOK) —
+ * kullanıcının bu iş emrinden çıkardığı şablon maddesi geri gelmemeli. Bu,
+ * silmenin neden soft olduğunun tek sebebi; filtre eklenirse silinen madde bir
+ * sonraki okumada yeniden doğar.
  * Satır-başına upsert yerine tek `createMany` (transaction süresi kritik).
  * `(serviceOrderId, templateKey)` üzerindeki DB unique kısıtı eşzamanlı iki
  * atamaya karşı son savunma hattı — `skipDuplicates` bu durumda sessizce
@@ -54,10 +58,14 @@ export interface SeedCandidateOrder {
  * Şablon maddeleri bu iş emrinde tamamlanmalı mı?
  *
  * Seed uzun süre yalnızca atama anında çalıştı; özellikten ÖNCE atanmış iş
- * emirleri bu yüzden kalıcı olarak boş kaldı ve boş liste kapıyı da açtı
- * (`countBlockingChecklist` var olan kayıtları sayar → 0 madde = 0 engel).
- * Aynı şey şablona yeni madde eklendiğinde de olurdu. Karar burada saf tutulur
- * ki hem okuma yolları hem kapılar aynı cevabı versin.
+ * emirleri bu yüzden kalıcı olarak boş kaldı — liste boşsa teknisyene
+ * hatırlatılacak madde de kalmaz. Aynı şey şablona yeni madde eklendiğinde de
+ * olurdu. Karar burada saf tutulur ki her okuma yolu aynı cevabı versin.
+ *
+ * `existingTemplateKeys` SİLİNMİŞ maddelerin anahtarlarını da içermeli: çağıran
+ * listeyi `ACTIVE_CHECKLIST_ITEM` ile filtreleyip anahtarları oradan toplarsa
+ * silinen madde "eksik" görünür ve her okumada boşuna transaction açılır
+ * (satır unique kısıt sayesinde geri gelmez ama karar yanlış olur).
  */
 export function shouldSeedChecklist(
   order: SeedCandidateOrder,
@@ -73,9 +81,9 @@ export function shouldSeedChecklist(
  * Eksik şablon maddelerini tamamlar. Dönen `true`, çağıranın kontrol listesini
  * yeniden okuması gerektiğini söyler (elindeki liste artık eksik).
  *
- * Çağrı yerleri bilinçli olarak hem okuma (teknisyen detay sayfası) hem yazma
- * (işe başla / tamamla kapıları) tarafında: kapı tek başına güvenliği sağlar,
- * sayfa ise teknisyene listeyi ilk açılışta gösterir.
+ * Kontrol listesi kapı olmaktan çıktığından (BAK-24) tek çağrı yeri kaldı:
+ * teknisyen detay sayfası. Atama anında da seed edilir; ikisi birlikte listenin
+ * teknisyenin gördüğü her yerde dolu olmasını sağlar.
  */
 export async function ensureChecklistSeeded(
   db: Pick<PrismaClient, "$transaction">,

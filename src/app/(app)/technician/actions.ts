@@ -6,44 +6,15 @@ import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
 import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
-import { ensureChecklistSeeded, seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
+import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
+import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import {
-  countBlockingChecklist,
   countIncompleteItems,
-  startWorkBlockMessage,
   completeWorkBlockMessage,
-  START_GATE_CATEGORIES,
-  COMPLETE_GATE_CATEGORIES,
 } from "@/lib/technician/gates"
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
-
-/**
- * Kapı hesabı için kontrol listesini okur; şablon maddeleri eksikse önce
- * tamamlar ve listeyi yeniden okur.
- *
- * Seed eskiden yalnızca atama anında çalışıyordu, bu yüzden özellikten önce
- * atanmış iş emirlerinde liste boş kalıyor ve boş liste kapıyı açıyordu.
- * Tamamlama yalnızca gerçekten eksik varken bir transaction açar — normal
- * akışta ek maliyet tek bir `findMany`'nin `templateKey` kolonundan ibaret.
- */
-async function readGateChecklist(
-  workshopId: string,
-  order: { id: string; status: OrderStatus; assignedTechnicianId: string | null }
-) {
-  const select = { category: true, isCompleted: true, isRequired: true, templateKey: true }
-  const where = { serviceOrderId: order.id, workshopId }
-
-  const checklist = await prisma.checklistItem.findMany({ where, select })
-  const seeded = await ensureChecklistSeeded(
-    prisma,
-    workshopId,
-    order,
-    checklist.map((c) => c.templateKey)
-  )
-  return seeded ? prisma.checklistItem.findMany({ where, select }) : checklist
-}
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -135,12 +106,8 @@ export async function startWorkAction(orderId: string) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
 
-  // Kapı, var olan maddeler üzerinden sayar; liste hiç oluşmamışsa "0 engel"
-  // çıkar ve kontroller sessizce atlanırdı. Önce eksikleri tamamla.
-  const checklist = await readGateChecklist(user.workshopId, order)
-  const startBlock = startWorkBlockMessage(countBlockingChecklist(checklist, START_GATE_CATEGORIES))
-  if (startBlock) return { error: startBlock }
-
+  // Kontrol listesi burada BİLİNÇLİ olarak okunmuyor: eksik kontrol maddesi
+  // artık tamire başlamayı engellemiyor (BAK-24, gerekçe `gates.ts` başında).
   await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
     data: { status: "in_progress" },
@@ -207,17 +174,13 @@ export async function completeWorkAction(orderId: string) {
     return { error: "Bu durum geçişine izin verilmiyor" }
   }
 
-  const [checklist, items] = await Promise.all([
-    readGateChecklist(user.workshopId, order),
-    prisma.serviceOrderItem.findMany({
-      where: { serviceOrderId: orderId, workshopId: user.workshopId },
-      select: { completedAt: true },
-    }),
-  ])
-  const completeBlock = completeWorkBlockMessage(
-    countBlockingChecklist(checklist, COMPLETE_GATE_CATEGORIES),
-    countIncompleteItems(items)
-  )
+  // Tek kapı iş kalemleri: eksik kontrol maddesi iş emrini kapattırmaz
+  // (BAK-24, gerekçe `gates.ts` başında).
+  const items = await prisma.serviceOrderItem.findMany({
+    where: { serviceOrderId: orderId, workshopId: user.workshopId },
+    select: { completedAt: true },
+  })
+  const completeBlock = completeWorkBlockMessage(countIncompleteItems(items))
   if (completeBlock) return { error: completeBlock }
 
   await prisma.serviceOrder.updateMany({
@@ -288,7 +251,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
-    where: { id: itemId, workshopId: user.workshopId },
+    where: { id: itemId, workshopId: user.workshopId, ...ACTIVE_CHECKLIST_ITEM },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
 
@@ -312,12 +275,68 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
   return { success: true }
 }
 
+/**
+ * Bir aşamanın (Kontrol / Onarım / Teslim) kalan maddelerini tek dokunuşla
+ * işaretler.
+ *
+ * Kasıtlı olarak AŞAMA BAZLI, liste geneli değil: teslim kontrolleri araç daha
+ * tamir edilmeden işaretlenmemeli, aşamalar farklı zamanlarda bitiyor.
+ * Yalnız `isCompleted: false` satırlara dokunur — önceden işaretlenenlerin
+ * zaman damgası ve "kim tamamladı" bilgisi korunur. Toplu geri alma yok:
+ * bir aşamanın tamamlama geçmişini tek dokunuşla silen, telafisi olmayan bir
+ * aksiyon olurdu; tek tek geri alma zaten duruyor.
+ */
+export async function completeAllChecklistItemsAction(orderId: string, category: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const parsedCategory = checklistItemSchema.shape.category.safeParse(category)
+  if (!parsedCategory.success) return { error: "Geçerli bir kategori seçiniz" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, assignedTechnicianId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { count } = await prisma.checklistItem.updateMany({
+    where: {
+      serviceOrderId: order.id,
+      workshopId: user.workshopId,
+      category: parsedCategory.data,
+      isCompleted: false,
+      ...ACTIVE_CHECKLIST_ITEM,
+    },
+    data: {
+      isCompleted: true,
+      completedAt: new Date(),
+      completedById: order.assignedTechnicianId,
+    },
+  })
+
+  if (count > 0) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "ServiceOrder",
+      order.id,
+      "checklist_items_completed_all",
+      JSON.stringify({ orderId: order.id, category: parsedCategory.data, count })
+    )
+  }
+
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath(`/orders/${order.id}`)
+  return { success: true, count }
+}
+
 export async function updateChecklistNoteAction(itemId: string, note: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
   const { user } = await requireWritableWorkshop("order.edit")
 
   const item = await prisma.checklistItem.findFirst({
-    where: { id: itemId, workshopId: user.workshopId },
+    where: { id: itemId, workshopId: user.workshopId, ...ACTIVE_CHECKLIST_ITEM },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
 
@@ -335,6 +354,19 @@ export async function updateChecklistNoteAction(itemId: string, note: string) {
   return { success: true }
 }
 
+/**
+ * Kontrol maddesini bu iş emrinden çıkarır — şablon maddeleri dahil.
+ *
+ * Silme SOFT ve İŞ EMRİNE ÖZELdir: satır `deletedAt` ile mezar taşı olarak
+ * kalır, böylece seed maddeyi geri getirmez (`templateKey` hâlâ "var" sayılır)
+ * ve "geri al" mümkün olur. Şablonun kendisi değişmez; sonraki iş emirleri
+ * silinenler dahil tüm maddeleri almaya devam eder.
+ *
+ * Zorunlu (şablon) maddeler eskiden hiç silinemiyordu; atölyeler kullanmadıkları
+ * maddeleri listede taşımak zorunda kalıyordu. Artık silinebiliyorlar — kapı
+ * hesabı silinen maddeyi saymaz, yani madde kalmayan bir kategori kapıyı açar.
+ * Bu bilinçli: maddeyi listeden çıkaran, o kontrolü istemediğini söylüyor.
+ */
 export async function deleteChecklistItemAction(itemId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
   const { user } = await requireWritableWorkshop("order.edit")
@@ -343,16 +375,62 @@ export async function deleteChecklistItemAction(itemId: string) {
     where: { id: itemId, workshopId: user.workshopId },
   })
   if (!item) return { error: "Kontrol maddesi bulunamadı" }
-  if (item.isRequired) return { error: "Zorunlu kontrol maddesi silinemez" }
+  // Zaten silinmiş: çift dokunuş hata göstermesin, silinme anı korunsun.
+  if (item.deletedAt) return { success: true }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: item.serviceOrderId, workshopId: user.workshopId },
   })
   if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
-  await prisma.checklistItem.deleteMany({
+  await prisma.checklistItem.updateMany({
+    where: { id: itemId, workshopId: user.workshopId, ...ACTIVE_CHECKLIST_ITEM },
+    data: { deletedAt: new Date(), deletedById: user.id },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ChecklistItem",
+    item.serviceOrderId,
+    "checklist_item_removed",
+    JSON.stringify({ itemId, description: item.description, templateKey: item.templateKey })
+  )
+
+  revalidatePath(`/technician/orders/${item.serviceOrderId}`)
+  revalidatePath(`/orders/${item.serviceOrderId}`)
+  return { success: true }
+}
+
+/** Yanlışlıkla silinen maddeyi bu iş emrine geri alır (işaretli/notlu hâliyle). */
+export async function restoreChecklistItemAction(itemId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const item = await prisma.checklistItem.findFirst({
     where: { id: itemId, workshopId: user.workshopId },
   })
+  if (!item) return { error: "Kontrol maddesi bulunamadı" }
+  if (!item.deletedAt) return { success: true }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: item.serviceOrderId, workshopId: user.workshopId },
+  })
+  if (order && isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  await prisma.checklistItem.updateMany({
+    where: { id: itemId, workshopId: user.workshopId },
+    data: { deletedAt: null, deletedById: null },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "ChecklistItem",
+    item.serviceOrderId,
+    "checklist_item_restored",
+    JSON.stringify({ itemId, description: item.description, templateKey: item.templateKey })
+  )
 
   revalidatePath(`/technician/orders/${item.serviceOrderId}`)
   revalidatePath(`/orders/${item.serviceOrderId}`)
@@ -651,6 +729,52 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
   revalidatePath(`/technician/orders/${item.serviceOrderId}`)
   revalidatePath(`/orders/${item.serviceOrderId}`)
   return { success: true }
+}
+
+/**
+ * İş emrindeki tamamlanmamış TÜM kalemleri tek dokunuşla "yapıldı" işaretler
+ * (BAK-21). On iki kalemi tek tek işaretlemek mobilde iş emrini kapatmanın en
+ * yavaş adımıydı.
+ *
+ * Yalnız `completedAt: null` satırlara dokunur: daha önce işaretlenmiş
+ * kalemlerin zaman damgası ve kim tamamladı bilgisi korunur, aksi hâlde toplu
+ * işlem gerçek tamamlama saatlerini eziyordu. Geri alma bilinçli olarak yok —
+ * toplu geri alma iş emri geçmişini sessizce silen, telafisi olmayan bir
+ * aksiyon olurdu; tek tek geri alma zaten mümkün.
+ *
+ * Attribution `toggleOrderItemCompletedAction` ile aynı: `completedById` iş
+ * emrinin atanmış ustası, eylemi yapan kullanıcı AuditLog'a yazılır.
+ */
+export async function completeAllOrderItemsAction(orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true, assignedTechnicianId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { count } = await prisma.serviceOrderItem.updateMany({
+    where: { serviceOrderId: order.id, workshopId: user.workshopId, completedAt: null },
+    data: { completedAt: new Date(), completedById: order.assignedTechnicianId },
+  })
+
+  if (count > 0) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "ServiceOrder",
+      order.id,
+      "order_items_completed_all",
+      JSON.stringify({ orderId: order.id, count })
+    )
+  }
+
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath(`/orders/${order.id}`)
+  return { success: true, count }
 }
 
 /**

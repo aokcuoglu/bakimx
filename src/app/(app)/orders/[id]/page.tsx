@@ -13,6 +13,7 @@ import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { getOrderActivity } from "@/lib/orders/activity"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 
 export default async function OrderDetailPage({
   params,
@@ -74,7 +75,8 @@ export default async function OrderDetailPage({
         include: { requestedBy: { select: { fullName: true } } },
       },
       // Teknisyen sekmesi (salt okunur) — düzenleme teknisyen panelinde kalır.
-      checklistItems: { orderBy: { sortOrder: "asc" } },
+      // Bu iş emrinden çıkarılan maddeler burada da görünmez.
+      checklistItems: { where: ACTIVE_CHECKLIST_ITEM, orderBy: { sortOrder: "asc" } },
       laborSessions: { orderBy: { startTime: "desc" } },
       internalNotes: { orderBy: { createdAt: "desc" } },
     },
@@ -145,6 +147,8 @@ export default async function OrderDetailPage({
       categoryId: i.categoryId,
       // Katalogdan seçilmiş kalemlerde dolu → satırda "Parça detayı" (ⓘ) açar.
       tecdocArticleId: i.tecdocArticleId,
+      // BakımX kaleminde dolu → satır kimliği katalogdan gelir, düzenlenemez.
+      bakimxProductId: i.bakimxProductId,
       source: i.source,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,

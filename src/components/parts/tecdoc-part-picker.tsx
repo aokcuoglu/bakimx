@@ -18,11 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { ChevronLeft, ChevronRight, PackageSearch, Search, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, PackageSearch, Search, Store, X } from "lucide-react"
 import { TecdocArticleRow } from "./tecdoc-article-row"
+import { BakimxProductRow } from "./bakimx-product-row"
 import { TecdocSearchResults } from "./tecdoc-search-results"
 import { VinLinkPrompt } from "./vin-link-prompt"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
+import { buildBakimxCategoryBranch, isBakimxNode } from "@/lib/parts/bakimx-tree"
 import type { ArticleSummary, CategoryMatch, CategoryNode } from "@/lib/tecdoc/types"
 import { CATEGORY_MATCH_LIMIT, searchCategoryTree } from "@/lib/tecdoc/tree"
 import { partSearchIncludes, trIncludes } from "@/lib/tr-search"
@@ -60,6 +64,14 @@ const MIN_SEARCH_LEN = 2
  * ARTI her seviyeden çalışan birleşik arama (kategori/alt kategori adı + parça
  * no/ad + marka).
  *
+ * BAK-35 — `onSelectBakimx` verilirse kök kategori listesinin SONUNA "BakımX
+ * Ürünleri" dalı, arama sonuçlarına da aynı adlı bölüm eklenir. BakımX ürünleri
+ * araçtan bağımsız olduğu için bu dal araç kataloğa BAĞLI OLMASA DA çalışır:
+ * `catalogVehicleTypeId` null iken modal artık VinLinkPrompt'a düşmez, yalnız
+ * BakımX dalını (ve VIN bağlama yolunu) gösterir. `bakimxCatalog` kapısı kapalı
+ * atölyede kategori/arama uçları 403 döner, dal ve bölüm hiç render edilmez —
+ * TecDoc akışı hiç etkilenmez (bkz. bakimx-client.ts).
+ *
  * Arama iki kipte çalışır:
  *  • Kategori içindeyken (parça listesi yüklü): yüklü listeyi client-side süzer —
  *    ek istek yok. Kapsam çipiyle global aramaya çıkılır.
@@ -73,6 +85,7 @@ const MIN_SEARCH_LEN = 2
 export function TecdocPartPicker({
   vehicle,
   onSelect,
+  onSelectBakimx,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   hideTrigger,
@@ -84,6 +97,12 @@ export function TecdocPartPicker({
 }: {
   vehicle: PickerVehicle | undefined
   onSelect: (sel: TecdocPartSelection) => void
+  /**
+   * BakımX ürünü seçildi (BAK-35). VERİLMEZSE BakımX dalı/bölümü hiç kurulmaz ve
+   * uçlara istek atılmaz — kalemi yazamayan çağıran (teknisyenin parça talebi,
+   * mevcut satırın parçasını değiştiren satır-içi seçici) ürünü göstermemeli.
+   */
+  onSelectBakimx?: (product: BakimxProductSummary) => void
   open?: boolean
   onOpenChange?: (v: boolean) => void
   hideTrigger?: boolean
@@ -103,6 +122,9 @@ export function TecdocPartPicker({
   const [tree, setTree] = useState<CategoryNode[] | null>(null)
   const [stack, setStack] = useState<CategoryNode[]>([]) // drill-down breadcrumb
   const [articles, setArticles] = useState<ArticleSummary[] | null>(null)
+  // BakımX yaprağına girildiğinde dolan ürün listesi — `articles`'ın kardeşi;
+  // ikisi aynı anda dolu OLMAZ (bir seferde tek yaprak açık).
+  const [bakimxLeafProducts, setBakimxLeafProducts] = useState<BakimxProductSummary[] | null>(null)
   const [query, setQuery] = useState("")
   const [supplierFilter, setSupplierFilter] = useState<string>("")
   const [loading, setLoading] = useState(false)
@@ -113,10 +135,26 @@ export function TecdocPartPicker({
   const [searchBrand, setSearchBrand] = useState("")
 
   const vehicleTypeId = vehicle?.catalogVehicleTypeId ?? null
-  /** Parça listesi yüklü → arama o kategoriye kapsamlı. */
-  const inCategory = articles != null
+  /** Parça/ürün listesi yüklü → arama o kategoriye kapsamlı. */
+  const inCategory = articles != null || bakimxLeafProducts != null
   const trimmedQuery = query.trim()
   const globalSearch = !inCategory && trimmedQuery.length >= MIN_SEARCH_LEN
+
+  // BakımX taksonomisi — modal açıkken bir kez okunur. Kapı kapalıysa (403) liste
+  // boş gelir, dolayısıyla dal hiç kurulmaz ve hata gösterilmez.
+  const bakimxEnabled = !!onSelectBakimx
+  const { categories: bakimxCategories } = useBakimxCategories(open && bakimxEnabled)
+  const bakimxBranch = useMemo(
+    () => (bakimxEnabled ? buildBakimxCategoryBranch(bakimxCategories) : null),
+    [bakimxEnabled, bakimxCategories],
+  )
+  // Global aramanın BakımX ayağı. TecDoc aramasından bağımsız: araç kataloğa
+  // bağlı olmasa da çalışır.
+  const { products: bakimxSearchResults, searching: bakimxSearching } = useBakimxProductSearch({
+    enabled: open && bakimxEnabled && globalSearch,
+    q: trimmedQuery,
+    limit: SEARCH_LIMIT,
+  })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
     if (vehicleTypeId == null) return
@@ -169,6 +207,7 @@ export function TecdocPartPicker({
     setTree(null)
     setStack([])
     setArticles(null)
+    setBakimxLeafProducts(null)
     setQuery("")
     setError("")
     setSearchResults(null)
@@ -234,6 +273,9 @@ export function TecdocPartPicker({
   // "Tekrar dene" yollarında yapılır (global aramaya ancak bunlardan biriyle
   // geçilir) — bunun için ayrı bir effect'e gerek yok.
   async function openLeaf(node: CategoryNode) {
+    // BakımX yaprağı: parçalar TecDoc'tan değil kendi kataloğumuzdan gelir ve
+    // araç bağı aranmaz.
+    if (isBakimxNode(node)) return openBakimxLeaf(node)
     if (vehicleTypeId == null) return
     setStack((s) => [...s, node])
     setLoading(true)
@@ -252,10 +294,29 @@ export function TecdocPartPicker({
     }
   }
 
+  async function openBakimxLeaf(node: CategoryNode) {
+    if (!node.bakimxKey) return
+    setStack((s) => [...s, node])
+    setLoading(true)
+    setError("")
+    setQuery("")
+    const result = await fetchBakimxProducts({ categoryKey: node.bakimxKey, limit: SEARCH_LIMIT })
+    if (result.status === "ok") {
+      setBakimxLeafProducts(result.data)
+    } else {
+      // Kapı arada kapandıysa ya da uç okunamadıysa yaprağı açma — kullanıcı
+      // kategori listesinde kalır (TecDoc dalları çalışmaya devam eder).
+      setStack((s) => s.slice(0, -1))
+      setError("BakımX ürünleri yüklenemedi.")
+    }
+    setLoading(false)
+  }
+
   function goBack() {
     setError("")
-    if (articles) {
+    if (articles || bakimxLeafProducts) {
       setArticles(null)
+      setBakimxLeafProducts(null)
       setQuery("")
       setSupplierFilter("") // yeni kategoride marka ön-filtresi taşınmasın
     }
@@ -268,6 +329,7 @@ export function TecdocPartPicker({
   /** Kapsam çipi ×: kategoriden çık ama yazılan sorguyu KORU → global aramaya geç. */
   function clearScope() {
     setArticles(null)
+    setBakimxLeafProducts(null)
     setStack([])
     setSupplierFilter("")
     setError("")
@@ -302,12 +364,18 @@ export function TecdocPartPicker({
     handleOpenChange(false)
   }
 
+  function selectBakimx(product: BakimxProductSummary) {
+    onSelectBakimx?.(product)
+    handleOpenChange(false)
+  }
+
   function handleOpenChange(next: boolean) {
     setOpen(next)
     // Yükleme artık open'ı izleyen useEffect'te (controlled + uncontrolled ortak yol).
     if (!next) {
       setStack([])
       setArticles(null)
+      setBakimxLeafProducts(null)
       setQuery("")
       setSupplierFilter("")
       setError("")
@@ -317,7 +385,12 @@ export function TecdocPartPicker({
     }
   }
 
-  const currentNodes = stack.length === 0 ? tree ?? [] : stack[stack.length - 1].children
+  // Kök liste: TecDoc ağacı + (varsa) BakımX dalı EN SONDA — araca uygunluğu
+  // doğrulanmış TecDoc kategorileri önce görünmeli.
+  const currentNodes =
+    stack.length === 0
+      ? [...(tree ?? []), ...(bakimxBranch ? [bakimxBranch] : [])]
+      : stack[stack.length - 1].children
   const supplierOptions = useMemo(() => {
     if (!articles) return []
     const names = Array.from(new Set(articles.map((a) => a.supplierName).filter(Boolean)))
@@ -334,6 +407,20 @@ export function TecdocPartPicker({
     return list
   }, [articles, query, supplierFilter])
 
+  // BakımX yaprağındaki ürünler de yüklü liste üzerinde client-side süzülür
+  // (TecDoc kategorisindeki davranışın aynısı — ek istek yok).
+  const filteredBakimxProducts = useMemo(() => {
+    if (!bakimxLeafProducts) return null
+    const q = query.trim()
+    if (!q) return bakimxLeafProducts
+    return bakimxLeafProducts.filter(
+      (p) =>
+        partSearchIncludes(p.name, q) ||
+        partSearchIncludes(p.sku, q) ||
+        trIncludes(p.brandName, q),
+    )
+  }, [bakimxLeafProducts, query])
+
   // Kategori eşleşmeleri: gösterilen limitin ÜSTÜNDE bir tavanla arayıp keseriz ki
   // "+n kategori daha" notu gerçek toplamı verebilsin.
   const categoryMatches = useMemo(() => {
@@ -347,22 +434,29 @@ export function TecdocPartPicker({
 
   if (!vehicle) return null
 
-  if (vehicleTypeId == null) {
+  // Araç kataloğa bağlı değil: TecDoc tarafı yok. BakımX yazımı açıksa modal yine
+  // de kullanılabilir (ürünler araçtan bağımsız) ve VIN bağlama yolu içeride
+  // durur; değilse eski davranış — yalnız VinLinkPrompt.
+  const bakimxOnly = vehicleTypeId == null
+  if (bakimxOnly && !bakimxEnabled) {
     if (hideTrigger) return null
     return <VinLinkPrompt vehicle={vehicle} />
   }
 
+  const leafCount = articles?.length ?? bakimxLeafProducts?.length ?? 0
   const scopeName = inCategory ? stack[stack.length - 1]?.name : null
   const searchPlaceholder = inCategory
-    ? `${articles.length} parça içinde ara...`
-    : "Kategori, parça veya marka ara..."
+    ? `${leafCount} parça içinde ara...`
+    : bakimxOnly
+      ? "BakımX ürünlerinde ara..."
+      : "Kategori, parça, marka veya OEM no ara..."
 
   return (
     <>
       {!hideTrigger && (
         <Button type="button" size="sm" variant="outline" onClick={() => handleOpenChange(true)} className="gap-1.5">
           <PackageSearch className="size-3.5" />
-          Araca Uygun Parçalar
+          {bakimxOnly ? "BakımX Ürünleri" : "Araca Uygun Parçalar"}
         </Button>
       )}
 
@@ -370,14 +464,18 @@ export function TecdocPartPicker({
         <DialogContent className="p-0 gap-0 sm:max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader className="border-b px-4 py-3 gap-0">
             <div className="flex items-center gap-2 pr-8">
-              {(stack.length > 0 || articles) && (
+              {(stack.length > 0 || inCategory) && (
                 <Button type="button" variant="ghost" size="icon" onClick={goBack} className="-ml-2" aria-label="Geri">
                   <ChevronLeft className="size-5" />
                 </Button>
               )}
               <div className="min-w-0">
                 <DialogTitle className="text-sm truncate">
-                  {stack.length === 0 ? "Araca Uygun Parçalar" : stack[stack.length - 1].name}
+                  {stack.length > 0
+                    ? stack[stack.length - 1].name
+                    : bakimxOnly
+                      ? "BakımX Ürünleri"
+                      : "Araca Uygun Parçalar"}
                 </DialogTitle>
                 <DialogDescription className="text-xs truncate">
                   {stack.length === 0
@@ -395,7 +493,7 @@ export function TecdocPartPicker({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={searchPlaceholder}
-                  aria-label="Kategori, parça veya marka ara"
+                  aria-label="Kategori, parça, marka veya OEM numarası ara"
                   className="pl-8"
                 />
               </div>
@@ -428,7 +526,17 @@ export function TecdocPartPicker({
             {!loading && error && !globalSearch && (
               <div className="px-4 py-6 text-center text-sm text-muted-foreground space-y-2">
                 <p>{error}</p>
-                <Button type="button" size="sm" variant="outline" onClick={() => (articles == null && stack.length === 0 ? loadCategories() : setError(""))}>
+                {/* Hata HER durumda temizlenir: araç kataloğa bağlı değilken
+                    loadCategories erken dönüyor ve buton "takılı" kalıyordu. */}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setError("")
+                    if (!bakimxOnly && !inCategory && stack.length === 0) void loadCategories()
+                  }}
+                >
                   Tekrar dene
                 </Button>
               </div>
@@ -441,6 +549,9 @@ export function TecdocPartPicker({
                 categoryOverflow={categoryMatches.overflow}
                 articles={searchResults}
                 searching={searching}
+                bakimxProducts={bakimxSearchResults}
+                bakimxSearching={bakimxSearching}
+                onBakimxSelect={onSelectBakimx ? selectBakimx : undefined}
                 brandFilter={searchBrand}
                 onBrandFilterChange={setSearchBrand}
                 onCategorySelect={openCategoryMatch}
@@ -449,8 +560,20 @@ export function TecdocPartPicker({
               />
             )}
 
-            {!globalSearch && !loading && !error && articles == null && (
+            {!globalSearch && !loading && !error && !inCategory && (
               <div>
+                {/* Araç kataloğa bağlı değilken TecDoc dalı yok; kullanıcı neden
+                    yalnız BakımX gördüğünü ve VIN'i nasıl bağlayacağını burada
+                    görsün (composer'daki notun modal içindeki karşılığı). */}
+                {bakimxOnly && stack.length === 0 && (
+                  <div className="space-y-2 border-b border-border/60 bg-muted/40 px-4 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      Araç katalogla eşleşmediği için araca özel parçalar listelenemiyor —
+                      aşağıdaki BakımX ürünleri her araçta kullanılabilir.
+                    </p>
+                    <VinLinkPrompt vehicle={vehicle} />
+                  </div>
+                )}
                 {currentNodes.map((node) => (
                   <button
                     key={node.id}
@@ -458,12 +581,39 @@ export function TecdocPartPicker({
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
                     className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left text-sm border-b border-border/60 hover:bg-muted"
                   >
-                    <span className="min-w-0 flex-1">{node.name}</span>
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}
+                      <span className="min-w-0 flex-1 truncate">{node.name}</span>
+                      {node.productCount != null && (
+                        <span className="shrink-0 text-xs text-muted-foreground">{node.productCount}</span>
+                      )}
+                    </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
                   </button>
                 ))}
                 {currentNodes.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">Alt kategori bulunamadı.</p>
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    {bakimxOnly ? "Listelenecek ürün bulunamadı." : "Alt kategori bulunamadı."}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* BakımX yaprağı: kendi kataloğumuzun ürün listesi (fiyat + stok). */}
+            {!globalSearch && !loading && !error && filteredBakimxProducts && (
+              <div>
+                {filteredBakimxProducts.map((p) => (
+                  <BakimxProductRow key={p.id} product={p} onSelect={() => selectBakimx(p)} />
+                ))}
+                {filteredBakimxProducts.length === 0 && (
+                  <div className="px-4 py-6 text-center text-sm text-muted-foreground space-y-2">
+                    <p>{query ? "Aramanızla eşleşen ürün yok." : "Bu kategoride ürün bulunamadı."}</p>
+                    {query && (
+                      <Button type="button" size="sm" variant="outline" onClick={clearScope}>
+                        Tüm katalogda ara
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             )}

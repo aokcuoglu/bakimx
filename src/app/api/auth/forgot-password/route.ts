@@ -6,6 +6,7 @@ import { clientIpFromHeaders } from "@/lib/auth-login"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
 import { passwordResetEmail } from "@/lib/emails/system-emails"
 import { generateResetToken, resetExpiry } from "@/lib/password-reset"
+import { canReceivePasswordReset } from "@/lib/user-identity"
 
 const GENERIC_MESSAGE =
   "Eğer bu e-posta bir hesaba bağlıysa, şifre sıfırlama bağlantısı gönderildi."
@@ -48,7 +49,11 @@ export async function POST(request: Request) {
   if (emailLimit.allowed) {
     try {
       const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
-      if (user && user.isActive) {
+      // E-postasız kullanıcı bu akışta HİÇ eşleşmemeli (BAK-40): şifresini
+      // atölye sahibi ekip panelinden sıfırlar. `findUnique({ email })` dolu bir
+      // e-postayla arıyor, yani zaten eşleşemez — kapı yine de açıkça duruyor ki
+      // sorgu bir gün gevşerse token e-postasız hesaba yazılmasın.
+      if (canReceivePasswordReset(user) && user?.email) {
         await prisma.passwordResetToken.updateMany({
           where: { userId: user.id, usedAt: null },
           data: { usedAt: new Date() },

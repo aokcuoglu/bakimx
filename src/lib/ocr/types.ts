@@ -26,6 +26,7 @@ export interface RegistrationOcrResult {
   vin: OcrFieldConfidence
   ownerName: OcrFieldConfidence
   ownerSurname: OcrFieldConfidence
+  identityOrTaxNumber: OcrFieldConfidence
   brand: OcrFieldConfidence
   model: OcrFieldConfidence
   vehicleType: OcrFieldConfidence
@@ -56,8 +57,22 @@ export interface PartBoxOcrResult {
   provider: OcrProviderName
 }
 
+/**
+ * Cam altındaki şase (VIN) plakasından tek alanlık okuma sonucu. Ruhsat okumasının
+ * aksine tek bir değer döner; doğrulama/normalizasyon çağıran tarafta
+ * `parseVinFromText` ile yapılır (sağlayıcıdan bağımsız tek kapı).
+ */
+export interface VinOcrResult {
+  /** Sağlayıcının okuduğu ham metin (henüz VIN olarak doğrulanmamış). */
+  rawVin: string
+  /** Sağlayıcı bu okumadan emin değilse false. */
+  confident: boolean
+  provider: OcrProviderName
+}
+
 export interface OcrProvider {
   readonly name: OcrProviderName
   extractRegistration(imageBuffer: Buffer, mimeType: string): Promise<RegistrationOcrResult>
   extractPartBox?(imageBuffer: Buffer, mimeType: string): Promise<PartBoxOcrResult>
+  extractVin?(imageBuffer: Buffer, mimeType: string): Promise<VinOcrResult>
 }

@@ -16,6 +16,9 @@ export const quoteItemSchema = z.object({
   // Kendi stoğundan seçilen parça (DB PartStockItem.id) — boşsa manuel/katalog parçası.
   // Teklif stok düşMEZ, sadece partId bağlar; çevrim sırasında stok düşülür.
   partId: z.string().optional().default(""),
+  // BakımX katalog ürünü (BAK-35). `partId` ile birlikte GELMEZ: BakımX stoğu
+  // atölyenin stoğu değil, çevrimde de stok hareketi yaratmaz.
+  bakimxProductId: z.string().optional().default(""),
 })
 
 export type QuoteItemFormValues = z.infer<typeof quoteItemSchema>
@@ -50,6 +53,8 @@ export const quoteItemActionSchema = z.object({
   note: z.string().optional(),
   // Kendi stoğundan seçilen parça (DB PartStockItem.id). Teklif stok düşMEZ.
   partId: z.string().optional(),
+  // BakımX katalog ürünü (BAK-35) — kalemin kaynağını çevrimden sonra da taşır.
+  bakimxProductId: z.string().optional(),
 })
 
 export const quoteCreateSchema = z.object({

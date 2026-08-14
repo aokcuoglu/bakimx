@@ -8,8 +8,6 @@ import {
   Building2,
   User as UserIcon,
   Save,
-  Mic,
-  Info,
   Mail,
   Phone,
   MessageCircle,
@@ -117,7 +115,7 @@ function toDefaults(initial?: CustomerFormInitial | CustomerFormInitialStrict): 
   }
 }
 
-export function CustomerCreateForm({ initial, mode = "create" }: { initial?: CustomerFormInitial | CustomerFormInitialStrict; mode?: "create" | "edit" }) {
+export function CustomerCreateForm({ initial, mode = "create", onCancel }: { initial?: CustomerFormInitial | CustomerFormInitialStrict; mode?: "create" | "edit"; onCancel?: () => void }) {
   const router = useRouter()
   const isEdit = mode === "edit" && !!initial?.id
 
@@ -201,11 +199,13 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                   name="type"
                   render={({ field }) => (
                     <div className="inline-flex rounded-lg border border-border bg-muted p-0.5 text-xs font-medium">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => field.onChange("individual")}
+                        variant={field.value === "individual" ? "default" : "ghost"}
+                        size="sm"
                         className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
+                          "min-h-11 gap-1.5",
                           field.value === "individual"
                             ? "bg-white text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
@@ -213,12 +213,14 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       >
                         <UserIcon className="size-3.5" />
                         Bireysel
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => field.onChange("corporate")}
+                        variant={field.value === "corporate" ? "default" : "ghost"}
+                        size="sm"
                         className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all touch-manipulation",
+                          "min-h-11 gap-1.5",
                           field.value === "corporate"
                             ? "bg-white text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
@@ -226,7 +228,7 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                       >
                         <Building2 className="size-3.5" />
                         Kurumsal
-                      </button>
+                      </Button>
                     </div>
                   )}
                 />
@@ -479,19 +481,21 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                             { key: "risky", label: "Riskli" },
                             { key: "fleet", label: "Filo" },
                           ].map((opt) => (
-                            <button
+                            <Button
                               key={opt.key}
                               type="button"
                               onClick={() => field.onChange(opt.key)}
+                              variant={field.value === opt.key ? "default" : "outline"}
+                              size="sm"
                               className={cn(
-                                "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
+                                "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border bg-white text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </FormControl>
@@ -543,19 +547,21 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                             { key: "discounted", label: "İndirimli" },
                             { key: "fleet", label: "Filo" },
                           ].map((opt) => (
-                            <button
+                            <Button
                               key={opt.key}
                               type="button"
                               onClick={() => field.onChange(opt.key)}
+                              variant={field.value === opt.key ? "default" : "outline"}
+                              size="sm"
                               className={cn(
-                                "inline-flex items-center px-2.5 h-8 rounded-md border text-xs font-medium transition-colors touch-manipulation",
+                                "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border bg-white text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </FormControl>
@@ -695,25 +701,11 @@ export function CustomerCreateForm({ initial, mode = "create" }: { initial?: Cus
                 />
               </div>
             </section>
-
-            <section className="rounded-lg border border-border bg-muted p-4 space-y-2">
-              <div className="flex items-start gap-2">
-                <Info className="size-4 text-muted-foreground/70 mt-0.5" />
-                <div className="text-xs text-muted-foreground">
-                  <p className="font-medium text-foreground">Sesle Doldur</p>
-                  <p className="mt-0.5">Sesle doldurma özelliği yakında. Şimdilik formu manuel doldurun.</p>
-                </div>
-              </div>
-              <Button type="button" variant="outline" size="sm" disabled className="w-full gap-1.5">
-                <Mic className="size-4" />
-                Sesle Doldur (Yakında)
-              </Button>
-            </section>
           </aside>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={pending}>
+          <Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())} disabled={pending}>
             İptal
           </Button>
           <Button type="submit" disabled={pending} className="gap-1.5">

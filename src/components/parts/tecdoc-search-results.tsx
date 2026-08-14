@@ -1,19 +1,28 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { TecdocArticleRow } from "./tecdoc-article-row"
+import { BakimxProductRow } from "./bakimx-product-row"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
+import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
+import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
 
 /**
  * Parça seçicinin global arama sonuçları: KATEGORİLER (ağaçtan, client-side) +
- * PARÇALAR (DB araması) + sonuç kümesinden türetilen marka çipleri.
+ * PARÇALAR (DB araması) + BAKIMX ÜRÜNLERİ (kendi kataloğumuz, BAK-35) + parça
+ * sonuç kümesinden türetilen marka çipleri.
  *
  * Marka çipleri istemci tarafında süzer; API çağrısı markaya göre daraltılmaz —
  * daraltılsaydı çip listesi kendi kendini yok ederdi (yalnız seçili marka kalırdı).
+ *
+ * BakımX bölümü PARÇALAR'ın ARDINDAN gelir: TecDoc satırlarının araca uygunluğu
+ * doğrulanmış, önce onlar görünmeli (aynı gerekçe suggestions.ts'te). `bakimxCatalog`
+ * kapısı kapalı atölyede liste hep boş gelir → bölüm hiç render edilmez, geri kalan
+ * arama hiç etkilenmez.
  */
 export function TecdocSearchResults({
   query,
@@ -21,6 +30,9 @@ export function TecdocSearchResults({
   categoryOverflow,
   articles,
   searching,
+  bakimxProducts,
+  bakimxSearching,
+  onBakimxSelect,
   brandFilter,
   onBrandFilterChange,
   onCategorySelect,
@@ -34,12 +46,36 @@ export function TecdocSearchResults({
   /** null: arama henüz tamamlanmadı (ilk yükleme). */
   articles: ArticleSearchResult[] | null
   searching: boolean
+  /** BakımX katalog eşleşmeleri; `onBakimxSelect` yoksa bölüm hiç çıkmaz. */
+  bakimxProducts?: BakimxProductSummary[]
+  bakimxSearching?: boolean
+  onBakimxSelect?: (p: BakimxProductSummary) => void
   brandFilter: string
   onBrandFilterChange: (v: string) => void
   onCategorySelect: (c: CategoryMatch) => void
   onArticleSelect: (a: ArticleSearchResult) => void
   onShowDetail?: (a: ArticleSummary) => void
 }) {
+  const [bakimxMatches, setBakimxMatches] = useState<Record<string, BakimxProductSummary>>({})
+  const lastArticlesRef = useRef<typeof articles>(null)
+
+  useEffect(() => {
+    if (!articles?.length) return
+    if (lastArticlesRef.current === articles) return
+
+    lastArticlesRef.current = articles
+    let active = true
+    const articleNumbers = articles.map((a) => a.articleNo)
+    void fetchBakimxMatches(articleNumbers).then((result) => {
+      if (!active) return
+      setBakimxMatches(result.status === "ok" ? result.data : {})
+    })
+
+    return () => {
+      active = false
+    }
+  }, [articles])
+
   const brands = useMemo(() => {
     if (!articles) return []
     const counts = new Map<string, number>()
@@ -58,7 +94,15 @@ export function TecdocSearchResults({
     return brandFilter ? articles.filter((a) => a.supplierName === brandFilter) : articles
   }, [articles, brandFilter])
 
-  const nothingFound = categories.length === 0 && visibleArticles != null && visibleArticles.length === 0
+  const visibleBakimx = onBakimxSelect ? (bakimxProducts ?? []) : []
+  // "Sonuç yok" ancak ÜÇ bölüm de boşken doğrudur. TecDoc araması hiç çalışmamış
+  // olabilir (araç kataloğa bağlı değil → `articles` null kalır); o durumda karar
+  // yalnız BakımX tarafına bakar.
+  const anyPending = searching || !!bakimxSearching
+  const nothingFound =
+    categories.length === 0 &&
+    visibleBakimx.length === 0 &&
+    (visibleArticles == null ? !!onBakimxSelect : visibleArticles.length === 0)
 
   return (
     <div>
@@ -122,6 +166,8 @@ export function TecdocSearchResults({
               key={a.tecdocArticleId}
               article={a}
               context={a.categoryName || null}
+              matchedOems={a.matchedOems}
+              bakimxMatch={bakimxMatches[a.articleNo] || null}
               onSelect={() => onArticleSelect(a)}
               onShowDetail={onShowDetail}
             />
@@ -129,22 +175,36 @@ export function TecdocSearchResults({
         </section>
       )}
 
-      {!searching && nothingFound && (
+      {visibleBakimx.length > 0 && (
+        <section>
+          <SectionHeading>BakımX Ürünleri ({visibleBakimx.length}{bakimxSearching ? "…" : ""})</SectionHeading>
+          {visibleBakimx.map((p) => (
+            <BakimxProductRow key={p.id} product={p} onSelect={() => onBakimxSelect?.(p)} />
+          ))}
+        </section>
+      )}
+
+      {!anyPending && nothingFound && (
         <div className="px-4 py-8 text-center space-y-2">
           <Search className="size-5 mx-auto text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
             &ldquo;{query}&rdquo; için sonuç bulunamadı.
           </p>
-          <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
-            Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır. Aradığınız parçayı
-            kategorilerden ilerleyerek getirebilirsiniz.
-          </p>
+          {/* Kapsam notu yalnız TecDoc araması GERÇEKTEN çalıştıysa doğrudur;
+              araç kataloğa bağlı değilken (`articles` null) yanıltıcı olurdu. */}
+          {visibleArticles != null && (
+            <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
+              Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır; OEM numarası ise
+              detayı bir kez açılmış parçalarda aranır. Aradığınız parçayı kategorilerden
+              ilerleyerek getirebilirsiniz.
+            </p>
+          )}
         </div>
       )}
 
       {/* Kategori eşleşmesi var ama hiç parça yok: kullanıcı çıkmaz sokakta
           kalmasın diye aynı kapsam notunu daha kısa göster. */}
-      {!searching && categories.length > 0 && visibleArticles != null && visibleArticles.length === 0 && (
+      {!anyPending && categories.length > 0 && visibleBakimx.length === 0 && visibleArticles != null && visibleArticles.length === 0 && (
         <p className="px-4 py-3 text-xs text-muted-foreground">
           Bu aramayla eşleşen kayıtlı parça yok — yukarıdaki kategoriye girerek parçaları
           getirebilirsiniz.

@@ -58,6 +58,38 @@ export function getSeatLimit(tier: PlanTier, extraSeats: number = 0): number {
   return PLAN_SEATS[tier] + Math.max(0, extraSeats)
 }
 
+/** Pakete göre okunur ad — hata metinlerinde "starter" değil "Başlangıç" geçsin. */
+export const PLAN_LABELS: Record<PlanTier, string> = {
+  starter: "Başlangıç",
+  pro: "Profesyonel",
+  premium: "Premium",
+}
+
+/**
+ * Koltuk limiti dolduğunda kullanıcının GÖRDÜĞÜ cümle (BAK-37).
+ *
+ * `starter` paketinin koltuk limiti 1'dir — yani başlangıç paketindeki bir
+ * atölye HİÇ alt kullanıcı açamaz ve ekip paneline her girişinde bu duvara
+ * toslar. Sessiz bir "işlem başarısız" burada kabul edilemez: metin kaç/kaç
+ * olduğunu, neden olduğunu ve çıkışın yükseltme olduğunu söylemek zorunda.
+ *
+ * Saf fonksiyon — hem sunucu kapısı (`assertSeatAvailableTx`) hem ekip paneli
+ * aynı cümleyi kullanır, ikisi ayrışmasın.
+ */
+export function seatLimitMessage(tier: PlanTier, used: number, limit: number): string {
+  const counts = `(${used}/${limit})`
+  if (limit <= 1) {
+    return (
+      `Koltuk limitiniz dolu ${counts}. ${PLAN_LABELS[tier]} paketi tek kullanıcı içerir — ` +
+      `ekibinize kullanıcı eklemek için paketinizi yükseltmeniz gerekiyor.`
+    )
+  }
+  return (
+    `Koltuk limitiniz dolu ${counts}. Yeni kullanıcı eklemek için paketinizi yükseltin ` +
+    `ya da ek koltuk için bizimle iletişime geçin.`
+  )
+}
+
 export type LockReason =
   | "pending"
   | "rejected"
@@ -93,7 +125,14 @@ const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
 // During the trial a workshop is on the `pro` tier, so premium features remain
 // locked behind an upgrade. `starter` min tier = enabled for every plan (the
 // gate then only serves as a per-tenant kill switch via feature overrides).
-export type GatedFeature = "eInvoice" | "aiAdvisor" | "multiBranch" | "rbac" | "vinLookup" | "partsCatalog"
+export type GatedFeature =
+  | "eInvoice"
+  | "aiAdvisor"
+  | "multiBranch"
+  | "rbac"
+  | "vinLookup"
+  | "partsCatalog"
+  | "bakimxCatalog"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
@@ -101,6 +140,11 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   rbac: "premium",
   vinLookup: "pro",
   partsCatalog: "starter",
+  // BakımX'in KENDİ kataloğu: sorgu bizim DB'mize gidiyor, dış kota yakmıyor —
+  // bu yüzden `partsCatalog` (TecDoc/RapidAPI) kapısının arkasına konmaz ve
+  // taban katman `starter`. Kapı yalnız atölye bazında kapatma düğmesi olarak
+  // durur (bkz. /admin/flags, resolveFeature).
+  bakimxCatalog: "starter",
 }
 
 type WorkshopPlanFields = Pick<

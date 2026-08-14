@@ -51,6 +51,12 @@ const FIELD_CONFIGS: FieldConfig[] = [
   { key: "vin", label: "Şase No (VIN)" },
   { key: "ownerName", label: "Araç Sahibi Adı" },
   { key: "ownerSurname", label: "Araç Sahibi Soyadı" },
+  {
+    key: "identityOrTaxNumber",
+    label: "T.C. Kimlik / Vergi No",
+    helperText:
+      "11 hane T.C. kimlik, 10 hane vergi numarası olarak müşteri ek bilgilerine kaydedilir.",
+  },
   { key: "phone", label: "Müşteri Telefonu", required: true, placeholder: "0555 123 4567", helperText: "Mevcut müşteri bu numarayla bulunur; yoksa Müşteriler bölümünde yeni kayıt oluşturulur." },
   { key: "brand", label: "Marka", required: true },
   { key: "model", label: "Model", required: true },
@@ -136,6 +142,7 @@ export function SmartCaptureRegistration() {
           vin: data.result.vin.value,
           ownerName: data.result.ownerName.value,
           ownerSurname: data.result.ownerSurname.value,
+          identityOrTaxNumber: data.result.identityOrTaxNumber?.value || "",
           phone: "",
           brand: data.result.brand.value,
           model: data.result.model.value,

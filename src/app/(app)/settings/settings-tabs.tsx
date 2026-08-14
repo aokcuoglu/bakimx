@@ -46,6 +46,8 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
 type WorkshopData = {
   id: string
   name: string
+  /** İş yeri giriş kodu (BAK-40) — kullanıcı adıyla giriş bunun üzerinden çözülür. */
+  loginCode: string
   phone: string
   city: string
   district: string | null
@@ -99,7 +101,9 @@ type SettingsData = {
 
 type UserData = {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) hesaplarda NULL — BAK-40. */
+  email: string | null
+  username: string | null
   workshopId: string
   firstName: string | null
   lastName: string | null
@@ -213,6 +217,8 @@ export function SettingsTabs({
               canManage={canManageTeam}
               seatUsed={seatUsed}
               seatLimit={seatLimit}
+              workshopName={workshop.name}
+              loginCode={workshop.loginCode}
             />
             <TechnicianManagement technicians={technicians} />
           </div>

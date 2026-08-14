@@ -22,11 +22,24 @@ export class TecdocError extends Error {
   }
 }
 
-/** Normalized category tree node the UI drills through. */
+/**
+ * Normalized category tree node the UI drills through.
+ *
+ * `source` (BAK-35): parça seçicisi TecDoc ağacının yanında BakımX'in kendi
+ * taksonomisini de listeliyor. `undefined` = TecDoc (mevcut ağaç, `id` gerçek
+ * bir TecDoc düğümü); `"bakimx"` düğümlerinde `id` YALNIZ liste anahtarıdır
+ * (sentetik negatif değer, bkz. bakimx-tree.ts) ve parçalar TecDoc uçlarından
+ * değil `/api/catalog/bakimx/search?categoryKey=` ucundan gelir.
+ */
 export interface CategoryNode {
   id: number
   name: string
   children: CategoryNode[]
+  source?: "tecdoc" | "bakimx"
+  /** Yalnız `source="bakimx"` yapraklarında: `bakimx_products.category_key`. */
+  bakimxKey?: string
+  /** Yalnız `source="bakimx"` yapraklarında: dalın görünür ürün sayısı. */
+  productCount?: number
 }
 
 /** Düzleştirilmiş yaprak kategori — Combobox listesini doldurur. `path` üst kategori yolu (" › " ayraçlı, yaprağın adı hariç). */

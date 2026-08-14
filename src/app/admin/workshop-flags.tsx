@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { setWorkshopFeatureOverride, clearWorkshopFeatureOverride } from "@/app/admin/actions"
 
 export interface FlagRow {
@@ -31,14 +31,9 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground">{f.label}</span>
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-              f.effective ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground",
-            )}
-          >
+          <Badge variant={f.effective ? "default" : "secondary"}>
             {f.effective ? "açık" : "kapalı"}
-          </span>
+          </Badge>
           {f.override && (
             <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
               override{f.override.expiresAt ? ` · ${new Date(f.override.expiresAt).toLocaleDateString("tr-TR")}` : ""}
@@ -53,28 +48,31 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
 
       <div className="flex items-center gap-1.5 shrink-0">
         {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-        <button
+        <Button
           disabled={pending || (f.override?.enabled === true)}
           onClick={() => run(() => setWorkshopFeatureOverride(workshopId, f.key, true))}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          variant="outline"
+          size="sm"
         >
           Aç
-        </button>
-        <button
+        </Button>
+        <Button
           disabled={pending || (f.override?.enabled === false)}
           onClick={() => run(() => setWorkshopFeatureOverride(workshopId, f.key, false))}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          variant="outline"
+          size="sm"
         >
           Kapat
-        </button>
-        <button
+        </Button>
+        <Button
           disabled={pending || !f.override}
           onClick={() => run(() => clearWorkshopFeatureOverride(workshopId, f.key))}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-          title="Override'ı kaldır — plan varsayılanına dön"
+          variant="ghost"
+          size="sm"
+          aria-label="Özel ayarı kaldır ve plan varsayılanına dön"
         >
           Sıfırla
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -5,12 +5,20 @@ import type { Permission } from "@/lib/roles"
 
 export interface AuthUser {
   id: string
-  email: string
+  /** E-postasız (kullanıcı adıyla açılmış) hesaplarda NULL — BAK-40. */
+  email: string | null
+  /** Tenant içi giriş adı; e-posta ile açılmış hesaplarda NULL. */
+  username: string | null
   workshopId: string
   firstName: string | null
   lastName: string | null
   role: UserRole
   isActive: boolean
+  /**
+   * Sahibin ürettiği geçici şifreyle açılmış/sıfırlanmış hesap — kullanıcı
+   * şifresini değiştirene kadar uygulamayı kullanamaz (BAK-37).
+   */
+  mustChangePassword: boolean
   /** Set when this is a founder impersonation context (the real admin's id). */
   impersonatorAdminId?: string
   /** True when the impersonation context forbids tenant-data writes. */
@@ -20,46 +28,75 @@ export interface AuthUser {
 const USER_SELECT = {
   id: true,
   email: true,
+  username: true,
   workshopId: true,
   firstName: true,
   lastName: true,
   role: true,
   isActive: true,
+  mustChangePassword: true,
 } as const
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+/**
+ * Oturum çerezini + impersonation katmanını okur.
+ *
+ * Yalnızca ÇEREZ OKUMA hataları burada yutulur: istek kapsamı dışında (cron,
+ * script, build) `cookies()` fırlatır ve orada "oturum yok" doğru cevaptır.
+ * Veritabanı hataları bilerek bu kapsamın DIŞINDA bırakılmıştır — onlar
+ * `getCurrentUser()`'dan yukarı fırlar (bkz. auth-session-errors.test.ts).
+ */
+async function readSessionState() {
   try {
     const { getSession, getActiveImpersonation } = await import("@/lib/session")
-
-    // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
-    // whole app scopes to the target tenant via the returned workshopId — no
-    // per-query changes. The real admin identity stays on the overlay (audit).
-    const imp = await getActiveImpersonation()
-    if (imp) {
-      const target = await prisma.user.findUnique({
-        where: { id: imp.targetUserId },
-        select: USER_SELECT,
-      })
-      if (target) {
-        return { ...target, impersonatorAdminId: imp.adminUserId, impersonationReadOnly: imp.readOnly }
-      }
-      // Target vanished — fall through to the real session rather than 500.
-    }
-
+    const impersonation = await getActiveImpersonation()
     const session = await getSession()
-    if (!session?.userId) return null
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: USER_SELECT,
-    })
-
-    if (!user) return null
-
-    return user
+    return { session, impersonation }
   } catch {
     return null
   }
+}
+
+/**
+ * Etkin kullanıcı, ya da oturum yoksa null.
+ *
+ * DİKKAT — null "kimlik çözülemedi" demektir, "altyapı çökük" demek DEĞİLDİR.
+ * Bu ayrım kritiktir: eskiden DB hatası da null'a düşüyordu ve saniyelik bir
+ * kesinti, o an sitede olan herkesi çıkışa yolluyordu. Artık DB hatası yukarı
+ * fırlar ve hata sınırı "tekrar deneyin" ekranı gösterir.
+ */
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const state = await readSessionState()
+  if (!state) return null
+  const { session, impersonation } = state
+
+  // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
+  // whole app scopes to the target tenant via the returned workshopId — no
+  // per-query changes. The real admin identity stays on the overlay (audit).
+  if (impersonation) {
+    const target = await prisma.user.findUnique({
+      where: { id: impersonation.targetUserId },
+      select: USER_SELECT,
+    })
+    if (target) {
+      return {
+        ...target,
+        impersonatorAdminId: impersonation.adminUserId,
+        impersonationReadOnly: impersonation.readOnly,
+      }
+    }
+    // Target vanished — fall through to the real session rather than 500.
+  }
+
+  if (!session?.userId) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: USER_SELECT,
+  })
+
+  if (!user) return null
+
+  return user
 }
 
 export async function requireAuth(): Promise<AuthUser> {
@@ -107,15 +144,43 @@ export async function getCurrentUserWithWorkshop() {
  * yazmayı unutmak sessiz bir yetki açığı olurdu. Zorunlu olduğu için derleyici
  * her çağrı yerini sınıflandırmaya zorlar.
  *
- * Sıra önemli: önce plan/abonelik yazma kilidi, sonra rol kapısı. Böylece plan
- * biten atölyede rol ne olursa olsun yazma yine kapalı.
+ * Sıra önemli: önce plan/abonelik yazma kilidi, sonra geçici şifre kapısı, sonra
+ * rol kapısı. Böylece plan biten atölyede rol ne olursa olsun yazma yine kapalı.
  */
 export async function requireWritableWorkshop(permission: Permission) {
   const { user, workshop } = await getCurrentUserWithWorkshop()
   assertWriteAccess(workshop)
+  assertPasswordChanged(user)
   const { assertCan } = await import("@/lib/rbac")
   assertCan(user, permission)
   return { user, workshop }
+}
+
+/**
+ * Geçici şifre kapısının SUNUCU tarafı (BAK-37).
+ *
+ * `(app)/layout.tsx` tam ekran şifre değiştirme ekranını gösterir, ama o yalnız
+ * UX katmanıdır: geçici şifreyle açılmış bir oturum çerezini alıp server
+ * action'lara doğrudan istek atmak HTML'i hiç görmez. Plan kilidinde
+ * (`assertWriteAccess`) öğrenilen ders burada da geçerli — kapı yazma yolunun
+ * kendisinde durmalı.
+ *
+ * Kendi şifresini değiştirme action'ı bu kapıdan BİLEREK geçmez
+ * (`(app)/account/actions.ts`): geçmesi gerekseydi kullanıcı kilidi hiç açamazdı.
+ */
+export function assertPasswordChanged(user: AuthUser): void {
+  // Kurucu impersonation'ı muaf: kilitli hesabı incelerken kurucunun elini
+  // bağlamaz, zaten kendi salt-okunur bayrağıyla sınırlı.
+  if (user.mustChangePassword && !user.impersonatorAdminId) {
+    throw new PasswordChangeRequiredError()
+  }
+}
+
+export class PasswordChangeRequiredError extends Error {
+  constructor() {
+    super("Devam etmeden önce geçici şifrenizi değiştirmeniz gerekiyor.")
+    this.name = "PasswordChangeRequiredError"
+  }
 }
 
 /**
