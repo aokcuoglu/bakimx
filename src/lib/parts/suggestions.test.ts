@@ -34,6 +34,8 @@ const bakimx = (id: string, over: Partial<BakimxProductSummary> = {}): BakimxPro
   imageUrl: null,
   oemNumbers: [],
   workshopPriceKurus: 248_000,
+  displayPriceKurus: 248_000,
+  discountBps: 0,
   vatRateBps: 2000,
   currency: "TRY",
   stockQty: 4,

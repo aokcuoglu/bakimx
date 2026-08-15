@@ -5,7 +5,7 @@ import { AuditLogAction } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 import { z } from "zod/v4"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { subKurus, sumKurus } from "@/lib/money"
 import { isCollectionLockedForOrder } from "@/lib/status-transitions"
 
@@ -201,7 +201,7 @@ export async function getCustomerOrdersForPayment(customerId: string) {
     include: {
       order: {
         include: {
-          items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+          items: { select: ORDER_TOTALS_ITEM_SELECT },
         },
       },
       vehicle: { select: { plate: true, brand: true, model: true } },

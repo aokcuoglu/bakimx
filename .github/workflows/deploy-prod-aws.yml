@@ -49,6 +49,41 @@ env:
   ROLE_ARN: arn:aws:iam::075550799591:role/bakimx-prod-gha-deploy
 
 jobs:
+  # PR-origin gate — a commit that never went through a pull request must not ship to
+  # production. `main` is unprotected on this plan (branch protection + rulesets both
+  # 403; GitHub Pro declined for budget on 2026-08-15, BAK-57), so a direct push to
+  # main is possible AND auto-deploys — that happened on 2026-07-30 (3079291, 3f038e7,
+  # two unreviewed prod deploys). This does NOT protect the branch: the commit is still
+  # on main. It stops that commit from being SHIPPED. main-push-guard.yml raises the
+  # alarm; this is the gate. Approved by alpkaan on 2026-08-15 (BAK-59).
+  #
+  # The `if` is on the STEP, not the job: a job-level `if` would mark this job
+  # `skipped` on workflow_dispatch, and `deploy` — which needs it — would be skipped
+  # with it. Here the job just runs zero steps and goes green in seconds.
+  # That is the deliberate hotfix escape hatch: an approved direct push can still be
+  # shipped by hand (Actions → this workflow → Run workflow), which leaves a trail
+  # (who dispatched it) while main-push-guard.yml still fails and files its issue.
+  pr-origin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Did this commit come from a pull request?
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null) | .number] | first // empty')
+          if [ -z "$PR" ]; then
+            echo "::error::${GITHUB_SHA} PR'sız main'e girdi — prod deploy durduruldu. Bilinçli bir hotfix ise: Actions → Deploy to AWS prod → Run workflow."
+            exit 1
+          fi
+          echo "Commit came from PR #${PR} — proceeding."
+
   # Quality gate — same rationale as deploy-dev-aws.yml, and it matters more here:
   # this workflow ships to production on a bare `push` to main. Without this job a
   # direct commit to main deployed with zero validation.
@@ -56,7 +91,7 @@ jobs:
     uses: ./.github/workflows/quality.yml
 
   deploy:
-    needs: quality
+    needs: [pr-origin, quality]
     # Native ARM64 runner → Fargate task runtimePlatform is ARM64 (Graviton), so the image
     # must be arm64. Native build avoids QEMU emulation. If arm64 hosted runners are not
     # available on your GitHub plan, switch to `ubuntu-latest` and add

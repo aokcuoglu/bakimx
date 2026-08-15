@@ -44,6 +44,12 @@ export type OrderItem = {
   quantity: number
   unitPrice: number | null
   totalPrice: number | null
+  /**
+   * Satır belgenin KDV'sine tabi mi (BAK-53). `false` ise hem satır tutarı KDV'siz
+   * gösterilir hem de Genel Toplam'a KDV'siz girer — gösterim ve hesap AYNI
+   * bayraktan beslenir (bkz. src/lib/totals.ts, BAK-55).
+   */
+  includeVat?: boolean | null
   note: string | null
   brand: string | null
   category: string | null
@@ -67,8 +73,6 @@ export type OrderItem = {
   purchasePhotoId?: string | null
   // Dolu ⇒ kalem sahada teknisyen tarafından "yapıldı" işaretlenmiş.
   completedAt?: string | null
-  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
-  includeVat?: boolean
 }
 
 export type Totals = {
@@ -280,16 +284,14 @@ export function PricingSummaryCard({
         <SummaryRow label="Parça Toplamı" value={totals.partsCount > 0 ? formatTRY(totals.partsTotal) : "—"} muted={totals.partsCount === 0} />
         <SummaryRow label="İşçilik Toplamı" value={totals.laborCount > 0 ? formatTRY(totals.laborTotal) : "—"} muted={totals.laborCount === 0} />
         <SummaryRow label="Dış İşçilik Toplamı" value={totals.externalLaborCount > 0 ? formatTRY(totals.externalLaborTotal) : "—"} muted={totals.externalLaborCount === 0} />
-            <div className="border-t pt-2 mt-2">
-              <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
-            </div>
-            {paidAmount > 0 && (
-              <>
-                <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
-                <SummaryRow label="Kalan Bakiye" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />
-              </>
-            )}
-            {editingMeta ? (
+        {/* Kalemlerin toplamı = ARA TOPLAM. Burada "Genel Toplam" yazıyordu
+            (99aa6e3) ve kartta iki Genel Toplam satırı vardı: kalem
+            toplamlarının hemen altındaki indirim/KDV uygulanmış rakam
+            "kalemler tutmuyor" gibi okunuyordu (BAK-55). */}
+        <div className="border-t pt-2 mt-2">
+          <SummaryRow label="Ara Toplam" value={totals.hasAnyPrice ? formatTRY(totals.subtotal) : "—"} bold />
+        </div>
+        {editingMeta ? (
           <div className="space-y-2.5 pt-2">
             <div>
               <Label className="text-xs">İndirim (₺)</Label>
@@ -337,6 +339,15 @@ export function PricingSummaryCard({
             <div className="border-t pt-2 mt-2">
               <SummaryRow label="Genel Toplam" value={totals.hasAnyPrice ? formatTRY(totals.grandTotal) : "—"} bold large />
             </div>
+          </>
+        )}
+
+        {/* Tahsilat satırları Genel Toplam'ın ALTINDA: hesap zinciri (kalemler →
+            ara toplam → indirim/KDV → genel toplam) araya ödeme girmeden okunur. */}
+        {paidAmount > 0 && (
+          <>
+            <SummaryRow label="Tahsil Edilen" value={formatTRY(paidAmount)} bold tone="emerald" />
+            <SummaryRow label="Kalan Bakiye" value={formatTRY(remainingAmount)} bold tone={remainingAmount > 0 ? "rose" : "emerald"} />
           </>
         )}
 

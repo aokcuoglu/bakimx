@@ -16,13 +16,23 @@ import type { BakimxProductSummary } from "./bakimx-catalog"
  *  2. `categoryId: null` — o kolon TecDoc kategori DÜĞÜM id'sidir. BakımX iç
  *     taksonomisinin anahtarı oraya yazılırsa kategori bazlı raporlama sahte
  *     TecDoc id'leriyle kirlenir. Kategori yalnız `category` metnine yazılır.
- *  3. `purchasePriceKurus` = ürünün `workshopPriceKurus`'u, yani atölyenin ALIŞ
- *     fiyatı (KDV hariç). `unitPrice` bundan ÖN-DOLDURULUR (dış alım kalıbı) ama
- *     ayrı bir alandır: atölye satış fiyatını kendi marjıyla düzenler. İkisini
- *     tek alana indirmek atölyeyi sıfır marjla satar duruma sokardı.
+ *  3. `purchasePriceKurus` = ürünün `displayPriceKurus`'u, yani atölye iskontosu
+ *     uygulandıktan sonra atölyenin GERÇEKTEN ödeyeceği alış fiyatı (KDV hariç,
+ *     BAK-47/BAK-58). Liste fiyatı (`workshopPriceKurus`) kaleme HİÇ yazılmaz:
+ *     yazılsaydı %15 iskontolu atölyenin maliyeti ve dolayısıyla marjı her
+ *     kalemde yanlış çıkardı. `unitPrice` bundan ÖN-DOLDURULUR (dış alım kalıbı)
+ *     ama ayrı bir alandır: atölye satış fiyatını kendi marjıyla düzenler.
+ *     İkisini tek alana indirmek atölyeyi sıfır marjla satar duruma sokardı.
  *
- * Fiyat kalemde ANLIK GÖRÜNTÜDÜR: ürün kartı sonradan zamlanırsa geçmiş iş emri
- * satırı değişmez (bu yüzden `bakimxProductId` FK değildir, bkz. schema.prisma).
+ * Fiyat kalemde ANLIK GÖRÜNTÜDÜR: ürün kartı sonradan zamlanırsa — ya da atölye
+ * iskontosu değişirse — geçmiş iş emri satırı değişmez (bu yüzden
+ * `bakimxProductId` FK değildir, bkz. schema.prisma).
+ *
+ * İskonto oranı İSTEMCİDEN GELMEZ: `displayPriceKurus`'u dolduran tek yer
+ * katalog okuma yoludur ve o da oranı atölye kaydından okur (bkz.
+ * bakimx-catalog.ts → resolveWorkshopDiscountBps). Sunucu yazımı ürünü
+ * `getVisibleBakimxProduct(..., workshop.id)` ile kendisi okuduğu için istemcinin
+ * gönderdiği fiyat hiçbir koşulda kaleme geçmez.
  *
  * `supplierName` / `supplierId` bilerek YOKTUR: onlar dış alım (source=purchase)
  * tedarikçi raporlamasının alanları; kaynağı `source=bakimx` + `bakimxProductId`
@@ -40,7 +50,7 @@ export interface BakimxLineItemFields {
   brand: string | null
   category: string | null
   unit: string
-  /** Atölyenin BakımX'ten alış fiyatı — KDV hariç, kuruş. */
+  /** Atölyenin BakımX'ten iskontolu alış fiyatı — KDV hariç, kuruş. */
   purchasePriceKurus: number
   /** Alıştan ön-doldurulmuş satış fiyatı; atölye kendi marjıyla değiştirir. */
   unitPrice: number
@@ -57,8 +67,8 @@ export function bakimxLineItemFields(product: BakimxProductSummary): BakimxLineI
     brand: product.brandName || null,
     category: product.categoryLabel,
     unit: product.unit,
-    purchasePriceKurus: product.workshopPriceKurus,
-    unitPrice: product.workshopPriceKurus,
+    purchasePriceKurus: product.displayPriceKurus,
+    unitPrice: product.displayPriceKurus,
   }
 }
 
@@ -76,23 +86,7 @@ export function bakimxStockLabel(product: BakimxProductSummary): string {
 }
 
 /**
- * BakımX ürününün araç uyumluluğunu kontrol et (BAK-46).
- * Ürün `vehicle_linked` ise, sağlanan araç tipi ürüne eşlenmiş olmalı.
- * `fitmentScope = universal` ürünler her zaman uyumlu.
- * Sunucu tarafı güvenlik kontrolü: istemcinin gönderdiği araç tipi değil,
- * sipariş/teklif kaydından okunur.
+ * Araç uyumluluk kontrolü (`validateBakimxProductFitment`) bu modülde DEĞİL,
+ * `./bakimx-fitment` içinde: burası istemci bileşenlerinin de import ettiği saf
+ * bir modül, Prisma erişimi eklenirse istemci paketi kırılır.
  */
-export async function validateBakimxProductFitment(
-  productId: string,
-  vehicleTypeId: number | null,
-): Promise<boolean> {
-  if (!vehicleTypeId) return true
-  const { prisma } = await import("@/lib/db")
-  const product = await prisma.bakimxProduct.findUnique({
-    where: { id: productId },
-    select: { fitmentScope: true, fitments: { select: { vehicleTypeId: true } } },
-  })
-  if (!product) return false
-  if (product.fitmentScope === "universal") return true
-  return product.fitments.some((f) => f.vehicleTypeId === vehicleTypeId)
-}

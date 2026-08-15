@@ -1,3 +1,4 @@
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       const order = await prisma.serviceOrder.findFirst({
         where: { id: serviceOrderId, workshopId: user.workshopId },
         include: {
-          items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+          items: { select: ORDER_TOTALS_ITEM_SELECT },
           intakeForm: { select: { vehicle: { select: { plate: true } } } },
         },
       })

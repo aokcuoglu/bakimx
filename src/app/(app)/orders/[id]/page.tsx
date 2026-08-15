@@ -141,6 +141,10 @@ export default async function OrderDetailPage({
       quantity: i.quantity,
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
+      // BAK-53 — satır KDV'ye tabi mi. DTO'da TAŞINMAK ZORUNDA: düzenleyici bu
+      // alandan hem kutuyu hem satırın KDV'li/KDV'siz gösterimini kuruyor.
+      // Taşınmazsa sunucu değeri yazar ama refresh'te kutu eski hâline döner.
+      includeVat: i.includeVat,
       note: i.note,
       brand: i.brand,
       category: i.category,

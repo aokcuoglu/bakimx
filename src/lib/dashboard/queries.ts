@@ -1,3 +1,4 @@
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { prisma } from "@/lib/db"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
@@ -91,7 +92,7 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
         paymentStatus: { in: ["unpaid", "partial"] },
       },
       include: {
-        items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+        items: { select: ORDER_TOTALS_ITEM_SELECT },
       },
     }),
   ])

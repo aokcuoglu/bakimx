@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test"
 import {
+  bakimxCategoriesUrl,
   bakimxSearchUrl,
   fetchBakimxCategories,
   fetchBakimxProducts,
@@ -98,4 +99,15 @@ test("sorgu dizesi yalnız dolu parametreleri taşır", () => {
   )
   // Boş sorgu meşrudur: kategoriye tıklandığında dalın tamamı listelenir.
   expect(bakimxSearchUrl({ q: "" })).toBe("/api/catalog/bakimx/search?")
+})
+
+test("vehicleTypeId taşınır; araçsız çağrıda parametre hiç eklenmez (BAK-46)", () => {
+  expect(bakimxSearchUrl({ q: "aku", vehicleTypeId: 42 })).toBe(
+    "/api/catalog/bakimx/search?q=aku&vehicleTypeId=42",
+  )
+  expect(bakimxSearchUrl({ q: "aku", vehicleTypeId: null })).toBe("/api/catalog/bakimx/search?q=aku")
+
+  // Taksonomi arama ile AYNI aracı görmeli, yoksa dolu görünen dal boş açılır.
+  expect(bakimxCategoriesUrl(42)).toBe("/api/catalog/bakimx/categories?vehicleTypeId=42")
+  expect(bakimxCategoriesUrl(null)).toBe("/api/catalog/bakimx/categories")
 })

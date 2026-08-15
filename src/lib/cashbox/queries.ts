@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 
 export type CashboxStats = {
   todayCollected: number
@@ -112,7 +112,7 @@ export async function getCashboxStats(workshopId: string): Promise<CashboxStats>
         paymentStatus: { in: ["unpaid", "partial"] },
       },
       include: {
-        items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+        items: { select: ORDER_TOTALS_ITEM_SELECT },
         intakeForm: { select: { customer: true, vehicle: true } },
       },
     }),
@@ -219,7 +219,7 @@ export async function getOpenReceivables(workshopId: string, limit = 50): Promis
       paymentStatus: { in: ["unpaid", "partial"] },
     },
     include: {
-      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      items: { select: ORDER_TOTALS_ITEM_SELECT },
       intakeForm: {
         select: {
           customer: { select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true, phone: true } },
@@ -440,7 +440,7 @@ export async function getCustomerBalances(workshopId: string): Promise<CustomerB
       intakes: {
         include: {
           order: {
-            include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
+            include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },
           },
         },
       },
@@ -553,7 +553,7 @@ export async function getReceivableAging(workshopId: string): Promise<AgingBucke
       paymentStatus: { in: ["unpaid", "partial"] },
     },
     include: {
-      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      items: { select: ORDER_TOTALS_ITEM_SELECT },
       intakeForm: {
         select: {
           customer: { select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true, phone: true } },

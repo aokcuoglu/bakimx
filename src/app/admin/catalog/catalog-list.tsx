@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Search, X, Loader2, Percent, Boxes, Package, Upload } from "lucide-react"
+import { Plus, Search, X, Loader2, Percent, Boxes, ClipboardList, Package, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -107,6 +107,9 @@ export function CatalogList({
           </p>
         </div>
         <div className="flex gap-2">
+          <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog/orders" />}>
+            <ClipboardList className="size-3.5 mr-1" /> Sipariş Talepleri
+          </Button>
           <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog/brands" />}>
             <Package className="size-3.5 mr-1" /> Markalar
           </Button>

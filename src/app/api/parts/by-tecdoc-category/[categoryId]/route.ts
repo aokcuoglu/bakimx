@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { tecdocErrorResponse, parsePositiveInt } from "@/lib/tecdoc/api-helpers"
-import { listBakimxProductsByTecdocCategory } from "@/lib/parts/bakimx-catalog"
+import { listBakimxProductsByTecdocCategory, parseVehicleTypeIdParam } from "@/lib/parts/bakimx-catalog"
 import { bakimxCatalogRouteGuard } from "@/lib/parts/bakimx-catalog-guard"
 
 /**
@@ -12,7 +12,7 @@ import { bakimxCatalogRouteGuard } from "@/lib/parts/bakimx-catalog-guard"
  * Ortak BakımX katalog kapısı auth, feature gate ve atölye bazlı rate limit uygular.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ categoryId: string }> },
 ) {
   const guard = await bakimxCatalogRouteGuard()
@@ -25,8 +25,10 @@ export async function GET(
     return NextResponse.json({ error: "invalid_params" }, { status: 400 })
   }
 
+  const vehicleTypeId = parseVehicleTypeIdParam(request.nextUrl.searchParams.get("vehicleTypeId"))
+
   try {
-    const products = await listBakimxProductsByTecdocCategory(id)
+    const products = await listBakimxProductsByTecdocCategory(id, vehicleTypeId, guard.workshopId)
     return NextResponse.json({ products })
   } catch (err) {
     return tecdocErrorResponse(err)

@@ -25,8 +25,14 @@ feature/* ──PR──► dev ──(push)──► 🚀 app-dev.bakimx.com   
 > **Tag deploy ETMEZ.** `vX.Y.Z` tag push'u yalnız `release.yml`'i tetikler; o da
 > GitHub Release'i `docs/releases/<tag>.md`'den oluşturur.
 
-`main` branch-protected: doğrudan push yok. "main'e merge = prod'a ship"i güvenli
-kılan şey bu — dev ondan önceki kapı.
+> **Branch protection YOK.** Repo private + free plan olduğu için hem
+> branch-protection hem rulesets API'si `403` dönüyor
+> ([`quality.yml`](../.github/workflows/quality.yml):3-9). Yani `dev`/`main`'e
+> doğrudan push'u ve bayat bir dalın merge edilmesini teknik olarak engelleyen
+> bir şey yok; "main'e merge = prod'a ship" kuralını güvenli kılan tek şey
+> disiplin. Deploy workflow'ları bu yüzden kalite kapısını ship edecekleri
+> commit'e karşı yeniden koşar. Bayat dalın nelere mal olduğu:
+> [agent-workflows/repo-guardrails.md](./agent-workflows/repo-guardrails.md).
 
 ---
 

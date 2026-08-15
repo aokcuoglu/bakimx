@@ -57,6 +57,28 @@ export function toDisplayPriceKurusOrNull(
   return storedKurus == null ? null : toDisplayPriceKurus(storedKurus, mode, taxBps)
 }
 
+/**
+ * "Tutarlar KDV dahil" kutusu değiştiğinde KDV'ye tabi hale getirilecek
+ * satırların kimlikleri (BAK-53 geri bildirimi).
+ *
+ * Kutu İŞARETLENİNCE muaf bırakılmış satırlar geri tabi olur: kullanıcı bu
+ * kutuyla belgenin tamamını kastediyor, tek tek verilmiş muafiyetlerin sessizce
+ * ayakta kalmasını değil. KDV matrahı satır bayraklarından kurulduğu için
+ * (`src/lib/totals.ts`) Genel Toplam'daki KDV tutarı da bu yazımla düzelir.
+ *
+ * İşaret KALKARKEN liste BOŞ döner — bilinçli asimetri: "KDV hariç" kip fiyatın
+ * net girilip net gösterilmesi demektir, KDV'nin belgeden kalkması değil. Toplu
+ * muafiyet bu kutunun işi olsaydı, yalnız net fiyat görmek isteyen kullanıcı
+ * belgenin KDV'sini de sıfırlardı.
+ */
+export function rowsToMakeVatLiable<T extends { id: string; includeVat?: boolean | null }>(
+  rows: readonly T[],
+  inclusive: boolean
+): string[] {
+  if (!inclusive) return []
+  return rows.filter((row) => row.includeVat === false).map((row) => row.id)
+}
+
 export function isPriceTaxMode(value: unknown): value is PriceTaxMode {
   return value === "included" || value === "excluded"
 }

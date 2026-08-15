@@ -7,7 +7,9 @@ import { bakimxCatalogRouteGuard } from "@/lib/parts/bakimx-catalog-guard"
  * TecDoc parça numaralarını BakımX ürünleriyle toplu eşleştir —
  * `POST /api/catalog/bakimx/match`.
  *
- * İstek gövdesi: `{ articleNumbers: string[] }` (sunucu tarafında 200 ile sınırlı).
+ * İstek gövdesi: `{ articleNumbers: string[], vehicleTypeId?: number }` (numara
+ * listesi sunucu tarafında 200 ile sınırlı). `vehicleTypeId` verilirse o araca
+ * eşlenmiş `vehicle_linked` ürünler de rozet alabilir (BAK-46).
  * Yanıt: `{ matches: { [articleNo]: BakimxProductSummary } }` — eşleşmeyen numara haritaya girmez.
  */
 export async function POST(request: Request) {
@@ -31,7 +33,15 @@ export async function POST(request: Request) {
       )
     }
 
-    const matches = await matchBakimxProductsByPartNumbers(articleNumbers)
+    const rawVehicleTypeId = body?.vehicleTypeId
+    const vehicleTypeId =
+      Number.isInteger(rawVehicleTypeId) && rawVehicleTypeId >= 1 ? rawVehicleTypeId : null
+
+    const matches = await matchBakimxProductsByPartNumbers(
+      articleNumbers,
+      vehicleTypeId,
+      guard.workshopId,
+    )
     return NextResponse.json({ matches })
   } catch (err) {
     console.error("[bakimx-catalog/match]", err instanceof Error ? err.message : err)

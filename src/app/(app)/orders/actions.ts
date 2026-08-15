@@ -11,7 +11,8 @@ import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-gu
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
-import { bakimxLineItemFields, validateBakimxProductFitment, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { validateBakimxProductFitment } from "@/lib/parts/bakimx-fitment"
 import { resolveFeature } from "@/lib/features"
 import type { PlanTier } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -105,7 +106,7 @@ export async function addOrderItemAction(formData: FormData) {
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
     source: raw.source || undefined,
     bakimxProductId: raw.bakimxProductId || undefined,
-    includeVat: raw.includeVat ? raw.includeVat === "true" : undefined,
+    includeVat: raw.includeVat || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -144,7 +145,10 @@ export async function addOrderItemAction(formData: FormData) {
       "bakimxCatalog",
     )
     if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
-    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId)
+    // Araç süzgeci burada BİLEREK boş: araç uyumluluğu aşağıda siparişin kendi
+    // aracıyla ayrıca doğrulanır (BAK-46). `workshop.id` iskonto için gerekir
+    // (BAK-47) — fiyat atölye kaydından okunur, istemciden değil.
+    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId, null, workshop.id)
     if (!product) return { error: "BakımX ürünü bulunamadı veya yayından kaldırılmış" }
     bakimxFields = bakimxLineItemFields(product)
   }
@@ -189,6 +193,8 @@ export async function addOrderItemAction(formData: FormData) {
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
           purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
           source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
+          // Satır KDV'ye tabi mi (BAK-53). Varsayılan `true` — gönderilmezse
+          // bugünkü davranış: belgenin KDV'si her satıra uygulanır.
           includeVat: parsed.data.includeVat ?? true,
         },
       })
@@ -657,7 +663,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     tecdocArticleId: has("tecdocArticleId")
       ? ((formData.get("tecdocArticleId") as string) === "" ? null : Number(formData.get("tecdocArticleId")))
       : undefined,
-    includeVat: has("includeVat") ? formData.get("includeVat") === "true" : undefined,
+    includeVat: has("includeVat") ? (formData.get("includeVat") as string) : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -717,6 +723,8 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
   if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
+  // Satır KDV'si (BAK-53) — toplamı değiştirir, bu yüzden aşağıdaki recalc
+  // zaten koşuyor (kalem güncellemesi her hâlükârda ödeme durumunu yeniler).
   if (parsed.data.includeVat !== undefined) data.includeVat = parsed.data.includeVat
 
   // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat

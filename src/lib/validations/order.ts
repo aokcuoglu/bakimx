@@ -23,8 +23,12 @@ export const serviceOrderItemSchema = z.object({
   // BakımX katalog ürünü (BAK-35). Doluysa kalemin kimlik/fiyat alanları SUNUCUDA
   // ürün kaydından türetilir — istemciden gelen ad/fiyat yazılmaz.
   bakimxProductId: z.string().optional(),
-  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
-  includeVat: z.coerce.boolean().optional(),
+  /**
+   * Satır KDV'ye tabi mi (BAK-53). `true`/alan yok → tabi; `false` → belgenin
+   * KDV'si bu satıra uygulanmaz (src/lib/totals.ts tek karar noktası).
+   * `z.coerce.boolean()` KULLANMA: "false" dizesi `true`'ya çevrilir.
+   */
+  includeVat: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
 })
 
 /**
@@ -43,8 +47,12 @@ export const serviceOrderItemUpdateSchema = z.object({
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),
   // Katalogdan parça seçilince kurulur / serbest metne dönülünce (boş string) temizlenir.
   tecdocArticleId: z.coerce.number().int("TecDoc parça no tam sayı olmalıdır").positive().nullable().optional(),
-  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
-  includeVat: z.coerce.boolean().optional(),
+  /**
+   * Satır KDV'ye tabi mi (BAK-53). `true`/alan yok → tabi; `false` → belgenin
+   * KDV'si bu satıra uygulanmaz (src/lib/totals.ts tek karar noktası).
+   * `z.coerce.boolean()` KULLANMA: "false" dizesi `true`'ya çevrilir.
+   */
+  includeVat: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
 })
 
 /**

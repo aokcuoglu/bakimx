@@ -7,7 +7,7 @@ import { formatTRY } from "@/lib/format"
 import { formatDateTime } from "@/lib/utils-client"
 import { PaymentMethodBadge, CollectionStatusBadge, PaymentBadge } from "@/components/shared/status-badge"
 import { CancelCollectionButton } from "@/components/cashbox/collection-cancel-button"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { ArrowLeft, Receipt, Calendar, User, FileText, Hash, MessageSquare, CreditCard, Banknote, Info, AlertTriangle } from "lucide-react"
 
 const methodIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -29,7 +29,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
       },
       serviceOrder: {
         include: {
-          items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+          items: { select: ORDER_TOTALS_ITEM_SELECT },
           intakeForm: {
             select: { vehicle: { select: { plate: true, brand: true, model: true } } },
           },

@@ -1,3 +1,4 @@
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
@@ -51,7 +52,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               id: true,
               status: true,
               paymentStatus: true,
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+              items: { select: ORDER_TOTALS_ITEM_SELECT },
             },
           },
         },

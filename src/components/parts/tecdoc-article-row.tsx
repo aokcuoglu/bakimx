@@ -5,6 +5,7 @@ import type { ArticleSummary } from "@/lib/tecdoc/types"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { formatTRY } from "@/lib/format"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
+import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 
 /**
  * Parça seçicideki tek parça satırı — hem kategori drill-down listesi hem arama
@@ -15,6 +16,9 @@ import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
  * (aramada parçanın hangi kategoriden geldiğini gösterir). `matchedOems` doluysa
  * satır neden çıktığı görünsün diye eşleşen OEM numarası da yazılır (#312).
  * `bakimxMatch` varsa, BakımX fiyat ve stok bilgisi rozet olarak gösterilir (Faz 2).
+ * Rozetteki tutar atölye iskontosu uygulanmış alış fiyatıdır (`displayPriceKurus`),
+ * yani BakımX ürün satırının ve kaleme yazılan tutarın aynısı; liste fiyatı
+ * (`workshopPriceKurus`) atölye yüzeyine çıkmaz (BAK-47 / BAK-58).
  */
 export function TecdocArticleRow({
   article,
@@ -33,6 +37,8 @@ export function TecdocArticleRow({
   onSelect: () => void
   onShowDetail?: (a: ArticleSummary) => void
 }) {
+  // İskontosuz atölyede boş string → rozet bugünküyle birebir aynı kalır.
+  const discountNote = bakimxMatch ? formatDiscountLabel(bakimxMatch.discountBps) : ""
   return (
     <div className="flex items-center border-b border-border/60 hover:bg-muted">
       <button
@@ -70,10 +76,11 @@ export function TecdocArticleRow({
           {bakimxMatch && (
             <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
               <span className="font-semibold tabular-nums text-foreground">
-                {formatTRY(bakimxMatch.workshopPriceKurus)}
+                {formatTRY(bakimxMatch.displayPriceKurus)}
               </span>
               <span className="text-muted-foreground/70">KDV hariç</span>
               <span className="text-muted-foreground">· {bakimxStockLabel(bakimxMatch)}</span>
+              {discountNote && <span className="text-success-strong">· {discountNote}</span>}
             </span>
           )}
         </span>
