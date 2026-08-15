@@ -23,6 +23,15 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 Respect the active agent's authorization and confirmation policies. Never bypass
 branch protection, required reviews, required checks, or repository permissions.
 
+**Merge yetkisi (2026-08-15, alpkaan).** Teslimat PR'ları için merge onayı
+KALICI olarak verilmiştir: kapılar yeşil ve PR mergeable ise, her PR için ayrıca
+"merge edeyim mi?" diye sorma — merge et ve kapanışa (dal temizliği,
+`bun run project:sync`, tracker doğrulaması) devam et. Bu yalnız **onay adımını**
+kaldırır, hiçbir kapıyı gevşetmez: kırmızı check'e rağmen merge, admin bypass ve
+`§6`'daki koşulların atlanması hâlâ yasak. Olağan teslimat dışındaki işler
+(deploy, geri alınamaz/dışa dönük işlemler) ayrı onay ister. Merge sonrası ne
+yapıldığı raporlanır.
+
 ## 1. Intake and understanding
 
 - Resolve the repository from the checkout and fetch the issue, comments,
@@ -140,6 +149,8 @@ bun run build
 - Resolve actionable review comments and re-check the diff.
 - Merge only when the PR is non-draft, mergeable, approved as required, current
   with `dev`, and all required checks are green.
+- Bu koşullar sağlandığında merge için ayrıca insan onayı BEKLENMEZ — bkz. yukarıdaki
+  "Merge yetkisi" notu.
 - Prefer squash merge unless repository policy or release history requires a
   different method. Never use admin bypass.
 - A deployment workflow triggered after merge is distinct from PR validation.
