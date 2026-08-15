@@ -184,7 +184,7 @@ export function TeamManagement({
   return (
     <div className="space-y-5">
       <WorkshopEntryQR workshopName={workshopName} loginCode={loginCode} logoUrl={logoUrl} />
-      <div className="rounded-lg border border-border bg-white p-5">
+      <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4 gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Users className="size-5 text-muted-foreground shrink-0" />
