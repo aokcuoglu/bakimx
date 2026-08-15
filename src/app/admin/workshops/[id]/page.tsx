@@ -28,6 +28,7 @@ const ACTION_LABELS: Record<string, string> = {
   admin_extra_seats_set: "Ek koltuk ayarlandı",
   billing_order_confirmed: "Havale teyit edildi",
   billing_order_cancelled: "Sipariş iptal edildi",
+  workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
 }
 const ROLE_LABELS: Record<string, string> = { owner: "Sahip", manager: "Yönetici", staff: "Personel" }
 
