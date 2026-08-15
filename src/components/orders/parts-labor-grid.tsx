@@ -223,9 +223,6 @@ export function PartsLaborEditor({
   )
 
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
-  const taxNote = priceTax.mode === "included"
-    ? <span className="block text-[10px] font-normal normal-case tracking-normal">KDV dahil</span>
-    : null
 
   return (
     <PriceTaxContext.Provider value={priceTax}>
@@ -287,6 +284,7 @@ export function PartsLaborEditor({
             <col className="w-40" />{/* Tür */}
             <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
             <col className="w-24" />{/* Miktar */}
+            <col className="w-20" />{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
             <col className="w-12" />{/* Sil */}
@@ -296,10 +294,11 @@ export function PartsLaborEditor({
               <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
+              <TableHead className={cn(headCls, "text-center")}>KDV</TableHead>
               {/* KDV dahil kipinde başlık ikinci satıra not düşer: tek satıra
                   eklenen "(KDV dahil)" iki dar kolonda taşıp birbirine giriyordu. */}
-              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat{taxNote}</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Toplam{taxNote}</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
               <TableHead className={cn(headCls, "text-right")}><span className="sr-only">İşlem</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -1199,9 +1198,11 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // #311 — saklanan tutar NET'tir; KDV dahil kipinde kullanıcı KDV'li tutarı
   // görür ve KDV'li yazar. Çevrim tek yönde burada kapanır: gösterimde net→brüt,
   // commit'te brüt→net.
+  // Per-row VAT: satırın includeVat bayrağı KDV dahil/hariç kipi belirler.
   const { mode: priceMode, taxBps } = usePriceTax()
-  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, priceMode, taxBps)
-  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, priceMode, taxBps)
+  const rowPriceMode: PriceTaxMode = (row.includeVat ?? true) ? "included" : "excluded"
+  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, rowPriceMode, taxBps)
+  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, rowPriceMode, taxBps)
 
   function startPrice() { setPriceDraft(displayUnitPrice != null ? String(kurusToLira(displayUnitPrice)) : ""); setEditingPrice(true) }
   function commitPrice() {
@@ -1382,27 +1383,6 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
         onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
       />
     </InputGroup>
-  )
-}
-
-function VatToggleButton({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
-  if (!editable || row.unitPrice == null) {
-    return null
-  }
-  const includeVat = row.includeVat ?? true
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      className={cn(
-        "h-8 text-xs px-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30",
-        includeVat && "border-2 font-semibold"
-      )}
-      onClick={() => onCell(row, { includeVat: !includeVat })}
-    >
-      Tutarlar KDV dahil (%20)
-    </Button>
   )
 }
 
@@ -1788,11 +1768,25 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
         </div>
       </TableCell>
 
-      {/* Birim Fiyat + VAT toggle */}
+      {/* KDV Checkbox */}
       <TableCell className="py-3.5">
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex justify-center">
+          {ed.editable && row.unitPrice != null ? (
+            <Checkbox
+              checked={row.includeVat ?? true}
+              onCheckedChange={(checked) => onCell(row, { includeVat: checked as boolean })}
+              className="h-5 w-5"
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">{(row.includeVat ?? true) ? "✓" : "—"}</span>
+          )}
+        </div>
+      </TableCell>
+
+      {/* Birim Fiyat */}
+      <TableCell className="py-3.5">
+        <div className="flex justify-end">
           <PriceField row={row} ed={ed} wide />
-          {ed.editable && <VatToggleButton row={row} editable={ed.editable} onCell={onCell} />}
         </div>
       </TableCell>
 
@@ -1869,16 +1863,22 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         </div>
       )}
 
-      {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
+      {/* Fiş satırı: Miktar · KDV · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
       <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+        {ed.editable && row.unitPrice != null && (
+          <Checkbox
+            checked={row.includeVat ?? true}
+            onCheckedChange={(checked) => onCell(row, { includeVat: checked as boolean })}
+            className="h-4 w-4 ml-auto"
+          />
+        )}
         <div className="ml-auto flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             <PriceField row={row} ed={ed} />
             <span className="text-sm text-muted-foreground">=</span>
             <TotalField lineTotal={ed.displayLineTotal} strong />
           </div>
-          {ed.editable && <VatToggleButton row={row} editable={ed.editable} onCell={onCell} />}
         </div>
       </div>
     </div>
