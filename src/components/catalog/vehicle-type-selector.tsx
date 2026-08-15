@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronDown, X } from "lucide-react"
+import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -88,6 +88,7 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
   useEffect(() => {
     fetchBrands()
     fetchTypeNames()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
