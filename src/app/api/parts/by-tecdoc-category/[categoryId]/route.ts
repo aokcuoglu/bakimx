@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/db"
 import { tecdocErrorResponse, parsePositiveInt } from "@/lib/tecdoc/api-helpers"
 import { BAKIMX_PRODUCT_SUMMARY_SELECT, toBakimxProductSummary } from "@/lib/parts/bakimx-catalog"
@@ -12,8 +12,11 @@ import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
  *
  * No auth gate: endpoint is public (doesn't expose private data), rate-limited at TecDoc level.
  */
-export async function GET(request: Request, props: { params: Promise<{ categoryId: string }> }) {
-  const { categoryId } = await props.params
+export async function GET(
+  _request: NextRequest,
+  context: RouteContext<"/api/parts/by-tecdoc-category/[categoryId]">,
+) {
+  const { categoryId } = await context.params
   const id = parsePositiveInt(categoryId)
 
   if (id == null) {
