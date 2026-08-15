@@ -21,6 +21,10 @@ mock.module("@/lib/features", () => ({
 
 mock.module("@/lib/db", () => ({
   prisma: {
+    // BAK-47: eşleştirme yolu da atölye iskontosunu okur (iskontosuz atölye).
+    workshop: {
+      findUnique: async () => ({ bakimxDiscountBps: 0 }),
+    },
     bakimxProduct: {
       findMany: async () => [
         {

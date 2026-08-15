@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { bakimxProductSearchTerms } from "./bakimx-search-key"
 import { normalizePartNo } from "./suggestions"
+import { resolveWorkshopPrice } from "./bakimx-price"
 
 /**
  * BakımX ürün kataloğunun ATÖLYE (okuma) tarafı — BAK-33.
@@ -70,6 +71,8 @@ export interface BakimxProductSummary {
   oemNumbers: string[]
   /** Atölyenin BakımX'ten ALIŞ fiyatı — KDV HARİÇ, kuruş. */
   workshopPriceKurus: number
+  /** Atölyenin iskontolu fiyatı — KDV HARİÇ, kuruş (BAK-47). */
+  displayPriceKurus: number
   /** `workshopPriceKurus` üzerine uygulanacak KDV oranı (bps; 2000 = %20). */
   vatRateBps: number
   currency: string
@@ -80,7 +83,10 @@ export interface BakimxProductSummary {
   leadTimeDays: number | null
 }
 
-export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProductSummary {
+export function toBakimxProductSummary(
+  row: BakimxProductSummaryRow,
+  discountBps: number = 0,
+): BakimxProductSummary {
   return {
     id: row.id,
     sku: row.sku,
@@ -95,6 +101,7 @@ export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProd
     imageUrl: row.imageUrl,
     oemNumbers: row.oemNumbers,
     workshopPriceKurus: row.workshopPriceKurus,
+    displayPriceKurus: resolveWorkshopPrice(row.workshopPriceKurus, discountBps),
     vatRateBps: row.vatRateBps,
     currency: row.currency,
     stockQty: row.stockQty,
@@ -107,18 +114,46 @@ export const BAKIMX_SEARCH_DEFAULT_LIMIT = 20
 export const BAKIMX_SEARCH_MAX_LIMIT = 50
 
 /**
+ * Atölyenin BakımX iskontosunu (bps) okur — BAK-47'nin TEK okuma noktası.
+ *
+ * İskonto İSTEMCİDEN GELMEZ: her okuma yolu atölye kaydından okur, böylece
+ * fiyat istemci tarafından manipüle edilemez. `workshopId` yoksa (atölye
+ * bağlamı olmayan çağrı) iskonto uygulanmaz.
+ */
+async function resolveWorkshopDiscountBps(workshopId?: string | null): Promise<number> {
+  if (!workshopId) return 0
+  const workshop = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: { bakimxDiscountBps: true },
+  })
+  return workshop?.bakimxDiscountBps ?? 0
+}
+
+/**
  * Atölyeye görünen ürünün koşulu — arama ve taksonomi AYNI filtreyi kullanmalı,
  * aksi hâlde ağaçta görünen kategori boş liste döndürür.
  *
- * `fitmentScope = universal`: Faz 1'de yalnız araçtan bağımsız ürünler
- * listelenir; `vehicle_linked` ürünler araç eşleştirmesi geldiğinde (Faz 2)
- * açılacak. Markanın `isActive`'i de kapı: bir markayı tek anahtarla
- * pasifleştirmek ürünlerini de listeden düşürür.
+ * `fitmentScope = universal`: her araçta — ve araç kataloğa bağlı değilken de —
+ * listelenir; Faz 1'in davranışı birebir korunur.
+ * `fitmentScope = vehicle_linked` (BAK-46): YALNIZ `vehicleTypeId` verilmişse ve
+ * ürüne o araç eşlenmişse listelenir. Parametre yokken araç doğrulanmamış
+ * demektir; araca bağlı ürünü orada göstermek yanlış eşleşme üretir.
+ *
+ * Markanın `isActive`'i de kapı: bir markayı tek anahtarla pasifleştirmek
+ * ürünlerini de listeden düşürür.
  */
-const VISIBLE_PRODUCT: Prisma.BakimxProductWhereInput = {
-  isActive: true,
-  fitmentScope: "universal",
-  brand: { isActive: true },
+function visibleProductFilter(vehicleTypeId?: number | null): Prisma.BakimxProductWhereInput {
+  if (vehicleTypeId == null) {
+    return { isActive: true, fitmentScope: "universal", brand: { isActive: true } }
+  }
+  return {
+    isActive: true,
+    brand: { isActive: true },
+    OR: [
+      { fitmentScope: "universal" },
+      { fitmentScope: "vehicle_linked", fitments: { some: { vehicleTypeId } } },
+    ],
+  }
 }
 
 export interface BakimxProductSearchInput {
@@ -126,6 +161,8 @@ export interface BakimxProductSearchInput {
   brandId?: string | null
   categoryKey?: string | null
   limit?: number | null
+  vehicleTypeId?: number | null
+  workshopId?: string | null
 }
 
 /**
@@ -133,38 +170,50 @@ export interface BakimxProductSearchInput {
  * `normalizePartSearchTerm`'den geçtiği için "aku" → "Akü ..." bulunur (bkz.
  * bakimx-search-key.ts). Boş `q` meşrudur: parça seçicide bir kategoriye
  * tıklandığında o dalın tamamı listelenir.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatlarına uygular
+ * (BAK-47). Boşsa iskonto yoktur (0%).
  */
 export async function searchBakimxProducts(
   input: BakimxProductSearchInput = {},
 ): Promise<BakimxProductSummary[]> {
   const terms = bakimxProductSearchTerms(input.q ?? "")
   const limit = clampSearchLimit(input.limit)
+  const discountBps = await resolveWorkshopDiscountBps(input.workshopId)
 
   const rows = await prisma.bakimxProduct.findMany({
     where: {
-      ...VISIBLE_PRODUCT,
+      // Görünürlük filtresi `AND` altında: `vehicle_linked` dalı bir `OR`
+      // taşıyor, üst seviyeye yayılırsa çağıranın kendi `OR`'u onu ezer.
+      AND: [
+        visibleProductFilter(input.vehicleTypeId),
+        ...terms.map((term) => ({ searchKey: { contains: term } })),
+      ],
       ...(input.brandId ? { brandId: input.brandId } : {}),
       ...(input.categoryKey ? { categoryKey: input.categoryKey } : {}),
-      ...(terms.length > 0 ? { AND: terms.map((term) => ({ searchKey: { contains: term } })) } : {}),
     },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
     orderBy: [{ name: "asc" }, { id: "asc" }],
     take: limit,
   })
 
-  return rows.map(toBakimxProductSummary)
+  return rows.map((row) => toBakimxProductSummary(row, discountBps))
 }
 
 /** TecDoc kategori köprüsüne bağlı, atölyeye görünür BakımX ürünleri (BAK-45). */
 export async function listBakimxProductsByTecdocCategory(
   tecdocCategoryId: number,
+  vehicleTypeId?: number | null,
+  workshopId?: string | null,
 ): Promise<BakimxProductSummary[]> {
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
+
   const rows = await prisma.bakimxProduct.findMany({
-    where: { ...VISIBLE_PRODUCT, tecdocCategoryId },
+    where: { AND: [visibleProductFilter(vehicleTypeId)], tecdocCategoryId },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
     orderBy: [{ brandName: "asc" }, { name: "asc" }],
   })
-  return rows.map(toBakimxProductSummary)
+  return rows.map((row) => toBakimxProductSummary(row, discountBps))
 }
 
 /**
@@ -172,13 +221,33 @@ export async function listBakimxProductsByTecdocCategory(
  * kullanır. İstemcinin gönderdiği ad/fiyat/kategori GÜVENİLMEZ: kalem alanları
  * buradan dönen satırdan türetilir (bkz. bakimx-item.ts), böylece pasifleşmiş
  * ürün eklenemez ve fiyat istemciden uydurulamaz.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatına uygular (BAK-47).
  */
-export async function getVisibleBakimxProduct(id: string): Promise<BakimxProductSummary | null> {
+export async function getVisibleBakimxProduct(
+  id: string,
+  vehicleTypeId?: number | null,
+  workshopId?: string | null,
+): Promise<BakimxProductSummary | null> {
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
+
   const row = await prisma.bakimxProduct.findFirst({
-    where: { ...VISIBLE_PRODUCT, id },
+    where: { AND: [visibleProductFilter(vehicleTypeId)], id },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
   })
-  return row ? toBakimxProductSummary(row) : null
+  return row ? toBakimxProductSummary(row, discountBps) : null
+}
+
+/**
+ * `?vehicleTypeId=` ayrıştırıcı — sorgu dizesi güvenilmez girdidir (BAK-46).
+ * Boş, sayı olmayan, sıfır ya da negatif değer `null`'a düşer; `null` "araç
+ * bilinmiyor" demektir ve yalnız `universal` ürünleri açar (kapalı taraf).
+ */
+export function parseVehicleTypeIdParam(raw: string | null): number | null {
+  if (!raw) return null
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed < 1) return null
+  return parsed
 }
 
 /** İstemci sınırı ÖNERİR, server kırpar (güvenilmez girdi). */
@@ -240,21 +309,28 @@ export function bakimxCategoryLabel(key: string): string {
  *
  * Yanıt `{ articleNo → BakimxProductSummary }` haritasıdır; eşleşmeyen
  * `articleNo` haritaya girmez.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatlarına uygular (BAK-47).
  */
 export async function matchBakimxProductsByPartNumbers(
   articleNumbers: string[],
+  vehicleTypeId?: number | null,
+  workshopId?: string | null,
 ): Promise<Record<string, BakimxProductSummary>> {
   if (articleNumbers.length === 0) return {}
 
   const normalized = articleNumbers.map(normalizePartNo).filter(Boolean)
   if (normalized.length === 0) return {}
 
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
+
   const rows = await prisma.bakimxProduct.findMany({
     where: {
-      ...VISIBLE_PRODUCT,
-      OR: [
-        { sku: { in: normalized } },
-        { oemNumbers: { hasSome: normalized } },
+      // İki `OR` var (görünürlük + numara eşleşmesi); ikisi de `AND` altında
+      // durmalı, yoksa biri diğerini ezer ve uymayan ürün rozet alır.
+      AND: [
+        visibleProductFilter(vehicleTypeId),
+        { OR: [{ sku: { in: normalized } }, { oemNumbers: { hasSome: normalized } }] },
       ],
     },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
@@ -262,7 +338,7 @@ export async function matchBakimxProductsByPartNumbers(
 
   const result: Record<string, BakimxProductSummary> = {}
   for (const row of rows) {
-    const product = toBakimxProductSummary(row)
+    const product = toBakimxProductSummary(row, discountBps)
     const match = articleNumbers.find((no) => {
       const noNorm = normalizePartNo(no)
       if (noNorm === normalizePartNo(row.sku)) return true
@@ -279,10 +355,12 @@ export async function matchBakimxProductsByPartNumbers(
  * GÖRÜNEN ürünü olan kategoriler, ürün sayısıyla. Kategorisi boş (`null`)
  * ürünler ağaçta yaprak açmaz — onlara arama üzerinden erişilir.
  */
-export async function listBakimxCategories(): Promise<BakimxCategoryNode[]> {
+export async function listBakimxCategories(
+  vehicleTypeId?: number | null,
+): Promise<BakimxCategoryNode[]> {
   const groups = await prisma.bakimxProduct.groupBy({
     by: ["categoryKey"],
-    where: { ...VISIBLE_PRODUCT, categoryKey: { not: null } },
+    where: { AND: [visibleProductFilter(vehicleTypeId)], categoryKey: { not: null } },
     _count: { _all: true },
   })
 

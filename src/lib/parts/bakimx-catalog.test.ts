@@ -2,6 +2,7 @@ import { describe, expect, it, mock } from "bun:test"
 import { Prisma } from "@prisma/client"
 
 import { bakimxProductSearchKeyMatches, buildBakimxProductSearchKey } from "./bakimx-search-key"
+import { normalizePartNo } from "./suggestions"
 
 /**
  * `bakimx_products` GLOBAL bir tablodur (workshopId yok) — her atölye aynı
@@ -51,12 +52,25 @@ const ROWS = [
     categoryKey: "aku",
     brandIsActive: false,
   }),
+  // Araca bağlı ürün: yalnız 42 numaralı araç tipinde görünmeli (BAK-46).
   row({
     id: "p-arac-bagli",
     name: "Akü 74Ah",
     brandName: "Varta",
     categoryKey: "aku",
     fitmentScope: "vehicle_linked",
+    fitmentVehicleTypeIds: [42],
+  }),
+  // Aynı araca eşli AMA markası pasif: araç eşleşmesi markayı geçersiz kılmamalı.
+  row({
+    id: "p-arac-bagli-pasif-marka",
+    name: "Akü 74Ah Pro",
+    brandName: "KapaliMarka",
+    brandId: "brand-kapali",
+    categoryKey: "aku",
+    brandIsActive: false,
+    fitmentScope: "vehicle_linked",
+    fitmentVehicleTypeIds: [42],
   }),
 ]
 
@@ -73,6 +87,8 @@ type RowInput = {
   isActive?: boolean
   brandIsActive?: boolean
   fitmentScope?: "universal" | "vehicle_linked"
+  /** `vehicle_linked` ürünün eşlendiği araç tipleri (BAK-46). */
+  fitmentVehicleTypeIds?: number[]
 }
 
 function row(input: RowInput) {
@@ -113,38 +129,69 @@ function row(input: RowInput) {
     createdAt: new Date("2026-08-01T00:00:00Z"),
     updatedAt: new Date("2026-08-01T00:00:00Z"),
     brandIsActive: input.brandIsActive ?? true,
+    fitmentVehicleTypeIds: input.fitmentVehicleTypeIds ?? [],
   }
 }
 
 type Row = ReturnType<typeof row>
 
-/** Sahte Prisma istemcisinin gördüğü argümanlar (yalnız bu uçların kullandığı alanlar). */
+/**
+ * Sahte Prisma istemcisinin gördüğü argümanlar (yalnız bu uçların kullandığı alanlar).
+ *
+ * `AND` / `OR` iç içe geçebilir: görünürlük süzgeci `AND` altında durur ve
+ * `vehicle_linked` dalı kendi `OR`'unu taşır (BAK-46), bu yüzden eşleştirici
+ * özyinelemeli olmak zorunda.
+ */
 type FakeWhere = {
   isActive?: boolean
   fitmentScope?: string
   brand?: { isActive?: boolean }
   brandId?: string
   categoryKey?: string | { not: null }
-  AND?: { searchKey: { contains: string } }[]
+  tecdocCategoryId?: number
+  id?: string
+  sku?: { in: string[] }
+  oemNumbers?: { hasSome: string[] }
+  searchKey?: { contains: string }
+  fitments?: { some: { vehicleTypeId: number } }
+  AND?: FakeWhere[]
+  OR?: FakeWhere[]
 }
 type FakeFindManyArgs = { where: FakeWhere; select: Record<string, true>; take: number }
 type FakeGroupByArgs = { where: FakeWhere }
 
+/** Tek `where` düğümünü bir satıra uygular — Prisma'nın yaptığı gibi özyinelemeli. */
+function matchesWhere(r: Row, where: FakeWhere): boolean {
+  if (where.isActive === true && !r.isActive) return false
+  if (where.fitmentScope && r.fitmentScope !== where.fitmentScope) return false
+  if (where.brand?.isActive === true && !r.brandIsActive) return false
+  if (where.brandId && r.brandId !== where.brandId) return false
+  if (where.id && r.id !== where.id) return false
+  if (where.tecdocCategoryId != null && r.tecdocCategoryId !== where.tecdocCategoryId) return false
+  if (typeof where.categoryKey === "object" && r.categoryKey == null) return false
+  if (typeof where.categoryKey === "string" && r.categoryKey !== where.categoryKey) return false
+  // `searchKey: { contains: term }` — DB'nin yaptığı alt-dize eşleşmesi.
+  if (where.searchKey && !r.searchKey.includes(where.searchKey.contains)) return false
+  // `sku` / `oemNumbers` kolonları DB'de normalize edilmiş hâlde tutulmaz;
+  // çağıran normalize edip sorar, bu yüzden karşılaştırma iki tarafta da normalize.
+  if (where.sku && !where.sku.in.some((n) => normalizePartNo(n) === normalizePartNo(r.sku))) return false
+  if (
+    where.oemNumbers &&
+    !where.oemNumbers.hasSome.some((n) =>
+      r.oemNumbers.some((oem) => normalizePartNo(oem) === normalizePartNo(n)),
+    )
+  ) {
+    return false
+  }
+  if (where.fitments && !r.fitmentVehicleTypeIds.includes(where.fitments.some.vehicleTypeId)) return false
+  if (where.AND && !where.AND.every((clause) => matchesWhere(r, clause))) return false
+  if (where.OR && !where.OR.some((clause) => matchesWhere(r, clause))) return false
+  return true
+}
+
 /** Prisma `where`'ini bellek içinde uygular — sorgunun süzgeci gerçekten test edilsin. */
 function applyWhere(where: FakeWhere): Row[] {
-  return ROWS.filter((r) => {
-    if (where.isActive === true && !r.isActive) return false
-    if (where.fitmentScope && r.fitmentScope !== where.fitmentScope) return false
-    if (where.brand?.isActive === true && !r.brandIsActive) return false
-    if (where.brandId && r.brandId !== where.brandId) return false
-    if (typeof where.categoryKey === "object" && r.categoryKey == null) return false
-    if (typeof where.categoryKey === "string" && r.categoryKey !== where.categoryKey) return false
-    for (const clause of where.AND ?? []) {
-      // `searchKey: { contains: term }` — DB'nin yaptığı alt-dize eşleşmesi.
-      if (!r.searchKey.includes(clause.searchKey.contains)) return false
-    }
-    return true
-  })
+  return ROWS.filter((r) => matchesWhere(r, where))
 }
 
 const lastFindMany: Partial<FakeFindManyArgs> = {}
@@ -177,6 +224,7 @@ const {
   BAKIMX_SEARCH_MAX_LIMIT,
   bakimxCategoryLabel,
   clampSearchLimit,
+  parseVehicleTypeIdParam,
   listBakimxCategories,
   matchBakimxProductsByPartNumbers,
   searchBakimxProducts,
@@ -246,7 +294,8 @@ describe("searchBakimxProducts", () => {
     const products = await searchBakimxProducts({ q: "aku" })
     expect(products.map((p) => p.id)).toEqual(["p-aku"])
     // Süzgeç gerçekten `searchKey` üzerinden gitti mi (ikinci bir katlama yok).
-    expect(lastFindMany.where?.AND).toEqual([{ searchKey: { contains: "aku" } }])
+    // `AND[0]` görünürlük süzgeci, terimler onun ardından gelir.
+    expect(lastFindMany.where?.AND?.slice(1)).toEqual([{ searchKey: { contains: "aku" } }])
   })
 
   it("terimler AND'lenir, sıradan bağımsız ('mutlu aku')", async () => {
@@ -272,11 +321,34 @@ describe("searchBakimxProducts", () => {
   it("pasif ürün, pasif marka ve araca bağlı ürün listelenmez", async () => {
     const ids = (await searchBakimxProducts({ q: "", limit: 50 })).map((p) => p.id)
     expect(ids).toEqual(["p-aku", "p-silecek", "p-yag"])
-    expect(lastFindMany.where).toMatchObject({
+    expect(lastFindMany.where?.AND?.[0]).toEqual({
       isActive: true,
       fitmentScope: "universal",
       brand: { isActive: true },
     })
+  })
+
+  it("araç verilince o araca eşlenmiş vehicle_linked ürün de listelenir (BAK-46)", async () => {
+    const ids = (await searchBakimxProducts({ q: "", limit: 50, vehicleTypeId: 42 })).map((p) => p.id)
+    expect(ids).toContain("p-arac-bagli")
+    // universal ürünler kaybolmadı — Faz 1 davranışı korunuyor.
+    expect(ids).toContain("p-aku")
+  })
+
+  it("BAŞKA araç verilince eşlenmemiş vehicle_linked ürün listelenmez", async () => {
+    const ids = (await searchBakimxProducts({ q: "", limit: 50, vehicleTypeId: 99 })).map((p) => p.id)
+    expect(ids).not.toContain("p-arac-bagli")
+    expect(ids).toEqual(["p-aku", "p-silecek", "p-yag"])
+  })
+
+  it("araçsız aramada vehicle_linked ürün hiç görünmez", async () => {
+    const ids = (await searchBakimxProducts({ q: "", limit: 50 })).map((p) => p.id)
+    expect(ids).not.toContain("p-arac-bagli")
+  })
+
+  it("pasif marka, araç eşleşse bile kapıyı açmaz", async () => {
+    const ids = (await searchBakimxProducts({ q: "", limit: 50, vehicleTypeId: 42 })).map((p) => p.id)
+    expect(ids).not.toContain("p-arac-bagli-pasif-marka")
   })
 
   it("boş sorgu kategoriye göre listeler (seçicide dala tıklama)", async () => {
@@ -286,6 +358,14 @@ describe("searchBakimxProducts", () => {
     expect((await searchBakimxProducts({ brandId: "brand-1", q: "yag" })).map((p) => p.id)).toEqual([
       "p-yag",
     ])
+  })
+
+  it("vehicleTypeId sorgu parametresi güvenilmez girdidir — bozuk değer null'a düşer", () => {
+    expect(parseVehicleTypeIdParam("42")).toBe(42)
+    // Bozuk/kötü niyetli girdi araca bağlı ürünleri AÇMAZ: null = yalnız universal.
+    for (const bad of [null, "", "abc", "0", "-1", "1.5", "42; DROP TABLE", "NaN", "Infinity"]) {
+      expect(parseVehicleTypeIdParam(bad)).toBeNull()
+    }
   })
 
   it("istemci sınırı sunucuda kırpılır", async () => {

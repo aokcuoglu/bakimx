@@ -445,3 +445,39 @@ export async function clearWorkshopFeatureOverride(
   revalidatePath("/admin", "layout")
   return { ok: true }
 }
+
+/** Atölyenin BakımX ürün iskontosunu ayarla (BAK-47). */
+export async function updateWorkshopBakimxDiscount(
+  workshopId: string,
+  discountBps: number,
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageWorkshops")
+  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
+  if (!Number.isInteger(discountBps) || discountBps < 0 || discountBps > 10000) {
+    return { ok: false, error: "İskonto 0-10000 bps aralığında olmalıdır." }
+  }
+
+  const workshop = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: { bakimxDiscountBps: true },
+  })
+  if (!workshop) return { ok: false, error: "İş yeri bulunamadı." }
+
+  const oldValue = workshop.bakimxDiscountBps
+  await prisma.workshop.update({
+    where: { id: workshopId },
+    data: { bakimxDiscountBps: discountBps },
+  })
+
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "Workshop",
+    workshopId,
+    "workshop_bakimx_discount_updated",
+    JSON.stringify({ beforeBps: oldValue, afterBps: discountBps }),
+  )
+
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
+  return { ok: true }
+}

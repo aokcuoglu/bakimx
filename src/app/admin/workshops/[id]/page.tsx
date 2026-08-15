@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
+import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ const ACTION_LABELS: Record<string, string> = {
   admin_extra_seats_set: "Ek koltuk ayarlandı",
   billing_order_confirmed: "Havale teyit edildi",
   billing_order_cancelled: "Sipariş iptal edildi",
+  workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
 }
 const ROLE_LABELS: Record<string, string> = { owner: "Sahip", manager: "Yönetici", staff: "Personel" }
 
@@ -192,6 +194,10 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
 
         <Section title="Özellik Bayrakları">
           <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
+        </Section>
+
+        <Section title="BakımX İskontosu">
+          <BakimxDiscountForm workshopId={workshop.id} currentDiscountBps={workshop.bakimxDiscountBps} />
         </Section>
 
         <Section title="Kullanım">
