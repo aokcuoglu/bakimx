@@ -241,11 +241,11 @@
   min-width: 20rem;
 }
 
-.cn-toast [class*="title"] {
+.cn-toast[data-sonner-toast][data-styled="true"] [data-title] {
   @apply font-semibold text-base text-foreground;
 }
 
-.cn-toast [class*="description"] {
+.cn-toast[data-sonner-toast][data-styled="true"] [data-description] {
   @apply text-sm text-foreground/85 leading-relaxed;
 }
 
@@ -253,7 +253,7 @@
   @apply size-6 rounded-md p-0 transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80;
 }
 
-.cn-toast [class*="action"] {
+.cn-toast[data-sonner-toast] [data-action] {
   @apply inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80;
 }
 
