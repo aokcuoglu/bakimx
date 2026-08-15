@@ -51,6 +51,7 @@ const PRODUCT_AUDIT_SELECT = {
   brandId: true,
   brandName: true,
   categoryKey: true,
+  tecdocCategoryId: true,
   barcode: true,
   unit: true,
   description: true,
@@ -81,6 +82,7 @@ function toWriteInput(input: {
   name: string
   brandId: string
   categoryKey: string
+  tecdocCategoryId: number | null
   barcode: string
   unit: string
   description: string
@@ -99,8 +101,8 @@ function toWriteInput(input: {
     sku: input.sku,
     name: input.name,
     brandId: input.brandId,
-    // Bilinmeyen kategori anahtarı sessizce kabul edilmez: taksonomi dışıysa boş kalır.
     categoryKey: isBakimxCategoryKey(input.categoryKey) ? input.categoryKey : null,
+    tecdocCategoryId: input.tecdocCategoryId,
     barcode: input.barcode || null,
     unit: input.unit || "adet",
     description: input.description || null,

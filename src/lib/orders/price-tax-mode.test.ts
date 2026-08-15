@@ -3,6 +3,8 @@ import {
   STANDARD_TAX_BPS,
   effectiveTaxBps,
   isPriceTaxMode,
+  readPriceTaxMode,
+  resolvePriceTaxMode,
   toDisplayPriceKurus,
   toDisplayPriceKurusOrNull,
   toStoredPriceKurus,
@@ -52,4 +54,15 @@ test("isPriceTaxMode yalnız bilinen kipleri kabul eder", () => {
   expect(isPriceTaxMode("excluded")).toBe(true)
   expect(isPriceTaxMode("dahil")).toBe(false)
   expect(isPriceTaxMode(null)).toBe(false)
+})
+
+test("yeni kullanıcıda KDV dahil kip varsayılandır", () => {
+  expect(resolvePriceTaxMode(null)).toBe("included")
+  expect(resolvePriceTaxMode("bozuk")).toBe("included")
+  expect(readPriceTaxMode()).toBe("included")
+})
+
+test("kullanıcının geçerli KDV tercihi korunur", () => {
+  expect(resolvePriceTaxMode("excluded")).toBe("excluded")
+  expect(resolvePriceTaxMode("included")).toBe("included")
 })

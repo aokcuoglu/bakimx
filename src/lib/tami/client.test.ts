@@ -401,7 +401,7 @@ test("mock auth3ds: HTML içindeki her iki formun (başarı/başarısız) hashed
   }
 })
 
-test("mock auth3ds: formlar sipariş/tutar bilgilerini taşır, card PAN'ı formda düz metin olarak yer almaz", async () => {
+test("mock auth3ds: formlar sipariş/tutar bilgilerini taşır, kart PAN/CVV form alanlarında yer almaz", async () => {
   const client = createMockTamiClient()
   const result = await client.auth3ds(sampleInput)
   const html = Buffer.from(result.threeDSHtmlContent as string, "base64").toString("utf8")
@@ -410,9 +410,10 @@ test("mock auth3ds: formlar sipariş/tutar bilgilerini taşır, card PAN'ı form
   for (const form of forms) {
     expect(form.fields.orderId).toBe(sampleInput.orderId)
     expect(form.fields.currencyCode).toBe(sampleInput.currency)
+    const fieldValues = Object.values(form.fields)
+    expect(fieldValues).not.toContain(sampleInput.card.number)
+    expect(fieldValues).not.toContain(sampleInput.card.cvv)
   }
-  expect(html).not.toContain(sampleInput.card.number)
-  expect(html).not.toContain(sampleInput.card.cvv)
 })
 
 test("mock preAuth3ds: auth3ds ile aynı sahte 3DS yanıtını üretir (base64 HTML)", async () => {

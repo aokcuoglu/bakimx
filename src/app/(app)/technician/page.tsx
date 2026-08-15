@@ -21,9 +21,11 @@ export default async function TechnicianPage({
   })
 
   // Seçili teknisyen URL'den gelir; atölyenin kendi listesine doğrulanır ve
-  // tanınmayan bir id ilk teknisyene düşer.
+  // tanınmayan bir id ilk teknisyene düşer. Önce giriş yapan kullanıcının bağlı
+  // teknisyeni kontrol edilir (BAK-39): bağlı ise URL parametresi kullanılmaz,
+  // bağlı değilse URL veya ilk teknisyen fallback'i uygulanır.
   const selectedTechnicianId = resolveSelectedTechnicianId(
-    params[TECHNICIAN_PARAM],
+    user.technicianId || params[TECHNICIAN_PARAM],
     technicians.map((t) => t.id)
   )
 

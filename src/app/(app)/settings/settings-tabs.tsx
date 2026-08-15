@@ -219,6 +219,8 @@ export function SettingsTabs({
               seatLimit={seatLimit}
               workshopName={workshop.name}
               loginCode={workshop.loginCode}
+              technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, isActive: t.isActive }))}
+              logoUrl={workshop.logoUrl || undefined}
             />
             <TechnicianManagement technicians={technicians} />
           </div>

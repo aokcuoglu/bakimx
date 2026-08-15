@@ -1,4 +1,5 @@
 import { z } from "zod/v4"
+import { isValidWorkshopCode } from "@/lib/workshop-code"
 
 const tier = z.enum(["starter", "pro", "premium"])
 const cycle = z.enum(["monthly", "yearly"])
@@ -32,6 +33,10 @@ export const checkoutPublicSchema = z.object({
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
   city: z.string().min(1, "Şehir zorunludur"),
   address: z.string().min(1, "Adres zorunludur"),
+  loginCode: z
+    .string()
+    .min(1, "İş yeri giriş kodu zorunludur")
+    .refine(isValidWorkshopCode, "İş yeri kodu geçersiz: 3-20 karakter, a-z, 0-9 ve tire (-) içermelidir"),
   kvkkConsent: z
     .union([z.literal("on"), z.literal("true"), z.boolean()])
     .refine((v) => v === true || v === "on" || v === "true", {

@@ -25,7 +25,7 @@ import { TecdocSearchResults } from "./tecdoc-search-results"
 import { VinLinkPrompt } from "./vin-link-prompt"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
-import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
+import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch, fetchBakimxProductsByTecdocCategory } from "@/lib/parts/bakimx-client"
 import { buildBakimxCategoryBranch, isBakimxNode } from "@/lib/parts/bakimx-tree"
 import type { ArticleSummary, CategoryMatch, CategoryNode } from "@/lib/tecdoc/types"
 import { CATEGORY_MATCH_LIMIT, searchCategoryTree } from "@/lib/tecdoc/tree"
@@ -125,6 +125,7 @@ export function TecdocPartPicker({
   // BakımX yaprağına girildiğinde dolan ürün listesi — `articles`'ın kardeşi;
   // ikisi aynı anda dolu OLMAZ (bir seferde tek yaprak açık).
   const [bakimxLeafProducts, setBakimxLeafProducts] = useState<BakimxProductSummary[] | null>(null)
+  const [categoryLinkedBakimxProducts, setCategoryLinkedBakimxProducts] = useState<BakimxProductSummary[] | null>(null)
   const [query, setQuery] = useState("")
   const [supplierFilter, setSupplierFilter] = useState<string>("")
   const [loading, setLoading] = useState(false)
@@ -208,6 +209,7 @@ export function TecdocPartPicker({
     setStack([])
     setArticles(null)
     setBakimxLeafProducts(null)
+    setCategoryLinkedBakimxProducts(null)
     setQuery("")
     setError("")
     setSearchResults(null)
@@ -282,10 +284,23 @@ export function TecdocPartPicker({
     setError("")
     setQuery("")
     try {
-      const res = await fetch(`/api/tecdoc/articles?vehicleId=${vehicleTypeId}&categoryId=${node.id}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Parçalar yüklenemedi.")
-      setArticles(data.articles as ArticleSummary[])
+      // TecDoc parçalarını ve kategoriyle bağlı BakımX ürünlerini paralel yükle
+      const [articlesRes, bakimxRes] = await Promise.all([
+        fetch(`/api/tecdoc/articles?vehicleId=${vehicleTypeId}&categoryId=${node.id}`),
+        fetchBakimxProductsByTecdocCategory(node.id),
+      ])
+
+      if (!articlesRes.ok) {
+        const articlesData = await articlesRes.json()
+        throw new Error(articlesData.error || "Parçalar yüklenemedi.")
+      }
+      const articlesData = await articlesRes.json()
+      setArticles(articlesData.articles as ArticleSummary[])
+
+      // BakımX ürünleri yüklenemezse devam et (kapı kapalıysa veya hata varsa)
+      if (bakimxRes.status === "ok") {
+        setCategoryLinkedBakimxProducts(bakimxRes.data)
+      }
     } catch (err) {
       setStack((s) => s.slice(0, -1))
       setError(err instanceof Error ? err.message : "Parçalar yüklenemedi.")
@@ -314,9 +329,10 @@ export function TecdocPartPicker({
 
   function goBack() {
     setError("")
-    if (articles || bakimxLeafProducts) {
+    if (articles || bakimxLeafProducts || categoryLinkedBakimxProducts) {
       setArticles(null)
       setBakimxLeafProducts(null)
+      setCategoryLinkedBakimxProducts(null)
       setQuery("")
       setSupplierFilter("") // yeni kategoride marka ön-filtresi taşınmasın
     }
@@ -330,6 +346,7 @@ export function TecdocPartPicker({
   function clearScope() {
     setArticles(null)
     setBakimxLeafProducts(null)
+    setCategoryLinkedBakimxProducts(null)
     setStack([])
     setSupplierFilter("")
     setError("")
@@ -376,6 +393,7 @@ export function TecdocPartPicker({
       setStack([])
       setArticles(null)
       setBakimxLeafProducts(null)
+      setCategoryLinkedBakimxProducts(null)
       setQuery("")
       setSupplierFilter("")
       setError("")
@@ -420,6 +438,19 @@ export function TecdocPartPicker({
         trIncludes(p.brandName, q),
     )
   }, [bakimxLeafProducts, query])
+
+  // Kategoriyle bağlı BakımX ürünlerini (TecDoc kategorisi açıldığında yüklenen) filtrele
+  const filteredCategoryLinkedBakimxProducts = useMemo(() => {
+    if (!categoryLinkedBakimxProducts) return null
+    const q = query.trim()
+    if (!q) return categoryLinkedBakimxProducts
+    return categoryLinkedBakimxProducts.filter(
+      (p) =>
+        partSearchIncludes(p.name, q) ||
+        partSearchIncludes(p.sku, q) ||
+        trIncludes(p.brandName, q),
+    )
+  }, [categoryLinkedBakimxProducts, query])
 
   // Kategori eşleşmeleri: gösterilen limitin ÜSTÜNDE bir tavanla arayıp keseriz ki
   // "+n kategori daha" notu gerçek toplamı verebilsin.
@@ -618,7 +649,7 @@ export function TecdocPartPicker({
               </div>
             )}
 
-            {!globalSearch && !loading && !error && filteredArticles && (
+            {!globalSearch && !loading && !error && (filteredArticles || filteredCategoryLinkedBakimxProducts) && (
               <div>
                 {supplierOptions.length > 1 && (
                   <div className="sticky top-0 z-10 bg-popover px-3 py-2 border-b">
@@ -637,7 +668,8 @@ export function TecdocPartPicker({
                     </Select>
                   </div>
                 )}
-                {filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => {
+                {/* TecDoc parçaları ve kategoriyle bağlı BakımX ürünlerini beraber göster (BAK-45) */}
+                {filteredArticles && filteredArticles.slice(0, MAX_VISIBLE_ARTICLES).map((a) => {
                   const cat = stack[stack.length - 1]
                   return (
                     <TecdocArticleRow
@@ -648,7 +680,10 @@ export function TecdocPartPicker({
                     />
                   )
                 })}
-                {filteredArticles.length === 0 && (
+                {filteredCategoryLinkedBakimxProducts && filteredCategoryLinkedBakimxProducts.map((p) => (
+                  <BakimxProductRow key={p.id} product={p} onSelect={() => selectBakimx(p)} />
+                ))}
+                {(!filteredArticles || filteredArticles.length === 0) && (!filteredCategoryLinkedBakimxProducts || filteredCategoryLinkedBakimxProducts.length === 0) && (
                   <div className="px-4 py-6 text-center text-sm text-muted-foreground space-y-2">
                     <p>{query ? "Aramanızla eşleşen parça yok." : "Bu kategoride araca uygun parça bulunamadı."}</p>
                     {query && (
@@ -658,9 +693,9 @@ export function TecdocPartPicker({
                     )}
                   </div>
                 )}
-                {filteredArticles.length > MAX_VISIBLE_ARTICLES && (
+                {filteredArticles && filteredArticles.length > MAX_VISIBLE_ARTICLES && (
                   <p className="px-4 py-3 text-center text-xs text-muted-foreground">
-                    İlk {MAX_VISIBLE_ARTICLES} parça gösteriliyor — daraltmak için arama kutusunu kullanın.
+                    İlk {MAX_VISIBLE_ARTICLES} parça gösteriliyor — daraltmak için arama kutosunu kullanın.
                   </p>
                 )}
               </div>

@@ -202,6 +202,7 @@ test("a realistic TR Excel export maps to two new products", () => {
     backorderable: false,
     leadTimeDays: 3,
     isActive: true,
+    tecdocCategoryId: null,
   })
 
   // Boş bırakılan kolonlar varsayılana düşer, hata üretmez.
@@ -251,6 +252,7 @@ test("an imported product gets the same searchKey as one typed into the admin fo
       backorderable: false,
       leadTimeDays: 3,
       isActive: true,
+      tecdocCategoryId: null,
     },
     BRAND.name,
   )
