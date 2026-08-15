@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { bakimxProductSearchTerms } from "./bakimx-search-key"
 import { normalizePartNo } from "./suggestions"
+import { resolveWorkshopPrice } from "./bakimx-price"
 
 /**
  * BakımX ürün kataloğunun ATÖLYE (okuma) tarafı — BAK-33.
@@ -70,6 +71,8 @@ export interface BakimxProductSummary {
   oemNumbers: string[]
   /** Atölyenin BakımX'ten ALIŞ fiyatı — KDV HARİÇ, kuruş. */
   workshopPriceKurus: number
+  /** Atölyenin iskontolu fiyatı — KDV HARİÇ, kuruş (BAK-47). */
+  displayPriceKurus: number
   /** `workshopPriceKurus` üzerine uygulanacak KDV oranı (bps; 2000 = %20). */
   vatRateBps: number
   currency: string
@@ -80,7 +83,10 @@ export interface BakimxProductSummary {
   leadTimeDays: number | null
 }
 
-export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProductSummary {
+export function toBakimxProductSummary(
+  row: BakimxProductSummaryRow,
+  discountBps: number = 0,
+): BakimxProductSummary {
   return {
     id: row.id,
     sku: row.sku,
@@ -95,6 +101,7 @@ export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProd
     imageUrl: row.imageUrl,
     oemNumbers: row.oemNumbers,
     workshopPriceKurus: row.workshopPriceKurus,
+    displayPriceKurus: resolveWorkshopPrice(row.workshopPriceKurus, discountBps),
     vatRateBps: row.vatRateBps,
     currency: row.currency,
     stockQty: row.stockQty,
@@ -105,6 +112,22 @@ export function toBakimxProductSummary(row: BakimxProductSummaryRow): BakimxProd
 
 export const BAKIMX_SEARCH_DEFAULT_LIMIT = 20
 export const BAKIMX_SEARCH_MAX_LIMIT = 50
+
+/**
+ * Atölyenin BakımX iskontosunu (bps) okur — BAK-47'nin TEK okuma noktası.
+ *
+ * İskonto İSTEMCİDEN GELMEZ: her okuma yolu atölye kaydından okur, böylece
+ * fiyat istemci tarafından manipüle edilemez. `workshopId` yoksa (atölye
+ * bağlamı olmayan çağrı) iskonto uygulanmaz.
+ */
+async function resolveWorkshopDiscountBps(workshopId?: string | null): Promise<number> {
+  if (!workshopId) return 0
+  const workshop = await prisma.workshop.findUnique({
+    where: { id: workshopId },
+    select: { bakimxDiscountBps: true },
+  })
+  return workshop?.bakimxDiscountBps ?? 0
+}
 
 /**
  * Atölyeye görünen ürünün koşulu — arama ve taksonomi AYNI filtreyi kullanmalı,
@@ -126,6 +149,7 @@ export interface BakimxProductSearchInput {
   brandId?: string | null
   categoryKey?: string | null
   limit?: number | null
+  workshopId?: string | null
 }
 
 /**
@@ -133,12 +157,16 @@ export interface BakimxProductSearchInput {
  * `normalizePartSearchTerm`'den geçtiği için "aku" → "Akü ..." bulunur (bkz.
  * bakimx-search-key.ts). Boş `q` meşrudur: parça seçicide bir kategoriye
  * tıklandığında o dalın tamamı listelenir.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatlarına uygular
+ * (BAK-47). Boşsa iskonto yoktur (0%).
  */
 export async function searchBakimxProducts(
   input: BakimxProductSearchInput = {},
 ): Promise<BakimxProductSummary[]> {
   const terms = bakimxProductSearchTerms(input.q ?? "")
   const limit = clampSearchLimit(input.limit)
+  const discountBps = await resolveWorkshopDiscountBps(input.workshopId)
 
   const rows = await prisma.bakimxProduct.findMany({
     where: {
@@ -152,19 +180,22 @@ export async function searchBakimxProducts(
     take: limit,
   })
 
-  return rows.map(toBakimxProductSummary)
+  return rows.map((row) => toBakimxProductSummary(row, discountBps))
 }
 
 /** TecDoc kategori köprüsüne bağlı, atölyeye görünür BakımX ürünleri (BAK-45). */
 export async function listBakimxProductsByTecdocCategory(
   tecdocCategoryId: number,
+  workshopId?: string | null,
 ): Promise<BakimxProductSummary[]> {
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
+
   const rows = await prisma.bakimxProduct.findMany({
     where: { ...VISIBLE_PRODUCT, tecdocCategoryId },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
     orderBy: [{ brandName: "asc" }, { name: "asc" }],
   })
-  return rows.map(toBakimxProductSummary)
+  return rows.map((row) => toBakimxProductSummary(row, discountBps))
 }
 
 /**
@@ -172,13 +203,20 @@ export async function listBakimxProductsByTecdocCategory(
  * kullanır. İstemcinin gönderdiği ad/fiyat/kategori GÜVENİLMEZ: kalem alanları
  * buradan dönen satırdan türetilir (bkz. bakimx-item.ts), böylece pasifleşmiş
  * ürün eklenemez ve fiyat istemciden uydurulamaz.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatına uygular (BAK-47).
  */
-export async function getVisibleBakimxProduct(id: string): Promise<BakimxProductSummary | null> {
+export async function getVisibleBakimxProduct(
+  id: string,
+  workshopId?: string | null,
+): Promise<BakimxProductSummary | null> {
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
+
   const row = await prisma.bakimxProduct.findFirst({
     where: { ...VISIBLE_PRODUCT, id },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
   })
-  return row ? toBakimxProductSummary(row) : null
+  return row ? toBakimxProductSummary(row, discountBps) : null
 }
 
 /** İstemci sınırı ÖNERİR, server kırpar (güvenilmez girdi). */
@@ -240,14 +278,19 @@ export function bakimxCategoryLabel(key: string): string {
  *
  * Yanıt `{ articleNo → BakimxProductSummary }` haritasıdır; eşleşmeyen
  * `articleNo` haritaya girmez.
+ *
+ * `workshopId` sağlanırsa, atölyenin BakımX iskontosunu ürün fiyatlarına uygular (BAK-47).
  */
 export async function matchBakimxProductsByPartNumbers(
   articleNumbers: string[],
+  workshopId?: string | null,
 ): Promise<Record<string, BakimxProductSummary>> {
   if (articleNumbers.length === 0) return {}
 
   const normalized = articleNumbers.map(normalizePartNo).filter(Boolean)
   if (normalized.length === 0) return {}
+
+  const discountBps = await resolveWorkshopDiscountBps(workshopId)
 
   const rows = await prisma.bakimxProduct.findMany({
     where: {
@@ -262,7 +305,7 @@ export async function matchBakimxProductsByPartNumbers(
 
   const result: Record<string, BakimxProductSummary> = {}
   for (const row of rows) {
-    const product = toBakimxProductSummary(row)
+    const product = toBakimxProductSummary(row, discountBps)
     const match = articleNumbers.find((no) => {
       const noNorm = normalizePartNo(no)
       if (noNorm === normalizePartNo(row.sku)) return true

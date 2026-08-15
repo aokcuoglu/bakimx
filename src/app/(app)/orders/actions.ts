@@ -144,7 +144,7 @@ export async function addOrderItemAction(formData: FormData) {
       "bakimxCatalog",
     )
     if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
-    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId)
+    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId, workshop.id)
     if (!product) return { error: "BakımX ürünü bulunamadı veya yayından kaldırılmış" }
     bakimxFields = bakimxLineItemFields(product)
   }

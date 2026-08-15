@@ -97,6 +97,11 @@ type FakeFindManyArgs = {
 
 mock.module("@/lib/db", () => ({
   prisma: {
+    // BAK-47: fiyat yolu atölyenin iskontosunu buradan okur. Bu paketteki
+    // testler iskontosuz atölyeyle çalışır — fiyat beklentileri liste fiyatıdır.
+    workshop: {
+      findUnique: async () => ({ bakimxDiscountBps: 0 }),
+    },
     bakimxProduct: {
       findMany: async (args: FakeFindManyArgs) => {
         const terms = (args.where.AND ?? []).map((clause) => clause.searchKey.contains)

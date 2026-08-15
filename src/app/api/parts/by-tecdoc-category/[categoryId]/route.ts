@@ -26,7 +26,7 @@ export async function GET(
   }
 
   try {
-    const products = await listBakimxProductsByTecdocCategory(id)
+    const products = await listBakimxProductsByTecdocCategory(id, guard.workshopId)
     return NextResponse.json({ products })
   } catch (err) {
     return tecdocErrorResponse(err)

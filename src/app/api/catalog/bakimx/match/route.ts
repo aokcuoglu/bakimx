@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const matches = await matchBakimxProductsByPartNumbers(articleNumbers)
+    const matches = await matchBakimxProductsByPartNumbers(articleNumbers, guard.workshopId)
     return NextResponse.json({ matches })
   } catch (err) {
     console.error("[bakimx-catalog/match]", err instanceof Error ? err.message : err)

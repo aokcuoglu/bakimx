@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
+import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
 
 export const dynamic = "force-dynamic"
 
@@ -192,6 +193,10 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
 
         <Section title="Özellik Bayrakları">
           <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
+        </Section>
+
+        <Section title="BakımX İskontosu">
+          <BakimxDiscountForm workshopId={workshop.id} currentDiscountBps={workshop.bakimxDiscountBps} />
         </Section>
 
         <Section title="Kullanım">
