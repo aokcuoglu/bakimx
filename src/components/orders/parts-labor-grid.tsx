@@ -201,9 +201,9 @@ export function PartsLaborEditor({
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
 
-  // Fiyat kipi (#311). Sunucuda ve ilk render'da HER ZAMAN "excluded" —
+  // Fiyat kipi (#311/#53). Sunucuda ve ilk render'da HER ZAMAN "included" —
   // localStorage yalnız mount sonrası okunur, yoksa hidrasyon uyuşmazlığı olur.
-  const [priceMode, setPriceMode] = useState<PriceTaxMode>("excluded")
+  const [priceMode, setPriceMode] = useState<PriceTaxMode>("included")
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPriceMode(readPriceTaxMode())
