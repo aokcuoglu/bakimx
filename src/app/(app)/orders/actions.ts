@@ -87,7 +87,6 @@ export async function addOrderItemAction(formData: FormData) {
     categoryId: formData.get("categoryId") as string,
     source: formData.get("source") as string,
     bakimxProductId: formData.get("bakimxProductId") as string,
-    includeVat: formData.get("includeVat") as string,
   }
 
   const parsed = orderItemCreateSchema.safeParse({
@@ -106,7 +105,6 @@ export async function addOrderItemAction(formData: FormData) {
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
     source: raw.source || undefined,
     bakimxProductId: raw.bakimxProductId || undefined,
-    includeVat: raw.includeVat ? raw.includeVat === "true" : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -190,7 +188,6 @@ export async function addOrderItemAction(formData: FormData) {
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
           purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
           source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
-          includeVat: parsed.data.includeVat ?? true,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
@@ -658,7 +655,6 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     tecdocArticleId: has("tecdocArticleId")
       ? ((formData.get("tecdocArticleId") as string) === "" ? null : Number(formData.get("tecdocArticleId")))
       : undefined,
-    includeVat: has("includeVat") ? formData.get("includeVat") === "true" : undefined,
   }
 
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
@@ -706,7 +702,6 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     categoryId?: number | null
     tecdocArticleId?: number | null
     totalPrice?: number | null
-    includeVat?: boolean
   } = {}
   if (parsed.data.name !== undefined) data.name = parsed.data.name
   if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
@@ -718,7 +713,6 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
   if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
-  if (parsed.data.includeVat !== undefined) data.includeVat = parsed.data.includeVat
 
   // Miktar veya birim fiyat değiştiyse, tekliften kopyalanmış olabilecek bayat
   // totalPrice satır totalini/genel toplamı yanlış gösterir — null'a çekip

@@ -152,7 +152,7 @@ function emptyDraft(type: ItemType, source: DraftSource): Row {
   return {
     id: "composer", type, name: "", sku: null, unit: "adet",
     quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
-    source, includeVat: true,
+    source,
   }
 }
 
@@ -223,6 +223,9 @@ export function PartsLaborEditor({
   )
 
   const headCls = "text-xs font-medium uppercase tracking-wide text-muted-foreground"
+  const taxNote = priceTax.mode === "included"
+    ? <span className="block text-[10px] font-normal normal-case tracking-normal">KDV dahil</span>
+    : null
 
   return (
     <PriceTaxContext.Provider value={priceTax}>
@@ -284,7 +287,6 @@ export function PartsLaborEditor({
             <col className="w-40" />{/* Tür */}
             <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
             <col className="w-24" />{/* Miktar */}
-            <col className="w-20" />{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
             <col className="w-12" />{/* Sil */}
@@ -294,11 +296,10 @@ export function PartsLaborEditor({
               <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
-              <TableHead className={cn(headCls, "text-center")}>KDV</TableHead>
               {/* KDV dahil kipinde başlık ikinci satıra not düşer: tek satıra
                   eklenen "(KDV dahil)" iki dar kolonda taşıp birbirine giriyordu. */}
-              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat</TableHead>
-              <TableHead className={cn(headCls, "text-right")}>Toplam</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Birim Fiyat{taxNote}</TableHead>
+              <TableHead className={cn(headCls, "text-right")}>Toplam{taxNote}</TableHead>
               <TableHead className={cn(headCls, "text-right")}><span className="sr-only">İşlem</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -489,7 +490,6 @@ export function PartsLaborGrid({
     if (draft.brand) fd.set("brand", draft.brand)
     if (draft.category) fd.set("category", draft.category)
     if (draft.categoryId != null) fd.set("categoryId", String(draft.categoryId))
-    if (draft.includeVat !== undefined) fd.set("includeVat", String(draft.includeVat))
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
@@ -541,7 +541,6 @@ export function PartsLaborGrid({
         fd.set("tecdocArticleId", patch.tecdocArticleId != null ? String(patch.tecdocArticleId) : "")
       if (patch.name !== undefined) fd.set("name", patch.name)
       if (patch.unit !== undefined) fd.set("unit", patch.unit ?? "")
-      if (patch.includeVat !== undefined) fd.set("includeVat", String(patch.includeVat))
       try {
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
@@ -1198,11 +1197,13 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // #311 — saklanan tutar NET'tir; KDV dahil kipinde kullanıcı KDV'li tutarı
   // görür ve KDV'li yazar. Çevrim tek yönde burada kapanır: gösterimde net→brüt,
   // commit'te brüt→net.
-  // Per-row VAT: satırın includeVat bayrağı KDV dahil/hariç kipi belirler.
+  // KDV kipi BELGE düzeyinde tektir (BAK-55): satır başına `includeVat` yalnız
+  // GÖRÜNÜMÜ değiştiriyor, hiçbir toplama girmiyordu — KDV'li gösterilen satır
+  // tutarı Genel Toplam'da karşılığını bulmuyordu. Gösterim üstteki "Tutarlar KDV
+  // dahil" anahtarından, hesap belgenin `taxRate`'inden gelir.
   const { mode: priceMode, taxBps } = usePriceTax()
-  const rowPriceMode: PriceTaxMode = (row.includeVat ?? true) ? "included" : "excluded"
-  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, rowPriceMode, taxBps)
-  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, rowPriceMode, taxBps)
+  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, priceMode, taxBps)
+  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, priceMode, taxBps)
 
   function startPrice() { setPriceDraft(displayUnitPrice != null ? String(kurusToLira(displayUnitPrice)) : ""); setEditingPrice(true) }
   function commitPrice() {
@@ -1768,21 +1769,6 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
         </div>
       </TableCell>
 
-      {/* KDV Checkbox */}
-      <TableCell className="py-3.5">
-        <div className="flex justify-center">
-          {ed.editable && row.unitPrice != null ? (
-            <Checkbox
-              checked={row.includeVat ?? true}
-              onCheckedChange={(checked) => onCell(row, { includeVat: checked as boolean })}
-              className="h-5 w-5"
-            />
-          ) : (
-            <span className="text-xs text-muted-foreground">{(row.includeVat ?? true) ? "✓" : "—"}</span>
-          )}
-        </div>
-      </TableCell>
-
       {/* Birim Fiyat */}
       <TableCell className="py-3.5">
         <div className="flex justify-end">
@@ -1863,16 +1849,9 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         </div>
       )}
 
-      {/* Fiş satırı: Miktar · KDV · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
+      {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
       <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
-        {ed.editable && row.unitPrice != null && (
-          <Checkbox
-            checked={row.includeVat ?? true}
-            onCheckedChange={(checked) => onCell(row, { includeVat: checked as boolean })}
-            className="h-4 w-4 ml-auto"
-          />
-        )}
         <div className="ml-auto flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             <PriceField row={row} ed={ed} />

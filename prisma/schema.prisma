@@ -902,7 +902,9 @@ model ServiceOrderItem {
   completionNote     String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
   photos             VehiclePhoto[]
-  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
+  // KULLANILMIYOR (BAK-55): satır başına KDV kipi hiçbir toplama girmiyordu —
+  // KDV tek noktada, belgenin `taxRate`'i ile eklenir (src/lib/totals.ts). Kolon
+  // yalnız veri kaybı olmasın diye duruyor; ayrı bir migration ile düşürülebilir.
   includeVat         Boolean          @default(true)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
