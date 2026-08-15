@@ -74,3 +74,25 @@ export function bakimxStockLabel(product: BakimxProductSummary): string {
   }
   return "Stokta yok"
 }
+
+/**
+ * BakımX ürününün araç uyumluluğunu kontrol et (BAK-46).
+ * Ürün `vehicle_linked` ise, sağlanan araç tipi ürüne eşlenmiş olmalı.
+ * `fitmentScope = universal` ürünler her zaman uyumlu.
+ * Sunucu tarafı güvenlik kontrolü: istemcinin gönderdiği araç tipi değil,
+ * sipariş/teklif kaydından okunur.
+ */
+export async function validateBakimxProductFitment(
+  productId: string,
+  vehicleTypeId: number | null,
+): Promise<boolean> {
+  if (!vehicleTypeId) return true
+  const { prisma } = await import("@/lib/db")
+  const product = await prisma.bakimxProduct.findUnique({
+    where: { id: productId },
+    select: { fitmentScope: true, fitments: { select: { vehicleTypeId: true } } },
+  })
+  if (!product) return false
+  if (product.fitmentScope === "universal") return true
+  return product.fitments.some((f) => f.vehicleTypeId === vehicleTypeId)
+}

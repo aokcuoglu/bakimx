@@ -31,6 +31,7 @@ import { BAKIMX_CATEGORIES, parseOemNumbers } from "@/lib/catalog/bakimx-catalog
 import { bpsToPercent, formatKurus, grossFromNetKurus, kurusToLira, liraToKurus, percentToBps } from "@/lib/money"
 import { createBakimxProductAction, updateBakimxProductAction } from "@/app/admin/catalog/actions"
 import type { CatalogBrandOption } from "@/app/admin/catalog/data"
+import { VehicleTypeSelector } from "@/components/catalog/vehicle-type-selector"
 
 export interface CatalogProductFormData {
   id: string
@@ -52,6 +53,13 @@ export interface CatalogProductFormData {
   backorderable: boolean
   leadTimeDays: number | null
   isActive: boolean
+  fitmentScope: "universal" | "vehicle_linked"
+  vehicleTypeIds: number[]
+}
+
+interface TecdocCategory {
+  id: number
+  name: string
 }
 
 interface TecdocCategory {
@@ -82,6 +90,8 @@ function toDefaults(product?: CatalogProductFormData): BakimxProductFormValues {
     backorderable: product?.backorderable ?? false,
     leadTimeDays: product?.leadTimeDays != null ? String(product.leadTimeDays) : "",
     isActive: product?.isActive ?? true,
+    fitmentScope: product?.fitmentScope ?? "universal",
+    vehicleTypeIds: product?.vehicleTypeIds ?? [],
   }
 }
 
@@ -151,6 +161,8 @@ export function CatalogProductForm({
       backorderable: values.backorderable,
       leadTimeDays: leadTimeDays == null ? null : Math.trunc(leadTimeDays),
       isActive: values.isActive,
+      fitmentScope: values.fitmentScope,
+      vehicleTypeIds: values.vehicleTypeIds,
     }
 
     startTransition(async () => {
@@ -537,6 +549,52 @@ export function CatalogProductForm({
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Araç kapsamı (BAK-46)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <FormField
+              control={form.control}
+              name="fitmentScope"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kapsam</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="universal">Tüm araçlar (varsayılan)</SelectItem>
+                        <SelectItem value="vehicle_linked">Seçili araçlar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    "Tüm araçlar": her araçta görünür. "Seçili araçlar": yalnız eşlenmiş araçlarda.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch("fitmentScope") === "vehicle_linked" && (
+              <div className="space-y-2">
+                <VehicleTypeSelector
+                  selectedIds={form.watch("vehicleTypeIds")}
+                  onChange={(ids) => form.setValue("vehicleTypeIds", ids)}
+                />
+                {form.watch("vehicleTypeIds").length === 0 && (
+                  <p className="text-sm text-destructive-strong">
+                    ⚠️ Hiçbir araç seçilmedi. Ürün kaydedilirse hiçbir yerde görünmez.
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
