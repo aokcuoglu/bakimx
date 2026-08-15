@@ -793,6 +793,21 @@ export function WorkOrderDetail({
           zaten header'da; burada yalnız header'da olmayan tutarlar). */}
       {order.totals.hasAnyPrice && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
+          {/* İndirim/KDV varken Genel Toplam kalem tutarlarına EŞİT DEĞİLDİR:
+              yalnız sonuç gösterilince (ör. ₺400'lük tek kalem → ₺240) rakam
+              hatalı sanılıyordu (BAK-55). Zincir hep görünür: ara toplam →
+              indirim → KDV → genel toplam. Fark yoksa şerit eskisi gibi sade. */}
+          {order.totals.discountAmount > 0 || order.totals.taxAmount > 0 ? (
+            <>
+              <span className="text-muted-foreground">Ara Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.subtotal)}</span></span>
+              {order.totals.discountAmount > 0 && (
+                <span className="text-muted-foreground">İndirim: <span className="font-semibold text-foreground">−{formatTRY(order.totals.discountAmount)}</span></span>
+              )}
+              {order.totals.taxAmount > 0 && (
+                <span className="text-muted-foreground">KDV{order.taxRate ? ` (%${bpsToPercent(order.taxRate)})` : ""}: <span className="font-semibold text-foreground">{formatTRY(order.totals.taxAmount)}</span></span>
+              )}
+            </>
+          ) : null}
           <span className="text-muted-foreground">Genel Toplam: <span className="font-semibold text-foreground">{formatTRY(order.totals.grandTotal)}</span></span>
           <span className="text-muted-foreground">Ödenen: <span className="font-semibold text-success-strong">{formatTRY(order.paidAmount)}</span></span>
           <span className="text-muted-foreground">Kalan: <span className={`font-semibold ${order.remainingAmount > 0 ? "text-destructive-strong" : "text-success-strong"}`}>{formatTRY(order.remainingAmount)}</span></span>
@@ -1514,10 +1529,23 @@ function MobileTotalsBar({
       aria-label="Fiyatlandırma özetine git"
       className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex w-full items-center justify-between rounded-xl border border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur touch-manipulation md:hidden"
     >
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Calculator className="size-4" />
-        Genel Toplam
-        <span className="text-xs text-muted-foreground/70">· {itemCount} kalem</span>
+      <span className="flex min-w-0 flex-col items-start gap-0.5">
+        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calculator className="size-4" />
+          Genel Toplam
+          <span className="text-xs text-muted-foreground/70">· {itemCount} kalem</span>
+        </span>
+        {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
+            (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
+        {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
+          <span className="truncate text-[11px] text-muted-foreground/70">
+            {[
+              `Ara toplam ${formatTRY(totals.subtotal)}`,
+              totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,
+              totals.taxAmount > 0 ? `KDV ${formatTRY(totals.taxAmount)}` : null,
+            ].filter(Boolean).join(" · ")}
+          </span>
+        )}
       </span>
       <span className="text-base font-bold tabular-nums text-foreground">{formatTRY(totals.grandTotal)}</span>
     </button>
