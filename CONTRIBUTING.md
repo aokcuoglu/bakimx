@@ -5,7 +5,7 @@ BakımX özel (private) bir üründür. Bu rehber, tutarlı ve gözden geçirile
 ## Dallanma modeli
 - `feature/*` — tüm geliştirme burada başlar, `dev`'e PR açılır.
 - `dev` — entegrasyon dalı. Her push otomatik **app-dev.bakimx.com**'a (AWS) deploy olur.
-- `main` — üretim aynası. Yalnızca app-dev'de doğrulanmış sürümler. `main`'e merge edildiğinde **prod**'a (Contabo) deploy olur.
+- `main` — üretim aynası. Yalnızca app-dev'de doğrulanmış sürümler. `main`'e merge edildiğinde **prod**'a (app.bakimx.com, AWS ECS) deploy olur.
 
 Tam akış için [docs/releasing.md](./docs/releasing.md).
 
@@ -18,16 +18,19 @@ Conventional Commits kullanılır: `feat:`, `fix:`, `refactor:`, `docs:`, `chore
 - Sunucu tarafında girdi doğrulaması (Zod).
 - Mobil-öncelikli UX.
 - Şema değişikliği migration etkisi açıklanmadan yapılmaz.
-- Yerel geliştirmede Docker kullanılmaz (Docker yalnızca VPS/prod).
-Detay: [CLAUDE.md](./CLAUDE.md) ve [AGENTS.md](./AGENTS.md).
+- Uygulama yerelde Docker'da çalışmaz (`bun run dev`); yalnız Postgres/MinIO `docker-compose.local.yml` ile ayağa kalkar. Docker imajı üretim içindir (CI'da build, AWS ECS'te çalışır).
+Detay: [CLAUDE.md](./CLAUDE.md), [AGENTS.md](./AGENTS.md) ve [docs/agent-workflows/repo-guardrails.md](./docs/agent-workflows/repo-guardrails.md).
 
 ## PR'dan önce
+CI'ın koştuğu kapının aynısı ([`quality.yml`](./.github/workflows/quality.yml)):
 ```bash
-bun run lint
+bun test
+bun run lint       # sıfır hata
 bun run typecheck
 bun run build      # önemli değişikliklerde
 bunx prisma validate
 ```
+PR'daki yeşil tik yalnız head commit'i kanıtlar; merge öncesi `origin/dev`'i dalına alıp kapıyı tekrar koştur.
 
 ## Sürüm kesme
 1. `feature/*` → `dev` merge, app-dev yeşil + smoke test.

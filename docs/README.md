@@ -9,6 +9,14 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 | Yapılandırma & ortam değişkenleri | [configuration.md](./configuration.md) |
 | Veritabanı, migration & yedekleme | [database.md](./database.md) |
 | Dallanma, deploy & sürüm çıkarma | [releasing.md](./releasing.md) |
+| UI kontrol boyutları | [ui-control-sizing.md](./ui-control-sizing.md) |
+
+## Ajan akışları
+
+| Konu | Doküman |
+|---|---|
+| GitHub issue teslimat sözleşmesi | [agent-workflows/issue-delivery.md](./agent-workflows/issue-delivery.md) |
+| Repo tuzakları — birikimden çıkan kurallar | [agent-workflows/repo-guardrails.md](./agent-workflows/repo-guardrails.md) |
 
 ## Altyapı
 
