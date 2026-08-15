@@ -37,6 +37,40 @@ env:
   ROLE_ARN: arn:aws:iam::292398627626:role/bakimx-dev-gha-deploy
 
 jobs:
+  # PR-origin gate — a commit that never went through a pull request must not ship to
+  # the shared dev environment. `dev` is unprotected on this plan (branch protection
+  # + rulesets both 403; GitHub Pro declined for budget on 2026-08-15, BAK-57), so a
+  # direct push is possible AND auto-deploys. The recent first-parent history confirms
+  # merged PRs are the normal dev workflow; silently shipping a direct push is not.
+  # This does NOT protect the branch: the commit is still on dev. It stops that commit
+  # from being SHIPPED. Approved by alpkaan on 2026-08-15 (BAK-62).
+  #
+  # The `if` is on the STEP, not the job: a job-level `if` would mark this job
+  # `skipped` on workflow_dispatch, and `deploy` — which needs it — would be skipped
+  # with it. Here the job just runs zero steps and goes green in seconds.
+  # That is the deliberate hotfix escape hatch: an approved direct push can still be
+  # shipped by hand (Actions → this workflow → Run workflow), which leaves a trail.
+  pr-origin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Did this commit come from a pull request?
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null) | .number] | first // empty')
+          if [ -z "$PR" ]; then
+            echo "::error::${GITHUB_SHA} PR'sız dev'e girdi — dev deploy durduruldu. Bilinçli bir hotfix ise: Actions → Deploy to AWS dev → Run workflow."
+            exit 1
+          fi
+          echo "Commit came from PR #${PR} — proceeding."
+
   # Quality gate. `quality` otherwise only runs on pull_request, which means a direct
   # push to dev — or a merge whose result nobody revalidated — reached this environment
   # with no test/lint/typecheck/build at all. Branch protection would normally cover
@@ -47,7 +81,7 @@ jobs:
     uses: ./.github/workflows/quality.yml
 
   deploy:
-    needs: quality
+    needs: [pr-origin, quality]
     # Native ARM64 runner → Fargate task runtimePlatform is ARM64 (Graviton), so the image
     # must be arm64. Native build avoids QEMU emulation. If arm64 hosted runners are not
     # available on your GitHub plan, switch to `ubuntu-latest` and add
