@@ -37,6 +37,23 @@ export type MinimalLineItem = {
   includeVat?: boolean | null
 }
 
+/**
+ * Toplam hesaplayan HER Prisma sorgusunun kalem `select`'i — tek kaynak (BAK-53).
+ *
+ * `includeVat` burada olmak ZORUNDA: düşerse Prisma alanı hiç döndürmez,
+ * `isVatLiable` `undefined` görüp satırı TABİ sayar ve KDV muaf kalemden de
+ * alınır. Ekrandaki iş emri (tam nesneyle okur) doğru, kasa/rapor yanlış çıkar —
+ * yani hata sessizdir ve iki yüzey birbirini tutmaz. Elle alan sıralamak yerine
+ * bu sabiti kullan; `order-totals-select.test.ts` bunu tarayarak zorluyor.
+ */
+export const ORDER_TOTALS_ITEM_SELECT = {
+  totalPrice: true,
+  unitPrice: true,
+  quantity: true,
+  type: true,
+  includeVat: true,
+} as const
+
 /** Satır KDV'ye tabi mi — tek karar noktası, `null`/`undefined` tabi sayılır. */
 export function isVatLiable(item: { includeVat?: boolean | null }): boolean {
   return item.includeVat !== false

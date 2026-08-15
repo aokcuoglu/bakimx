@@ -1,3 +1,4 @@
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
@@ -28,7 +29,7 @@ export default async function CustomerDetailPage({
           vehicle: true,
           order: {
             include: {
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+              items: { select: ORDER_TOTALS_ITEM_SELECT },
               collections: {
                 where: { status: "completed" },
                 select: { id: true, amount: true, method: true, paymentDate: true, referenceNo: true, note: true },
