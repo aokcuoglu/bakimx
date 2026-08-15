@@ -19,11 +19,30 @@ const MANUAL_DIALOG = readFileSync(
  */
 
 test("yazılan fiyat kalıcılaşmadan önce KDV kipinden geçer", () => {
-  expect(GRID).toContain("toStoredPriceKurus(liraToKurus(lira)")
+  // Grid'in fiyat alanı düz metin girdisidir (bkz. aşağıdaki test): kullanıcının
+  // yazdığı dize `parseTRYToKurus` ile kuruşa çevrilir, sonra KDV kipinden geçer.
+  expect(GRID).toContain("toStoredPriceKurus(entered")
   expect(MANUAL_DIALOG).toContain("toStoredPriceKurus(liraToKurus(lira)")
-  // Ham lira→kuruş çevrimi doğrudan bir kalem fiyatına yazılmamalı.
+  // Ham lira/dize→kuruş çevrimi doğrudan bir kalem fiyatına yazılmamalı.
   expect(GRID).not.toMatch(/unitPrice:\s*liraToKurus\(/)
+  expect(GRID).not.toMatch(/unitPrice:\s*parseTRYToKurus\(/)
   expect(MANUAL_DIALOG).not.toMatch(/unitPrice\s*=\s*[^\n]*\?\s*liraToKurus\(/)
+})
+
+/**
+ * BAK-53 geri bildirimi — Birim Fiyat alanı `type="number"` DEĞİL.
+ *
+ * Sayı girdisi dar hücrede tarayıcı oklarını basıyor, tekerlek/ok tuşuyla fiyatı
+ * kazara değiştiriyor ve Türkçe klavyeyle yazılan "120,50" tarayıcı tarafından
+ * geçersiz sayılıp `value` olarak BOŞ dizeye düşüyordu — yani kuruşlu fiyat
+ * sessizce kaybediliyordu. Alan düz `Input` + `parseTRYToKurus` ile çalışır.
+ */
+test("Birim Fiyat alanı sayı girdisi değil, virgüllü girişi okuyan metin alanıdır", () => {
+  const priceField = GRID.slice(GRID.indexOf("function PriceField("), GRID.indexOf("function TotalField("))
+  expect(priceField).toContain('data-slot="price-field"')
+  expect(priceField).toContain('inputMode="decimal"')
+  expect(priceField).not.toContain('type="number"')
+  expect(GRID).toContain("parseTRYToKurus(priceDraft)")
 })
 
 test("birim fiyat ve satır toplamı gösterim çevriminden okunur", () => {

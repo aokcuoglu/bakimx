@@ -5,6 +5,7 @@ import {
   isPriceTaxMode,
   readPriceTaxMode,
   resolvePriceTaxMode,
+  rowsToMakeVatLiable,
   toDisplayPriceKurus,
   toDisplayPriceKurusOrNull,
   toStoredPriceKurus,
@@ -65,4 +66,28 @@ test("yeni kullanıcıda KDV dahil kip varsayılandır", () => {
 test("kullanıcının geçerli KDV tercihi korunur", () => {
   expect(resolvePriceTaxMode("excluded")).toBe("excluded")
   expect(resolvePriceTaxMode("included")).toBe("included")
+})
+
+// ── "Tutarlar KDV dahil" kutusunun satır KDV işaretlerine etkisi (BAK-53) ────
+
+test("kutu işaretlenince muaf bırakılmış satırlar tabi hale gelir", () => {
+  const rows = [
+    { id: "a", includeVat: true },
+    { id: "b", includeVat: false },
+    { id: "c", includeVat: undefined },
+    { id: "d", includeVat: false },
+  ]
+  // Yalnız muaf olanlar yazılır: zaten tabi satıra boş PATCH atılmaz.
+  expect(rowsToMakeVatLiable(rows, true)).toEqual(["b", "d"])
+})
+
+test("işaret kalkarken hiçbir satır muaf yapılmaz", () => {
+  const rows = [{ id: "a", includeVat: true }, { id: "b", includeVat: false }]
+  // "KDV hariç" kip net giriş/gösterim demektir; belgenin KDV'sini kaldırmaz.
+  expect(rowsToMakeVatLiable(rows, false)).toEqual([])
+})
+
+test("yazılacak satır yoksa liste boştur", () => {
+  expect(rowsToMakeVatLiable([], true)).toEqual([])
+  expect(rowsToMakeVatLiable([{ id: "a", includeVat: true }], true)).toEqual([])
 })
