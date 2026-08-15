@@ -89,6 +89,21 @@ dosyalarıydı, bir doküman filtresi tam da yakalaması gereken sınıfı kaç�
 Ayrıca `push` olayında workflow'un **pushlanan commit'teki** sürümü çalışır, yani
 guard'ı aynı doğrudan push'ta silen biri yakalanmaz.
 
+### 2.4 PR'sız commit prod'a çıkamaz
+
+Alarm haber verir, kapı durdurur:
+[`deploy-prod-aws.yml`](../../.github/workflows/deploy-prod-aws.yml) içindeki
+`pr-origin` job'ı, `deploy`'un `needs`'inde. `main`'e gelen commit bir merged PR'a
+bağlı değilse prod deploy **başlamadan düşer** (alpkaan onayı, 2026-08-15).
+
+Bu da dalı korumaz — commit `main`'de kalır, yalnız ship edilmez. Ve bilinçli bir
+kaçış yolu var: `if` job seviyesinde değil **adım** seviyesindedir, yani
+`workflow_dispatch` ile elle çalıştırıldığında job sıfır adımla yeşil geçer.
+Gerçek bir hotfix'te prod'a çıkmanın hiçbir yolunun kalmaması kapının kendisinden
+büyük risk; elle çalıştırma zaten iz bırakır (kim başlattı Actions'ta görünür) ve
+`main-push-guard` yine kırmızıdır. `if`'i job seviyesine taşıma: o zaman dispatch
+sırasında job *skipped* olur ve ona bağlı `deploy` da atlanır.
+
 ## 3. Şema ve onu kullanan kod aynı PR'da gider
 
 Yeni bir Prisma modeli/alanı kullanan kod, `prisma/schema.prisma` değişikliği ve
