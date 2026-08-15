@@ -58,25 +58,31 @@ export function toDisplayPriceKurusOrNull(
 }
 
 /**
- * "Tutarlar KDV dahil" kutusu değiştiğinde KDV'ye tabi hale getirilecek
- * satırların kimlikleri (BAK-53 geri bildirimi).
- *
- * Kutu İŞARETLENİNCE muaf bırakılmış satırlar geri tabi olur: kullanıcı bu
- * kutuyla belgenin tamamını kastediyor, tek tek verilmiş muafiyetlerin sessizce
- * ayakta kalmasını değil. KDV matrahı satır bayraklarından kurulduğu için
- * (`src/lib/totals.ts`) Genel Toplam'daki KDV tutarı da bu yazımla düzelir.
- *
- * İşaret KALKARKEN liste BOŞ döner — bilinçli asimetri: "KDV hariç" kip fiyatın
- * net girilip net gösterilmesi demektir, KDV'nin belgeden kalkması değil. Toplu
- * muafiyet bu kutunun işi olsaydı, yalnız net fiyat görmek isteyen kullanıcı
- * belgenin KDV'sini de sıfırlardı.
+ * "Tutarlar KDV dahil" kutusu İŞARETLENDİĞİNDE KDV'ye tabi yapılacak satırlar.
  */
 export function rowsToMakeVatLiable<T extends { id: string; includeVat?: boolean | null }>(
   rows: readonly T[],
-  inclusive: boolean
 ): string[] {
-  if (!inclusive) return []
   return rows.filter((row) => row.includeVat === false).map((row) => row.id)
+}
+
+/**
+ * "Tutarlar KDV dahil" kutusu KALDIRILDIĞINDA KDV'den çıkarılacak satırlar.
+ */
+export function rowsToMakeVatExempt<T extends { id: string; includeVat?: boolean | null }>(
+  rows: readonly T[],
+): string[] {
+  return rows.filter((row) => row.includeVat !== false).map((row) => row.id)
+}
+
+/**
+ * Tüm satırlar KDV'ye tabi mi? Üst kutunun işaretli görünüp görünmeyeceğini
+ * belirler (iki yönlü senkronizasyon — BAK-53 geri bildirimi).
+ */
+export function allRowsVatLiable<T extends { includeVat?: boolean | null }>(
+  rows: readonly T[],
+): boolean {
+  return rows.length > 0 && rows.every((row) => row.includeVat !== false)
 }
 
 export function isPriceTaxMode(value: unknown): value is PriceTaxMode {
