@@ -29,15 +29,28 @@ kullanım güvenli; dosya başına `eslint-disable` yorumu ile bastırılır (PR
 `vehicle-create-form.tsx`, `supplier-form.tsx`). Yeni bir form eklerken aynı
 deseni kullan, kuralı `eslint.config` seviyesinde kapatma.
 
-## 2. PR'daki yeşil tik merge sonucunu kanıtlamaz
+## 2. Hiçbir dal sunucu tarafında korumalı değil — bu kabul edilmiş bir risk
 
-Repo private + free plan: branch protection ve rulesets API'leri 403 dönüyor,
-yani **hiçbir şey dalın güncel olmasını zorunlu kılmıyor**
-([`quality.yml`](../../.github/workflows/quality.yml):3-9). Yeşil tik yalnız PR
-head'inin yeşil olduğunu söyler, `dev` ile birleşmiş halinin değil. Deploy
-workflow'ları bu yüzden kapıyı ship edecekleri commit'e karşı yeniden koşar.
+Repo private + free plan: branch protection ve rulesets API'leri **403** dönüyor
+("Upgrade to GitHub Pro or make this repository public")
+([`quality.yml`](../../.github/workflows/quality.yml):3-9). Sonuç ne `dev` ne de
+`main` için bir kapı var: **hiçbir şey dalın güncel olmasını zorunlu kılmıyor**,
+kırmızı CI'lı bir PR merge edilebiliyor ve **her iki dala da PR'sız doğrudan push
+yapılabiliyor**.
 
-Bunun bedeli iki kez ödendi:
+**Bu bilgi eksikliği değil, karardır.** BAK-57'de üç seçenek ölçüldü (Pro $4/ay →
+klasik branch protection; Team $16/ay + org transferi; repoyu public yapmak) ve
+2026-08-15'te Pro **bütçe olmadığı için alınmadı**. Yani `main`'in korumasızlığı
+bilinçli olarak kabul edilmiş bir risktir; yerine ücretsiz bir **görünürlük**
+katmanı kondu (aşağısı). Karar değişirse açılacak kutular — PR zorunlu (required
+approvals **0**; 20 günde 19 merge yapan tek kişi kendini bloke etmesin), status
+check `quality` zorunlu, dalın güncel olması zorunlu, admin dahil bypass yok.
+
+### 2.1 Yeşil tik merge sonucunu kanıtlamaz
+
+Yeşil tik yalnız PR head'inin yeşil olduğunu söyler, `dev` ile birleşmiş halinin
+değil. Deploy workflow'ları bu yüzden kapıyı ship edecekleri commit'e karşı
+yeniden koşar. Bunun bedeli iki kez ödendi:
 
 - **PR #338**, PR #334'ün eklediği `WorkshopEntryQR` çağrısını bayat bir dal
   üzerinden squash merge ederek düşürdü; bileşen dosyaları repoda kaldı ama hiç
@@ -50,6 +63,31 @@ Kural: push'tan önce `git fetch origin dev && git merge origin/dev`, sonra
 kapıları **birleşmiş hal üzerinde** tekrar koştur. Merge öncesi
 `git diff origin/dev --stat` çıktısını oku — dokunmadığın bir dosya siliniyorsa
 dalın bayattır.
+
+### 2.2 `.githooks/pre-push` caydırıcıdır, engelleyici değildir
+
+`.githooks/pre-push` `dev` ve `main`'e doğrudan push'u reddeder ve `postinstall`
+`core.hooksPath=.githooks` yazar — ama bu bir koruma değil, kas hafızası
+düzeltmesidir. Üç yoldan atlanır: `git push --no-verify`, `ALLOW_DIRECT_PUSH=1`,
+ve `bun install` hiç çalışmamış bir checkout (hook kayıtlı değildir). Ayrıca
+GitHub web arayüzünden yapılan düzenleme/merge hook'u hiç görmez. "Hook var" bir
+dalın korunduğu anlamına **gelmez**.
+
+### 2.3 PR'sız `main` push'u alarm verir (ama durdurmaz)
+
+30-07'de `main`'e PR'sız iki commit girdi (`3079291`, `3f038e7`); ikisi de prod
+deploy'u tetikledi ve **kimse haberdar olmadı**.
+[`main-push-guard.yml`](../../.github/workflows/main-push-guard.yml) bu sessizliği
+kapatır: `main`'e her push'ta commit'in bir PR'dan gelip gelmediğini sorar
+(`commits/<sha>/pulls`), gelmemişse run'ı **kırmızıya düşürür** ve tek seferlik
+bir issue açar.
+
+Ne yaptığı konusunda dürüst ol: bu **engelleme değil, bildirimdir**. Commit dala
+çoktan girmiştir ve prod deploy'u çoktan başlamıştır; alarm olaydan *sonra* haber
+verir. `paths-ignore` bilinçli olarak yoktur — 30-07'deki push'lar `.yml`
+dosyalarıydı, bir doküman filtresi tam da yakalaması gereken sınıfı kaçırırdı.
+Ayrıca `push` olayında workflow'un **pushlanan commit'teki** sürümü çalışır, yani
+guard'ı aynı doğrudan push'ta silen biri yakalanmaz.
 
 ## 3. Şema ve onu kullanan kod aynı PR'da gider
 
