@@ -36,10 +36,9 @@ function buildIntake(overrides: Record<string, unknown> = {}) {
         damageMarks: [],
         approvals: [],
         order: null,
-        timelineEvents: [{ eventType: "intake_created", description: "Kabul oluşturuldu", createdAt: CREATED_AT }],
         ...overrides,
       },
-      { showPhotos: true, showDamage: true, showOrderItems: true, showPaymentStatus: true, showTimeline: true }
+      { showPhotos: true, showDamage: true, showOrderItems: true, showPaymentStatus: true }
     )
   )
 }
@@ -193,7 +192,7 @@ describe("renderIntakePrintoutHtml", () => {
     const html = render()
     expect(html).not.toContain("Hasar Kayıtları")
     expect(html).not.toContain("Servis Emri")
-    expect(html).toContain("Süreç Zaman Çizelgesi")
+    expect(html).not.toContain("Süreç Zaman Çizelgesi")
   })
 
   test("iş yeri iletişim bilgileri adres/telefon satırının altında görünür", () => {

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db"
 import { PublicSharePage } from "@/components/intake/public-share-page"
 import { PublicLinkState } from "@/components/shared/public-link-state"
 import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
-import { calculatePhotoCompletion, groupPhotosByPhase } from "@/lib/intake/completeness"
+import { groupPhotosByPhase } from "@/lib/intake/completeness"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 
@@ -22,7 +22,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },
           order: { select: { id: true, status: true, paymentStatus: true, items: { select: { id: true, type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
         },
       },
@@ -46,13 +45,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     showDamage: shareLink.showDamage,
     showOrderItems: shareLink.showOrderItems,
     showPaymentStatus: shareLink.showPaymentStatus,
-    showTimeline: shareLink.showTimeline,
   }
 
   const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
 
-  const photoTypes = intakeForm.photos.map((p) => p.type)
-  const photoCompletion = calculatePhotoCompletion(photoTypes)
   const photoGroups = groupPhotosByPhase(
     intakeForm.photos.map((p) => ({
       id: p.id,
@@ -70,7 +66,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     showDamage: shareLink.showDamage,
     showOrderItems: shareLink.showOrderItems,
     showPaymentStatus: shareLink.showPaymentStatus,
-    showTimeline: shareLink.showTimeline,
     workshop: {
       name: workshop.name,
       phone: workshop.phone,
@@ -85,7 +80,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       contact: pickWorkshopPublicContact(workshopSettings),
     },
     intakeForm: safeIntakeForm,
-    photoCompletion,
     photoGroups,
   }
 
