@@ -41,6 +41,7 @@ import {
   MemberCredentialsDialog,
   type IssuedCredentials,
 } from "@/components/settings/member-credentials-dialog"
+import { WorkshopEntryQR } from "@/components/settings/workshop-entry-qr"
 
 /**
  * E-postasız yoldan açılabilen roller (BAK-37). `owner`/`manager` bilerek yok —
@@ -107,6 +108,7 @@ export function TeamManagement({
   workshopName,
   loginCode,
   technicians,
+  logoUrl,
 }: {
   members: TeamMember[]
   invites: PendingInvite[]
@@ -120,6 +122,7 @@ export function TeamManagement({
   loginCode: string
   /** BAK-39: Teknicyen listesi; üye seçimiyle eşleştirilmesi için. */
   technicians: { id: string; fullName: string; isActive: boolean }[]
+  logoUrl?: string
 }) {
   const atLimit = seatUsed >= seatLimit
   const router = useRouter()
@@ -179,10 +182,12 @@ export function TeamManagement({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
-      <div className="flex items-center justify-between mb-4 gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Users className="size-5 text-muted-foreground shrink-0" />
+    <div className="space-y-5">
+      <WorkshopEntryQR workshopName={workshopName} loginCode={loginCode} logoUrl={logoUrl} />
+      <div className="rounded-lg border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Users className="size-5 text-muted-foreground shrink-0" />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-semibold text-foreground">Ekip</h3>
@@ -513,13 +518,14 @@ export function TeamManagement({
         </div>
       )}
 
-      {/* Geçici şifre YALNIZ burada görünür; pencere kapanınca geri getirilemez. */}
-      <MemberCredentialsDialog
-        credentials={issued}
-        workshopName={workshopName}
-        loginCode={loginCode}
-        onClose={() => setIssued(null)}
-      />
+        {/* Geçici şifre YALNIZ burada görünür; pencere kapanınca geri getirilemez. */}
+        <MemberCredentialsDialog
+          credentials={issued}
+          workshopName={workshopName}
+          loginCode={loginCode}
+          onClose={() => setIssued(null)}
+        />
+      </div>
     </div>
   )
 }
