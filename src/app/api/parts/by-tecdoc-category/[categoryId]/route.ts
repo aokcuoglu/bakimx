@@ -28,7 +28,7 @@ export async function GET(
   const vehicleTypeId = parseVehicleTypeIdParam(request.nextUrl.searchParams.get("vehicleTypeId"))
 
   try {
-    const products = await listBakimxProductsByTecdocCategory(id, vehicleTypeId)
+    const products = await listBakimxProductsByTecdocCategory(id, vehicleTypeId, guard.workshopId)
     return NextResponse.json({ products })
   } catch (err) {
     return tecdocErrorResponse(err)

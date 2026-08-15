@@ -37,7 +37,11 @@ export async function POST(request: Request) {
     const vehicleTypeId =
       Number.isInteger(rawVehicleTypeId) && rawVehicleTypeId >= 1 ? rawVehicleTypeId : null
 
-    const matches = await matchBakimxProductsByPartNumbers(articleNumbers, vehicleTypeId)
+    const matches = await matchBakimxProductsByPartNumbers(
+      articleNumbers,
+      vehicleTypeId,
+      guard.workshopId,
+    )
     return NextResponse.json({ matches })
   } catch (err) {
     console.error("[bakimx-catalog/match]", err instanceof Error ? err.message : err)

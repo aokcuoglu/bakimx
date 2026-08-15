@@ -43,6 +43,10 @@ model Workshop {
   // (paid overage / custom deals — charged offline until usage billing lands).
   extraSeats         Int                    @default(0)
 
+  // --- BakımX pricing (BAK-47) ---
+  // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
+  bakimxDiscountBps  Int                    @default(0)
+
   // --- Paid subscription period (manual/havale billing v1) ---
   // Set on the first confirmed paid order. Null = legacy/admin-provisioned or
   // never-paid workshop (no period gate). currentPeriodEnd < now => locked.
