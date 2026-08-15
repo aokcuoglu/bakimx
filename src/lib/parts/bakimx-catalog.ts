@@ -155,6 +155,18 @@ export async function searchBakimxProducts(
   return rows.map(toBakimxProductSummary)
 }
 
+/** TecDoc kategori köprüsüne bağlı, atölyeye görünür BakımX ürünleri (BAK-45). */
+export async function listBakimxProductsByTecdocCategory(
+  tecdocCategoryId: number,
+): Promise<BakimxProductSummary[]> {
+  const rows = await prisma.bakimxProduct.findMany({
+    where: { ...VISIBLE_PRODUCT, tecdocCategoryId },
+    select: BAKIMX_PRODUCT_SUMMARY_SELECT,
+    orderBy: [{ brandName: "asc" }, { name: "asc" }],
+  })
+  return rows.map(toBakimxProductSummary)
+}
+
 /**
  * Tek ürünü ATÖLYE GÖRÜNÜRLÜĞÜ filtresiyle okur — kalem yazan yol (BAK-35) bunu
  * kullanır. İstemcinin gönderdiği ad/fiyat/kategori GÜVENİLMEZ: kalem alanları
