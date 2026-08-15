@@ -89,6 +89,7 @@ model Workshop {
   billingOrders          BillingOrder[]
   featureOverrides       WorkshopFeatureOverride[]
   laborCatalogItems      LaborCatalogItem[]
+  bakimxOrders           BakimxOrder[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -2041,4 +2042,92 @@ model BakimxCatalogAudit {
   @@index([actorUserId])
   @@index([createdAt])
   @@map("bakimx_catalog_audit")
+}
+
+// ---------------------------------------------------------------------------
+// BakımX sipariş TALEBİ akışı (BAK-60, BAK-30 tasarımındaki B seçeneği)
+//
+// Bu blok yukarıdakilerin AKSİNE tenant'a aittir: sipariş bir atölyenin talebidir,
+// katalog satırı gibi herkese açık değildir. Okuma yolu DAİMA `workshopId` ile
+// süzülür; yalnız `/admin/catalog/orders` tüm atölyeleri görür.
+//
+// KALEM ≠ SİPARİŞ: BakımX ürününü iş emrine kalem olarak eklemek (bkz.
+// `ServiceOrderItem.bakimxProductId`) burada BİR SATIR AÇMAZ ve stoğa dokunmaz.
+// Sipariş yalnız açık bir "Sipariş ver" eylemiyle doğar — atölye bir parçayı
+// teklife koyup işi almayabilir, o yüzden kalem eklemek talep sayılmaz.
+//
+// STOK: `bakimx_products.stock_qty` YALNIZ `shipped` geçişinde düşer (talepte,
+// `confirmed`'da ya da kalem eklemede değil) ve tam olarak BİR KEZ düşer —
+// geçiş, mevcut durumu koşula alan bir `updateMany` ile transaction içinde
+// yapılır (bkz. src/app/admin/catalog/orders/actions.ts). Talep anında
+// rezervasyon YOKTUR: iki atölye aynı 3 adetlik ürünün 3'ünü birden isteyebilir,
+// admin bunu sevkiyattan önce listedeki uyarıda görür.
+// ---------------------------------------------------------------------------
+
+/// Sipariş yaşam döngüsü. İptal yalnız `shipped` ÖNCESİNDE mümkündür ve stoğa
+/// hiç dokunmaz; `shipped` ve `cancelled` terminal durumlardır.
+enum BakimxOrderStatus {
+  requested
+  confirmed
+  shipped
+  cancelled
+}
+
+/// Atölyenin BakımX'e verdiği sipariş talebi.
+model BakimxOrder {
+  id         String   @id @default(cuid())
+  workshopId String   @map("workshop_id")
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  /// Talebi açan kullanıcı. FK YOK — `bakimx_product_imports.created_by_user_id`
+  /// ile aynı sözleşme: kullanıcı silinse de sipariş geçmişi yaşar.
+  createdByUserId String @map("created_by_user_id")
+
+  status BakimxOrderStatus @default(requested)
+  note   String?
+
+  confirmedAt DateTime? @map("confirmed_at")
+  shippedAt   DateTime? @map("shipped_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  items BakimxOrderItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workshopId, status])
+  @@index([status, createdAt])
+  @@map("bakimx_orders")
+}
+
+/// Sipariş kalemi — talep ANININ donmuş görüntüsü.
+///
+/// Ad/SKU ve üç fiyat alanı bilinçli olarak kopyalanır: ürün kartı sonradan
+/// değişse (zam, isim düzeltmesi, yayından kalkma) geçmiş sipariş ne istendiğini
+/// ve o gün hangi tutara istendiğini göstermeye devam etmeli. Bu yüzden
+/// `bakimxProductId` de FK DEĞİLDİR (`ServiceOrderItem.bakimxProductId` ile aynı
+/// sözleşme).
+model BakimxOrderItem {
+  id      String      @id @default(cuid())
+  orderId String      @map("order_id")
+  order   BakimxOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  bakimxProductId String @map("bakimx_product_id")
+  quantity        Int
+
+  /// Sunucuda çözülmüş, iskonto UYGULANMIŞ birim fiyat — KDV hariç, kuruş.
+  /// İstemcinin gönderdiği fiyat hiçbir koşulda buraya yazılmaz.
+  unitPriceKurus Int @map("unit_price_kurus")
+  /// Fiyatın nasıl oluştuğu sonradan açıklanabilsin diye liste fiyatı ve oran da
+  /// birlikte donar (`unitPrice = listPrice × (10000 − discountBps) / 10000`).
+  listPriceKurus Int @map("list_price_kurus")
+  discountBps    Int @map("discount_bps")
+
+  nameSnapshot String @map("name_snapshot")
+  skuSnapshot  String @map("sku_snapshot")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([bakimxProductId])
+  @@map("bakimx_order_items")
 }

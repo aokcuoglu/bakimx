@@ -5,7 +5,8 @@ import { redirect } from "next/navigation"
 import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getPlanState, isPlanExpiredLock } from "@/lib/plan"
+import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
+import { resolveFeature } from "@/lib/features"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -61,6 +62,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const cookieStore = await cookies()
   const initialSidebarCollapsed = cookieStore.get("sidebar-state")?.value === "collapsed"
+
+  // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
+  // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
+  // hesaplandığı değil.
+  const enabledFeatures = (
+    await resolveFeature(user.workshopId, workshop.planTier as PlanTier, "bakimxCatalog")
+  )
+    ? ["bakimxCatalog"]
+    : []
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,
@@ -134,7 +144,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       <div className="flex-1">
-        <AppShellChrome initialSidebarCollapsed={initialSidebarCollapsed}>{children}</AppShellChrome>
+        <AppShellChrome
+          initialSidebarCollapsed={initialSidebarCollapsed}
+          enabledFeatures={enabledFeatures}
+        >
+          {children}
+        </AppShellChrome>
       </div>
       <div className="border-t py-3 px-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} BakimX · Tüm hakları saklıdır · v{process.env.NEXT_PUBLIC_APP_VERSION}
