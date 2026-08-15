@@ -17,6 +17,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB studio:** `bun run db:studio` — Prisma Studio on port 5555
 - **DB migrate:** `bun run db:migrate` — create migration (use `prisma migrate deploy` for production)
 - **Dev login (QA):** `GET /api/auth/dev-login?email=<seed-user>&redirect=<path>` — opens a session without typing a password (default `admin@bakimx.com`, redirect `/dashboard`). Only responds when `NODE_ENV=development` AND the request host is localhost; 404 everywhere else. Use it for browser QA in isolated worktrees instead of hand-rolling a temporary login route.
+- **Test:** `bun test` (unit) / `bun run test:e2e` (Playwright). Unit tests are `*.test.ts`, end-to-end tests **must** end in `*.e2e.ts` — the two runners share the `*.spec.ts` pattern and `bun test` dies on a Playwright file (`playwright.config.ts:7-10`, PR #306).
 - **Git hooks:** `postinstall` registers `core.hooksPath=.githooks`. `post-merge`/`post-checkout` re-run `prisma generate` whenever `prisma/schema.prisma` changed in the pulled/checked-out range — otherwise the generated client stays stale and Prisma throws `Unknown argument` for fields that DO exist in the schema. Restart the dev server after it fires (Turbopack does not hot-reload `node_modules`).
 
 ## Local Infrastructure
@@ -28,6 +29,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Tech Stack
 - Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (base-nova style)
+- **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
 - Uses `@base-ui/react` (NOT Radix) for shadcn/ui primitives
 - Button uses `render` prop (NOT `asChild`) for link rendering
 - Accordion uses Base UI API (no `type`/`collapsible` props)
@@ -85,12 +87,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Demo login: demo@bakimx.com / demo123456
 
 ## GitHub Issue Delivery
-- When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end.
-- Treat the issue, its comments, attachments, and linked items as the source of truth; state inferred acceptance criteria before coding.
-- Work in a dedicated `issue/<number>-<slug>` branch and isolated worktree based on the latest `origin/dev`.
+- When the user asks to implement a GitHub issue by number, follow `docs/agent-workflows/issue-delivery.md` end to end — that document owns the full lifecycle (intake, isolated `issue/<number>-<slug>` worktree off the latest `origin/dev`, validation, PR, merge, project verification, cleanup). Do not restate it here.
 - Never stash, reset, overwrite, commit, or clean unrelated user changes.
-- A delivery request includes implementation, proportionate validation, push, PR creation, green-check monitoring, merge when permitted, issue/project verification, cleanup of only agent-created resources, and a safe local `dev` fast-forward when the checkout is clean.
-- Put `Closes #<number>` in the PR body so merge closes the issue. Confirm the linked item becomes Done in Factory - BakimX.
-- When the same work is also tracked in Multica, add a second closing line — `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) — so the PR links there too and merge moves that issue to Done. The key must follow a closing keyword, sit in the PR title, or be in the branch name; a bare mention is filed as `reference_only` and stays invisible. Write only the GitHub line when there is no Multica issue — never invent a key.
-- Never link a PR to an issue after that issue is closed (issue → Development panel). Project automation reacts to the link and overwrites `Done`. The `Closes` lines written at PR-open time are the only links you need.
-- Finish delivery with `bun run project:sync` — it moves any closed issue's card to Done and reports open issues sitting in Done. Idempotent, board-only, safe to re-run.
+- **Two closing lines, one per tracker:** `Closes #<number>` for GitHub, plus `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) when Multica tracks the same work. Neither implies the other; a bare key mention without a closing keyword is filed as `reference_only` and never becomes a visible link. Never invent a key.
+- **Link at PR-open time only.** Never link a PR from a closed issue's Development panel — project automation reacts to the link and overwrites `Done`.
+- Finish delivery with `bun run project:sync` — idempotent, board-only, safe to re-run.
+- Before pushing, merge the latest `origin/dev` into your branch and re-run the gate: a PR's green check only covers its head commit, and nothing in this repo forces a branch to be up to date. See `docs/agent-workflows/repo-guardrails.md`.

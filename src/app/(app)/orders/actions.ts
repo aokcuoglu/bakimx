@@ -145,7 +145,10 @@ export async function addOrderItemAction(formData: FormData) {
       "bakimxCatalog",
     )
     if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
-    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId, workshop.id)
+    // Araç süzgeci burada BİLEREK boş: araç uyumluluğu aşağıda siparişin kendi
+    // aracıyla ayrıca doğrulanır (BAK-46). `workshop.id` iskonto için gerekir
+    // (BAK-47) — fiyat atölye kaydından okunur, istemciden değil.
+    const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId, null, workshop.id)
     if (!product) return { error: "BakımX ürünü bulunamadı veya yayından kaldırılmış" }
     bakimxFields = bakimxLineItemFields(product)
   }

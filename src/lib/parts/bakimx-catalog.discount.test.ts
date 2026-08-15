@@ -111,19 +111,19 @@ describe("searchBakimxProducts — iskonto uygulaması", () => {
 describe("diğer okuma yolları aynı iskontoyu uygular", () => {
   it("getVisibleBakimxProduct — kalem yazımının okuduğu yol", async () => {
     discountBps = 1500
-    const product = await getVisibleBakimxProduct("p-aku", "ws-2")
+    const product = await getVisibleBakimxProduct("p-aku", null, "ws-2")
     expect(product?.displayPriceKurus).toBe(4_250)
   })
 
   it("listBakimxProductsByTecdocCategory — TecDoc rozet yolu", async () => {
     discountBps = 1500
-    const [product] = await listBakimxProductsByTecdocCategory(101, "ws-2")
+    const [product] = await listBakimxProductsByTecdocCategory(101, null, "ws-2")
     expect(product.displayPriceKurus).toBe(4_250)
   })
 
   it("matchBakimxProductsByPartNumbers — TecDoc eşleştirme yolu", async () => {
     discountBps = 1500
-    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"], "ws-2")
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"], null, "ws-2")
     expect(matches["C 27 125"]?.displayPriceKurus).toBe(4_250)
   })
 
@@ -131,8 +131,8 @@ describe("diğer okuma yolları aynı iskontoyu uygular", () => {
     discountBps = 1500
 
     const [searched] = await searchBakimxProducts({ workshopId: "ws-2" })
-    const single = await getVisibleBakimxProduct("p-aku", "ws-2")
-    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"], "ws-2")
+    const single = await getVisibleBakimxProduct("p-aku", null, "ws-2")
+    const matches = await matchBakimxProductsByPartNumbers(["C 27 125"], null, "ws-2")
 
     expect(single?.displayPriceKurus).toBe(searched.displayPriceKurus)
     expect(matches["C 27 125"]?.displayPriceKurus).toBe(searched.displayPriceKurus)
