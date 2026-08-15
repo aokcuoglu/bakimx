@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, MessageCircle, Share2, FileText, FileDown, Clock, BarChart3, Eye } from "lucide-react"
+import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, MessageCircle, Share2, FileText, FileDown, Clock, Eye } from "lucide-react"
 import { INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { formatFuelLevel } from "@/lib/fuel-level"
@@ -42,16 +42,6 @@ type SafeIntakeData = {
   timeline: { eventType: string; description: string; createdAt: Date }[]
 }
 
-type PhotoCompletionResult = {
-  total: number
-  completed: number
-  required: number
-  requiredCompleted: number
-  percentage: number
-  missing: string[]
-  missingLabels: string[]
-}
-
 type PhotoPhaseGroup = {
   phase: string
   label: string
@@ -80,12 +70,11 @@ type ShareLink = {
     contact: WorkshopPublicContact | null
   }
   intakeForm: SafeIntakeData
-  photoCompletion: PhotoCompletionResult
   photoGroups: PhotoPhaseGroup[]
 }
 
 export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
-  const { workshop, intakeForm, token, photoCompletion, photoGroups } = shareLink
+  const { workshop, intakeForm, token, photoGroups } = shareLink
   const statusInfo = INTAKE_STATUS[intakeForm.status as keyof typeof INTAKE_STATUS]
   const [copied, setCopied] = useState(false)
 
@@ -188,52 +177,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
           <span className="text-xs text-muted-foreground">
             {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}
           </span>
-        </div>
-
-        {/* Evidence Summary Card */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden print:border print:border-border print:shadow-none">
-          <div className="h-[3px] bg-brand" />
-          <div className="p-4">
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2 mb-3">
-              <BarChart3 className="size-4 text-brand" />
-              Kanıt Özeti
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center">
-                <p className="text-xl font-bold text-foreground">
-                  {photoCompletion.percentage}%
-                </p>
-                <p className="text-xs text-muted-foreground">Fotoğraf</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-foreground">
-                  {intakeForm.damageMarks.length}
-                </p>
-                <p className="text-xs text-muted-foreground">Hasar</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-foreground">
-                  {intakeForm.approvals.length > 0 && intakeForm.approvals[0].status === "verified" ? "Onaylı" : "Bekliyor"}
-                </p>
-                <p className="text-xs text-muted-foreground">Onay</p>
-              </div>
-            </div>
-            <div className="mt-3 w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${photoCompletion.percentage === 100 ? "bg-success" : photoCompletion.percentage >= 60 ? "bg-warning" : "bg-destructive"}`}
-                style={{ width: `${photoCompletion.percentage}%` }}
-              />
-            </div>
-            {photoCompletion.missingLabels.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {photoCompletion.missingLabels.map((label) => (
-                  <span key={label} className="text-[10px] bg-destructive/10 text-foreground px-1.5 py-0.5 rounded-full border border-destructive/20">
-                    Eksik: {label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Customer & Vehicle */}
