@@ -72,10 +72,9 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
     defaultValues: toDefaults(settings),
   })
 
-  const weekdayDays = parseWorkingDays(form.watch("weekdayWorkingDays"))
+  const weekdayDays = parseWorkingDays(form.watch("weekdayWorkingDays")) // eslint-disable-line react-hooks/incompatible-library
   const weekendDays = parseWorkingDays(form.watch("weekendWorkingDays"))
-  
-  // eslint-disable-next-line react-hooks/incompatible-library
+
   const holidayEnabled = form.watch("holidayEnabled")
 
   function toggleDay(field: "weekdayWorkingDays" | "weekendWorkingDays", dayValue: string) {
