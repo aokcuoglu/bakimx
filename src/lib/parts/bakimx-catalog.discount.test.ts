@@ -67,12 +67,21 @@ describe("toBakimxProductSummary — iskonto eşlemesi", () => {
     const summary = toBakimxProductSummary(PRODUCT_ROW)
     expect(summary.workshopPriceKurus).toBe(5_000)
     expect(summary.displayPriceKurus).toBe(5_000)
+    expect(summary.discountBps).toBe(0)
   })
 
   it("%15 iskontoda liste fiyatı korunur, görünen fiyat düşer", () => {
     const summary = toBakimxProductSummary(PRODUCT_ROW, 1500)
     expect(summary.workshopPriceKurus).toBe(5_000)
     expect(summary.displayPriceKurus).toBe(4_250)
+  })
+
+  /**
+   * BAK-58 — yüzeydeki not oranı DTO'dan okur; iki fiyattan geri hesaplamak
+   * yuvarlama yüzünden "%14,99" gibi tutarsız etiketler üretirdi.
+   */
+  it("uygulanan oran DTO ile taşınır — yüzey notu bunu okur", () => {
+    expect(toBakimxProductSummary(PRODUCT_ROW, 1500).discountBps).toBe(1500)
   })
 
   it("%100 iskontoda görünen fiyat sıfırlanır", () => {

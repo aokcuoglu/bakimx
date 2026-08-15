@@ -25,6 +25,8 @@ const product = (over: Partial<BakimxProductSummary> = {}): BakimxProductSummary
   imageUrl: null,
   oemNumbers: [],
   workshopPriceKurus: 248_000,
+  displayPriceKurus: 248_000,
+  discountBps: 0,
   vatRateBps: 2000,
   currency: "TRY",
   stockQty: 3,
@@ -51,10 +53,60 @@ test("kategorisiz üründe kategori metni de boş kalır", () => {
 })
 
 test("fiyat alışa yazılır, satış fiyatı ondan ÖN-DOLDURULUR", () => {
-  const fields = bakimxLineItemFields(product({ workshopPriceKurus: 248_000 }))
+  const fields = bakimxLineItemFields(
+    product({ workshopPriceKurus: 248_000, displayPriceKurus: 248_000, discountBps: 0 }),
+  )
   // İkisi ayrı alan: atölye unitPrice'ı kendi marjıyla düzenler, alış donmuş kalır.
   expect(fields.purchasePriceKurus).toBe(248_000)
   expect(fields.unitPrice).toBe(248_000)
+})
+
+/**
+ * BAK-58 — iskonto BAĞLANTISI. BAK-47 iskontoyu `displayPriceKurus`'a hesaplıyordu
+ * ama kalem hâlâ liste fiyatını yazıyordu: %15 iskontolu atölyenin maliyeti her
+ * kalemde şişik çıkıyordu. Alan seçimi burada korunur.
+ */
+test("iskontolu atölyede kaleme İSKONTOLU tutar yazılır, liste fiyatı değil", () => {
+  const fields = bakimxLineItemFields(
+    product({ workshopPriceKurus: 248_000, displayPriceKurus: 210_800, discountBps: 1500 }),
+  )
+  expect(fields.purchasePriceKurus).toBe(210_800)
+  expect(fields.unitPrice).toBe(210_800)
+  expect(fields.purchasePriceKurus).not.toBe(248_000)
+})
+
+test("iskontosuz atölyede (bps 0) kalem bugünküyle birebir aynı — regresyon kapısı", () => {
+  const p = product({ workshopPriceKurus: 248_000, displayPriceKurus: 248_000, discountBps: 0 })
+  expect(bakimxLineItemFields(p)).toEqual({
+    source: "bakimx",
+    bakimxProductId: "bx-1",
+    partId: null,
+    categoryId: null,
+    name: "Akü 60Ah 540A",
+    sku: "C 27 125",
+    brand: "Mutlu",
+    category: "Akü",
+    unit: "adet",
+    purchasePriceKurus: 248_000,
+    unitPrice: 248_000,
+  })
+})
+
+/**
+ * Fiyat kalemde ANLIK GÖRÜNTÜ: iskonto sonradan değişse de yazılmış kalem
+ * değişmez — çünkü kaleme referans değil, o anki sayı kopyalanır.
+ */
+test("yazılmış kalem, iskonto sonradan değişince değişmez", () => {
+  const atWriteTime = bakimxLineItemFields(
+    product({ workshopPriceKurus: 248_000, displayPriceKurus: 210_800, discountBps: 1500 }),
+  )
+  // Atölyenin iskontosu %15 → %30 yapıldı: aynı ürün artık başka bir tutar veriyor.
+  const afterChange = bakimxLineItemFields(
+    product({ workshopPriceKurus: 248_000, displayPriceKurus: 173_600, discountBps: 3000 }),
+  )
+  expect(afterChange.purchasePriceKurus).toBe(173_600)
+  // Önce yazılmış kalem etkilenmez.
+  expect(atWriteTime.purchasePriceKurus).toBe(210_800)
 })
 
 test("kimlik ve kaynak alanları üründen gelir", () => {
@@ -106,4 +158,7 @@ test("addOrderItemAction BakımX kaleminde partId bağlamaz ve stok düşmez", (
   // Fiyat ve kimlik istemciden değil, DB'den okunan üründen türetilir.
   expect(body).toContain("getVisibleBakimxProduct(")
   expect(body).toContain("bakimxLineItemFields(product)")
+  // BAK-58: iskonto oranı da istemciden GELMEZ — ürün atölye bağlamıyla okunur,
+  // `displayPriceKurus` sunucuda atölye kaydındaki orandan çözülür.
+  expect(body).toMatch(/getVisibleBakimxProduct\([^)]*workshop\.id\)/)
 })

@@ -3,6 +3,7 @@
 import { Store } from "lucide-react"
 import { formatTRY } from "@/lib/format"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
+import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { cn } from "@/lib/utils"
 
@@ -11,10 +12,15 @@ import { cn } from "@/lib/utils"
  * arama sonuçlarının "BakımX Ürünleri" bölümü bunu kullanır (TecdocArticleRow'un
  * kardeşi).
  *
- * FİYAT: gösterilen tutar atölyenin BakımX'ten **ALIŞ** fiyatıdır, KDV hariç.
+ * FİYAT: gösterilen tutar atölyenin BakımX'ten **ALIŞ** fiyatıdır, KDV hariç, ve
+ * atölye iskontosu UYGULANMIŞ hâlidir (`displayPriceKurus`) — kaleme yazılan
+ * tutarla birebir aynı (bkz. bakimx-item.ts). Liste fiyatını (`workshopPriceKurus`)
+ * burada basmayın: iskontolu atölye ekranda bir tutar görüp kalemde başkasını
+ * bulur. Üstü çizili liste fiyatı da göstermiyoruz (BAK-47 kararı); iskonto varsa
+ * yalnız küçük bir not çıkar.
+ *
  * Etiketi ("Alış") satırdan kaldırmayın: aynı listede TecDoc parçalarının fiyatı
- * yok ve rakam satış fiyatı sanılırsa atölye kendi zammını unutur (kaleme de bu
- * yüzden `purchasePriceKurus` olarak yazılıyor — bkz. bakimx-item.ts).
+ * yok ve rakam satış fiyatı sanılırsa atölye kendi zammını unutur.
  */
 export function BakimxProductRow({
   product,
@@ -24,6 +30,8 @@ export function BakimxProductRow({
   onSelect: () => void
 }) {
   const outOfStock = product.stockQty <= 0 && !product.backorderable
+  // İskontosuz atölyede boş string döner → satır bugünküyle birebir aynı kalır.
+  const discountNote = formatDiscountLabel(product.discountBps)
   return (
     <div className="flex items-center border-b border-border/60 hover:bg-muted">
       <button
@@ -53,12 +61,13 @@ export function BakimxProductRow({
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
             <span className="font-semibold tabular-nums text-foreground">
-              Alış: {formatTRY(product.workshopPriceKurus)}
+              Alış: {formatTRY(product.displayPriceKurus)}
             </span>
             <span className="text-muted-foreground/70">KDV hariç</span>
             <span className={cn(outOfStock ? "text-warning-strong" : "text-muted-foreground")}>
               · {bakimxStockLabel(product)}
             </span>
+            {discountNote && <span className="text-success-strong">· {discountNote}</span>}
           </span>
         </span>
       </button>
