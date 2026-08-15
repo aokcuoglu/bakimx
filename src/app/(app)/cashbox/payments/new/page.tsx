@@ -1,3 +1,4 @@
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { CollectionCreateForm } from "@/components/cashbox/collection-create-form"
@@ -29,7 +30,7 @@ export default async function NewPaymentPage({ searchParams }: { searchParams: P
       vehicle: { select: { plate: true, brand: true, model: true } },
       order: {
         include: {
-          items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+          items: { select: ORDER_TOTALS_ITEM_SELECT },
         },
       },
     },

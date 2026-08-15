@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { calculateMinimalTotal } from "@/lib/totals"
+import { calculateMinimalTotal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { customerDisplayName } from "@/lib/format"
 
@@ -70,7 +70,7 @@ export async function getOperationsHealth(workshopId: string): Promise<Operation
         paymentStatus: { in: ["unpaid", "partial"] },
       },
       include: {
-        items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+        items: { select: ORDER_TOTALS_ITEM_SELECT },
       },
     }),
   ])
@@ -155,7 +155,7 @@ export async function getDelayedJobs(
         },
       },
       assignedTechnician: { select: { fullName: true } },
-      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      items: { select: ORDER_TOTALS_ITEM_SELECT },
     },
     orderBy: { estimatedDeliveryAt: "asc" },
     take: limit,
@@ -303,7 +303,7 @@ export async function getCustomerAnalytics(workshopId: string): Promise<Customer
           include: {
             order: {
               include: {
-                items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+                items: { select: ORDER_TOTALS_ITEM_SELECT },
               },
             },
           },
@@ -511,7 +511,7 @@ export async function getRevenueAnalytics(workshopId: string): Promise<RevenueAn
         paymentStatus: { in: ["unpaid", "partial"] },
       },
       include: {
-        items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+        items: { select: ORDER_TOTALS_ITEM_SELECT },
       },
     }),
     prisma.serviceOrder.findMany({
@@ -521,7 +521,7 @@ export async function getRevenueAnalytics(workshopId: string): Promise<RevenueAn
         paymentStatus: { notIn: ["cancelled"] },
       },
       include: {
-        items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+        items: { select: ORDER_TOTALS_ITEM_SELECT },
       },
     }),
     prisma.serviceOrder.count({

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 
 function monthStart(): Date {
   const now = new Date()
@@ -170,7 +170,7 @@ export async function getExpensiveOrders(
   const orders = await prisma.serviceOrder.findMany({
     where,
     include: {
-      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      items: { select: ORDER_TOTALS_ITEM_SELECT },
       intakeForm: {
         include: {
           customer: { select: { firstName: true, lastName: true, fullName: true, companyName: true, type: true } },
@@ -305,7 +305,7 @@ export async function getFilteredOrders(
           vehicle: { select: { plate: true, brand: true, model: true } },
         },
       },
-      items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+      items: { select: ORDER_TOTALS_ITEM_SELECT },
     },
     orderBy: { createdAt: "desc" },
     take: limit,
@@ -371,7 +371,7 @@ export async function getTopCustomersBySpend(
       intakes: {
         include: {
           order: {
-            include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
+            include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },
           },
         },
       },
@@ -503,7 +503,7 @@ export async function getCollectionReportStats(
         status: { notIn: ["cancelled"] },
         paymentStatus: { in: ["unpaid", "partial"] },
       },
-      include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
+      include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },
     }),
   ])
 

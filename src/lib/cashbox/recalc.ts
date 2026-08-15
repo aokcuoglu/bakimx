@@ -1,5 +1,5 @@
 import type { Prisma, PaymentStatus } from "@prisma/client"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { sumKurus } from "@/lib/money"
 import { computePaymentStatus, computeRemainingAmount } from "@/lib/cashbox/status"
 
@@ -18,7 +18,7 @@ export async function recalcOrderPayment(
 ): Promise<{ statusChanged: boolean; newStatus: string } | null> {
   const order = await tx.serviceOrder.findFirst({
     where: { id: serviceOrderId, workshopId },
-    include: { items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } } },
+    include: { items: { select: ORDER_TOTALS_ITEM_SELECT } },
   })
   if (!order) return null
 

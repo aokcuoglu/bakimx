@@ -7,7 +7,7 @@ import { Wallet, ChevronRight, Info, AlertTriangle, Search, Building2, Filter } 
 import { Input } from "@/components/ui/input"
 import { CustomerTypeBadge, CustomerTagBadge } from "@/components/customers/customer-badges"
 import { formatTRY } from "@/lib/format"
-import { calculateOrderTotalsFromMinimal } from "@/lib/totals"
+import { calculateOrderTotalsFromMinimal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { cn } from "@/lib/utils"
 import { FilterSelect } from "@/components/shared/filter-select"
 
@@ -48,7 +48,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
               paymentStatus: true,
               discountAmount: true,
               taxRate: true,
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true, type: true } },
+              items: { select: ORDER_TOTALS_ITEM_SELECT },
             },
           },
         },

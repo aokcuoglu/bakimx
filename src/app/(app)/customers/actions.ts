@@ -1,5 +1,6 @@
 "use server"
 
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { prisma } from "@/lib/db"
 import { requireAuth, requireWritableWorkshop } from "@/lib/auth"
 import { customerCreateSchema } from "@/lib/validations/customer"
@@ -379,7 +380,7 @@ export async function listCustomersForWorkshop(
               workOrderNo: true,
               status: true,
               paymentStatus: true,
-              items: { select: { totalPrice: true, unitPrice: true, quantity: true } },
+              items: { select: ORDER_TOTALS_ITEM_SELECT },
             },
           },
         },
