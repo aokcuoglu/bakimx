@@ -14,8 +14,10 @@ import { bakimxCatalogRouteGuard } from "@/lib/parts/bakimx-catalog-guard"
  * `?vehicleTypeId=` verilirse o araca eşlenmiş `vehicle_linked` ürünler de
  * listeye girer (BAK-46); verilmezse yalnız `universal` ürünler döner.
  *
- * Fiyat alanı `workshopPriceKurus` = atölyenin ALIŞ fiyatı, `displayPriceKurus` =
- * iskontolu satış fiyatı — KDV HARİÇ, her ikisi de kuruş (BAK-47).
+ * Fiyat alanı `workshopPriceKurus` = BakımX'in LİSTE fiyatı, `displayPriceKurus`
+ * = atölye iskontosu uygulanmış ALIŞ fiyatı, `discountBps` = uygulanan oran —
+ * fiyatların ikisi de KDV HARİÇ ve kuruş (BAK-47 / BAK-58). Atölye yüzeyi
+ * `displayPriceKurus` gösterir, kaleme de o yazılır.
  */
 export async function GET(request: Request) {
   const guard = await bakimxCatalogRouteGuard()

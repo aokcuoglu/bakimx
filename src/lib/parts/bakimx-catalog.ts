@@ -15,10 +15,15 @@ import { resolveWorkshopPrice } from "./bakimx-price"
  * `BAKIMX_PRODUCT_SUMMARY_SELECT` üzerinden geçmeli, `prisma.bakimxProduct`'a
  * doğrudan `select`'siz dokunulmamalıdır (bkz. bakimx-catalog.test.ts).
  *
- * FİYAT SÖZLEŞMESİ: `workshopPriceKurus` = atölyenin BakımX'ten **alış** fiyatı,
- * **KDV hariç**, kuruş (bkz. src/lib/money.ts). KDV oranı ayrı: `vatRateBps`.
- * Kaleme yazılırken `purchasePriceKurus`'a gider, `unitPrice`'a DEĞİL — atölye
- * satış fiyatını kendi marjıyla belirler (bkz. BAK-35).
+ * FİYAT SÖZLEŞMESİ: `workshopPriceKurus` = BakımX'in **liste** fiyatı,
+ * `displayPriceKurus` = atölyenin iskontosu uygulandıktan sonra gerçekten
+ * ödeyeceği alış fiyatı — ikisi de **KDV hariç**, kuruş (bkz. src/lib/money.ts).
+ * KDV oranı ayrı: `vatRateBps`.
+ *
+ * ATÖLYE YÜZEYİ `displayPriceKurus` OKUR — liste fiyatı yalnız BakımX'in kendi
+ * katalog yönetiminde (`/admin/catalog`) görünür. Kaleme de iskontolu tutar
+ * yazılır: `purchasePriceKurus`'a gider, `unitPrice` ondan ön-doldurulur (atölye
+ * satış fiyatını kendi marjıyla belirler — bkz. BAK-35 / BAK-58).
  */
 
 /**
@@ -73,6 +78,12 @@ export interface BakimxProductSummary {
   workshopPriceKurus: number
   /** Atölyenin iskontolu fiyatı — KDV HARİÇ, kuruş (BAK-47). */
   displayPriceKurus: number
+  /**
+   * `displayPriceKurus`'u üreten atölye iskontosu (bps; 1500 = %15), iskontosuz
+   * atölyede 0. Yüzeydeki notu (`formatDiscountLabel`) besleyen tek girdi —
+   * yüzey oranı iki fiyattan geri hesaplamasın diye DTO ile taşınır (BAK-58).
+   */
+  discountBps: number
   /** `workshopPriceKurus` üzerine uygulanacak KDV oranı (bps; 2000 = %20). */
   vatRateBps: number
   currency: string
@@ -102,6 +113,7 @@ export function toBakimxProductSummary(
     oemNumbers: row.oemNumbers,
     workshopPriceKurus: row.workshopPriceKurus,
     displayPriceKurus: resolveWorkshopPrice(row.workshopPriceKurus, discountBps),
+    discountBps,
     vatRateBps: row.vatRateBps,
     currency: row.currency,
     stockQty: row.stockQty,

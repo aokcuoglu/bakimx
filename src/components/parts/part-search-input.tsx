@@ -22,6 +22,7 @@ import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
+import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import {
   buildPartSuggestions,
   suggestionKey,
@@ -385,7 +386,9 @@ export function PartSearchInput({
               // BAK-35 — BakımX kataloğu: araca bağlı değil ama satılabilirliği ve
               // fiyatı bizde kayıtlı. Gösterilen tutar ATÖLYENİN ALIŞ fiyatıdır
               // (KDV hariç); etiketi kaldırmayın, satış fiyatı sanılırsa atölye
-              // kendi marjını unutur.
+              // kendi marjını unutur. Tutar iskonto uygulanmış hâldir
+              // (`displayPriceKurus`) — kaleme yazılanla birebir aynı, liste fiyatı
+              // atölye yüzeyine çıkmaz (BAK-47 / BAK-58).
               <AutocompleteItem
                 key={suggestionKey(s)}
                 value={s}
@@ -403,9 +406,15 @@ export function PartSearchInput({
                   </span>
                   <span className="block text-[11px] text-muted-foreground truncate">
                     <span className="font-semibold text-foreground">
-                      Alış: {formatTRY(s.product.workshopPriceKurus)}
+                      Alış: {formatTRY(s.product.displayPriceKurus)}
                     </span>
                     <> · KDV hariç · {bakimxStockLabel(s.product)}</>
+                    {/* İskontosuz atölyede boş string → satır bugünküyle birebir aynı. */}
+                    {formatDiscountLabel(s.product.discountBps) && (
+                      <span className="text-success-strong">
+                        {" "}· {formatDiscountLabel(s.product.discountBps)}
+                      </span>
+                    )}
                   </span>
                 </span>
               </AutocompleteItem>
