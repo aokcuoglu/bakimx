@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus } from "lucide-react"
@@ -32,6 +31,37 @@ export function VehicleTypeSelector({
   const [loading, setLoading] = useState(false)
   const [selectedTypes, setSelectedTypes] = useState<Map<number, VehicleType>>(new Map())
 
+  const loadBrands = () => {
+    fetch("/api/vehicle-catalog/brands")
+      .then(r => r.json())
+      .then(d => setBrands(d?.brands || []))
+      .catch(() => setBrands([]))
+  }
+
+  const loadModels = (brandId: number) => {
+    if (!brandId) {
+      setModels([])
+      return
+    }
+    fetch(`/api/vehicle-catalog/models?brandId=${brandId}`)
+      .then(r => r.json())
+      .then(d => setModels(d?.models || []))
+      .catch(() => setModels([]))
+  }
+
+  const loadTypes = (modelId: number) => {
+    if (!modelId) {
+      setTypes([])
+      return
+    }
+    setLoading(true)
+    fetch(`/api/vehicle-catalog/types?modelId=${modelId}`)
+      .then(r => r.json())
+      .then(d => setTypes(d?.types || []))
+      .catch(() => setTypes([]))
+      .finally(() => setLoading(false))
+  }
+
   useEffect(() => {
     // Initialize selected types
     const map = new Map(selectedTypes)
@@ -44,34 +74,15 @@ export function VehicleTypeSelector({
   }, [])
 
   useEffect(() => {
-    fetch("/api/vehicle-catalog/brands")
-      .then(r => r.json())
-      .then(d => setBrands(d?.brands || []))
-      .catch(() => setBrands([]))
+    loadBrands()
   }, [])
 
   useEffect(() => {
-    if (!selectedBrand) {
-      setModels([])
-      return
-    }
-    fetch(`/api/vehicle-catalog/models?brandId=${selectedBrand}`)
-      .then(r => r.json())
-      .then(d => setModels(d?.models || []))
-      .catch(() => setModels([]))
+    loadModels(selectedBrand || 0)
   }, [selectedBrand])
 
   useEffect(() => {
-    if (!selectedModel) {
-      setTypes([])
-      return
-    }
-    setLoading(true)
-    fetch(`/api/vehicle-catalog/types?modelId=${selectedModel}`)
-      .then(r => r.json())
-      .then(d => setTypes(d?.types || []))
-      .catch(() => setTypes([]))
-      .finally(() => setLoading(false))
+    loadTypes(selectedModel || 0)
   }, [selectedModel])
 
   const filteredModels = selectedBrand
