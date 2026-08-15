@@ -104,6 +104,36 @@ büyük risk; elle çalıştırma zaten iz bırakır (kim başlattı Actions'ta 
 `main-push-guard` yine kırmızıdır. `if`'i job seviyesine taşıma: o zaman dispatch
 sırasında job *skipped* olur ve ona bağlı `deploy` da atlanır.
 
+### 2.5 Release merge'ünde `dev`'i SİLME — silinirse otomatik geri gelir
+
+15-08'de release PR'ı ([#364](https://github.com/aokcuoglu/bakimx/pull/364),
+`dev -> main`) merge edilirken head dalı **elle** silindi. Repo ayarı suçlu
+değil: `delete_branch_on_merge` zaten `false`; silme merge ekranındaki "Delete
+branch" düğmesine basılmasıydı. `dev` bir issue dalı değil, **kalıcı entegrasyon
+dalıdır** — release'den sonra da yaşamaya devam eder.
+
+Bedeli tek bir dal kaydından ibaret değildi, zincirleme oldu:
+
+- ajanlar dallanacak tabanı kaybetti (`issue/*` dalları `origin/dev`'den açılır),
+- `deploy-dev-aws.yml` (`push: dev`) bir daha tetiklenemez hale geldi, yani
+  `app-dev.bakimx.com` deploy alamaz oldu,
+- `sync-main-to-dev.yml` aynı dakikada düştü (18:44, `a95f453`):
+  `actions/checkout` `ref: dev` bulamadı.
+
+İçerik kaybı olmadı — release `dev`'i `main`'e merge ettiği için `main`'in ağacı
+`dev`'in son commit'iyle (`42467e3`) byte-byte aynıydı; dal `main`'den geri
+yaratıldı.
+
+Sunucu tarafında silmeyi engelleyemiyoruz (§2: branch protection 403). Yerine
+[`dev-branch-guard.yml`](../../.github/workflows/dev-branch-guard.yml) kondu:
+`delete` olayında `dev`'i `main`'den yeniden yaratır ve olay sessiz kalmasın diye
+bir issue açar. Dal bu arada elle geri açılmışsa **dokunmaz** (üzerine yazmak o
+commit'leri düşürürdü).
+
+Dürüst ol: bu **engelleme değil, onarımdır**. Silme gerçekleşir; workflow olaydan
+sonra çalışır. Silme ile geri gelme arasındaki kısa pencerede açılmış bir PR
+hedefini kaybedebilir. Kural hâlâ geçerli: release merge'ünde o düğmeye basma.
+
 ## 3. Şema ve onu kullanan kod aynı PR'da gider
 
 Yeni bir Prisma modeli/alanı kullanan kod, `prisma/schema.prisma` değişikliği ve
