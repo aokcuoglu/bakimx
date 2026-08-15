@@ -109,6 +109,16 @@ export async function fetchBakimxMatches(
   }
 }
 
+/** TecDoc kategorisine bağlı BakımX ürünlerini fetch et (BAK-45). */
+export async function fetchBakimxProductsByTecdocCategory(
+  categoryId: number,
+): Promise<BakimxFetchResult<BakimxProductSummary[]>> {
+  return getJson<BakimxProductSummary[]>(
+    `/api/parts/by-tecdoc-category/${categoryId}`,
+    "products",
+  )
+}
+
 /** Satır içi arama ile aynı eşik: 2 karakterden kısa sorgu sunucuya gitmez. */
 export const BAKIMX_MIN_SEARCH_LEN = 2
 /** Açılır listede BakımX'e ayrılan yer — TecDoc satırlarını aşağı itmesin. */

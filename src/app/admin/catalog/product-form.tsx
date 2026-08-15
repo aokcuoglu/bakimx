@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -38,6 +38,7 @@ export interface CatalogProductFormData {
   name: string
   brandId: string
   categoryKey: string | null
+  tecdocCategoryId: number | null
   barcode: string | null
   unit: string
   description: string | null
@@ -53,6 +54,11 @@ export interface CatalogProductFormData {
   isActive: boolean
 }
 
+interface TecdocCategory {
+  id: number
+  name: string
+}
+
 /** Yaygın KDV oranları — serbest giriş yerine sabit liste (yanlış oran = yanlış KDV dahil fiyat). */
 const VAT_RATES = [0, 1, 10, 20]
 
@@ -62,12 +68,12 @@ function toDefaults(product?: CatalogProductFormData): BakimxProductFormValues {
     name: product?.name ?? "",
     brandId: product?.brandId ?? "",
     categoryKey: product?.categoryKey ?? "",
+    tecdocCategoryId: product?.tecdocCategoryId ?? null,
     barcode: product?.barcode ?? "",
     unit: product?.unit ?? "adet",
     description: product?.description ?? "",
     imageUrl: product?.imageUrl ?? "",
     oemNumbers: product?.oemNumbers.join(", ") ?? "",
-    // DB kuruş tutar, form lira gösterir — dönüşüm YALNIZ bu sınırda (money.ts).
     workshopPrice: product ? kurusToLira(product.workshopPriceKurus) : 0,
     vatRate: product ? bpsToPercent(product.vatRateBps) : 20,
     costPrice: product?.costPriceKurus != null ? String(kurusToLira(product.costPriceKurus)) : "",
@@ -97,6 +103,20 @@ export function CatalogProductForm({
   const isEdit = !!product
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [tecdocCategories, setTecdocCategories] = useState<TecdocCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/admin/tecdoc-categories")
+      .then((r) => r.json())
+      .then((data) => {
+        setTecdocCategories(data.categories || [])
+        setLoadingCategories(false)
+      })
+      .catch(() => {
+        setLoadingCategories(false)
+      })
+  }, [])
 
   const form = useForm<BakimxProductFormValues, unknown, BakimxProductFormValues>({
     resolver: typedResolver(bakimxProductFormSchema),
@@ -117,6 +137,7 @@ export function CatalogProductForm({
       name: values.name,
       brandId: values.brandId,
       categoryKey: values.categoryKey,
+      tecdocCategoryId: values.tecdocCategoryId,
       barcode: values.barcode,
       unit: values.unit,
       description: values.description,
@@ -233,7 +254,7 @@ export function CatalogProductForm({
                 name="categoryKey"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kategori</FormLabel>
+                    <FormLabel>BakımX kategorisi</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
                         <SelectTrigger className="w-full">
@@ -253,6 +274,42 @@ export function CatalogProductForm({
                         </SelectContent>
                       </Select>
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tecdocCategoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>TecDoc kategorisi</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={(v) => field.onChange(v ? Number(v) : null)}
+                        disabled={loadingCategories}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={loadingCategories ? "Yükleniyor..." : "TecDoc kategorisi seçin"}>
+                            {(value: string | null) =>
+                              value && tecdocCategories.length > 0
+                                ? tecdocCategories.find((c) => c.id === Number(value))?.name ?? value
+                                : null
+                            }
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Eşleştirilmiyor</SelectItem>
+                          {tecdocCategories.map((c) => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>Ürün bu TecDoc kategorisinde de listelenir.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

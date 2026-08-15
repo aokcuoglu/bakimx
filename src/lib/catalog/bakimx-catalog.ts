@@ -148,6 +148,7 @@ export interface BakimxProductWriteInput {
   name: string
   brandId: string
   categoryKey: string | null
+  tecdocCategoryId: number | null
   barcode: string | null
   unit: string
   description: string | null
@@ -176,6 +177,7 @@ export function bakimxProductWriteData(input: BakimxProductWriteInput, brandName
     brandId: input.brandId,
     brandName,
     categoryKey: input.categoryKey,
+    tecdocCategoryId: input.tecdocCategoryId,
     barcode: input.barcode,
     unit: input.unit,
     description: input.description,
@@ -215,6 +217,7 @@ export const AUDITED_PRODUCT_FIELDS = [
   "brandId",
   "brandName",
   "categoryKey",
+  "tecdocCategoryId",
   "barcode",
   "unit",
   "description",
@@ -289,7 +292,8 @@ const AUDIT_FIELD_LABELS: Record<string, string> = {
   name: "Ürün adı",
   brandId: "Marka",
   brandName: "Marka adı",
-  categoryKey: "Kategori",
+  categoryKey: "BakımX kategorisi",
+  tecdocCategoryId: "TecDoc kategorisi",
   barcode: "Barkod",
   unit: "Birim",
   description: "Açıklama",

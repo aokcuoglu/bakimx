@@ -29,6 +29,7 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
         name: true,
         brandId: true,
         categoryKey: true,
+        tecdocCategoryId: true,
         barcode: true,
         unit: true,
         description: true,

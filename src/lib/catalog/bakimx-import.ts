@@ -48,6 +48,7 @@ const EXISTING_PRODUCT_SELECT = {
   backorderable: true,
   leadTimeDays: true,
   isActive: true,
+  tecdocCategoryId: true,
 } as const satisfies Prisma.BakimxProductSelect
 
 /**
