@@ -283,6 +283,11 @@ model User {
   role       UserRole @default(owner)
   // Soft-disable a seat (blocks sign-in) without deleting history.
   isActive   Boolean  @default(true)
+  // BAK-39: Opsiyonel bağ — giriş hesabını personel kaydıyla eşler. Bağlı kullanıcılar
+  // teknisyen panelinde kendi işlerini görür; bağsız olanlar listedeki ilk teknisyeni seçer.
+  // Bağ kaldırıldığında NULL'a döner; eski davranış korunur (geriye dönük kırılma yok).
+  technicianId String?
+  technician   Technician? @relation(fields: [technicianId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -297,6 +302,7 @@ model User {
   // bunları ifade edemediği için burada yalnızca not olarak geçer.
   @@unique([workshopId, username])
   @@index([workshopId])
+  @@index([technicianId])
 }
 
 // Workshop-scoped team roles. `staff` is the least-privileged operational role.
@@ -702,6 +708,7 @@ model Technician {
   laborSessions  LaborSession[]
   purchasedItems ServiceOrderItem[]
   completedItems ServiceOrderItem[] @relation("ItemCompletedBy")
+  linkedUsers    User[] // BAK-39: Teknicyen kaydıyla eşleştirilmiş giriş hesapları
 
   @@index([workshopId])
   @@index([workshopId, isActive])

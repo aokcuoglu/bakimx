@@ -19,6 +19,8 @@ export interface AuthUser {
    * şifresini değiştirene kadar uygulamayı kullanamaz (BAK-37).
    */
   mustChangePassword: boolean
+  /** BAK-39: Teknicyen kaydıyla eşleştirilmiş ise bu id'dir, yoksa null. */
+  technicianId: string | null
   /** Set when this is a founder impersonation context (the real admin's id). */
   impersonatorAdminId?: string
   /** True when the impersonation context forbids tenant-data writes. */
@@ -35,6 +37,7 @@ const USER_SELECT = {
   role: true,
   isActive: true,
   mustChangePassword: true,
+  technicianId: true,
 } as const
 
 /**

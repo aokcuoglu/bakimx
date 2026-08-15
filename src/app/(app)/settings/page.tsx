@@ -96,6 +96,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     prisma.user.findMany({
       where: { workshopId: user.workshopId },
       // `username` de çekiliyor: e-postasız üye listede kimliksiz görünmesin.
+      // BAK-39: `technicianId` de çekiliyor; teknisyen seçim UI'ında görünecek.
       select: {
         id: true,
         email: true,
@@ -104,6 +105,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         lastName: true,
         role: true,
         isActive: true,
+        technicianId: true,
       },
       orderBy: { createdAt: "asc" },
     }),
