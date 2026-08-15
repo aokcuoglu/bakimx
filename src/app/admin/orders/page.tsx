@@ -15,12 +15,12 @@ async function OrderStats() {
   const stats = await getOrderStats()
 
   const statCards = [
-    { label: "Toplam", value: stats.total, color: "bg-blue-50" },
-    { label: "Beklemede", value: stats.pending, color: "bg-yellow-50" },
-    { label: "Onaylandı", value: stats.confirmed, color: "bg-purple-50" },
-    { label: "Gönderilen", value: stats.shipped, color: "bg-green-50" },
-    { label: "Ödenmemiş", value: stats.unpaid, color: "bg-red-50" },
-    { label: "Kısmi Ödeme", value: stats.partialPaid, color: "bg-orange-50" }
+    { label: "Toplam", value: stats.total, color: "bg-muted/50" },
+    { label: "Beklemede", value: stats.pending, color: "bg-warning/10" },
+    { label: "Onaylandı", value: stats.confirmed, color: "bg-muted/50" },
+    { label: "Gönderilen", value: stats.shipped, color: "bg-success/10" },
+    { label: "Ödenmemiş", value: stats.unpaid, color: "bg-destructive/10" },
+    { label: "Kısmi Ödeme", value: stats.partialPaid, color: "bg-warning/10" }
   ]
 
   return (
