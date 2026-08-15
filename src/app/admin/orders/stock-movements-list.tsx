@@ -62,7 +62,7 @@ export function StockMovementsList({ movements }: StockMovementsListProps) {
               </div>
               <div className="text-right space-y-1">
                 <div className={`font-medium ${
-                  movement.type === "deduction" ? "text-destructive-strong" : "text-success-strong"
+                  movement.type === "deduction" ? "text-red-600" : "text-green-600"
                 }`}>
                   {movement.type === "deduction" ? "−" : "+"}{movement.quantity}
                 </div>

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
-import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import OrderDetailView from "./order-detail"
 
 export const metadata = {
@@ -30,9 +29,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         },
         orderBy: { createdAt: "desc" }
       },
-      photos: {
-        where: VISIBLE_PHOTO
-      },
+      photos: true,
       sync_logs: {
         orderBy: { createdAt: "desc" }
       }

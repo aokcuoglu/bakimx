@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db"
-import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export interface GetOrdersParams {
   limit?: number
@@ -57,9 +56,7 @@ export async function getOrderById(id: string) {
         },
         orderBy: { createdAt: "desc" }
       },
-      photos: {
-        where: VISIBLE_PHOTO
-      },
+      photos: true,
       sync_logs: {
         orderBy: { createdAt: "desc" }
       }
