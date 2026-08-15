@@ -61,14 +61,19 @@ export function isPriceTaxMode(value: unknown): value is PriceTaxMode {
   return value === "included" || value === "excluded"
 }
 
-/** localStorage'daki kip; okunamazsa (SSR, gizli mod, bozuk değer) `excluded`. */
+/** Yeni kullanıcılar fiyatı müşteriye söylendiği biçimde, KDV dahil görür ve girer. */
+export function resolvePriceTaxMode(value: unknown): PriceTaxMode {
+  return isPriceTaxMode(value) ? value : "included"
+}
+
+/** localStorage'daki kip; okunamazsa (SSR, gizli mod, bozuk değer) `included`. */
 export function readPriceTaxMode(): PriceTaxMode {
-  if (typeof window === "undefined") return "excluded"
+  if (typeof window === "undefined") return "included"
   try {
     const stored = window.localStorage.getItem(PRICE_TAX_MODE_STORAGE_KEY)
-    return isPriceTaxMode(stored) ? stored : "excluded"
+    return resolvePriceTaxMode(stored)
   } catch {
-    return "excluded"
+    return "included"
   }
 }
 
