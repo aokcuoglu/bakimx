@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { useEffect, useState } from "react"
