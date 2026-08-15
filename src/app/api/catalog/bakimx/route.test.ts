@@ -90,7 +90,7 @@ mock.module("@/lib/features", () => ({
 }))
 
 type FakeFindManyArgs = {
-  where: { categoryKey?: string; AND?: { searchKey: { contains: string } }[] }
+  where: { categoryKey?: string; AND?: { searchKey?: { contains: string } }[] }
   select: Record<string, true>
   take: number
 }
@@ -99,7 +99,10 @@ mock.module("@/lib/db", () => ({
   prisma: {
     bakimxProduct: {
       findMany: async (args: FakeFindManyArgs) => {
-        const terms = (args.where.AND ?? []).map((clause) => clause.searchKey.contains)
+        // `AND[0]` görünürlük süzgeci (BAK-46); arama terimleri onun ardından gelir.
+        const terms = (args.where.AND ?? [])
+          .map((clause) => clause.searchKey?.contains)
+          .filter((t): t is string => typeof t === "string")
         return PRODUCTS.filter(
           (p) =>
             (!args.where.categoryKey || p.categoryKey === args.where.categoryKey) &&
@@ -125,6 +128,10 @@ function searchRequest(query: string): Request {
   return new Request(`https://app.bakimx.com/api/catalog/bakimx/search${query}`)
 }
 
+function categoriesRequest(query = ""): Request {
+  return new Request(`https://app.bakimx.com/api/catalog/bakimx/categories${query}`)
+}
+
 describe("GET /api/catalog/bakimx/search", () => {
   it("kapı kapalıyken 403 + feature_locked döner", async () => {
     featureEnabled = false
@@ -133,7 +140,7 @@ describe("GET /api/catalog/bakimx/search", () => {
     expect(response.status).toBe(403)
     expect(await response.json()).toMatchObject({ code: "feature_locked" })
 
-    const categories = await categoriesGET()
+    const categories = await categoriesGET(categoriesRequest())
     expect(categories.status).toBe(403)
     expect(await categories.json()).toMatchObject({ code: "feature_locked" })
     featureEnabled = true
@@ -202,7 +209,7 @@ describe("GET /api/catalog/bakimx/search", () => {
 describe("GET /api/catalog/bakimx/categories", () => {
   it("iç taksonomiyi etiket ve ürün sayısıyla döner", async () => {
     workshopId = "ws-categories"
-    const response = await categoriesGET()
+    const response = await categoriesGET(categoriesRequest())
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
       categories: [

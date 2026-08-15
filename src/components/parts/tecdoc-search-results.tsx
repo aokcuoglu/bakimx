@@ -33,6 +33,7 @@ export function TecdocSearchResults({
   bakimxProducts,
   bakimxSearching,
   onBakimxSelect,
+  vehicleTypeId,
   brandFilter,
   onBrandFilterChange,
   onCategorySelect,
@@ -50,6 +51,8 @@ export function TecdocSearchResults({
   bakimxProducts?: BakimxProductSummary[]
   bakimxSearching?: boolean
   onBakimxSelect?: (p: BakimxProductSummary) => void
+  /** Rozet eşleşmesi araca bağlı ürünleri de kapsasın diye (BAK-46). */
+  vehicleTypeId?: number | null
   brandFilter: string
   onBrandFilterChange: (v: string) => void
   onCategorySelect: (c: CategoryMatch) => void
@@ -66,7 +69,7 @@ export function TecdocSearchResults({
     lastArticlesRef.current = articles
     let active = true
     const articleNumbers = articles.map((a) => a.articleNo)
-    void fetchBakimxMatches(articleNumbers).then((result) => {
+    void fetchBakimxMatches(articleNumbers, vehicleTypeId).then((result) => {
       if (!active) return
       setBakimxMatches(result.status === "ok" ? result.data : {})
     })
@@ -74,7 +77,7 @@ export function TecdocSearchResults({
     return () => {
       active = false
     }
-  }, [articles])
+  }, [articles, vehicleTypeId])
 
   const brands = useMemo(() => {
     if (!articles) return []

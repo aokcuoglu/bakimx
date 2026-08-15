@@ -282,6 +282,7 @@ export function PartSearchInput({
     enabled: !!onSelectBakimxProduct,
     q: query,
     limit: BAKIMX_SUGGESTION_LIMIT,
+    vehicleTypeId,
   })
 
   const suggestions = buildPartSuggestions(results, bakimxResults, stockResults)

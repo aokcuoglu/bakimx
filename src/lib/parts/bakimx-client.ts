@@ -57,6 +57,8 @@ export interface BakimxProductQuery {
   categoryKey?: string | null
   brandId?: string | null
   limit?: number | null
+  /** Seçili aracın tipi — araca bağlı (`vehicle_linked`) ürünleri açar (BAK-46). */
+  vehicleTypeId?: number | null
 }
 
 export function bakimxSearchUrl(query: BakimxProductQuery): string {
@@ -65,6 +67,7 @@ export function bakimxSearchUrl(query: BakimxProductQuery): string {
   if (query.categoryKey) qs.set("categoryKey", query.categoryKey)
   if (query.brandId) qs.set("brandId", query.brandId)
   if (query.limit != null) qs.set("limit", String(query.limit))
+  if (query.vehicleTypeId != null) qs.set("vehicleTypeId", String(query.vehicleTypeId))
   return `/api/catalog/bakimx/search?${qs.toString()}`
 }
 
@@ -74,8 +77,18 @@ export function fetchBakimxProducts(
   return getJson<BakimxProductSummary[]>(bakimxSearchUrl(query), "products")
 }
 
-export function fetchBakimxCategories(): Promise<BakimxFetchResult<BakimxCategoryNode[]>> {
-  return getJson<BakimxCategoryNode[]>("/api/catalog/bakimx/categories", "categories")
+/** Taksonomi arama ile AYNI aracı görmeli — aksi hâlde dolu görünen dal boş açılır. */
+export function bakimxCategoriesUrl(vehicleTypeId?: number | null): string {
+  const qs = new URLSearchParams()
+  if (vehicleTypeId != null) qs.set("vehicleTypeId", String(vehicleTypeId))
+  const query = qs.toString()
+  return query ? `/api/catalog/bakimx/categories?${query}` : "/api/catalog/bakimx/categories"
+}
+
+export function fetchBakimxCategories(
+  vehicleTypeId?: number | null,
+): Promise<BakimxFetchResult<BakimxCategoryNode[]>> {
+  return getJson<BakimxCategoryNode[]>(bakimxCategoriesUrl(vehicleTypeId), "categories")
 }
 
 export interface BakimxMatchResult {
@@ -84,6 +97,7 @@ export interface BakimxMatchResult {
 
 export async function fetchBakimxMatches(
   articleNumbers: string[],
+  vehicleTypeId?: number | null,
 ): Promise<BakimxFetchResult<Record<string, BakimxProductSummary>>> {
   if (gateLocked) return { status: "locked" }
   if (articleNumbers.length === 0) return { status: "ok", data: {} }
@@ -92,7 +106,7 @@ export async function fetchBakimxMatches(
     const res = await fetch("/api/catalog/bakimx/match", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ articleNumbers }),
+      body: JSON.stringify({ articleNumbers, vehicleTypeId: vehicleTypeId ?? undefined }),
     })
     if (res.status === 403) {
       gateLocked = true
@@ -112,9 +126,11 @@ export async function fetchBakimxMatches(
 /** TecDoc kategorisine bağlı BakımX ürünlerini fetch et (BAK-45). */
 export async function fetchBakimxProductsByTecdocCategory(
   categoryId: number,
+  vehicleTypeId?: number | null,
 ): Promise<BakimxFetchResult<BakimxProductSummary[]>> {
+  const qs = vehicleTypeId != null ? `?vehicleTypeId=${vehicleTypeId}` : ""
   return getJson<BakimxProductSummary[]>(
-    `/api/parts/by-tecdoc-category/${categoryId}`,
+    `/api/parts/by-tecdoc-category/${categoryId}${qs}`,
     "products",
   )
 }
@@ -130,7 +146,10 @@ export const BAKIMX_SUGGESTION_LIMIT = 8
  *
  * `locked`: kapı kapalı ya da uç okunamadı → dal hiç render EDİLMEMELİ.
  */
-export function useBakimxCategories(enabled: boolean): {
+export function useBakimxCategories(
+  enabled: boolean,
+  vehicleTypeId?: number | null,
+): {
   categories: BakimxCategoryNode[]
   locked: boolean
 } {
@@ -140,7 +159,7 @@ export function useBakimxCategories(enabled: boolean): {
   useEffect(() => {
     if (!enabled) return
     let active = true
-    void fetchBakimxCategories().then((result) => {
+    void fetchBakimxCategories(vehicleTypeId).then((result) => {
       if (!active) return
       setCategories(result.status === "ok" ? result.data : [])
       setLocked(result.status !== "ok")
@@ -148,7 +167,7 @@ export function useBakimxCategories(enabled: boolean): {
     return () => {
       active = false
     }
-  }, [enabled])
+  }, [enabled, vehicleTypeId])
 
   return { categories, locked }
 }
@@ -163,8 +182,9 @@ export function useBakimxProductSearch(input: {
   q?: string | null
   categoryKey?: string | null
   limit?: number | null
+  vehicleTypeId?: number | null
 }): { products: BakimxProductSummary[]; locked: boolean; searching: boolean } {
-  const { enabled, categoryKey = null, limit = null } = input
+  const { enabled, categoryKey = null, limit = null, vehicleTypeId = null } = input
   const q = (input.q ?? "").trim()
   const [products, setProducts] = useState<BakimxProductSummary[]>([])
   const [locked, setLocked] = useState(false)
@@ -175,7 +195,9 @@ export function useBakimxProductSearch(input: {
   const lastQueryRef = useRef<string | null>(null)
 
   const hasScope = q.length >= BAKIMX_MIN_SEARCH_LEN || !!categoryKey
-  const requestKey = enabled && hasScope ? `${q}|${categoryKey ?? ""}|${limit ?? ""}` : null
+  const requestKey = enabled && hasScope
+    ? `${q}|${categoryKey ?? ""}|${limit ?? ""}|${vehicleTypeId ?? ""}`
+    : null
 
   useEffect(() => {
     if (requestKey == null) {
@@ -191,7 +213,7 @@ export function useBakimxProductSearch(input: {
     const timer = setTimeout(() => {
       // Spinner debounce'tan SONRA açılır: her tuş vuruşunda yanıp sönmesin.
       setSearching(true)
-      void fetchBakimxProducts({ q, categoryKey, limit }).then((result) => {
+      void fetchBakimxProducts({ q, categoryKey, limit, vehicleTypeId }).then((result) => {
         if (!active) return
         setProducts(result.status === "ok" ? result.data : [])
         setLocked(result.status !== "ok")
