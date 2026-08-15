@@ -902,6 +902,8 @@ model ServiceOrderItem {
   completionNote     String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
   photos             VehiclePhoto[]
+  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
+  includeVat         Boolean          @default(true)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 

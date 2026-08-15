@@ -67,6 +67,8 @@ export type OrderItem = {
   purchasePhotoId?: string | null
   // Dolu ⇒ kalem sahada teknisyen tarafından "yapıldı" işaretlenmiş.
   completedAt?: string | null
+  // Per-row VAT inclusion toggle: true = includes 20% VAT in displayed price
+  includeVat?: boolean
 }
 
 export type Totals = {
