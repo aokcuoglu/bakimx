@@ -12,13 +12,13 @@ fix, develop, or deliver it. Unless the user limits the scope, completion means:
 1. Understand the issue and define testable acceptance criteria.
 2. Implement the smallest complete solution in an isolated worktree.
 3. Validate and review the change in proportion to its risk.
-4. Push a branch and open a PR that closes every tracker the work is filed in:
+4. Hand off to the primary checkout for local preview on localhost:3000.
+5. Wait for user confirmation, then push and open a PR that closes every tracker:
    `Closes #<github-number>`, plus `Closes <MULTICA-KEY>` when a Multica issue
    drives the delivery.
-5. Monitor required GitHub Actions, fix failures, and merge only when green.
-6. Verify the issue is closed and its Factory - BakimX project item is Done.
-7. Remove only the branch/worktree created for the issue.
-8. Fast-forward the primary local `dev` checkout only when it is clean.
+6. Monitor required GitHub Actions, fix failures, and merge only when green.
+7. Verify the issue is closed and its Factory - BakimX project item is Done.
+8. Switch primary back to `dev`, pull merged changes, delete the issue branch.
 
 Respect the active agent's authorization and confirmation policies. Never bypass
 branch protection, required reviews, required checks, or repository permissions.
@@ -28,7 +28,7 @@ KALICI olarak verilmiştir: kapılar yeşil ve PR mergeable ise, her PR için ay
 "merge edeyim mi?" diye sorma — merge et ve kapanışa (dal temizliği,
 `bun run project:sync`, tracker doğrulaması) devam et. Bu yalnız **onay adımını**
 kaldırır, hiçbir kapıyı gevşetmez: kırmızı check'e rağmen merge, admin bypass ve
-`§6`'daki koşulların atlanması hâlâ yasak. Olağan teslimat dışındaki işler
+`§7`'deki koşulların atlanması hâlâ yasak. Olağan teslimat dışındaki işler
 (deploy, geri alınamaz/dışa dönük işlemler) ayrı onay ister. Merge sonrası ne
 yapıldığı raporlanır.
 
@@ -109,13 +109,44 @@ bun run build
 - If a gate is unavailable or fails for a pre-existing reason, collect evidence,
   distinguish it from regressions, and do not claim full success.
 
-## 5. Commit and pull request
+## 5. Local preview
+
+After quality gates pass in the worktree, hand the change to the primary checkout
+so the user can verify on localhost:3000 before a PR is opened.
+
+```sh
+# Push the issue branch from the worktree
+git push -u origin issue/<number>-<slug>
+
+# Remove the worktree (releases the branch for checkout elsewhere)
+git worktree remove <worktree-path>
+
+# Switch primary checkout to the issue branch
+cd ~/www/bakimx
+git fetch origin
+git checkout issue/<number>-<slug>
+bun install   # if bun.lock changed
+```
+
+- If `bun run dev` is already running, it hot-reloads after checkout. If
+  dependencies changed (`bun.lock` diff), run `bun install` and restart the dev
+  server.
+- Inform the user that changes are ready for testing on localhost:3000 and what
+  flows/pages to check.
+- **Wait for user confirmation** before proceeding to §6. If the user reports a
+  bug, fix it directly in the primary checkout (still on the issue branch), push,
+  re-run quality gates, and ask for re-test.
+- Skip this step only when the user explicitly says to proceed without local QA
+  (e.g. "PR aç, test etmeme gerek yok").
+
+## 6. Commit and pull request
 
 - Keep commits intentional and limited to issue-owned files.
 - Use a descriptive commit such as `fix(#123): correct intake validation`.
 - Rebase or merge the latest `origin/dev` before the final validation when the
   branch has drifted; never force-push shared work without explicit authorization.
-- Push the issue branch and open a PR targeting `dev`.
+- The issue branch was already pushed in §5. Push any additional commits from
+  local QA fixes, then open a PR targeting `dev`.
 - Complete the PR template. Include summary, risks, tests and manual QA evidence.
 - Link the PR from its body, not only from a commit or comment. Work that is
   tracked in both systems needs **two closing lines**, one per tracker:
@@ -142,21 +173,21 @@ bun run build
 - Start as draft while checks or review work remain; mark ready only when the
   implementation and evidence are complete.
 
-## 6. Checks, review, and merge
+## 7. Checks, review, and merge
 
 - Monitor every required check to a terminal state. Inspect logs and fix failures
   attributable to the branch; rerun proportionate local validation after fixes.
 - Resolve actionable review comments and re-check the diff.
 - Merge only when the PR is non-draft, mergeable, approved as required, current
   with `dev`, and all required checks are green.
-- Bu koşullar sağlandığında merge için ayrıca insan onayı BEKLENMEZ — bkz. yukarıdaki
-  "Merge yetkisi" notu.
+- Bu koşullar sağlandığında merge için ayrıca insan onayı BEKLENMEZ — bkz.
+  yukarıdaki "Merge yetkisi" notu.
 - Prefer squash merge unless repository policy or release history requires a
   different method. Never use admin bypass.
 - A deployment workflow triggered after merge is distinct from PR validation.
   Report its status; do not claim deployment success before it completes.
 
-## 7. Closure and project automation
+## 8. Closure and project automation
 
 - Confirm the merged PR contains the closing keyword and GitHub closed the issue.
 - Confirm the issue item in `Factory - BakimX` has Status `Done`.
@@ -182,23 +213,25 @@ bun run project:sync              # closed issue -> Status Done
 bun run project:sync -- --dry-run # report drift without changing anything
 ```
 
-## 8. Cleanup and local synchronization
+## 9. Cleanup and local synchronization
 
 - Delete only the remote issue branch when it is merged and no longer needed.
-- Remove only the worktree created for this issue, then delete only its local
-  branch. Verify targets exactly before either operation.
+- The worktree was already removed in §5. If it still exists (e.g. local QA was
+  skipped), remove it now and delete only its local branch. Verify targets exactly
+  before either operation.
 - Never use broad cleanup commands such as `git worktree prune`, wildcard branch
   deletion, `git clean`, or `git reset --hard` as routine cleanup.
-- Update the primary local checkout only when it is on `dev`, has no staged,
-  unstaged, or untracked changes, and can fast-forward:
+- After merge, the primary checkout is on the issue branch (from §5). Switch it
+  back to `dev` and pull the merged changes:
 
 ```sh
-git fetch origin dev
+git checkout dev
 git pull --ff-only origin dev
+git branch -d issue/<number>-<slug>
 ```
 
-- If the primary checkout is dirty or cannot fast-forward, leave it untouched and
-  report the exact blocker and the already-merged commit.
+- If the primary is dirty or cannot fast-forward, leave it untouched and report
+  the exact blocker and the already-merged commit.
 
 ## Final report
 
