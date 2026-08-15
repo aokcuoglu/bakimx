@@ -11,7 +11,7 @@ import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-gu
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
-import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { bakimxLineItemFields, validateBakimxProductFitment, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
 import { resolveFeature } from "@/lib/features"
 import type { PlanTier } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
@@ -147,6 +147,18 @@ export async function addOrderItemAction(formData: FormData) {
     const product = await getVisibleBakimxProduct(parsed.data.bakimxProductId)
     if (!product) return { error: "BakımX ürünü bulunamadı veya yayından kaldırılmış" }
     bakimxFields = bakimxLineItemFields(product)
+  }
+
+  // Araç uyumluluğu kontrolü (BAK-46): vehicle_linked ürünler sadece uyumlu araçlara
+  // eklenebilir. Sunucu otoritesi: araç tipi kalem yazımından değil, siparişten okunur.
+  if (bakimxFields) {
+    const intake = await prisma.vehicleIntakeForm.findUnique({
+      where: { id: order.intakeFormId },
+      select: { vehicle: { select: { catalogVehicleTypeId: true } } },
+    })
+    const vehicleTypeId = intake?.vehicle.catalogVehicleTypeId ?? null
+    const fitmentValid = await validateBakimxProductFitment(parsed.data.bakimxProductId!, vehicleTypeId)
+    if (!fitmentValid) return { error: "BakımX ürünü seçili araç ile uyumlu değildir" }
   }
 
   let createdItemId: string | null = null
