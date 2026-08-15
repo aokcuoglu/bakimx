@@ -1,0 +1,152 @@
+name: Main push guard
+
+# Alarm, NOT protection. This workflow blocks nothing — the commit is already on
+# `main` and deploy-prod-aws.yml has already started by the time this runs. What it
+# buys is VISIBILITY: today a direct push to `main` goes through in silence.
+#
+# Why an alarm instead of a real gate: server-side branch protection needs GitHub Pro
+# on this account (private repo + Free plan → both the branch-protection and rulesets
+# APIs return 403). Pro was declined for budget reasons on 2026-08-15 (BAK-57), so
+# `main` staying unprotected is an ACCEPTED RISK, not an oversight. Details and the
+# checklist to open if that decision is ever revisited:
+# docs/agent-workflows/repo-guardrails.md §2.
+#
+# The gap is not theoretical: 3079291 and 3f038e7 were pushed straight to `main` on
+# 2026-07-30, both triggered a prod deploy, and nobody was notified.
+#
+# NO paths-ignore on purpose. Those two pushes touched .github/ISSUE_TEMPLATE/*.yml,
+# so deploy-prod-aws.yml's `**.md` / `docs/**` filter would have missed them anyway —
+# a doc filter here would blind the guard to exactly the class of push it exists for.
+#
+# Known limitation, by design: on a `push` event GitHub runs the workflow version that
+# exists IN the pushed commit, so this file only guards pushes made after it lands on
+# `main` (via the normal dev→main release merge). Someone who deletes this file in the
+# same direct push is not caught — a bypassable alarm is still worth more than none.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read # list PRs associated with the pushed commit
+  issues: write # file the alarm issue
+
+# Per-sha group: two quick pushes must each get their own verdict, so a second push
+# may never cancel the first one's check.
+concurrency:
+  group: main-push-guard-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SHA: ${{ github.sha }}
+    steps:
+      # "List pull requests associated with a commit" is the whole test: a merged PR
+      # resolves to its number, a hand-pushed commit resolves to an empty array.
+      # Verified both ways on this repo: 3079291 (direct push) → 0 results,
+      # 558170e (PR #346) → #346.
+      #
+      # `merged_at != null` only — deliberately NOT also `base.ref == main`. Every
+      # commit on main today resolves to a PR based on main, but if the release path
+      # ever changes to fast-forwarding main to a dev commit, a base filter would fire
+      # on every legitimate release. An alarm that cries wolf gets muted, so the looser
+      # test wins: "did this code go through a pull request at all".
+      - name: Was this commit merged through a pull request?
+        id: origin
+        run: |
+          set -euo pipefail
+          PR=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null) | .number] | first // empty')
+          if [ -n "$PR" ]; then
+            echo "Commit ${SHA} came from PR #${PR} — nothing to report."
+            echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Commit ${SHA} reached main without a pull request."
+          fi
+
+      # Same sha twice (a re-run, or a manual dispatch on an already-reported commit)
+      # must not open a second issue. Matched against the recent issue list rather than
+      # `--search`, which runs on an index that lags issue creation by seconds.
+      - name: Already reported?
+        id: dedupe
+        if: steps.origin.outputs.pr == ''
+        run: |
+          set -euo pipefail
+          SHORT="${SHA:0:12}"
+          EXISTING=$(gh issue list --state all --limit 100 --json number,title \
+            --jq "[.[] | select(.title | contains(\"$SHORT\")) | .number] | first // empty")
+          if [ -n "$EXISTING" ]; then
+            echo "Already filed as #${EXISTING}."
+            echo "existing=$EXISTING" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: File the alarm issue
+        if: steps.origin.outputs.pr == '' && steps.dedupe.outputs.existing == ''
+        env:
+          PUSHER: ${{ github.event.pusher.name || github.actor }}
+          AUTHOR: ${{ github.event.head_commit.author.name || 'bilinmiyor' }}
+          PUSHED_AT: ${{ github.event.head_commit.timestamp || '' }}
+          MESSAGE: ${{ github.event.head_commit.message || '' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          SHORT="${SHA:0:12}"
+          # Sliced inside jq, not through `head` — a pipe that closes early would kill
+          # gh with SIGPIPE and `pipefail` would fail the step instead of reporting.
+          FILES=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}" \
+            --jq '[.files[]?.filename] | .[0:50] | join("\n")')
+          [ -n "$FILES" ] || FILES="(dosya listesi alınamadı)"
+
+          {
+            echo "\`main\` dalına **PR açılmadan** doğrudan bir commit girdi. Bu commit"
+            echo "prod deploy'unu (\`deploy-prod-aws.yml\`) tetiklemiş olabilir."
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | [\`${SHORT}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHA}) |"
+            echo "| Push eden | ${PUSHER} |"
+            echo "| Commit yazarı | ${AUTHOR} |"
+            echo "| Zaman | ${PUSHED_AT:-bilinmiyor} |"
+            echo "| Alarm run | ${RUN_URL} |"
+            echo
+            echo "Commit mesajı:"
+            echo
+            echo '```'
+            echo "${MESSAGE}"
+            echo '```'
+            echo
+            echo "Değişen dosyalar:"
+            echo
+            echo '```'
+            echo "${FILES}"
+            echo '```'
+            echo
+            echo "## Ne yapmalı"
+            echo
+            echo "1. Değişikliğin kasıtlı ve doğru olduğunu commit'i açarak doğrula."
+            echo "2. \`deploy-prod-aws.yml\` run'ının sonucuna bak — prod'a ne çıktı?"
+            echo "3. Yanlışsa geri al: \`git revert ${SHORT}\` ile \`dev\` üzerinden PR aç."
+            echo "4. Doğruysa bu issue'yu kapat."
+            echo
+            echo "Bu bir engelleme değil, bildirimdir: \`main\` sunucu tarafında korumasız"
+            echo "(GitHub Pro alınmadı — BAK-57, 2026-08-15, kabul edilmiş risk). Gerekçe ve"
+            echo "kararın değişmesi hâlinde açılacak kutular: \`docs/agent-workflows/repo-guardrails.md\` §2."
+          } > issue-body.md
+
+          gh issue create \
+            --title "PR'sız main push'u: ${SHORT}" \
+            --body-file issue-body.md
+
+      # The red run is half the alarm — an issue nobody has subscribed to is easy to
+      # miss, a failed check on main is not. Runs even when the issue was already
+      # filed, so a re-run does not look green.
+      - name: Fail the run
+        if: steps.origin.outputs.pr == ''
+        run: |
+          echo "::error::${SHA} main'e PR'sız girdi. Ayrıntı için açılan issue'ya bak."
+          exit 1
