@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test"
 import {
   STANDARD_TAX_BPS,
+  allRowsVatLiable,
   effectiveTaxBps,
   isPriceTaxMode,
   readPriceTaxMode,
   resolvePriceTaxMode,
+  rowsToMakeVatExempt,
   rowsToMakeVatLiable,
   toDisplayPriceKurus,
   toDisplayPriceKurusOrNull,
@@ -77,17 +79,27 @@ test("kutu işaretlenince muaf bırakılmış satırlar tabi hale gelir", () => 
     { id: "c", includeVat: undefined },
     { id: "d", includeVat: false },
   ]
-  // Yalnız muaf olanlar yazılır: zaten tabi satıra boş PATCH atılmaz.
-  expect(rowsToMakeVatLiable(rows, true)).toEqual(["b", "d"])
+  expect(rowsToMakeVatLiable(rows)).toEqual(["b", "d"])
 })
 
-test("işaret kalkarken hiçbir satır muaf yapılmaz", () => {
-  const rows = [{ id: "a", includeVat: true }, { id: "b", includeVat: false }]
-  // "KDV hariç" kip net giriş/gösterim demektir; belgenin KDV'sini kaldırmaz.
-  expect(rowsToMakeVatLiable(rows, false)).toEqual([])
+test("kutu kaldırılınca tabi satırlar muaf yapılır", () => {
+  const rows = [
+    { id: "a", includeVat: true },
+    { id: "b", includeVat: false },
+    { id: "c", includeVat: undefined },
+  ]
+  expect(rowsToMakeVatExempt(rows)).toEqual(["a", "c"])
 })
 
 test("yazılacak satır yoksa liste boştur", () => {
-  expect(rowsToMakeVatLiable([], true)).toEqual([])
-  expect(rowsToMakeVatLiable([{ id: "a", includeVat: true }], true)).toEqual([])
+  expect(rowsToMakeVatLiable([])).toEqual([])
+  expect(rowsToMakeVatLiable([{ id: "a", includeVat: true }])).toEqual([])
+  expect(rowsToMakeVatExempt([])).toEqual([])
+  expect(rowsToMakeVatExempt([{ id: "a", includeVat: false }])).toEqual([])
+})
+
+test("allRowsVatLiable — tüm satırlar tabi ise true", () => {
+  expect(allRowsVatLiable([{ includeVat: true }, { includeVat: undefined }])).toBe(true)
+  expect(allRowsVatLiable([{ includeVat: true }, { includeVat: false }])).toBe(false)
+  expect(allRowsVatLiable([])).toBe(false)
 })

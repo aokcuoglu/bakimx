@@ -46,8 +46,10 @@ import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { bpsToPercent, kurusToLira, parseTRYToKurus } from "@/lib/money"
 import {
   STANDARD_TAX_BPS,
+  allRowsVatLiable,
   effectiveTaxBps,
   readPriceTaxMode,
+  rowsToMakeVatExempt,
   rowsToMakeVatLiable,
   toDisplayPriceKurus,
   toDisplayPriceKurusOrNull,
@@ -176,7 +178,7 @@ export function PartsLaborEditor({
   rows, vehicle, locked, loading, laborCatalog, orderId,
   allowExternalLabor = true, showAttributes = true,
   taxRateBps, onApplyStandardTax,
-  flash, onAdd, onCell, onRemove, onBulkIncludeVat,
+  flash, onAdd, onCell, onRemove, onBulkIncludeVat, onBulkExcludeVat,
 }: {
   rows: Row[]
   vehicle?: PickerVehicle
@@ -203,6 +205,11 @@ export function PartsLaborEditor({
    * ucuz bir yol sunuyorsa (tek refresh) bunu doldurur.
    */
   onBulkIncludeVat?: (rowIds: string[]) => void
+  /**
+   * "Tutarlar KDV dahil" kaldırılınca tabi satırları toplu muaf yapar (BAK-53).
+   * Verilmezse satır satır `onCell` ile aynı iş yapılır.
+   */
+  onBulkExcludeVat?: (rowIds: string[]) => void
 }) {
   // Parça detay modalı (tek örnek) — arama, katalog picker'ı ve kalem satırları besler.
   const [detail, setDetail] = useState<DetailRequest | null>(null)
@@ -286,6 +293,7 @@ export function PartsLaborEditor({
         locked={locked}
         onCell={onCell}
         onBulkIncludeVat={onBulkIncludeVat}
+        onBulkExcludeVat={onBulkExcludeVat}
         onApplyStandardTax={onApplyStandardTax}
       />
 
@@ -386,43 +394,44 @@ export function PartsLaborEditor({
 /**
  * KDV dahil/hariç anahtarı + belgede KDV oranı yokken çıkan uyarı (#311).
  *
- * Kip düzenleyicinin GÖSTERİMİNİ ve GİRİŞİNİ çevirir; KDV'yi Genel Toplam'a
- * ekleyen tek yer belgenin `taxRate` alanıdır. Belgede oran yoksa düzenleyici
- * standart %20 ile hesap gösterir ve farkı gizlemek yerine söyler —
- * `onApplyStandardTax` verilmişse tek tıkla oranı belgeye yazdırır.
- *
- * BAK-53 geri bildirimi — kutu işaretlenince KDV sütunundaki TÜM satırlar tabi
- * hale gelir: "tutarlar KDV dahil" derken kullanıcı belgenin tamamını kastediyor,
- * tek tek verilmiş muafiyetlerin sessizce ayakta kalmasını değil. KDV matrahı
- * (ve dolayısıyla Genel Toplam'daki KDV tutarı) satır bayraklarından okunduğu
- * için tutar da bu yazımla birlikte güncellenir (src/lib/totals.ts).
- *
- * İşaret KALKARKEN satırlara DOKUNULMAZ — bilinçli asimetri: "KDV hariç" kip
- * fiyatın net girilip net gösterilmesi demektir, KDV'nin belgeden kalkması
- * değil. Bir satırı KDV'den çıkarmanın yolu o satırın KDV kutusudur; toplu
- * muafiyet üst kutunun işi değildir (aksi hâlde yalnız net fiyat görmek isteyen
- * kullanıcı belgenin KDV'sini de sıfırlardı).
+ * İki yönlü senkronizasyon (BAK-53 geri bildirimi):
+ * - Kutu İŞARETLENİNCE: tüm satırlar KDV'ye tabi olur + gösterim dahil kipine geçer.
+ * - Kutu KALDIRILINCA: tüm satırlar KDV'den muaf olur + gösterim hariç kipine geçer.
+ * - Satır satır tüm tickler işaretlenince üst kutu da otomatik işaretlenir.
+ * - Herhangi bir satırın tick'i kalkınca üst kutu da otomatik kalkar.
  */
-function PriceTaxToggleRow({ rows, locked, onCell, onBulkIncludeVat, onApplyStandardTax }: {
+function PriceTaxToggleRow({ rows, locked, onCell, onBulkIncludeVat, onBulkExcludeVat, onApplyStandardTax }: {
   rows: Row[]
   locked: boolean
   onCell: OnCell
   onBulkIncludeVat?: (rowIds: string[]) => void
+  onBulkExcludeVat?: (rowIds: string[]) => void
   onApplyStandardTax?: () => void
 }) {
   const { mode, setMode, taxBps, documentTaxSet } = usePriceTax()
   const checkboxId = useId()
-  const inclusive = mode === "included"
+
+  const allLiable = allRowsVatLiable(rows)
+
+  useEffect(() => {
+    if (allLiable && mode !== "included") setMode("included")
+    else if (!allLiable && rows.length > 0 && mode !== "excluded") setMode("excluded")
+  }, [allLiable, rows.length, mode, setMode])
 
   function handleToggle(checked: boolean) {
     setMode(checked ? "included" : "excluded")
     if (locked) return
-    const targetIds = rowsToMakeVatLiable(rows, checked)
-    if (targetIds.length === 0) return
-    // Toplu yazımı adaptör verdiyse ONU kullan: iş emri tarafında satır başına
-    // ayrı `router.refresh()` atmak yerine tek yenileme yapar.
-    if (onBulkIncludeVat) onBulkIncludeVat(targetIds)
-    else rows.filter((r) => targetIds.includes(r.id)).forEach((r) => onCell(r, { includeVat: true }))
+    if (checked) {
+      const targetIds = rowsToMakeVatLiable(rows)
+      if (targetIds.length === 0) return
+      if (onBulkIncludeVat) onBulkIncludeVat(targetIds)
+      else rows.filter((r) => targetIds.includes(r.id)).forEach((r) => onCell(r, { includeVat: true }))
+    } else {
+      const targetIds = rowsToMakeVatExempt(rows)
+      if (targetIds.length === 0) return
+      if (onBulkExcludeVat) onBulkExcludeVat(targetIds)
+      else rows.filter((r) => targetIds.includes(r.id)).forEach((r) => onCell(r, { includeVat: false }))
+    }
   }
 
   return (
@@ -434,13 +443,13 @@ function PriceTaxToggleRow({ rows, locked, onCell, onBulkIncludeVat, onApplyStan
         >
           <Checkbox
             id={checkboxId}
-            checked={inclusive}
+            checked={allLiable}
             onCheckedChange={(checked) => handleToggle(checked === true)}
           />
           <span>Tutarlar KDV dahil (%{bpsToPercent(taxBps)})</span>
         </label>
       </div>
-      {inclusive && !documentTaxSet && (
+      {allLiable && !documentTaxSet && (
         <p className="flex flex-wrap items-center justify-end gap-x-1.5 gap-y-1 text-xs text-warning-strong">
           <Info className="size-3.5 shrink-0" />
           <span>Bu belgede KDV oranı tanımlı değil — kalemler %{bpsToPercent(taxBps)} varsayılarak gösteriliyor.</span>
@@ -613,20 +622,15 @@ export function PartsLaborGrid({
     persistUpdate(row.id, patch, opts)
   }
 
-  // "Tutarlar KDV dahil" işaretlenince muaf satırların tümünü tabi yapar
-  // (BAK-53). Satır başına ayrı PATCH gider (uçta toplu güncelleme yok) ama
-  // `router.refresh()` TEK: her yazımda yenilemek N kalemli emirde N sunucu
-  // render'ı demekti. Herhangi biri düşerse yerel durum sunucudan geri kurulur —
-  // yarım uygulanmış bir liste ekranda kalmasın.
-  async function bulkIncludeVat(rowIds: string[]) {
+  async function bulkSetVat(rowIds: string[], include: boolean) {
     if (rowIds.length === 0) return
     const targets = new Set(rowIds)
-    setRows((prev) => prev.map((r) => (targets.has(r.id) ? { ...r, includeVat: true } : r)))
+    setRows((prev) => prev.map((r) => (targets.has(r.id) ? { ...r, includeVat: include } : r)))
     try {
       const results = await Promise.all(
         rowIds.map(async (rowId) => {
           const fd = new FormData()
-          fd.set("includeVat", "true")
+          fd.set("includeVat", String(include))
           const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
           const data = await res.json()
           return data.success === true
@@ -662,7 +666,8 @@ export function PartsLaborGrid({
       onAdd={addItem}
       onCell={onCell}
       onRemove={removeRow}
-      onBulkIncludeVat={bulkIncludeVat}
+      onBulkIncludeVat={(ids) => bulkSetVat(ids, true)}
+      onBulkExcludeVat={(ids) => bulkSetVat(ids, false)}
     />
   )
 }
