@@ -144,7 +144,7 @@ export function TecdocPartPicker({
   // BakımX taksonomisi — modal açıkken bir kez okunur. Kapı kapalıysa (403) liste
   // boş gelir, dolayısıyla dal hiç kurulmaz ve hata gösterilmez.
   const bakimxEnabled = !!onSelectBakimx
-  const { categories: bakimxCategories } = useBakimxCategories(open && bakimxEnabled)
+  const { categories: bakimxCategories } = useBakimxCategories(open && bakimxEnabled, vehicleTypeId)
   const bakimxBranch = useMemo(
     () => (bakimxEnabled ? buildBakimxCategoryBranch(bakimxCategories) : null),
     [bakimxEnabled, bakimxCategories],
@@ -155,6 +155,7 @@ export function TecdocPartPicker({
     enabled: open && bakimxEnabled && globalSearch,
     q: trimmedQuery,
     limit: SEARCH_LIMIT,
+    vehicleTypeId,
   })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
@@ -287,7 +288,7 @@ export function TecdocPartPicker({
       // TecDoc parçalarını ve kategoriyle bağlı BakımX ürünlerini paralel yükle
       const [articlesRes, bakimxRes] = await Promise.all([
         fetch(`/api/tecdoc/articles?vehicleId=${vehicleTypeId}&categoryId=${node.id}`),
-        fetchBakimxProductsByTecdocCategory(node.id),
+        fetchBakimxProductsByTecdocCategory(node.id, vehicleTypeId),
       ])
 
       if (!articlesRes.ok) {
@@ -315,7 +316,7 @@ export function TecdocPartPicker({
     setLoading(true)
     setError("")
     setQuery("")
-    const result = await fetchBakimxProducts({ categoryKey: node.bakimxKey, limit: SEARCH_LIMIT })
+    const result = await fetchBakimxProducts({ categoryKey: node.bakimxKey, limit: SEARCH_LIMIT, vehicleTypeId })
     if (result.status === "ok") {
       setBakimxLeafProducts(result.data)
     } else {
@@ -583,6 +584,7 @@ export function TecdocPartPicker({
                 bakimxProducts={bakimxSearchResults}
                 bakimxSearching={bakimxSearching}
                 onBakimxSelect={onSelectBakimx ? selectBakimx : undefined}
+                vehicleTypeId={vehicleTypeId}
                 brandFilter={searchBrand}
                 onBrandFilterChange={setSearchBrand}
                 onCategorySelect={openCategoryMatch}
