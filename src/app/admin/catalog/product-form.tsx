@@ -138,6 +138,7 @@ export function CatalogProductForm({
     defaultValues: toDefaults(product),
   })
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const priceLira = Number(form.watch("workshopPrice")) || 0
   const vatPercent = Number(form.watch("vatRate")) || 0
   const grossLabel = formatKurus(grossFromNetKurus(liraToKurus(priceLira), percentToBps(vatPercent)))
@@ -580,7 +581,7 @@ export function CatalogProductForm({
                     </Select>
                   </FormControl>
                   <FormDescription>
-                    "Tüm araçlar": her araçta görünür. "Seçili araçlar": yalnız eşlenmiş araçlarda.
+                    &quot;Tüm araçlar&quot;: her araçta görünür. &quot;Seçili araçlar&quot;: yalnız eşlenmiş araçlarda.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

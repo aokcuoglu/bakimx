@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronDown, X } from "lucide-react"
+import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -36,31 +37,7 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
   const [typeNames, setTypeNames] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    fetchBrands()
-    fetchTypeNames()
-  }, [])
-
-  useEffect(() => {
-    if (selectedBrand) {
-      fetchModels(Number(selectedBrand))
-      setSelectedModel("")
-      setTypes([])
-    } else {
-      setModels([])
-      setTypes([])
-    }
-  }, [selectedBrand])
-
-  useEffect(() => {
-    if (selectedModel) {
-      fetchTypes(Number(selectedBrand), Number(selectedModel))
-      setSelectedType("")
-    } else {
-      setTypes([])
-    }
-  }, [selectedModel, selectedBrand])
-
+  // Declare fetch functions before useEffect to avoid "accessed before declaration" errors
   const fetchBrands = async () => {
     try {
       const res = await fetch("/api/vehicle-catalog/brands")
@@ -107,6 +84,32 @@ export function VehicleTypeSelector({ selectedIds, onChange }: VehicleTypeSelect
       console.error("Araç tipi adları yükleme hatası:", error)
     }
   }
+
+  useEffect(() => {
+    fetchBrands()
+    fetchTypeNames()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (selectedBrand) {
+      fetchModels(Number(selectedBrand))
+      setSelectedModel("")
+      setTypes([])
+    } else {
+      setModels([])
+      setTypes([])
+    }
+  }, [selectedBrand])
+
+  useEffect(() => {
+    if (selectedModel) {
+      fetchTypes(Number(selectedBrand), Number(selectedModel))
+      setSelectedType("")
+    } else {
+      setTypes([])
+    }
+  }, [selectedModel, selectedBrand])
 
   const addType = () => {
     if (!selectedType) return

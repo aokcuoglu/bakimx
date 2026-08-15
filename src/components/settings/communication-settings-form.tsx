@@ -68,14 +68,12 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
     defaultValues: toDefaults(settings),
   })
 
-  
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const smsProvider = form.watch("smsProvider")
-  
-  // eslint-disable-next-line react-hooks/incompatible-library
+
   const whatsappProvider = form.watch("whatsappProvider")
-  
-  // eslint-disable-next-line react-hooks/incompatible-library
+
   const emailProvider = form.watch("emailProvider")
 
   async function onSubmit(values: CommunicationSettingsFormValues) {
