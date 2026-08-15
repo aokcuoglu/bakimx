@@ -2,7 +2,6 @@ import { PHOTO_PHASES } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
 import type { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
-import { TIMELINE_EVENT_LABELS } from "@/lib/intake/timeline-constants"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { escapeHtml } from "@/lib/html-escape"
@@ -41,14 +40,6 @@ type IntakePrintoutData = {
 }
 
 const fmtDate = (d: Date | string) => new Date(d).toLocaleDateString("tr-TR")
-const fmtDateTime = (d: Date | string) =>
-  new Date(d).toLocaleDateString("tr-TR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
 
 const lineTotalOf = (item: { quantity: number; unitPrice: number | null; totalPrice: number | null }) => {
   if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
@@ -313,23 +304,6 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
         )
       : ""
 
-  // ---- Zaman çizelgesi ---------------------------------------------------
-  const timelineSection =
-    intakeForm.timeline.length > 0
-      ? section(
-          "Süreç Zaman Çizelgesi",
-          `<ol class="timeline">
-            ${intakeForm.timeline
-              .map(
-                (event) => `<li class="timeline-item">
-                  <div class="timeline-label">${TIMELINE_EVENT_LABELS[event.eventType] || event.description}</div>
-                  <div class="timeline-date">${fmtDateTime(event.createdAt)}</div>
-                </li>`
-              )
-              .join("")}
-          </ol>`
-        )
-      : ""
 
   const approvalSection =
     intakeForm.approvals.length > 0
@@ -573,21 +547,6 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
       padding: 5px 8px;
     }
 
-    /* Zaman çizelgesi */
-    .timeline { list-style: none; margin: 0; padding: 0 0 0 12px; border-left: 2px solid var(--line); }
-    .timeline-item { padding: 3px 0 3px 12px; position: relative; }
-    .timeline-item::before {
-      content: "";
-      position: absolute;
-      left: -17px;
-      top: 9px;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-    .timeline-label { font-size: 10.5px; font-weight: 600; }
-    .timeline-date { font-size: 9px; color: var(--faint); }
 
     .approval { font-size: 12px; font-weight: 700; }
 
@@ -663,7 +622,6 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
     ${evidenceSummarySection}
     ${damageSection}
     ${photoSection}
-    ${timelineSection}
     ${approvalSection}
     ${customTemplateSection}
     ${workshopSection}

@@ -22,7 +22,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          timelineEvents: { select: { eventType: true, description: true, createdAt: true }, orderBy: { createdAt: "asc" } },
           order: { select: { id: true, status: true, paymentStatus: true, items: { select: { id: true, type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
         },
       },
@@ -46,7 +45,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     showDamage: shareLink.showDamage,
     showOrderItems: shareLink.showOrderItems,
     showPaymentStatus: shareLink.showPaymentStatus,
-    showTimeline: shareLink.showTimeline,
   }
 
   const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
@@ -68,7 +66,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     showDamage: shareLink.showDamage,
     showOrderItems: shareLink.showOrderItems,
     showPaymentStatus: shareLink.showPaymentStatus,
-    showTimeline: shareLink.showTimeline,
     workshop: {
       name: workshop.name,
       phone: workshop.phone,

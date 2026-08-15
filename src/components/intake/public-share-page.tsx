@@ -4,14 +4,13 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, MessageCircle, Share2, FileText, FileDown, Clock, Eye } from "lucide-react"
+import { Printer, Car, Phone, CheckCircle2, MapPin, Calendar, Shield, MessageCircle, Share2, FileText, FileDown, Eye } from "lucide-react"
 import { INTAKE_STATUS } from "@/lib/constants"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { formatFuelLevel } from "@/lib/fuel-level"
 import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
 import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/totals"
-import { ApprovalTimeline } from "@/components/intake/approval-timeline"
 import { GroupedPhotoGallery } from "@/components/intake/grouped-photo-gallery"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
@@ -39,7 +38,6 @@ type SafeIntakeData = {
   damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
   order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
-  timeline: { eventType: string; description: string; createdAt: Date }[]
 }
 
 type PhotoPhaseGroup = {
@@ -55,7 +53,6 @@ type ShareLink = {
   showDamage: boolean
   showOrderItems: boolean
   showPaymentStatus: boolean
-  showTimeline: boolean
   workshop: {
     name: string
     phone: string
@@ -297,25 +294,6 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Approval Timeline */}
-        {shareLink.showTimeline && (
-          <div className="bg-card border border-border rounded-lg overflow-hidden print:border print:border-border print:shadow-none">
-            <div className="h-[3px] bg-brand" />
-            <div className="p-4 space-y-3">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                <Clock className="size-3.5" />
-                Onay Zaman Çizelgesi
-              </h3>
-              <ApprovalTimeline
-                events={intakeForm.timeline}
-                intakeCreatedAt={intakeForm.createdAt}
-                approvedAt={intakeForm.approvedAt}
-                compact
-              />
             </div>
           </div>
         )}

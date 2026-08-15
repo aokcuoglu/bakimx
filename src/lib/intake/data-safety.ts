@@ -30,7 +30,6 @@ export type SafeIntakeData = {
   damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
   order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
-  timeline: { eventType: string; description: string; createdAt: Date }[]
 }
 
 const NEVER_PUBLIC_FIELDS = [
@@ -79,14 +78,12 @@ export function sanitizeIntakeForPublic(
       paymentStatus?: string
       items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[]
     } | null
-    timelineEvents?: { eventType: string; description: string; createdAt: Date }[]
   },
   visibility: {
     showPhotos?: boolean
     showDamage?: boolean
     showOrderItems?: boolean
     showPaymentStatus?: boolean
-    showTimeline?: boolean
   } = {}
 ): SafeIntakeData {
   void NEVER_PUBLIC_FIELDS
@@ -142,19 +139,6 @@ export function sanitizeIntakeForPublic(
       }
     : null
 
-  // Internal-only events must never appear in the public share (mirrors the
-  // passport sanitizer): internal notes and labor-session start/stop events.
-  const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped", "parts_request_converted", "order_reopened"]
-  const timeline = (visibility.showTimeline !== false && intake.timelineEvents)
-    ? intake.timelineEvents
-        .filter((e) => !internalEventTypes.includes(e.eventType))
-        .map((e) => ({
-          eventType: e.eventType,
-          description: e.description,
-          createdAt: e.createdAt,
-        }))
-    : []
-
   return {
     status: intake.status,
     statusLabel,
@@ -169,7 +153,6 @@ export function sanitizeIntakeForPublic(
     damageMarks,
     approvals: intake.approvals,
     order,
-    timeline,
   }
 }
 
@@ -221,6 +204,5 @@ export function escapeIntakeForHtml(data: SafeIntakeData): SafeIntakeData {
           items: data.order.items.map((i) => ({ ...i, name: escapeHtml(i.name) })),
         }
       : null,
-    timeline: data.timeline.map((e) => ({ ...e, description: escapeHtml(e.description) })),
   }
 }
