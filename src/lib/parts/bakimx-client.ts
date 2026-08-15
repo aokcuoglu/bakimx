@@ -135,6 +135,39 @@ export async function fetchBakimxProductsByTecdocCategory(
   )
 }
 
+/**
+ * Sipariş TALEBİ oluşturur (BAK-60) — `POST /api/catalog/bakimx/orders`.
+ *
+ * Gövdede FİYAT YOKTUR ve olmamalıdır: tutarı sunucu atölyenin iskontosuyla
+ * kendisi çözer. Buraya bir fiyat alanı eklemek sunucuda hiçbir şeyi değiştirmez
+ * ama "fiyat istemciden gelmez" sözleşmesini okuyan bir sonraki kişiyi yanıltır.
+ *
+ * Okuma yollarının aksine kapı KAPALI olduğunda hata SESSİZ DEĞİLDİR: kullanıcı
+ * bir düğmeye bastı, sonucu görmeli. Bu yüzden `gateLocked` belleği de burada
+ * kullanılmaz — dönen mesaj olduğu gibi yüzeye çıkar.
+ */
+export async function createBakimxOrder(input: {
+  items: { bakimxProductId: string; quantity: number }[]
+  note?: string
+}): Promise<{ ok: true; orderId: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch("/api/catalog/bakimx/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    const body = (await res.json().catch(() => null)) as
+      | { order?: { id?: string }; error?: string }
+      | null
+    if (!res.ok || !body?.order?.id) {
+      return { ok: false, error: body?.error || "Sipariş oluşturulamadı." }
+    }
+    return { ok: true, orderId: body.order.id }
+  } catch {
+    return { ok: false, error: "Sipariş gönderilemedi. Bağlantınızı kontrol edin." }
+  }
+}
+
 /** Satır içi arama ile aynı eşik: 2 karakterden kısa sorgu sunucuya gitmez. */
 export const BAKIMX_MIN_SEARCH_LEN = 2
 /** Açılır listede BakımX'e ayrılan yer — TecDoc satırlarını aşağı itmesin. */

@@ -33,6 +33,7 @@ import {
   MessageSquare,
   Calendar,
   Receipt,
+  PackageSearch,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
@@ -45,6 +46,14 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
   badge?: string
   children?: NavItem[]
+  /**
+   * Bu bağlantı bir özellik kapısının arkasındaysa kapının anahtarı. Kapı kapalı
+   * atölyede bağlantı hiç render EDİLMEZ — sayfanın kendisi 404 verdiği için
+   * (bkz. (app)/bakimx-orders/page.tsx) menüde bırakmak kırık bağlantı olurdu.
+   * Kapının kendisi sunucuda çözülür ve `enabledFeatures` ile buraya iner;
+   * istemci hiçbir zaman kapıyı kendisi hesaplamaz.
+   */
+  feature?: string
 }
 
 type NavGroup = {
@@ -76,6 +85,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
       { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart },
+      {
+        href: "/bakimx-orders",
+        label: "BakımX Siparişleri",
+        icon: PackageSearch,
+        feature: "bakimxCatalog",
+      },
       { href: "/suppliers", label: "Tedarikçiler", icon: Truck },
       { href: "/cashbox", label: "Kasa", icon: Wallet, children: [
         { href: "/cashbox/payments", label: "Tahsilatlar", icon: Receipt },
@@ -189,9 +204,16 @@ export function AppShell({
 export function AppShellChrome({
   children,
   initialSidebarCollapsed = false,
+  enabledFeatures = [],
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
+  /**
+   * Bu atölyede AÇIK olan özellik kapıları — sunucuda `resolveFeature` ile
+   * çözülür (bkz. (app)/layout.tsx). `feature` taşıyan menü satırı yalnız
+   * anahtarı bu listede varsa çıkar.
+   */
+  enabledFeatures?: string[]
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -222,6 +244,7 @@ export function AppShellChrome({
             pathname={pathname}
             collapsed={sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
+            enabledFeatures={enabledFeatures}
           />
         </aside>
 
@@ -238,7 +261,11 @@ export function AppShellChrome({
               <X className="size-5" />
             </Button>
             <div className="flex-1 overflow-y-auto">
-              <SidebarContent pathname={pathname} onClose={() => setSidebarOpen(false)} />
+              <SidebarContent
+                pathname={pathname}
+                onClose={() => setSidebarOpen(false)}
+                enabledFeatures={enabledFeatures}
+              />
             </div>
           </SheetContent>
         </Sheet>
@@ -365,12 +392,21 @@ function SidebarContent({
   onClose,
   collapsed = false,
   onToggleCollapse,
+  enabledFeatures = [],
 }: {
   pathname: string
   onClose?: () => void
   collapsed?: boolean
   onToggleCollapse?: () => void
+  enabledFeatures?: string[]
 }) {
+  // Kapı kapalı bağlantı menüden düşer. Kapısı olmayan satır (çoğunluk) hiç
+  // etkilenmez — `feature` alanı yoksa koşul zaten geçilir.
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.feature || enabledFeatures.includes(item.feature)),
+  })).filter((group) => group.items.length > 0)
+
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => {
     const initial = new Set<string>()
     for (const group of NAV_GROUPS) {
@@ -434,7 +470,7 @@ function SidebarContent({
       </div>
 
       <nav className={cn("flex-1 py-4 space-y-5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden", collapsed ? "px-2" : "px-3")}>
-        {NAV_GROUPS.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             {!collapsed && (
               <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-navy-foreground/55">

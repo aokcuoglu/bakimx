@@ -83,6 +83,11 @@ export const TENANT_TABLES = [
   "PaymentTransaction",
   "ImpersonationSession",
   "CronRun",
+  // BakımX sipariş TALEBİ (BAK-60): katalog tablolarının aksine kiracıya aittir
+  // (`workshop_id` taşır), dolayısıyla korunanlarda değil burada. Kalem tablosu
+  // aynı TRUNCATE listesinde olduğu için FK sırası sorun değil.
+  "bakimx_orders",
+  "bakimx_order_items",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */
