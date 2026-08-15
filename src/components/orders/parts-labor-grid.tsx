@@ -152,7 +152,7 @@ function emptyDraft(type: ItemType, source: DraftSource): Row {
   return {
     id: "composer", type, name: "", sku: null, unit: "adet",
     quantity: 1, unitPrice: null, totalPrice: null, note: null, brand: null, category: null, categoryId: null,
-    source, includeVat: true,
+    source,
   }
 }
 
@@ -490,7 +490,6 @@ export function PartsLaborGrid({
     if (draft.brand) fd.set("brand", draft.brand)
     if (draft.category) fd.set("category", draft.category)
     if (draft.categoryId != null) fd.set("categoryId", String(draft.categoryId))
-    if (draft.includeVat !== undefined) fd.set("includeVat", String(draft.includeVat))
     // Katalog bağlantısı: satırda "Parça detayı" (ⓘ) ancak bu id ile açılabilir.
     if (draft.tecdocArticleId != null) fd.set("tecdocArticleId", String(draft.tecdocArticleId))
     if (draft.source) fd.set("source", draft.source)
@@ -542,7 +541,6 @@ export function PartsLaborGrid({
         fd.set("tecdocArticleId", patch.tecdocArticleId != null ? String(patch.tecdocArticleId) : "")
       if (patch.name !== undefined) fd.set("name", patch.name)
       if (patch.unit !== undefined) fd.set("unit", patch.unit ?? "")
-      if (patch.includeVat !== undefined) fd.set("includeVat", String(patch.includeVat))
       try {
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
@@ -1385,27 +1383,6 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
   )
 }
 
-function VatToggleButton({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
-  if (!editable || row.unitPrice == null) {
-    return null
-  }
-  const includeVat = row.includeVat ?? true
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      className={cn(
-        "h-8 text-xs px-2 border-red-500 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30",
-        includeVat && "border-2 font-semibold"
-      )}
-      onClick={() => onCell(row, { includeVat: !includeVat })}
-    >
-      Tutarlar KDV dahil (%20)
-    </Button>
-  )
-}
-
 function TotalField({ lineTotal, strong }: { lineTotal: number | null; strong?: boolean }) {
   return (
     <span className={cn(
@@ -1788,11 +1765,10 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
         </div>
       </TableCell>
 
-      {/* Birim Fiyat + VAT toggle */}
+      {/* Birim Fiyat */}
       <TableCell className="py-3.5">
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex justify-end">
           <PriceField row={row} ed={ed} wide />
-          {ed.editable && <VatToggleButton row={row} editable={ed.editable} onCell={onCell} />}
         </div>
       </TableCell>
 
@@ -1872,13 +1848,10 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
       <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
-        <div className="ml-auto flex flex-col items-end gap-1.5">
-          <div className="flex items-center gap-2">
-            <PriceField row={row} ed={ed} />
-            <span className="text-sm text-muted-foreground">=</span>
-            <TotalField lineTotal={ed.displayLineTotal} strong />
-          </div>
-          {ed.editable && <VatToggleButton row={row} editable={ed.editable} onCell={onCell} />}
+        <div className="ml-auto flex items-center gap-2">
+          <PriceField row={row} ed={ed} />
+          <span className="text-sm text-muted-foreground">=</span>
+          <TotalField lineTotal={ed.displayLineTotal} strong />
         </div>
       </div>
     </div>
