@@ -625,6 +625,7 @@ function defaultWriteInput(sku: string, brandId: string): BakimxProductWriteInpu
     backorderable: false,
     leadTimeDays: null,
     isActive: true,
+    tecdocCategoryId: null,
   }
 }
 
