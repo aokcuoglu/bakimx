@@ -43,6 +43,8 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
         backorderable: true,
         leadTimeDays: true,
         isActive: true,
+        fitmentScope: true,
+        fitments: { select: { vehicleTypeId: true } },
       },
     }),
     getCatalogBrandOptions(),
@@ -51,9 +53,14 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
 
   if (!product) notFound()
 
+  const productFormData = {
+    ...product,
+    vehicleTypeIds: product.fitments.map((f) => f.vehicleTypeId),
+  }
+
   return (
     <div className="space-y-6">
-      <CatalogProductForm product={product} brands={brands} />
+      <CatalogProductForm product={productFormData} brands={brands} />
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Denetim kaydı</h2>

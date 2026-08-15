@@ -96,7 +96,9 @@ function toWriteInput(input: {
   backorderable: boolean
   leadTimeDays: number | null
   isActive: boolean
-}): BakimxProductWriteInput {
+  fitmentScope?: string
+  vehicleTypeIds?: number[]
+}): BakimxProductWriteInput & { fitmentScope: "universal" | "vehicle_linked"; vehicleTypeIds: number[] } {
   return {
     sku: input.sku,
     name: input.name,
@@ -116,6 +118,8 @@ function toWriteInput(input: {
     backorderable: input.backorderable,
     leadTimeDays: input.leadTimeDays,
     isActive: input.isActive,
+    fitmentScope: (input.fitmentScope === "vehicle_linked" ? "vehicle_linked" : "universal") as "universal" | "vehicle_linked",
+    vehicleTypeIds: input.vehicleTypeIds || [],
   }
 }
 
@@ -148,11 +152,23 @@ export async function createBakimxProductAction(raw: unknown): Promise<Result> {
         data: {
           ...data,
           currency: "TRY",
+          fitmentScope: input.fitmentScope,
           updatedByUserId: ctx.user.id,
           publishedAt: data.isActive ? new Date() : null,
         },
         select: PRODUCT_AUDIT_SELECT,
       })
+
+      if (input.fitmentScope === "vehicle_linked" && input.vehicleTypeIds.length > 0) {
+        await tx.bakimxProductFitment.createMany({
+          data: input.vehicleTypeIds.map((typeId) => ({
+            productId: product.id,
+            vehicleTypeId: typeId,
+          })),
+          skipDuplicates: true,
+        })
+      }
+
       await tx.bakimxCatalogAudit.create({
         data: {
           actorUserId: ctx.user.id,
@@ -181,9 +197,16 @@ export async function updateBakimxProductAction(productId: string, raw: unknown)
   if (!parsed.success) return { ok: false, error: getValidationError(parsed) ?? "Geçersiz ürün bilgisi." }
   const input = toWriteInput(parsed.data)
 
-  const [current, brand] = await Promise.all([
-    prisma.bakimxProduct.findUnique({ where: { id: productId }, select: PRODUCT_AUDIT_SELECT }),
+  const [current, brand, currentFitments] = await Promise.all([
+    prisma.bakimxProduct.findUnique({
+      where: { id: productId },
+      select: { ...PRODUCT_AUDIT_SELECT, fitmentScope: true }
+    }),
     prisma.bakimxProductBrand.findUnique({ where: { id: input.brandId }, select: { id: true, name: true } }),
+    prisma.bakimxProductFitment.findMany({
+      where: { productId },
+      select: { vehicleTypeId: true }
+    }),
   ])
   if (!current) return { ok: false, error: "Ürün bulunamadı." }
   if (!brand) return { ok: false, error: "Marka bulunamadı." }
@@ -192,9 +215,12 @@ export async function updateBakimxProductAction(productId: string, raw: unknown)
   const diff = diffCatalogFields(productAuditSnapshot(current), productAuditSnapshot(data))
   const action = catalogAuditAction(diff.keys)
 
-  // Hiçbir alan değişmediyse yazma da denetim de yapılmaz — "değişiklik yok"
-  // bir hata değil, sessiz başarı.
-  if (!action) return { ok: true, id: current.id }
+  // Hiçbir alan değişmediyse ve fitment de değişmediyse yazma yapılmaz
+  const fitmentChanged = input.fitmentScope !== current.fitmentScope ||
+    JSON.stringify(input.vehicleTypeIds.sort((a, b) => a - b)) !==
+    JSON.stringify(currentFitments.map(f => f.vehicleTypeId).sort((a, b) => a - b))
+
+  if (!action && !fitmentChanged) return { ok: true, id: current.id }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -202,19 +228,35 @@ export async function updateBakimxProductAction(productId: string, raw: unknown)
         where: { id: productId },
         data: {
           ...data,
+          fitmentScope: input.fitmentScope,
           updatedByUserId: ctx.user.id,
           // İlk yayına alınma anı bir kez yazılır; sonraki aktif/pasif turları onu değiştirmez.
           ...(data.isActive && current.publishedAt === null ? { publishedAt: new Date() } : {}),
         },
       })
+
+      if (fitmentChanged) {
+        if (input.fitmentScope === "vehicle_linked" && input.vehicleTypeIds.length > 0) {
+          await tx.bakimxProductFitment.deleteMany({ where: { productId } })
+          await tx.bakimxProductFitment.createMany({
+            data: input.vehicleTypeIds.map((typeId) => ({
+              productId,
+              vehicleTypeId: typeId,
+            })),
+          })
+        } else {
+          await tx.bakimxProductFitment.deleteMany({ where: { productId } })
+        }
+      }
+
       await tx.bakimxCatalogAudit.create({
         data: {
           actorUserId: ctx.user.id,
           entityType: "product",
           entityId: productId,
-          action,
-          beforeJson: asJson(diff.before),
-          afterJson: asJson(diff.after),
+          action: action || "update",
+          beforeJson: asJson(diff.before || { fitmentScope: current.fitmentScope }),
+          afterJson: asJson(diff.after || { fitmentScope: input.fitmentScope }),
         },
       })
     })
