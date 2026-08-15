@@ -64,6 +64,8 @@ export const bakimxProductFormSchema = z.object({
   backorderable: z.boolean().default(false),
   leadTimeDays: optionalNumericText,
   isActive: z.boolean().default(true),
+  fitmentScope: z.enum(["universal", "vehicle_linked"], { error: "Geçerli bir kapsam seçin" }).default("universal"),
+  vehicleTypeIds: z.array(z.coerce.number().int().positive()).default([]),
 })
 
 export type BakimxProductFormValues = z.infer<typeof bakimxProductFormSchema>
@@ -107,7 +109,12 @@ export const bakimxProductInputSchema = z.object({
     .nullable()
     .default(null),
   isActive: z.boolean().default(true),
-})
+  fitmentScope: z.enum(["universal", "vehicle_linked"], { error: "Geçerli bir kapsam seçin" }).default("universal"),
+  vehicleTypeIds: z.array(z.coerce.number().int().positive()).default([]),
+}).refine(
+  (data) => data.fitmentScope === "universal" || data.vehicleTypeIds.length > 0,
+  { message: "Araç bazlı ürünlerin en az bir araç tipi seçilmiş olmalıdır", path: ["vehicleTypeIds"] }
+)
 
 export type BakimxProductInput = z.infer<typeof bakimxProductInputSchema>
 

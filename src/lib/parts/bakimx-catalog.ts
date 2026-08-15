@@ -110,22 +110,44 @@ export const BAKIMX_SEARCH_MAX_LIMIT = 50
  * Atölyeye görünen ürünün koşulu — arama ve taksonomi AYNI filtreyi kullanmalı,
  * aksi hâlde ağaçta görünen kategori boş liste döndürür.
  *
- * `fitmentScope = universal`: Faz 1'de yalnız araçtan bağımsız ürünler
- * listelenir; `vehicle_linked` ürünler araç eşleştirmesi geldiğinde (Faz 2)
- * açılacak. Markanın `isActive`'i de kapı: bir markayı tek anahtarla
- * pasifleştirmek ürünlerini de listeden düşürür.
+ * `fitmentScope = universal`: Her araçta (ve araç kataloğa bağlı değilken de)
+ * listelenir — Faz 1'in davranışı.
+ * `fitmentScope = vehicle_linked`: Yalnız Faz 2'de, `vehicleTypeId`
+ * parametresi verilmişse ve araç eşleştirmesi bulunmuşsa listelenir.
+ * Verilmemişse (araç kataloğa bağlı değil) yalnız `universal` ürünler görünür.
+ * Markanın `isActive`'i de kapı: bir markayı tek anahtarla pasifleştirmek
+ * ürünlerini de listeden düşürür.
  */
-const VISIBLE_PRODUCT: Prisma.BakimxProductWhereInput = {
-  isActive: true,
-  fitmentScope: "universal",
-  brand: { isActive: true },
+function getVisibleProductFilter(vehicleTypeId?: number): Prisma.BakimxProductWhereInput {
+  if (vehicleTypeId) {
+    return {
+      isActive: true,
+      brand: { isActive: true },
+      OR: [
+        { fitmentScope: "universal" },
+        {
+          fitmentScope: "vehicle_linked",
+          fitments: { some: { vehicleTypeId } },
+        },
+      ],
+    }
+  }
+  return {
+    isActive: true,
+    fitmentScope: "universal",
+    brand: { isActive: true },
+  }
 }
+
+// Legacy constant for backwards compatibility, defaults to universal only
+const VISIBLE_PRODUCT: Prisma.BakimxProductWhereInput = getVisibleProductFilter()
 
 export interface BakimxProductSearchInput {
   q?: string | null
   brandId?: string | null
   categoryKey?: string | null
   limit?: number | null
+  vehicleTypeId?: number | null
 }
 
 /**
@@ -139,10 +161,11 @@ export async function searchBakimxProducts(
 ): Promise<BakimxProductSummary[]> {
   const terms = bakimxProductSearchTerms(input.q ?? "")
   const limit = clampSearchLimit(input.limit)
+  const visibleFilter = getVisibleProductFilter(input.vehicleTypeId ?? undefined)
 
   const rows = await prisma.bakimxProduct.findMany({
     where: {
-      ...VISIBLE_PRODUCT,
+      ...visibleFilter,
       ...(input.brandId ? { brandId: input.brandId } : {}),
       ...(input.categoryKey ? { categoryKey: input.categoryKey } : {}),
       ...(terms.length > 0 ? { AND: terms.map((term) => ({ searchKey: { contains: term } })) } : {}),
@@ -161,9 +184,10 @@ export async function searchBakimxProducts(
  * buradan dönen satırdan türetilir (bkz. bakimx-item.ts), böylece pasifleşmiş
  * ürün eklenemez ve fiyat istemciden uydurulamaz.
  */
-export async function getVisibleBakimxProduct(id: string): Promise<BakimxProductSummary | null> {
+export async function getVisibleBakimxProduct(id: string, vehicleTypeId?: number): Promise<BakimxProductSummary | null> {
+  const visibleFilter = getVisibleProductFilter(vehicleTypeId)
   const row = await prisma.bakimxProduct.findFirst({
-    where: { ...VISIBLE_PRODUCT, id },
+    where: { ...visibleFilter, id },
     select: BAKIMX_PRODUCT_SUMMARY_SELECT,
   })
   return row ? toBakimxProductSummary(row) : null
@@ -231,15 +255,17 @@ export function bakimxCategoryLabel(key: string): string {
  */
 export async function matchBakimxProductsByPartNumbers(
   articleNumbers: string[],
+  vehicleTypeId?: number,
 ): Promise<Record<string, BakimxProductSummary>> {
   if (articleNumbers.length === 0) return {}
 
   const normalized = articleNumbers.map(normalizePartNo).filter(Boolean)
   if (normalized.length === 0) return {}
 
+  const visibleFilter = getVisibleProductFilter(vehicleTypeId)
   const rows = await prisma.bakimxProduct.findMany({
     where: {
-      ...VISIBLE_PRODUCT,
+      ...visibleFilter,
       OR: [
         { sku: { in: normalized } },
         { oemNumbers: { hasSome: normalized } },
@@ -267,10 +293,11 @@ export async function matchBakimxProductsByPartNumbers(
  * GÖRÜNEN ürünü olan kategoriler, ürün sayısıyla. Kategorisi boş (`null`)
  * ürünler ağaçta yaprak açmaz — onlara arama üzerinden erişilir.
  */
-export async function listBakimxCategories(): Promise<BakimxCategoryNode[]> {
+export async function listBakimxCategories(vehicleTypeId?: number): Promise<BakimxCategoryNode[]> {
+  const visibleFilter = getVisibleProductFilter(vehicleTypeId)
   const groups = await prisma.bakimxProduct.groupBy({
     by: ["categoryKey"],
-    where: { ...VISIBLE_PRODUCT, categoryKey: { not: null } },
+    where: { ...visibleFilter, categoryKey: { not: null } },
     _count: { _all: true },
   })
 

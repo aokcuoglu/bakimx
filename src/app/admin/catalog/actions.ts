@@ -65,6 +65,7 @@ const PRODUCT_AUDIT_SELECT = {
   leadTimeDays: true,
   isActive: true,
   publishedAt: true,
+  fitmentScope: true,
 } as const
 
 function asJson(value: Record<string, unknown>): Prisma.InputJsonValue {
@@ -94,7 +95,9 @@ function toWriteInput(input: {
   backorderable: boolean
   leadTimeDays: number | null
   isActive: boolean
-}): BakimxProductWriteInput {
+  fitmentScope: "universal" | "vehicle_linked"
+  vehicleTypeIds: number[]
+}): BakimxProductWriteInput & { fitmentScope: "universal" | "vehicle_linked"; vehicleTypeIds: number[] } {
   return {
     sku: input.sku,
     name: input.name,
@@ -114,6 +117,8 @@ function toWriteInput(input: {
     backorderable: input.backorderable,
     leadTimeDays: input.leadTimeDays,
     isActive: input.isActive,
+    fitmentScope: input.fitmentScope,
+    vehicleTypeIds: input.vehicleTypeIds,
   }
 }
 
@@ -145,12 +150,25 @@ export async function createBakimxProductAction(raw: unknown): Promise<Result> {
       const product = await tx.bakimxProduct.create({
         data: {
           ...data,
+          fitmentScope: input.fitmentScope,
           currency: "TRY",
           updatedByUserId: ctx.user.id,
           publishedAt: data.isActive ? new Date() : null,
         },
         select: PRODUCT_AUDIT_SELECT,
       })
+
+      // Create fitment records for vehicle_linked products
+      if (input.fitmentScope === "vehicle_linked" && input.vehicleTypeIds.length > 0) {
+        await tx.bakimxProductFitment.createMany({
+          data: input.vehicleTypeIds.map(vehicleTypeId => ({
+            productId: product.id,
+            vehicleTypeId,
+          })),
+          skipDuplicates: true,
+        })
+      }
+
       await tx.bakimxCatalogAudit.create({
         data: {
           actorUserId: ctx.user.id,
@@ -190,9 +208,21 @@ export async function updateBakimxProductAction(productId: string, raw: unknown)
   const diff = diffCatalogFields(productAuditSnapshot(current), productAuditSnapshot(data))
   const action = catalogAuditAction(diff.keys)
 
+  // Check if fitments have changed
+  const currentFitments = await prisma.bakimxProductFitment.findMany({
+    where: { productId },
+    select: { vehicleTypeId: true },
+  })
+  const currentIds = new Set(currentFitments.map(f => f.vehicleTypeId))
+  const newIds = new Set(input.vehicleTypeIds)
+  const fitmentsChanged = !(currentIds.size === newIds.size && Array.from(currentIds).every(id => newIds.has(id)))
+  const fitmentScopeChanged = input.fitmentScope !== current.fitmentScope
+
   // Hiçbir alan değişmediyse yazma da denetim de yapılmaz — "değişiklik yok"
   // bir hata değil, sessiz başarı.
-  if (!action) return { ok: true, id: current.id }
+  if (!action && !fitmentsChanged && !fitmentScopeChanged) {
+    return { ok: true, id: current.id }
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -200,21 +230,47 @@ export async function updateBakimxProductAction(productId: string, raw: unknown)
         where: { id: productId },
         data: {
           ...data,
+          fitmentScope: input.fitmentScope,
           updatedByUserId: ctx.user.id,
           // İlk yayına alınma anı bir kez yazılır; sonraki aktif/pasif turları onu değiştirmez.
           ...(data.isActive && current.publishedAt === null ? { publishedAt: new Date() } : {}),
         },
       })
-      await tx.bakimxCatalogAudit.create({
-        data: {
-          actorUserId: ctx.user.id,
-          entityType: "product",
-          entityId: productId,
-          action,
-          beforeJson: asJson(diff.before),
-          afterJson: asJson(diff.after),
-        },
-      })
+
+      // Update fitment records
+      if (input.fitmentScope === "vehicle_linked") {
+        // Delete old fitments
+        await tx.bakimxProductFitment.deleteMany({
+          where: { productId },
+        })
+        // Create new fitments
+        if (input.vehicleTypeIds.length > 0) {
+          await tx.bakimxProductFitment.createMany({
+            data: input.vehicleTypeIds.map(vehicleTypeId => ({
+              productId,
+              vehicleTypeId,
+            })),
+          })
+        }
+      } else {
+        // Delete all fitments for universal products
+        await tx.bakimxProductFitment.deleteMany({
+          where: { productId },
+        })
+      }
+
+      if (action) {
+        await tx.bakimxCatalogAudit.create({
+          data: {
+            actorUserId: ctx.user.id,
+            entityType: "product",
+            entityId: productId,
+            action,
+            beforeJson: asJson(diff.before),
+            afterJson: asJson(diff.after),
+          },
+        })
+      }
     })
 
     revalidateCatalog()

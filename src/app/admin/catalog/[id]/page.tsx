@@ -42,6 +42,10 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
         backorderable: true,
         leadTimeDays: true,
         isActive: true,
+        fitmentScope: true,
+        fitments: {
+          select: { vehicleTypeId: true },
+        },
       },
     }),
     getCatalogBrandOptions(),

@@ -22,6 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { VehicleTypeSelector } from "@/components/catalog/vehicle-type-selector"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   bakimxProductFormSchema,
@@ -51,6 +52,8 @@ export interface CatalogProductFormData {
   backorderable: boolean
   leadTimeDays: number | null
   isActive: boolean
+  fitmentScope: "universal" | "vehicle_linked"
+  fitments: Array<{ vehicleTypeId: number }>
 }
 
 /** Yaygın KDV oranları — serbest giriş yerine sabit liste (yanlış oran = yanlış KDV dahil fiyat). */
@@ -76,6 +79,8 @@ function toDefaults(product?: CatalogProductFormData): BakimxProductFormValues {
     backorderable: product?.backorderable ?? false,
     leadTimeDays: product?.leadTimeDays != null ? String(product.leadTimeDays) : "",
     isActive: product?.isActive ?? true,
+    fitmentScope: product?.fitmentScope ?? "universal",
+    vehicleTypeIds: product?.fitments?.map(f => f.vehicleTypeId) ?? [],
   }
 }
 
@@ -112,6 +117,11 @@ export function CatalogProductForm({
     const leadTimeDays = optionalNumber(values.leadTimeDays)
     const costLira = optionalNumber(values.costPrice)
 
+    if (values.fitmentScope === "vehicle_linked" && values.vehicleTypeIds.length === 0) {
+      setError("Araç bazlı ürünler için en az bir araç tipi seçilmelidir")
+      return
+    }
+
     const payload = {
       sku: values.sku,
       name: values.name,
@@ -130,6 +140,8 @@ export function CatalogProductForm({
       backorderable: values.backorderable,
       leadTimeDays: leadTimeDays == null ? null : Math.trunc(leadTimeDays),
       isActive: values.isActive,
+      fitmentScope: values.fitmentScope,
+      vehicleTypeIds: values.vehicleTypeIds,
     }
 
     startTransition(async () => {
@@ -480,6 +492,57 @@ export function CatalogProductForm({
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Kapsam</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <FormField
+              control={form.control}
+              name="fitmentScope"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Urun gorunulugu *</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="universal">Tum araclar</SelectItem>
+                        <SelectItem value="vehicle_linked">Secili araclar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    {field.value === "universal" ? "Arac katalogu bagli olsun ya da olmasin tum araclar da gorunur." : "Yalniz secilen arac tipler inde gorunur."}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch("fitmentScope") === "vehicle_linked" && (
+              <FormField
+                control={form.control}
+                name="vehicleTypeIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Arac tipler</FormLabel>
+                    <FormControl>
+                      <VehicleTypeSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 
