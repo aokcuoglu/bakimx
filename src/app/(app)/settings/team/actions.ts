@@ -600,3 +600,55 @@ export async function resetMemberPasswordAction(userId: string): Promise<Credent
     return toErr(e, "Şifre sıfırlanamadı")
   }
 }
+
+/**
+ * Kullanıcıyı teknicyen kaydıyla eşleştir ya da bağı kaldır (BAK-39).
+ *
+ * Bağlı kullanıcılar teknisyen panelinde kendi işlerini görür; bağlı olmayan
+ * kullanıcılar URL parametresine veya ilk teknisyene düşer.
+ */
+export async function setMemberTechnicianAction(
+  userId: string,
+  technicianId: string | null
+): Promise<Result> {
+  const { user } = await requireWritableWorkshop("team.manage")
+  try {
+    assertCanManageTeam(user)
+
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, workshopId: true, role: true },
+    })
+    assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
+
+    // Teknicyen var ise, aynı workshop'a ait olduğunu doğrula.
+    if (technicianId) {
+      const technician = await prisma.technician.findUnique({
+        where: { id: technicianId },
+        select: { id: true, workshopId: true },
+      })
+      if (!technician || technician.workshopId !== user.workshopId) {
+        return fail("Bu teknisyen bulunamadı.")
+      }
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { technicianId },
+    })
+
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "User",
+      userId,
+      "member_technician_linked",
+      JSON.stringify({ technicianId })
+    )
+
+    revalidatePath("/settings")
+    return { ok: true }
+  } catch (e) {
+    return toErr(e)
+  }
+}

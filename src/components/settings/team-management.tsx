@@ -34,6 +34,7 @@ import {
   revokeInviteAction,
   updateMemberRoleAction,
   setMemberActiveAction,
+  setMemberTechnicianAction,
 } from "@/app/(app)/settings/team/actions"
 import { AddLocalMemberForm } from "@/components/settings/add-local-member-form"
 import {
@@ -56,6 +57,8 @@ export type TeamMember = {
   lastName: string | null
   role: UserRole
   isActive: boolean
+  /** BAK-39: Teknicyen kaydıyla eşleştirilmiş ise bu id'dir, yoksa null. */
+  technicianId: string | null
 }
 export type PendingInvite = {
   id: string
@@ -103,6 +106,7 @@ export function TeamManagement({
   seatLimit,
   workshopName,
   loginCode,
+  technicians,
 }: {
   members: TeamMember[]
   invites: PendingInvite[]
@@ -114,6 +118,8 @@ export function TeamManagement({
   workshopName: string
   /** `Workshop.loginCode` — kullanıcı adıyla girişte hangi tenant olduğunu çözer. */
   loginCode: string
+  /** BAK-39: Teknicyen listesi; üye seçimiyle eşleştirilmesi için. */
+  technicians: { id: string; fullName: string; isActive: boolean }[]
 }) {
   const atLimit = seatUsed >= seatLimit
   const router = useRouter()
@@ -131,6 +137,12 @@ export function TeamManagement({
   const [inviteRole, setInviteRole] = useState<UserRole>("usta")
   const [lastInviteUrl, setLastInviteUrl] = useState("")
   const [copied, setCopied] = useState(false)
+
+  // BAK-39: Teknicyen seçimi için label ve seçim haritası
+  const technicianLabels = technicians.reduce(
+    (acc, t) => ({ ...acc, [t.id]: t.fullName }),
+    {} as Record<string, string>
+  )
 
   const assignable = rolesUpTo(currentUserRole)
   // Rol atama kuralı korunur: kimse kendinden yüksek rol açamaz.
@@ -396,6 +408,28 @@ export function TeamManagement({
                       ))}
                     </SelectContent>
                   </Select>
+                  {/* BAK-39: Teknicyen seçimi — kullanıcı bir teknicyen kaydıyla
+                      eşleştirilirse, panelde kendi işlerini görecek. */}
+                  {technicians.length > 0 && (
+                    <Select
+                      items={technicianLabels}
+                      value={m.technicianId || ""}
+                      disabled={isPending}
+                      onValueChange={(v) => run(() => setMemberTechnicianAction(m.id, v || null))}
+                    >
+                      <SelectTrigger size="sm" className="text-xs">
+                        <SelectValue placeholder="Teknisyen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Bağlantı yok</SelectItem>
+                        {technicians.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.fullName} {!t.isActive && "(Pasif)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {/* E-postasız üyenin "şifremi unuttum" yolu yok — sıfırlama
                       buradan geçer ve yeni geçici şifre üretir. */}
                   {isLocalMember(m) && (
