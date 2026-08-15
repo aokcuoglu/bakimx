@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { useState } from "react"
@@ -68,8 +69,6 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
     defaultValues: toDefaults(settings),
   })
 
-
-  // eslint-disable-next-line react-hooks/incompatible-library
   const smsProvider = form.watch("smsProvider")
   const whatsappProvider = form.watch("whatsappProvider")
   const emailProvider = form.watch("emailProvider")

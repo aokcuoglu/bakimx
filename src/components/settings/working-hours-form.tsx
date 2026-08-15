@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { useState } from "react"
@@ -72,11 +73,8 @@ export function WorkingHoursForm({ settings }: { settings: SettingsData }) {
     defaultValues: toDefaults(settings),
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const weekdayDays = parseWorkingDays(form.watch("weekdayWorkingDays"))
-  // eslint-disable-next-line react-hooks/incompatible-library
   const weekendDays = parseWorkingDays(form.watch("weekendWorkingDays"))
-  // eslint-disable-next-line react-hooks/incompatible-library
   const holidayEnabled = form.watch("holidayEnabled")
 
   function toggleDay(field: "weekdayWorkingDays" | "weekendWorkingDays", dayValue: string) {
