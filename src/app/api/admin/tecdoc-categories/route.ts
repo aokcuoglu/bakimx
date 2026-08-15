@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { requireAdmin } from "@/lib/admin"
+import { requireAdminCapability } from "@/lib/admin"
 import { tecdocErrorResponse } from "@/lib/tecdoc/api-helpers"
 
 interface CategoryOption {
@@ -17,7 +17,7 @@ interface CategoryOption {
  * Rate limit: none (internal admin-only endpoint, not user-facing).
  */
 export async function GET() {
-  await requireAdmin()
+  await requireAdminCapability("manageCatalog")
 
   try {
     const categories = await prisma.tecdocArticle.findMany({
