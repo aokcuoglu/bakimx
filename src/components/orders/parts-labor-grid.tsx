@@ -287,6 +287,7 @@ export function PartsLaborEditor({
             <col className="w-40" />{/* Tür */}
             <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
             <col className="w-24" />{/* Miktar */}
+            <col className="w-16" />{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
             <col className="w-12" />{/* Sil */}
@@ -296,6 +297,9 @@ export function PartsLaborEditor({
               <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
+              {/* BAK-53 — satır KDV'ye tabi mi. İşaret kalkınca hem satır tutarı
+                  hem Genel Toplam KDV'siz hesaplanır. */}
+              <TableHead className={cn(headCls, "text-center")}>KDV</TableHead>
               {/* KDV dahil kipinde başlık ikinci satıra not düşer: tek satıra
                   eklenen "(KDV dahil)" iki dar kolonda taşıp birbirine giriyordu. */}
               <TableHead className={cn(headCls, "text-right")}>Birim Fiyat{taxNote}</TableHead>
@@ -306,7 +310,7 @@ export function PartsLaborEditor({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <EmptyItemsHint locked={locked} />
                 </TableCell>
               </TableRow>
@@ -497,6 +501,9 @@ export function PartsLaborGrid({
     // ad/parça no/marka/kategori/alış fiyatı alanlarını oradan yazar — buradan
     // gönderilen değerler yalnız iyimser satır içindir (bkz. addOrderItemAction).
     if (draft.bakimxProductId) fd.set("bakimxProductId", draft.bakimxProductId)
+    // BAK-53 — satır KDV bayrağı. Sunucu varsayılanı da `true`, ama taslakta
+    // kullanıcı işareti kaldırdıysa o karar kaybolmamalı.
+    if (draft.includeVat !== undefined) fd.set("includeVat", String(draft.includeVat !== false))
     // Stok kartına bağlıysa sunucu stoğu düşürür (bkz. Row.__partId).
     if (draft.__partId) fd.set("partId", draft.__partId)
     try {
@@ -541,6 +548,7 @@ export function PartsLaborGrid({
         fd.set("tecdocArticleId", patch.tecdocArticleId != null ? String(patch.tecdocArticleId) : "")
       if (patch.name !== undefined) fd.set("name", patch.name)
       if (patch.unit !== undefined) fd.set("unit", patch.unit ?? "")
+      if (patch.includeVat !== undefined) fd.set("includeVat", String(patch.includeVat !== false))
       try {
         const res = await fetch(`/api/orders/items?id=${rowId}&orderId=${orderId}`, { method: "PATCH", body: fd })
         const data = await res.json()
@@ -1197,20 +1205,23 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // #311 — saklanan tutar NET'tir; KDV dahil kipinde kullanıcı KDV'li tutarı
   // görür ve KDV'li yazar. Çevrim tek yönde burada kapanır: gösterimde net→brüt,
   // commit'te brüt→net.
-  // KDV kipi BELGE düzeyinde tektir (BAK-55): satır başına `includeVat` yalnız
-  // GÖRÜNÜMÜ değiştiriyor, hiçbir toplama girmiyordu — KDV'li gösterilen satır
-  // tutarı Genel Toplam'da karşılığını bulmuyordu. Gösterim üstteki "Tutarlar KDV
-  // dahil" anahtarından, hesap belgenin `taxRate`'inden gelir.
+  // SATIR BAZLI KDV (BAK-53) + BAK-55'in koşulu: satırda gösterilen tutar, o
+  // satırın Genel Toplam'a KATTIĞI tutar olmalı. `includeVat=false` satır KDV'ye
+  // tabi DEĞİLDİR (src/lib/totals.ts) — dolayısıyla belge "KDV dahil" kipinde
+  // olsa bile o satır KDV'siz gösterilir ve KDV'siz girilir. İki rakam artık aynı
+  // bayraktan besleniyor; #354'ün kaldırdığı kopukluk bu yüzden geri gelmiyor.
   const { mode: priceMode, taxBps } = usePriceTax()
-  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, priceMode, taxBps)
-  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, priceMode, taxBps)
+  const vatLiable = row.includeVat !== false
+  const rowPriceMode: PriceTaxMode = vatLiable ? priceMode : "excluded"
+  const displayUnitPrice = toDisplayPriceKurusOrNull(row.unitPrice, rowPriceMode, taxBps)
+  const displayLineTotal = lineTotal == null ? null : toDisplayPriceKurus(lineTotal, rowPriceMode, taxBps)
 
   function startPrice() { setPriceDraft(displayUnitPrice != null ? String(kurusToLira(displayUnitPrice)) : ""); setEditingPrice(true) }
   function commitPrice() {
     setEditingPrice(false)
     const lira = Number(priceDraft)
     if (!priceDraft || Number.isNaN(lira) || lira < 0) return
-    const kurus = toStoredPriceKurus(liraToKurus(lira), priceMode, taxBps)
+    const kurus = toStoredPriceKurus(liraToKurus(lira), rowPriceMode, taxBps)
     if (kurus !== row.unitPrice) onCell(row, { unitPrice: kurus })
   }
 
@@ -1218,6 +1229,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
     isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
     tecdocOpen, setTecdocOpen, lineTotal, displayLineTotal, displayUnitPrice,
+    vatLiable,
     startPrice, commitPrice,
   }
 }
@@ -1714,6 +1726,29 @@ const META_FIELD_MOBILE = cn(
 )
 
 // ── Masaüstü satırı: gerçek <tr> (çarşaf liste) ──────────────────────────────
+/**
+ * Satır KDV anahtarı (BAK-53). Varsayılan İŞARETLİ: girilen fiyat KDV dahildir.
+ * İşaret kalkınca satır KDV'ye tabi olmaktan çıkar — tutar net'e döner ve Genel
+ * Toplam'a da KDV'siz girer (src/lib/totals.ts). Gösterim ile hesap tek bayrak.
+ */
+function VatCell({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell: OnCell }) {
+  const label = ed.vatLiable ? "KDV dahil" : "KDV hariç"
+  if (!ed.editable) {
+    return (
+      <span className="text-xs text-muted-foreground" title={label}>
+        {ed.vatLiable ? "KDV" : "—"}
+      </span>
+    )
+  }
+  return (
+    <Checkbox
+      checked={ed.vatLiable}
+      onCheckedChange={(checked) => onCell(row, { includeVat: checked === true })}
+      aria-label={`${row.name || "Satır"} — ${label}`}
+    />
+  )
+}
+
 function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, onCell, onRemove, flash, onShowDetail }: {
   row: Row
   /** Yalnız iş emrinde dolu — dış alım detay modalı orderId ister. */
@@ -1766,6 +1801,13 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
       <TableCell className="py-3.5">
         <div className="flex justify-center">
           <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+        </div>
+      </TableCell>
+
+      {/* KDV — satır belgenin KDV'sine tabi mi (BAK-53) */}
+      <TableCell className="py-3.5">
+        <div className="flex justify-center">
+          <VatCell row={row} ed={ed} onCell={onCell} />
         </div>
       </TableCell>
 
@@ -1852,6 +1894,10 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       {/* Fiş satırı: Miktar · Birim Fiyat = Toplam (tek satırda, yığılmadan) */}
       <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <VatCell row={row} ed={ed} onCell={onCell} />
+          KDV
+        </label>
         <div className="ml-auto flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2">
             <PriceField row={row} ed={ed} />
