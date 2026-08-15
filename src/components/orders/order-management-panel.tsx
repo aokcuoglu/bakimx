@@ -44,6 +44,12 @@ export type OrderItem = {
   quantity: number
   unitPrice: number | null
   totalPrice: number | null
+  /**
+   * Satır belgenin KDV'sine tabi mi (BAK-53). `false` ise hem satır tutarı KDV'siz
+   * gösterilir hem de Genel Toplam'a KDV'siz girer — gösterim ve hesap AYNI
+   * bayraktan beslenir (bkz. src/lib/totals.ts, BAK-55).
+   */
+  includeVat?: boolean | null
   note: string | null
   brand: string | null
   category: string | null

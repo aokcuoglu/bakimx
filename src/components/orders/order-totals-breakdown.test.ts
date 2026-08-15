@@ -6,6 +6,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 const DETAIL = readFileSync(join(import.meta.dir, "work-order-detail.tsx"), "utf8")
 const PANEL = readFileSync(join(import.meta.dir, "order-management-panel.tsx"), "utf8")
 const GRID = readFileSync(join(import.meta.dir, "parts-labor-grid.tsx"), "utf8")
+const TOTALS = readFileSync(join(import.meta.dir, "../../lib/totals.ts"), "utf8")
 
 /**
  * BAK-55 — "Genel Toplam kalemle tutmuyor".
@@ -53,12 +54,19 @@ test("Fiyatlandırma kartında kalem toplamlarının altındaki satır Ara Topla
   )
 })
 
-test("satır tutarı belge düzeyindeki KDV kipinden okunur, satır bayrağından değil", () => {
-  // Satır başına `includeVat` hiçbir toplama girmiyordu: satır KDV'li tutar
-  // gösterirken Genel Toplam yalnız belgenin `taxRate`'ini ekliyordu — ekrandaki
-  // iki rakam birbirini tutmuyordu (BAK-55).
-  expect(GRID).not.toContain("rowPriceMode")
-  expect(GRID).not.toContain("VatToggleButton")
-  expect(GRID).not.toContain('fd.set("includeVat"')
-  expect(GRID).toContain("toDisplayPriceKurusOrNull(row.unitPrice, priceMode, taxBps)")
+test("satır KDV bayrağı hem gösterimi hem hesabı besler — ikisi ayrışamaz", () => {
+  // BAK-55'in kuralı: satırda gösterilen tutarın Genel Toplam'da karşılığı
+  // olmalı. #354 satır başına `includeVat`'ı, YALNIZ gösterimi değiştirip hiçbir
+  // toplama girmediği için kaldırmıştı. BAK-53 onu geri getirdi; bu kez bayrak
+  // `totals.ts`'in KDV matrahını da belirliyor. Bu test o bağı korur: satır
+  // bayrağı gösterimde kullanılıyorsa, hesapta da kullanılmak ZORUNDA.
+  expect(GRID).toContain("rowPriceMode")
+  expect(GRID).toContain('fd.set("includeVat"')
+  expect(GRID).toContain("toDisplayPriceKurusOrNull(row.unitPrice, rowPriceMode, taxBps)")
+
+  // Hesap tarafı: matrah yalnız tabi satırlardan kuruluyor mu?
+  expect(TOTALS).toContain("isVatLiable")
+  expect(TOTALS).toContain("taxableSubtotal")
+  // KDV, indirim sonrası TÜM ara toplama değil, tabi kısma uygulanır.
+  expect(TOTALS).not.toContain("applyTaxBps(afterDiscount")
 })
