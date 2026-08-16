@@ -8,6 +8,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
+import { roleCan } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
 
@@ -254,6 +255,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           role: t.role,
         }))}
         suppliers={suppliers}
+        // Dış alım silme kuralının rol ekseni (BAK-83): teslime hazır iş emrinde
+        // kaydı yalnız iş emrini düzenleyebilenler kaldırabilir.
+        canEditOrder={roleCan(user.role, "order.edit")}
       />
     </AppShell>
   )

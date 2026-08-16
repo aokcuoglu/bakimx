@@ -8,6 +8,8 @@ import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
+import { purchaseDeleteDecision } from "@/lib/orders/purchase-delete"
+import { roleCan } from "@/lib/roles"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
@@ -535,20 +537,22 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   return { success: true }
 }
 
-export async function removeOrderItemAction(itemId: string, orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
-
-  const item = await prisma.serviceOrderItem.findFirst({
-    where: { id: itemId, workshopId: user.workshopId },
-  })
-  if (!item) return { error: "Kalem bulunamadı" }
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+/**
+ * Kalemin fiziksel silinmesi + yan etkileri: bağlı parça-kutusu fotoğrafları,
+ * stok iadesi, tahsilat yeniden hesabı, denetim kaydı, cache tazeleme.
+ *
+ * Yetki kapısı ve durum kuralı BİLEREK burada değil, çağıranda durur —
+ * `removeOrderItemAction` (ofis, `order.edit`) ile `removePurchaseItemAction`
+ * (dış alım, `parts.purchase` + BAK-83 kuralı) farklı kapılardan geçer ama
+ * silmenin kendisi tek yerde kalır.
+ */
+async function deleteOrderItemRecord(
+  user: { id: string; workshopId: string },
+  item: { id: string; name: string; type: string; quantity: number; source: string | null; partId: string | null },
+  orderId: string,
+  auditAction: string,
+) {
+  const itemId = item.id
 
   // Dış alım kaleminin bağlı parça-kutusu fotoğraflarını topla (FK ON DELETE SET
   // NULL olduğu için satır silinince foto yetim kalır → açıkça temizlenir).
@@ -618,7 +622,7 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     user.id,
     "ServiceOrderItem",
     itemId,
-    "order_item_removed",
+    auditAction,
     JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity, source: item.source }),
     orderId,
   )
@@ -629,6 +633,57 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     revalidatePath("/purchases")
   }
   return { success: true }
+}
+
+export async function removeOrderItemAction(itemId: string, orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+
+  return deleteOrderItemRecord(user, item, orderId, "order_item_removed")
+}
+
+/**
+ * Teknisyen ekranındaki "Dışarıdan Alınan Parçalar" kaydını siler (BAK-83).
+ *
+ * Aynı satır iş emri kalem tablosunda da durduğu için silme HER İKİ yüzeyden
+ * birden kaldırır; toplam ve tahsilat yeniden hesaplanır, parça-kutusu fotoğrafı
+ * ve /purchases listesi de düşer. Kapı `parts.purchase`: parçayı kaydeden kişi
+ * (çırak dahil) kendi hatasını düzeltebilmeli. Durum kuralı
+ * `purchaseDeleteDecision`'da — teslim/iptal edilmiş emirde kimse, teslime hazır
+ * emirde yalnız `order.edit` taşıyanlar silebilir.
+ */
+export async function removePurchaseItemAction(itemId: string, orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("parts.purchase")
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+  if (item.source !== "purchase") return { error: "Bu kalem bir dış alım değil" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+
+  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  if (!decision.allowed) return { error: decision.reason }
+
+  return deleteOrderItemRecord(user, item, orderId, "purchase_removed")
 }
 
 export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
