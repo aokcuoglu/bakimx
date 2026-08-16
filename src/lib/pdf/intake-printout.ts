@@ -5,6 +5,7 @@ import type { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { bakimxPdfFooterBar } from "@/lib/pdf/brand-footer"
 import { renderWorkshopContactHtml } from "@/lib/pdf/workshop-contact"
 import { escapeHtml } from "@/lib/html-escape"
+import { calculateOrderTotals, formatTaxRate } from "@/lib/totals"
 import type { WorkshopPublicContact } from "@/lib/workshop-contact"
 
 export const DEFAULT_PRIMARY_COLOR = "#0B1F3A"
@@ -46,9 +47,6 @@ const lineTotalOf = (item: { quantity: number; unitPrice: number | null; totalPr
   if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
   return null
 }
-
-const sumItems = (items: { quantity: number; unitPrice: number | null; totalPrice: number | null }[]) =>
-  items.reduce((sum, item) => sum + (lineTotalOf(item) ?? 0), 0)
 
 /**
  * Bir kalem grubunu (parça / işçilik / dış işçilik) tabloya çevirir.
@@ -131,10 +129,17 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
   const parts = orderItems.filter((i) => i.type === "part")
   const labor = orderItems.filter((i) => i.type === "labor")
   const externalLabor = orderItems.filter((i) => i.type === "external_labor")
-  const partsTotal = sumItems(parts)
-  const laborTotal = sumItems(labor)
-  const externalLaborTotal = sumItems(externalLabor)
-  const grandTotal = partsTotal + laborTotal + externalLaborTotal
+  // Toplamlar tek yerden (totals.ts) gelir: indirim KDV'ye tabi kısma orantılı
+  // dağıtılır ve KDV yalnız `includeVat` satırlara uygulanır. Elle satır toplayan
+  // eski hesap iş emrinin indirimini ve KDV'sini komple düşürüyordu.
+  const orderTotals = calculateOrderTotals(orderItems, {
+    discountAmount: intakeForm.order?.discountAmount ?? null,
+    taxRate: intakeForm.order?.taxRate ?? null,
+  })
+  const partsTotal = orderTotals.partsTotal
+  const laborTotal = orderTotals.laborTotal
+  const externalLaborTotal = orderTotals.externalLaborTotal
+  const grandTotal = orderTotals.grandTotal
 
   const approval = intakeForm.approvals[0]
   const isApproved = approval?.status === "verified"
@@ -218,11 +223,16 @@ export function renderIntakePrintoutHtml(data: IntakePrintoutData): string {
 
   // ---- Servis emri -------------------------------------------------------
   const hasMoney = partsTotal > 0 || laborTotal > 0 || externalLaborTotal > 0
+  const hasDiscount = orderTotals.discountAmount > 0
+  const hasTax = orderTotals.taxAmount > 0
   const totalsBlock = hasMoney
     ? `<div class="totals">
         ${partsTotal > 0 ? `<div class="total-row"><span>Parça toplamı</span><span>${formatTRY(partsTotal)}</span></div>` : ""}
         ${laborTotal > 0 ? `<div class="total-row"><span>İşçilik toplamı</span><span>${formatTRY(laborTotal)}</span></div>` : ""}
         ${externalLaborTotal > 0 ? `<div class="total-row"><span>Dış işçilik toplamı</span><span>${formatTRY(externalLaborTotal)}</span></div>` : ""}
+        ${hasDiscount || hasTax ? `<div class="total-row"><span>Ara toplam</span><span>${formatTRY(orderTotals.subtotal)}</span></div>` : ""}
+        ${hasDiscount ? `<div class="total-row"><span>İndirim</span><span>&minus;${formatTRY(orderTotals.discountAmount)}</span></div>` : ""}
+        ${hasTax ? `<div class="total-row"><span>KDV (${formatTaxRate(orderTotals.taxRate)})</span><span>${formatTRY(orderTotals.taxAmount)}</span></div>` : ""}
         <div class="total-row total-grand"><span>Genel Toplam</span><span>${formatTRY(grandTotal)}</span></div>
       </div>`
     : ""

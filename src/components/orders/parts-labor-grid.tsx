@@ -788,7 +788,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
         </Field>
       </div>
       <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center sm:gap-3">
-        <TotalPreview lineTotal={ed.lineTotal} vatKurus={ed.vatKurus} />
+        <TotalPreview lineTotal={ed.grossLineTotal} vatKurus={ed.vatKurus} />
         <AddButton draft={draft} onSubmit={submit} submitting={submitting} disabled={disabled} />
       </div>
     </div>
@@ -1148,6 +1148,7 @@ function EmptyItemsHint({ locked }: { locked: boolean }) {
   )
 }
 
+/** Composer'ın anlık toplamı — satır sütunuyla aynı sözleşme: tutar KDV DAHİL. */
 function TotalPreview({ lineTotal, vatKurus }: { lineTotal: number | null; vatKurus: number | null }) {
   if (lineTotal == null) return null
   return (
@@ -1155,21 +1156,22 @@ function TotalPreview({ lineTotal, vatKurus }: { lineTotal: number | null; vatKu
       <span>
         Toplam: <span className="font-semibold tabular-nums text-foreground">{formatTRY(lineTotal)}</span>
       </span>
-      {vatKurus != null && vatKurus > 0 && <VatHint vatKurus={vatKurus} />}
+      {vatKurus != null && vatKurus > 0 && <VatHint vatKurus={vatKurus} included />}
     </span>
   )
 }
 
 /**
- * Satırın net tutarının ALTINDA duran küçük KDV notu (BAK-75 §3).
+ * Satırın tutarının ALTINDA duran küçük KDV notu (BAK-75 §3).
  *
- * Neden "+": üstteki rakam NET'tir, bu tutar onun üstüne biner. Genel Toplam'da
- * ikisi ayrı satır olarak görünür (Ara Toplam / KDV) — ekranla hesap birebir.
+ * Yazılışı ÜSTÜNDEKİ rakama göre değişir, yoksa not yanlış okunur:
+ * - `included` yok → üstteki NET (birim fiyat), KDV onun ÜSTÜNE biner: "+₺20,00 KDV".
+ * - `included` var → üstteki BRÜT (satır toplamı), KDV onun İÇİNDE: "₺20,00 KDV dahil".
  */
-function VatHint({ vatKurus, className }: { vatKurus: number; className?: string }) {
+function VatHint({ vatKurus, className, included }: { vatKurus: number; className?: string; included?: boolean }) {
   return (
     <span className={cn("text-[11px] leading-tight tabular-nums text-muted-foreground", className)}>
-      +{formatTRY(vatKurus)} KDV
+      {included ? `${formatTRY(vatKurus)} KDV dahil` : `+${formatTRY(vatKurus)} KDV`}
     </span>
   )
 }
@@ -1207,6 +1209,16 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   const vatLiable = row.includeVat !== false
   const vatKurus = vatLiable ? lineVatKurus(lineTotal, taxBps) : null
 
+  // "Toplam" sütunu KDV DAHİL okunur (BAK-75 takibi). Kullanıcının satırda
+  // gördüğü tutar cebinden çıkacak tutar olmalı; net toplam yazan sütun,
+  // üstteki Genel Toplam ile tutmuyormuş gibi görünüyordu (4×₺100 satır,
+  // ₺480 Genel Toplam). Tick kapalıyken brüt = net, sütun değişmez.
+  //
+  // Bu YALNIZ GÖSTERİMDİR: `vatKurus` satır bazlı hesaplanır, belge KDV'si ise
+  // toplam matraha bir kez uygulanır (bkz. line-vat.ts). Genel Toplam'ı
+  // besleyen tek yer totals.ts'tir, bu rakam değil.
+  const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)
+
   function startPrice() { setPriceDraft(toPriceDraft(row.unitPrice)); setEditingPrice(true) }
   function commitPrice() {
     setEditingPrice(false)
@@ -1220,7 +1232,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   return {
     isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
-    tecdocOpen, setTecdocOpen, lineTotal,
+    tecdocOpen, setTecdocOpen, lineTotal, grossLineTotal,
     vatLiable, vatKurus,
     startPrice, commitPrice,
   }
@@ -1419,14 +1431,29 @@ function PriceCell({ row, ed, wide, align = "end" }: {
   )
 }
 
-function TotalField({ lineTotal, strong }: { lineTotal: number | null; strong?: boolean }) {
+/**
+ * "Toplam" hücresi — tutar KDV DAHİL, altında bunu söyleyen küçük not.
+ *
+ * Not olmadan sütun yanıltıcı: aynı satırda birim fiyat NET yazıyor, tick'e göre
+ * toplam brütleşiyor; hangisinin hangisi olduğu rakamdan okunmuyordu.
+ */
+function TotalField({ lineTotal, strong, vatIncluded }: {
+  lineTotal: number | null
+  strong?: boolean
+  vatIncluded?: boolean
+}) {
   return (
-    <span className={cn(
-      "tabular-nums",
-      strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
-      lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
-    )}>
-      {lineTotal != null ? formatTRY(lineTotal) : "—"}
+    <span className="inline-flex flex-col items-end">
+      <span className={cn(
+        "tabular-nums",
+        strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
+        lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
+      )}>
+        {lineTotal != null ? formatTRY(lineTotal) : "—"}
+      </span>
+      {lineTotal != null && vatIncluded && (
+        <span className="text-[11px] leading-tight text-muted-foreground">KDV dahil</span>
+      )}
     </span>
   )
 }
@@ -1850,11 +1877,11 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
         </div>
       </TableCell>
 
-      {/* Toplam (vurgulu, NET) + otosave onayı */}
+      {/* Toplam (vurgulu, KDV DAHİL) + otosave onayı */}
       <TableCell className="py-3.5">
         <div className="flex items-center justify-end gap-1.5">
           <RowFlash kind={flash} iconOnly />
-          <TotalField lineTotal={ed.lineTotal} strong />
+          <TotalField lineTotal={ed.grossLineTotal} strong vatIncluded={ed.vatKurus != null && ed.vatKurus > 0} />
         </div>
       </TableCell>
 
@@ -1925,7 +1952,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       )}
 
       {/* Fiş satırı: Miktar · KDV · Birim Fiyat = Toplam (tek satırda, yığılmadan).
-          Tutarlar NET; tick açıksa altta "+₺X KDV" notu durur (BAK-75 §3). */}
+          Birim fiyat NET, Toplam KDV DAHİL; tick açıksa altta "+₺X KDV" notu durur. */}
       <div className="mt-3 flex items-start gap-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
         {vatPerLine && (
@@ -1938,9 +1965,9 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           <div className="flex items-center gap-2">
             <PriceField row={row} ed={ed} />
             <span className="text-sm text-muted-foreground">=</span>
-            <TotalField lineTotal={ed.lineTotal} strong />
+            <TotalField lineTotal={ed.grossLineTotal} strong />
           </div>
-          {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} />}
+          {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
         </div>
       </div>
     </div>

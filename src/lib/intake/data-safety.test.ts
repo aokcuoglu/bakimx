@@ -71,3 +71,36 @@ describe("sanitizeIntakeForPublic — tutar görünürlüğü", () => {
     expect(safe.order?.items[1].totalPrice).toBeNull()
   })
 })
+
+describe("sanitizeIntakeForPublic — KDV / indirim kırılımı", () => {
+  /**
+   * Regresyon (BAK-75 takibi): iş emrinin `taxRate`'i ve satırların `includeVat`
+   * bayrağı DTO'da hiç yoktu. Müşteri belgesi kırılımı hesaplayamıyor, ham net
+   * toplamı "Genel Toplam" diye basıyordu — iş emrinde KDV %20 ve ₺80 iken
+   * "Araç Kabul ve İşlem Özeti"nde KDV satırı hiç görünmüyordu.
+   */
+  test("indirim, KDV oranı ve satır KDV bayrağı DTO'ya taşınır", () => {
+    const intake = baseIntake()
+    intake.order = {
+      ...intake.order,
+      discountAmount: 10000,
+      taxRate: 2000,
+      items: [
+        { type: "part", name: "Filtre", quantity: 1, unitPrice: 50000, totalPrice: null, includeVat: true },
+        { type: "labor", name: "İşçilik", quantity: 1, unitPrice: 20000, totalPrice: null, includeVat: false },
+      ],
+    } as typeof intake.order
+    const safe = sanitizeIntakeForPublic(intake, { showOrderItems: true })
+    expect(safe.order?.discountAmount).toBe(10000)
+    expect(safe.order?.taxRate).toBe(2000)
+    expect(safe.order?.items[0].includeVat).toBe(true)
+    // `false` AYNEN taşınmalı: düşerse `isVatLiable` satırı tabi sayar ve
+    // müşteri belgesi KDV'siz kalemden de KDV alır.
+    expect(safe.order?.items[1].includeVat).toBe(false)
+  })
+
+  test("kolon seçilmemişse bayrak null olur — tabi sayılır (geriye dönük uyum)", () => {
+    const safe = sanitizeIntakeForPublic(baseIntake(), { showOrderItems: true })
+    expect(safe.order?.items[0].includeVat).toBeNull()
+  })
+})

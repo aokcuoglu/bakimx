@@ -200,6 +200,17 @@ export function formatOrderSummary(
   laborCount: number
   externalLaborCount: number
   hasAnyPrice: boolean
+  /** Belgenin KDV oranı (bps) — "KDV (%20)" başlığını yazabilmek için. */
+  taxRate: number
+  /** İndirim satırı basılmalı mı — tutar 0'sa kırılımda yer kaplamasın. */
+  hasDiscount: boolean
+  /**
+   * KDV satırı basılmalı mı.
+   *
+   * Yalnız `taxRate > 0` YETMEZ: BAK-75'ten sonra kalemlerin hepsi KDV'siz
+   * olabilir, o zaman `taxAmount` 0 çıkar ve "KDV ₺0,00" basmak yanıltıcıdır.
+   */
+  hasTax: boolean
 } {
   const totals = calculateOrderTotals(items, options)
 
@@ -215,5 +226,14 @@ export function formatOrderSummary(
     laborCount: totals.laborCount,
     externalLaborCount: totals.externalLaborCount,
     hasAnyPrice: totals.hasAnyPrice,
+    taxRate: totals.taxRate,
+    hasDiscount: totals.discountAmount > 0,
+    hasTax: totals.taxAmount > 0,
   }
+}
+
+/** KDV oranını (bps) "%20" biçiminde yazar — %20,5 gibi kesirli oranlar da doğru. */
+export function formatTaxRate(bps: number): string {
+  const pct = bps / 100
+  return `%${Number.isInteger(pct) ? pct : pct.toFixed(2).replace(".", ",")}`
 }

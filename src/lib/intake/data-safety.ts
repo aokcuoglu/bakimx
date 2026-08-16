@@ -29,7 +29,20 @@ export type SafeIntakeData = {
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
   damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
-  order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
+  /**
+   * `discountAmount` (kuruş) ve `taxRate` (bps) müşteri belgesinin kırılımını
+   * besler; kalemdeki `includeVat` hangi satırın KDV'ye tabi olduğunu söyler.
+   * Üçü de tutar bilgisidir — `showOrderItems` kapalıyken kalemlerle birlikte
+   * düşer (bkz. `showMoney`).
+   */
+  order: {
+    status: string
+    statusLabel: string
+    paymentStatusLabel: string
+    discountAmount: number | null
+    taxRate: number | null
+    items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; includeVat: boolean | null }[]
+  } | null
 }
 
 const NEVER_PUBLIC_FIELDS = [
@@ -76,7 +89,9 @@ export function sanitizeIntakeForPublic(
     order: {
       status: string
       paymentStatus?: string
-      items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[]
+      discountAmount?: number | null
+      taxRate?: number | null
+      items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; includeVat?: boolean | null }[]
     } | null
   },
   visibility: {
@@ -129,12 +144,18 @@ export function sanitizeIntakeForPublic(
         paymentStatusLabel: (visibility.showPaymentStatus && intake.order.paymentStatus)
           ? PAYMENT_STATUS[intake.order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label || intake.order.paymentStatus
           : "",
+        discountAmount: showMoney ? intake.order.discountAmount ?? null : null,
+        taxRate: showMoney ? intake.order.taxRate ?? null : null,
         items: intake.order.items.map((i) => ({
           type: i.type,
           name: i.name,
           quantity: i.quantity,
           unitPrice: showMoney ? i.unitPrice : null,
           totalPrice: showMoney ? i.totalPrice : null,
+          // Bayrak aynen taşınır: düşerse `isVatLiable` satırı TABİ sayar
+          // (null/undefined → tabi) ve müşteri belgesi KDV'siz bir kalemden de
+          // KDV alır — ekrandaki iş emriyle tutmaz.
+          includeVat: i.includeVat ?? null,
         })),
       }
     : null
