@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CalendarCheck, ShoppingCart, LifeBuoy, HelpCircle, ChevronRight, MessagesSquare } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLiveChatBadge } from "../use-live-chat-badge";
 import type { AssistantView } from "../site-assistant";
 
 interface MenuViewProps {
@@ -58,29 +58,6 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
 const ROW_CLASS =
   "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left md:h-auto " +
   "hover:border-primary/40 hover:bg-primary/5";
-
-/** Menüdeki canlı destek satırının çevrimiçi rozetini besleyen minimum sorgu. */
-function useLiveChatBadge() {
-  const [state, setState] = useState<{ available: boolean; online: boolean } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/live-chat/status")
-      .then((res) => res.json())
-      .then((data: { available?: boolean; online?: boolean }) => {
-        if (!cancelled) setState({ available: data.available === true, online: data.online === true });
-      })
-      .catch(() => {
-        // Durum alınamazsa satırı hiç gösterme — "çevrimiçi" yalanı söylemektense yok say.
-        if (!cancelled) setState({ available: false, online: false });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return state;
-}
 
 export function MenuView({ onNavigate }: MenuViewProps) {
   const badge = useLiveChatBadge();
