@@ -2,12 +2,17 @@ import type { OrderStatus } from "@prisma/client"
 import { isOrderLocked } from "@/lib/status-transitions"
 
 /**
- * Dış alım (ServiceOrderItem source=purchase) kaydını SİLME kuralı — BAK-83.
+ * Dış alım (ServiceOrderItem source=purchase) kaydını DEĞİŞTİRME kuralı — BAK-83
+ * (silme), BAK-84 (düzenleme).
  *
  * Dış alım ayrı bir defter değil, iş emrinin bir kalemidir: teknisyen ekranındaki
  * "Dışarıdan Alınan Parçalar" listesi ile iş emri kalem tablosu AYNI satırı
  * gösterir. Bu yüzden silme her iki yüzeyden de kalemi komple kaldırır — toplam,
  * kâr/maliyet ve /purchases listesi aynı anda düşer.
+ *
+ * Düzenleme AYNI kapıdan geçer: parçanın adını/numarasını/miktarını değiştirmek
+ * de kalemin kimliğini ve tutarını değiştirir. Silemeyen bir rolün düzenleyebiliyor
+ * olması kapının kendisini anlamsız kılardı.
  *
  * Kural iki kademeli:
  *
@@ -32,10 +37,10 @@ export type PurchaseDeleteDecision =
   | { allowed: false; reason: string }
 
 export const PURCHASE_DELETE_LOCKED_REASON =
-  "Teslim edilmiş veya iptal edilmiş iş emrinden dış alım kaydı silinemez"
+  "Teslim edilmiş veya iptal edilmiş iş emrinde dış alım kaydı düzenlenemez veya silinemez"
 
 export const PURCHASE_DELETE_OFFICE_ONLY_REASON =
-  "Teslime hazır iş emrinde dış alım kaydını yalnız iş emrini düzenleyebilen roller silebilir"
+  "Teslime hazır iş emrinde dış alım kaydını yalnız iş emrini düzenleyebilen roller değiştirebilir"
 
 /**
  * @param orderStatus İş emrinin güncel durumu.
