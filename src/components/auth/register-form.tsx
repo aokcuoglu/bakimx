@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() cannot be memoized by React Compiler; usage is safe */
 
-import { useState, useSyncExternalStore } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
@@ -47,6 +47,7 @@ import {
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { formatPhoneTR } from "@/lib/format"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
+import { PLAN_SEATS } from "@/lib/plan"
 import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
 
@@ -782,6 +783,18 @@ function StepTeam({ form }: { form: WizardForm }) {
     name: "teamMembers",
   })
 
+  const selectedPlan = form.watch("selectedPlan")
+  const maxMembers = PLAN_SEATS[selectedPlan] - 1
+  const canAdd = maxMembers > 0 && fields.length < maxMembers
+
+  useEffect(() => {
+    if (fields.length > maxMembers) {
+      for (let i = fields.length - 1; i >= maxMembers; i--) {
+        remove(i)
+      }
+    }
+  }, [maxMembers, fields.length, remove])
+
   return (
     <div className="space-y-4">
       <div>
@@ -790,80 +803,96 @@ function StepTeam({ form }: { form: WizardForm }) {
           Ekibiniz
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          İlk ekip üyelerinizi ekleyin. Bu adımı atlayıp sonra da ekleyebilirsiniz.
+          {maxMembers > 0
+            ? `İlk ekip üyelerinizi ekleyin (en fazla ${maxMembers} kişi). Bu adımı atlayıp sonra da ekleyebilirsiniz.`
+            : "Başlangıç paketinde ek kullanıcı bulunmaz. Ekip üyesi eklemek için Profesyonel veya Premium pakete geçiş yapabilirsiniz."}
         </p>
       </div>
 
-      {fields.length === 0 && (
+      {maxMembers === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <Users className="mx-auto size-8 text-muted-foreground/50" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Bu adım Başlangıç paketi için geçerli değil — isterseniz atlayabilirsiniz.
+          </p>
+        </div>
+      ) : fields.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <Users className="mx-auto size-8 text-muted-foreground/50" />
           <p className="mt-2 text-sm text-muted-foreground">
             Henüz ekip üyesi eklenmedi
           </p>
         </div>
-      )}
+      ) : null}
 
-      <div className="space-y-3">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-start gap-2">
-            <FormField
-              control={form.control}
-              name={`teamMembers.${index}.fullName`}
-              render={({ field: f }) => (
-                <FormItem className="flex-1">
-                  <FormControl>
-                    <Input {...f} placeholder="Ad Soyad" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`teamMembers.${index}.role`}
-              render={({ field: f }) => (
-                <FormItem className="w-40">
-                  <Select value={f.value} onValueChange={(v) => f.onChange(v ?? "usta")}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Rol" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {ROLE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => remove(index)}
-              className="shrink-0 text-muted-foreground hover:text-destructive-strong"
-              aria-label="Üyeyi kaldır"
-            >
-              <Trash2 className="size-4" />
-            </Button>
+      {maxMembers > 0 && (
+        <>
+          <div className="space-y-3">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-start gap-2">
+                <FormField
+                  control={form.control}
+                  name={`teamMembers.${index}.fullName`}
+                  render={({ field: f }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input {...f} placeholder="Ad Soyad" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`teamMembers.${index}.role`}
+                  render={({ field: f }) => (
+                    <FormItem className="w-40">
+                      <Select value={f.value} onValueChange={(v) => f.onChange(v ?? "usta")}>
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Rol" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ROLE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(index)}
+                  className="shrink-0 text-muted-foreground hover:text-destructive-strong"
+                  aria-label="Üyeyi kaldır"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => append({ fullName: "", role: "usta" })}
-        className="gap-1.5"
-      >
-        <Plus className="size-4" />
-        Ekip üyesi ekle
-      </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ fullName: "", role: "usta" })}
+            disabled={!canAdd}
+            className="gap-1.5"
+          >
+            <Plus className="size-4" />
+            {canAdd
+              ? "Ekip üyesi ekle"
+              : `Limit doldu (${maxMembers}/${maxMembers})`}
+          </Button>
+        </>
+      )}
     </div>
   )
 }
