@@ -351,6 +351,7 @@ export const PARTS_REQUEST_STATUS = {
   requested: { label: "Talep Edildi", color: "bg-warning/10 text-foreground border-warning/20" },
   prepared: { label: "Hazırlandı", color: "bg-primary/10 text-foreground border-primary/20" },
   delivered: { label: "Teslim Edildi", color: "bg-success/10 text-foreground border-success/20" },
+  cancelled: { label: "İptal Edildi", color: "bg-destructive/10 text-foreground border-destructive/20" },
 } as const
 
 export type PartsRequestStatusKey = keyof typeof PARTS_REQUEST_STATUS

@@ -8,6 +8,11 @@ import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
+import {
+  findUndecidedPartsRequests,
+  orderStatusNeedsPartsDecision,
+  undecidedPartsRequestsMessage,
+} from "@/lib/orders/parts-request-guard"
 import { purchaseDeleteDecision } from "@/lib/orders/purchase-delete"
 import { roleCan } from "@/lib/roles"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
@@ -59,6 +64,9 @@ export async function createServiceOrderAction(intakeFormId: string) {
   revalidatePath("/orders")
   return { success: true, id: order.id }
 }
+
+/** İş emri iptalinde açık parça taleplerine yazılan gerekçe. */
+const ORDER_CANCELLED_REQUEST_REASON = "İş emri iptal edildi"
 
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
@@ -872,6 +880,19 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
     if (unpriced.length > 0) return { error: unpricedItemsMessage(unpriced) }
   }
 
+  // Karar bekleyen parça talebi varken emir teslime hazırlanamaz/teslim edilemez:
+  // "hazır" bildirimi müşteriye giderken ya da araç çıkarken hâlâ açık bir parça
+  // sorusu kalmasın (bkz. @/lib/orders/parts-request-guard).
+  if (orderStatusNeedsPartsDecision(status)) {
+    const requests = await prisma.partsRequest.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { partName: true, status: true, convertedAt: true, cancelledAt: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const undecided = findUndecidedPartsRequests(requests)
+    if (undecided.length > 0) return { error: undecidedPartsRequestsMessage(undecided) }
+  }
+
   const updateResult = await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
     data: { status },
@@ -879,6 +900,38 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`, undefined, orderId)
+
+  // İş emri iptal edilince açık parça talepleri de kapanır: emir kilitlendiği
+  // için (isOrderLocked) tek tek karar verilebilecek bir yüzey kalmaz, talepler
+  // "karar bekliyor" görünümünde sonsuza kadar asılı kalırdı.
+  if (status === "cancelled") {
+    const openRequests = await prisma.partsRequest.findMany({
+      where: {
+        serviceOrderId: orderId,
+        workshopId: user.workshopId,
+        convertedAt: null,
+        status: { not: "cancelled" },
+      },
+      select: { id: true, partName: true },
+    })
+    if (openRequests.length > 0) {
+      await prisma.partsRequest.updateMany({
+        where: { id: { in: openRequests.map((r) => r.id) }, workshopId: user.workshopId },
+        data: { status: "cancelled", cancelledAt: new Date(), cancelReason: ORDER_CANCELLED_REQUEST_REASON },
+      })
+      for (const request of openRequests) {
+        await AuditLogAction(
+          user.workshopId,
+          user.id,
+          "PartsRequest",
+          request.id,
+          "parts_request_cancelled",
+          JSON.stringify({ orderId, partName: request.partName, reason: ORDER_CANCELLED_REQUEST_REASON }),
+          orderId,
+        )
+      }
+    }
+  }
 
   // Intake + work order are presented as one unified flow (see work-order-detail.tsx's
   // "Sipariş" tab, which drives this action directly); keep the linked intake's

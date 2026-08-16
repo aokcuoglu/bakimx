@@ -1459,6 +1459,13 @@ model PartsRequest {
   /// devam eder; convertedAt ondan bağımsız, "kaleme çevrildi mi" sorusuna
   /// tek doğru kaynaktır — status tekrar "requested"a dönemeyeceği için ayrı alan gerekir.
   convertedAt    DateTime?
+  /// Dolu ⇒ talep karara bağlanarak REDDEDİLDİ (`status = cancelled` ile birlikte
+  /// yazılır). `convertedAt` ile birlikte "karar verildi mi" sorusunun iki
+  /// yanıtından biridir — ikisi de boşsa talep hâlâ karar bekliyordur ve iş emri
+  /// teslime alınamaz (bkz. src/lib/orders/parts-request-guard.ts).
+  cancelledAt    DateTime?
+  /// İptal gerekçesi — ATÖLYE İÇİ not, müşteri yüzeyine çıkmaz.
+  cancelReason   String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -1472,6 +1479,9 @@ enum PartsRequestStatus {
   requested
   prepared
   delivered
+  /// Ofis talebi reddetti (parça alınmayacak). Terminal: kaleme çevrilemez,
+  /// fiziksel akışta ilerletilemez; yalnız "geri al" ile `requested`a döner.
+  cancelled
 }
 
 model LaborSession {

@@ -4,7 +4,13 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { revalidatePath } from "next/cache"
-import { checklistItemSchema, internalNoteSchema, partsRequestSchema } from "@/lib/validations/technician"
+import {
+  checklistItemSchema,
+  internalNoteSchema,
+  partsRequestCancelSchema,
+  partsRequestEditSchema,
+  partsRequestSchema,
+} from "@/lib/validations/technician"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
 import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
@@ -15,6 +21,12 @@ import {
 import type { OrderStatus } from "@prisma/client"
 
 const ORDER_LOCKED_ERROR = "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez"
+
+/** Talebin fiziksel teslimat akışı; `cancelled` bu akışın dışında bir karardır. */
+const PHYSICAL_PARTS_REQUEST_STATUSES: readonly string[] = ["requested", "prepared", "delivered"]
+
+const PARTS_REQUEST_CANCELLED_ERROR = "Bu talep iptal edilmiş; önce iptali geri alın"
+const PARTS_REQUEST_CONVERTED_ERROR = "Bu talep kaleme eklendi; değişiklik iş emri kalemi üzerinden yapılır"
 
 export async function assignTechnicianAction(orderId: string, technicianId: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -546,14 +558,24 @@ export async function createPartsRequestAction(formData: FormData) {
   return { success: true }
 }
 
+/**
+ * Talebin FİZİKSEL akışını ilerletir (requested→prepared→delivered).
+ *
+ * `cancelled` buradan yazılamaz: iptal ayrı bir karardır, gerekçesiyle birlikte
+ * `cancelPartsRequestAction` üzerinden geçer. İptal edilmiş talep de bu akışta
+ * ilerletilemez — önce `reopenPartsRequestAction` ile geri alınması gerekir.
+ */
 export async function updatePartsRequestStatusAction(requestId: string, status: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
   const { user } = await requireWritableWorkshop("parts.purchase")
+
+  if (!PHYSICAL_PARTS_REQUEST_STATUSES.includes(status)) return { error: "Geçersiz talep durumu" }
 
   const request = await prisma.partsRequest.findFirst({
     where: { id: requestId, workshopId: user.workshopId },
   })
   if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.status === "cancelled") return { error: PARTS_REQUEST_CANCELLED_ERROR }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: request.serviceOrderId, workshopId: user.workshopId },
@@ -796,6 +818,7 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
   })
   if (!request) return { error: "Parça talebi bulunamadı" }
   if (request.convertedAt) return { error: "Bu talep zaten kaleme eklendi" }
+  if (request.status === "cancelled") return { error: PARTS_REQUEST_CANCELLED_ERROR }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: request.serviceOrderId, workshopId: user.workshopId },
@@ -807,8 +830,15 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
   const converted = await prisma.$transaction(async (tx) => {
     // `convertedAt`i önce koşullu güncelle: iki eşzamanlı çağrı yarışırsa yalnız
     // biri `count > 0` görür, kalem yalnız o durumda oluşturulur (çift kalem önlenir).
+    // `status != cancelled` aynı koşulda: iptalle yarışan çevirme kaybeder ve
+    // iptal edilmiş talep için kalem açılmaz.
     const updated = await tx.partsRequest.updateMany({
-      where: { id: requestId, workshopId: user.workshopId, convertedAt: null },
+      where: {
+        id: requestId,
+        workshopId: user.workshopId,
+        convertedAt: null,
+        status: { not: "cancelled" },
+      },
       data: { convertedAt: new Date() },
     })
     if (updated.count === 0) return false
@@ -852,6 +882,198 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
     intakeFormId: order.intakeFormId,
     eventType: "parts_request_converted",
     description: `Parça talebi kaleme eklendi: ${request.partName}`,
+  })
+
+  revalidatePath(`/orders/${request.serviceOrderId}`)
+  revalidatePath(`/technician/orders/${request.serviceOrderId}`)
+  return { success: true }
+}
+
+/**
+ * Bekleyen bir parça talebinin bilgilerini düzeltir (ad, parça no, marka,
+ * miktar, not).
+ *
+ * KALEME EKLENMİŞ TALEP DÜZENLENMEZ: kalem ayrı bir kayıttır ve talep alanları
+ * ona kopyalanmıştır — burada değiştirmek iki kaydı sessizce ayrıştırırdı.
+ * O durumda düzeltme iş emri kaleminin kendi satırında yapılır.
+ * İptal edilmiş talep de düzenlenmez; önce iptali geri alınır.
+ */
+export async function updatePartsRequestAction(requestId: string, formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("parts.purchase")
+
+  const parsed = partsRequestEditSchema.safeParse({
+    partName: (formData.get("partName") as string) || "",
+    partSku: (formData.get("partSku") as string) || "",
+    brand: (formData.get("brand") as string) || "",
+    quantity: (formData.get("quantity") as string) || "1",
+    note: (formData.get("note") as string) || "",
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+
+  const request = await prisma.partsRequest.findFirst({
+    where: { id: requestId, workshopId: user.workshopId },
+  })
+  if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.convertedAt) return { error: PARTS_REQUEST_CONVERTED_ERROR }
+  if (request.status === "cancelled") return { error: PARTS_REQUEST_CANCELLED_ERROR }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const data = {
+    partName: parsed.data.partName,
+    partSku: parsed.data.partSku || null,
+    brand: parsed.data.brand || null,
+    quantity: parsed.data.quantity,
+    note: parsed.data.note || null,
+  }
+
+  // Koşullu yazma: düzenleme ile çevirme/iptal yarışırsa düzenleme kaybeder.
+  const updated = await prisma.partsRequest.updateMany({
+    where: {
+      id: requestId,
+      workshopId: user.workshopId,
+      convertedAt: null,
+      status: { not: "cancelled" },
+    },
+    data,
+  })
+  if (updated.count === 0) return { error: "Talep bu sırada karara bağlandı, sayfayı yenileyin" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "PartsRequest",
+    requestId,
+    "parts_request_edited",
+    JSON.stringify({ orderId: request.serviceOrderId, before: {
+      partName: request.partName,
+      partSku: request.partSku,
+      brand: request.brand,
+      quantity: request.quantity,
+      note: request.note,
+    }, after: data }),
+    request.serviceOrderId,
+  )
+
+  // Ad değiştiyse talebin ne olduğu da değişmiş demektir; zaman çizelgesine
+  // yalnız o durumda yazılır (miktar/not düzeltmesi gürültü yaratmasın).
+  if (request.partName !== data.partName) {
+    await addTimelineEvent({
+      workshopId: user.workshopId,
+      intakeFormId: order.intakeFormId,
+      eventType: "parts_request_edited",
+      description: `Parça talebi düzeltildi: ${request.partName} → ${data.partName}`,
+    })
+  }
+
+  revalidatePath(`/orders/${request.serviceOrderId}`)
+  revalidatePath(`/technician/orders/${request.serviceOrderId}`)
+  return { success: true }
+}
+
+/**
+ * Talebi REDDEDER: parça alınmayacak. Karar kapısının (parts-request-guard)
+ * ikinci ucu — kaleme eklemenin alternatifi budur, talebi askıda bırakmak değil.
+ *
+ * Kaleme eklenmiş talep iptal edilemez: kalem zaten oluştu, geri alma yolu o
+ * kalemi silmektir (iş emri kalem satırı). Gerekçe atölye içi kalır.
+ */
+export async function cancelPartsRequestAction(requestId: string, reason: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("parts.purchase")
+
+  const parsed = partsRequestCancelSchema.safeParse({ reason: reason ?? "" })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Geçersiz gerekçe" }
+
+  const request = await prisma.partsRequest.findFirst({
+    where: { id: requestId, workshopId: user.workshopId },
+  })
+  if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.convertedAt) return { error: PARTS_REQUEST_CONVERTED_ERROR }
+  if (request.status === "cancelled") return { error: "Bu talep zaten iptal edildi" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const cancelReason = parsed.data.reason || null
+
+  const cancelled = await prisma.partsRequest.updateMany({
+    where: { id: requestId, workshopId: user.workshopId, convertedAt: null, status: { not: "cancelled" } },
+    data: { status: "cancelled", cancelledAt: new Date(), cancelReason },
+  })
+  if (cancelled.count === 0) return { error: "Talep bu sırada karara bağlandı, sayfayı yenileyin" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "PartsRequest",
+    requestId,
+    "parts_request_cancelled",
+    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName, reason: cancelReason }),
+    request.serviceOrderId,
+  )
+
+  // İç olay: gerekçe müşteri yüzeyine çıkmaz (bkz. data-safety denylist'i).
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "parts_request_cancelled",
+    description: `Parça talebi iptal edildi: ${request.partName}${cancelReason ? ` — ${cancelReason}` : ""}`,
+  })
+
+  revalidatePath(`/orders/${request.serviceOrderId}`)
+  revalidatePath(`/technician/orders/${request.serviceOrderId}`)
+  return { success: true }
+}
+
+/** İptali geri alır: talep yeniden karar bekleyen `requested` durumuna döner. */
+export async function reopenPartsRequestAction(requestId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("parts.purchase")
+
+  const request = await prisma.partsRequest.findFirst({
+    where: { id: requestId, workshopId: user.workshopId },
+  })
+  if (!request) return { error: "Parça talebi bulunamadı" }
+  if (request.status !== "cancelled") return { error: "Bu talep iptal edilmemiş" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: request.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true, intakeFormId: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  await prisma.partsRequest.updateMany({
+    where: { id: requestId, workshopId: user.workshopId, status: "cancelled" },
+    data: { status: "requested", cancelledAt: null, cancelReason: null },
+  })
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "PartsRequest",
+    requestId,
+    "parts_request_reopened",
+    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName }),
+    request.serviceOrderId,
+  )
+
+  await addTimelineEvent({
+    workshopId: user.workshopId,
+    intakeFormId: order.intakeFormId,
+    eventType: "parts_request_reopened",
+    description: `Parça talebinin iptali geri alındı: ${request.partName}`,
   })
 
   revalidatePath(`/orders/${request.serviceOrderId}`)

@@ -231,6 +231,10 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       // Ofis talebi kaleme çevirdiyse usta da görsün: "istediğim parça iş
       // emrine girdi mi?" sorusu bugüne dek yalnız ofis ekranında yanıtlanıyordu.
       convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
+      // Ofis talebi reddettiyse gerekçesi de sahaya iner: usta beklediği parçanın
+      // neden gelmediğini ekranında görsün, ofisi aramak zorunda kalmasın.
+      cancelledAt: p.cancelledAt ? p.cancelledAt.toISOString() : null,
+      cancelReason: p.cancelReason,
       createdAt: p.createdAt.toISOString(),
     })),
     laborSessions: order.laborSessions.map((l) => ({
