@@ -71,11 +71,21 @@ export const purchaseItemCreateSchema = z.object({
   supplierName: z.string().optional(),
   supplierId: z.string().optional(),
   purchasedById: z.string().optional(),
+  // --- Katalog eşleşmesi (BAK-84) ---
+  // Dışarıdan alınan parçanın numarası araç kataloğunda çıktıysa usta eşleştirir
+  // ve kalem katalog bağıyla kaydedilir. `partId`/`bakimxProductId` BİLEREK yok:
+  // biri stok düşerdi, diğeri satırı `source=bakimx` sayardı (bkz. purchase-match.ts).
+  tecdocArticleId: z.coerce.number().int("TecDoc parça no tam sayı olmalıdır").positive().optional(),
+  brand: z.string().optional(),
+  category: z.string().optional(),
+  categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().optional(),
 })
 
 /**
- * Dış alım kalemi düzenleme şeması (masa tarafı detay modal'ı). Satış unitPrice'ı
- * grid'deki mevcut alandan bağımsız düzenlenir; burada YER ALMAZ.
+ * Dış alım kalemi düzenleme şeması. İki yüzey kullanır: masa tarafı detay modal'ı
+ * (tedarikçi/tarih/alış fiyatı) ve teknisyen kartının düzenlemesi (BAK-84 — parça
+ * adı, numarası, miktarı, markası ve katalog bağı). Satış unitPrice'ı grid'deki
+ * mevcut alandan bağımsız düzenlenir; burada YER ALMAZ.
  */
 export const purchaseItemUpdateSchema = z.object({
   purchasePriceKurus: z.coerce
@@ -85,6 +95,14 @@ export const purchaseItemUpdateSchema = z.object({
     .optional(),
   supplierName: z.string().nullable().optional(),
   supplierId: z.string().nullable().optional(),
+  name: z.string().min(1, "Parça adı boş olamaz").optional(),
+  sku: z.string().nullable().optional(),
+  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").optional(),
+  brand: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),
+  // Katalogla eşleştirilince kurulur, eşleşme kaldırılınca (boş string) temizlenir.
+  tecdocArticleId: z.coerce.number().int("TecDoc parça no tam sayı olmalıdır").positive().nullable().optional(),
 })
 
 /**
