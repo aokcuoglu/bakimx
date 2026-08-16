@@ -1,27 +1,90 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  ANNOUNCEMENT_BAR_SLOT,
+  ANNOUNCEMENT_STORAGE_KEY,
+  announcementDismissScript,
+  landingAnnouncement,
+} from "@/lib/landing/announcement";
 
+/**
+ * Duyuru barı — rozet + metin + ok'lu CTA, kapatılabilir.
+ *
+ * CLS notu: bar HER ZAMAN sunucudan gelir. Kapatmış ziyaretçide satır içi
+ * script `<html>` üzerine gizleme sınıfını hidrasyondan önce koyar, yani bar
+ * hiç boyanmaz ve aşağıdaki efekt onu kaldırdığında görsel bir zıplama olmaz.
+ * Header `sticky top-0` olduğu için konumu barın varlığına bağlı değildir.
+ */
 export function AnnouncementBar() {
   const prefersReducedMotion = useReducedMotion();
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY) === landingAnnouncement.id) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDismissed(true);
+      }
+    } catch {
+      /* localStorage erişilemezse duyuru görünür kalsın */
+    }
+  }, []);
+
+  function dismiss() {
+    try {
+      localStorage.setItem(ANNOUNCEMENT_STORAGE_KEY, landingAnnouncement.id);
+    } catch {
+      /* yok say — kapatma yalnız bu oturum için geçerli olur */
+    }
+    setDismissed(true);
+  }
 
   return (
-    <motion.div
-      initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="bg-primary text-primary-foreground"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex items-center justify-center gap-2 text-center text-xs sm:text-sm">
-          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-            Erken Üye
-          </span>
-          <span>
-            Erken üyelere özel başlangıç fiyatları · 7 gün ücretsiz dene.
-          </span>
-        </div>
-      </div>
-    </motion.div>
+    <>
+      <script
+        // Kapatma kararını ilk boyadan önce uygular; bkz. yukarıdaki CLS notu.
+        dangerouslySetInnerHTML={{ __html: announcementDismissScript() }}
+      />
+      {!dismissed && (
+        <motion.div
+          data-slot={ANNOUNCEMENT_BAR_SLOT}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="bg-primary text-primary-foreground"
+        >
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex min-h-11 flex-wrap items-center justify-center gap-x-2 gap-y-1 py-1.5 pr-10 text-center text-xs sm:text-sm md:min-h-9">
+              <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                {landingAnnouncement.badge}
+              </span>
+              <span>{landingAnnouncement.text}</span>
+              <Link
+                href={landingAnnouncement.href}
+                className="inline-flex shrink-0 items-center gap-1 font-semibold underline underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/70 focus-visible:ring-offset-1 focus-visible:ring-offset-primary rounded-sm"
+              >
+                {landingAnnouncement.linkLabel}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon-compact"
+              onClick={dismiss}
+              aria-label="Duyuruyu kapat"
+              className="absolute right-1 top-1/2 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground focus-visible:ring-primary-foreground/70 dark:hover:bg-primary-foreground/15"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </>
   );
 }

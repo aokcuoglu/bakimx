@@ -30,6 +30,14 @@ export function HeroSection() {
         className="pointer-events-none absolute -top-32 right-[-8%] h-[440px] w-[440px] rounded-full bg-brand/10 blur-3xl"
       />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/*
+          Hero kompozisyonu (BAK-78 planı):
+          - üst satır: sol kolon (mesaj + CTA) + sağ kolon (Faz 2'de soru→cevap şeridi)
+          - altında ortalanmış slot: Faz 3'te "BakımX'e sorun" ask bar buraya girer.
+          Slot bu fazda boş olduğu için hiç render edilmiyor — boş bir kap
+          bırakmak gereksiz dikey boşluk yaratırdı. Faz 3 slot'u grid'in
+          kardeşi olarak ekler (`mx-auto` + üst boşluk kendi üzerinde).
+        */}
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
           {/* Sol: mesaj + CTA */}
           <div className="flex max-w-xl flex-col gap-6">
@@ -49,8 +57,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.05 }}
               className="text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
             >
-              Aracı <span className="text-primary">saniyede</span> kabul edin,
-              servisi <span className="text-primary">kağıtsız</span> yönetin
+              Ruhsatı okutun, servis{" "}
+              <span className="text-primary">kendi kendine</span> yazılsın
             </motion.h1>
 
             <motion.p
@@ -59,9 +67,8 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.15 }}
               className="text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
-              Ruhsatı okutun; araç, müşteri ve şasi bilgisi otomatik dolsun. İş
-              emri, fotoğraf kanıtı, teklif ve tahsilat tek panelde — müşteriniz
-              aracını canlı takip linkinden izlesin.
+              Plaka, marka, model ve şasi ruhsattan dolar; iş emri, fotoğraf
+              kanıtı ve teklif aynı panelde ilerler.
             </motion.p>
 
             <motion.div
@@ -92,6 +99,18 @@ export function HeroSection() {
               </a>
             </motion.div>
 
+            {/* Kanıtlanabilir tek satır: hero'yu sayfadaki canlı ruhsat demosuna bağlar. */}
+            <motion.a
+              href="#ruhsat-demo"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="group inline-flex w-fit items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+            >
+              Örnek bir ruhsatı hemen aşağıda deneyin
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+            </motion.a>
+
             <motion.ul
               initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -110,7 +129,8 @@ export function HeroSection() {
             </motion.ul>
           </div>
 
-          {/* Sağ: ürün ekranı + yüzen doğrulama rozeti */}
+          {/* Sağ: ürün ekranı + yüzen doğrulama rozeti.
+              Faz 2'de soru→cevap kart şeridiyle değişecek; bu fazda yerinde kalır. */}
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -123,6 +143,9 @@ export function HeroSection() {
                 alt="BakimX iş emri detay ekranı"
                 width={1440}
                 height={900}
+                // Faz 1'de bu görsel hâlâ hero'nun en büyük elemanı, yani LCP
+                // adayı: `priority` kalkarsa LCP ölçümü İYİLEŞMEZ, gecikir.
+                // "LCP = H1" hedefi görsel hero'dan çıktığında (Faz 2) gelir.
                 priority
                 sizes="(min-width: 1024px) 620px, 100vw"
                 className="w-full"
@@ -146,6 +169,8 @@ export function HeroSection() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Faz 3 slot — ortalanmış "BakımX'e sorun" ask bar buraya gelecek. */}
       </div>
     </section>
   );
