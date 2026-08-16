@@ -43,11 +43,11 @@ export function AssistantPanel({ view, successContext, onNavigate, onSuccess, on
         view === "chat" && "h-[70vh] sm:h-[560px]",
       )}
     >
-      <header className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
-          <Wrench className="size-4" />
+      <header className="flex items-center gap-3 bg-primary px-4 py-3.5 text-primary-foreground">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/15">
+          <Wrench className="size-5" />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-0.5">
           <p className="text-sm font-semibold leading-tight">BakımX Asistanı</p>
           <p className="text-xs leading-tight text-primary-foreground/80">
             Sorularınız için buradayız
@@ -58,7 +58,7 @@ export function AssistantPanel({ view, successContext, onNavigate, onSuccess, on
           size="icon"
           onClick={onClose}
           aria-label="Kapat"
-          className="text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+          className="-mr-1 shrink-0 rounded-full text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
         >
           <X className="h-5 w-5" />
         </Button>
