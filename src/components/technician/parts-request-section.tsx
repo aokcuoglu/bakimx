@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { PARTS_REQUEST_STATUS } from "@/lib/constants"
 import { PartSearchInput } from "@/components/parts/part-search-input"
+import { PartCard } from "@/components/parts/part-card"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import { TecdocPartPicker, type PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 import { ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
@@ -459,36 +460,32 @@ function PartsRequestList({ requests, locked }: { requests: TechnicianPartsReque
         const next = nextStatus[req.status]
 
         return (
-          <div key={req.id} className="rounded-lg bg-muted px-3 py-2.5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground break-words">
-                  {req.partName}
-                  <span className="ml-1.5 text-xs text-muted-foreground">×{req.quantity}</span>
-                </p>
-                <p className="text-xs text-muted-foreground break-words">
-                  {req.partSku && <span className="font-mono">{req.partSku}</span>}
-                  {req.brand && <>{req.partSku ? " · " : ""}{req.brand}</>}
-                </p>
-                {req.note && <p className="text-xs text-muted-foreground mt-0.5 break-words">{req.note}</p>}
-              </div>
+          <PartCard
+            key={req.id}
+            name={req.partName}
+            quantity={req.quantity}
+            partNo={req.partSku}
+            brand={req.brand}
+            note={req.note}
+            badge={
               <span
                 className={cn(
-                  "shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border",
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border",
                   statusInfo?.color
                 )}
               >
                 {statusInfo?.label || req.status}
               </span>
-            </div>
-
-            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[10px] text-muted-foreground/70">
+            }
+            meta={
+              <>
                 {new Date(req.createdAt).toLocaleDateString("tr-TR")}
                 {req.tecdocArticleId != null && " · Katalog parçası"}
                 {req.convertedAt && " · İş emrine kalem olarak eklendi"}
-              </span>
-              {!locked && next && (
+              </>
+            }
+            actions={
+              !locked && next ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -504,9 +501,9 @@ function PartsRequestList({ requests, locked }: { requests: TechnicianPartsReque
                   <CheckCircle2 className="size-3" />
                   {next.label}
                 </Button>
-              )}
-            </div>
-          </div>
+              ) : null
+            }
+          />
         )
       })}
     </div>

@@ -268,6 +268,10 @@ export async function addPurchaseItemAction(formData: FormData) {
     supplierName: (formData.get("supplierName") as string) || undefined,
     supplierId: (formData.get("supplierId") as string) || undefined,
     purchasedById: (formData.get("purchasedById") as string) || undefined,
+    tecdocArticleId: (formData.get("tecdocArticleId") as string) || undefined,
+    brand: (formData.get("brand") as string) || undefined,
+    category: (formData.get("category") as string) || undefined,
+    categoryId: (formData.get("categoryId") as string) || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -342,6 +346,13 @@ export async function addPurchaseItemAction(formData: FormData) {
           // unitPrice×quantity kullanır.
           unitPrice: purchasePriceKurus,
           totalPrice: null,
+          // Katalog eşleşmesi (BAK-84): parça numarası araç kataloğunda çıktıysa
+          // kalem TecDoc parçasına bağlanır. Stok/BakımX eşleşmesinde bu alanlar
+          // boş kalır, yalnız ad/marka metni dolar (bkz. purchaseMatchFields).
+          tecdocArticleId: parsed.data.tecdocArticleId ?? null,
+          brand: parsed.data.brand || null,
+          category: parsed.data.category || null,
+          categoryId: parsed.data.categoryId ?? null,
           purchasePriceKurus,
           supplierName: parsed.data.supplierName || null,
           supplierId,
@@ -387,6 +398,7 @@ export async function addPurchaseItemAction(formData: FormData) {
       quantity: parsed.data.quantity,
       purchasePriceKurus,
       supplierName: parsed.data.supplierName || null,
+      tecdocArticleId: parsed.data.tecdocArticleId ?? null,
       hasPhoto: !!photoUpload,
     }),
     order.id,
@@ -399,10 +411,15 @@ export async function addPurchaseItemAction(formData: FormData) {
 }
 
 /**
- * Dış alım kaleminin (source=purchase) alış metadata'sını günceller: tedarikçi,
- * alış tarihi, alış fiyatı ve isteğe bağlı yeni parça kutusu fotoğrafı. Satış
- * unitPrice'ına DOKUNMAZ (oluşturma sonrası bağımsızdır). Alış fiyatı iş emri
- * toplamını etkilemez → recalc gerekmez. Kilitli emir reddedilir.
+ * Dış alım kalemini (source=purchase) günceller. İki yüzey çağırır:
+ *   • masa tarafı satın alma detayı — tedarikçi, alış tarihi, alış fiyatı ve
+ *     isteğe bağlı yeni parça kutusu fotoğrafı;
+ *   • teknisyen kartındaki "Düzenle" (BAK-84) — parça adı, numarası, miktarı,
+ *     markası ve katalog bağı (`tecdocArticleId`/`category`/`categoryId`).
+ *
+ * Satış unitPrice'ına DOKUNMAZ (oluşturma sonrası bağımsızdır). Alış fiyatı iş
+ * emri toplamını etkilemez; MİKTAR etkiler → yalnız o değişince recalc koşar.
+ * Durum/rol kapısı `purchaseDeleteDecision` ile silme ile ortaktır.
  */
 export async function updatePurchaseItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -421,13 +438,25 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
     select: { id: true, intakeFormId: true, status: true },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+
+  // Düzenleme silme ile AYNI kapıdan geçer (BAK-84): kalemin adını/numarasını/
+  // miktarını değiştirmek de kimliğini ve tutarını değiştirir, silemeyen rol
+  // düzenleyememeli (tek kaynak: purchaseDeleteDecision).
+  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  if (!decision.allowed) return { error: decision.reason }
 
   const has = (k: string) => formData.get(k) !== null
   const parsed = purchaseItemUpdateSchema.safeParse({
     purchasePriceKurus: has("purchasePriceKurus") ? Number(formData.get("purchasePriceKurus")) : undefined,
     supplierName: has("supplierName") ? (formData.get("supplierName") as string) : undefined,
     supplierId: has("supplierId") ? ((formData.get("supplierId") as string) || null) : undefined,
+    name: has("name") ? ((formData.get("name") as string) || "").trim() : undefined,
+    sku: has("sku") ? ((formData.get("sku") as string) || null) : undefined,
+    quantity: has("quantity") ? Number(formData.get("quantity")) : undefined,
+    brand: has("brand") ? ((formData.get("brand") as string) || null) : undefined,
+    category: has("category") ? ((formData.get("category") as string) || null) : undefined,
+    categoryId: has("categoryId") ? ((formData.get("categoryId") as string) || null) : undefined,
+    tecdocArticleId: has("tecdocArticleId") ? ((formData.get("tecdocArticleId") as string) || null) : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -438,8 +467,22 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
     supplierName?: string | null
     supplierId?: string | null
     purchasedAt?: Date
+    name?: string
+    sku?: string | null
+    quantity?: number
+    brand?: string | null
+    category?: string | null
+    categoryId?: number | null
+    tecdocArticleId?: number | null
   } = {}
   if (parsed.data.purchasePriceKurus !== undefined) data.purchasePriceKurus = parsed.data.purchasePriceKurus
+  if (parsed.data.name !== undefined) data.name = parsed.data.name
+  if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
+  if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
+  if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
+  if (parsed.data.category !== undefined) data.category = parsed.data.category || null
+  if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+  if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
   if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
   if (parsed.data.supplierId !== undefined) {
     const sid = parsed.data.supplierId || null
@@ -495,6 +538,12 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
           data,
         })
         if (updRes.count !== 1) throw new Error("Kalem bulunamadı")
+        // Miktar satır toplamını değiştirir (totalPrice null → unitPrice×quantity),
+        // dolayısıyla iş emri tahsilat durumunu da. Alış fiyatı/tedarikçi
+        // düzenlemeleri toplama dokunmadığı için recalc YALNIZ burada gerekir.
+        if (data.quantity !== undefined) {
+          await recalcOrderPayment(tx, orderId, user.workshopId)
+        }
       }
       if (photoUpload) {
         await tx.vehiclePhoto.create({
