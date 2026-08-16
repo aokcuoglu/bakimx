@@ -39,21 +39,25 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
   const Icon = action.icon;
   return (
     <>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="size-4" />
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover/button:bg-primary/15">
+        <Icon className="size-5" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-foreground">{action.label}</span>
-        <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
+      <span className="min-w-0 flex-1 space-y-0.5">
+        <span className="block text-sm font-medium leading-tight text-foreground">{action.label}</span>
+        <span className="block truncate text-xs leading-tight text-muted-foreground">{action.description}</span>
       </span>
       {trailing}
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70 transition-transform group-hover/button:translate-x-0.5" />
     </>
   );
 }
 
+// `md:h-auto` şart: Button size varyantındaki `md:h-9` twMerge'de `h-auto` ile
+// aynı gruba düşmediği için md+ ekranda satırı 36px'e sabitliyor, `py-3` ölü
+// kalıyor ve ikon karesi satır kenarına yapışıp "emanet" duruyordu.
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal px-3 py-3 text-left";
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left md:h-auto " +
+  "hover:border-primary/40 hover:bg-primary/5";
 
 /** Menüdeki canlı destek satırının çevrimiçi rozetini besleyen minimum sorgu. */
 function useLiveChatBadge() {
@@ -83,8 +87,8 @@ export function MenuView({ onNavigate }: MenuViewProps) {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-xl bg-muted/60 px-4 py-3">
-        <p className="text-sm text-foreground">
+      <div className="rounded-2xl bg-muted/60 px-4 py-3.5">
+        <p className="text-sm leading-relaxed text-foreground">
           Merhaba! 👋 BakımX ile ilgilendiğiniz için teşekkürler. Size nasıl yardımcı olabiliriz?
         </p>
       </div>

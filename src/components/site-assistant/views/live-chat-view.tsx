@@ -290,7 +290,8 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
       </form>
 
       <div className="border-t px-3 py-1.5">
-        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={reset}>
+        {/* `md:h-7` olmadan size varyantındaki `md:h-9` md+ ekranda kazanır. */}
+        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs md:h-7" onClick={reset}>
           <RefreshCw className="mr-1 size-3" /> Yeni sohbet başlat
         </Button>
       </div>
