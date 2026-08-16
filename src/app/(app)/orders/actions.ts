@@ -193,9 +193,10 @@ export async function addOrderItemAction(formData: FormData) {
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
           purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
           source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
-          // Satır KDV'ye tabi mi (BAK-53). Varsayılan `true` — gönderilmezse
-          // bugünkü davranış: belgenin KDV'si her satıra uygulanır.
-          includeVat: parsed.data.includeVat ?? true,
+          // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
+          // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
+          // girer, KDV yalnız satırın tick'i açılınca üstüne biner.
+          includeVat: parsed.data.includeVat ?? false,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).

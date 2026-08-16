@@ -941,10 +941,12 @@ model ServiceOrderItem {
   completionNote     String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
   photos             VehiclePhoto[]
-  // KULLANILMIYOR (BAK-55): satır başına KDV kipi hiçbir toplama girmiyordu —
-  // KDV tek noktada, belgenin `taxRate`'i ile eklenir (src/lib/totals.ts). Kolon
-  // yalnız veri kaybı olmasın diye duruyor; ayrı bir migration ile düşürülebilir.
-  includeVat         Boolean          @default(true)
+  // Satır KDV'ye TABİ mi (BAK-53). Tabi satırların net toplamı, belgenin
+  // `taxRate`'iyle Genel Toplam'a eklenen KDV'nin matrahıdır (src/lib/totals.ts).
+  // Varsayılan BAK-75'te `true` → `false` çevrildi: KDV kimseye sorulmadan
+  // eklenmez, servis tick'i kendisi açar. MEVCUT satırlar değişmez — migration
+  // yalnız kolonun DEFAULT'unu değiştirir, hiçbir satırı güncellemez.
+  includeVat         Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
