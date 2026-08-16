@@ -39,6 +39,12 @@ import {
   type TechnicianPartsRequest,
 } from "@/components/technician/parts-request-section"
 import { isOrderLocked } from "@/lib/status-transitions"
+import { purchaseDeleteDecision, type PurchaseDeleteDecision } from "@/lib/orders/purchase-delete"
+import { removePurchaseItemAction } from "@/app/(app)/orders/actions"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
@@ -114,10 +120,13 @@ export function TechnicianOrderDetail({
   order,
   technicians,
   suppliers,
+  canEditOrder,
 }: {
   order: OrderData
   technicians: TechnicianInfo[]
   suppliers: SupplierInfo[]
+  /** Kullanıcı `order.edit` taşıyor mu — dış alım silme kuralının ikinci ekseni. */
+  canEditOrder: boolean
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -164,6 +173,11 @@ export function TechnicianOrderDetail({
   const afterPhotos = galleryPhotos.filter((p) => p.phase === "delivery")
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
+
+  // Dış alım silme kuralı (BAK-83) sunucudaki action ile AYNI fonksiyondan
+  // okunur; buton yalnız gerçekten izinli olduğunda çıkar, aksi halde gerekçe
+  // yazılır.
+  const purchaseDelete = purchaseDeleteDecision(order.status as OrderStatus, canEditOrder)
 
   // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
   // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
@@ -385,7 +399,11 @@ export function TechnicianOrderDetail({
             Dışarıdan Alınan Parçalar
           </h3>
         </div>
-        <PurchasedItemsSection items={purchasedItems} />
+        <PurchasedItemsSection
+          items={purchasedItems}
+          orderId={order.id}
+          deleteDecision={purchaseDelete}
+        />
         {locked ? (
           <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine parça eklenemez</p>
         ) : (
@@ -715,7 +733,15 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
   )
 }
 
-function PurchasedItemsSection({ items }: { items: OrderData["items"] }) {
+function PurchasedItemsSection({
+  items,
+  orderId,
+  deleteDecision,
+}: {
+  items: OrderData["items"]
+  orderId: string
+  deleteDecision: PurchaseDeleteDecision
+}) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground/70">Henüz dışarıdan alınan parça yok.</p>
   }
@@ -734,14 +760,89 @@ function PurchasedItemsSection({ items }: { items: OrderData["items"] }) {
               {item.purchasedAt ? ` · ${new Date(item.purchasedAt).toLocaleDateString("tr-TR")}` : ""}
             </p>
           </div>
-          {item.purchasePriceKurus != null && (
-            <span className="text-sm font-semibold text-foreground shrink-0">
-              {formatTRY(item.purchasePriceKurus)}
-            </span>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {item.purchasePriceKurus != null && (
+              <span className="text-sm font-semibold text-foreground">
+                {formatTRY(item.purchasePriceKurus)}
+              </span>
+            )}
+            {deleteDecision.allowed && <PurchaseDeleteButton item={item} orderId={orderId} />}
+          </div>
         </div>
       ))}
+      {!deleteDecision.allowed && (
+        <p className="text-xs text-muted-foreground/70">{deleteDecision.reason}</p>
+      )}
     </div>
+  )
+}
+
+/**
+ * Dış alım kaydını iş emrinden komple kaldırır (BAK-83). Onay metni bunun bir
+ * "listeden gizleme" değil, iş emri kaleminin silinmesi olduğunu açıkça söyler:
+ * tutar toplamdan düşer, parça kutusu fotoğrafı da gider.
+ */
+function PurchaseDeleteButton({
+  item,
+  orderId,
+}: {
+  item: OrderData["items"][number]
+  orderId: string
+}) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  async function confirmDelete() {
+    setBusy(true)
+    try {
+      const res = await removePurchaseItemAction(item.id, orderId)
+      if (res?.error) {
+        toast.error(res.error)
+        return
+      }
+      setOpen(false)
+      toast.success("Parça iş emrinden kaldırıldı")
+      router.refresh()
+    } catch {
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setOpen(true)}
+        aria-label={`${item.name} — dışarıdan alınan parçayı sil`}
+        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+      >
+        <Trash2 className="size-4" />
+      </Button>
+
+      <AlertDialog open={open} onOpenChange={(o) => { if (!busy) setOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Parça kaydı silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &quot;{item.name}&quot; dışarıdan alınan parça kaydı iş emrinden de kaldırılacak:
+              tutarı toplamdan düşecek ve varsa parça kutusu fotoğrafı silinecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={confirmDelete}>
+              {busy && <Loader2 className="size-4 animate-spin" />}
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
