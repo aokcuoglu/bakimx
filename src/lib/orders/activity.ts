@@ -186,6 +186,21 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
       const name = String(meta.partName ?? "Parça")
       return { category: "part", label: `Parça talebi kaleme eklendi: ${name}` }
     }
+    case "parts_request_edited": {
+      const before = meta.before as Record<string, unknown> | undefined
+      const after = meta.after as Record<string, unknown> | undefined
+      const name = String(after?.partName ?? before?.partName ?? "Parça")
+      return { category: "part", label: `Parça talebi düzenlendi: ${name}` }
+    }
+    case "parts_request_cancelled": {
+      const name = String(meta.partName ?? "Parça")
+      const reason = typeof meta.reason === "string" && meta.reason ? meta.reason : null
+      return { category: "part", label: `Parça talebi iptal edildi: ${name}`, detail: reason ?? undefined }
+    }
+    case "parts_request_reopened": {
+      const name = String(meta.partName ?? "Parça")
+      return { category: "part", label: `Parça talebi iptali geri alındı: ${name}` }
+    }
 
     default:
       return null

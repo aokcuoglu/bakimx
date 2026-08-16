@@ -28,6 +28,8 @@ export type TechnicianPartsRequest = {
   note: string | null
   status: string
   convertedAt: string | null
+  cancelledAt: string | null
+  cancelReason: string | null
   createdAt: string
 }
 
@@ -52,7 +54,9 @@ export function PartsRequestSection({
   requests: TechnicianPartsRequest[]
   locked: boolean
 }) {
-  const pendingCount = requests.filter((r) => r.status !== "delivered").length
+  // "Bekliyor" = usta hâlâ parçayı bekliyor. Teslim alınmış VE ofisin iptal
+  // ettiği talepler beklemez (iptal edilen parça hiç gelmeyecek).
+  const pendingCount = requests.filter((r) => r.status !== "delivered" && r.status !== "cancelled").length
 
   return (
     <div className="rounded-lg border border-border bg-white p-4">
@@ -447,6 +451,7 @@ function PartsRequestList({ requests, locked }: { requests: TechnicianPartsReque
 
   // Teknisyenin ekranında anlamlı geçiş "teslim aldım"dır; "hazırlandı" ofisin
   // adımı olsa da parçayı kendi getiren usta da işaretleyebilsin diye durur.
+  // `cancelled` bilerek yok: ofis talebi reddettiyse akış orada biter.
   const nextStatus: Record<string, { status: string; label: string }> = {
     requested: { status: "prepared", label: "Hazırlandı" },
     prepared: { status: "delivered", label: "Teslim Aldım" },
@@ -471,6 +476,12 @@ function PartsRequestList({ requests, locked }: { requests: TechnicianPartsReque
                   {req.brand && <>{req.partSku ? " · " : ""}{req.brand}</>}
                 </p>
                 {req.note && <p className="text-xs text-muted-foreground mt-0.5 break-words">{req.note}</p>}
+                {req.status === "cancelled" && (
+                  <p className="mt-1 text-xs text-muted-foreground break-words">
+                    <span className="font-medium text-destructive-strong">Ofis iptal etti</span>
+                    {req.cancelReason ? `: ${req.cancelReason}` : " — parça alınmayacak"}
+                  </p>
+                )}
               </div>
               <span
                 className={cn(

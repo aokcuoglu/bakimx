@@ -35,11 +35,15 @@ export function OrderInfoCard({
   technicians,
   onRequestDelivery,
   deliveryBlocked,
+  partsDecisionBlocked,
 }: {
   order: OrderDetailData
   technicians?: AssignableTechnician[]
   onRequestDelivery?: () => void
+  /** Fiyatsız kalem ya da karar bekleyen parça talebi → teslim kapalı. */
   deliveryBlocked?: boolean
+  /** Karar bekleyen parça talebi → "Teslime Hazır" da kapalı (BAK-85). */
+  partsDecisionBlocked?: boolean
 }) {
   const locked = isOrderLocked(order.status as OrderStatus)
 
@@ -289,7 +293,14 @@ export function OrderInfoCard({
                 </SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((s) => (
-                    <SelectItem key={s} value={s} disabled={s === "delivered" && deliveryBlocked}>
+                    <SelectItem
+                      key={s}
+                      value={s}
+                      disabled={
+                        (s === "delivered" && deliveryBlocked) ||
+                        (s === "ready_for_delivery" && partsDecisionBlocked)
+                      }
+                    >
                       {ORDER_STATUS[s as OrderStatusKey]?.label ?? s}
                     </SelectItem>
                   ))}

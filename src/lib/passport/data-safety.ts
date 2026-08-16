@@ -192,7 +192,18 @@ export function sanitizePassportForPublic(
     ? data.intakes.flatMap((intake) =>
         (intake.timelineEvents || [])
           .filter((e) => {
-            const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped", "parts_request_converted", "order_reopened"]
+            // Atölye içi olaylar — parça talebinin ofis kararları (düzeltme,
+            // iptal + gerekçesi, iptalin geri alınması) müşteri yüzeyine çıkmaz.
+            const internalEventTypes = [
+              "internal_note_added",
+              "labor_session_started",
+              "labor_session_stopped",
+              "parts_request_converted",
+              "parts_request_edited",
+              "parts_request_cancelled",
+              "parts_request_reopened",
+              "order_reopened",
+            ]
             return !internalEventTypes.includes(e.eventType)
           })
           .map((e) => ({
