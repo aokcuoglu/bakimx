@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ShieldCheck, Zap, CalendarCheck, ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { ObjectionCards } from "@/components/sections/ObjectionCards";
+import { HeroAskBar } from "@/components/sections/HeroAskBar";
 
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
@@ -14,6 +16,9 @@ const trustBadges = [
 
 export function HeroSection() {
   const prefersReducedMotion = useReducedMotion();
+  // Ask bar'ın metni hero'da tutulur: Faz 2'nin itiraz kartları ona yazar.
+  const [askQuery, setAskQuery] = useState("");
+  const [askFocusSignal, setAskFocusSignal] = useState(0);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand/10 via-background to-background pt-10 pb-16 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
@@ -130,11 +135,31 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full min-w-0"
           >
-            <ObjectionCards />
+            {/* Faz 2'de açık bırakılan bağ (BAK-81): kart tıklaması artık SSS'e
+                gitmek yerine ask bar'ı o soruyla doldurup odağı oraya taşır.
+                `href` yerinde kalır, JS'siz yol bozulmaz. */}
+            <ObjectionCards
+              onSelect={(objection) => {
+                setAskQuery(objection.question);
+                setAskFocusSignal((signal) => signal + 1);
+              }}
+            />
           </motion.div>
         </div>
 
-        {/* Faz 3 slot — ortalanmış "BakımX'e sorun" ask bar buraya gelecek. */}
+        {/* Faz 3 slot: ortalanmış "BakımX'e sorun" ask bar. */}
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-12 sm:mt-14"
+        >
+          <HeroAskBar
+            value={askQuery}
+            onValueChange={setAskQuery}
+            focusSignal={askFocusSignal}
+          />
+        </motion.div>
       </div>
     </section>
   );
