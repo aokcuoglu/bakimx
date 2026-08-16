@@ -5,9 +5,9 @@
 import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
 import { z } from "zod/v4"
+import { typedResolver } from "@/lib/validations/resolver"
 import {
   Eye,
   EyeOff,
@@ -16,10 +16,14 @@ import {
   Building2,
   User,
   Phone,
-  MapPin,
   Check,
   ChevronRight,
   ChevronLeft,
+  Users,
+  Clock,
+  FileText,
+  Plus,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,14 +44,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { formatPhoneTR } from "@/lib/format"
-import { TR_CITIES } from "@/lib/tr-cities"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
+import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
 
 const STEPS = [
   { label: "Paket Seçimi" },
   { label: "İşletme Bilgileri" },
+  { label: "Vergi & Çalışma" },
+  { label: "Ekip" },
   { label: "Hesap Bilgileri" },
   { label: "Onay" },
 ] as const
@@ -58,7 +65,23 @@ const registerWizardSchema = z.object({
   workshopName: z.string().min(2, "İş yeri adı zorunludur"),
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
   city: z.string().min(1, "Şehir zorunludur"),
+  district: z.string().optional().default(""),
   address: z.string().min(1, "Adres zorunludur"),
+  workshopEmail: z.string().optional().default(""),
+  taxOffice: z.string().optional().default(""),
+  taxNumber: z.string().optional().default(""),
+  invoiceTitle: z.string().optional().default(""),
+  weekdayStart: z.string().default("09:00"),
+  weekdayEnd: z.string().default("18:00"),
+  workingDays: z.string().default("1,2,3,4,5,6"),
+  teamMembers: z
+    .array(
+      z.object({
+        fullName: z.string().min(1, "İsim zorunludur"),
+        role: z.enum(["usta", "teknisyen", "servis_danismani"]),
+      }),
+    )
+    .default([]),
   firstName: z.string().min(1, "Ad zorunludur"),
   lastName: z.string().min(1, "Soyad zorunludur"),
   email: z.email("Geçerli bir e-posta adresi giriniz"),
@@ -67,12 +90,15 @@ const registerWizardSchema = z.object({
 })
 
 type WizardFormValues = z.infer<typeof registerWizardSchema>
+type WizardForm = UseFormReturn<WizardFormValues, unknown, WizardFormValues>
 
 const STEP_FIELDS: Record<number, (keyof WizardFormValues)[]> = {
   0: ["selectedPlan", "billingPeriod"],
   1: ["workshopName", "phone", "city", "address"],
-  2: ["firstName", "lastName", "email", "password"],
-  3: ["kvkkConsent"],
+  2: ["taxOffice", "taxNumber", "invoiceTitle", "weekdayStart", "weekdayEnd", "workingDays"],
+  3: ["teamMembers"],
+  4: ["firstName", "lastName", "email", "password"],
+  5: ["kvkkConsent"],
 }
 
 const stepVariants = {
@@ -83,6 +109,22 @@ const stepVariants = {
 
 const noopSubscribe = () => () => {}
 
+const DAY_LABELS = [
+  { value: "1", short: "Pzt" },
+  { value: "2", short: "Sal" },
+  { value: "3", short: "Çar" },
+  { value: "4", short: "Per" },
+  { value: "5", short: "Cum" },
+  { value: "6", short: "Cmt" },
+  { value: "0", short: "Paz" },
+]
+
+const ROLE_OPTIONS = [
+  { value: "usta", label: "Usta" },
+  { value: "teknisyen", label: "Teknisyen" },
+  { value: "servis_danismani", label: "Servis Danışmanı" },
+]
+
 export function RegisterForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -92,15 +134,24 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
-  const form = useForm<WizardFormValues>({
-    resolver: zodResolver(registerWizardSchema),
+  const form = useForm<WizardFormValues, unknown, WizardFormValues>({
+    resolver: typedResolver(registerWizardSchema),
     defaultValues: {
       selectedPlan: "pro",
       billingPeriod: "monthly",
       workshopName: "",
       phone: "",
       city: "",
+      district: "",
       address: "",
+      workshopEmail: "",
+      taxOffice: "",
+      taxNumber: "",
+      invoiceTitle: "",
+      weekdayStart: "09:00",
+      weekdayEnd: "18:00",
+      workingDays: "1,2,3,4,5,6",
+      teamMembers: [],
       firstName: "",
       lastName: "",
       email: "",
@@ -111,11 +162,22 @@ export function RegisterForm() {
   })
 
   const billingPeriod = form.watch("billingPeriod")
+  const workshopName = form.watch("workshopName")
+  const city = form.watch("city")
 
   async function goNext() {
     const fields = STEP_FIELDS[currentStep]
-    const valid = await form.trigger(fields)
-    if (!valid) return
+    // Step 3 (Ekip) has no required fields — always passes if array is empty
+    if (currentStep === 3) {
+      const members = form.getValues("teamMembers")
+      if (members.length > 0) {
+        const valid = await form.trigger("teamMembers")
+        if (!valid) return
+      }
+    } else {
+      const valid = await form.trigger(fields)
+      if (!valid) return
+    }
     setDirection(1)
     setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
@@ -129,18 +191,32 @@ export function RegisterForm() {
     setError("")
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.set("workshopName", values.workshopName)
-      formData.set("firstName", values.firstName)
-      formData.set("lastName", values.lastName)
-      formData.set("email", values.email)
-      formData.set("phone", values.phone)
-      formData.set("city", values.city)
-      formData.set("address", values.address)
-      formData.set("password", values.password)
-      formData.set("kvkkConsent", "on")
+      const body = {
+        workshopName: values.workshopName,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        city: values.city,
+        district: values.district || undefined,
+        address: values.address,
+        password: values.password,
+        workshopEmail: values.workshopEmail || undefined,
+        taxOffice: values.taxOffice || undefined,
+        taxNumber: values.taxNumber || undefined,
+        invoiceTitle: values.invoiceTitle || undefined,
+        weekdayStart: values.weekdayStart,
+        weekdayEnd: values.weekdayEnd,
+        workingDays: values.workingDays,
+        teamMembers: values.teamMembers.length > 0 ? values.teamMembers : undefined,
+        kvkkConsent: true,
+      }
 
-      const res = await fetch("/api/auth/register", { method: "POST", body: formData })
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
       const data = await res.json()
       if (data.ok) {
         setSubmitted(values.email.trim())
@@ -196,7 +272,7 @@ export function RegisterForm() {
             </div>
           )}
 
-          <div className="relative min-h-[320px]">
+          <div className="relative min-h-[380px]">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
@@ -213,15 +289,19 @@ export function RegisterForm() {
                     billingPeriod={billingPeriod}
                   />
                 )}
-                {currentStep === 1 && <StepBusinessInfo form={form} />}
-                {currentStep === 2 && (
+                {currentStep === 1 && (
+                  <StepBusinessInfo form={form} workshopName={workshopName} city={city} />
+                )}
+                {currentStep === 2 && <StepTaxAndHours form={form} />}
+                {currentStep === 3 && <StepTeam form={form} />}
+                {currentStep === 4 && (
                   <StepAccountInfo
                     form={form}
                     showPassword={showPassword}
                     setShowPassword={setShowPassword}
                   />
                 )}
-                {currentStep === 3 && <StepConfirmation form={form} />}
+                {currentStep === 5 && <StepConfirmation form={form} />}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -236,7 +316,7 @@ export function RegisterForm() {
             <div className="flex-1" />
             {currentStep < STEPS.length - 1 ? (
               <Button type="button" onClick={goNext} className="gap-1.5">
-                Devam
+                {currentStep === 3 ? "Atla / Devam" : "Devam"}
                 <ChevronRight className="size-4" />
               </Button>
             ) : (
@@ -309,7 +389,7 @@ function StepPlanSelection({
   form,
   billingPeriod,
 }: {
-  form: ReturnType<typeof useForm<WizardFormValues>>
+  form: WizardForm
   billingPeriod: "monthly" | "yearly"
 }) {
   return (
@@ -429,7 +509,17 @@ function PlanCard({
   )
 }
 
-function StepBusinessInfo({ form }: { form: ReturnType<typeof useForm<WizardFormValues>> }) {
+function StepBusinessInfo({
+  form,
+  workshopName,
+  city,
+}: {
+  form: WizardForm
+  workshopName: string
+  city: string
+}) {
+  const slug = workshopName.length >= 2 ? slugifyWorkshopCode(workshopName) : ""
+
   return (
     <div className="space-y-4">
       <div>
@@ -451,6 +541,11 @@ function StepBusinessInfo({ form }: { form: ReturnType<typeof useForm<WizardForm
                 <Input {...field} placeholder="Örnek Oto Servis" className="pl-9" />
               </div>
             </FormControl>
+            {slug && (
+              <p className="text-xs text-muted-foreground mt-1">
+                bakimx.com/w/<span className="font-medium text-foreground">{slug}</span>
+              </p>
+            )}
             <FormMessage />
           </FormItem>
         )}
@@ -482,31 +577,42 @@ function StepBusinessInfo({ form }: { form: ReturnType<typeof useForm<WizardForm
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="city"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Şehir</FormLabel>
-            <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Şehir</FormLabel>
               <FormControl>
-                <SelectTrigger className="w-full">
-                  <MapPin className="size-4 text-muted-foreground/70" />
-                  <SelectValue placeholder="İl seçin" />
-                </SelectTrigger>
+                <CitySelect
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v)}
+                />
               </FormControl>
-              <SelectContent className="max-h-72">
-                {TR_CITIES.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="district"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>İlçe</FormLabel>
+              <FormControl>
+                <DistrictSelect
+                  city={city}
+                  value={field.value || ""}
+                  onValueChange={(v) => field.onChange(v)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       <FormField
         control={form.control}
@@ -521,6 +627,243 @@ function StepBusinessInfo({ form }: { form: ReturnType<typeof useForm<WizardForm
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="workshopEmail"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              İşletme e-postası <span className="text-muted-foreground font-normal">(opsiyonel)</span>
+            </FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Input {...field} type="email" placeholder="servis@isyeri.com" className="pl-9" />
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+}
+
+function StepTaxAndHours({ form }: { form: WizardForm }) {
+  const workingDays = form.watch("workingDays")
+  const selectedDays = workingDays ? workingDays.split(",").filter(Boolean) : []
+
+  function toggleDay(day: string) {
+    const current = new Set(selectedDays)
+    if (current.has(day)) {
+      current.delete(day)
+    } else {
+      current.add(day)
+    }
+    form.setValue("workingDays", Array.from(current).join(","), { shouldDirty: true })
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <FileText className="size-5" />
+          Vergi & Çalışma Saatleri
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Fatura ve çalışma bilgileriniz (tümü opsiyonel, sonradan da ayarlanabilir)
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          control={form.control}
+          name="taxOffice"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vergi dairesi</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Kadıköy VD" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="taxNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vergi numarası</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="1234567890" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="invoiceTitle"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Fatura ünvanı</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Örnek Oto Tamir Ltd. Şti." />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Çalışma Günleri</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {DAY_LABELS.map((day) => {
+            const active = selectedDays.includes(day.value)
+            return (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => toggleDay(day.value)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors",
+                  active
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/40",
+                )}
+              >
+                {day.short}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground shrink-0">Saat:</span>
+          <FormField
+            control={form.control}
+            name="weekdayStart"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormControl>
+                  <Input {...field} type="time" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <span className="text-muted-foreground">-</span>
+          <FormField
+            control={form.control}
+            name="weekdayEnd"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormControl>
+                  <Input {...field} type="time" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StepTeam({ form }: { form: WizardForm }) {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "teamMembers",
+  })
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Users className="size-5" />
+          Ekibiniz
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          İlk ekip üyelerinizi ekleyin. Bu adımı atlayıp sonra da ekleyebilirsiniz.
+        </p>
+      </div>
+
+      {fields.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <Users className="mx-auto size-8 text-muted-foreground/50" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Henüz ekip üyesi eklenmedi
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-start gap-2">
+            <FormField
+              control={form.control}
+              name={`teamMembers.${index}.fullName`}
+              render={({ field: f }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input {...f} placeholder="Ad Soyad" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name={`teamMembers.${index}.role`}
+              render={({ field: f }) => (
+                <FormItem className="w-40">
+                  <Select value={f.value} onValueChange={(v) => f.onChange(v ?? "usta")}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Rol" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ROLE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => remove(index)}
+              className="shrink-0 text-muted-foreground hover:text-destructive-strong"
+              aria-label="Üyeyi kaldır"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => append({ fullName: "", role: "usta" })}
+        className="gap-1.5"
+      >
+        <Plus className="size-4" />
+        Ekip üyesi ekle
+      </Button>
     </div>
   )
 }
@@ -530,7 +873,7 @@ function StepAccountInfo({
   showPassword,
   setShowPassword,
 }: {
-  form: ReturnType<typeof useForm<WizardFormValues>>
+  form: WizardForm
   showPassword: boolean
   setShowPassword: (v: boolean) => void
 }) {
@@ -628,10 +971,18 @@ function StepAccountInfo({
   )
 }
 
-function StepConfirmation({ form }: { form: ReturnType<typeof useForm<WizardFormValues>> }) {
+function StepConfirmation({ form }: { form: WizardForm }) {
   const values = form.getValues()
   const planPkg = PLAN_PACKAGES.find((p) => p.tier === values.selectedPlan)
   const priceLabel = values.billingPeriod === "monthly" ? planPkg?.monthlyLabel : planPkg?.yearlyLabel
+
+  const workingDaysArr = values.workingDays ? values.workingDays.split(",").filter(Boolean) : []
+  const dayNames = workingDaysArr
+    .map((d) => DAY_LABELS.find((dl) => dl.value === d)?.short)
+    .filter(Boolean)
+    .join(", ")
+
+  const hasTaxInfo = values.taxOffice || values.taxNumber || values.invoiceTitle
 
   return (
     <div className="space-y-5">
@@ -643,13 +994,54 @@ function StepConfirmation({ form }: { form: ReturnType<typeof useForm<WizardForm
       </div>
 
       <div className="space-y-3">
-        <SummaryRow label="Paket" value={`${planPkg?.name} — ${priceLabel}`} />
-        <SummaryRow label="İş yeri" value={values.workshopName} />
-        <SummaryRow label="Telefon" value={values.phone} />
-        <SummaryRow label="Şehir" value={values.city} />
-        <SummaryRow label="Adres" value={values.address} />
-        <SummaryRow label="Ad Soyad" value={`${values.firstName} ${values.lastName}`} />
-        <SummaryRow label="E-posta" value={values.email} />
+        <SummarySection title="Paket">
+          <SummaryRow label="Paket" value={`${planPkg?.name} — ${priceLabel}`} />
+        </SummarySection>
+
+        <SummarySection title="İşletme Bilgileri">
+          <SummaryRow label="İş yeri" value={values.workshopName} />
+          <SummaryRow label="Telefon" value={values.phone} />
+          <SummaryRow
+            label="Konum"
+            value={[values.city, values.district].filter(Boolean).join(", ")}
+          />
+          <SummaryRow label="Adres" value={values.address} />
+          {values.workshopEmail && (
+            <SummaryRow label="İşletme e-postası" value={values.workshopEmail} />
+          )}
+        </SummarySection>
+
+        {hasTaxInfo && (
+          <SummarySection title="Vergi Bilgileri">
+            {values.taxOffice && <SummaryRow label="Vergi dairesi" value={values.taxOffice} />}
+            {values.taxNumber && <SummaryRow label="Vergi no" value={values.taxNumber} />}
+            {values.invoiceTitle && <SummaryRow label="Fatura ünvanı" value={values.invoiceTitle} />}
+          </SummarySection>
+        )}
+
+        <SummarySection title="Çalışma Saatleri">
+          <SummaryRow label="Günler" value={dayNames || "Belirtilmedi"} />
+          <SummaryRow label="Saat" value={`${values.weekdayStart} - ${values.weekdayEnd}`} />
+        </SummarySection>
+
+        <SummarySection title="Ekip">
+          {values.teamMembers.length > 0 ? (
+            values.teamMembers.map((m, i) => (
+              <SummaryRow
+                key={i}
+                label={m.fullName}
+                value={ROLE_OPTIONS.find((r) => r.value === m.role)?.label || m.role}
+              />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground px-3 py-1.5">Henüz eklenmedi</p>
+          )}
+        </SummarySection>
+
+        <SummarySection title="Hesap Bilgileri">
+          <SummaryRow label="Ad Soyad" value={`${values.firstName} ${values.lastName}`} />
+          <SummaryRow label="E-posta" value={values.email} />
+        </SummarySection>
       </div>
 
       <FormField
@@ -676,6 +1068,17 @@ function StepConfirmation({ form }: { form: ReturnType<typeof useForm<WizardForm
           </FormItem>
         )}
       />
+    </div>
+  )
+}
+
+function SummarySection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+        {title}
+      </h3>
+      <div className="space-y-1">{children}</div>
     </div>
   )
 }
