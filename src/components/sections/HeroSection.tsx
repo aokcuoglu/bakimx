@@ -1,18 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  ShieldCheck,
-  Zap,
-  CalendarCheck,
-  ArrowRight,
-  CheckCircle2,
-  ScanLine,
-} from "lucide-react";
+import { ShieldCheck, Zap, CalendarCheck, ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { BrowserFrame } from "@/components/sections/DeviceFrame";
+import { ObjectionCards } from "@/components/sections/ObjectionCards";
 
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
@@ -129,44 +121,16 @@ export function HeroSection() {
             </motion.ul>
           </div>
 
-          {/* Sağ: ürün ekranı + yüzen doğrulama rozeti.
-              Faz 2'de soru→cevap kart şeridiyle değişecek; bu fazda yerinde kalır. */}
+          {/* Sağ: soru→cevap kart şeridi (BAK-80). Faz 1'deki tek statik ürün
+              görselinin yerini aldı. Artık hero'nun en büyük elemanı bir görsel
+              değil H1 metni; şeritteki görsellerin hiçbiri `priority` almaz. */}
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative mx-auto w-full max-w-2xl lg:mx-0"
+            className="w-full min-w-0"
           >
-            <BrowserFrame>
-              <Image
-                src="/landing/screens/order-detail.png"
-                alt="BakimX iş emri detay ekranı"
-                width={1440}
-                height={900}
-                // Faz 1'de bu görsel hâlâ hero'nun en büyük elemanı, yani LCP
-                // adayı: `priority` kalkarsa LCP ölçümü İYİLEŞMEZ, gecikir.
-                // "LCP = H1" hedefi görsel hero'dan çıktığında (Faz 2) gelir.
-                priority
-                sizes="(min-width: 1024px) 620px, 100vw"
-                className="w-full"
-              />
-            </BrowserFrame>
-
-            <motion.div
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.55 }}
-              className="absolute -bottom-4 -left-3 hidden rounded-lg border bg-card p-3 shadow-xl sm:block"
-            >
-              <div className="flex items-center gap-2">
-                <ScanLine className="h-4 w-4 text-primary" />
-                <span className="font-mono text-sm font-semibold">34 ABC 123</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success-strong">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Ruhsattan dolduruldu
-                </span>
-              </div>
-            </motion.div>
+            <ObjectionCards />
           </motion.div>
         </div>
 
