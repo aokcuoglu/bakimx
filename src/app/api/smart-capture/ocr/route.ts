@@ -7,6 +7,7 @@ import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-ima
 import { parseOcrImageRequest } from "@/lib/ocr/parse-image-request"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
+import { grantVehicleHistoryAccess } from "@/lib/vehicle-history/access"
 
 export async function POST(request: Request) {
   try {
@@ -68,6 +69,16 @@ export async function POST(request: Request) {
         JSON.stringify({ provider: provider.name, cacheHit: true, sourceOcrLogId: cachedLog.id })
       )
 
+      // Ruhsat bu atölyede okutuldu ⇒ servisler arası geçmiş maskesi kalkar
+      // (BAK-77). Cache hit'te de sayılır: kullanıcı yine ruhsatı elinde tutuyor.
+      await grantVehicleHistoryAccess({
+        workshopId: user.workshopId,
+        plate: cachedFields.plate?.value ?? "",
+        vin: cachedFields.vin?.value ?? null,
+        userId: user.id,
+        ocrLogId: cachedOcrLog.id,
+      })
+
       return NextResponse.json({
         result: { ...cachedFields, provider: provider.name },
         ocrLogId: cachedOcrLog.id,
@@ -119,6 +130,15 @@ export async function POST(request: Request) {
       "ocr_capture",
       JSON.stringify({ provider: provider.name })
     )
+
+    // Bkz. cache hit dalındaki aynı çağrı (BAK-77).
+    await grantVehicleHistoryAccess({
+      workshopId: user.workshopId,
+      plate: result.plate.value,
+      vin: result.vin.value,
+      userId: user.id,
+      ocrLogId: ocrLog.id,
+    })
 
     const { rawText: _, ...publicResult } = result
 

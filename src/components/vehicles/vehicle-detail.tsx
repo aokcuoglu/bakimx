@@ -53,6 +53,11 @@ import {
 } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { ReminderRow } from "@/lib/reminders/queries"
+import {
+  CrossWorkshopHistoryCard,
+  WorkshopChip,
+} from "@/components/vehicles/cross-workshop-history"
+import type { CrossWorkshopHistory } from "@/lib/vehicle-history/types"
 
 type VehicleData = {
   id: string
@@ -98,6 +103,7 @@ type VehicleData = {
       status: string
       paymentStatus: string
       estimatedDeliveryAt: string | null
+      createdAt: string
       grandTotal: number
     } | null
     damageMarks: Array<{
@@ -123,7 +129,17 @@ function customerDisplayName(c: VehicleData["customer"]) {
   return c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "Müşteri"
 }
 
-export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
+export function VehicleDetail({
+  vehicle: v,
+  workshopName,
+  crossWorkshop,
+}: {
+  vehicle: VehicleData
+  /** Kendi iş emirlerinin künye çipinde basılan atölye adı. */
+  workshopName: string
+  /** Aracın başka servislerdeki geçmişi (BAK-77). */
+  crossWorkshop: CrossWorkshopHistory
+}) {
   const router = useRouter()
   const [confirmVinOpen, setConfirmVinOpen] = useState(false)
   const [confirmingVin, setConfirmingVin] = useState(false)
@@ -144,6 +160,19 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
   }
 
   const workOrders = v.intakes.filter((i) => i.order)
+
+  // İş emri geçmişi artık ATÖLYE SINIRINI AŞAR (BAK-77): kendi kayıtlarınla
+  // aracın diğer servislerdeki kayıtları tek bir zaman çizgisinde birleşir ve
+  // her satır hangi serviste yapıldığını künye çipiyle söyler. Yabancı satırlar
+  // tıklanabilir DEĞİLDİR (başka kiracının iş emri) ve tutar taşımaz.
+  const orderHistory = [
+    ...workOrders.map((i) => ({
+      kind: "own" as const,
+      at: i.order?.createdAt ?? i.createdAt,
+      intake: i,
+    })),
+    ...crossWorkshop.orders.map((o) => ({ kind: "foreign" as const, at: o.servicedAt, order: o })),
+  ].sort((a, b) => b.at.localeCompare(a.at))
   const allDamageMarks = v.intakes.flatMap((i) =>
     i.damageMarks.map((dm) => ({ ...dm, orderId: i.order?.id ?? null, intakeDate: i.createdAt }))
   )
@@ -287,7 +316,7 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
           <SectionCard
             title="İş Emri Geçmişi"
             icon={Wrench}
-            count={workOrders.length}
+            count={orderHistory.length}
             action={
               <Link
                 href={`/orders/new?vehicleId=${v.id}`}
@@ -298,51 +327,77 @@ export function VehicleDetail({ vehicle: v }: { vehicle: VehicleData }) {
               </Link>
             }
           >
-            {workOrders.length === 0 ? (
+            {orderHistory.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
                 <Wrench className="size-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">Bu araç için iş emri bulunmuyor</p>
               </div>
             ) : (
               <div className="divide-y divide-border -mx-4 sm:-mx-5">
-                {workOrders.map((i) =>
-                  i.order ? (
-                    <Link
-                      key={i.order.id}
-                      href={`/orders/${i.order.id}`}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
-                    >
+                {orderHistory.map((row) => {
+                  if (row.kind === "own") {
+                    const i = row.intake
+                    if (!i.order) return null
+                    return (
+                      <Link
+                        key={i.order.id}
+                        href={`/orders/${i.order.id}`}
+                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-semibold text-muted-foreground">
+                              {i.order.workOrderNo || "—"}
+                            </span>
+                            <StatusBadge status={i.order.status} />
+                            <PaymentBadge status={i.order.paymentStatus} />
+                            <WorkshopChip name={workshopName} />
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            {i.fuelLevelAtIntake != null && (
+                              <FuelGauge value={i.fuelLevelAtIntake} size="sm" showLabel={false} className="shrink-0" />
+                            )}
+                            <p className="text-xs text-muted-foreground truncate">{i.customerComplaint}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                          </p>
+                          {i.order.estimatedDeliveryAt ? (
+                            <p className="text-[11px] text-muted-foreground">
+                              Tahmini: {formatDate(i.order.estimatedDeliveryAt)}
+                            </p>
+                          ) : null}
+                        </div>
+                      </Link>
+                    )
+                  }
+                  const o = row.order
+                  return (
+                    <div key={o.key} className="flex items-center gap-3 px-4 sm:px-5 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-semibold text-muted-foreground">
-                            {i.order.workOrderNo || "—"}
-                          </span>
-                          <StatusBadge status={i.order.status} />
-                          <PaymentBadge status={i.order.paymentStatus} />
+                          <StatusBadge status={o.status} />
+                          <WorkshopChip name={o.workshopName} city={o.workshopCity} />
                         </div>
-                        <div className="mt-1 flex items-center gap-2">
-                          {i.fuelLevelAtIntake != null && (
-                            <FuelGauge value={i.fuelLevelAtIntake} size="sm" showLabel={false} className="shrink-0" />
-                          )}
-                          <p className="text-xs text-muted-foreground truncate">{i.customerComplaint}</p>
-                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground truncate">
+                          {o.complaint || "—"}
+                        </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
-                        </p>
-                        {i.order.estimatedDeliveryAt ? (
-                          <p className="text-[11px] text-muted-foreground">
-                            Tahmini: {formatDate(i.order.estimatedDeliveryAt)}
-                          </p>
-                        ) : null}
+                        <p className="text-[11px] text-muted-foreground">{formatDate(o.servicedAt)}</p>
+                        {/* Başka servisin tutarı hiçbir koşulda gösterilmez. */}
+                        <p className="text-[11px] text-muted-foreground/70">Tutar gizli</p>
                       </div>
-                    </Link>
-                  ) : null
-                )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </SectionCard>
+
+          <CrossWorkshopHistoryCard history={crossWorkshop} showOrders={false} />
 
           <SectionCard
             title="Bakım Hatırlatmaları"

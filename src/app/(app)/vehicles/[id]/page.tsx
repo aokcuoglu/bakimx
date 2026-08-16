@@ -7,6 +7,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
+import { getCrossWorkshopVehicleHistory } from "@/lib/vehicle-history/queries"
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,6 +35,14 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
   if (!vehicle) notFound()
 
   const reminders = await getVehicleReminders(user.workshopId, id)
+
+  // Aracın BAŞKA servislerdeki geçmişi (BAK-77). Bu atölyenin kendi kaydı
+  // olduğu için maske burada zaten açıktır ("own_record"); yine de karar
+  // sorgunun kendisine bırakılır, sayfada varsayım yapılmaz.
+  const crossWorkshop = await getCrossWorkshopVehicleHistory({
+    workshopId: user.workshopId,
+    plate: vehicle.plate,
+  })
 
   const serialized = {
     ...vehicle,
@@ -70,7 +79,11 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle={vehicle.plate} showGlobalSearch={false}>
-      <VehicleDetail vehicle={serialized} />
+      <VehicleDetail
+        vehicle={serialized}
+        workshopName={workshop?.name ?? "Bu servis"}
+        crossWorkshop={crossWorkshop}
+      />
     </AppShell>
   )
 }

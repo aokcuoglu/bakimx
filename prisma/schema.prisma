@@ -90,6 +90,7 @@ model Workshop {
   featureOverrides       WorkshopFeatureOverride[]
   laborCatalogItems      LaborCatalogItem[]
   bakimxOrders           BakimxOrder[]
+  vehicleHistoryGrants   VehicleHistoryGrant[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -483,6 +484,39 @@ model Vehicle {
   @@index([workshopId])
   @@index([customerId])
   @@index([workshopId, vin])
+  /// Servisler arası araç geçmişi (BAK-77) plakayı ATÖLYEDEN BAĞIMSIZ arar.
+  /// `@@unique([workshopId, plate])` bu sorguya yaramaz (bileşik indeksin ön eki
+  /// workshopId'dir), o yüzden plaka için ayrı bir indeks gerekir.
+  @@index([plate])
+}
+
+/// Bir atölyenin, BAŞKA atölyelerdeki araç geçmişini maskesiz görme hakkı (BAK-77).
+///
+/// Hak, aracın **ruhsatının o atölyede okutulmuş olmasıyla** kazanılır: ruhsatı
+/// elinde tutmak, araçla gerçek bir servis ilişkisi kurulduğunun kanıtıdır ve
+/// KVKK açısından maskeyi kaldırmanın dayanağıdır. Kayıt bilerek **plaka**
+/// üzerinden tutulur, bir `Vehicle` id'si üzerinden değil: hak, tarama anında bu
+/// atölyede henüz araç kaydı olmadan da doğar (sihirbazın ilk adımı).
+///
+/// Hakkın ikinci kaynağı olan "bu atölyenin aracı zaten servis etmiş olması"
+/// burada TUTULMAZ; o türetilir (bkz. `src/lib/vehicle-history/access.ts`).
+model VehicleHistoryGrant {
+  id              String   @id @default(cuid())
+  workshopId      String
+  workshop        Workshop @relation(fields: [workshopId], references: [id])
+  /// Normalize plaka (boşluksuz, büyük harf) — atölyeler arası araç anahtarı.
+  plate           String
+  /// Tarama anındaki VIN, ruhsatta okunabildiyse. Yalnız bilgi amaçlı.
+  vin             String?
+  grantedByUserId String?
+  /// Ruhsat sahipliğini kanıtlayan OcrLog satırı. FK YOK: OcrLog başka bir
+  /// saklama politikasına tabi olabilir, temizlenirse hak düşmemeli.
+  ocrLogId        String?
+  createdAt       DateTime @default(now())
+
+  @@unique([workshopId, plate])
+  @@index([workshopId])
+  @@index([plate])
 }
 
 model VehicleIntakeForm {
