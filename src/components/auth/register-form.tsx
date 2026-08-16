@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() cannot be memoized by React Compiler; usage is safe */
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { Fragment, useEffect, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
@@ -348,10 +348,10 @@ export function RegisterForm() {
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <nav aria-label="Kayıt adımları" className="flex items-center justify-between">
+    <nav aria-label="Kayıt adımları" className="flex items-start justify-between">
       {STEPS.map((step, i) => (
-        <div key={step.label} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-1.5">
+        <Fragment key={step.label}>
+          <div className="flex shrink-0 flex-col items-center gap-1.5">
             <div
               className={cn(
                 "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
@@ -365,7 +365,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </div>
             <span
               className={cn(
-                "text-xs font-medium hidden sm:block whitespace-nowrap",
+                "text-[11px] font-medium hidden sm:block whitespace-nowrap",
                 i <= currentStep ? "text-foreground" : "text-muted-foreground/60",
               )}
             >
@@ -375,12 +375,12 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           {i < STEPS.length - 1 && (
             <div
               className={cn(
-                "flex-1 h-0.5 mx-2 sm:mx-3 rounded-full transition-colors",
+                "mt-[15px] h-0.5 min-w-4 flex-1 mx-1.5 rounded-full transition-colors",
                 i < currentStep ? "bg-primary" : "bg-muted-foreground/20",
               )}
             />
           )}
-        </div>
+        </Fragment>
       ))}
     </nav>
   )
