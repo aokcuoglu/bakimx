@@ -31,6 +31,28 @@ export const registerSchema = z.object({
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
   city: z.string().min(1, "Şehir zorunludur"),
   address: z.string().min(1, "Adres zorunludur"),
+  district: z.string().optional(),
+  workshopEmail: z
+    .string()
+    .optional()
+    .refine((v) => !v || z.email().safeParse(v).success, {
+      message: "Geçerli bir e-posta adresi giriniz",
+    }),
+  taxOffice: z.string().optional(),
+  taxNumber: z.string().optional(),
+  invoiceTitle: z.string().optional(),
+  weekdayStart: z.string().optional(),
+  weekdayEnd: z.string().optional(),
+  workingDays: z.string().optional(),
+  teamMembers: z
+    .array(
+      z.object({
+        fullName: z.string().min(1),
+        role: z.enum(["usta", "teknisyen", "servis_danismani"]),
+      }),
+    )
+    .optional()
+    .default([]),
   kvkkConsent: z
     .union([z.literal("on"), z.literal("true"), z.boolean()])
     .refine((v) => v === true || v === "on" || v === "true", {
