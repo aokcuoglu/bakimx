@@ -60,13 +60,30 @@ test("satır KDV bayrağı hem gösterimi hem hesabı besler — ikisi ayrışam
   // toplama girmediği için kaldırmıştı. BAK-53 onu geri getirdi; bu kez bayrak
   // `totals.ts`'in KDV matrahını da belirliyor. Bu test o bağı korur: satır
   // bayrağı gösterimde kullanılıyorsa, hesapta da kullanılmak ZORUNDA.
-  expect(GRID).toContain("rowPriceMode")
+  expect(GRID).toContain("const vatLiable = row.includeVat !== false")
+  expect(GRID).toContain("const vatKurus = vatLiable ? lineVatKurus(lineTotal, taxBps) : null")
   expect(GRID).toContain('fd.set("includeVat"')
-  expect(GRID).toContain("toDisplayPriceKurusOrNull(row.unitPrice, rowPriceMode, taxBps)")
 
   // Hesap tarafı: matrah yalnız tabi satırlardan kuruluyor mu?
   expect(TOTALS).toContain("isVatLiable")
   expect(TOTALS).toContain("taxableSubtotal")
   // KDV, indirim sonrası TÜM ara toplama değil, tabi kısma uygulanır.
   expect(TOTALS).not.toContain("applyTaxBps(afterDiscount")
+})
+
+test("BAK-75 — ₺100 kalem: tick kapalıyken ₺100, açıkken ₺120", () => {
+  const line = { type: "part", name: "Turbo radyatörü", quantity: 1, unitPrice: 10000, totalPrice: null }
+
+  // Varsayılan (tick kapalı): KDV oranı belgede tanımlı olsa bile satır matraha
+  // girmez — Genel Toplam yazılan tutarın ta kendisidir.
+  const withoutVat = calculateOrderTotals([{ ...line, includeVat: false }], { taxRate: 2000 })
+  expect(withoutVat.subtotal).toBe(10000)
+  expect(withoutVat.taxAmount).toBe(0)
+  expect(withoutVat.grandTotal).toBe(10000)
+
+  // Tick açık: tutar DEĞİŞMEZ, üstüne %20 biner ve kırılım ayrı okunur.
+  const withVat = calculateOrderTotals([{ ...line, includeVat: true }], { taxRate: 2000 })
+  expect(withVat.subtotal).toBe(10000)
+  expect(withVat.taxAmount).toBe(2000)
+  expect(withVat.grandTotal).toBe(12000)
 })

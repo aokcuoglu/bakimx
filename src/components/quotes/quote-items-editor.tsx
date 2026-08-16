@@ -37,7 +37,7 @@ export function QuoteItemsEditor({
   vehicle?: PickerVehicle
   laborCatalog: LaborCatalogRow[]
   disabled?: boolean
-  /** Teklif formundaki KDV oranı (bps) — kalemlerin KDV dahil gösterimi için (#311). */
+  /** Teklif formundaki KDV oranı (bps) — satır KDV notunun oranı. */
   taxRateBps?: number | null
   /** KDV oranı 0 iken standart %20'yi teklif formuna yazar. */
   onApplyStandardTax?: () => void
@@ -114,6 +114,12 @@ export function QuoteItemsEditor({
       showAttributes={false}
       taxRateBps={taxRateBps}
       onApplyStandardTax={onApplyStandardTax}
+      // Satır başına KDV tick'i teklifte YOK: `QuoteItem`'da `includeVat` kolonu
+      // olmadığı için tick kaydedilemez ve teklif toplamına hiç yansımazdı
+      // (rowsToQuoteItems bayrağı düşürür). Teklif KDV'si belgenin kendi
+      // "KDV Oranı (%)" alanından, tüm kalemlere birden uygulanır.
+      vatPerLine={false}
+      defaultVatLiable
       flash={flash}
       onAdd={addItem}
       onCell={onCell}

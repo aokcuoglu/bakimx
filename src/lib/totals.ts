@@ -6,9 +6,15 @@ import { sumKurus, applyDiscountKurus, applyTaxBps, addKurus, formatKurus, mulDi
  * kuruş addition is exact, only the tax share rounds.
  *
  * SATIR BAZLI KDV (BAK-53). `includeVat` bir satırın KDV'ye TABİ olup olmadığını
- * söyler; `false` olan satır belgenin KDV'sini almaz. Alan yoksa/`null` ise
- * **tabidir** — eski kayıtlar ve bu alanı hiç göndermeyen çağıranlar bugünkü
- * davranışı birebir sürdürsün diye varsayılan bilerek `true` tarafında.
+ * söyler; `false` olan satır belgenin KDV'sini almaz.
+ *
+ * İki ayrı varsayılan var, karıştırma:
+ * - VERİTABANI kolonunun varsayılanı BAK-75'te `false` oldu — yeni bir iş emri
+ *   kalemi KDV'siz açılır, tick'i servis kendisi işaretler.
+ * - BURADAKİ okuma varsayılanı `true` KALIR: alan yoksa/`null` ise satır tabidir.
+ *   Bu iki farklı çağıran için: kolonu hiç seçmemiş bir sorgu (bkz.
+ *   ORDER_TOTALS_ITEM_SELECT) ve `includeVat` alanı OLMAYAN teklif kalemleri —
+ *   teklifte KDV belgenin `taxRate`'iyle tüm kalemlere birden uygulanır.
  *
  * Tüm satırlar tabiyken formül bugünküyle AYNI sonucu verir (bkz. totals.test.ts):
  * `taxableSubtotal === subtotal` olduğunda aşağıdaki oranlama kimlik fonksiyonu.
