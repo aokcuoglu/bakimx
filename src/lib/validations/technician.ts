@@ -28,3 +28,28 @@ export const partsRequestSchema = z.object({
     .optional()
     .transform((v) => (v === "" || v === undefined ? undefined : v)),
 })
+
+/**
+ * Ofisin bekleyen bir parça talebinde düzelttiği alanlar.
+ *
+ * `serviceOrderId` ve `tecdocArticleId` BİLEREK yok: talep başka bir iş emrine
+ * taşınamaz, katalog eşleşmesi de elle değiştirilemez (eşleşme talebi oluşturan
+ * aramadan gelir — elle girilen bir id yanlış parçayı kaleme taşırdı).
+ * `partSku`/`brand`/`note` boş bırakılabilir; boş string sunucuda `null` olur.
+ */
+export const partsRequestEditSchema = z.object({
+  partName: z.string().trim().min(1, "Parça adı zorunludur").max(200),
+  partSku: z.string().trim().max(120).optional().or(z.literal("")),
+  brand: z.string().trim().max(120).optional().or(z.literal("")),
+  quantity: z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır").max(999, "Miktar en fazla 999 olabilir"),
+  note: z.string().trim().max(500).optional().or(z.literal("")),
+})
+
+export type PartsRequestEditInput = z.infer<typeof partsRequestEditSchema>
+
+/** İptal gerekçesi — atölye içi not, zorunlu değildir. */
+export const partsRequestCancelSchema = z.object({
+  reason: z.string().trim().max(300, "Gerekçe en fazla 300 karakter olabilir").optional().or(z.literal("")),
+})
+
+export type PartsRequestCancelInput = z.infer<typeof partsRequestCancelSchema>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { PlanWriteLockedError, getPlanState } from "@/lib/plan"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
+import { findUndecidedPartsRequests, undecidedPartsRequestsMessage } from "@/lib/orders/parts-request-guard"
 import { AuditLogAction } from "@/lib/audit"
 import { addTimelineEvent } from "@/lib/intake/timeline"
 import { isOtpExpired } from "@/lib/intake/otp"
@@ -24,14 +25,15 @@ function isDemoSms(): boolean {
 }
 
 /**
- * Teslim öncesi fiyat guard'ı: iş emrinde fiyatı hiç girilmemiş kalem varsa hata
- * metni, yoksa null döner (bkz. `@/lib/orders/pricing-guard`).
+ * Teslim öncesi kapılar: fiyatı hiç girilmemiş kalem (`@/lib/orders/pricing-guard`)
+ * ve karara bağlanmamış parça talebi (`@/lib/orders/parts-request-guard`). İlk
+ * engelin metni döner, engel yoksa null.
  *
- * Salt-okunur (plan kilitli) dükkân MUAFTIR: kalem düzenleyemediği için fiyatı da
- * giremez, guard uygulanırsa araç içeride rehin kalırdı — bu, aşağıdaki teslim
- * muafiyetinin aynı gerekçesi.
+ * Salt-okunur (plan kilitli) dükkân MUAFTIR: ne kalem düzenleyebilir ne talebi
+ * karara bağlayabilir, kapı uygulanırsa araç içeride rehin kalırdı — bu, aşağıdaki
+ * teslim muafiyetinin aynı gerekçesi.
  */
-async function checkDeliveryPricing(
+async function checkDeliveryBlockers(
   workshopId: string,
   intakeFormId: string,
   workshop: Parameters<typeof getPlanState>[0],
@@ -40,12 +42,21 @@ async function checkDeliveryPricing(
 
   const order = await prisma.serviceOrder.findFirst({
     where: { intakeFormId, workshopId },
-    select: { items: { select: { id: true, name: true, unitPrice: true }, orderBy: { createdAt: "asc" } } },
+    select: {
+      items: { select: { id: true, name: true, unitPrice: true }, orderBy: { createdAt: "asc" } },
+      partsRequests: {
+        select: { partName: true, status: true, convertedAt: true, cancelledAt: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   })
   if (!order) return null
 
   const unpriced = findUnpricedItems(order.items)
-  return unpriced.length > 0 ? unpricedItemsMessage(unpriced) : null
+  if (unpriced.length > 0) return unpricedItemsMessage(unpriced)
+
+  const undecided = findUndecidedPartsRequests(order.partsRequests)
+  return undecided.length > 0 ? undecidedPartsRequestsMessage(undecided) : null
 }
 
 // Salt-okunur kilit MUAFİYETİ (ürün kararı 2026-07-06): süresi dolan dükkân,
@@ -66,9 +77,9 @@ export async function requestDeliveryOtpAction(intakeFormId: string) {
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
 
-  // Fiyat eksikse SMS hiç gitmesin — müşteri boşuna kod beklemesin.
-  const pricingError = await checkDeliveryPricing(user.workshopId, intakeFormId, workshop)
-  if (pricingError) return { error: pricingError }
+  // Fiyat ya da parça kararı eksikse SMS hiç gitmesin — müşteri boşuna kod beklemesin.
+  const blockerError = await checkDeliveryBlockers(user.workshopId, intakeFormId, workshop)
+  if (blockerError) return { error: blockerError }
 
   const sendKey = `delivery-otp-send:${intakeFormId}`
   if (!checkRateLimit(sendKey).allowed) return { error: "Çok sık kod istendi, lütfen biraz sonra tekrar deneyin" }
@@ -130,9 +141,9 @@ export async function verifyDeliveryOtpAction(intakeFormId: string, code: string
   if (!intake) return { error: "Kabul formu bulunamadı" }
   if (intake.status !== "ready_for_delivery") return { error: "Araç teslimata hazır değil" }
 
-  // Kod istendikten sonra bir kalemin fiyatı silinmiş olabilir; teslim anında tekrar bak.
-  const pricingError = await checkDeliveryPricing(user.workshopId, intakeFormId, workshop)
-  if (pricingError) return { error: pricingError }
+  // Kod istendikten sonra fiyat silinmiş ya da yeni parça talebi gelmiş olabilir; teslim anında tekrar bak.
+  const blockerError = await checkDeliveryBlockers(user.workshopId, intakeFormId, workshop)
+  if (blockerError) return { error: blockerError }
 
   const verifyKey = `delivery-otp-verify:${intakeFormId}`
   if (!checkRateLimit(verifyKey).allowed) return { error: "Çok fazla deneme, lütfen biraz sonra tekrar deneyin" }
