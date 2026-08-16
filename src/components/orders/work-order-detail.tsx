@@ -59,7 +59,7 @@ import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
-import { STANDARD_TAX_BPS } from "@/lib/orders/price-tax-mode"
+import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
 import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
@@ -378,10 +378,13 @@ export function WorkOrderDetail({
   }
 
   /**
-   * #311 — kalem düzenleyicisinde "KDV dahil" kipine geçen kullanıcı, iş emrinde
-   * KDV oranı tanımlı değilse tek tıkla standart %20'yi uygular. Diğer meta
-   * alanları KAYITLI değerlerinden gönderilir (metaDraft'tan değil): açık ama
-   * kaydedilmemiş bir fiyatlandırma düzenlemesi bu tıkla sessizce kalıcılaşmasın.
+   * BAK-75 — bir kalemin KDV tick'i açıldığında iş emrinde KDV oranı tanımlı
+   * değilse standart %20 buradan yazılır. Oran olmadan tick tek başına işe
+   * yaramaz: satırda "+₺20,00 KDV" yazarken Genel Toplam'a hiç KDV girmez.
+   *
+   * Diğer meta alanları KAYITLI değerlerinden gönderilir (metaDraft'tan değil):
+   * açık ama kaydedilmemiş bir fiyatlandırma düzenlemesi bu tıkla sessizce
+   * kalıcılaşmasın.
    */
   async function applyStandardTaxRate() {
     setLoading(true)
