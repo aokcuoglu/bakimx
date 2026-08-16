@@ -15,11 +15,11 @@ export default async function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-muted">
-      <div className="lg:w-[38%] lg:min-h-screen">
+    <div className="min-h-screen flex flex-col lg:flex-row lg:h-screen bg-muted">
+      <div className="lg:w-[38%] shrink-0">
         <AuthVisualPanel />
       </div>
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
+      <div className="flex-1 flex items-center lg:items-start justify-center p-6 lg:p-10 lg:overflow-y-auto">
         <div className="w-full max-w-[520px]">
           <RegisterForm />
         </div>
