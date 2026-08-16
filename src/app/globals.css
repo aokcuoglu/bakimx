@@ -91,6 +91,146 @@
   100% { opacity: 0; transform: translateX(0.75rem); }
 }
 
+/* Hero'daki soru→cevap kart şeridi (BAK-80).
+
+   Neden Tailwind sınıfı değil de burada: kurgu üç kırılımda ÜÇ AYRI düzen
+   kullanıyor (mobil yatay snap / desktop sonsuz kayma / hareket azaltmada
+   statik grid) ve her birinde `display` değişiyor. Bunu `lg:motion-reduce:`
+   yığınlarıyla yazmak, çakışan `display` utility'lerinin kaynak sırasına
+   bağlı kalmasına yol açıyordu. Açık media query'ler deterministik.
+
+   Kritik: DOM her kırılımda AYNI — düzen yalnız CSS ile değişiyor. Bu sayede
+   şerit JS gerektirmiyor, hidrasyondan önce doğru görünüyor ve hareket azaltma
+   tercihi için ikinci bir ağaç render edilmiyor. */
+@keyframes objection-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+/* Varsayılan (mobil/tablet): yatay swipe + snap. Otomatik kaydırma YOK —
+   pil harcar ve kullanıcının kendi kaydırmasıyla çakışır. */
+/* `min-width: 0` şart: yatay kaydırıcının içindeki 16 kartın max-content
+   genişliği, grid/flex öğesinin varsayılan `min-width: auto`u yüzünden sütunu
+   şişiriyor ve TÜM sayfaya yatay taşma bindiriyordu (mobilde H1 ve CTA'lar
+   ekran dışına taşıyordu). Kaydırıcı ancak sıfır minimum genişlikle kendi
+   kabına hapsolur. */
+.objection-strip {
+  position: relative;
+  min-width: 0;
+}
+
+.objection-track {
+  display: flex;
+  min-width: 0;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.objection-track > li {
+  flex: 0 0 min(85%, 20rem);
+  scroll-snap-align: center;
+}
+
+/* Kopya set yalnız desktop'taki kesintisiz döngü için var; başka her yerde
+   ekran okuyucudan da düzenden de tamamen çıkar. */
+.objection-track > li[data-objection-clone] {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .objection-strip {
+    height: 34rem;
+    overflow: hidden;
+    /* Üst/alt maske: kartlar şeridin ucunda kesilmiş gibi değil, soluyarak biter. */
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 10%,
+      #000 90%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 10%,
+      #000 90%,
+      transparent
+    );
+  }
+
+  .objection-track {
+    flex-direction: column;
+    /* Boşluk `gap` değil `margin-bottom` — translateY(-50%) ancak şeridin
+       yüksekliği tam olarak "iki özdeş set" olduğunda kusursuz döner. `gap`
+       setler ARASINA da bir boşluk koyup son kartın altına koymadığı için
+       yarım boşluk kayması bırakır ve her turda gözle görülür bir sıçrama olur. */
+    gap: 0;
+    overflow: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
+    animation: objection-scroll 72s linear infinite;
+    will-change: transform;
+  }
+
+  .objection-track > li {
+    flex: none;
+    margin-bottom: 1rem;
+  }
+
+  .objection-track > li[data-objection-clone] {
+    display: revert;
+  }
+
+  /* Okumak isteyen dursun: fare üstündeyken ve klavyeyle kart odaklandığında. */
+  .objection-strip:hover .objection-track,
+  .objection-strip:focus-within .objection-track {
+    animation-play-state: paused;
+  }
+}
+
+/* Hareket azaltma tercihi: hiç animasyon yok, maske yok — kartlar okunabilir
+   statik bir grid olur ve kaydırmayı kullanıcı yapar.
+
+   Yükseklik neden hâlâ sınırlı: 8 kart iki sütunda ~1430 px tutuyor. Sınır
+   kalkınca hero o boya uzuyor, `items-center` yüzünden H1 sayfanın ortasına
+   iniyor ve ilk ekranda görünmüyordu. Yani sınırsız grid, hareketi azaltmak
+   isteyen kullanıcıyı sayfanın asıl mesajından ediyor. Kutu aynı boyda kalır,
+   otomatik kayma yerine normal dikey kaydırma gelir. */
+@media (prefers-reduced-motion: reduce) {
+  .objection-track {
+    animation: none;
+  }
+
+  @media (min-width: 1024px) {
+    .objection-strip {
+      overflow-y: auto;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    .objection-track {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .objection-track > li {
+      margin-bottom: 0;
+    }
+
+    .objection-track > li[data-objection-clone] {
+      display: none;
+    }
+  }
+}
+
 /* Mobil-öncelikli yardımcı sınıflar — gerçek safe-area inset'leri (önceden no-op'tu). */
 @utility safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
