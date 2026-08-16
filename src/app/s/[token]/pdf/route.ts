@@ -4,6 +4,7 @@ import { sanitizeIntakeForPublic, escapeIntakeForHtml } from "@/lib/intake/data-
 import { renderIntakePrintoutHtml } from "@/lib/pdf/intake-printout"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +22,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          order: { select: { status: true, paymentStatus: true, items: { select: { type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
+          // Ekrandaki özetle aynı kırılımı basar — indirim/KDV alanları ve
+          // satır bazlı `includeVat` bayrağı olmadan PDF KDV'yi düşürür.
+          order: {
+            select: {
+              status: true,
+              paymentStatus: true,
+              discountAmount: true,
+              taxRate: true,
+              items: { select: { name: true, ...ORDER_TOTALS_ITEM_SELECT } },
+            },
+          },
         },
       },
       workshop: { select: { name: true, phone: true, city: true, address: true, logoUrl: true } },

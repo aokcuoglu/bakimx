@@ -135,6 +135,60 @@ describe("renderIntakePrintoutHtml", () => {
     expect(html).toContain("2 kalem")
   })
 
+  /**
+   * Regresyon (BAK-75 takibi): çıktı kalemleri elle topluyor, iş emrinin
+   * `discountAmount` / `taxRate` alanlarını hiç okumuyordu. KDV seçili bir iş
+   * emrinde bile belgede KDV satırı çıkmıyor, Genel Toplam ham net kalıyordu.
+   */
+  test("iş emrinde KDV varsa kırılım basılır ve Genel Toplam KDV'yi içerir", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        discountAmount: null,
+        taxRate: 2000,
+        items: [
+          { type: "part", name: "Akü", quantity: 4, unitPrice: 10000, totalPrice: null, includeVat: true },
+        ],
+      },
+    })
+    expect(html).toContain("Ara toplam")
+    expect(html).toContain("KDV (%20)")
+    expect(html).toContain("₺80,00")
+    expect(html).toContain('<div class="total-row total-grand"><span>Genel Toplam</span><span>₺480,00</span></div>')
+  })
+
+  test("KDV'siz kalemden KDV alınmaz, indirim satırı ayrı basılır", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        discountAmount: 5000,
+        taxRate: 2000,
+        items: [
+          { type: "part", name: "Akü", quantity: 1, unitPrice: 10000, totalPrice: null, includeVat: false },
+        ],
+      },
+    })
+    expect(html).toContain("İndirim")
+    expect(html).toContain("&minus;₺50,00")
+    expect(html).not.toContain("KDV (%20)")
+    expect(html).toContain('<div class="total-row total-grand"><span>Genel Toplam</span><span>₺50,00</span></div>')
+  })
+
+  test("KDV/indirim yoksa kırılım hiç basılmaz — tek satırlık toplam kalır", () => {
+    const html = render({
+      order: {
+        status: "in_progress",
+        paymentStatus: "unpaid",
+        items: [{ type: "part", name: "Akü", quantity: 1, unitPrice: 10000, totalPrice: null }],
+      },
+    })
+    expect(html).not.toContain("Ara toplam")
+    expect(html).not.toContain("İndirim")
+    expect(html).not.toContain("KDV (")
+  })
+
   test("hiçbir kalemde tutar yoksa Tutar sütunu hiç basılmaz", () => {
     const html = render({
       order: {

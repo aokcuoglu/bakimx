@@ -62,12 +62,37 @@ test("Birim Fiyat alanı sayı girdisi değil, virgüllü girişi okuyan metin a
   expect(priceField).not.toContain('type="number"')
 })
 
-test("satırda gösterilen tutar ham `unitPrice` / satır toplamıdır", () => {
-  // Gösterim çevrimi olmadığı için satır doğrudan saklanan değeri basar.
+test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
+  // Gösterim çevrimi olmadığı için alan doğrudan saklanan değeri basar.
   expect(GRID).toContain("row.unitPrice != null ? formatTRY(row.unitPrice)")
-  expect(GRID).toContain("lineTotal={ed.lineTotal}")
   expect(GRID).not.toContain("ed.displayUnitPrice")
   expect(GRID).not.toContain("ed.displayLineTotal")
+})
+
+/**
+ * BAK-75 takibi — "Toplam" sütunu KDV DAHİL.
+ *
+ * Net toplam basan sütun, üstteki finansal şeritle tutmuyormuş gibi görünüyordu:
+ * 4 satırın her biri ₺100,00 yazarken Genel Toplam ₺480,00 çıkıyordu. Kullanıcının
+ * satırda gördüğü tutar cebinden çıkacak tutar olmalı.
+ *
+ * `ed.lineTotal`'a geri dönen bir düzenleme sessizce eski görünümü diriltir —
+ * ne TypeScript ne lint yakalar, o yüzden kaynak üzerinden korunuyor.
+ */
+test("Toplam sütunu KDV DAHİL tutarı basar — net toplam değil", () => {
+  expect(GRID).toContain("const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)")
+  // Masaüstü satırı, mobil kart ve composer önizlemesi — üçü de brüt okur.
+  expect(GRID).not.toContain("lineTotal={ed.lineTotal}")
+  const grossUses = GRID.match(/lineTotal=\{ed\.grossLineTotal\}/g) ?? []
+  expect(grossUses.length).toBe(3)
+})
+
+test("brüt tutarın yanında KDV'nin içinde olduğu YAZAR", () => {
+  // Aynı satırda birim fiyat NET, toplam BRÜT duruyor; hangisinin hangisi olduğu
+  // rakamdan okunmuyor. Masaüstünde "KDV dahil" etiketi, mobil/composer'da
+  // tutarlı not ("₺20,00 KDV dahil") bu ayrımı taşır.
+  expect(GRID).toContain("KDV dahil")
+  expect(GRID).toContain("<VatHint vatKurus={ed.vatKurus} included />")
 })
 
 test("KDV tick'i açılınca satırda KDV tutarı gösterilir VE belgeye oran yazılır", () => {

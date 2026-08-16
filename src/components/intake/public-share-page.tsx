@@ -10,7 +10,7 @@ import { formatTRY, formatMileage } from "@/lib/format"
 import { formatFuelLevel } from "@/lib/fuel-level"
 import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { generateWhatsAppShareText, getWhatsAppShareUrl } from "@/lib/share/whatsapp"
-import { formatOrderSummary, formatLineTotal, calculateLineTotal } from "@/lib/totals"
+import { formatOrderSummary, formatLineTotal, calculateLineTotal, calculateOrderTotals, formatTaxRate } from "@/lib/totals"
 import { GroupedPhotoGallery } from "@/components/intake/grouped-photo-gallery"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { WorkshopContactBlock } from "@/components/shared/workshop-contact-block"
@@ -37,7 +37,14 @@ type SafeIntakeData = {
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
   damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
-  order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
+  order: {
+    status: string
+    statusLabel: string
+    paymentStatusLabel: string
+    discountAmount: number | null
+    taxRate: number | null
+    items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; includeVat: boolean | null }[]
+  } | null
 }
 
 type PhotoPhaseGroup = {
@@ -78,7 +85,15 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
   const publicLink = typeof window !== "undefined" ? `${window.location.origin}/s/${token}` : `/s/${token}`
 
   const orderItems = intakeForm.order?.items ?? []
-  const summary = formatOrderSummary(orderItems)
+  // İş emrinin indirimi ve KDV oranı hesaba KATILIR (BAK-75 takibi): bu iki
+  // seçenek geçilmediğinde müşteri belgesi ham net toplamı "Genel Toplam" diye
+  // basıyordu — iş emrinde KDV seçiliyken bile ekranda KDV satırı yoktu.
+  const orderTotalsOptions = {
+    discountAmount: intakeForm.order?.discountAmount ?? null,
+    taxRate: intakeForm.order?.taxRate ?? null,
+  }
+  const summary = formatOrderSummary(orderItems, orderTotalsOptions)
+  const grandTotalKurus = calculateOrderTotals(orderItems, orderTotalsOptions).grandTotal
   const parts = orderItems.filter((i) => i.type === "part")
   const labor = orderItems.filter((i) => i.type === "labor")
   const externalLabor = orderItems.filter((i) => i.type === "external_labor")
@@ -95,11 +110,10 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
       statusLabel: intakeForm.statusLabel,
       // Tutarlar kalemlerle birlikte gelir (bkz. sanitizeIntakeForPublic);
       // showPaymentStatus yalnızca "Ödendi / Ödenmedi" etiketini yönetir.
-      totalAmount: shareLink.showOrderItems && intakeForm.order ? orderItems.reduce((sum, item) => {
-        if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-        if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
-        return sum
-      }, 0) : null,
+      //
+      // Sayfadaki "Genel Toplam" ile AYNI rakam: elle satır toplayan eski hesap
+      // indirimi ve KDV'yi atlıyordu, mesajdaki tutar ekrandakinden farklı çıkıyordu.
+      totalAmount: shareLink.showOrderItems && intakeForm.order ? grandTotalKurus : null,
     })
     window.open(getWhatsAppShareUrl(text), "_blank")
   }
@@ -418,6 +432,26 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                       <div className="flex justify-between text-muted-foreground">
                         <span>Dış İşçilik Toplamı</span>
                         <span>{summary.externalLaborTotal}</span>
+                      </div>
+                    )}
+                    {/* Ara Toplam / İndirim / KDV kırılımı — yalnız iş emrinde
+                        gerçekten varsa basılır, yoksa tek satırlık toplam kalır. */}
+                    {(summary.hasDiscount || summary.hasTax) && (
+                      <div className="flex justify-between text-muted-foreground pt-1 border-t border-border">
+                        <span>Ara Toplam</span>
+                        <span>{summary.subtotal}</span>
+                      </div>
+                    )}
+                    {summary.hasDiscount && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>İndirim</span>
+                        <span>−{summary.discountAmount}</span>
+                      </div>
+                    )}
+                    {summary.hasTax && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>KDV ({formatTaxRate(summary.taxRate)})</span>
+                        <span>{summary.taxAmount}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-base pt-1 border-t border-border">

@@ -5,6 +5,7 @@ import { sanitizeIntakeForPublic } from "@/lib/intake/data-safety"
 import { groupPhotosByPhase } from "@/lib/intake/completeness"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
+import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +23,18 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
           photos: { where: { serviceOrderItemId: null, ...VISIBLE_PHOTO }, select: { id: true, type: true, label: true, fileUrl: true, phase: true } },
           damageMarks: { select: { id: true, zone: true, damageType: true, severity: true, note: true } },
           approvals: { select: { status: true, approvedAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
-          order: { select: { id: true, status: true, paymentStatus: true, items: { select: { id: true, type: true, name: true, quantity: true, unitPrice: true, totalPrice: true } } } },
+          // `discountAmount` + `taxRate` müşteri özetinin KDV/indirim kırılımını
+          // besler; kalem select'i ORDER_TOTALS_ITEM_SELECT'ten gelir (BAK-53).
+          order: {
+            select: {
+              id: true,
+              status: true,
+              paymentStatus: true,
+              discountAmount: true,
+              taxRate: true,
+              items: { select: { id: true, name: true, ...ORDER_TOTALS_ITEM_SELECT } },
+            },
+          },
         },
       },
       workshop: { select: { id: true, name: true, phone: true, city: true, address: true, logoUrl: true } },
