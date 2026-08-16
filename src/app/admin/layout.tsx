@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react"
 import { requireAdmin } from "@/lib/admin"
 import { logoutAction } from "@/app/(auth)/login/actions"
 import { AdminNav } from "@/app/admin/admin-nav"
+import { getUnansweredCount } from "@/app/admin/live-chat/data"
 import { Button } from "@/components/ui/button"
 
 export const metadata = { title: "BakimX Yönetim" }
@@ -14,6 +15,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Real gate for the whole console. Server actions re-assert their own capability
   // (defense in depth — actions do not inherit this guard).
   await requireAdmin()
+
+  // Yanıt bekleyen canlı destek görüşmesi sayısı — konsolun her sayfasında
+  // görünür ki bekleyen bir ziyaretçi fark edilmeden kalmasın. Sayaç
+  // okunamazsa gezinme yine de çizilir (rozet 0 görünür).
+  const liveChatUnanswered = await getUnansweredCount().catch(() => 0)
 
   return (
     <div className="min-h-screen bg-muted">
@@ -39,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:flex md:gap-6">
         <aside className="md:w-52 md:shrink-0">
           <div className="md:sticky md:top-6">
-            <AdminNav />
+            <AdminNav liveChatUnanswered={liveChatUnanswered} />
           </div>
         </aside>
         <main className="min-w-0 flex-1 pt-4 md:pt-0">{children}</main>

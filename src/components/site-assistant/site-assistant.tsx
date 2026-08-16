@@ -6,7 +6,7 @@ import { isPublicAssistantPath } from "@/lib/site-assistant-visibility";
 import { AssistantLauncher } from "./assistant-launcher";
 import { AssistantPanel } from "./assistant-panel";
 
-export type AssistantView = "menu" | "demo" | "support" | "faq" | "success";
+export type AssistantView = "menu" | "chat" | "demo" | "support" | "faq" | "success";
 export type SuccessContext = "demo" | "support";
 
 const OPEN_KEY = "bakimx.assistant.open";

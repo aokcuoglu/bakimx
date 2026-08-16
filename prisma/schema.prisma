@@ -1668,6 +1668,91 @@ enum SupportRequestStatus {
   archived
 }
 
+/// www.bakimx.com canlı destek widget'ının tek satırlık yapılandırması.
+/// Kiracıya ait DEĞİL — bu, BakımX şirketinin kendi destek masasıdır; bu yüzden
+/// workshopId yok ve yönetimi yalnız /admin konsolundan yapılır.
+/// `id` sabit "singleton": ikinci bir satır yazılamaz, okuma yolu yoksa oluşturur.
+model LiveChatSettings {
+  id             String   @id @default("singleton")
+  enabled        Boolean  @default(true)
+  timezone       String   @default("Europe/Istanbul")
+  /// WeeklySchedule — { mon: { enabled, start: "09:00", end: "18:00" }, ... }
+  /// Şekli src/lib/live-chat/schedule.ts içindeki parseWeeklySchedule doğrular;
+  /// bozuk/eksik JSON sessizce varsayılana düşer (widget asla patlamaz).
+  schedule       Json
+  /// Kapalı olunacak istisna günler, "YYYY-MM-DD".
+  holidays       String[] @default([])
+  /// Çevrimiçiyken sohbet açılışına düşen sistem mesajı.
+  greeting       String
+  /// Çevrimdışıyken sohbet açılışına düşen sistem mesajı.
+  offlineMessage String
+  /// Panel başlığının altındaki dönüş süresi vaadi.
+  responseNote   String
+  updatedAt      DateTime @updatedAt
+  updatedByEmail String?
+}
+
+/// Bir ziyaretçi ile destek ekibi arasındaki tek bir canlı destek görüşmesi.
+/// Ziyaretçinin kimliği `publicToken`dır (oturum yok) — VehiclePassportToken ile
+/// aynı desen. Token tarayıcıda localStorage'da durur.
+model LiveChatConversation {
+  id             String                     @id @default(cuid())
+  publicToken    String                     @unique
+  status         LiveChatConversationStatus @default(open)
+  visitorName    String
+  visitorEmail   String
+  visitorPhone   String?
+  /// Görüşme çalışma saatleri DIŞINDA başladıysa true — gelen kutusunda
+  /// "asenkron dönüş bekleniyor" olarak ayırt edilir.
+  startedOffline Boolean                    @default(false)
+  clientIp       String?
+  userAgent      String?
+  /// Widget'ın açıldığı sayfa — hangi içeriğin soru doğurduğunu gösterir.
+  pageUrl        String?
+
+  lastMessageAt        DateTime  @default(now())
+  lastVisitorMessageAt DateTime?
+  lastAgentMessageAt   DateTime?
+  /// Okundu işaretleri sayaç değil zaman damgasıdır: idempotent, yarış
+  /// koşulunda sayacı bozmaz. Okunmamış = lastVisitorMessageAt > agentLastReadAt.
+  agentLastReadAt      DateTime?
+  visitorLastReadAt    DateTime?
+  closedAt             DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages LiveChatMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([lastMessageAt])
+}
+
+enum LiveChatConversationStatus {
+  open
+  closed
+}
+
+model LiveChatMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   LiveChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         LiveChatSender
+  /// Yalnız sender=agent iken dolu — hangi yöneticinin yanıtladığı denetim izi.
+  agentEmail     String?
+  body           String
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+enum LiveChatSender {
+  visitor
+  agent
+  /// Otomatik karşılama / çevrimdışı bilgilendirme metinleri.
+  system
+}
+
 /// Global TecDoc catalog cache (NOT tenant-scoped), sibling of VinLookup.
 /// Rows created this month == billed RapidAPI catalog calls; the monthly cap
 /// is shared with vin_lookups (see src/lib/rapidapi-quota.ts).

@@ -109,6 +109,12 @@ export const KEEP_TABLES = [
   "bakimx_catalog_audit",
   "DemoRequest",
   "SupportRequest",
+  // Canlı destek (BAK-73): www.bakimx.com ziyaretçileriyle BakımX'in KENDİ
+  // yazışması — kiracı verisi değil. Kiracı sıfırlaması destek geçmişini ve
+  // widget ayarlarını silmemeli (aksi hâlde çalışma saatleri de sıfırlanırdı).
+  "LiveChatSettings",
+  "LiveChatConversation",
+  "LiveChatMessage",
   "_prisma_migrations",
 ]
 
