@@ -71,6 +71,10 @@ export const TENANT_TABLES = [
   "PartSupplierPrice",
   "VehiclePassportToken",
   "OcrLog",
+  // Servisler arası araç geçmişi hakkı (BAK-77): `workshopId` taşır ve dayanağı
+  // o atölyenin ruhsat taramasıdır — kiracı verisi silinirken hak da düşmeli,
+  // yoksa yeni kiracı eski kiracının açtığı maskeyi devralırdı.
+  "VehicleHistoryGrant",
   "ChecklistItem",
   "InternalNote",
   "PartsRequest",

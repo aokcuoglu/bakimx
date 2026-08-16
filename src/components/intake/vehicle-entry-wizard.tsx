@@ -26,6 +26,7 @@ import { CustomerSearchOrCreate } from "@/components/customers/customer-search-o
 import { PlateScanner } from "@/components/intake/plate-scanner"
 import { VinScanner } from "@/components/intake/vin-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
+import { CrossWorkshopHistoryLoader } from "@/components/vehicles/cross-workshop-history"
 import { useVinResolve } from "@/components/vehicles/vin-resolve"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { displayCustomerName, type CustomerLite, type UnifiedResult } from "@/lib/search/unified-results"
@@ -107,6 +108,10 @@ export function VehicleEntryWizard({
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
   const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(null)
   const [scanner, setScanner] = useState<"plate" | "vin" | null>(null)
+  // Ruhsat okuma sayacı. Servisler arası geçmiş kilidi ruhsat taramasıyla açılır
+  // (BAK-77); tarama sunucuda hakkı yazdığı anda paneli yeniden çektirmek için
+  // bu sayaç artar.
+  const [ocrUnlockKey, setOcrUnlockKey] = useState(0)
 
   // Onay
   const [confirmed, setConfirmed] = useState<{ vehicleId: string; customerId: string; label: string; sublabel: string } | null>(null)
@@ -275,6 +280,8 @@ export function VehicleEntryWizard({
    * yüzden kimlik çakışması burada tek yerde ele alınır.
    */
   function applyOcr({ values, confidence: conf, owner: ocrOwner }: RuhsattanOkuResult) {
+    // Ruhsat okundu ⇒ sunucu servisler arası geçmiş hakkını yazdı (BAK-77).
+    setOcrUnlockKey((k) => k + 1)
     const found = identityConflicts({ plate: fields.plate, vin: fields.vin }, { plate: values.plate, vin: values.vin })
     setConflicts(found)
     const keep = new Set(found.map((c) => c.key))
@@ -732,6 +739,13 @@ export function VehicleEntryWizard({
               </Button>
             </div>
           )}
+          {/*
+            Araç bu atölyede yeni ama BAŞKA servislerde kayıtlı olabilir (BAK-77).
+            Ruhsat okutulmadıysa panel maskeli gelir ve kilidi nasıl açacağını
+            söyler; ruhsat bu oturumda okutulduysa (ocrUnlockKey değişir) maskesiz
+            tazelenir.
+          */}
+          <CrossWorkshopHistoryLoader plate={normalizePlate(fields.plate)} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
             <Button type="button" className="gap-2" onClick={leaveVehicleStep}>
               Devam <ChevronRight className="size-4" />
@@ -814,6 +828,8 @@ export function VehicleEntryWizard({
               </div>
             )}
           </div>
+          {/* Seçilen aracın diğer servislerdeki geçmişi (BAK-77). */}
+          <CrossWorkshopHistoryLoader vehicleId={confirmed.vehicleId} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={restart}>Başka araç seç</Button>}>
             <Button type="button" className="gap-2" onClick={onComplete}>
               Kabul detaylarına geç <ChevronRight className="size-4" />
