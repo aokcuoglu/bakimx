@@ -1,15 +1,14 @@
 name: Main push guard
 
-# Alarm, NOT protection. This workflow blocks nothing — the commit is already on
-# `main` and deploy-prod-aws.yml has already started by the time this runs. What it
-# buys is VISIBILITY: today a direct push to `main` goes through in silence.
+# Alarm, NOT protection. This workflow blocks nothing — if a commit ever reaches
+# `main` outside a PR, deploy-prod-aws.yml has already started by the time this runs.
 #
-# Why an alarm instead of a real gate: server-side branch protection needs GitHub Pro
-# on this account (private repo + Free plan → both the branch-protection and rulesets
-# APIs return 403). Pro was declined for budget reasons on 2026-08-15 (BAK-57), so
-# `main` staying unprotected is an ACCEPTED RISK, not an oversight. Details and the
-# checklist to open if that decision is ever revisited:
-# docs/agent-workflows/repo-guardrails.md §2.
+# SECOND LAYER since 2026-08-17 (BAK-89): `main` now requires a pull request and
+# admins cannot bypass it, so the class of push this guard was written for is
+# blocked server-side before it happens. Keep the guard anyway — it costs ~1 minute
+# per push and it still fires for the one remaining path, an admin who turns the
+# protection off, pushes, and turns it back on. That path leaves an audit trail;
+# silence did not. See docs/agent-workflows/repo-guardrails.md §2.
 #
 # The gap is not theoretical: 3079291 and 3f038e7 were pushed straight to `main` on
 # 2026-07-30, both triggered a prod deploy, and nobody was notified.
@@ -133,9 +132,10 @@ jobs:
             echo "3. Yanlışsa geri al: \`git revert ${SHORT}\` ile \`dev\` üzerinden PR aç."
             echo "4. Doğruysa bu issue'yu kapat."
             echo
-            echo "Bu bir engelleme değil, bildirimdir: \`main\` sunucu tarafında korumasız"
-            echo "(GitHub Pro alınmadı — BAK-57, 2026-08-15, kabul edilmiş risk). Gerekçe ve"
-            echo "kararın değişmesi hâlinde açılacak kutular: \`docs/agent-workflows/repo-guardrails.md\` §2."
+            echo "Bu bir engelleme değil, bildirimdir. \`main\` 2026-08-17'den beri sunucu"
+            echo "tarafında korumalı (PR zorunlu, admin muafiyeti kapalı — BAK-89), yani bu"
+            echo "alarmın çalması korumanın geçici olarak kapatıldığı anlamına gelir."
+            echo "Ayrıntı: \`docs/agent-workflows/repo-guardrails.md\` §2."
           } > issue-body.md
 
           gh issue create \

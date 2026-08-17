@@ -11,11 +11,17 @@ name: Dev branch guard
 #   - `sync-main-to-dev.yml` aynı dakikada `failure` ile düştü (18:44, a95f453):
 #     `actions/checkout` `ref: dev` bulamadı.
 #
-# NEDEN SUNUCU TARAFI KORUMA DEĞİL: branch protection ve rulesets bu hesapta
-# 403 döner (private repo + Free plan). BAK-57'de Pro bütçe nedeniyle alınmadı;
-# `main`/`dev`'in korumasızlığı kabul edilmiş bir risk. Bkz.
-# docs/agent-workflows/repo-guardrails.md §2. Bu workflow o boşluğu kapatmaz,
-# yalnız EN PAHALI sonucunu — dalın yokluğunu — saniyeler içinde geri alır.
+# ARTIK İKİNCİ KATMAN: 2026-08-17'de (BAK-89) `dev` için sunucu tarafı koruma
+# açıldı — silme depo sahibi için bile reddediliyor (fiilen test edildi: 422
+# "Cannot delete this branch"). Yani bu workflow'un yazılma sebebi olan olay
+# normal şartlarda bir daha GERÇEKLEŞMEZ. Silinmedi çünkü maliyeti yok (17 günde
+# ~1 dk) ve koruma elle kapatılırsa geriye kalan tek ağ bu.
+#
+# 2026-08-17'nin dersi de bu yüzden önemli: guard tam lazım olduğu anda çalışamadı,
+# çünkü o da bir Actions job'ı ve arızalı olan Actions'ın kendisiydi (dakika kotası
+# dolmuştu). ONARIM MEKANİZMASI, ONARDIĞI ŞEYLE AYNI ARIZA NOKTASINA BAĞLIYDI —
+# sunucu tarafı koruma bu bağımlılığı kaldırdı.
+# Bkz. docs/agent-workflows/repo-guardrails.md §2.
 #
 # DÜRÜSTLÜK NOTU: bu bir engelleme değil, ONARIMDIR. Silme gerçekleşir; workflow
 # olaydan sonra çalışır ve dalı yeniden yaratır. Silme ile geri gelme arasında
