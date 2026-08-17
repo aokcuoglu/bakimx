@@ -34,8 +34,14 @@ bun run db:migrate          # = prisma migrate dev
 # 3) üretilen prisma/migrations/<ts>_<isim>/ klasörünü COMMIT et
 ```
 
-Sonrası otomatik: `dev`'e merge → app-dev deploy'unda migration kapısı çalışır →
-`main`'e merge → prod deploy'unda aynı kapı çalışır.
+Sonrası: `main`'e merge → prod deploy'unda migration kapısı çalışır (otomatik).
+
+> ⚠️ **app-dev otomatik değil.** `dev`'e merge tek başına deploy tetiklemez
+> (2026-08-17, BAK-90), dolayısıyla **migration da uygulanmaz**. Migration içeren
+> bir merge'in squash mesajına `[deploy-dev]` yaz; unutulursa app-dev'in şeması
+> koddan geride kalır ve orada test eden herkes anlamsız Prisma hatalarıyla
+> karşılaşır. Sonradan fark edilirse: Actions → *Deploy to AWS dev* → Run workflow.
+> Ayrıntı: [releasing.md](./releasing.md).
 
 > **Yerel geliştirme AWS dev DB'sine bağlanır** (`.env.local` → `localhost:5433`,
 > `bun run db:tunnel` ile SSM tüneli açıkken). `db:migrate` yerel authoring,

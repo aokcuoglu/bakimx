@@ -92,4 +92,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Two closing lines, one per tracker:** `Closes #<number>` for GitHub, plus `Closes <MULTICA-KEY>` (e.g. `Closes BAK-7`) when Multica tracks the same work. Neither implies the other; a bare key mention without a closing keyword is filed as `reference_only` and never becomes a visible link. Never invent a key.
 - **Link at PR-open time only.** Never link a PR from a closed issue's Development panel — project automation reacts to the link and overwrites `Done`.
 - Finish delivery with `bun run project:sync` — idempotent, board-only, safe to re-run.
-- Before pushing, merge the latest `origin/dev` into your branch and re-run the gate: a PR's green check only covers its head commit, and nothing in this repo forces a branch to be up to date. See `docs/agent-workflows/repo-guardrails.md`.
+- Before pushing, merge the latest `origin/dev` into your branch and re-run the gate: a PR's green check only covers its head commit, and nothing forces a **dev-targeted** branch to be up to date (`main` does require it since BAK-89, `dev` does not). See `docs/agent-workflows/repo-guardrails.md`.

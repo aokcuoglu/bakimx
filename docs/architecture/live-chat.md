@@ -93,12 +93,35 @@ servisidir; bu değişiklik yoklama arayüzünü bozmadan yapılabilir.
 - Ziyaretçi IP'si ve user-agent'ı görüşmede saklanır (spam teşhisi). Kişisel veri
   saklama süresi ürün kararıdır; şu an otomatik temizlik **yoktur**.
 
+## Yöneticiye e-posta bildirimi
+
+Ziyaretçi yazdığında `ADMIN_EMAILS`'teki adreslere e-posta gider
+([`src/lib/live-chat/notify.ts`](../../src/lib/live-chat/notify.ts)). Bu olmadan
+sistem yalnız birinin gelen kutusunu açık tutmasıyla çalışıyordu — sayfadaki
+"genelde birkaç dakika içinde yanıtlıyoruz" sözünü kimse göremiyordu.
+
+İki tasarım kararı:
+
+- **`sendSystemEmail` kullanılmıyor**, `sendEmailDirect` kullanılıyor. Birincisi
+  zorunlu `workshopId` istiyor ve her gönderimi o kiracının `communicationLog`
+  kaydına yazıyor; canlı destek görüşmesi hiçbir atölyeye ait değil, uydurma bir
+  kiracıya bağlamak başkasının destek trafiğini o kiracının İletişim Kayıtları
+  ekranına düşürürdü (#194'ün kapattığı sızıntı sınıfı). Takas: bu gönderimlerin
+  kaydı tutulmuyor.
+- **Yığın bastırma.** Ziyaretçi mesajını üç satıra bölerse üç e-posta gitmez:
+  `startsNewBurst()` yalnız gerçekten yeni bir bekleyiş başladığında `true` döner
+  (yeni görüşme, temsilci yanıtından sonra gelen mesaj, ya da 15 dakikalık
+  sessizliğin ardından). Karar saf bir fonksiyonda ve testleri var.
+
+Gönderim best-effort: başarısız olması ziyaretçinin mesajını **düşürmez**.
+
 ## Bilinçli kapsam dışı
 
-- **E-posta bildirimi yok.** Mesai dışı gelen mesaj yalnız gelen kutusuna düşer;
-  yöneticiye e-posta gitmez. `sendSystemEmail` zorunlu `workshopId` istediği için
-  (kiracı iletişim kaydına bağlıdır) buraya doğrudan uymuyor — eklenecekse ayrı
-  bir "platform bildirimi" yolu gerekir.
+- **Ziyaretçiye e-posta yok.** Temsilci yanıtı yalnız widget'ta görünür; ziyaretçi
+  sekmeyi kapatıp bir daha dönmezse yanıtı görmez. Düzgün eklenmesi için yanıtı
+  taşıyan bir e-posta **ve** `publicToken` ile sohbeti geri açan bir bağlantı
+  gerekiyor. Bu yüzden varsayılan çevrimdışı metninden "e-posta ile dönüş
+  yapalım" ifadesi çıkarıldı — tutulamayan bir sözdü.
 - **Dosya/görsel eki yok**, yazı tabanlı.
 - **Birden çok destek temsilcisi için atama/sahiplenme yok** — tüm yöneticiler
   aynı gelen kutusunu görür. `agentEmail` her yanıtta saklandığı için kimin

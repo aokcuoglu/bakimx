@@ -289,12 +289,13 @@ system cron (`*/15`) to dispatch due maintenance reminders.
 
 Two environments on **AWS ECS Fargate + RDS**, in separate AWS accounts, both fully automated:
 
-| Branch | Environment | Workflow |
-| --- | --- | --- |
-| `dev` | `app-dev.bakimx.com` | `deploy-dev-aws.yml` |
-| `main` | `bakimx.com` + `app.bakimx.com` | `deploy-prod-aws.yml` |
+| Branch | Environment | Workflow | Trigger |
+| --- | --- | --- | --- |
+| `dev` | `app-dev.bakimx.com` | `deploy-dev-aws.yml` | **opt-in**: `[deploy-dev]` in the commit message, or manual dispatch |
+| `main` | `bakimx.com` + `app.bakimx.com` | `deploy-prod-aws.yml` | every push |
 
-1. Push to `dev`/`main` (docs-only commits are skipped via `paths-ignore`).
+1. Push to `main` — or to `dev` with the `[deploy-dev]` marker (docs-only commits to
+   `main` are skipped via `paths-ignore`).
 2. **GitHub Actions** assumes an AWS role via **OIDC** (no long-lived keys), builds the arm64 image
    with Buildx and pushes it to **ECR** (`bakimx/app`, tags `dev`/`prod` + `sha-<commit>`).
 3. A new **ECS task-definition revision** is registered (image swap + the runtime env the CDK task

@@ -29,22 +29,56 @@ kullanım güvenli; dosya başına `eslint-disable` yorumu ile bastırılır (PR
 `vehicle-create-form.tsx`, `supplier-form.tsx`). Yeni bir form eklerken aynı
 deseni kullan, kuralı `eslint.config` seviyesinde kapatma.
 
-## 2. Hiçbir dal sunucu tarafında korumalı değil — bu kabul edilmiş bir risk
+## 2. Dallar kısmen korumalı — neyin kapalı, neyin açık olduğunu bil
 
-Repo private + free plan: branch protection ve rulesets API'leri **403** dönüyor
-("Upgrade to GitHub Pro or make this repository public")
-([`quality.yml`](../../.github/workflows/quality.yml):3-9). Sonuç ne `dev` ne de
-`main` için bir kapı var: **hiçbir şey dalın güncel olmasını zorunlu kılmıyor**,
-kırmızı CI'lı bir PR merge edilebiliyor ve **her iki dala da PR'sız doğrudan push
-yapılabiliyor**.
+2026-08-17'de GitHub Pro alındı (Actions dakikası bitince, BAK-86) ve branch
+protection **açıldı** (BAK-89). Öncesinde API `403` dönüyordu; bu dosyanın eski
+sürümündeki "hiçbir dal korumalı değil" ifadesi artık geçersiz.
 
-**Bu bilgi eksikliği değil, karardır.** BAK-57'de üç seçenek ölçüldü (Pro $4/ay →
-klasik branch protection; Team $16/ay + org transferi; repoyu public yapmak) ve
-2026-08-15'te Pro **bütçe olmadığı için alınmadı**. Yani `main`'in korumasızlığı
-bilinçli olarak kabul edilmiş bir risktir; yerine ücretsiz bir **görünürlük**
-katmanı kondu (aşağısı). Karar değişirse açılacak kutular — PR zorunlu (required
-approvals **0**; 20 günde 19 merge yapan tek kişi kendini bloke etmesin), status
-check `quality` zorunlu, dalın güncel olması zorunlu, admin dahil bypass yok.
+| | `main` | `dev` |
+|---|---|---|
+| Silme | ❌ engelli (**admin dahil**) | ❌ engelli (**admin dahil**) |
+| Force push | ❌ engelli (**admin dahil**) | ❌ engelli (**admin dahil**) |
+| PR zorunlu | ✅ 0 onay | — açık |
+| `quality` check zorunlu | ✅ | — |
+| Dalın güncel olması (`strict`) | ✅ açık | — |
+| Admin bypass (`enforce_admins`) | ❌ kapalı | ❌ kapalı |
+
+Tablodaki iki satır **varsayılmadı, ölçüldü** (2026-08-17, BAK-89). Tek kullanımlık
+bir `tmp-*` dalına aynı kural seti uygulanıp depo sahibinin token'ıyla denendi:
+
+```
+DELETE /git/refs/heads/tmp-*   → 422 "Cannot delete this branch"
+PATCH  ... force=true          → 422 "Cannot force-push to this branch"
+```
+
+Aynı test `enforce_admins: false` iken de tekrarlandı ve **yine 422** döndü — yani
+silme/force-push yasağı admin muafiyetinden bağımsız olarak herkese uygulanıyor.
+`enforce_admins` bu ikisini değil, **PR ve `quality` zorunluluğunu** admin için de
+bağlayıcı yapar.
+
+Kararların gerekçesi:
+
+- **`main`'de admin bypass kapalı** — §2.3'teki olay (30-07'de `main`'e PR'sız iki
+  commit, ikisi de sessizce prod'a çıktı) artık *alarm* değil **duvar**. Hotfix yolu
+  kapanmıyor: [`releasing.md`](../releasing.md) §Hotfix zaten "main'den dallan,
+  main'e PR aç, merge et" diyor — yani belgeli akış hiçbir zaman doğrudan push
+  değildi. Gerçekten çaresiz kalınırsa admin korumayı 10 saniyede kapatabilir ve bu
+  iz bırakır; sessiz bir push iz bırakmıyordu.
+- **`main`'de `strict` açık** — `main`'e yalnız release PR'ı geliyor, yani "açık tüm
+  PR'lar yeniden `quality` koşar" maliyeti burada pratikte sıfır (kıyas: `dev`'e ayda
+  onlarca PR). Karşılığında release PR'ı `main`'i tam olarak içermeden merge
+  edilemiyor — `main`'e girmiş bir düzeltmeyi sessizce geri alan bir sürüm mümkün değil.
+- **`dev`'de PR/check zorunlu değil** — `sync-main-to-dev.yml` `dev`'e **doğrudan**
+  push ediyor (release sonrası `main`'i geri merge'ler). Hem PR zorunluluğu hem
+  zorunlu status check bu push'u reddeder ve her release sonrası sync'i kırar.
+  Kapatılabilir (`bypass_pull_request_allowances` ile `github-actions` uygulamasına
+  muafiyet), ama kazancı düşük: ajanlar zaten PR ile giriyor ve PR'sız bir commit'in
+  **ship edilmesi** `pr-origin` kapısıyla engelli (§2.4). Bilinçli açık kutu.
+
+Ortadan kalkan risk: **dal silme, force push ve `main`'e PR'sız push**. Geriye kalan
+risk: `dev`'e PR'sız push (ship edilemez) ve `dev`'e açılan PR'larda **bayat dal** —
+onun panzehiri hâlâ §2.1'deki disiplin.
 
 ### 2.1 Yeşil tik merge sonucunu kanıtlamaz
 
@@ -73,7 +107,13 @@ ve `bun install` hiç çalışmamış bir checkout (hook kayıtlı değildir). A
 GitHub web arayüzünden yapılan düzenleme/merge hook'u hiç görmez. "Hook var" bir
 dalın korunduğu anlamına **gelmez**.
 
-### 2.3 PR'sız `main` push'u alarm verir (ama durdurmaz)
+### 2.3 PR'sız `main` push'u artık engelli — alarm ikinci katman
+
+> **17-08 güncellemesi (BAK-89):** `main` artık PR zorunlu ve admin muafiyeti
+> kapalı, yani aşağıda anlatılan push sınıfı **gerçekleşmeden** reddediliyor.
+> `main-push-guard.yml` silinmedi (maliyeti ~1 dk/push): geriye kalan tek yol —
+> korumayı elle kapatıp push edip geri açmak — hâlâ alarm verir. Yani bu guard'ın
+> kırmızıya dönmesi bugün "birisi korumayı kapattı" demektir.
 
 30-07'de `main`'e PR'sız iki commit girdi (`3079291`, `3f038e7`); ikisi de prod
 deploy'u tetikledi ve **kimse haberdar olmadı**.
@@ -99,12 +139,17 @@ gelen commit bir merged PR'a bağlı değilse ilgili deploy **başlamadan düşe
 (alpkaan onayı, 2026-08-15; BAK-59 ve BAK-62).
 
 Bu da dalları korumaz — commit `dev` veya `main`'de kalır, yalnız ship edilmez.
-Ve bilinçli bir kaçış yolu var: `if` job seviyesinde değil **adım** seviyesindedir, yani
-`workflow_dispatch` ile elle çalıştırıldığında job sıfır adımla yeşil geçer.
-Gerçek bir hotfix'te prod'a çıkmanın hiçbir yolunun kalmaması kapının kendisinden
-büyük risk; elle çalıştırma zaten iz bırakır (kim başlattı Actions'ta görünür) ve
-`main-push-guard` yine kırmızıdır. `if`'i job seviyesine taşıma: o zaman dispatch
-sırasında job *skipped* olur ve ona bağlı `deploy` da atlanır.
+Ve bilinçli bir kaçış yolu var: PR kontrolünün `if`'i job seviyesinde değil **adım**
+seviyesindedir, yani `workflow_dispatch` ile elle çalıştırıldığında job sıfır adımla
+yeşil geçer. Gerçek bir hotfix'te prod'a çıkmanın hiçbir yolunun kalmaması kapının
+kendisinden büyük risk; elle çalıştırma zaten iz bırakır (kim başlattı Actions'ta
+görünür) ve `main-push-guard` yine kırmızıdır. **Bu adım-seviyesi `if`'i job
+seviyesine taşıma**: o zaman dispatch sırasında job *skipped* olur ve ona bağlı
+`deploy` da atlanır.
+
+Karıştırma: `deploy-dev-aws.yml`'de bu adım-seviyesi `if`'in yanında bir de
+**job-seviyesi** `if` var (`[deploy-dev]` işaretçisi, §6). İkisi farklı işler
+yapıyor ve birleştirilemez — ayrıntı workflow'un kendi yorumunda.
 
 ### 2.5 Release merge'ünde `dev`'i SİLME — silinirse otomatik geri gelir
 
@@ -126,15 +171,22 @@ Bedeli tek bir dal kaydından ibaret değildi, zincirleme oldu:
 `dev`'in son commit'iyle (`42467e3`) byte-byte aynıydı; dal `main`'den geri
 yaratıldı.
 
-Sunucu tarafında silmeyi engelleyemiyoruz (§2: branch protection 403). Yerine
-[`dev-branch-guard.yml`](../../.github/workflows/dev-branch-guard.yml) kondu:
-`delete` olayında `dev`'i `main`'den yeniden yaratır ve olay sessiz kalmasın diye
-bir issue açar. Dal bu arada elle geri açılmışsa **dokunmaz** (üzerine yazmak o
-commit'leri düşürürdü).
+**Aynı hata 17-08'de tekrarlandı** (PR [#384](https://github.com/aokcuoglu/bakimx/pull/384),
+v0.14.0 release merge'ü) — ve bu kez onarım da çalışmadı: `dev-branch-guard.yml`
+de bir Actions job'ı, arızalı olan da Actions'ın kendisiydi (ücretsiz dakika
+kotası dolmuştu, BAK-86). **Onarım mekanizması onardığı şeyle aynı tek arıza
+noktasına bağlıydı.** `dev` elle, `main`'den geri yaratıldı (ağaç hash'i birebir
+aynıydı, içerik kaybı yine yok).
 
-Dürüst ol: bu **engelleme değil, onarımdır**. Silme gerçekleşir; workflow olaydan
-sonra çalışır. Silme ile geri gelme arasındaki kısa pencerede açılmış bir PR
-hedefini kaybedebilir. Kural hâlâ geçerli: release merge'ünde o düğmeye basma.
+İki olaydan sonra kalıcı çözüm kondu: **17-08 itibarıyla silme sunucu tarafında
+engelli** (§2 — `allow_deletions: false`, admin dahil). Yani bu artık *olamaz*.
+[`dev-branch-guard.yml`](../../.github/workflows/dev-branch-guard.yml) yine
+duruyor (`delete` olayında `dev`'i `main`'den yeniden yaratır ve bir issue açar)
+ama artık **ikinci savunma hattı**, birinci değil — koruma elle kapatılırsa diye.
+
+Dürüst ol: guard bir **engelleme değil, onarımdır** ve iki koşulda işe yaramaz —
+Actions bloke olduğunda ve silme ile geri gelme arasındaki pencerede açılmış bir
+PR hedefini kaybettiğinde. Kural hâlâ geçerli: release merge'ünde o düğmeye basma.
 
 ## 3. Şema ve onu kullanan kod aynı PR'da gider
 
@@ -172,3 +224,29 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 `rbac-coverage` ve `photo-visibility` bilinçli istisnalar için gerekçeli bir
 allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
 ya da taramayı daraltma.
+
+## 6. `dev`'e merge app-dev'e deploy ETMEZ — `[deploy-dev]` yaz
+
+17-08'den beri [`deploy-dev-aws.yml`](../../.github/workflows/deploy-dev-aws.yml)
+**opt-in**: `dev`'e giden push yalnızca head commit mesajında `[deploy-dev]`
+geçerse deploy eder, yoksa tüm job'lar `skipped` olur ve **0 dakika** faturalanır
+(alpkaan onayı, 2026-08-17; BAK-90). Elle çalıştırma her zaman deploy eder:
+Actions → *Deploy to AWS dev* → Run workflow.
+
+Neden: bu tek workflow 17 günde 125 run ve faturanın **%73'ü**ydü (her run 16
+faturalanabilir dakika, 11'i arm64 build). Ücretsiz kota bunun için doldu ve
+v0.14.0'ın prod deploy'unu saatlerce bloke etti (BAK-86). app-dev'e günde 7 kez
+ihtiyaç yok — QA izole worktree'de lokal/tünelli DB ile yapılıyor, app-dev'in
+asıl işi sürüm öncesi paylaşımlı doğrulama.
+
+Squash mesajına işaretçiyi ne zaman ekleyeceksin:
+
+| Durum | İşaretçi |
+|---|---|
+| PR yeni bir **migration** içeriyor | **ZORUNLU** — dev DB'sine `migrate deploy` yalnız bu deploy içinde koşar; unutulursa app-dev şeması koddan geri kalır |
+| Değişikliği paylaşımlı ortamda birinin görmesi gerekiyor | ekle |
+| Sürüm öncesi doğrulama turu | ekle (ya da elle dispatch) |
+| Sıradan feature/fix PR'ı, QA worktree'de yapıldı | **ekleme** |
+
+app-dev'in bayat kalması normaldir ve bir arıza değildir; sürüm öncesi zaten elle
+deploy ediliyor ([releasing.md](../releasing.md) §Sürüm çıkarma adım 2).
