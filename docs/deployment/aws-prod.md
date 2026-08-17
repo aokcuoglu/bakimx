@@ -95,6 +95,9 @@ SESSION_COOKIE_DOMAIN = .bakimx.com     # bakimx.com ↔ app.bakimx.com paylaş�
 ```
 > `DB_SSL_NO_VERIFY` **kritik** — task-def:4'te yoktu, o yüzden CI enjekte eder. `SESSION_COOKIE_*` prod'da zaten doğru default'a düşer ama parite için açıkça enjekte edilir; ayrıca **build-arg** olarak da geçilir (Edge middleware build-time inline eder). Build-arg'lar CI'da kalır; yalnız runtime env CDK'ya taşınır.
 
+### 1e. `ADMIN_EMAILS` → SSM (2026-08-17, elle yapıldı → CDK'ya taşınacak)
+`ADMIN_EMAILS`, `/bakimx/<env>/ADMIN_EMAILS` SSM parametresi var olmasına rağmen task-def'te **düz `environment` girdisiydi**; yani parametre hiç okunmuyordu ve "SSM'i güncelledim" demek hiçbir şeyi değiştirmiyordu. Elle düzeltildi (dev `:198`, prod `:28`): değişken `secrets[]`e taşındı ve diğer sağlayıcı env'leriyle aynı deseni izliyor. Parametre okuma izni, CDK'nın kendi `...DefaultPolicy` politikasına dokunmamak için task execution rolüne **ayrı** bir satır içi politikayla verildi (`AdminEmailsSsmRead`). CDK'ya taşırken ikisi birden gerekir: `secrets[]` girdisi **ve** `grantRead`. Aksi hâlde task `ResourceInitializationError` ile hiç başlamaz. Operasyonel kullanım: [platform-admin-model.md](../operations/platform-admin-model.md).
+
 ---
 
 ## 2. Backfill sonrası temizlik
