@@ -1,11 +1,11 @@
-import { requireAdmin } from "@/lib/admin"
+import { can, getAdminContext } from "@/lib/admin"
 import { getLeadRows } from "@/app/admin/data"
 import { AdminDemoRequests, AdminSupportRequests } from "@/app/admin/admin-requests"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminLeadsPage() {
-  await requireAdmin()
+  const ctx = await getAdminContext()
   const { demoRows, supportRows } = await getLeadRows()
 
   return (
@@ -15,7 +15,7 @@ export default async function AdminLeadsPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Demo Talepleri</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Public demo talepleri. Yeni olanlar üstte.</p>
         </div>
-        <AdminDemoRequests requests={demoRows} />
+        <AdminDemoRequests requests={demoRows} canManage={can(ctx, "manageLeads")} />
       </div>
 
       <div className="space-y-3 pt-2">
@@ -23,7 +23,7 @@ export default async function AdminLeadsPage() {
           <h2 className="text-lg font-bold text-foreground">Destek Talepleri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Public destek talepleri. Yeni olanlar üstte.</p>
         </div>
-        <AdminSupportRequests requests={supportRows} />
+        <AdminSupportRequests requests={supportRows} canManage={can(ctx, "manageLeads")} />
       </div>
     </div>
   )

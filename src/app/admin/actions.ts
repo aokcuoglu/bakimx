@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { requireAdmin, requireAdminCapability } from "@/lib/admin"
+import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { isGatedFeature } from "@/lib/features"
@@ -63,7 +63,7 @@ const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolve
  *  approve a `pending` row without a card (manual admin override) or to
  *  un-reject a previously rejected workshop. */
 export async function approveWorkshop(workshopId: string): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
 
   const now = new Date()
@@ -76,7 +76,7 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
       trialEndsAt: computeTrialEnd(now),
     },
   })
-  await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_approved")
+  await AuditLogAction(workshopId, ctx.user.id, "Workshop", workshopId, "admin_workshop_approved")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "approved")
   revalidatePath("/admin", "layout")
   return { ok: true }
@@ -84,14 +84,14 @@ export async function approveWorkshop(workshopId: string): Promise<Result> {
 
 /** Reject a workshop (blocks sign-in). */
 export async function rejectWorkshop(workshopId: string): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
 
   const ws = await prisma.workshop.update({
     where: { id: workshopId },
     data: { approvalStatus: "rejected" },
   })
-  await AuditLogAction(workshopId, admin.id, "Workshop", workshopId, "admin_workshop_rejected")
+  await AuditLogAction(workshopId, ctx.user.id, "Workshop", workshopId, "admin_workshop_rejected")
   await sendOwnerDecisionEmail(workshopId, ws.name, ws.email, "rejected")
   revalidatePath("/admin", "layout")
   return { ok: true }
@@ -103,7 +103,7 @@ export async function activateWorkshopPlan(
   tier: string,
   status: string = "active"
 ): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
   if (!TIERS.includes(tier as PlanTier)) return { ok: false, error: "Geçersiz paket." }
   if (!STATUSES.includes(status as SubStatus)) return { ok: false, error: "Geçersiz durum." }
@@ -120,7 +120,7 @@ export async function activateWorkshopPlan(
   })
   await AuditLogAction(
     workshopId,
-    admin.id,
+    ctx.user.id,
     "Workshop",
     workshopId,
     "admin_plan_activated",
@@ -132,7 +132,7 @@ export async function activateWorkshopPlan(
 
 /** Grant/adjust founder-provided extra login seats (paid overage / custom deal). */
 export async function setWorkshopExtraSeats(workshopId: string, extraSeats: number): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("manageWorkshops")
   if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
   if (!Number.isInteger(extraSeats) || extraSeats < 0 || extraSeats > 500) {
     return { ok: false, error: "Geçersiz ek koltuk sayısı." }
@@ -141,7 +141,7 @@ export async function setWorkshopExtraSeats(workshopId: string, extraSeats: numb
   await prisma.workshop.update({ where: { id: workshopId }, data: { extraSeats } })
   await AuditLogAction(
     workshopId,
-    admin.id,
+    ctx.user.id,
     "Workshop",
     workshopId,
     "admin_extra_seats_set",
@@ -159,7 +159,7 @@ export async function updateDemoRequestStatus(
   requestId: string,
   status: string
 ): Promise<Result> {
-  await requireAdmin()
+  await requireAdminCapability("manageLeads")
   if (!requestId) return { ok: false, error: "Talep seçilmedi." }
   if (!DEMO_STATUSES.includes(status as DemoRequestStatus)) {
     return { ok: false, error: "Geçersiz durum." }
@@ -181,7 +181,7 @@ export async function updateSupportRequestStatus(
   requestId: string,
   status: string
 ): Promise<Result> {
-  await requireAdmin()
+  await requireAdminCapability("manageLeads")
   if (!requestId) return { ok: false, error: "Talep seçilmedi." }
   if (!SUPPORT_STATUSES.includes(status as SupportRequestStatus)) {
     return { ok: false, error: "Geçersiz durum." }
@@ -200,7 +200,7 @@ export async function updateSupportRequestStatus(
  *  actual claim-guard transaction lives in activateBillingOrder so the TAMI
  *  payment callback can share it. */
 export async function confirmBillingOrder(orderId: string): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("confirmBilling")
   if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
 
   // Sunucu tarafı guard (UI zaten kartlı siparişte butonu gizliyor ama tek
@@ -222,8 +222,8 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
 
   const result = await activateBillingOrder(orderId, {
     actor: "admin",
-    confirmedByEmail: admin.email,
-    actorUserId: admin.id,
+    confirmedByEmail: ctx.user.email,
+    actorUserId: ctx.user.id,
   })
   if (!result.ok) return result
   revalidatePath("/admin", "layout")
@@ -236,7 +236,7 @@ export async function confirmBillingOrder(orderId: string): Promise<Result> {
  *  automated callback and the manual havale confirm, so this can never
  *  double-activate an already-confirmed order. */
 export async function retryStuckActivation(transactionId: string): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("confirmBilling")
   if (!transactionId) return { ok: false, error: "İşlem seçilmedi." }
 
   const txn = await prisma.paymentTransaction.findUnique({ where: { id: transactionId } })
@@ -260,7 +260,7 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
     if (claimed.count > 0) {
       await AuditLogAction(
         txn.workshopId,
-        admin.id,
+        ctx.user.id,
         "PaymentTransaction",
         transactionId,
         "payment_activation_retried",
@@ -277,8 +277,8 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
 
   const activation = await activateBillingOrder(txn.billingOrderId, {
     actor: "admin",
-    confirmedByEmail: admin.email,
-    actorUserId: admin.id,
+    confirmedByEmail: ctx.user.email,
+    actorUserId: ctx.user.id,
   })
 
   if (activation.ok) {
@@ -289,7 +289,7 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
     if (claimed.count > 0) {
       await AuditLogAction(
         txn.workshopId,
-        admin.id,
+        ctx.user.id,
         "PaymentTransaction",
         transactionId,
         "payment_activation_retried",
@@ -321,7 +321,7 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
       if (claimed.count > 0) {
         await AuditLogAction(
           txn.workshopId,
-          admin.id,
+          ctx.user.id,
           "PaymentTransaction",
           transactionId,
           "payment_activation_retried",
@@ -335,7 +335,7 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
     // İptal (veya beklenmedik başka bir durum): txn callback_received'da bırakılır.
     await AuditLogAction(
       txn.workshopId,
-      admin.id,
+      ctx.user.id,
       "PaymentTransaction",
       transactionId,
       "payment_activation_retry_blocked",
@@ -354,7 +354,7 @@ export async function retryStuckActivation(transactionId: string): Promise<Resul
 
 /** Cancel a pending order (e.g. havale never arrived). */
 export async function cancelBillingOrder(orderId: string): Promise<Result> {
-  const admin = await requireAdmin()
+  const ctx = await requireAdminCapability("confirmBilling")
   if (!orderId) return { ok: false, error: "Sipariş seçilmedi." }
   const order = await prisma.billingOrder.findUnique({ where: { id: orderId }, select: { id: true, status: true, workshopId: true, method: true } })
   if (!order) return { ok: false, error: "Sipariş bulunamadı." }
@@ -382,7 +382,7 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
     data: { status: "cancelled" },
   })
   if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
-  await AuditLogAction(order.workshopId, admin.id, "BillingOrder", orderId, "billing_order_cancelled")
+  await AuditLogAction(order.workshopId, ctx.user.id, "BillingOrder", orderId, "billing_order_cancelled")
   revalidatePath("/admin", "layout")
   return { ok: true }
 }

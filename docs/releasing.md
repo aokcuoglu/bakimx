@@ -152,6 +152,16 @@ temizlenmiş bir prod anlık görüntüsüyle beslemeyi düşünün.
 
 ## Admin konsolu erişimi
 
-`/admin`, ortam başına `ADMIN_EMAILS` env değişkeniyle (virgülle ayrılmış)
-kapılıdır — AWS'te task-def env / Secrets üzerinden. Ayarlı değilse `/admin`
-herkese 404 döner. Genel demo hesabını **asla** `ADMIN_EMAILS`'e koymayın.
+`/admin` üyeliği `PlatformAdmin` tablosundadır ve konsoldan yönetilir
+(`/admin/admins`) — yönetici eklemek/çıkarmak **deploy gerektirmez** (BAK-93).
+
+`ADMIN_EMAILS` yalnız iki işi kaldı:
+
+1. **Bootstrap** — tablo boşken (yeni ortam, prod kiracı sıfırlaması sonrası) bu
+   listedeki adresler konsola girebilir ve ilk girişte tabloya `founder` olarak
+   yazılır. Tablo dolduktan sonra env'in bir hükmü yoktur.
+2. **Bildirim alıcısı** — yeni başvuru / canlı destek e-postaları bu adreslere
+   gider. Bu kullanım değişmedi.
+
+Ne tablo ne env doluysa `/admin` herkese 404 döner. Genel demo hesabını **asla**
+`ADMIN_EMAILS`'e koymayın.
