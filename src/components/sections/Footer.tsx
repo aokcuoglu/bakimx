@@ -121,7 +121,7 @@ export function Footer() {
             <p className="text-xs sm:text-sm text-white/50">
               &copy; {currentYear} BakimX. Tüm hakları saklıdır.
             </p>
-            <span className="text-xs text-white/30">
+            <span className="text-xs text-white/60">
               v{process.env.NEXT_PUBLIC_APP_VERSION}
             </span>
           </div>

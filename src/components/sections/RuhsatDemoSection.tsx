@@ -113,7 +113,7 @@ export function RuhsatDemoSection() {
         <SectionHeading
           badge="Canlı Demo"
           title="Ruhsatı okut,"
-          titleHighlight="aracı saniyede tanı."
+          titleHighlight="araç bilgilerini otomatik doldur."
           subtitle="Örnek bir ruhsatla deneyin: araç bilgileri otomatik dolsun, VIN'iyle eşleşen uygun parçalar karşınıza gelsin."
         />
 
@@ -251,7 +251,7 @@ export function RuhsatDemoSection() {
               className="mt-10 flex flex-col items-center gap-3 text-center"
             >
               <p className="text-base font-medium">
-                Kendi aracınızla deneyin — ruhsatı okutun, işi saniyede başlatın.
+                Kendi aracınızla deneyin — ruhsatı okutun, işi araç bilgileriyle başlatın.
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link

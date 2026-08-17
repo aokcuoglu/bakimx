@@ -15,7 +15,7 @@ export function BrandEyebrow({
 }) {
   return (
     <span
-      className={`font-mono text-xs font-medium uppercase tracking-[0.18em] text-brand ${className}`}
+      className={`font-mono text-xs font-medium uppercase tracking-[0.18em] text-foreground ${className}`}
     >
       {children}
     </span>

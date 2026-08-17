@@ -14,7 +14,7 @@ import { BrandEyebrow } from "@/components/shared/brand-decor";
 const differentiators = [
   {
     icon: ScanLine,
-    title: "Ruhsatla saniyede kabul",
+    title: "Ruhsatla otomatik kabul",
     description:
       "Ruhsat fotoğrafından araç, müşteri ve şasi bilgisi yapay zekayla otomatik dolar; elle veri girişi biter.",
   },
