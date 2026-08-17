@@ -26,6 +26,7 @@ import { CustomerSearchOrCreate } from "@/components/customers/customer-search-o
 import { PlateScanner } from "@/components/intake/plate-scanner"
 import { VinScanner } from "@/components/intake/vin-scanner"
 import { RuhsattanOku, type RuhsattanOkuResult } from "@/components/vehicles/ruhsattan-oku"
+import { CrossWorkshopHistoryLoader } from "@/components/vehicles/cross-workshop-history"
 import { useVinResolve } from "@/components/vehicles/vin-resolve"
 import { changeVehicleOwnerAction } from "@/app/(app)/vehicles/actions"
 import { displayCustomerName, type CustomerLite, type UnifiedResult } from "@/lib/search/unified-results"
@@ -36,10 +37,12 @@ import { ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/li
 import {
   ENTRY_METHODS,
   entryStepLabels,
+  identityConflicts,
   previousEntryStep,
   vehicleFieldError,
   type EntryMethod,
   type EntryStep,
+  type IdentityConflict,
 } from "@/lib/intake/entry-wizard"
 
 type VehicleResult = Extract<UnifiedResult, { kind: "vehicle" }>
@@ -88,6 +91,9 @@ export function VehicleEntryWizard({
   const [showDetails, setShowDetails] = useState(false)
   const [catalogIds, setCatalogIds] = useState<{ brandId?: number; modelId?: number; vehicleTypeId?: number }>({})
   const [duplicate, setDuplicate] = useState<VehicleResult | null>(null)
+  // Ruhsattan okunan plaka/şase, kullanıcının girdiğinden farklıysa: üzerine
+  // yazılmaz, burada listelenir ve kullanıcı hangisini kullanacağını seçer.
+  const [conflicts, setConflicts] = useState<IdentityConflict[]>([])
 
   // Sahip
   const [owner, setOwner] = useState<{ id: string; label: string } | null>(null)
@@ -102,6 +108,10 @@ export function VehicleEntryWizard({
   const [custVehicles, setCustVehicles] = useState<CustVehicle[]>([])
   const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(null)
   const [scanner, setScanner] = useState<"plate" | "vin" | null>(null)
+  // Ruhsat okuma sayacı. Servisler arası geçmiş kilidi ruhsat taramasıyla açılır
+  // (BAK-77); tarama sunucuda hakkı yazdığı anda paneli yeniden çektirmek için
+  // bu sayaç artar.
+  const [ocrUnlockKey, setOcrUnlockKey] = useState(0)
 
   // Onay
   const [confirmed, setConfirmed] = useState<{ vehicleId: string; customerId: string; label: string; sublabel: string } | null>(null)
@@ -134,6 +144,22 @@ export function VehicleEntryWizard({
 
   function setField(key: keyof VehicleFields, v: string) {
     setFields((prev) => ({ ...prev, [key]: v }))
+    // Alanı elle değiştirmek çakışma sorusunu cevaplar: gösterilen uyarı düşer.
+    if (key === "plate" || key === "vin") setConflicts((prev) => prev.filter((c) => c.key !== key))
+  }
+
+  /** Çakışan alanda ruhsattan okunan değeri kullan. */
+  function applyScannedValue(c: IdentityConflict) {
+    setField(c.key, c.scanned)
+    if (c.key === "vin" && isValidVin(c.scanned)) {
+      void vinResolve.resolve(c.scanned, {
+        engineDisplacement: fields.engineDisplacement || undefined,
+        enginePower: fields.enginePower || undefined,
+        fuelType: fields.fuelType || undefined,
+        firstRegistrationDate: fields.firstRegistrationDate || undefined,
+        modelYear: fields.modelYear ? Number(fields.modelYear) || undefined : undefined,
+      })
+    }
   }
 
   // ——— Dış prefill / geri navigasyon ———
@@ -248,15 +274,25 @@ export function VehicleEntryWizard({
     setStep("confirm")
   }
 
+  /**
+   * Ruhsat OCR sonucunu forma uygular. Ruhsat adımından da (alanlar boş), araç
+   * bilgileri adımından da (kullanıcı plaka/şase girmiş olabilir) çağrılır; bu
+   * yüzden kimlik çakışması burada tek yerde ele alınır.
+   */
   function applyOcr({ values, confidence: conf, owner: ocrOwner }: RuhsattanOkuResult) {
+    // Ruhsat okundu ⇒ sunucu servisler arası geçmiş hakkını yazdı (BAK-77).
+    setOcrUnlockKey((k) => k + 1)
+    const found = identityConflicts({ plate: fields.plate, vin: fields.vin }, { plate: values.plate, vin: values.vin })
+    setConflicts(found)
+    const keep = new Set(found.map((c) => c.key))
     setFields((prev) => ({
       ...prev,
-      plate: values.plate || prev.plate,
+      plate: keep.has("plate") ? prev.plate : values.plate || prev.plate,
       brand: values.brand || prev.brand,
       model: values.model || prev.model,
       vehicleType: ocrVehicleTypeToSlug(values.vehicleType) || prev.vehicleType,
       modelYear: values.modelYear || prev.modelYear,
-      vin: values.vin || prev.vin,
+      vin: keep.has("vin") ? prev.vin : values.vin || prev.vin,
       engineNo: values.engineNo || prev.engineNo,
       firstRegistrationDate: values.registrationDate || prev.firstRegistrationDate,
       commercialName: values.commercialName || prev.commercialName,
@@ -265,16 +301,21 @@ export function VehicleEntryWizard({
       enginePower: values.enginePower || prev.enginePower,
       inspectionValidUntil: values.inspectionValidUntil || prev.inspectionValidUntil,
     }))
+    // Korunan alanın değeri ruhsattan gelmedi; OCR güven skorunu ona yapıştırmak
+    // kullanıcının kendi girdisini "düşük güvenli okuma" gibi sarıya boyardı.
     setConfidence({
-      plate: conf.plate, brand: conf.brand, model: conf.model, vehicleType: conf.vehicleType,
-      modelYear: conf.modelYear, vin: conf.vin, engineNo: conf.engineNo,
+      plate: keep.has("plate") ? undefined : conf.plate,
+      brand: conf.brand, model: conf.model, vehicleType: conf.vehicleType,
+      modelYear: conf.modelYear, vin: keep.has("vin") ? undefined : conf.vin, engineNo: conf.engineNo,
       firstRegistrationDate: conf.registrationDate, commercialName: conf.commercialName,
       fuelType: conf.fuelType, engineDisplacement: conf.engineDisplacement,
       enginePower: conf.enginePower, inspectionValidUntil: conf.inspectionValidUntil,
     })
     if (ocrOwner.label) setOwnerSeed(ocrOwner)
     setShowDetails(true)
-    if (isValidVin(values.vin)) {
+    // Çakışmada kullanıcının şasesi korunuyor; onu zaten girdiği adımda
+    // sorguladık — ruhsattaki farklı şase için kota harcama.
+    if (!keep.has("vin") && isValidVin(values.vin)) {
       void vinResolve.resolve(values.vin, {
         engineDisplacement: values.engineDisplacement || undefined,
         enginePower: values.enginePower || undefined,
@@ -374,6 +415,7 @@ export function VehicleEntryWizard({
     setConfidence({})
     setCatalogIds({})
     setDuplicate(null)
+    setConflicts([])
     setQuery("")
     setResults([])
     setPickedCustomer(null)
@@ -646,6 +688,33 @@ export function VehicleEntryWizard({
             title="Araç bilgileri"
             description="Zorunlu alanlar plaka, marka ve model. Ruhsattan okunan alanlar sarı işaretliyse kontrol edin."
           />
+          {/* Hangi yoldan gelinirse gelinsin (plaka araması, şase, müşteri) ruhsat
+              burada da okutulabilir — alanları elle doldurmak zorunda kalmayın. */}
+          <RuhsattanOku
+            title="Ruhsattan otomatik doldur"
+            description="Ruhsatı kamerayla çekin ya da dosyadan seçin; aşağıdaki alanlar dolsun."
+            onResult={applyOcr}
+          />
+          {conflicts.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+              <p className="flex items-start gap-2 text-sm font-medium text-foreground">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-strong" />
+                Ruhsattan okunan bilgi girdiğinizden farklı — girdiğiniz değer korundu.
+              </p>
+              {conflicts.map((c) => (
+                <div key={c.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-card p-2">
+                  <span className="min-w-0 text-sm">
+                    <span className="font-medium text-foreground">{c.label}:</span>{" "}
+                    <span className="text-muted-foreground">girilen</span> {c.current}{" "}
+                    <span className="text-muted-foreground">· ruhsatta</span> {c.scanned}
+                  </span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => applyScannedValue(c)}>
+                    Ruhsattakini kullan
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           <EntryVehicleFields
             fields={fields}
             onFieldChange={setField}
@@ -670,6 +739,13 @@ export function VehicleEntryWizard({
               </Button>
             </div>
           )}
+          {/*
+            Araç bu atölyede yeni ama BAŞKA servislerde kayıtlı olabilir (BAK-77).
+            Ruhsat okutulmadıysa panel maskeli gelir ve kilidi nasıl açacağını
+            söyler; ruhsat bu oturumda okutulduysa (ocrUnlockKey değişir) maskesiz
+            tazelenir.
+          */}
+          <CrossWorkshopHistoryLoader plate={normalizePlate(fields.plate)} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
             <Button type="button" className="gap-2" onClick={leaveVehicleStep}>
               Devam <ChevronRight className="size-4" />
@@ -752,6 +828,8 @@ export function VehicleEntryWizard({
               </div>
             )}
           </div>
+          {/* Seçilen aracın diğer servislerdeki geçmişi (BAK-77). */}
+          <CrossWorkshopHistoryLoader vehicleId={confirmed.vehicleId} refreshKey={ocrUnlockKey} />
           <WizardActions back={<Button type="button" variant="outline" onClick={restart}>Başka araç seç</Button>}>
             <Button type="button" className="gap-2" onClick={onComplete}>
               Kabul detaylarına geç <ChevronRight className="size-4" />

@@ -3,6 +3,7 @@ import {
   ENTRY_METHODS,
   entryMethodOption,
   entryStepLabels,
+  identityConflicts,
   previousEntryStep,
   vehicleFieldError,
 } from "@/lib/intake/entry-wizard"
@@ -46,6 +47,42 @@ test("vehicleFieldError: boşluk dolu değer boş sayılır", () => {
 
 test("vehicleFieldError: tüm alanlar doluysa null", () => {
   expect(vehicleFieldError({ plate: "34ABC12", brand: "Renault", model: "Clio" })).toBeNull()
+})
+
+test("identityConflicts: boş alanlarda çakışma yok — ruhsat değeri uygulanır", () => {
+  expect(identityConflicts({ plate: "", vin: "" }, { plate: "34ERK34", vin: "WF0MXXGCHMRT73173" })).toEqual([])
+})
+
+test("identityConflicts: ruhsat okunamayan alanı çakışma saymaz", () => {
+  expect(identityConflicts({ plate: "34ERK34", vin: "" }, { plate: "", vin: "" })).toEqual([])
+})
+
+test("identityConflicts: aynı plaka farklı yazımda çakışmaz", () => {
+  expect(identityConflicts({ plate: "34 erk 34", vin: "" }, { plate: "34ERK34", vin: "" })).toEqual([])
+})
+
+test("identityConflicts: farklı plaka bildirilir, kullanıcının değeri korunur", () => {
+  expect(identityConflicts({ plate: "34ERK34", vin: "" }, { plate: "34ERK84", vin: "" })).toEqual([
+    { key: "plate", label: "Plaka", current: "34ERK34", scanned: "34ERK84" },
+  ])
+})
+
+test("identityConflicts: farklı şase bildirilir", () => {
+  const conflicts = identityConflicts(
+    { plate: "", vin: "wf0mxxgchmrt73173" },
+    { plate: "", vin: "WF0MXXGCHMRT73174" }
+  )
+  expect(conflicts).toEqual([
+    { key: "vin", label: "Şase (VIN)", current: "WF0MXXGCHMRT73173", scanned: "WF0MXXGCHMRT73174" },
+  ])
+})
+
+test("identityConflicts: iki alan da çakışırsa ikisi de listelenir", () => {
+  const conflicts = identityConflicts(
+    { plate: "34ERK34", vin: "WF0MXXGCHMRT73173" },
+    { plate: "06ABC12", vin: "WF0MXXGCHMRT73174" }
+  )
+  expect(conflicts.map((c) => c.key)).toEqual(["plate", "vin"])
 })
 
 test("previousEntryStep: ray sırasına göre bir geri gider", () => {

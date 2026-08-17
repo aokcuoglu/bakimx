@@ -7,6 +7,9 @@
  * asla ayrışmasın ve testlenebilsin.
  */
 
+import { normalizePlate } from "@/lib/format"
+import { normalizeVin } from "@/lib/vin/types"
+
 export type EntryMethod = "registration" | "vin" | "plate" | "customer"
 export type EntryStep = "method" | "capture" | "vehicle" | "owner" | "confirm"
 
@@ -83,6 +86,41 @@ export function vehicleFieldError(fields: { plate: string; brand: string; model:
   if (!fields.model.trim()) missing.push("Model")
   if (!missing.length) return null
   return `${missing.join(", ")} zorunludur.`
+}
+
+/**
+ * Ruhsat OCR'ı ile kullanıcının elle girdiği kimlik alanı çakışması.
+ * `current` kullanıcının değeri (korunur), `scanned` ruhsattan okunan.
+ */
+export type IdentityConflict = {
+  key: "plate" | "vin"
+  label: string
+  current: string
+  scanned: string
+}
+
+/**
+ * Kullanıcı sihirbaza plaka araması ya da camdan şase ile girdiyse o değer bir
+ * **kimlik çıpasıdır**: aranan araç odur. Ruhsat OCR'ı aynı adımda farklı bir
+ * plaka/şase okursa (yanlış ruhsat, yanlış hane) sessizce üzerine yazmak iş
+ * emrini başka bir araca bağlar. Bu yüzden çakışma bildirilir, kullanıcı seçer.
+ *
+ * Boş alanda çakışma yoktur — ruhsattan gelen değer doğrudan uygulanır.
+ */
+export function identityConflicts(
+  current: { plate: string; vin: string },
+  scanned: { plate: string; vin: string }
+): IdentityConflict[] {
+  const conflicts: IdentityConflict[] = []
+  const plate = { current: normalizePlate(current.plate), scanned: normalizePlate(scanned.plate) }
+  if (plate.current && plate.scanned && plate.current !== plate.scanned) {
+    conflicts.push({ key: "plate", label: "Plaka", current: current.plate.trim(), scanned: scanned.plate.trim() })
+  }
+  const vin = { current: normalizeVin(current.vin), scanned: normalizeVin(scanned.vin) }
+  if (vin.current && vin.scanned && vin.current !== vin.scanned) {
+    conflicts.push({ key: "vin", label: "Şase (VIN)", current: vin.current, scanned: vin.scanned })
+  }
+  return conflicts
 }
 
 /**

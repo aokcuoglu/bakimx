@@ -89,20 +89,52 @@ dosyalarıydı, bir doküman filtresi tam da yakalaması gereken sınıfı kaç�
 Ayrıca `push` olayında workflow'un **pushlanan commit'teki** sürümü çalışır, yani
 guard'ı aynı doğrudan push'ta silen biri yakalanmaz.
 
-### 2.4 PR'sız commit prod'a çıkamaz
+### 2.4 PR'sız commit dev veya prod'a çıkamaz
 
 Alarm haber verir, kapı durdurur:
+[`deploy-dev-aws.yml`](../../.github/workflows/deploy-dev-aws.yml) ve
 [`deploy-prod-aws.yml`](../../.github/workflows/deploy-prod-aws.yml) içindeki
-`pr-origin` job'ı, `deploy`'un `needs`'inde. `main`'e gelen commit bir merged PR'a
-bağlı değilse prod deploy **başlamadan düşer** (alpkaan onayı, 2026-08-15).
+`pr-origin` job'ları, kendi `deploy` job'larının `needs`'inde. `dev` veya `main`'e
+gelen commit bir merged PR'a bağlı değilse ilgili deploy **başlamadan düşer**
+(alpkaan onayı, 2026-08-15; BAK-59 ve BAK-62).
 
-Bu da dalı korumaz — commit `main`'de kalır, yalnız ship edilmez. Ve bilinçli bir
-kaçış yolu var: `if` job seviyesinde değil **adım** seviyesindedir, yani
+Bu da dalları korumaz — commit `dev` veya `main`'de kalır, yalnız ship edilmez.
+Ve bilinçli bir kaçış yolu var: `if` job seviyesinde değil **adım** seviyesindedir, yani
 `workflow_dispatch` ile elle çalıştırıldığında job sıfır adımla yeşil geçer.
 Gerçek bir hotfix'te prod'a çıkmanın hiçbir yolunun kalmaması kapının kendisinden
 büyük risk; elle çalıştırma zaten iz bırakır (kim başlattı Actions'ta görünür) ve
 `main-push-guard` yine kırmızıdır. `if`'i job seviyesine taşıma: o zaman dispatch
 sırasında job *skipped* olur ve ona bağlı `deploy` da atlanır.
+
+### 2.5 Release merge'ünde `dev`'i SİLME — silinirse otomatik geri gelir
+
+15-08'de release PR'ı ([#364](https://github.com/aokcuoglu/bakimx/pull/364),
+`dev -> main`) merge edilirken head dalı **elle** silindi. Repo ayarı suçlu
+değil: `delete_branch_on_merge` zaten `false`; silme merge ekranındaki "Delete
+branch" düğmesine basılmasıydı. `dev` bir issue dalı değil, **kalıcı entegrasyon
+dalıdır** — release'den sonra da yaşamaya devam eder.
+
+Bedeli tek bir dal kaydından ibaret değildi, zincirleme oldu:
+
+- ajanlar dallanacak tabanı kaybetti (`issue/*` dalları `origin/dev`'den açılır),
+- `deploy-dev-aws.yml` (`push: dev`) bir daha tetiklenemez hale geldi, yani
+  `app-dev.bakimx.com` deploy alamaz oldu,
+- `sync-main-to-dev.yml` aynı dakikada düştü (18:44, `a95f453`):
+  `actions/checkout` `ref: dev` bulamadı.
+
+İçerik kaybı olmadı — release `dev`'i `main`'e merge ettiği için `main`'in ağacı
+`dev`'in son commit'iyle (`42467e3`) byte-byte aynıydı; dal `main`'den geri
+yaratıldı.
+
+Sunucu tarafında silmeyi engelleyemiyoruz (§2: branch protection 403). Yerine
+[`dev-branch-guard.yml`](../../.github/workflows/dev-branch-guard.yml) kondu:
+`delete` olayında `dev`'i `main`'den yeniden yaratır ve olay sessiz kalmasın diye
+bir issue açar. Dal bu arada elle geri açılmışsa **dokunmaz** (üzerine yazmak o
+commit'leri düşürürdü).
+
+Dürüst ol: bu **engelleme değil, onarımdır**. Silme gerçekleşir; workflow olaydan
+sonra çalışır. Silme ile geri gelme arasındaki kısa pencerede açılmış bir PR
+hedefini kaybedebilir. Kural hâlâ geçerli: release merge'ünde o düğmeye basma.
 
 ## 3. Şema ve onu kullanan kod aynı PR'da gider
 

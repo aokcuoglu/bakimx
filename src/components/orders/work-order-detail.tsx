@@ -59,11 +59,12 @@ import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
-import { STANDARD_TAX_BPS } from "@/lib/orders/price-tax-mode"
+import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
 import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
 import { findUnpricedItems } from "@/lib/orders/pricing-guard"
+import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cross-links"
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
@@ -378,10 +379,13 @@ export function WorkOrderDetail({
   }
 
   /**
-   * #311 — kalem düzenleyicisinde "KDV dahil" kipine geçen kullanıcı, iş emrinde
-   * KDV oranı tanımlı değilse tek tıkla standart %20'yi uygular. Diğer meta
-   * alanları KAYITLI değerlerinden gönderilir (metaDraft'tan değil): açık ama
-   * kaydedilmemiş bir fiyatlandırma düzenlemesi bu tıkla sessizce kalıcılaşmasın.
+   * BAK-75 — bir kalemin KDV tick'i açıldığında iş emrinde KDV oranı tanımlı
+   * değilse standart %20 buradan yazılır. Oran olmadan tick tek başına işe
+   * yaramaz: satırda "+₺20,00 KDV" yazarken Genel Toplam'a hiç KDV girmez.
+   *
+   * Diğer meta alanları KAYITLI değerlerinden gönderilir (metaDraft'tan değil):
+   * açık ama kaydedilmemiş bir fiyatlandırma düzenlemesi bu tıkla sessizce
+   * kalıcılaşmasın.
    */
   async function applyStandardTaxRate() {
     setLoading(true)
@@ -650,7 +654,11 @@ export function WorkOrderDetail({
   // Teslimden sonra kalemler kilitlenir, fiyat bir daha girilemez; bu yüzden
   // fiyatsız kalem varken teslim aksiyonu kapalı (asıl engel sunucuda).
   const unpricedItems = findUnpricedItems(order.items)
-  const deliveryBlocked = unpricedItems.length > 0
+  // Karar bekleyen parça talebi hem "Teslime Hazır"ı hem teslimi kapatır: müşteriye
+  // "hazır" denirken ya da araç çıkarken açık parça sorusu kalmasın (BAK-85).
+  const undecidedRequests = findUndecidedPartsRequests(order.partsRequests)
+  const partsDecisionBlocked = undecidedRequests.length > 0
+  const deliveryBlocked = unpricedItems.length > 0 || partsDecisionBlocked
 
   // Header aksiyonları eski orders akışı (order durum makinesi). Teslim adımı
   // OTP akışını tetikler (müşteri onaylı teslim); verify hem intake hem order'ı
@@ -662,7 +670,9 @@ export function WorkOrderDetail({
     onClick: a.key === "delivered" ? handleRequestDeliveryOtp : () => changeStatus(a.key),
     tone: a.key === "cancelled" ? "danger" : a.primary ? "primary" : "secondary",
     icon: ORDER_ACTION_ICONS[a.key],
-    disabled: a.key === "delivered" && deliveryBlocked,
+    disabled:
+      (a.key === "delivered" && deliveryBlocked) ||
+      (a.key === "ready_for_delivery" && partsDecisionBlocked),
   }))
 
   const damagePhotos = intake.photos.filter((p) => p.type === "damage_detail")
@@ -734,7 +744,7 @@ export function WorkOrderDetail({
       {/* Teslim adımında fiyatsız kalem varsa: başlıktaki teslim butonu pasif,
           gerekçe ve çıkış yolu burada. Yalnız teslim adımında gösterilir —
           önceki adımlarda fiyat henüz beklenen bir eksik değil. */}
-      {deliveryBlocked && order.status === "ready_for_delivery" && (
+      {unpricedItems.length > 0 && order.status === "ready_for_delivery" && (
         <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
           <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
           <div className="min-w-0 space-y-1">
@@ -746,6 +756,29 @@ export function WorkOrderDetail({
             <p className="text-muted-foreground text-xs">Teslim için tüm kalemlere fiyat girin (0 TL girilebilir).</p>
             <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
               Parça sekmesinde tamamla
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Karar bekleyen parça talebi: fiyat uyarısından farklı olarak teslim
+          adımından ÖNCE de gösterilir — "Teslime Hazır"ı da kapatan engel budur,
+          kullanıcı o düğmeyi pasif bulmadan önce nedenini görsün. */}
+      {partsDecisionBlocked && !orderLocked && (
+        <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm flex items-start gap-2">
+          <TriangleAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
+          <div className="min-w-0 space-y-1">
+            <p className="font-medium">{undecidedRequests.length} parça talebi karar bekliyor.</p>
+            <p className="text-muted-foreground truncate">
+              {undecidedRequests.slice(0, 2).map((r) => r.partName).join(", ")}
+              {undecidedRequests.length > 2 && `, +${undecidedRequests.length - 2}`}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Her talebi ya kaleme ekleyin ya da iptal edin; karar verilmeden iş emri teslime
+              hazırlanamaz ve teslim edilemez.
+            </p>
+            <Button variant="outline" onClick={() => handleTabChange("parca")} className="mt-1">
+              Parça sekmesinde karar ver
             </Button>
           </div>
         </div>
@@ -912,6 +945,7 @@ export function WorkOrderDetail({
             technicians={technicians}
             onRequestDelivery={handleRequestDeliveryOtp}
             deliveryBlocked={deliveryBlocked}
+            partsDecisionBlocked={partsDecisionBlocked}
           />
 
           {/* Şikayet & Notlar (düzenlenebilir) */}

@@ -29,8 +29,20 @@ export type SafeIntakeData = {
   photos: { id: string; type: string; label: string; fileUrl: string | null; phase: string }[]
   damageMarks: { zone: string; zoneLabel: string; damageType: string; damageTypeLabel: string; severity: string; severityLabel: string; severityColor: string; note: string | null }[]
   approvals: { status: string; approvedAt: Date | null }[]
-  order: { status: string; statusLabel: string; paymentStatusLabel: string; items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[] } | null
-  timeline: { eventType: string; description: string; createdAt: Date }[]
+  /**
+   * `discountAmount` (kuruş) ve `taxRate` (bps) müşteri belgesinin kırılımını
+   * besler; kalemdeki `includeVat` hangi satırın KDV'ye tabi olduğunu söyler.
+   * Üçü de tutar bilgisidir — `showOrderItems` kapalıyken kalemlerle birlikte
+   * düşer (bkz. `showMoney`).
+   */
+  order: {
+    status: string
+    statusLabel: string
+    paymentStatusLabel: string
+    discountAmount: number | null
+    taxRate: number | null
+    items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; includeVat: boolean | null }[]
+  } | null
 }
 
 const NEVER_PUBLIC_FIELDS = [
@@ -77,16 +89,16 @@ export function sanitizeIntakeForPublic(
     order: {
       status: string
       paymentStatus?: string
-      items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null }[]
+      discountAmount?: number | null
+      taxRate?: number | null
+      items: { type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; includeVat?: boolean | null }[]
     } | null
-    timelineEvents?: { eventType: string; description: string; createdAt: Date }[]
   },
   visibility: {
     showPhotos?: boolean
     showDamage?: boolean
     showOrderItems?: boolean
     showPaymentStatus?: boolean
-    showTimeline?: boolean
   } = {}
 ): SafeIntakeData {
   void NEVER_PUBLIC_FIELDS
@@ -132,28 +144,21 @@ export function sanitizeIntakeForPublic(
         paymentStatusLabel: (visibility.showPaymentStatus && intake.order.paymentStatus)
           ? PAYMENT_STATUS[intake.order.paymentStatus as keyof typeof PAYMENT_STATUS]?.label || intake.order.paymentStatus
           : "",
+        discountAmount: showMoney ? intake.order.discountAmount ?? null : null,
+        taxRate: showMoney ? intake.order.taxRate ?? null : null,
         items: intake.order.items.map((i) => ({
           type: i.type,
           name: i.name,
           quantity: i.quantity,
           unitPrice: showMoney ? i.unitPrice : null,
           totalPrice: showMoney ? i.totalPrice : null,
+          // Bayrak aynen taşınır: düşerse `isVatLiable` satırı TABİ sayar
+          // (null/undefined → tabi) ve müşteri belgesi KDV'siz bir kalemden de
+          // KDV alır — ekrandaki iş emriyle tutmaz.
+          includeVat: i.includeVat ?? null,
         })),
       }
     : null
-
-  // Internal-only events must never appear in the public share (mirrors the
-  // passport sanitizer): internal notes and labor-session start/stop events.
-  const internalEventTypes = ["internal_note_added", "labor_session_started", "labor_session_stopped", "parts_request_converted", "order_reopened"]
-  const timeline = (visibility.showTimeline !== false && intake.timelineEvents)
-    ? intake.timelineEvents
-        .filter((e) => !internalEventTypes.includes(e.eventType))
-        .map((e) => ({
-          eventType: e.eventType,
-          description: e.description,
-          createdAt: e.createdAt,
-        }))
-    : []
 
   return {
     status: intake.status,
@@ -169,7 +174,6 @@ export function sanitizeIntakeForPublic(
     damageMarks,
     approvals: intake.approvals,
     order,
-    timeline,
   }
 }
 
@@ -221,6 +225,5 @@ export function escapeIntakeForHtml(data: SafeIntakeData): SafeIntakeData {
           items: data.order.items.map((i) => ({ ...i, name: escapeHtml(i.name) })),
         }
       : null,
-    timeline: data.timeline.map((e) => ({ ...e, description: escapeHtml(e.description) })),
   }
 }

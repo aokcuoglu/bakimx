@@ -105,7 +105,10 @@ export function RuhsatDemoSection() {
   }, [clearTimers]);
 
   return (
-    <section id="ruhsat-demo" className="py-16 sm:py-24 bg-muted/30 overflow-x-clip">
+    <section
+      id="ruhsat-demo"
+      className="scroll-mt-24 py-16 sm:py-24 bg-muted/30 overflow-x-clip"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           badge="Canlı Demo"

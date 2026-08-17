@@ -60,6 +60,7 @@ export type AdminCapability =
   | "manageFlags"
   | "exportData"
   | "manageCatalog"
+  | "manageLiveChat"
 
 export interface AdminContext {
   user: AuthUser

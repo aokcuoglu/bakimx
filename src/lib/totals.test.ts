@@ -1,5 +1,5 @@
 import { describe, expect, it, test } from "bun:test"
-import { calculateOrderTotals, calculateOrderTotalsFromMinimal, formatOrderSummary } from "@/lib/totals"
+import { calculateOrderTotals, calculateOrderTotalsFromMinimal, formatOrderSummary, formatTaxRate } from "@/lib/totals"
 
 // Money is integer kuruş; taxRate is bps (2000 = %20).
 
@@ -55,6 +55,42 @@ test("formatOrderSummary dış işçilik toplamını biçimler, yoksa —", () =
   expect(withExt.externalLaborTotal).not.toBe("—")
   const without = formatOrderSummary([{ type: "part", name: "Y", quantity: 1, unitPrice: 6000, totalPrice: null }])
   expect(without.externalLaborTotal).toBe("—")
+})
+
+/**
+ * Kırılım bayrakları — müşteri belgesi (Araç Kabul ve İşlem Özeti) İndirim ve
+ * KDV satırlarını bunlara bakarak basar.
+ */
+describe("formatOrderSummary kırılım bayrakları", () => {
+  const akü = (includeVat?: boolean) => ({
+    type: "part", name: "Akü", quantity: 4, unitPrice: 10000, totalPrice: null, includeVat,
+  })
+
+  test("KDV oranı ve tabi kalem varsa hasTax açılır", () => {
+    const s = formatOrderSummary([akü(true)], { taxRate: 2000 })
+    expect(s.hasTax).toBe(true)
+    expect(s.taxRate).toBe(2000)
+    expect(s.taxAmount).toBe("₺80,00")
+    expect(s.grandTotal).toBe("₺480,00")
+  })
+
+  test("oran tanımlı ama tabi kalem yoksa hasTax kapalı — '₺0,00 KDV' basılmaz", () => {
+    const s = formatOrderSummary([akü(false)], { taxRate: 2000 })
+    expect(s.hasTax).toBe(false)
+    expect(s.grandTotal).toBe("₺400,00")
+  })
+
+  test("indirim yalnız sıfırdan büyükken satır ister", () => {
+    expect(formatOrderSummary([akü(true)], { discountAmount: 0 }).hasDiscount).toBe(false)
+    expect(formatOrderSummary([akü(true)], { discountAmount: 5000 }).hasDiscount).toBe(true)
+  })
+})
+
+test("formatTaxRate bps'i yüzdeye çevirir, kesirli oranı virgülle yazar", () => {
+  expect(formatTaxRate(2000)).toBe("%20")
+  expect(formatTaxRate(1000)).toBe("%10")
+  expect(formatTaxRate(0)).toBe("%0")
+  expect(formatTaxRate(2050)).toBe("%20,50")
 })
 
 /**

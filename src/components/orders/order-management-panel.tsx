@@ -210,9 +210,9 @@ export function PartsLaborCard({
   onLoading: (b: boolean) => void
   loading: boolean
   laborCatalog: LaborCatalogRow[]
-  /** İş emrinin KDV oranı (bps) — kalem tutarlarının KDV dahil gösterimi için (#311). */
+  /** İş emrinin KDV oranı (bps) — satır KDV notunun oranı (BAK-75). */
   taxRateBps?: number | null
-  /** KDV oranı tanımsızken standart %20'yi iş emrine uygular. */
+  /** Bir satırın KDV tick'i açılırken oran tanımsızsa standart %20'yi iş emrine yazar. */
   onApplyStandardTax?: () => void
 }) {
   return (

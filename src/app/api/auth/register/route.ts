@@ -107,6 +107,13 @@ export async function POST(request: Request) {
     // İş yeri giriş kodu çakışırsa (aynı isimli ikinci atölye) sonraki adayla
     // sınırlı sayıda yeniden dene — checkout'takiyle aynı P2002 deseni.
     const createWorkshopWithLoginCode = async () => {
+      // Parse working days for settings
+      const workingDaysArr = data.workingDays
+        ? data.workingDays.split(",").map((d) => parseInt(d, 10))
+        : [1, 2, 3, 4, 5, 6]
+      const weekdayDays = workingDaysArr.filter((d) => d >= 1 && d <= 5).join(",")
+      const weekendDays = workingDaysArr.filter((d) => d === 0 || d === 6).join(",")
+
       for (let attempt = 0; attempt < MAX_LOGIN_CODE_RETRIES; attempt++) {
         const loginCode = workshopCodeCandidate(data.workshopName, attempt)
         try {
@@ -117,8 +124,12 @@ export async function POST(request: Request) {
                 name: data.workshopName,
                 phone: data.phone,
                 city: data.city,
+                district: data.district || null,
                 address: data.address,
-                email: data.email,
+                email: data.workshopEmail || data.email,
+                taxOffice: data.taxOffice || null,
+                taxNumber: data.taxNumber || null,
+                invoiceTitle: data.invoiceTitle || null,
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",
@@ -126,7 +137,16 @@ export async function POST(request: Request) {
                 trialStartedAt: null,
                 trialEndsAt: null,
                 planTier: "pro",
-                settings: { create: {} },
+                settings: {
+                  create: {
+                    weekdayStart: data.weekdayStart || "09:00",
+                    weekdayEnd: data.weekdayEnd || "18:00",
+                    weekdayWorkingDays: weekdayDays || "1,2,3,4,5",
+                    weekendStart: data.weekdayStart || "09:00",
+                    weekendEnd: data.weekdayEnd || "18:00",
+                    weekendWorkingDays: weekendDays || "",
+                  },
+                },
               },
             })
 
@@ -141,6 +161,19 @@ export async function POST(request: Request) {
                 role: "owner",
               },
             })
+
+            // Create initial team members (technicians) if provided
+            if (data.teamMembers && data.teamMembers.length > 0) {
+              await tx.technician.createMany({
+                data: data.teamMembers.map((m) => ({
+                  workshopId: ws.id,
+                  fullName: m.fullName,
+                  phone: "",
+                  role: m.role,
+                })),
+              })
+            }
+
             return ws
           })
         } catch (err) {

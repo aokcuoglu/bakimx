@@ -1,0 +1,107 @@
+name: Dev branch guard
+
+# `dev` silinirse otomatik geri getirir.
+#
+# NEDEN: 2026-08-15'te release PR'ı (#364, dev -> main) merge edilirken head dalı
+# elle silindi. Repo ayarı suçlu değil — `delete_branch_on_merge` zaten `false`;
+# silme merge ekranındaki "Delete branch" düğmesiyle tek seferlik bir insan
+# hareketiydi. Sonuç zincirleme oldu:
+#   - `dev` yok olduğu için tüm ajanlar dallanacak taban kaybetti,
+#   - `deploy-dev-aws.yml` (push: dev) bir daha tetiklenemez hale geldi,
+#   - `sync-main-to-dev.yml` aynı dakikada `failure` ile düştü (18:44, a95f453):
+#     `actions/checkout` `ref: dev` bulamadı.
+#
+# NEDEN SUNUCU TARAFI KORUMA DEĞİL: branch protection ve rulesets bu hesapta
+# 403 döner (private repo + Free plan). BAK-57'de Pro bütçe nedeniyle alınmadı;
+# `main`/`dev`'in korumasızlığı kabul edilmiş bir risk. Bkz.
+# docs/agent-workflows/repo-guardrails.md §2. Bu workflow o boşluğu kapatmaz,
+# yalnız EN PAHALI sonucunu — dalın yokluğunu — saniyeler içinde geri alır.
+#
+# DÜRÜSTLÜK NOTU: bu bir engelleme değil, ONARIMDIR. Silme gerçekleşir; workflow
+# olaydan sonra çalışır ve dalı yeniden yaratır. Silme ile geri gelme arasında
+# kısa bir pencere vardır ve o pencerede açılmış bir PR hedefini kaybedebilir.
+#
+# `delete` olayı her zaman VARSAYILAN DALDAKİ (main) workflow sürümünü çalıştırır
+# — silinen dalın içeriğine bakmaz. Bu yüzden `dev` yokken de çalışabilir.
+on:
+  delete
+
+# Art arda iki silme olayı iki onarımı aynı anda koşturmasın.
+concurrency:
+  group: dev-branch-guard
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    # Yalnız `dev` DALI silindiğinde; etiket silmeleri ve issue/feature dalları
+    # (silinmeleri normal teslimat temizliğidir) buraya hiç girmez.
+    if: github.event.ref_type == 'branch' && github.event.ref == 'dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # dalı geri push etmek için
+      issues: write # kalıcı iz bırakmak için
+
+    steps:
+      - name: Checkout main (full history)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Recreate dev from main
+        id: restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Yarış koşulu: birisi bu arada `dev`'i elle geri açmış olabilir.
+          # Varsa DOKUNMA — üzerine yazmak o kişinin commit'lerini düşürürdü.
+          if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+            echo "dev zaten mevcut — onarım gereksiz, hiçbir şey yapılmadı."
+            echo "restored=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # `main` doğru taban: release akışı `dev`'i `main`'e merge eder, yani
+          # silinme anında `main` `dev`'in içeriğini zaten taşıyor. 2026-08-15'te
+          # bu doğrulandı — main'in ağacı dev'in son commit'iyle byte-byte aynıydı.
+          SHA="$(git rev-parse origin/main)"
+          git push origin "$SHA:refs/heads/dev"
+
+          echo "restored=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "dev, main'den ($SHA) yeniden oluşturuldu."
+
+      - name: Open an issue so the deletion is not silent
+        if: steps.restore.outputs.restored == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Gövde bir dosyaya yazılır: heredoc'u doğrudan `gh`'a boru etmek YAML
+          # blok skalerinden taşıyor (satırlar sütun 0'a inince `run:` bloğu biter).
+          cat > /tmp/dev-guard-issue.md <<'BODY'
+          `dev` dalı silindi; **Dev branch guard** workflow'u onu `main`'den yeniden oluşturdu.
+
+          Bu bir bildirimdir, hata raporu değil — dal geri geldi ve içerik kaybı yok
+          (release akışında `main` zaten `dev`'in içeriğini taşır).
+
+          **Kontrol edilmesi gereken:**
+
+          - Silme bir `dev -> main` release merge'ünde "Delete branch" düğmesine
+            basılarak mı oldu? Öyleyse bir sonraki release'de basmayın — `dev`
+            kalıcı bir dal, issue dalı değil.
+          - Silme ile onarım arasındaki kısa pencerede açılmış bir PR varsa hedef
+            dalını doğrulayın.
+          - `sync-main-to-dev` o dakikada düştüyse yeniden çalıştırın.
+
+          Arka plan: `docs/agent-workflows/repo-guardrails.md` §2.5
+          BODY
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "dev dalı silindi ve otomatik geri getirildi" \
+            --body-file /tmp/dev-guard-issue.md \
+            || echo "::warning::Issue açılamadı; onarım yine de başarılı."

@@ -2,27 +2,31 @@
 
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
-import { bpsToPercent, parseTRYToKurus } from "@/lib/money"
+import { bpsToPercent } from "@/lib/money"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, StickyNote, Timer,
-  Trash2, Send,
+  Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
 } from "lucide-react"
 import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
-import { BottomSheet } from "@/components/shared/bottom-sheet"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { OrderChecklist, useChecklistState } from "@/components/technician/order-checklist"
 import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
+import { PartCard } from "@/components/parts/part-card"
+import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
+import {
+  AddPurchaseButton,
+  EditPurchaseButton,
+  type SupplierInfo,
+  type TechnicianInfo,
+} from "@/components/technician/purchase-form-sheet"
 import {
   ORDER_STATUS,
   fuelTypeLabel, transmissionLabel,
@@ -39,12 +43,14 @@ import {
   type TechnicianPartsRequest,
 } from "@/components/technician/parts-request-section"
 import { isOrderLocked } from "@/lib/status-transitions"
+import { purchaseDeleteDecision, type PurchaseDeleteDecision } from "@/lib/orders/purchase-delete"
+import { removePurchaseItemAction } from "@/app/(app)/orders/actions"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
-import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { partNameWithBrand } from "@/lib/ocr/part-box-result"
-import type { PartBoxOcrResult, PartNumberSuggestion } from "@/lib/ocr/types"
-import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/ocr/types"
 import { workOrderPath } from "@/lib/technician/cross-links"
 import {
   countRemainingChecklist,
@@ -82,7 +88,7 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
+  items: { id: string; type: string; name: string; sku: string | null; brand: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; tecdocArticleId: number | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
   // engineDisplacement/enginePower/firstRegistrationDate: parça kataloğu
   // bileşenlerinin beklediği PickerVehicle alanları (araç varyantı ipuçları).
@@ -99,25 +105,17 @@ type OrderData = {
   vehicleId: string
 }
 
-type TechnicianInfo = {
-  id: string
-  fullName: string
-  role: string
-}
-
-type SupplierInfo = {
-  id: string
-  name: string
-}
-
 export function TechnicianOrderDetail({
   order,
   technicians,
   suppliers,
+  canEditOrder,
 }: {
   order: OrderData
   technicians: TechnicianInfo[]
   suppliers: SupplierInfo[]
+  /** Kullanıcı `order.edit` taşıyor mu — dış alım silme kuralının ikinci ekseni. */
+  canEditOrder: boolean
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -164,6 +162,24 @@ export function TechnicianOrderDetail({
   const afterPhotos = galleryPhotos.filter((p) => p.phase === "delivery")
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
+
+  // Dış alım silme/düzenleme kuralı (BAK-83, BAK-84) sunucudaki action ile AYNI
+  // fonksiyondan okunur; butonlar yalnız gerçekten izinliyken çıkar, aksi halde
+  // gerekçe yazılır.
+  const purchaseDelete = purchaseDeleteDecision(order.status as OrderStatus, canEditOrder)
+
+  // Parça arayan bileşenlerin (talep kutusu, dış alım formu) beklediği araç
+  // özeti — iki bölüm de aynı katalog kapsamını görsün diye tek yerde kurulur.
+  const pickerVehicle: PickerVehicle = {
+    id: order.vehicle.id,
+    catalogVehicleTypeId: order.vehicle.catalogVehicleTypeId,
+    vin: order.vehicle.vin,
+    modelYear: order.vehicle.modelYear,
+    engineDisplacement: order.vehicle.engineDisplacement,
+    enginePower: order.vehicle.enginePower,
+    fuelType: order.vehicle.fuelType,
+    firstRegistrationDate: order.vehicle.firstRegistrationDate,
+  }
 
   // `draft` ve `waiting_parts` dahil: güncel akışta emirler draft'tan doğrudan
   // in_progress'e geçiyor (approved artık üretilmiyor, bkz. status-transitions.ts),
@@ -364,16 +380,7 @@ export function TechnicianOrderDetail({
 
       <PartsRequestSection
         orderId={order.id}
-        vehicle={{
-          id: order.vehicle.id,
-          catalogVehicleTypeId: order.vehicle.catalogVehicleTypeId,
-          vin: order.vehicle.vin,
-          modelYear: order.vehicle.modelYear,
-          engineDisplacement: order.vehicle.engineDisplacement,
-          enginePower: order.vehicle.enginePower,
-          fuelType: order.vehicle.fuelType,
-          firstRegistrationDate: order.vehicle.firstRegistrationDate,
-        }}
+        vehicle={pickerVehicle}
         requests={order.partsRequests}
         locked={locked}
       />
@@ -385,12 +392,20 @@ export function TechnicianOrderDetail({
             Dışarıdan Alınan Parçalar
           </h3>
         </div>
-        <PurchasedItemsSection items={purchasedItems} />
+        <PurchasedItemsSection
+          items={purchasedItems}
+          orderId={order.id}
+          vehicle={pickerVehicle}
+          suppliers={suppliers}
+          technicians={technicians}
+          deleteDecision={purchaseDelete}
+        />
         {locked ? (
           <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine parça eklenemez</p>
         ) : (
           <AddPurchaseButton
             orderId={order.id}
+            vehicle={pickerVehicle}
             suppliers={suppliers}
             technicians={technicians}
             defaultTechnicianId={order.assignedTechnicianId}
@@ -715,389 +730,153 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
   )
 }
 
-function PurchasedItemsSection({ items }: { items: OrderData["items"] }) {
+/**
+ * Dış alım listesi — projenin ortak PARÇA KARTINI kullanır (BAK-84), yani
+ * "Parça Talepleri" bölümüyle aynı yerleşim: ad + miktar, altında mono parça
+ * numarası ve marka, sağda tutar, altta tarih/kaynak ve aksiyonlar.
+ *
+ * Düzenleme ve silme AYNI kapıdan geçer (`purchaseDeleteDecision`): kalemi
+ * silemeyen roller onu değiştiremez de — ikisi de kalemin kimliğini bozar.
+ */
+function PurchasedItemsSection({
+  items,
+  orderId,
+  vehicle,
+  suppliers,
+  technicians,
+  deleteDecision,
+}: {
+  items: OrderData["items"]
+  orderId: string
+  vehicle: PickerVehicle
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  deleteDecision: PurchaseDeleteDecision
+}) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground/70">Henüz dışarıdan alınan parça yok.</p>
   }
   return (
     <div className="space-y-2">
       {items.map((item) => (
-        <div
+        <PartCard
           key={item.id}
-          className="flex items-start justify-between gap-2 py-2 px-3 rounded-lg bg-muted border border-border"
-        >
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-            <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-              {item.supplierName ? `${item.supplierName} · ` : ""}
-              {item.quantity} adet
-              {item.purchasedAt ? ` · ${new Date(item.purchasedAt).toLocaleDateString("tr-TR")}` : ""}
-            </p>
-          </div>
-          {item.purchasePriceKurus != null && (
-            <span className="text-sm font-semibold text-foreground shrink-0">
-              {formatTRY(item.purchasePriceKurus)}
-            </span>
-          )}
-        </div>
+          name={item.name}
+          quantity={item.quantity}
+          partNo={item.sku}
+          brand={item.brand}
+          badge={
+            item.purchasePriceKurus != null ? (
+              <span className="text-sm font-semibold text-foreground">
+                {formatTRY(item.purchasePriceKurus)}
+              </span>
+            ) : null
+          }
+          meta={
+            <>
+              {item.supplierName || "Tedarikçi belirtilmedi"}
+              {item.purchasedAt && ` · ${new Date(item.purchasedAt).toLocaleDateString("tr-TR")}`}
+              {item.tecdocArticleId != null && " · Katalog parçası"}
+            </>
+          }
+          actions={
+            deleteDecision.allowed ? (
+              <>
+                <EditPurchaseButton
+                  orderId={orderId}
+                  vehicle={vehicle}
+                  suppliers={suppliers}
+                  technicians={technicians}
+                  item={{
+                    id: item.id,
+                    name: item.name,
+                    sku: item.sku,
+                    brand: item.brand,
+                    quantity: item.quantity,
+                    purchasePriceKurus: item.purchasePriceKurus,
+                    supplierName: item.supplierName,
+                    purchasedAt: item.purchasedAt,
+                    tecdocArticleId: item.tecdocArticleId,
+                  }}
+                />
+                <PurchaseDeleteButton item={item} orderId={orderId} />
+              </>
+            ) : null
+          }
+        />
       ))}
+      {!deleteDecision.allowed && (
+        <p className="text-xs text-muted-foreground/70">{deleteDecision.reason}</p>
+      )}
     </div>
   )
 }
 
-function todayTrString(): string {
-  const now = new Date()
-  const dd = String(now.getDate()).padStart(2, "0")
-  const mm = String(now.getMonth() + 1).padStart(2, "0")
-  return `${dd}.${mm}.${now.getFullYear()}`
-}
-
-function AddPurchaseButton({
+/**
+ * Dış alım kaydını iş emrinden komple kaldırır (BAK-83). Onay metni bunun bir
+ * "listeden gizleme" değil, iş emri kaleminin silinmesi olduğunu açıkça söyler:
+ * tutar toplamdan düşer, parça kutusu fotoğrafı da gider.
+ */
+function PurchaseDeleteButton({
+  item,
   orderId,
-  suppliers,
-  technicians,
-  defaultTechnicianId,
 }: {
+  item: OrderData["items"][number]
   orderId: string
-  suppliers: SupplierInfo[]
-  technicians: TechnicianInfo[]
-  defaultTechnicianId: string | null
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState("")
-  const [sku, setSku] = useState("")
-  const [supplierName, setSupplierName] = useState("")
-  const [supplierId, setSupplierId] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState("1")
-  const [price, setPrice] = useState("")
-  const [purchasedAt, setPurchasedAt] = useState(todayTrString())
-  const [technicianId, setTechnicianId] = useState(defaultTechnicianId || "")
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [ocrLoading, setOcrLoading] = useState(false)
-  const [ocrResult, setOcrResult] = useState<Pick<PartBoxOcrResult, "partName" | "brand" | "partNumbers"> | null>(null)
-  const [ocrError, setOcrError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  function resetForm() {
-    setName("")
-    setSku("")
-    setSupplierName("")
-    setSupplierId(null)
-    setQuantity("1")
-    setPrice("")
-    setPurchasedAt(todayTrString())
-    setTechnicianId(defaultTechnicianId || "")
-    setFile(null)
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setPreviewUrl(null)
-    setError(null)
-    setOcrLoading(false)
-    setOcrResult(null)
-    setOcrError(null)
-  }
-
-  function onPickFile(f: File | null) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setFile(f)
-    setPreviewUrl(f ? URL.createObjectURL(f) : null)
-    setOcrResult(null)
-    setOcrError(null)
-    if (f) void runPartBoxOcr(f)
-  }
-
-  async function runPartBoxOcr(f: File) {
-    setOcrLoading(true)
-    setOcrError(null)
+  async function confirmDelete() {
+    setBusy(true)
     try {
-      const fd = new FormData()
-      fd.set("image", f)
-      const res = await fetch("/api/parts/ocr", { method: "POST", body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setOcrError(data?.error || "Kutu okunamadı, alanları elle girebilirsiniz.")
+      const res = await removePurchaseItemAction(item.id, orderId)
+      if (res?.error) {
+        toast.error(res.error)
         return
       }
-      setOcrResult({
-        partName: data.result.partName,
-        brand: data.result.brand,
-        partNumbers: data.result.partNumbers ?? [],
-      })
-    } catch {
-      setOcrError("Kutu okunamadı, alanları elle girebilirsiniz.")
-    } finally {
-      setOcrLoading(false)
-    }
-  }
-
-  async function handleSubmit() {
-    setError(null)
-    if (!name.trim()) {
-      setError("Parça adı zorunludur")
-      return
-    }
-    const priceKurus = price.trim() ? parseTRYToKurus(price) : 0
-    if (priceKurus == null) {
-      setError("Geçerli bir alış fiyatı giriniz")
-      return
-    }
-
-    const fd = new FormData()
-    fd.set("serviceOrderId", orderId)
-    fd.set("name", name.trim())
-    fd.set("sku", sku.trim())
-    fd.set("quantity", quantity || "1")
-    fd.set("purchasePriceKurus", String(priceKurus))
-    fd.set("supplierName", supplierName.trim())
-    if (supplierId) fd.set("supplierId", supplierId)
-    fd.set("purchasedAt", purchasedAt)
-    if (technicianId) fd.set("purchasedById", technicianId)
-    if (file) fd.set("file", file)
-
-    setSubmitting(true)
-    try {
-      const res = await fetch("/api/orders/purchases", { method: "POST", body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(data?.error || "Kaydedilemedi")
-        setSubmitting(false)
-        return
-      }
-      resetForm()
       setOpen(false)
+      toast.success("Parça iş emrinden kaldırıldı")
       router.refresh()
     } catch {
-      setError("Bağlantı hatası, lütfen tekrar deneyin")
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin")
     } finally {
-      setSubmitting(false)
+      setBusy(false)
     }
   }
 
   return (
     <>
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium mt-2"
+        aria-label={`${item.name} — dışarıdan alınan parçayı sil`}
+        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
       >
-        <Plus className="size-4" />
-        Parça Aldım
-      </button>
+        <Trash2 className="size-4" />
+      </Button>
 
-      <BottomSheet
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o)
-          if (!o) resetForm()
-        }}
-        title="Dışarıdan Parça Alımı"
-        description="Aldığınız parçayı bu iş emrine kalem olarak ekleyin."
-        footer={
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="lg"
-              className="flex-1 touch-manipulation"
-              disabled={submitting || !name.trim()}
-              onClick={handleSubmit}
-            >
-              <Send className="size-3.5" />
-              {submitting ? "Kaydediliyor…" : "Kalem Olarak Ekle"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="touch-manipulation"
-              disabled={submitting}
-              onClick={() => {
-                setOpen(false)
-                resetForm()
-              }}
-            >
-              İptal
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3 py-1">
-          {error && (
-            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Parça adı *</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Örn. Ön fren balatası" />
-          </div>
-
-          <div className="flex gap-2">
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Parça no / OEM</label>
-              <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="SKU / OEM" />
-            </div>
-            <div className="w-24 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Miktar</label>
-              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Tedarikçi</label>
-            <SupplierAutocompleteField
-              suppliers={suppliers}
-              value={supplierName}
-              onChange={setSupplierName}
-              onSelectSupplier={setSupplierId}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Alış fiyatı (₺)</label>
-              <Input
-                inputMode="decimal"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0,00"
-              />
-            </div>
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Alış tarihi</label>
-              <DatePicker value={purchasedAt} onChange={setPurchasedAt} />
-            </div>
-          </div>
-
-          {technicians.length > 0 && (
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
-              <Select value={technicianId} onValueChange={(v) => setTechnicianId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seçiniz">
-                    {(value) => technicians.find((t) => t.id === value)?.fullName || "Seçiniz"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {technicians.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Parça kutusu fotoğrafı</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-            />
-            {previewUrl ? (
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 touch-manipulation"
-                  onClick={() => onPickFile(null)}
-                >
-                  <Trash2 className="size-3.5" />
-                  Kaldır
-                </Button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 py-6 text-sm text-muted-foreground touch-manipulation"
-              >
-                <Camera className="size-6" />
-                Fotoğraf çek / seç
-              </button>
-            )}
-          </div>
-
-          {ocrLoading && (
-            <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 py-6">
-              <BrandSpinner size={36} label="Kutu okunuyor…" />
-            </div>
-          )}
-
-          {ocrError && !ocrLoading && (
-            <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
-              {ocrError}
-            </p>
-          )}
-
-          {ocrResult && !ocrLoading && (
-            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-              <p className="text-xs font-medium text-primary">Kutudan okunan öneriler</p>
-
-              {ocrResult.partName.value && (
-                <div className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Parça adı</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setName(ocrResult.partName.value)}
-                      className="rounded-full border border-border bg-background px-2.5 py-1 text-xs hover:border-primary hover:text-primary touch-manipulation"
-                    >
-                      {ocrResult.partName.value}
-                    </button>
-                    {ocrResult.brand.value && (
-                      <button
-                        type="button"
-                        onClick={() => setName(partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value))}
-                        className="rounded-full border border-border bg-background px-2.5 py-1 text-xs hover:border-primary hover:text-primary touch-manipulation"
-                      >
-                        {partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value)}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {ocrResult.partNumbers.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Parça no (birini seçin)</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ocrResult.partNumbers.map((pn: PartNumberSuggestion) => {
-                      const low = pn.confidence != null && pn.confidence < LOW_CONFIDENCE_THRESHOLD
-                      return (
-                        <button
-                          key={pn.value}
-                          type="button"
-                          onClick={() => setSku(pn.value)}
-                          className={
-                            "rounded-full border px-2.5 py-1 text-xs touch-manipulation hover:border-primary hover:text-primary " +
-                            (low ? "border-amber-300 bg-amber-50 text-amber-700" : "border-border bg-background")
-                          }
-                          title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
-                        >
-                          <span className="text-muted-foreground">{pn.label}</span>
-                          <span className="mx-1 text-border">·</span>
-                          {pn.value}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </BottomSheet>
+      <AlertDialog open={open} onOpenChange={(o) => { if (!busy) setOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Parça kaydı silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &quot;{item.name}&quot; dışarıdan alınan parça kaydı iş emrinden de kaldırılacak:
+              tutarı toplamdan düşecek ve varsa parça kutusu fotoğrafı silinecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={confirmDelete}>
+              {busy && <Loader2 className="size-4 animate-spin" />}
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

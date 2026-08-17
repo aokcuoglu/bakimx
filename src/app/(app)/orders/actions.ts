@@ -8,6 +8,13 @@ import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { createServiceOrderForIntake } from "@/lib/orders/create-service-order"
 import { findUnpricedItems, unpricedItemsMessage } from "@/lib/orders/pricing-guard"
+import {
+  findUndecidedPartsRequests,
+  orderStatusNeedsPartsDecision,
+  undecidedPartsRequestsMessage,
+} from "@/lib/orders/parts-request-guard"
+import { purchaseDeleteDecision } from "@/lib/orders/purchase-delete"
+import { roleCan } from "@/lib/roles"
 import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
@@ -57,6 +64,9 @@ export async function createServiceOrderAction(intakeFormId: string) {
   revalidatePath("/orders")
   return { success: true, id: order.id }
 }
+
+/** İş emri iptalinde açık parça taleplerine yazılan gerekçe. */
+const ORDER_CANCELLED_REQUEST_REASON = "İş emri iptal edildi"
 
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
@@ -193,9 +203,10 @@ export async function addOrderItemAction(formData: FormData) {
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
           purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
           source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
-          // Satır KDV'ye tabi mi (BAK-53). Varsayılan `true` — gönderilmezse
-          // bugünkü davranış: belgenin KDV'si her satıra uygulanır.
-          includeVat: parsed.data.includeVat ?? true,
+          // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
+          // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
+          // girer, KDV yalnız satırın tick'i açılınca üstüne biner.
+          includeVat: parsed.data.includeVat ?? false,
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
@@ -265,6 +276,10 @@ export async function addPurchaseItemAction(formData: FormData) {
     supplierName: (formData.get("supplierName") as string) || undefined,
     supplierId: (formData.get("supplierId") as string) || undefined,
     purchasedById: (formData.get("purchasedById") as string) || undefined,
+    tecdocArticleId: (formData.get("tecdocArticleId") as string) || undefined,
+    brand: (formData.get("brand") as string) || undefined,
+    category: (formData.get("category") as string) || undefined,
+    categoryId: (formData.get("categoryId") as string) || undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -339,6 +354,13 @@ export async function addPurchaseItemAction(formData: FormData) {
           // unitPrice×quantity kullanır.
           unitPrice: purchasePriceKurus,
           totalPrice: null,
+          // Katalog eşleşmesi (BAK-84): parça numarası araç kataloğunda çıktıysa
+          // kalem TecDoc parçasına bağlanır. Stok/BakımX eşleşmesinde bu alanlar
+          // boş kalır, yalnız ad/marka metni dolar (bkz. purchaseMatchFields).
+          tecdocArticleId: parsed.data.tecdocArticleId ?? null,
+          brand: parsed.data.brand || null,
+          category: parsed.data.category || null,
+          categoryId: parsed.data.categoryId ?? null,
           purchasePriceKurus,
           supplierName: parsed.data.supplierName || null,
           supplierId,
@@ -384,6 +406,7 @@ export async function addPurchaseItemAction(formData: FormData) {
       quantity: parsed.data.quantity,
       purchasePriceKurus,
       supplierName: parsed.data.supplierName || null,
+      tecdocArticleId: parsed.data.tecdocArticleId ?? null,
       hasPhoto: !!photoUpload,
     }),
     order.id,
@@ -396,10 +419,15 @@ export async function addPurchaseItemAction(formData: FormData) {
 }
 
 /**
- * Dış alım kaleminin (source=purchase) alış metadata'sını günceller: tedarikçi,
- * alış tarihi, alış fiyatı ve isteğe bağlı yeni parça kutusu fotoğrafı. Satış
- * unitPrice'ına DOKUNMAZ (oluşturma sonrası bağımsızdır). Alış fiyatı iş emri
- * toplamını etkilemez → recalc gerekmez. Kilitli emir reddedilir.
+ * Dış alım kalemini (source=purchase) günceller. İki yüzey çağırır:
+ *   • masa tarafı satın alma detayı — tedarikçi, alış tarihi, alış fiyatı ve
+ *     isteğe bağlı yeni parça kutusu fotoğrafı;
+ *   • teknisyen kartındaki "Düzenle" (BAK-84) — parça adı, numarası, miktarı,
+ *     markası ve katalog bağı (`tecdocArticleId`/`category`/`categoryId`).
+ *
+ * Satış unitPrice'ına DOKUNMAZ (oluşturma sonrası bağımsızdır). Alış fiyatı iş
+ * emri toplamını etkilemez; MİKTAR etkiler → yalnız o değişince recalc koşar.
+ * Durum/rol kapısı `purchaseDeleteDecision` ile silme ile ortaktır.
  */
 export async function updatePurchaseItemAction(itemId: string, orderId: string, formData: FormData) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -418,13 +446,25 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
     select: { id: true, intakeFormId: true, status: true },
   })
   if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emri düzenlenemez" }
+
+  // Düzenleme silme ile AYNI kapıdan geçer (BAK-84): kalemin adını/numarasını/
+  // miktarını değiştirmek de kimliğini ve tutarını değiştirir, silemeyen rol
+  // düzenleyememeli (tek kaynak: purchaseDeleteDecision).
+  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  if (!decision.allowed) return { error: decision.reason }
 
   const has = (k: string) => formData.get(k) !== null
   const parsed = purchaseItemUpdateSchema.safeParse({
     purchasePriceKurus: has("purchasePriceKurus") ? Number(formData.get("purchasePriceKurus")) : undefined,
     supplierName: has("supplierName") ? (formData.get("supplierName") as string) : undefined,
     supplierId: has("supplierId") ? ((formData.get("supplierId") as string) || null) : undefined,
+    name: has("name") ? ((formData.get("name") as string) || "").trim() : undefined,
+    sku: has("sku") ? ((formData.get("sku") as string) || null) : undefined,
+    quantity: has("quantity") ? Number(formData.get("quantity")) : undefined,
+    brand: has("brand") ? ((formData.get("brand") as string) || null) : undefined,
+    category: has("category") ? ((formData.get("category") as string) || null) : undefined,
+    categoryId: has("categoryId") ? ((formData.get("categoryId") as string) || null) : undefined,
+    tecdocArticleId: has("tecdocArticleId") ? ((formData.get("tecdocArticleId") as string) || null) : undefined,
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
@@ -435,8 +475,22 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
     supplierName?: string | null
     supplierId?: string | null
     purchasedAt?: Date
+    name?: string
+    sku?: string | null
+    quantity?: number
+    brand?: string | null
+    category?: string | null
+    categoryId?: number | null
+    tecdocArticleId?: number | null
   } = {}
   if (parsed.data.purchasePriceKurus !== undefined) data.purchasePriceKurus = parsed.data.purchasePriceKurus
+  if (parsed.data.name !== undefined) data.name = parsed.data.name
+  if (parsed.data.sku !== undefined) data.sku = parsed.data.sku || null
+  if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
+  if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
+  if (parsed.data.category !== undefined) data.category = parsed.data.category || null
+  if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
+  if (parsed.data.tecdocArticleId !== undefined) data.tecdocArticleId = parsed.data.tecdocArticleId ?? null
   if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
   if (parsed.data.supplierId !== undefined) {
     const sid = parsed.data.supplierId || null
@@ -492,6 +546,12 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
           data,
         })
         if (updRes.count !== 1) throw new Error("Kalem bulunamadı")
+        // Miktar satır toplamını değiştirir (totalPrice null → unitPrice×quantity),
+        // dolayısıyla iş emri tahsilat durumunu da. Alış fiyatı/tedarikçi
+        // düzenlemeleri toplama dokunmadığı için recalc YALNIZ burada gerekir.
+        if (data.quantity !== undefined) {
+          await recalcOrderPayment(tx, orderId, user.workshopId)
+        }
       }
       if (photoUpload) {
         await tx.vehiclePhoto.create({
@@ -534,20 +594,22 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
   return { success: true }
 }
 
-export async function removeOrderItemAction(itemId: string, orderId: string) {
-  const { requireWritableWorkshop } = await import("@/lib/auth")
-  const { user } = await requireWritableWorkshop("order.edit")
-
-  const item = await prisma.serviceOrderItem.findFirst({
-    where: { id: itemId, workshopId: user.workshopId },
-  })
-  if (!item) return { error: "Kalem bulunamadı" }
-
-  const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId: user.workshopId },
-  })
-  if (!order) return { error: "Servis emri bulunamadı" }
-  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+/**
+ * Kalemin fiziksel silinmesi + yan etkileri: bağlı parça-kutusu fotoğrafları,
+ * stok iadesi, tahsilat yeniden hesabı, denetim kaydı, cache tazeleme.
+ *
+ * Yetki kapısı ve durum kuralı BİLEREK burada değil, çağıranda durur —
+ * `removeOrderItemAction` (ofis, `order.edit`) ile `removePurchaseItemAction`
+ * (dış alım, `parts.purchase` + BAK-83 kuralı) farklı kapılardan geçer ama
+ * silmenin kendisi tek yerde kalır.
+ */
+async function deleteOrderItemRecord(
+  user: { id: string; workshopId: string },
+  item: { id: string; name: string; type: string; quantity: number; source: string | null; partId: string | null },
+  orderId: string,
+  auditAction: string,
+) {
+  const itemId = item.id
 
   // Dış alım kaleminin bağlı parça-kutusu fotoğraflarını topla (FK ON DELETE SET
   // NULL olduğu için satır silinince foto yetim kalır → açıkça temizlenir).
@@ -617,7 +679,7 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     user.id,
     "ServiceOrderItem",
     itemId,
-    "order_item_removed",
+    auditAction,
     JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity, source: item.source }),
     orderId,
   )
@@ -628,6 +690,57 @@ export async function removeOrderItemAction(itemId: string, orderId: string) {
     revalidatePath("/purchases")
   }
   return { success: true }
+}
+
+export async function removeOrderItemAction(itemId: string, orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: "Teslim edilmiş veya iptal edilmiş iş emrinden kalem silinemez" }
+
+  return deleteOrderItemRecord(user, item, orderId, "order_item_removed")
+}
+
+/**
+ * Teknisyen ekranındaki "Dışarıdan Alınan Parçalar" kaydını siler (BAK-83).
+ *
+ * Aynı satır iş emri kalem tablosunda da durduğu için silme HER İKİ yüzeyden
+ * birden kaldırır; toplam ve tahsilat yeniden hesaplanır, parça-kutusu fotoğrafı
+ * ve /purchases listesi de düşer. Kapı `parts.purchase`: parçayı kaydeden kişi
+ * (çırak dahil) kendi hatasını düzeltebilmeli. Durum kuralı
+ * `purchaseDeleteDecision`'da — teslim/iptal edilmiş emirde kimse, teslime hazır
+ * emirde yalnız `order.edit` taşıyanlar silebilir.
+ */
+export async function removePurchaseItemAction(itemId: string, orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("parts.purchase")
+
+  const item = await prisma.serviceOrderItem.findFirst({
+    where: { id: itemId, workshopId: user.workshopId },
+  })
+  if (!item) return { error: "Kalem bulunamadı" }
+  if (item.source !== "purchase") return { error: "Bu kalem bir dış alım değil" }
+  if (item.serviceOrderId !== orderId) return { error: "Kalem bu iş emrine ait değil" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true },
+  })
+  if (!order) return { error: "Servis emri bulunamadı" }
+
+  const decision = purchaseDeleteDecision(order.status, roleCan(user.role, "order.edit"))
+  if (!decision.allowed) return { error: decision.reason }
+
+  return deleteOrderItemRecord(user, item, orderId, "purchase_removed")
 }
 
 export async function updateOrderItemAction(itemId: string, orderId: string, formData: FormData) {
@@ -816,6 +929,19 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
     if (unpriced.length > 0) return { error: unpricedItemsMessage(unpriced) }
   }
 
+  // Karar bekleyen parça talebi varken emir teslime hazırlanamaz/teslim edilemez:
+  // "hazır" bildirimi müşteriye giderken ya da araç çıkarken hâlâ açık bir parça
+  // sorusu kalmasın (bkz. @/lib/orders/parts-request-guard).
+  if (orderStatusNeedsPartsDecision(status)) {
+    const requests = await prisma.partsRequest.findMany({
+      where: { serviceOrderId: orderId, workshopId: user.workshopId },
+      select: { partName: true, status: true, convertedAt: true, cancelledAt: true },
+      orderBy: { createdAt: "asc" },
+    })
+    const undecided = findUndecidedPartsRequests(requests)
+    if (undecided.length > 0) return { error: undecidedPartsRequestsMessage(undecided) }
+  }
+
   const updateResult = await prisma.serviceOrder.updateMany({
     where: { id: orderId, workshopId: user.workshopId },
     data: { status },
@@ -823,6 +949,38 @@ export async function updateOrderStatusAction(orderId: string, status: string) {
   if (updateResult.count === 0) return { error: "Servis emri bulunamadı" }
 
   await AuditLogAction(user.workshopId, user.id, "ServiceOrder", orderId, `order_status_changed_to_${status}`, undefined, orderId)
+
+  // İş emri iptal edilince açık parça talepleri de kapanır: emir kilitlendiği
+  // için (isOrderLocked) tek tek karar verilebilecek bir yüzey kalmaz, talepler
+  // "karar bekliyor" görünümünde sonsuza kadar asılı kalırdı.
+  if (status === "cancelled") {
+    const openRequests = await prisma.partsRequest.findMany({
+      where: {
+        serviceOrderId: orderId,
+        workshopId: user.workshopId,
+        convertedAt: null,
+        status: { not: "cancelled" },
+      },
+      select: { id: true, partName: true },
+    })
+    if (openRequests.length > 0) {
+      await prisma.partsRequest.updateMany({
+        where: { id: { in: openRequests.map((r) => r.id) }, workshopId: user.workshopId },
+        data: { status: "cancelled", cancelledAt: new Date(), cancelReason: ORDER_CANCELLED_REQUEST_REASON },
+      })
+      for (const request of openRequests) {
+        await AuditLogAction(
+          user.workshopId,
+          user.id,
+          "PartsRequest",
+          request.id,
+          "parts_request_cancelled",
+          JSON.stringify({ orderId, partName: request.partName, reason: ORDER_CANCELLED_REQUEST_REASON }),
+          orderId,
+        )
+      }
+    }
+  }
 
   // Intake + work order are presented as one unified flow (see work-order-detail.tsx's
   // "Sipariş" tab, which drives this action directly); keep the linked intake's

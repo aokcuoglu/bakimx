@@ -90,6 +90,7 @@ model Workshop {
   featureOverrides       WorkshopFeatureOverride[]
   laborCatalogItems      LaborCatalogItem[]
   bakimxOrders           BakimxOrder[]
+  vehicleHistoryGrants   VehicleHistoryGrant[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -483,6 +484,39 @@ model Vehicle {
   @@index([workshopId])
   @@index([customerId])
   @@index([workshopId, vin])
+  /// Servisler arası araç geçmişi (BAK-77) plakayı ATÖLYEDEN BAĞIMSIZ arar.
+  /// `@@unique([workshopId, plate])` bu sorguya yaramaz (bileşik indeksin ön eki
+  /// workshopId'dir), o yüzden plaka için ayrı bir indeks gerekir.
+  @@index([plate])
+}
+
+/// Bir atölyenin, BAŞKA atölyelerdeki araç geçmişini maskesiz görme hakkı (BAK-77).
+///
+/// Hak, aracın **ruhsatının o atölyede okutulmuş olmasıyla** kazanılır: ruhsatı
+/// elinde tutmak, araçla gerçek bir servis ilişkisi kurulduğunun kanıtıdır ve
+/// KVKK açısından maskeyi kaldırmanın dayanağıdır. Kayıt bilerek **plaka**
+/// üzerinden tutulur, bir `Vehicle` id'si üzerinden değil: hak, tarama anında bu
+/// atölyede henüz araç kaydı olmadan da doğar (sihirbazın ilk adımı).
+///
+/// Hakkın ikinci kaynağı olan "bu atölyenin aracı zaten servis etmiş olması"
+/// burada TUTULMAZ; o türetilir (bkz. `src/lib/vehicle-history/access.ts`).
+model VehicleHistoryGrant {
+  id              String   @id @default(cuid())
+  workshopId      String
+  workshop        Workshop @relation(fields: [workshopId], references: [id])
+  /// Normalize plaka (boşluksuz, büyük harf) — atölyeler arası araç anahtarı.
+  plate           String
+  /// Tarama anındaki VIN, ruhsatta okunabildiyse. Yalnız bilgi amaçlı.
+  vin             String?
+  grantedByUserId String?
+  /// Ruhsat sahipliğini kanıtlayan OcrLog satırı. FK YOK: OcrLog başka bir
+  /// saklama politikasına tabi olabilir, temizlenirse hak düşmemeli.
+  ocrLogId        String?
+  createdAt       DateTime @default(now())
+
+  @@unique([workshopId, plate])
+  @@index([workshopId])
+  @@index([plate])
 }
 
 model VehicleIntakeForm {
@@ -907,10 +941,12 @@ model ServiceOrderItem {
   completionNote     String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
   photos             VehiclePhoto[]
-  // KULLANILMIYOR (BAK-55): satır başına KDV kipi hiçbir toplama girmiyordu —
-  // KDV tek noktada, belgenin `taxRate`'i ile eklenir (src/lib/totals.ts). Kolon
-  // yalnız veri kaybı olmasın diye duruyor; ayrı bir migration ile düşürülebilir.
-  includeVat         Boolean          @default(true)
+  // Satır KDV'ye TABİ mi (BAK-53). Tabi satırların net toplamı, belgenin
+  // `taxRate`'iyle Genel Toplam'a eklenen KDV'nin matrahıdır (src/lib/totals.ts).
+  // Varsayılan BAK-75'te `true` → `false` çevrildi: KDV kimseye sorulmadan
+  // eklenmez, servis tick'i kendisi açar. MEVCUT satırlar değişmez — migration
+  // yalnız kolonun DEFAULT'unu değiştirir, hiçbir satırı güncellemez.
+  includeVat         Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -1423,6 +1459,13 @@ model PartsRequest {
   /// devam eder; convertedAt ondan bağımsız, "kaleme çevrildi mi" sorusuna
   /// tek doğru kaynaktır — status tekrar "requested"a dönemeyeceği için ayrı alan gerekir.
   convertedAt    DateTime?
+  /// Dolu ⇒ talep karara bağlanarak REDDEDİLDİ (`status = cancelled` ile birlikte
+  /// yazılır). `convertedAt` ile birlikte "karar verildi mi" sorusunun iki
+  /// yanıtından biridir — ikisi de boşsa talep hâlâ karar bekliyordur ve iş emri
+  /// teslime alınamaz (bkz. src/lib/orders/parts-request-guard.ts).
+  cancelledAt    DateTime?
+  /// İptal gerekçesi — ATÖLYE İÇİ not, müşteri yüzeyine çıkmaz.
+  cancelReason   String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -1436,6 +1479,9 @@ enum PartsRequestStatus {
   requested
   prepared
   delivered
+  /// Ofis talebi reddetti (parça alınmayacak). Terminal: kaleme çevrilemez,
+  /// fiziksel akışta ilerletilemez; yalnız "geri al" ile `requested`a döner.
+  cancelled
 }
 
 model LaborSession {
@@ -1666,6 +1712,91 @@ enum SupportRequestStatus {
   in_progress
   resolved
   archived
+}
+
+/// www.bakimx.com canlı destek widget'ının tek satırlık yapılandırması.
+/// Kiracıya ait DEĞİL — bu, BakımX şirketinin kendi destek masasıdır; bu yüzden
+/// workshopId yok ve yönetimi yalnız /admin konsolundan yapılır.
+/// `id` sabit "singleton": ikinci bir satır yazılamaz, okuma yolu yoksa oluşturur.
+model LiveChatSettings {
+  id             String   @id @default("singleton")
+  enabled        Boolean  @default(true)
+  timezone       String   @default("Europe/Istanbul")
+  /// WeeklySchedule — { mon: { enabled, start: "09:00", end: "18:00" }, ... }
+  /// Şekli src/lib/live-chat/schedule.ts içindeki parseWeeklySchedule doğrular;
+  /// bozuk/eksik JSON sessizce varsayılana düşer (widget asla patlamaz).
+  schedule       Json
+  /// Kapalı olunacak istisna günler, "YYYY-MM-DD".
+  holidays       String[] @default([])
+  /// Çevrimiçiyken sohbet açılışına düşen sistem mesajı.
+  greeting       String
+  /// Çevrimdışıyken sohbet açılışına düşen sistem mesajı.
+  offlineMessage String
+  /// Panel başlığının altındaki dönüş süresi vaadi.
+  responseNote   String
+  updatedAt      DateTime @updatedAt
+  updatedByEmail String?
+}
+
+/// Bir ziyaretçi ile destek ekibi arasındaki tek bir canlı destek görüşmesi.
+/// Ziyaretçinin kimliği `publicToken`dır (oturum yok) — VehiclePassportToken ile
+/// aynı desen. Token tarayıcıda localStorage'da durur.
+model LiveChatConversation {
+  id             String                     @id @default(cuid())
+  publicToken    String                     @unique
+  status         LiveChatConversationStatus @default(open)
+  visitorName    String
+  visitorEmail   String
+  visitorPhone   String?
+  /// Görüşme çalışma saatleri DIŞINDA başladıysa true — gelen kutusunda
+  /// "asenkron dönüş bekleniyor" olarak ayırt edilir.
+  startedOffline Boolean                    @default(false)
+  clientIp       String?
+  userAgent      String?
+  /// Widget'ın açıldığı sayfa — hangi içeriğin soru doğurduğunu gösterir.
+  pageUrl        String?
+
+  lastMessageAt        DateTime  @default(now())
+  lastVisitorMessageAt DateTime?
+  lastAgentMessageAt   DateTime?
+  /// Okundu işaretleri sayaç değil zaman damgasıdır: idempotent, yarış
+  /// koşulunda sayacı bozmaz. Okunmamış = lastVisitorMessageAt > agentLastReadAt.
+  agentLastReadAt      DateTime?
+  visitorLastReadAt    DateTime?
+  closedAt             DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages LiveChatMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([lastMessageAt])
+}
+
+enum LiveChatConversationStatus {
+  open
+  closed
+}
+
+model LiveChatMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   LiveChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         LiveChatSender
+  /// Yalnız sender=agent iken dolu — hangi yöneticinin yanıtladığı denetim izi.
+  agentEmail     String?
+  body           String
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+enum LiveChatSender {
+  visitor
+  agent
+  /// Otomatik karşılama / çevrimdışı bilgilendirme metinleri.
+  system
 }
 
 /// Global TecDoc catalog cache (NOT tenant-scoped), sibling of VinLookup.

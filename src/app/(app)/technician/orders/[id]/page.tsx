@@ -8,6 +8,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
+import { roleCan } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
 
@@ -132,12 +133,14 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       type: i.type,
       name: i.name,
       sku: i.sku,
+      brand: i.brand,
       unit: i.unit,
       quantity: i.quantity,
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       note: i.note,
       source: i.source,
+      tecdocArticleId: i.tecdocArticleId,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
@@ -230,6 +233,10 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       // Ofis talebi kaleme çevirdiyse usta da görsün: "istediğim parça iş
       // emrine girdi mi?" sorusu bugüne dek yalnız ofis ekranında yanıtlanıyordu.
       convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
+      // Ofis talebi reddettiyse gerekçesi de sahaya iner: usta beklediği parçanın
+      // neden gelmediğini ekranında görsün, ofisi aramak zorunda kalmasın.
+      cancelledAt: p.cancelledAt ? p.cancelledAt.toISOString() : null,
+      cancelReason: p.cancelReason,
       createdAt: p.createdAt.toISOString(),
     })),
     laborSessions: order.laborSessions.map((l) => ({
@@ -254,6 +261,9 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           role: t.role,
         }))}
         suppliers={suppliers}
+        // Dış alım silme kuralının rol ekseni (BAK-83): teslime hazır iş emrinde
+        // kaydı yalnız iş emrini düzenleyebilenler kaldırabilir.
+        canEditOrder={roleCan(user.role, "order.edit")}
       />
     </AppShell>
   )
