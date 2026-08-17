@@ -41,22 +41,44 @@ sürümündeki "hiçbir dal korumalı değil" ifadesi artık geçersiz.
 | Force push | ❌ engelli (**admin dahil**) | ❌ engelli (**admin dahil**) |
 | PR zorunlu | ✅ 0 onay | — açık |
 | `quality` check zorunlu | ✅ | — |
-| Dalın güncel olması (`strict`) | ❌ kapalı | ❌ kapalı |
-| Admin bypass (`enforce_admins`) | açık | açık |
+| Dalın güncel olması (`strict`) | ✅ açık | — |
+| Admin bypass (`enforce_admins`) | ❌ kapalı | ❌ kapalı |
 
-Bilinçli açık bırakılan üç kutu, gerekçesiyle:
+Tablodaki iki satır **varsayılmadı, ölçüldü** (2026-08-17, BAK-89). Tek kullanımlık
+bir `tmp-*` dalına aynı kural seti uygulanıp depo sahibinin token'ıyla denendi:
 
-- **`dev`'de PR/check zorunlu değil** — `sync-main-to-dev.yml` `dev`'e doğrudan
-  push ediyor; zorunlu kılmak o workflow'u kırar. PR'sız bir commit'in `dev`'e
-  girmesi hâlâ mümkün, ama **ship edilmesi** `pr-origin` kapısıyla engelli (§2.4).
-- **`strict` kapalı** — açık olsaydı her `main` merge'ünde tüm açık PR'lar
-  `quality`'yi yeniden koşardı; Actions dakikası kıt (BAK-90). Yerine §2.1'deki
-  disiplin geçerli: **push'tan önce `origin/dev`'i merge et.**
-- **Admin bypass açık** — gerçek bir hotfix'te `main`'e PR'sız girme yolu kapanmasın.
-  Silme ve force push bundan **etkilenmez**: GitHub o ikisini herkese uygular.
+```
+DELETE /git/refs/heads/tmp-*   → 422 "Cannot delete this branch"
+PATCH  ... force=true          → 422 "Cannot force-push to this branch"
+```
 
-Yani hâlâ geçerli olan risk **bayat dal** ve `main`'e bilinçli doğrudan push;
-ortadan kalkan risk **dal silme ve force push**.
+Aynı test `enforce_admins: false` iken de tekrarlandı ve **yine 422** döndü — yani
+silme/force-push yasağı admin muafiyetinden bağımsız olarak herkese uygulanıyor.
+`enforce_admins` bu ikisini değil, **PR ve `quality` zorunluluğunu** admin için de
+bağlayıcı yapar.
+
+Kararların gerekçesi:
+
+- **`main`'de admin bypass kapalı** — §2.3'teki olay (30-07'de `main`'e PR'sız iki
+  commit, ikisi de sessizce prod'a çıktı) artık *alarm* değil **duvar**. Hotfix yolu
+  kapanmıyor: [`releasing.md`](../releasing.md) §Hotfix zaten "main'den dallan,
+  main'e PR aç, merge et" diyor — yani belgeli akış hiçbir zaman doğrudan push
+  değildi. Gerçekten çaresiz kalınırsa admin korumayı 10 saniyede kapatabilir ve bu
+  iz bırakır; sessiz bir push iz bırakmıyordu.
+- **`main`'de `strict` açık** — `main`'e yalnız release PR'ı geliyor, yani "açık tüm
+  PR'lar yeniden `quality` koşar" maliyeti burada pratikte sıfır (kıyas: `dev`'e ayda
+  onlarca PR). Karşılığında release PR'ı `main`'i tam olarak içermeden merge
+  edilemiyor — `main`'e girmiş bir düzeltmeyi sessizce geri alan bir sürüm mümkün değil.
+- **`dev`'de PR/check zorunlu değil** — `sync-main-to-dev.yml` `dev`'e **doğrudan**
+  push ediyor (release sonrası `main`'i geri merge'ler). Hem PR zorunluluğu hem
+  zorunlu status check bu push'u reddeder ve her release sonrası sync'i kırar.
+  Kapatılabilir (`bypass_pull_request_allowances` ile `github-actions` uygulamasına
+  muafiyet), ama kazancı düşük: ajanlar zaten PR ile giriyor ve PR'sız bir commit'in
+  **ship edilmesi** `pr-origin` kapısıyla engelli (§2.4). Bilinçli açık kutu.
+
+Ortadan kalkan risk: **dal silme, force push ve `main`'e PR'sız push**. Geriye kalan
+risk: `dev`'e PR'sız push (ship edilemez) ve `dev`'e açılan PR'larda **bayat dal** —
+onun panzehiri hâlâ §2.1'deki disiplin.
 
 ### 2.1 Yeşil tik merge sonucunu kanıtlamaz
 
@@ -85,7 +107,13 @@ ve `bun install` hiç çalışmamış bir checkout (hook kayıtlı değildir). A
 GitHub web arayüzünden yapılan düzenleme/merge hook'u hiç görmez. "Hook var" bir
 dalın korunduğu anlamına **gelmez**.
 
-### 2.3 PR'sız `main` push'u alarm verir (ama durdurmaz)
+### 2.3 PR'sız `main` push'u artık engelli — alarm ikinci katman
+
+> **17-08 güncellemesi (BAK-89):** `main` artık PR zorunlu ve admin muafiyeti
+> kapalı, yani aşağıda anlatılan push sınıfı **gerçekleşmeden** reddediliyor.
+> `main-push-guard.yml` silinmedi (maliyeti ~1 dk/push): geriye kalan tek yol —
+> korumayı elle kapatıp push edip geri açmak — hâlâ alarm verir. Yani bu guard'ın
+> kırmızıya dönmesi bugün "birisi korumayı kapattı" demektir.
 
 30-07'de `main`'e PR'sız iki commit girdi (`3079291`, `3f038e7`); ikisi de prod
 deploy'u tetikledi ve **kimse haberdar olmadı**.
