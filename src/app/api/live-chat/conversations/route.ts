@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { availabilityOf, getLiveChatConfig } from "@/lib/live-chat/settings"
 import { clientIpOf, newConversationToken, rateLimit, toThreadWire } from "@/lib/live-chat/server"
+import { notifyAdminsOfVisitorMessage } from "@/lib/live-chat/notify"
 import { startConversationSchema } from "@/lib/validations/live-chat"
 
 export const dynamic = "force-dynamic"
@@ -77,6 +78,18 @@ export async function POST(request: Request) {
         },
       },
       include: { messages: { orderBy: { createdAt: "asc" } } },
+    })
+
+    // Bildirim ziyaretçiyi bekletmez: uygulama kalıcı bir Node sunucusu (ECS
+    // Fargate) olarak koşuyor, yanıt döndükten sonra promise tamamlanır.
+    void notifyAdminsOfVisitorMessage({
+      visitorName: conversation.visitorName,
+      visitorEmail: conversation.visitorEmail,
+      visitorPhone: conversation.visitorPhone,
+      body: input.message,
+      pageUrl: conversation.pageUrl,
+      startedOffline: conversation.startedOffline,
+      isNew: true,
     })
 
     return NextResponse.json(

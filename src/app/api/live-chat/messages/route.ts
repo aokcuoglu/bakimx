@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { availabilityOf, getLiveChatConfig } from "@/lib/live-chat/settings"
 import { clientIpOf, findConversationByToken, rateLimit, toMessageWire, toThreadWire } from "@/lib/live-chat/server"
+import { notifyAdminsOfVisitorMessage, startsNewBurst } from "@/lib/live-chat/notify"
 import { sendMessageSchema } from "@/lib/validations/live-chat"
 
 export const dynamic = "force-dynamic"
@@ -109,6 +110,27 @@ export async function POST(request: Request) {
         visitorLastReadAt: now,
       },
     })
+
+    // Yeni bir yanıtsız yığın başlıyorsa yöneticilere haber ver. Ardışık mesajlar
+    // tek e-posta ile geçilir — kararın kendisi startsNewBurst'te, test edilebilir.
+    if (
+      startsNewBurst({
+        isNew: false,
+        previousVisitorMessageAt: conversation.lastVisitorMessageAt,
+        lastAgentMessageAt: conversation.lastAgentMessageAt,
+        now,
+      })
+    ) {
+      void notifyAdminsOfVisitorMessage({
+        visitorName: conversation.visitorName,
+        visitorEmail: conversation.visitorEmail,
+        visitorPhone: conversation.visitorPhone,
+        body: parsed.data.body,
+        pageUrl: conversation.pageUrl,
+        startedOffline: conversation.startedOffline,
+        isNew: false,
+      })
+    }
 
     return NextResponse.json({ message: toMessageWire(message) }, { status: 201 })
   } catch (err) {
