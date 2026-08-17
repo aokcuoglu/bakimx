@@ -302,6 +302,8 @@ model User {
   passwordResets        PasswordResetToken[]
   deletedPhotos         VehiclePhoto[]       @relation("VehiclePhotoDeletedBy")
   deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
+  platformAdmin         PlatformAdmin?       @relation("PlatformAdminUser")
+  grantedPlatformAdmins PlatformAdmin[]      @relation("PlatformAdminCreatedBy")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1643,6 +1645,51 @@ model WorkshopFeatureOverride {
 
   @@unique([workshopId, featureKey])
   @@index([workshopId])
+}
+
+/// BakımX PERSONELİNİN `/admin` konsoluna erişimi (BAK-93). Kiracı içi ekip
+/// rolleriyle (`UserRole`) karıştırılmamalı — bu tablo platform tarafıdır.
+///
+/// Üyelik neden DB'de: `ADMIN_EMAILS` env allowlist'iyle personel eklemek/çıkarmak
+/// ECS task-def değişikliği + redeploy gerektiriyordu; yani erişimi kesmek en acele
+/// edilmesi gereken anda en yavaş yoldu. Env yalnız BOOTSTRAP yolu olarak kaldı:
+/// tablo boşken devreye girer ve ilk okumada satırları kendisi yazar (`src/lib/admin.ts`).
+///
+/// Satır SİLİNMEZ, `disabledAt` ile kapatılır — denetim kaydındaki `actorUserId`
+/// bağı ve "kim ne zaman yöneticiydi" sorusunun cevabı korunsun diye.
+model PlatformAdmin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation("PlatformAdminUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  role AdminRole @default(readonly)
+
+  /// Dolu ise erişim kapalı; açık oturum da bir sonraki istekte reddedilir.
+  disabledAt DateTime?
+
+  /// "Tüm oturumlarını kapat" bunu `now()` yapar. Oturum çerezindeki
+  /// `authenticatedAt` bundan ESKİYSE oturum reddedilir — iron-session durumsuz
+  /// olduğu ve çerez 7 gün yaşadığı için tek iptal noktası budur.
+  /// NULL = hiç iptal edilmemiş (bu alan gelmeden önce açılmış oturumlar da geçerli).
+  sessionsValidFrom DateTime?
+
+  createdByUserId String?
+  createdBy       User?   @relation("PlatformAdminCreatedBy", fields: [createdByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([disabledAt])
+}
+
+/// Platform yöneticisi rolleri — yetki matrisi `src/lib/admin.ts` içindeki
+/// `CAPABILITIES` tablosundadır (kaynak: `docs/operations/platform-admin-model.md` §2).
+enum AdminRole {
+  founder // Her şey, yönetici yönetimi dahil
+  support // Destek: salt-okunur impersonation + canlı destek
+  finance // Faturalandırma teyidi + dışa aktarım
+  readonly // Yalnız görüntüleme
 }
 
 // A founder "login as workshop owner" session. The real admin identity lives in

@@ -17,9 +17,10 @@ Bunlar kodda doğrulanmış gerçeklerdir, tasarım hedefi değil.
 | Konu | Bugünkü durum | Kaynak |
 |---|---|---|
 | Konsol | `/admin`, 9 bölüm (Genel Bakış, İş Yerleri, Faturalandırma, Talepler, Canlı Destek, Ürün Kataloğu, Özellik Bayrakları, Denetim Kaydı, Sistem Sağlığı) | `src/app/admin/admin-nav.tsx:30` |
-| Üyelik | `ADMIN_EMAILS` env allowlist; boşsa konsol **herkese 404** | `src/lib/admin.ts:9` |
-| Kimlik | Admin, bir atölyeye ait normal bir `User` satırıdır — ayrı personel tablosu yok | `src/lib/admin.ts:37` |
-| Rol | Tek rol: `founder`. `can()` her yetkiye `true` döner | `src/lib/admin.ts:51,79` |
+| Üyelik | `PlatformAdmin` tablosu (BAK-93). `ADMIN_EMAILS` yalnız tablo boşken çalışan bootstrap yolu; ikisi de boşsa konsol **herkese 404** | `src/lib/admin.ts` |
+| Kimlik | Admin, bir atölyeye ait normal bir `User` satırıdır; `PlatformAdmin` o kullanıcıya platform erişimi ekler | `prisma/schema.prisma` |
+| Rol | `founder \| support \| finance \| readonly`; `can()` §2'deki matristen karar verir | `src/lib/admin.ts` |
+| Oturum iptali | `PlatformAdmin.sessionsValidFrom` + oturumdaki `authenticatedAt` — erişimi kapatılan yönetici açık sekmesinde de 404 alır | `src/lib/admin.ts`, `src/lib/session.ts` |
 | Yetki kancası | `AdminCapability` + `requireAdminCapability()` çağrı yerlerinde zaten kullanılıyor | `src/lib/admin.ts:87` |
 | Impersonation | **Salt-okunur**, 30 dk sabit süre, DB kaydı + denetim kaydı, Prisma yazma kilidi | `src/app/admin/impersonation-actions.ts:13` |
 | Denetim | Sayfalı, iş yeri + işlem filtreli | `src/app/admin/audit/page.tsx` |
@@ -56,13 +57,14 @@ Kurumsal SaaS pratiğinde standart olan üç kural — kaynaklar §7'de:
 
 ### Aşama 1 — asıl öneri (bir sprint)
 
-| # | İş | Neden |
-|---|---|---|
-| 1 | **`/admin` için MFA (TOTP) zorunlu** | Bugün repoda hiç 2FA yok. Konsol tüm kiracıların verisine erişiyor ve tek kapısı e-posta+şifre. Sızan tek bir şifre = tüm müşteri verisi. **En yüksek öncelikli açık.** |
-| 2 | **Üyeliği env'den DB'ye taşı** (`PlatformAdmin` tablosu) | Bugün personel eklemek/çıkarmak = ECS task-def / SSM env değişikliği + yeniden deploy. Yani **işten ayrılan birinin erişimini kesmek bir deploy gerektiriyor.** Bu, en çok acele edilmesi gereken anda en yavaş yoldur. |
-| 3 | **Gerçek admin rolleri** | `AdminRole` bugün tek değerli (`src/lib/admin.ts:51`). Kanca hazır: `founder \| support \| finance \| readonly` eklemek yalnız `can()` tablosunu değiştirir, çağrı yerlerine dokunmaz. |
+| # | İş | Durum | Neden |
+|---|---|---|---|
+| 1 | **`/admin` için ikinci faktör — Google Workspace SSO** | açık | Konsol tüm kiracıların verisine erişiyor ve tek kapısı e-posta+şifre. Sızan tek bir şifre = tüm müşteri verisi. **En yüksek öncelikli açık.** Yöntem kararı §7'de. |
+| 2 | **Üyeliği env'den DB'ye taşı** (`PlatformAdmin` tablosu) | **BAK-93 ile geldi** | Personel eklemek/çıkarmak ECS task-def / SSM env değişikliği + yeniden deploy demekti. Artık `/admin/admins` üzerinden; `ADMIN_EMAILS` yalnız tablo boşken çalışan bootstrap yolu. |
+| 3 | **Gerçek admin rolleri** | **BAK-93 ile geldi** | `AdminRole` artık `founder \| support \| finance \| readonly`; kısıtlama tek yerden, `src/lib/admin.ts` içindeki `CAPABILITIES` tablosundan. Çağrı yerleri değişmedi. |
+| 4 | **Oturum iptali** | **BAK-93 ile geldi** | iron-session durumsuz ve 7 gün ömürlü; env'den bir adresi silmek açık sekmeyi kapatmıyordu. `PlatformAdmin.sessionsValidFrom` + oturumdaki `authenticatedAt` damgası ile erişimi kapatılan yönetici bir sonraki istekte 404 alır. |
 
-Önerilen yetki tablosu:
+Yetki tablosu (uygulanan hâli — kaynak: `src/lib/admin.ts`):
 
 | Yetki | founder | support | finance | readonly |
 |---|:--:|:--:|:--:|:--:|
@@ -76,10 +78,28 @@ Kurumsal SaaS pratiğinde standart olan üç kural — kaynaklar §7'de:
 | `viewAudit` | ✅ | ✅ | ✅ | ✅ |
 | `viewHealth` | ✅ | ✅ | — | ✅ |
 | `exportData` | ✅ | — | ✅ | — |
+| `manageLeads` (demo/destek talebi durumu) | ✅ | ✅ | — | — |
+| `manageAdmins` (bu liste) | ✅ | — | — | — |
+
+Son iki satır bu dokümanın ilk hâlinde yoktu; uygulama sırasında iki kapısız
+mutasyon ortaya çıktı (talep durumu güncelleme ve yönetici yönetiminin kendisi)
+ve tabloya eklendi. Kapsam `src/lib/admin-gate-coverage.test.ts` ile korunuyor:
+`/admin` altında yazma yapıp `requireAdminCapability()` çağırmayan bir action
+`bun test`i düşürür.
+
+**Nasıl yönetilir:** `/admin/admins` (yalnız `founder`). Ekleme, rol değiştirme,
+erişimi kapatma ve "oturumları kapat" işlemlerinin hepsi `AuditLog`'a düşer ve
+denetim sayfasında okunabilir etiketle görünür. Yönetici satırı **silinmez**,
+`disabledAt` ile kapatılır — geçmişte kimin yönetici olduğu kaybolmasın diye.
+
+**Bootstrap:** tablo boşken `ADMIN_EMAILS` devreye girer ve ilk yönetici
+okumasında adresleri `founder` olarak tabloya yazar. Tablo dolduğu andan sonra
+env'in hükmü yoktur: adı env'de geçen ama tabloda satırı olmayan kişi yönetici
+değildir. Prod kiracı sıfırlaması (`scripts/prod-reset.ts`) tabloyu boşalttığı
+için bu yol oradan dönüşte de çalışır.
 
 ### Aşama 2 — müşteri portföyü kurumsallaştıkça
 
-- Google Workspace SSO ile personel girişi (offboarding tek noktadan).
 - Impersonation'da müşteri bilgilendirmesi; hassas tenant'a impersonation kilidi.
 - Çeyreklik erişim gözden geçirmesi (kim hâlâ yönetici olmalı).
 
@@ -152,8 +172,10 @@ Bugünkü kanallar ve boşlukları:
 
 ## 6. Gündeme gelmemiş ama gerekli olanlar
 
-- **Offboarding tatbikatı.** Bugün bir personelin erişimini kesmek deploy gerektiriyor
-  (§2 Aşama 1 / #2). Bu düzelene kadar "kim yönetici" listesini yazılı tutun.
+- **Offboarding tatbikatı.** Konsol erişimini kesmek artık `/admin/admins` →
+  "Erişimi kapat" (açık oturum dahil, deploy yok — BAK-93). Geriye kalan adımlar
+  hâlâ elle: uygulama hesabının kendisi (`User.isActive`), prod DB / AWS erişimi
+  ve varsa paylaşılan sırlar. Bunları bir kez uçtan uca deneyin.
 - **Break-glass / prod veritabanı erişimi.** `scripts/prod-reset.ts` ve SSM tüneliyle
   prod'a doğrudan erişim mümkün. Kimin, ne zaman, hangi gerekçeyle bağlandığının
   kaydı yok. En az: her prod DB oturumu için yazılı gerekçe + sonrasında bildirim.
@@ -177,8 +199,8 @@ Bugünkü kanallar ve boşlukları:
 
 | Öncelik | İş | Gerekçe |
 |---|---|---|
-| **P0** | `/admin` için MFA | Tüm kiracı verisinin tek kapısı bugün tek faktörlü |
-| **P0** | `ADMIN_EMAILS` → DB tablosu + admin rolleri | Offboarding deploy gerektirmemeli; en az yetki uygulanabilmeli |
+| **P0** | **`/admin` için Google Workspace SSO** | Tüm kiracı verisinin tek kapısı bugün tek faktörlü |
+| ~~P0~~ | ~~`ADMIN_EMAILS` → DB tablosu + admin rolleri~~ | **BAK-93 ile geldi** — §2 |
 | **P1** | İş yeri listesinde arama + sayfalama | Destek akışının ilk adımı |
 | **P1** | Aktif impersonation ekranı + iptal (`revokedAt`) | Şemada var, kodda yok |
 | **P1** | Impersonation olaylarını denetim filtresine/etiketlerine ekle | En hassas olay bugün görünmüyor |
@@ -186,7 +208,24 @@ Bugünkü kanallar ve boşlukları:
 | **P2** | Rate limit'i paylaşımlı sayaca taşı | Çok task'lı ECS'te eşik çarpılıyor |
 | **P2** | `SupportRequest`: `workshopId` + atama + iç not | Şikayet ↔ kiracı bağı |
 | **P2** | Etiket/rozet temizliği (§4 / 2-3-4) | Tutarlılık; yeni personelin öğrenme yükü |
-| **P3** | Google Workspace SSO, çeyreklik erişim gözden geçirmesi, statü sayfası | Portföy büyüdükçe |
+| **P3** | Çeyreklik erişim gözden geçirmesi, statü sayfası | Portföy büyüdükçe |
+
+### İkinci faktör kararı: TOTP değil SSO (2026-08-17)
+
+Bu dokümanın ilk hâli P0'ı **TOTP** yazıyor, Google Workspace SSO'yu P3'e
+koyuyordu. Karar SSO yönünde değişti; ikisi de ikinci faktörü çözdüğü için sıraya
+ikisini birden koymak yanlış olurdu.
+
+Gerekçe: TOTP yalnız **giriş anını** güçlendirir, üyeliği hâlâ BakımX yönetir —
+işten ayrılan biri için TOTP kaydını, hesabını ve `PlatformAdmin` satırını ayrı
+ayrı kapatmak gerekir. Google Workspace SSO offboarding'i **tek noktaya** indirir:
+Workspace hesabı kapandığında konsol girişi de kapanır. BakımX personeli zaten
+Workspace kullanıyor, yani ikinci faktör (Workspace'in kendi 2FA'sı) ücretsiz
+gelir ve yeni bir sır saklama yükü doğmaz.
+
+BAK-93 bunun **ilk halkasıdır**: SSO da bir `PlatformAdmin` satırına ve bir role
+bağlanacak; env allowlist'i üstünde SSO kurmak mümkün değildi. Sıra artık
+"kimlik sağlayıcı" katmanında.
 
 ---
 

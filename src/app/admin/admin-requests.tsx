@@ -93,7 +93,7 @@ function StatusButton({
   )
 }
 
-function DemoRequestRow({ r }: { r: AdminDemoRequestRow }) {
+function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: boolean }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
 
@@ -132,7 +132,7 @@ function DemoRequestRow({ r }: { r: AdminDemoRequestRow }) {
 
         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-          {DEMO_STATUSES.map((s) => (
+          {canManage && DEMO_STATUSES.map((s) => (
             <StatusButton
               key={s.value}
               current={r.status}
@@ -148,7 +148,7 @@ function DemoRequestRow({ r }: { r: AdminDemoRequestRow }) {
   )
 }
 
-function SupportRequestRow({ r }: { r: AdminSupportRequestRow }) {
+function SupportRequestRow({ r, canManage }: { r: AdminSupportRequestRow; canManage: boolean }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
 
@@ -185,7 +185,7 @@ function SupportRequestRow({ r }: { r: AdminSupportRequestRow }) {
 
         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-          {SUPPORT_STATUSES.map((s) => (
+          {canManage && SUPPORT_STATUSES.map((s) => (
             <StatusButton
               key={s.value}
               current={r.status}
@@ -201,27 +201,40 @@ function SupportRequestRow({ r }: { r: AdminSupportRequestRow }) {
   )
 }
 
-export function AdminDemoRequests({ requests }: { requests: AdminDemoRequestRow[] }) {
+export function AdminDemoRequests({
+  requests,
+  canManage = false,
+}: {
+  requests: AdminDemoRequestRow[]
+  /** `manageLeads` yetkisi — yoksa durum düğmeleri çizilmez (BAK-93). */
+  canManage?: boolean
+}) {
   if (requests.length === 0) {
     return <p className="text-sm text-muted-foreground">Henüz demo talebi yok.</p>
   }
   return (
     <div className="space-y-3">
       {requests.map((r) => (
-        <DemoRequestRow key={r.id} r={r} />
+        <DemoRequestRow key={r.id} r={r} canManage={canManage} />
       ))}
     </div>
   )
 }
 
-export function AdminSupportRequests({ requests }: { requests: AdminSupportRequestRow[] }) {
+export function AdminSupportRequests({
+  requests,
+  canManage = false,
+}: {
+  requests: AdminSupportRequestRow[]
+  canManage?: boolean
+}) {
   if (requests.length === 0) {
     return <p className="text-sm text-muted-foreground">Henüz destek talebi yok.</p>
   }
   return (
     <div className="space-y-3">
       {requests.map((r) => (
-        <SupportRequestRow key={r.id} r={r} />
+        <SupportRequestRow key={r.id} r={r} canManage={canManage} />
       ))}
     </div>
   )

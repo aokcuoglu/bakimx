@@ -23,6 +23,14 @@ export interface ImpersonationOverlay {
 export interface SessionData {
   userId?: string
   workshopId?: string
+  /**
+   * Oturumun AÇILDIĞI an (epoch ms). Tek amacı iptal edilebilirlik: çerez
+   * durumsuz ve 7 gün ömürlü olduğu için, bir platform yöneticisinin açık
+   * oturumunu kesmenin başka yolu yok (`PlatformAdmin.sessionsValidFrom` ile
+   * karşılaştırılır — BAK-93). Bu alan gelmeden önce açılmış çerezlerde YOK;
+   * `isAdminSessionRevoked` bunu bilerek "iptal edilmiş" sayar.
+   */
+  authenticatedAt?: number
   impersonation?: ImpersonationOverlay
 }
 
@@ -73,6 +81,23 @@ export async function getSession() {
   const cookieStore = await cookies()
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
   return session
+}
+
+/**
+ * Girişin TEK yazma noktası. Önce çerezi temizler (session fixation), sonra
+ * kimliği ve `authenticatedAt` damgasını yazar.
+ *
+ * Neden helper: damga dört ayrı giriş yolunda (login route, login server action,
+ * verify-email, dev-login) tutarlı olmak zorunda. Biri unutulursa o yoldan açılan
+ * yönetici oturumu iptal edilemez hâle gelirdi — sessiz bir güvenlik açığı.
+ */
+export async function establishSession(userId: string, workshopId: string): Promise<void> {
+  const session = await getSession()
+  session.destroy()
+  session.userId = userId
+  session.workshopId = workshopId
+  session.authenticatedAt = Date.now()
+  await session.save()
 }
 
 /**
