@@ -98,6 +98,41 @@ env'in hükmü yoktur: adı env'de geçen ama tabloda satırı olmayan kişi yö
 değildir. Prod kiracı sıfırlaması (`scripts/prod-reset.ts`) tabloyu boşalttığı
 için bu yol oradan dönüşte de çalışır.
 
+**`ADMIN_EMAILS` yine de ölü bir değişken değil.** Konsol üyeliği artık tabloda
+ama bu liste hâlâ **sistem bildirimlerinin alıcı listesidir**: yeni iş yeri
+kaydı (`api/auth/register`), canlı destek mesajı, TAMI ödeme/konfigürasyon
+alarmları (`lib/tami/*-alert.ts`), cron hata bildirimi (`lib/ops/cron-run.ts`),
+deneme/abonelik bitiş uyarıları (`lib/billing/lifecycle.ts`) ve
+`/admin/health`'in "yönetici e-postası tanımlı mı" kontrolü hep `getAdminEmails()`
+okur. Yani buradan bir adres çıkarmak o kişiye giden **bütün** sistem
+e-postalarını keser.
+
+**Nerede tutuluyor (2026-08-17'den beri).** Değerin kaynağı her iki ortamda da
+SSM Parameter Store: `/bakimx/dev/ADMIN_EMAILS` ve `/bakimx/prod/ADMIN_EMAILS`.
+ECS task-def'i onu `secrets[]` girdisi olarak okur (`AI_PROVIDER`,
+`EMAIL_PROVIDER` vb. ile aynı desen); daha önce task-def'te düz bir
+`environment` girdisiydi ve SSM parametresi **hiç okunmuyordu** — aynı adın iki
+yerde farklı değer tutabildiği bu durum, "SSM'i güncelledim" denip hiçbir şeyin
+değişmemesine yol açıyordu.
+
+Değiştirme yolu (deploy gerektirmez, ~2 dk, kesintisiz):
+
+```sh
+aws ssm put-parameter --name /bakimx/prod/ADMIN_EMAILS --type String --overwrite \
+  --value "a@bakimx.com,b@bakimx.com" --region eu-central-1 --profile bakimx-prod
+aws ecs update-service --cluster bakimx-prod-cluster --service bakimx-prod-app-svc \
+  --force-new-deployment --region eu-central-1 --profile bakimx-prod
+```
+
+> **CDK uyarısı.** Task-def'in ve task execution rolünün asıl kaynağı CDK
+> compute stack'idir ve o kaynak **bu repoda değildir**. CDK'da `ADMIN_EMAILS`
+> hâlâ düz `environment` girdisi olarak duruyorsa bir `cdk deploy` bu bağlantıyı
+> geri alır — o zaman yukarıdaki `put-parameter` yine sessizce etkisiz kalır.
+> Kalıcı çözüm CDK kaynağında: değişkeni `secrets[]`e taşımak ve parametre
+> okuma iznini task execution rolüne eklemek (bugün bu izin, CDK'nın kendi
+> `...DefaultPolicy` politikasına dokunmamak için ayrı bir `AdminEmailsSsmRead`
+> satır içi politikasıyla verilmiştir).
+
 ### Aşama 2 — müşteri portföyü kurumsallaştıkça
 
 - Impersonation'da müşteri bilgilendirmesi; hassas tenant'a impersonation kilidi.
