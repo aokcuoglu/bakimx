@@ -98,12 +98,16 @@ export function AdminBilling({
   stuckTransactions,
   subscriptions,
   revenue,
+  canConfirm = false,
 }: {
   orders: AdminOrderRow[]
   recentOrders: AdminOrderRow[]
   stuckTransactions: AdminStuckTxnRow[]
   subscriptions: AdminSubRow[]
   revenue: { activeCount: number; mrrLabel: string; monthLabel: string }
+  /** `confirmBilling` yetkisi. Kapı sunucudadır; bu yalnız 404 üretecek
+   *  düğmeleri yetkisiz role göstermemek içindir (BAK-93). */
+  canConfirm?: boolean
 }) {
   return (
     <div className="space-y-6">
@@ -113,14 +117,14 @@ export function AdminBilling({
         <Stat label="Bu ay tahsil" value={revenue.monthLabel} />
       </div>
 
-      <StuckTransactionsSection rows={stuckTransactions} />
+      {canConfirm && <StuckTransactionsSection rows={stuckTransactions} />}
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-foreground">Bekleyen Ödemeler</h2>
         {orders.length === 0 ? (
           <p className="text-sm text-muted-foreground">Bekleyen ödeme yok.</p>
         ) : (
-          orders.map((o) => <OrderRow key={o.id} o={o} />)
+          orders.map((o) => <OrderRow key={o.id} o={o} canConfirm={canConfirm} />)
         )}
       </section>
 
@@ -278,7 +282,7 @@ function SourceBadge({ o }: { o: AdminOrderRow }) {
   return null
 }
 
-function OrderRow({ o }: { o: AdminOrderRow }) {
+function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const isCard = o.method === "card"
@@ -310,14 +314,16 @@ function OrderRow({ o }: { o: AdminOrderRow }) {
           {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
           {/* Kartlı akış otomatik — yanlışlıkla elle onaylanıp çifte aktivasyona
               yol açmasın diye kartlı bekleyen siparişte confirm butonu YOK. */}
-          {!isCard && (
+          {canConfirm && !isCard && (
             <Button type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id))} size="sm">
               <Check className="size-3.5" /> Havale alındı
             </Button>
           )}
-          <Button type="button" disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id))} variant="outline" size="sm">
-            <X className="size-3.5" /> İptal
-          </Button>
+          {canConfirm && (
+            <Button type="button" disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id))} variant="outline" size="sm">
+              <X className="size-3.5" /> İptal
+            </Button>
+          )}
         </div>
       </div>
     </div>

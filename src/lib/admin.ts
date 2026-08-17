@@ -1,11 +1,34 @@
 import { notFound, redirect } from "next/navigation"
+import type { AdminRole } from "@prisma/client"
 import { getCurrentUser, type AuthUser } from "@/lib/auth"
+import { prisma } from "@/lib/db"
+import { getSession } from "@/lib/session"
+import { can, isAdminSessionRevoked, type AdminCapability } from "@/lib/admin-roles"
 
 /**
- * Founder/super-admin gate for the /admin console. Membership is configured via
- * the ADMIN_EMAILS env var (comma-separated e-mails) — no schema/role changes.
- * If ADMIN_EMAILS is unset, NOBODY is an admin (the console 404s for everyone).
+ * Platform (BakımX personeli) yetkilendirmesi — `/admin` konsolunun kapısı.
+ * Kiracı içi rollerle (`UserRole`, `src/lib/roles.ts`) ilgisi yoktur.
+ *
+ * Üyelik `PlatformAdmin` tablosundadır (BAK-93). `ADMIN_EMAILS` env değişkeni
+ * YALNIZ bootstrap yoludur: tablo boşken devreye girer ve ilk yönetici okumasında
+ * satırları kendisi yazar. Tablo dolduğu andan itibaren tek kaynak DB'dir — env'de
+ * adı geçen ama tabloda satırı olmayan biri yönetici DEĞİLDİR.
+ *
+ * Rol/yetenek tablosu ve saf yardımcılar `@/lib/admin-roles` içindedir (istemci
+ * bileşenleri oradan import eder); buradan yeniden ihraç edilir ki sunucu tarafı
+ * tek bir modülle çalışsın.
  */
+
+export {
+  ADMIN_ROLES,
+  ADMIN_ROLE_LABELS,
+  ADMIN_ROLE_DESCRIPTIONS,
+  adminCapabilities,
+  can,
+  isAdminSessionRevoked,
+} from "@/lib/admin-roles"
+export type { AdminRole, AdminCapability }
+
 export function getAdminEmails(): string[] {
   return (process.env.ADMIN_EMAILS || "")
     .split(",")
@@ -18,66 +41,118 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return getAdminEmails().includes(email.trim().toLowerCase())
 }
 
-export async function isCurrentUserAdmin(): Promise<boolean> {
-  const user = await getCurrentUser()
-  return isAdminEmail(user?.email)
+/**
+ * Yönetici her zaman e-postalı bir hesaptır — üyelik `PlatformAdmin.userId`
+ * üzerinden kurulsa da giriş kimliği e-postadır. Tip bunu taşır ki
+ * `confirmedByEmail` gibi denetim alanları `user.email` nullable olduğu hâlde
+ * (BAK-40) ekstra kontrol istemesin.
+ */
+export type AdminUser = AuthUser & { email: string }
+
+export interface AdminContext {
+  user: AdminUser
+  adminRole: AdminRole
+  /** `PlatformAdmin.id`, ya da env bootstrap'ıyla girilmişse null. */
+  platformAdminId: string | null
+}
+
+/** Oturum damgası; istek kapsamı dışında (cron/script/build) undefined. */
+async function sessionAuthenticatedAt(): Promise<number | undefined> {
+  try {
+    const session = await getSession()
+    return session.authenticatedAt
+  } catch {
+    return undefined
+  }
 }
 
 /**
- * Yönetici her zaman e-postalı bir hesaptır — üyelik ADMIN_EMAILS üzerinden
- * kurulur. Tip bunu taşır ki `confirmedByEmail` gibi denetim alanları
- * `user.email` nullable olduğu hâlde (BAK-40) ekstra kontrol istemesin.
+ * Env allowlist'i tabloya taşır (tek seferlik, idempotent). `skipDuplicates`
+ * eşzamanlı iki isteğin yarışını zararsız kılar. Best-effort: yazma hatası
+ * konsola giriş yapılmasını ENGELLEMEZ (çağıran yakalar) — aksi hâlde geçici bir
+ * yazma sorunu kurucuyu kendi konsolundan kilitlerdi.
  */
-export type AdminUser = AuthUser & { email: string }
+async function materializeEnvAdmins(): Promise<void> {
+  const emails = getAdminEmails()
+  if (emails.length === 0) return
+
+  const users = await prisma.user.findMany({
+    where: { email: { in: emails, mode: "insensitive" } },
+    select: { id: true },
+  })
+  if (users.length === 0) return
+
+  await prisma.platformAdmin.createMany({
+    data: users.map((u) => ({ userId: u.id, role: "founder" as const })),
+    skipDuplicates: true,
+  })
+}
+
+interface ResolvedAdmin {
+  adminRole: AdminRole
+  platformAdminId: string | null
+}
+
+/**
+ * Etkin kullanıcının platform rolü, ya da yönetici değilse null.
+ *
+ * Sıra: (1) DB satırı — devre dışıysa veya oturumu iptal edilmişse reddet,
+ * (2) satır yoksa ve env'de adı geçiyorsa YALNIZ tablo boşken bootstrap.
+ */
+async function resolveAdmin(user: AuthUser): Promise<ResolvedAdmin | null> {
+  if (!user.email) return null
+
+  const row = await prisma.platformAdmin.findUnique({
+    where: { userId: user.id },
+    select: { id: true, role: true, disabledAt: true, sessionsValidFrom: true },
+  })
+
+  if (row) {
+    if (row.disabledAt) return null
+    if (isAdminSessionRevoked(await sessionAuthenticatedAt(), row.sessionsValidFrom)) return null
+    return { adminRole: row.role, platformAdminId: row.id }
+  }
+
+  if (!isAdminEmail(user.email)) return null
+  // Tablo doluysa env'in sözü geçmez — offboarding tek noktadan (DB) yapılabilsin.
+  if ((await prisma.platformAdmin.count()) > 0) return null
+
+  try {
+    await materializeEnvAdmins()
+  } catch (err) {
+    console.error("[admin] env bootstrap materialization failed:", err instanceof Error ? err.message : err)
+  }
+  return { adminRole: "founder", platformAdminId: null }
+}
+
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  return (await resolveAdmin(user)) !== null
+}
 
 /**
  * Use in admin pages AND admin server actions. Throws notFound() (404) for
  * non-admins so the console's existence isn't revealed. Returns the admin user.
  */
 export async function requireAdmin(): Promise<AdminUser> {
-  const user = await getCurrentUser()
-  if (!user) redirect("/login")
-  // `isAdminEmail` zaten null'a false döner; ikinci kontrol yalnız daraltma için.
-  if (!user.email || !isAdminEmail(user.email)) notFound()
-  return { ...user, email: user.email }
-}
-
-/**
- * RBAC-ready seam. Today the only admin role is `founder` (everyone in
- * ADMIN_EMAILS). When a limited "support agent" role is introduced later, only
- * `adminRole` resolution + the `can()` table change — the call sites that
- * already declare a capability keep working unchanged.
- */
-export type AdminRole = "founder"
-
-export type AdminCapability =
-  | "viewConsole"
-  | "manageWorkshops"
-  | "confirmBilling"
-  | "viewAudit"
-  | "viewHealth"
-  | "impersonate"
-  | "manageFlags"
-  | "exportData"
-  | "manageCatalog"
-  | "manageLiveChat"
-
-export interface AdminContext {
-  user: AuthUser
-  adminRole: AdminRole
+  return (await getAdminContext()).user
 }
 
 export async function getAdminContext(): Promise<AdminContext> {
-  const user = await requireAdmin()
-  return { user, adminRole: "founder" }
-}
+  const user = await getCurrentUser()
+  if (!user) redirect("/login")
 
-/**
- * Capability check. P1: founders can do everything. Restricting a future
- * `support_agent` is a single edit to this table — not a call-site sweep.
- */
-export function can(ctx: AdminContext, _capability: AdminCapability): boolean {
-  return ctx.adminRole === "founder"
+  const resolved = await resolveAdmin(user)
+  // `resolveAdmin` e-postasız kullanıcıya zaten null döner; ikinci kontrol
+  // yalnız `AdminUser.email` daraltması için.
+  if (!resolved || !user.email) notFound()
+
+  return {
+    user: { ...user, email: user.email },
+    adminRole: resolved.adminRole,
+    platformAdminId: resolved.platformAdminId,
+  }
 }
 
 /**

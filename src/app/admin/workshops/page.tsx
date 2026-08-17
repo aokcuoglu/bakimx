@@ -1,11 +1,11 @@
-import { requireAdmin } from "@/lib/admin"
+import { can, getAdminContext } from "@/lib/admin"
 import { getWorkshopRows } from "@/app/admin/data"
 import { AdminWorkshops } from "@/app/admin/admin-workshops"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminWorkshopsPage() {
-  await requireAdmin()
+  const ctx = await getAdminContext()
   const rows = await getWorkshopRows()
 
   return (
@@ -16,7 +16,7 @@ export default async function AdminWorkshopsPage() {
           Yeni kayıtları görüntüleyin, paket taleplerini etkinleştirin. Detay için iş yeri adına tıklayın.
         </p>
       </div>
-      <AdminWorkshops workshops={rows} />
+      <AdminWorkshops workshops={rows} canManage={can(ctx, "manageWorkshops")} />
     </div>
   )
 }

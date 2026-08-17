@@ -1,11 +1,11 @@
-import { requireAdmin } from "@/lib/admin"
+import { can, getAdminContext } from "@/lib/admin"
 import { getBillingData } from "@/app/admin/data"
 import { AdminBilling } from "@/app/admin/admin-billing"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminBillingPage() {
-  await requireAdmin()
+  const ctx = await getAdminContext()
   const { orderRows, recentOrders, stuckTransactions, subscriptions, revenue } = await getBillingData()
 
   return (
@@ -22,6 +22,7 @@ export default async function AdminBillingPage() {
         stuckTransactions={stuckTransactions}
         subscriptions={subscriptions}
         revenue={revenue}
+        canConfirm={can(ctx, "confirmBilling")}
       />
     </div>
   )

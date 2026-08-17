@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { requireAdmin } from "@/lib/admin"
+import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
 import { getEffectiveFeatures } from "@/lib/features"
@@ -59,7 +59,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export default async function WorkshopDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin()
+  const ctx = await getAdminContext()
   const { id } = await params
 
   const workshop = await prisma.workshop.findUnique({
@@ -143,18 +143,22 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
               </p>
             )}
           </div>
-          <div className="shrink-0">
-            <ImpersonateButton workshopId={workshop.id} />
-          </div>
+          {can(ctx, "impersonate") && (
+            <div className="shrink-0">
+              <ImpersonateButton workshopId={workshop.id} />
+            </div>
+          )}
         </div>
-        <WorkshopActions
-          w={{
-            id: workshop.id,
-            approvalStatus: workshop.approvalStatus,
-            requestedPlanTier: workshop.requestedPlanTier,
-            extraSeats: workshop.extraSeats,
-          }}
-        />
+        {can(ctx, "manageWorkshops") && (
+          <WorkshopActions
+            w={{
+              id: workshop.id,
+              approvalStatus: workshop.approvalStatus,
+              requestedPlanTier: workshop.requestedPlanTier,
+              extraSeats: workshop.extraSeats,
+            }}
+          />
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -192,13 +196,17 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
           </div>
         </Section>
 
-        <Section title="Özellik Bayrakları">
-          <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
-        </Section>
+        {can(ctx, "manageFlags") && (
+          <Section title="Özellik Bayrakları">
+            <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
+          </Section>
+        )}
 
-        <Section title="BakımX İskontosu">
-          <BakimxDiscountForm workshopId={workshop.id} currentDiscountBps={workshop.bakimxDiscountBps} />
-        </Section>
+        {can(ctx, "manageWorkshops") && (
+          <Section title="BakımX İskontosu">
+            <BakimxDiscountForm workshopId={workshop.id} currentDiscountBps={workshop.bakimxDiscountBps} />
+          </Section>
+        )}
 
         <Section title="Kullanım">
           <Field label="Müşteri" value={String(customerCount)} />

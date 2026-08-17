@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { loginSchema } from "@/lib/validations/auth"
-import { getSession } from "@/lib/session"
+import { establishSession } from "@/lib/session"
 import {
   verifyCredentials,
   loginRateLimit,
@@ -74,11 +74,7 @@ export async function POST(request: Request) {
 
     // Rotate the session on login: clear any pre-existing (possibly fixated)
     // session data before writing the authenticated identity.
-    const session = await getSession()
-    session.destroy()
-    session.userId = result.userId
-    session.workshopId = result.workshopId
-    await session.save()
+    await establishSession(result.userId, result.workshopId)
 
     // Planı bitmiş workshop'lar uygulamaya değil satın alma akışına gider; app
     // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).

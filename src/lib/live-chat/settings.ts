@@ -12,8 +12,15 @@ import {
 export const DEFAULT_GREETING =
   "Merhaba! 👋 BakımX destek ekibindeyiz. Sorunuzu yazın, hemen yanıtlayalım."
 
+/**
+ * DİKKAT — burada tutamayacağımız bir söz verme. Sistem ziyaretçiye e-posta
+ * GÖNDERMİYOR: yanıt yalnız widget'ta görünür (ziyaretçi tarayıcısında saklanan
+ * anahtarla sohbete geri döner). Metnin eski hâli "size buradan ve e-posta ile
+ * dönüş yapalım" diyordu; bunun karşılığı kodda hiç olmadı. Ziyaretçiye e-posta
+ * eklenirse söz geri konabilir.
+ */
 export const DEFAULT_OFFLINE_MESSAGE =
-  "Şu an çevrimdışıyız. Mesajınızı bırakın — mesai başlar başlamaz size buradan ve e-posta ile dönüş yapalım."
+  "Şu an çevrimdışıyız. Mesajınızı bırakın — mesai başlar başlamaz buradan dönüş yapalım."
 
 export const DEFAULT_RESPONSE_NOTE = "Genelde birkaç dakika içinde yanıtlıyoruz"
 

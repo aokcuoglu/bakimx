@@ -30,8 +30,9 @@ import { buildPoolConfig } from "../src/lib/pg-connection"
  *      (fotoğraflar DB'de değil, `STORAGE_PATH_PREFIX` altında S3'te durur)
  *   7) `/tmp/.prod-db-url` dosyasını silin.
  *
- * Sonrasında prod'da hiç atölye kalmaz — `/register` ile yeniden hesap açılır,
- * admin yetkisi `ADMIN_EMAILS` env'inden gelir.
+ * Sonrasında prod'da hiç atölye kalmaz — `/register` ile yeniden hesap açılır.
+ * `PlatformAdmin` tablosu da boşaldığı için konsol erişimi yeniden `ADMIN_EMAILS`
+ * bootstrap'ına düşer ve ilk yönetici girişinde tabloya geri yazılır (BAK-93).
  *
  * URL dosyadan okunur (argv/env'e düşmesin diye) ve host tünele çevrilir; bu
  * sayede tünel kapalıyken script uzak RDS'e doğrudan bağlanıp çalışamaz.
@@ -86,6 +87,11 @@ export const TENANT_TABLES = [
   "BillingOrder",
   "PaymentTransaction",
   "ImpersonationSession",
+  // Platform yöneticiliği (BAK-93) global bir yetkidir ama satırı `User`'a FK ile
+  // bağlıdır ve o kullanıcı bu listede siliniyor — CASCADE'siz TRUNCATE, tablo
+  // listede olmasaydı zaten iptal ederdi. Sıfırlama sonrası üyelik `ADMIN_EMAILS`
+  // bootstrap'ından yeniden kurulur (bkz. dosya başı, `src/lib/admin.ts`).
+  "PlatformAdmin",
   "CronRun",
   // BakımX sipariş TALEBİ (BAK-60): katalog tablolarının aksine kiracıya aittir
   // (`workshop_id` taşır), dolayısıyla korunanlarda değil burada. Kalem tablosu
