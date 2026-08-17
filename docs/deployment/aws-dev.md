@@ -1,6 +1,6 @@
 # AWS dev CI/CD — CDK backfill spec
 
-**Amaç.** `app-dev.bakimx.com` (AWS dev ortamı, Contabo `staging.app.bakimx.com`'un yerini alır) için CI/CD, `dev` push'unda GitHub Actions → ECR → ECS ile deploy eder (workflow: [`.github/workflows/deploy-dev-aws.yml`](../../.github/workflows/deploy-dev-aws.yml)). Aşağıdaki AWS kaynakları 2026-07-20'de **AWS CLI ile** (hibrit yaklaşım) elle oluşturuldu; bu doküman onların **CDK'ya taşınması (backfill)** içindir; taşındıktan sonra CLI kaynakları ve CI'daki geçici env-enjeksiyonu kaldırılır.
+**Amaç.** `app-dev.bakimx.com` (AWS dev ortamı, Contabo `staging.app.bakimx.com`'un yerini alır) için CI/CD, GitHub Actions → ECR → ECS ile deploy eder — **`dev` push'unda otomatik değil**: commit mesajında `[deploy-dev]` işaretçisi ya da elle dispatch gerekir (2026-08-17, BAK-90; bkz. [releasing.md](../releasing.md)) (workflow: [`.github/workflows/deploy-dev-aws.yml`](../../.github/workflows/deploy-dev-aws.yml)). Aşağıdaki AWS kaynakları 2026-07-20'de **AWS CLI ile** (hibrit yaklaşım) elle oluşturuldu; bu doküman onların **CDK'ya taşınması (backfill)** içindir; taşındıktan sonra CLI kaynakları ve CI'daki geçici env-enjeksiyonu kaldırılır.
 
 Account `292398627626`, region `eu-central-1`. Repo `aokcuoglu/bakimx`.
 
@@ -128,7 +128,7 @@ Kaynaklar CLI ile **aynı isimlerle** zaten var. CDK aynı isimle **oluşturmaya
 ---
 
 ## 4. Doğrulama (backfill sonrası)
-- `dev`'e küçük bir commit push et → workflow yeşil (build → ECR → migrate gate → deploy, PRIMARY==yeni assert geçer).
+- Workflow'u elle çalıştır (Actions → *Deploy to AWS dev* → Run workflow, `dev`) → yeşil (build → ECR → migrate gate → deploy, PRIMARY==yeni assert geçer). Push ile denemek istersen commit mesajına `[deploy-dev]` ekle.
 - `aws ecs describe-task-definition --task-definition bakimx-dev-app` → `app` env'inde 3 değişken var.
 - `curl -I https://app-dev.bakimx.com/api/health` → 200.
 - Login → Set-Cookie `bakimx_session_dev; Domain=app-dev.bakimx.com` (prod'dan izole).
