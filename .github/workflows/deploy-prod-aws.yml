@@ -50,12 +50,13 @@ env:
 
 jobs:
   # PR-origin gate — a commit that never went through a pull request must not ship to
-  # production. `main` is unprotected on this plan (branch protection + rulesets both
-  # 403; GitHub Pro declined for budget on 2026-08-15, BAK-57), so a direct push to
-  # main is possible AND auto-deploys — that happened on 2026-07-30 (3079291, 3f038e7,
-  # two unreviewed prod deploys). This does NOT protect the branch: the commit is still
-  # on main. It stops that commit from being SHIPPED. main-push-guard.yml raises the
-  # alarm; this is the gate. Approved by alpkaan on 2026-08-15 (BAK-59).
+  # production. Written when `main` was unprotected and a direct push both landed AND
+  # auto-deployed — that happened on 2026-07-30 (3079291, 3f038e7, two unreviewed prod
+  # deploys). Since 2026-08-17 (BAK-89) `main` requires a PR and admins cannot bypass,
+  # so this is now defence in depth rather than the only gate: it still stops a commit
+  # that reached main while protection was temporarily off from being SHIPPED.
+  # main-push-guard.yml raises the alarm; this is the gate. Approved by alpkaan on
+  # 2026-08-15 (BAK-59). See docs/agent-workflows/repo-guardrails.md §2.
   #
   # The `if` is on the STEP, not the job: a job-level `if` would mark this job
   # `skipped` on workflow_dispatch, and `deploy` — which needs it — would be skipped

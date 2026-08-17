@@ -2,11 +2,13 @@ name: Pull request quality
 
 # Runs on PRs AND — via workflow_call — as the gate in front of both deploys.
 # The PR's green check only proves the PR *head* was green; it says nothing about
-# the merged result. With no branch protection on this plan (private repo + free
-# plan → both the branch-protection and rulesets APIs return 403), nothing forces
-# a branch to be up to date before merge, and nothing stops a direct push to
-# dev/main. So the deploy workflows re-run this against the exact commit they are
-# about to ship. See deploy-dev-aws.yml / deploy-prod-aws.yml.
+# the merged result. Branch protection is ON since 2026-08-17 (BAK-89), but it only
+# closes part of the gap: `main` requires this check and an up-to-date branch,
+# while `dev` requires neither (sync-main-to-dev.yml pushes to dev directly, so a
+# required check there would break every post-release sync). So a stale branch can
+# still be merged into `dev`. That is why the deploy workflows re-run this against
+# the exact commit they are about to ship. See deploy-dev-aws.yml /
+# deploy-prod-aws.yml and docs/agent-workflows/repo-guardrails.md §2.
 on:
   pull_request:
     branches: [dev, main]

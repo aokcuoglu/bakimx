@@ -43,19 +43,19 @@ feature/* ──PR──► dev ──[deploy-dev]──► 🚀 app-dev.bakimx.
 > | Force push | ❌ engelli (admin dahil) | ❌ engelli (admin dahil) |
 > | PR zorunlu | ✅ (0 onay) | — açık bırakıldı |
 > | `quality` check zorunlu | ✅ | — |
-> | Dalın güncel olması (`strict`) | ❌ kapalı | — |
+> | Dalın güncel olması (`strict`) | ✅ açık | — |
+> | Admin bypass (`enforce_admins`) | ❌ kapalı | ❌ kapalı |
+>
+> **`main`'e doğrudan push artık mümkün değil** — admin dahil. Hotfix akışı
+> değişmedi: aşağıdaki §Hotfix zaten `main`'e **PR** açmayı tarif ediyor.
+> `strict` açık olduğu için release PR'ı `main`'i tam içermeden merge edilemez.
 >
 > `dev`'de PR ve check **bilinçli olarak zorunlu değil**: `sync-main-to-dev.yml`
-> `dev`'e doğrudan push ediyor, zorunlu kılınırsa o workflow kırılır. `dev`'e giren
-> PR'sız bir commit'in **ship edilmesini** zaten `deploy-dev-aws.yml`'deki
-> `pr-origin` kapısı engelliyor. `strict` kapalı çünkü her merge'de açık tüm
-> PR'ların `quality`'yi yeniden koşmasına yol açıyor (Actions dakikası, BAK-90) —
-> bayat dal riski yerine "push öncesi `origin/dev`'i merge et" disipliniyle
-> karşılanıyor: [agent-workflows/repo-guardrails.md](./agent-workflows/repo-guardrails.md).
->
-> "Bypassing the above settings" (admin muafiyeti) açık bırakıldı, yani gerçek bir
-> hotfix'te `main`'e PR'sız girmek hâlâ mümkün — ama **silme ve force push admin
-> için de kapalı**, GitHub bu ikisini herkese uyguluyor.
+> `dev`'e doğrudan push ediyor, zorunlu kılınırsa her release sonrası o workflow
+> kırılır. `dev`'e giren PR'sız bir commit'in **ship edilmesini** zaten
+> `deploy-dev-aws.yml`'deki `pr-origin` kapısı engelliyor. Gerekçelerin tamamı ve
+> kuralların fiilî testi:
+> [agent-workflows/repo-guardrails.md](./agent-workflows/repo-guardrails.md) §2.
 
 ---
 
@@ -87,8 +87,12 @@ feature/* ──PR──► dev ──[deploy-dev]──► 🚀 app-dev.bakimx.
 5. `main`'e merge et. **Prod deploy'u burada başlar** (~11–12 dk): build → yeni
    task-def → **migration kapısı** → araç katalogu seed'i (bloklamayan) → ECS
    servis güncellemesi → yeni task-def'e yakınsadığının doğrulanması.
-   Merge'den önce prod runtime env'inde `APP_URL`, `RESEND_*` ve `ADMIN_EMAILS`
-   dolu mu kontrol et.
+   Env kontrolü **her sürümde gerekmiyor**: `APP_URL`, `ADMIN_EMAILS`,
+   `EMAIL_PROVIDER` ve `RESEND_*` prod task-def'inde kalıcı olarak tanımlı
+   (SSM Parameter Store + Secrets Manager, `bakimx/prod/*`) ve deploy bunları
+   yeniden yazmıyor. Yalnız **yeni bir env değişkeni ekleyen** sürümlerde kontrol
+   et — o zaman da doğru yer task-def'in kendisi:
+   `aws ecs describe-task-definition --task-definition bakimx-prod-app`.
 6. İzle: GitHub Actions → **"Deploy to AWS prod"** veya
    `gh run watch <id> --exit-status`. Yeşile dönünce https://app.bakimx.com'u
    duman testinden geçir.
