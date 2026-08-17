@@ -11,6 +11,13 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 | Dallanma, deploy & sürüm çıkarma | [releasing.md](./releasing.md) |
 | UI kontrol boyutları | [ui-control-sizing.md](./ui-control-sizing.md) |
 
+## Operasyon
+
+| Konu | Doküman |
+|---|---|
+| Platform yönetim modeli — ekip erişimi, roller, konsol | [operations/platform-admin-model.md](./operations/platform-admin-model.md) |
+| Destek runbook — şikayet triyajı & test yöntemleri | [operations/support-runbook.md](./operations/support-runbook.md) |
+
 ## Ajan akışları
 
 | Konu | Doküman |
