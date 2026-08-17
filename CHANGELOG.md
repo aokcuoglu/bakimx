@@ -3,7 +3,17 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.12.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.14.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.14.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.14.0 | Canlı destek, servisler arası araç geçmişi, ruhsat/şase okuma, KDV modeli yeniden kuruldu | [v0.14.0](./docs/releases/v0.14.0.md) |
+
+Öne çıkanlar: **aracın ve parçanın kimliğini elle yazma dönemi kapandı** — ruhsat artık iş emri sihirbazının her yolunda okutulabiliyor ve şase kamerayla taranıyor (girilen plaka/şase ruhsattan farklıysa **üzerine yazılmaz**, fark uyarı olarak gösterilir); bir plaka birden çok serviste kayıtlıysa geçmişi görünür hâle geldi — kişisel veri **varsayılan olarak maskeli**, maskeyi kaldıran şey ruhsatın o serviste okutulmuş olması (`VehicleHistoryGrant`), **fiyat hiçbir koşulda servisler arası çıkmaz** ve bu iki testle kapıya bağlı; dışarıdan alınan parçanın numarası TecDoc / BakımX / stok kataloglarında aranıp tek tıkla eşleştiriliyor (yalnız `tecdocArticleId` bağı kurulur — `partId` yazmak stok düşümü tetiklerdi). **Para tarafı:** KDV modeli baştan kuruldu — varsayılan KAPALI, girilen tutar her zaman net (₺100 giren ₺83,33 okumuyor artık), kalem tablosunun "Toplam" sütunu KDV dahil okunuyor ve müşteriye giden özet/PDF/WhatsApp çıktıları nihayet indirim + KDV kırılımını basıyor. **Parça talepleri** iptal/düzenleme kararı kazandı ve karara bağlanmamış talep varken araç teslim edilemiyor (eskiden teslim sonrası emir kilitlendiği için talep sonsuza kadar askıda kalıyordu); dış alım kaydı teknisyen ekranından silinebiliyor. Ayrıca **BakımX'in kendi canlı destek masası** devreye girdi (ziyaretçi widget'ı + çalışma saatleri + `/admin` gelen kutusu; ECS'te ortak pub/sub olmadığı için bilinçli olarak yoklama, SSE değil), `/register` 4 adımlı sihirbaza dönüştü ve landing Faz 1-3 (duyuru barı, itiraz kart şeridi, hero ask bar) yayına girdi. **Migration VAR** (4 migration: canlı destek tabloları, `includeVat` varsayılanı, `VehicleHistoryGrant`, parça talebi iptali).
+
+> **0.13.0 neden yok:** `v0.13.0` tag'i hiçbir zaman `dev`'e ya da `main`'e girmemiş bir dala (`17083f3`) işaret ediyordu ve GitHub'da yanlışlıkla "Latest" görünüyordu; tag ile release silindi. Aynı tag adını farklı bir commit için yeniden kullanmak, tag'i daha önce fetch etmiş her klonda kalıcı karışıklık bırakacağı için numarada boşluk bırakıldı. v0.14.0 ayrıca v0.12.0'dan beri `main`'e tag'lenmeden girmiş içeriği de (PR #364 release partisi) devralır.
 
 ## 0.12.x
 
