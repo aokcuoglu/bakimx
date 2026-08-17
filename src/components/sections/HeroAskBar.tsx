@@ -103,6 +103,8 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
           <Input
             id={INPUT_ID}
             ref={inputRef}
+            role="combobox"
+            aria-haspopup="dialog"
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
             // Vaat ettiğimiz şey hazır yanıtları bulmak; "her şeyi sorun" değil.

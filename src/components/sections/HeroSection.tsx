@@ -29,13 +29,11 @@ export function HeroSection() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/*
           Hero kompozisyonu (BAK-78 planı):
-          - üst satır: sol kolon (mesaj + CTA) + sağ kolon (Faz 2'de soru→cevap şeridi)
-          - altında ortalanmış slot: Faz 3'te "BakımX'e sorun" ask bar buraya girer.
-          Slot bu fazda boş olduğu için hiç render edilmiyor — boş bir kap
-          bırakmak gereksiz dikey boşluk yaratırdı. Faz 3 slot'u grid'in
-          kardeşi olarak ekler (`mx-auto` + üst boşluk kendi üzerinde).
+          - üst satır: sol kolon (mesaj + CTA) + sağ kolon (soru→cevap şeridi)
+          - ikinci satır: iki kolona yayılan "BakımX'e sorun" ask bar.
+          DOM sırası görsel grid sırasından bağımsız olarak klavye akışını korur.
         */}
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-x-14 lg:gap-y-12">
           {/* Sol: mesaj + CTA */}
           <div className="flex max-w-xl flex-col gap-6">
             <motion.span
@@ -126,6 +124,22 @@ export function HeroSection() {
             </motion.ul>
           </div>
 
+          {/* DOM sırası klavye akışını belirler: hero CTA'larından sonra ask bar
+              ve çipler, ardından kart şeridi gelir. Desktop grid kartları yine
+              sağ kolonda, ask bar'ı iki kolonun altında gösterir. */}
+          <motion.div
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="lg:col-span-2 lg:row-start-2"
+          >
+            <HeroAskBar
+              value={askQuery}
+              onValueChange={setAskQuery}
+              focusSignal={askFocusSignal}
+            />
+          </motion.div>
+
           {/* Sağ: soru→cevap kart şeridi (BAK-80). Faz 1'deki tek statik ürün
               görselinin yerini aldı. Artık hero'nun en büyük elemanı bir görsel
               değil H1 metni; şeritteki görsellerin hiçbiri `priority` almaz. */}
@@ -133,7 +147,7 @@ export function HeroSection() {
             initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full min-w-0"
+            className="w-full min-w-0 lg:col-start-2 lg:row-start-1"
           >
             {/* Faz 2'de açık bırakılan bağ (BAK-81): kart tıklaması artık SSS'e
                 gitmek yerine ask bar'ı o soruyla doldurup odağı oraya taşır.
@@ -146,20 +160,6 @@ export function HeroSection() {
             />
           </motion.div>
         </div>
-
-        {/* Faz 3 slot: ortalanmış "BakımX'e sorun" ask bar. */}
-        <motion.div
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-12 sm:mt-14"
-        >
-          <HeroAskBar
-            value={askQuery}
-            onValueChange={setAskQuery}
-            focusSignal={askFocusSignal}
-          />
-        </motion.div>
       </div>
     </section>
   );

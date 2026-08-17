@@ -124,13 +124,13 @@ export function AssistantPanel({
           modal && "bottom-4 sm:bottom-6",
         )}
       >
-        <header className="flex items-center gap-3 bg-primary px-4 py-3.5 text-primary-foreground">
+        <div className="flex items-center gap-3 bg-primary px-4 py-3.5 text-primary-foreground">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/15">
             <Wrench className="size-5" />
           </div>
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-sm font-semibold leading-tight">BakımX Asistanı</p>
-            <p className="text-xs leading-tight text-primary-foreground/80">
+            <p className="text-xs leading-tight text-primary-foreground">
               Sorularınız için buradayız
             </p>
           </div>
@@ -143,7 +143,7 @@ export function AssistantPanel({
           >
             <X className="h-5 w-5" />
           </Button>
-        </header>
+        </div>
 
         <div className={cn("min-h-0 flex-1", view === "chat" ? "flex flex-col" : "overflow-y-auto")}>
           {view === "menu" && <MenuView onNavigate={onNavigate} />}
