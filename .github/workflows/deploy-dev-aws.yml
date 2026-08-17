@@ -5,16 +5,28 @@ name: Deploy to AWS dev (app-dev.bakimx.com)
 #
 # Flow: build arm64 image → push to ECR → register a new task-def revision (image swap)
 # → DB migration gate (one-off ECS task, aborts on failure) → update the ECS service.
+#
+# OPT-IN, NOT AUTOMATIC (BAK-90, approved by alpkaan on 2026-08-17). A push to `dev`
+# only deploys when its head commit message contains the literal marker `[deploy-dev]`;
+# otherwise every job is skipped. `workflow_dispatch` always deploys.
+#
+# Why: this workflow was 73% of the repo's Actions bill — 125 runs in 17 days (≈7/day,
+# 24 in one day), 16 billable minutes each (11 of them the arm64 build). app-dev is not
+# needed that often: agents do QA in isolated worktrees against a local/tunnelled DB, and
+# app-dev's real job is shared pre-release verification, i.e. a few times a month. A
+# job-level `if` allocates no runner, so a skipped push costs 0 minutes.
+#
+# Add `[deploy-dev]` to the squash-merge message whenever the merge needs to reach the
+# shared environment — ALWAYS when it adds a Prisma migration, because the dev DB only
+# gets `migrate deploy` as part of this deploy (docs/database.md).
+#
+# `paths-ignore` was removed with the same change: the marker is now the single rule for
+# whether a push deploys, and a path filter on top of it would silently swallow an
+# explicit `[deploy-dev]` on a docs-only commit.
 
 on:
   push:
     branches: [dev]
-    # Docs/markdown-only pushes don't change the image or infra — skip the ~15 min build+deploy.
-    # (workflow_dispatch always runs, as a manual override.)
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - ".env*.example"
   workflow_dispatch:
 
 # OIDC: assume the AWS deploy role without long-lived keys.
@@ -37,20 +49,30 @@ env:
   ROLE_ARN: arn:aws:iam::292398627626:role/bakimx-dev-gha-deploy
 
 jobs:
+  # Every job below carries the same opt-in condition (see the header). It is repeated
+  # rather than factored into one `gate` job on purpose: a gate job would allocate a
+  # runner and bill a full minute on EVERY push to dev, which is exactly the cost this
+  # change exists to remove. A skipped job bills nothing.
+  #
+  # `deploy` needs both jobs below, so skipping them skips it too.
+
   # PR-origin gate — a commit that never went through a pull request must not ship to
-  # the shared dev environment. `dev` is unprotected on this plan (branch protection
-  # + rulesets both 403; GitHub Pro declined for budget on 2026-08-15, BAK-57), so a
-  # direct push is possible AND auto-deploys. The recent first-parent history confirms
+  # the shared dev environment. `dev` still accepts direct pushes by design (its
+  # protection covers deletion and force-push only — sync-main-to-dev.yml must be able
+  # to push there), so a direct push is possible. The recent first-parent history confirms
   # merged PRs are the normal dev workflow; silently shipping a direct push is not.
   # This does NOT protect the branch: the commit is still on dev. It stops that commit
   # from being SHIPPED. Approved by alpkaan on 2026-08-15 (BAK-62).
   #
-  # The `if` is on the STEP, not the job: a job-level `if` would mark this job
-  # `skipped` on workflow_dispatch, and `deploy` — which needs it — would be skipped
-  # with it. Here the job just runs zero steps and goes green in seconds.
+  # Two different `if`s here, do not merge them. The JOB-level one is the opt-in marker
+  # gate shared by all jobs. The STEP-level one (`event_name == 'push'`) must stay on the
+  # step: moving it to the job would mark this job `skipped` on workflow_dispatch, and
+  # `deploy` — which needs it — would be skipped with it. On dispatch the job instead runs
+  # zero steps and goes green in seconds.
   # That is the deliberate hotfix escape hatch: an approved direct push can still be
   # shipped by hand (Actions → this workflow → Run workflow), which leaves a trail.
   pr-origin:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy-dev]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -73,11 +95,12 @@ jobs:
 
   # Quality gate. `quality` otherwise only runs on pull_request, which means a direct
   # push to dev — or a merge whose result nobody revalidated — reached this environment
-  # with no test/lint/typecheck/build at all. Branch protection would normally cover
-  # that, but it is unavailable on this plan (private repo + free plan → the
-  # branch-protection and rulesets APIs both 403), so the gate lives here instead.
-  # It runs against the exact commit about to be deployed, not a PR head.
+  # with no test/lint/typecheck/build at all. `dev` is protected against deletion and
+  # force-push (2026-08-17, BAK-89) but deliberately NOT against direct pushes, because
+  # sync-main-to-dev.yml has to push there. So the gate stays here, and it runs against
+  # the exact commit about to be deployed, not a PR head.
   quality:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy-dev]') }}
     uses: ./.github/workflows/quality.yml
 
   deploy:
