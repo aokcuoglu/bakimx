@@ -20,6 +20,7 @@ export function PartCard({
   brand,
   note,
   badge,
+  media,
   meta,
   actions,
   className,
@@ -33,6 +34,8 @@ export function PartCard({
   note?: ReactNode
   /** Sağ üst: durum rozeti ya da tutar. */
   badge?: ReactNode
+  /** Ad satırının altında tam genişlik alan: fotoğraf şeridi gibi görsel ekler. */
+  media?: ReactNode
   /** Alt satırın solu: tarih, kaynak gibi ikincil bilgi. */
   meta?: ReactNode
   /** Alt satırın sağı: düzenle/sil/durum butonları. */
@@ -63,6 +66,8 @@ export function PartCard({
         </div>
         {badge && <div className="shrink-0">{badge}</div>}
       </div>
+
+      {media && <div className="mt-2">{media}</div>}
 
       {hasFooter && (
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
