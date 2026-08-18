@@ -3,7 +3,15 @@
 BakımX sürüm geçmişi. Her sürümün ayrıntılı notu [`docs/releases/`](./docs/releases/) altındadır. Sürümler [SemVer](https://semver.org/lang/tr/) ve dev→staging→main akışını izler (bkz. [docs/releasing.md](./docs/releasing.md)).
 
 ## Yayınlanmamış (Unreleased)
-Henüz yok — v0.14.1 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+Henüz yok — v0.15.0 tag'lendi, sonraki sürüm için birikmiş tag'siz geliştirme bulunmuyor.
+
+## 0.15.x
+
+| Sürüm | Başlık | Not |
+|---|---|---|
+| 0.15.0 | `/admin` üyeliği veritabanına ve gerçek rollere taşındı; sıfır marjla faturalanan parça görünür oldu | [v0.15.0](./docs/releases/v0.15.0.md) |
+
+0.15.0 öne çıkanlar: **`/admin` üyeliği `ADMIN_EMAILS` env allowlist'inden `PlatformAdmin` tablosuna taşındı** (BAK-93) — personel eklemek/çıkarmak artık ECS task-def düzenlemesi ve redeploy istemiyor, `can()` her yetkiye `true` dönmüyor (`founder | support | finance | readonly` matrisi tek yerde, `/admin/actions.ts` içindeki 9 kapısız mutasyon yeteneğe bağlandı), ve **açık bir yönetici oturumu nihayet kesilebiliyor** (`sessionsValidFrom` + çerezdeki yeni `authenticatedAt` damgası; giriş tek noktadan `establishSession`'dan geçiyor). Kilitlenmeye karşı üç katman var: tablo boşken `ADMIN_EMAILS` bootstrap'ı ilk gireni `founder` olarak tabloya yazar, son aktif kurucu düşürülemez, ve `sessionsValidFrom` NULL iken deploy anında hiçbir oturum düşmez; `ADMIN_EMAILS`'in **bildirim alıcısı** olarak kullanımı değişmedi. İş emri tarafında **sessizce sıfır marjla faturalanan parça görünür oldu** (BAK-91): "Parça Aldım" ile girilen tutar alış fiyatı olduğu hâlde satış fiyatına birebir kopyalanıyordu — artık satış alışa eşitse kehribar, altındaysa kırmızı, alış fiyatı satırda hep okunur ve liste üstünde toplu hatırlatma var; kural engelleyici değil, eksik olan görünürlüktü ve hesaplama/toplam/kayıt yoluna dokunulmadı. Landing redesign'ın son fazı (BAK-82) ölçülmemiş metrik bandını ve yinelenen bölümü kaldırdı, hero klavye sırasını düzeltti, karanlık mod axe ihlallerini sıfırladı ve **mobil yakınlaştırmayı geri açtı** (`maximumScale: 1` kalktı). Ops tarafında `ADMIN_EMAILS`'in gerçek kaynağının SSM olduğu kayda geçti (#394). **Migration VAR** — tek migration, yalnız ekleyici (`AdminRole` enum + `PlatformAdmin` tablosu), mevcut veriye dokunmuyor. **app-dev doğrulaması yapılmadı:** sürüm penceresini uzatmamak için bilinçli olarak atlandı, prod bu migration'ı çalıştıran ilk ortam.
 
 ## 0.14.x
 
