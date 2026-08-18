@@ -72,6 +72,7 @@ Yetki tablosu (uygulanan hâli — kaynak: `src/lib/admin.ts`):
 | `manageWorkshops` (onay/red/plan) | ✅ | — | — | — |
 | `confirmBilling` | ✅ | — | ✅ | — |
 | `impersonate` (salt-okunur) | ✅ | ✅ | — | — |
+| `sendPasswordReset` (kullanıcıya bağlantı gönder) | ✅ | ✅ | — | — |
 | `manageFlags` | ✅ | — | — | — |
 | `manageCatalog` | ✅ | — | — | — |
 | `manageLiveChat` | ✅ | ✅ | — | — |
@@ -80,6 +81,12 @@ Yetki tablosu (uygulanan hâli — kaynak: `src/lib/admin.ts`):
 | `exportData` | ✅ | — | ✅ | — |
 | `manageLeads` (demo/destek talebi durumu) | ✅ | ✅ | — | — |
 | `manageAdmins` (bu liste) | ✅ | — | — | — |
+
+`sendPasswordReset` BAK-97 ile geldi: bağlantı **yalnız** kullanıcının kayıtlı
+e-postasına gider ve konsolda hiçbir yerde gösterilmez — aksi hâlde ele geçirilmiş
+bir yönetici hesabı tek tıkla herhangi bir kiracı hesabına girebilirdi. Aynı
+kullanıcıya tekrar gönderim 5 dakika kilitlidir ve sayaç DB'deki son token'ın
+yaşıdır (`src/lib/password-reset.ts`), süreç-içi bir sayaç değil.
 
 Son iki satır bu dokümanın ilk hâlinde yoktu; uygulama sırasında iki kapısız
 mutasyon ortaya çıktı (talep durumu güncelleme ve yönetici yönetiminin kendisi)

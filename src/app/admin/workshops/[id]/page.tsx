@@ -11,6 +11,7 @@ import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
 import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
+import { SendPasswordResetButton } from "@/app/admin/workshop-user-actions"
 
 export const dynamic = "force-dynamic"
 
@@ -29,6 +30,7 @@ const ACTION_LABELS: Record<string, string> = {
   billing_order_confirmed: "Havale teyit edildi",
   billing_order_cancelled: "Sipariş iptal edildi",
   workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
+  password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
 }
 const ROLE_LABELS: Record<string, string> = { owner: "Sahip", manager: "Yönetici", staff: "Personel" }
 
@@ -97,6 +99,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
       : null,
   }))
 
+  const canSendReset = can(ctx, "sendPasswordReset")
   const plan = getPlanState(workshop)
   const activeUsers = workshop.users.filter((u) => u.isActive).length
   const seatLimit = getSeatLimit(workshop.planTier as PlanTier, workshop.extraSeats)
@@ -180,16 +183,23 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
         <Section title="Ekip & Koltuk">
           <Field label="Aktif kullanıcı" value={`${activeUsers} / ${seatLimit}`} />
           <Field label="Ek koltuk" value={String(workshop.extraSeats)} />
-          <div className="pt-1 space-y-1.5">
+          <div className="pt-1 space-y-2.5">
             {workshop.users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between text-sm">
-                <span className={cn("text-foreground", !u.isActive && "text-muted-foreground line-through")}>
+              <div key={u.id} className="flex items-start justify-between gap-2 text-sm">
+                <span className={cn("min-w-0 break-words text-foreground", !u.isActive && "text-muted-foreground line-through")}>
                   {/* E-postasız üye kullanıcı adıyla listelenir (BAK-40). */}
                   {u.email ?? u.username ?? "—"}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Badge className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role] ?? u.role}</Badge>
-                  {!u.isActive && <Badge className="bg-destructive/10 text-destructive-strong">pasif</Badge>}
+                <span className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <Badge className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role] ?? u.role}</Badge>
+                    {!u.isActive && <Badge className="bg-destructive/10 text-destructive-strong">pasif</Badge>}
+                  </span>
+                  {/* Buton yalnız akışa GİREBİLEN koltuklarda: e-postasız veya pasif
+                      hesap token almaz (canReceivePasswordReset), aksiyon zaten reddeder. */}
+                  {canSendReset && u.isActive && u.email && (
+                    <SendPasswordResetButton workshopId={workshop.id} userId={u.id} label={u.email} />
+                  )}
                 </span>
               </div>
             ))}

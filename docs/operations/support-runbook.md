@@ -59,6 +59,15 @@ Sırayla eleyin:
    8 deneme sınırı devreye girer ve kullanıcı "Çok fazla deneme yapıldı" görür —
    bu bir kilit değil, **bir dakika** sonra düşer. Müşteriye bunu söyleyin.
 
+5. **Şifresini gerçekten unuttuysa:** iş yeri detayında (`/admin/workshops/<id>`)
+   → **Ekip & Koltuk** → ilgili kullanıcının satırındaki **"Şifre bağlantısı"**
+   düğmesi. Bağlantı yalnız kullanıcının kayıtlı e-postasına gider; konsolda
+   görünmez, sizin de göremeyeceğiniz bir şeydir. İşlem denetim kaydına
+   "Şifre sıfırlama bağlantısı gönderildi" olarak düşer. Yetki: `founder` ve
+   `support`. Aynı kullanıcıya tekrar gönderim **5 dakika** kilitlidir — her yeni
+   bağlantı öncekini geçersizler, yani üst üste basmak kullanıcının elindeki taze
+   bağlantıyı öldürür.
+
 **Yapmayın:** müşterinin şifresini bilmeye çalışmak, prod'da onun hesabıyla giriş
 denemek. Gerekiyorsa salt-okunur impersonation kullanın.
 
@@ -80,9 +89,14 @@ denemek. Gerekiyorsa salt-okunur impersonation kullanın.
    kullanıcıya yine "gönderildi" der — hesap var mı sorusunu sızdırmamak için.
    Müşteriye 15 dakika beklemesini söyleyin.
 
+5. **Bağlantıyı konsoldan siz gönderin.** Senaryo A adım 5: iş yeri detayı →
+   Ekip & Koltuk → "Şifre bağlantısı". Kullanıcının formu doldurmasına gerek
+   kalmaz; IP/e-posta limitine takılmışsa da bu yol açıktır. E-postasız ve pasif
+   koltuklarda düğme çıkmaz — o hesapların şifresini iş yeri sahibi sıfırlar.
+
 **Sahip kilitli kaldıysa** (e-posta adresi ölü, atölyede başka yönetici yok): bu
-bugün konsoldan çözülemez, elle müdahale gerekir. Kim yaptıysa yazılı gerekçe
-bıraksın.
+bugün konsoldan çözülemez, elle müdahale gerekir — konsoldaki bağlantı da o ölü
+adrese gider. Kim yaptıysa yazılı gerekçe bıraksın.
 
 ---
 

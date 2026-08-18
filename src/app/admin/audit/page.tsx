@@ -25,6 +25,7 @@ const ACTION_LABELS: Record<string, string> = {
   impersonation_started: "Taklit oturumu başladı",
   impersonation_ended: "Taklit oturumu kapandı",
   impersonation_revoked: "Taklit oturumu iptal edildi",
+  password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
 }
 
 interface AuditSearchParams {
