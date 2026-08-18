@@ -24,7 +24,15 @@ export interface ServiceAdvisorResult {
   rawResponse?: string
 }
 
+export interface LandingAssistantResult {
+  answer: string | null
+  sourceIds: string[]
+  provider: AiProviderName
+  rawResponse?: string
+}
+
 export interface AiProvider {
   readonly name: AiProviderName
   suggest(input: ServiceAdvisorInput): Promise<ServiceAdvisorResult>
+  askLanding(question: string, signal?: AbortSignal): Promise<LandingAssistantResult>
 }

@@ -132,6 +132,24 @@ const CORPUS: CorpusEntry[] = [
   })),
 ];
 
+/** Model yanıtındaki kaynak kimliklerini yalnız bilinen corpus kayıtlarına çözer. */
+export function getAssistantAnswerById(id: string): AssistantAnswer | undefined {
+  const entry = CORPUS.find((item) => item.id === id);
+  if (!entry) return undefined;
+  return {
+    id: entry.id,
+    source: entry.source,
+    question: entry.question,
+    answer: entry.answer,
+    href: entry.href,
+  };
+}
+
+/** Sağlayıcı prompt'unda kullanılan, kullanıcı girdisinden tamamen ayrı corpus. */
+export function getAssistantCorpus(): AssistantAnswer[] {
+  return CORPUS.map((entry) => getAssistantAnswerById(entry.id)!);
+}
+
 function tokenScore(token: string, entry: CorpusEntry): number {
   if (entry.keywordTokens.some((k) => sharesStem(token, k))) return WEIGHT.keyword;
   if (entry.questionTokens.some((q) => sharesStem(token, q))) return WEIGHT.question;

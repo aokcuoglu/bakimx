@@ -24,6 +24,7 @@ interface AssistantPanelProps {
   successContext: SuccessContext;
   /** Ask bar'dan gelen soru; yalnız `view === "answers"` iken anlamlı. */
   query: string;
+  aiEnabled: boolean;
   /**
    * Ask bar'dan açıldığında panel gerçek bir iletişim kutusu gibi davranır:
    * odak içeride hapsolur, kapanınca ask bar'a geri döner. FAB'dan açılan
@@ -39,6 +40,7 @@ export function AssistantPanel({
   view,
   successContext,
   query,
+  aiEnabled,
   modal = false,
   onNavigate,
   onSuccess,
@@ -148,7 +150,7 @@ export function AssistantPanel({
         <div className={cn("min-h-0 flex-1", view === "chat" ? "flex flex-col" : "overflow-y-auto")}>
           {view === "menu" && <MenuView onNavigate={onNavigate} />}
           {view === "answers" && (
-            <AnswersView query={query} onBack={() => onNavigate("menu")} onNavigate={onNavigate} />
+            <AnswersView query={query} aiEnabled={aiEnabled} onBack={() => onNavigate("menu")} onNavigate={onNavigate} />
           )}
           {view === "chat" && <LiveChatView onBack={() => onNavigate("menu")} />}
           {view === "demo" && <DemoFormView onBack={() => onNavigate("menu")} onSuccess={onSuccess} />}
