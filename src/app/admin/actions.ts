@@ -173,23 +173,150 @@ export async function updateDemoRequestStatus(
   return { ok: true }
 }
 
+/** İç notun konsolda okunabilir kalması için üst sınır; sınırsız metin
+ *  denetim kaydını ve liste sorgusunu şişirir. */
+const INTERNAL_NOTE_MAX = 2000
+
+/** Destek talebi denetim kaydı — YALNIZ kiracıya bağlı talepler için.
+ *  `AuditLog.workshopId` zorunlu olduğundan bağsız bir talebin düşecek yeri yok;
+ *  bağlandığı anda sonraki her işlem kiracının denetim kaydında görünür. */
+async function logSupportRequest(
+  workshopId: string | null,
+  actorUserId: string,
+  requestId: string,
+  action: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  if (!workshopId) return
+  await AuditLogAction(
+    workshopId,
+    actorUserId,
+    "SupportRequest",
+    requestId,
+    action,
+    metadata ? JSON.stringify(metadata) : undefined
+  )
+}
+
 /** Update the workflow status of a public support request.
- *  No AuditLog — SupportRequest is not workshop-scoped; its `status`/`updatedAt`
- *  fields already track changes. AuditLog is workshop-bound and inappropriate
- *  for public leads. */
+ *  Kiracıya bağlıysa AuditLog'a düşer (BAK-98); bağsız talepte `status`/`updatedAt`
+ *  tek iz olarak kalır. */
 export async function updateSupportRequestStatus(
   requestId: string,
   status: string
 ): Promise<Result> {
-  await requireAdminCapability("manageLeads")
+  const ctx = await requireAdminCapability("manageLeads")
   if (!requestId) return { ok: false, error: "Talep seçilmedi." }
   if (!SUPPORT_STATUSES.includes(status as SupportRequestStatus)) {
     return { ok: false, error: "Geçersiz durum." }
   }
 
-  await prisma.supportRequest.update({
+  const updated = await prisma.supportRequest.update({
     where: { id: requestId },
     data: { status: status as SupportRequestStatus },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(updated.workshopId, ctx.user.id, requestId, "admin_support_request_status", {
+    status,
+  })
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Şikayeti bir iş yerine bağla ya da bağı kaldır (boş `workshopId`).
+ *  Denetim kaydı bağın DURDUĞU tarafa yazılır: bağlarken yeni kiracıya,
+ *  bağı kaldırırken eski kiracıya — aksi hâlde işlem hiçbir yerde görünmezdi. */
+export async function setSupportRequestWorkshop(
+  requestId: string,
+  workshopId: string
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+
+  const nextWorkshopId = workshopId.trim() || null
+  if (nextWorkshopId) {
+    const exists = await prisma.workshop.findUnique({
+      where: { id: nextWorkshopId },
+      select: { id: true },
+    })
+    if (!exists) return { ok: false, error: "İş yeri bulunamadı." }
+  }
+
+  const current = await prisma.supportRequest.findUnique({
+    where: { id: requestId },
+    select: { workshopId: true },
+  })
+  if (!current) return { ok: false, error: "Talep bulunamadı." }
+
+  await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { workshopId: nextWorkshopId },
+  })
+  await logSupportRequest(
+    nextWorkshopId ?? current.workshopId,
+    ctx.user.id,
+    requestId,
+    "admin_support_request_linked",
+    { workshopId: nextWorkshopId }
+  )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Talebi bir platform yöneticisine ata ya da atamayı kaldır (boş `userId`).
+ *  Yalnız ETKİN yönetici atanabilir — pasif bir hesaba atanan talep sahipsiz
+ *  kalırdı. */
+export async function assignSupportRequest(requestId: string, userId: string): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+
+  const nextUserId = userId.trim() || null
+  if (nextUserId) {
+    const admin = await prisma.platformAdmin.findUnique({
+      where: { userId: nextUserId },
+      select: { disabledAt: true },
+    })
+    if (!admin || admin.disabledAt) {
+      return { ok: false, error: "Yalnız etkin yöneticilere atama yapılabilir." }
+    }
+  }
+
+  const updated = await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { assignedToUserId: nextUserId },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(
+    updated.workshopId,
+    ctx.user.id,
+    requestId,
+    "admin_support_request_assigned",
+    { assignedToUserId: nextUserId }
+  )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Konsol içi not. Metnin kendisi denetim kaydına YAZILMAZ — not serbest metin
+ *  ve kişisel veri taşıyabilir; kaydın amacı "kim ne zaman düzenledi". */
+export async function saveSupportRequestInternalNote(
+  requestId: string,
+  note: string
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+  if (note.length > INTERNAL_NOTE_MAX) {
+    return { ok: false, error: `Not en fazla ${INTERNAL_NOTE_MAX} karakter olabilir.` }
+  }
+
+  const trimmed = note.trim()
+  const updated = await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { internalNote: trimmed || null },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(updated.workshopId, ctx.user.id, requestId, "admin_support_request_note", {
+    cleared: trimmed.length === 0,
   })
   revalidatePath("/admin", "layout")
   return { ok: true }

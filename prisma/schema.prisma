@@ -91,6 +91,7 @@ model Workshop {
   laborCatalogItems      LaborCatalogItem[]
   bakimxOrders           BakimxOrder[]
   vehicleHistoryGrants   VehicleHistoryGrant[]
+  supportRequests        SupportRequest[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -304,6 +305,8 @@ model User {
   deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
   platformAdmin         PlatformAdmin?       @relation("PlatformAdminUser")
   grantedPlatformAdmins PlatformAdmin[]      @relation("PlatformAdminCreatedBy")
+  /// Bu personele ATANMIŞ destek talepleri (BAK-98).
+  supportRequests       SupportRequest[]     @relation("SupportRequestAssignee")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1747,11 +1750,28 @@ model SupportRequest {
   message      String
   clientIp     String?
   status       SupportRequestStatus @default(new)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+
+  /// Şikayeti açan kiracı. Kayıt anında e-posta TEK bir atölyeye eşleşirse
+  /// otomatik dolar; birden çok aday çıkarsa NULL kalır ve konsoldan elle
+  /// bağlanır — yanlış kiracıya bağlamak, bağsız bırakmaktan pahalıdır.
+  workshopId String?
+  workshop   Workshop? @relation(fields: [workshopId], references: [id])
+
+  /// Talebi üstlenen BakımX personeli — platform yöneticisinin `User` kaydı.
+  assignedToUserId String?
+  assignedTo       User?   @relation("SupportRequestAssignee", fields: [assignedToUserId], references: [id])
+
+  /// YALNIZ /admin konsolunda görünen iç not; hiçbir müşteri yüzeyi bu modeli
+  /// okumaz. Kaynak taraması: `src/lib/support/internal-note-visibility.test.ts`.
+  internalNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
+  @@index([workshopId])
+  @@index([assignedToUserId])
 }
 
 enum SupportRequestStatus {
