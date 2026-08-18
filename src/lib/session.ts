@@ -101,11 +101,21 @@ export async function establishSession(userId: string, workshopId: string): Prom
 }
 
 /**
- * The active (present + unexpired) impersonation overlay, or null. Safe to call
- * outside a request scope (cron, scripts): cookies() throws there → returns null.
- * Used by getCurrentUser() (effective identity) and the Prisma write-guard.
+ * Çerezdeki overlay — VARSA ve süresi DOLMAMIŞSA. Safe to call outside a request
+ * scope (cron, scripts): cookies() throws there → returns null.
+ *
+ * DİKKAT — bu fonksiyon İPTALİ (revokedAt/endedAt) BİLMEZ; bilemez de: bu modül
+ * `src/middleware.ts` üzerinden Edge runtime'a giriyor ve prisma'yı buraya statik
+ * olarak import etmek middleware bundle'ını kırar. İptal farkındalığı
+ * `@/lib/impersonation` içindedir (BAK-96).
+ *
+ * Bu yüzden burası yalnız FAIL-CLOSED kullanımlar içindir — yani overlay'in
+ * varlığının KISITLAMA doğurduğu yerler (prisma yazma kapısı, katalog import
+ * kapısı). Orada bayat bir overlay en fazla fazladan kısıtlar, veri sızdırmaz.
+ * Kimliği çözen her yol (`getCurrentUser`) iptal farkındalığını KULLANMAK
+ * ZORUNDADIR.
  */
-export async function getActiveImpersonation(): Promise<ImpersonationOverlay | null> {
+export async function getImpersonationOverlay(): Promise<ImpersonationOverlay | null> {
   try {
     const session = await getSession()
     const imp = session.impersonation
