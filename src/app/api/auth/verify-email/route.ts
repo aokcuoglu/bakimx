@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { readVerifyToken } from "@/lib/billing/verify-token"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
-import { getSession } from "@/lib/session"
+import { establishSession } from "@/lib/session"
 
 /**
  * E-posta doğrulama linki (public, GET). Token → workshopId → trial'ı başlat
@@ -50,11 +50,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   // Oturum aç (login route ile aynı desen): önce temizle, sonra kimliği yaz.
-  const session = await getSession()
-  session.destroy()
-  session.userId = owner.id
-  session.workshopId = workshopId
-  await session.save()
+  await establishSession(owner.id, workshopId)
 
   return NextResponse.redirect(new URL("/dashboard", origin))
 }

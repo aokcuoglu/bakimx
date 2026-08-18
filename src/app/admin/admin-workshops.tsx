@@ -44,7 +44,7 @@ function Badge({ children, className }: { children: React.ReactNode; className?:
   )
 }
 
-function Row({ w }: { w: AdminWorkshopRow }) {
+function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
   const trial = w.trialEndsAt ? new Date(w.trialEndsAt).toLocaleDateString("tr-TR") : null
 
   return (
@@ -76,22 +76,31 @@ function Row({ w }: { w: AdminWorkshopRow }) {
           </Link>
         </div>
 
-        <div className="shrink-0">
-          <WorkshopActions w={w} />
-        </div>
+        {canManage && (
+          <div className="shrink-0">
+            <WorkshopActions w={w} />
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export function AdminWorkshops({ workshops }: { workshops: AdminWorkshopRow[] }) {
-  if (workshops.length === 0) {
-    return <p className="text-sm text-muted-foreground">Henüz iş yeri yok.</p>
-  }
+/** `canManage` = `manageWorkshops` yetkisi. Kapı sunucudadır; bu yalnız yetkisi
+ *  olmayan role 404 üretecek düğmeyi göstermemek içindir (BAK-93). */
+export function AdminWorkshops({
+  workshops,
+  canManage = false,
+}: {
+  workshops: AdminWorkshopRow[]
+  canManage?: boolean
+}) {
+  // Boş sonuç durumu (filtreli/filtresiz ayrımıyla) sayfaya aittir —
+  // bkz. `src/app/admin/workshops/page.tsx`.
   return (
     <div className="space-y-3">
       {workshops.map((w) => (
-        <Row key={w.id} w={w} />
+        <Row key={w.id} w={w} canManage={canManage} />
       ))}
     </div>
   )

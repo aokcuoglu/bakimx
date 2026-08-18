@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ChevronRight, CalendarCheck, LifeBuoy, MessagesSquare, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandSpinner } from "@/components/shared/brand-spinner";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { matchAssistantAnswers } from "@/lib/landing/assistant-answers";
@@ -13,21 +14,59 @@ import type { AssistantView } from "../site-assistant";
 interface AnswersViewProps {
   /** Ask bar'a yazılan ham metin. */
   query: string;
+  aiEnabled: boolean;
   onBack: () => void;
   onNavigate: (view: AssistantView) => void;
 }
 
 /**
- * Ask bar'dan gelen sorunun karşılığı (BAK-81, yaklaşım A).
+ * Ask bar'dan gelen sorunun karşılığı (BAK-81 yaklaşım A, BAK-92 yaklaşım B).
  *
- * Cevaplar `matchAssistantAnswers` ile MEVCUT metinlerden seçilir; burada
- * üretilmiş tek cümle yoktur. Eşleşme çıkmazsa görünüm canlı destek / demo
- * akışına düşer ve soru kaybolmasın diye ekranda kalır.
+ * Bayrak kapalıyken cevaplar yalnız `matchAssistantAnswers` ile seçilir ve ağ
+ * isteği yapılmaz. Açıkken kaynaklı tek AI yanıtı denenir; her hata durumunda
+ * aynı yerel eşleştiriciye dönülür.
  */
-export function AnswersView({ query, onBack, onNavigate }: AnswersViewProps) {
-  const answers = useMemo(() => matchAssistantAnswers(query), [query]);
+type AiResponse =
+  | { success: true; mode: "fallback" }
+  | { success: true; mode: "ai"; answer: string; sources: ReturnType<typeof matchAssistantAnswers> }
+  | { success: false };
+
+export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersViewProps) {
+  const fallbackAnswers = useMemo(() => matchAssistantAnswers(query), [query]);
+  const [aiState, setAiState] = useState<{
+    query: string;
+    answer: { answer: string; sources: ReturnType<typeof matchAssistantAnswers> } | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!aiEnabled) return;
+
+    const controller = new AbortController();
+    void fetch("/api/assistant/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: query }),
+      signal: controller.signal,
+    })
+      .then(async (response) => response.json() as Promise<AiResponse>)
+      .then((result) => {
+        if (result.success && result.mode === "ai") {
+          setAiState({ query, answer: { answer: result.answer, sources: result.sources } });
+        } else {
+          setAiState({ query, answer: null });
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAiState({ query, answer: null });
+      });
+    return () => controller.abort();
+  }, [aiEnabled, query]);
+
+  const loading = aiEnabled && aiState?.query !== query;
+  const aiAnswer = aiState?.query === query ? aiState.answer : null;
+  const answers = aiAnswer?.sources ?? fallbackAnswers;
   const badge = useLiveChatBadge();
-  const empty = answers.length === 0;
+  const empty = !loading && answers.length === 0;
 
   return (
     <div className="space-y-4 p-4">
@@ -38,7 +77,11 @@ export function AnswersView({ query, onBack, onNavigate }: AnswersViewProps) {
         <p className="mt-0.5 text-sm leading-relaxed text-foreground">{query}</p>
       </div>
 
-      {empty ? (
+      {loading ? (
+        <div className="flex min-h-28 items-center justify-center rounded-xl border">
+          <BrandSpinner size={36} label="Yanıt hazırlanıyor…" />
+        </div>
+      ) : empty ? (
         <div className="flex items-start gap-2.5 rounded-xl border border-dashed px-3.5 py-3">
           <SearchX aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -47,17 +90,31 @@ export function AnswersView({ query, onBack, onNavigate }: AnswersViewProps) {
           </p>
         </div>
       ) : (
-        <ul className="space-y-2.5">
+        <div className="space-y-2.5">
+          {aiAnswer && (
+            <div className="rounded-xl border bg-card p-3.5">
+              <p className="flex items-start gap-2 text-sm leading-relaxed text-foreground">
+                <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-success-strong" />
+                <span>{aiAnswer.answer}</span>
+              </p>
+            </div>
+          )}
+          {aiAnswer && <p className="text-xs font-medium text-muted-foreground">Yanıt kaynağı</p>}
+          <ul className="space-y-2.5">
           {answers.map((answer) => (
             <li key={`${answer.source}-${answer.id}`} className="rounded-xl border bg-card p-3.5">
               <p className="text-sm font-semibold leading-snug text-foreground">
                 {answer.source === "objection" ? `“${answer.question}”` : answer.question}
               </p>
-              <Separator className="my-2.5" />
-              <p className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
-                <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-success-strong" />
-                <span>{answer.answer}</span>
-              </p>
+              {!aiAnswer && (
+                <>
+                  <Separator className="my-2.5" />
+                  <p className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+                    <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-success-strong" />
+                    <span>{answer.answer}</span>
+                  </p>
+                </>
+              )}
               {answer.href && (
                 <a
                   href={answer.href}
@@ -69,11 +126,12 @@ export function AnswersView({ query, onBack, onNavigate }: AnswersViewProps) {
               )}
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
 
       <div className="space-y-2">
-        {!empty && (
+        {!empty && !loading && (
           <p className="text-xs leading-relaxed text-muted-foreground">
             Aradığınız yanıt bu değil mi?
           </p>

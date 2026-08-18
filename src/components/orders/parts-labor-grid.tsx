@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -27,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store, AlertTriangle } from "lucide-react"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { cn } from "@/lib/utils"
 import { searchLaborItems } from "@/lib/labor/search"
@@ -45,6 +46,15 @@ import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
+import {
+  needsMarkup,
+  purchaseMarginHint,
+  purchaseMarginNoticeMessage,
+  purchaseMarginPercent,
+  purchaseMarginState,
+  showsPurchaseCost,
+  type PurchaseMarginState,
+} from "@/lib/orders/purchase-margin"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
 import type { OrderItem } from "@/components/orders/order-management-panel"
@@ -273,6 +283,10 @@ export function PartsLaborEditor({
 
       {!locked && <Separator />}
 
+      {/* BAK-91 — maliyetine duran kalemler için liste üstü hatırlatma. Kilitli
+          belgede gizli: fiyat artık değiştirilemez, uyarı yalnız gürültü olur. */}
+      {!locked && <PurchaseMarginNotice rows={rows} />}
+
       {/* Ortak çarşaf liste: her iki tab'dan eklenen kalemler. Düzenle + sil. */}
       {/* Geniş kapsayıcı (≥52rem): gerçek shadcn Base <table>. Eşik tablonun kendi
           min genişliği; altında tablo zaten yatay kaydırmaya düşerdi, onun yerine
@@ -383,6 +397,28 @@ export function PartsLaborEditor({
  * ve o ata, shadcn `Table`'ın `overflow-x-auto`'lu kabıdır.
  */
 const ITEM_LIST_SCROLL = "max-h-[26rem] overflow-y-auto overscroll-contain"
+
+/**
+ * Liste üstü marj hatırlatması (BAK-91).
+ *
+ * Satır-içi renk tek kalemi işaretler; bu şerit iş emrini KAPATAN kişiye toplu
+ * cevap verir ("2 kalem hâlâ alış fiyatında"). Liste kendi içinde kaydığı için
+ * (ITEM_LIST_SCROLL) uyarılı satır ekranın dışında kalabilir — şerit listenin
+ * ÜSTÜNDE, kaydırma alanının dışında durur.
+ *
+ * Engelleyici DEĞİLDİR: sıfır marjla satmak geçerli bir karar olabilir (garanti,
+ * jest). Eksik olan kural değil görünürlüktü.
+ */
+function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
+  const message = purchaseMarginNoticeMessage(rows)
+  if (!message) return null
+  return (
+    <Alert variant="warning" className="border-warning/20 bg-warning/10">
+      <AlertTriangle />
+      <AlertTitle className="text-xs font-medium text-pretty">{message}</AlertTitle>
+    </Alert>
+  )
+}
 
 /**
  * İŞ EMRİ adaptörü: PartsLaborEditor'ün her değişikliğini `/api/orders/items`
@@ -1219,6 +1255,12 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // besleyen tek yer totals.ts'tir, bu rakam değil.
   const grossLineTotal = lineTotal == null ? null : lineTotal + (vatKurus ?? 0)
 
+  // BAK-91 — alış fiyatı kayıtlı kalemde (dış alım / BakımX) satış fiyatı hâlâ
+  // maliyete eşit mi, altında mı. İkisi de NET kuruş olduğu için doğrudan
+  // kıyaslanır; satırda gösterilen birim fiyat da net (BAK-75), yani kullanıcının
+  // gördüğü iki rakam aynı tabandadır.
+  const marginState = purchaseMarginState(row)
+
   function startPrice() { setPriceDraft(toPriceDraft(row.unitPrice)); setEditingPrice(true) }
   function commitPrice() {
     setEditingPrice(false)
@@ -1233,7 +1275,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
     isPart, editable, identityLocked, linked, filter, setFilter,
     editingPrice, setEditingPrice, priceDraft, setPriceDraft,
     tecdocOpen, setTecdocOpen, lineTotal, grossLineTotal,
-    vatLiable, vatKurus,
+    vatLiable, vatKurus, marginState,
     startPrice, commitPrice,
   }
 }
@@ -1388,10 +1430,24 @@ function toPriceDraft(unitPriceKurus: number | null): string {
 // gönderiliyordu. Metin alanında ₺ ve binlik ayraç GÖSTERİMDE kalır (odak yokken
 // formatTRY), odaklanınca ham sayıya döner ve parseTRYToKurus her iki biçimi de
 // okur.
+//
+// BAK-91 — alış fiyatı kayıtlı kalemde satış hâlâ maliyete eşit/altındaysa
+// rakamın KENDİSİ renklenir: satır "hayalet" olduğu için kenarlık/zemin
+// GHOST_ROW tarafından şeffaflanır (metin rengi ezilmez). Zararına satır
+// destructive, revize edilmemiş satır warning — biri hata, öbürü hatırlatma.
+const MARGIN_TONE: Record<PurchaseMarginState, string> = {
+  none: "",
+  unpriced: "",
+  "at-cost": "text-warning-strong font-semibold",
+  "below-cost": "text-destructive-strong font-semibold",
+  "marked-up": "",
+}
+
 function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean }) {
+  const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
     return (
-      <span data-slot="price-field" className={cn("text-sm tabular-nums", row.unitPrice == null && "text-muted-foreground/70")}>
+      <span data-slot="price-field" className={cn("text-sm tabular-nums", tone, row.unitPrice == null && "text-muted-foreground/70")}>
         {row.unitPrice != null ? formatTRY(row.unitPrice) : "—"}
       </span>
     )
@@ -1404,7 +1460,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
       autoComplete="off"
       placeholder="₺0,00"
       aria-label="Birim fiyat"
-      className={cn("h-9 px-2.5 text-right text-sm tabular-nums", wide ? "w-32" : "w-28")}
+      className={cn("h-9 px-2.5 text-right text-sm tabular-nums", tone, wide ? "w-32" : "w-28")}
       value={ed.editingPrice ? ed.priceDraft : row.unitPrice != null ? formatTRY(row.unitPrice) : ""}
       onFocus={(e) => { if (!ed.editingPrice) ed.startPrice(); e.currentTarget.select() }}
       onChange={(e) => { if (!ed.editingPrice) ed.startPrice(); ed.setPriceDraft(e.target.value) }}
@@ -1427,7 +1483,56 @@ function PriceCell({ row, ed, wide, align = "end" }: {
     <div className={cn("flex flex-col gap-0.5", align === "end" ? "items-end" : "items-start")}>
       <PriceField row={row} ed={ed} wide={wide} />
       {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} className="pr-2.5" />}
+      <PurchaseCostHint row={row} ed={ed} />
     </div>
+  )
+}
+
+/**
+ * Alış fiyatı ipucu (BAK-91) — birim fiyatın altında "Alış ₺300,00".
+ *
+ * İki işi birden yapar: fiyat revize edilmemişken uyarır, revize edildikten
+ * SONRA da maliyeti görünür tutar (kullanıcı isteği: "satın alma fiyatını da bir
+ * yerde görmeye devam edebilmesi lazım"). Alımın tedarikçi/tarih/fiş fotoğrafı
+ * detayı hâlâ tür kolonundaki 🏷 ikonunda (PurchaseDetailButton) — burası yalnız
+ * rakam, çünkü kapanışta bakılan şey rakam.
+ *
+ * Tutar NET'tir (KDV hariç) ve üstündeki birim fiyat da net gösterilir (BAK-75)
+ * — iki rakam aynı tabanda, göz kıyaslaması doğru.
+ */
+function PurchaseCostHint({ row, ed }: { row: Row; ed: RowEditor }) {
+  const state = ed.marginState
+  if (!showsPurchaseCost(state)) return null
+  const cost = row.purchasePriceKurus
+  if (cost == null) return null
+
+  const warn = needsMarkup(state)
+  const percent = purchaseMarginPercent(row)
+  const hint = purchaseMarginHint(state)
+  const tooltip = [
+    `Alış fiyatı: ${formatTRY(cost)} (KDV hariç)`,
+    percent != null && !warn ? `Kâr marjı: %${percent}` : null,
+    hint,
+  ].filter(Boolean).join(" · ")
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        aria-label={tooltip}
+        className={cn(
+          "inline-flex max-w-full items-center gap-1 rounded-md text-[11px] leading-tight tabular-nums",
+          state === "below-cost"
+            ? "font-medium text-destructive-strong"
+            : state === "at-cost"
+              ? "font-medium text-warning-strong"
+              : "text-muted-foreground",
+        )}
+      >
+        {warn && <AlertTriangle className="size-3 shrink-0" />}
+        <span className="truncate">Alış {formatTRY(cost)}</span>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -1952,8 +2057,11 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       )}
 
       {/* Fiş satırı: Miktar · KDV · Birim Fiyat = Toplam (tek satırda, yığılmadan).
-          Birim fiyat NET, Toplam KDV DAHİL; tick açıksa altta "+₺X KDV" notu durur. */}
-      <div className="mt-3 flex items-start gap-2 border-t border-border pt-3">
+          Birim fiyat NET, Toplam KDV DAHİL; tick açıksa altta "+₺X KDV" notu durur.
+          BAK-91 — `flex-wrap`: 390px'lik ekranda satır 368px istiyordu ve 296px'lik
+          karttan TAŞIYORDU (toplam tutar ve alış fiyatı notu sağdan kesiliyordu).
+          Sığmayınca fiyat grubu kendi satırına iner; geniş kartta düzen aynı. */}
+      <div className="mt-3 flex flex-wrap items-start gap-x-2 gap-y-2 border-t border-border pt-3">
         <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
         {vatPerLine && (
           <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
@@ -1968,6 +2076,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
             <TotalField lineTotal={ed.grossLineTotal} strong />
           </div>
           {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
+          <PurchaseCostHint row={row} ed={ed} />
         </div>
       </div>
     </div>

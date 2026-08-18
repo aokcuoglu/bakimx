@@ -17,6 +17,11 @@ const ACTION_LABELS: Record<string, string> = {
   admin_extra_seats_set: "Ek koltuk ayarlandı",
   billing_order_confirmed: "Havale teyit edildi",
   billing_order_cancelled: "Sipariş iptal edildi",
+  platform_admin_added: "Platform yöneticisi eklendi",
+  platform_admin_role_changed: "Yönetici rolü değişti",
+  platform_admin_disabled: "Yönetici erişimi kapatıldı",
+  platform_admin_enabled: "Yönetici erişimi açıldı",
+  platform_admin_sessions_revoked: "Yönetici oturumları kapatıldı",
 }
 
 interface AuditSearchParams {

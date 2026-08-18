@@ -281,7 +281,10 @@ system cron (`*/15`) to dispatch due maintenance reminders.
   until an admin approves (deliberate, not a public instant-provisioning flow).
 - **Rate limiting:** in-process fixed-window limiter — **per-container only**; must move to a shared
   store (Redis) before horizontal scaling.
-- **Admin console:** `/admin` is gated by an `ADMIN_EMAILS` allowlist (404 for everyone if unset).
+- **Admin console:** `/admin` membership lives in the `PlatformAdmin` table with real roles
+  (`founder | support | finance | readonly`) and revocable sessions; `ADMIN_EMAILS` is only the
+  bootstrap path while that table is empty. 404 for everyone when both are empty.
+  See `docs/operations/platform-admin-model.md`.
 
 ---
 

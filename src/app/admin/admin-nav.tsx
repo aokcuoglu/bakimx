@@ -12,8 +12,10 @@ import {
   ToggleLeft,
   PackageSearch,
   MessagesSquare,
+  ShieldUser,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { AdminCapability } from "@/lib/admin-roles"
 
 interface NavItem {
   href: string
@@ -22,6 +24,12 @@ interface NavItem {
   exact?: boolean
   /** Yanıt bekleyen görüşme sayısı gibi sayaçlar için anahtar. */
   badgeKey?: "liveChat"
+  /**
+   * Bu yetki yoksa bağlantı hiç çizilmez. Sayfa zaten kendi kapısında 404
+   * veriyor; bu yalnız UX — yetkisi olmayan bir role tıklayınca 404 alacağı
+   * bağlantı gösterilmesin (BAK-93 ile roller gerçek oldu).
+   */
+  capability?: AdminCapability
 }
 
 const ITEMS: NavItem[] = [
@@ -29,15 +37,30 @@ const ITEMS: NavItem[] = [
   { href: "/admin/workshops", label: "İş Yerleri", icon: Building2 },
   { href: "/admin/billing", label: "Faturalandırma", icon: Receipt },
   { href: "/admin/leads", label: "Talepler", icon: Inbox },
-  { href: "/admin/live-chat", label: "Canlı Destek", icon: MessagesSquare, badgeKey: "liveChat" },
-  { href: "/admin/catalog", label: "Ürün Kataloğu", icon: PackageSearch },
-  { href: "/admin/flags", label: "Özellik Bayrakları", icon: ToggleLeft },
-  { href: "/admin/audit", label: "Denetim Kaydı", icon: ScrollText },
-  { href: "/admin/health", label: "Sistem Sağlığı", icon: Activity },
+  {
+    href: "/admin/live-chat",
+    label: "Canlı Destek",
+    icon: MessagesSquare,
+    badgeKey: "liveChat",
+    capability: "manageLiveChat",
+  },
+  { href: "/admin/catalog", label: "Ürün Kataloğu", icon: PackageSearch, capability: "manageCatalog" },
+  { href: "/admin/flags", label: "Özellik Bayrakları", icon: ToggleLeft, capability: "manageFlags" },
+  { href: "/admin/audit", label: "Denetim Kaydı", icon: ScrollText, capability: "viewAudit" },
+  { href: "/admin/health", label: "Sistem Sağlığı", icon: Activity, capability: "viewHealth" },
+  { href: "/admin/admins", label: "Yöneticiler", icon: ShieldUser, capability: "manageAdmins" },
 ]
 
-export function AdminNav({ liveChatUnanswered = 0 }: { liveChatUnanswered?: number }) {
+export function AdminNav({
+  liveChatUnanswered = 0,
+  capabilities = [],
+}: {
+  liveChatUnanswered?: number
+  capabilities?: AdminCapability[]
+}) {
   const pathname = usePathname()
+  const allowed = new Set(capabilities)
+  const items = ITEMS.filter((i) => !i.capability || allowed.has(i.capability))
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/")
@@ -46,7 +69,7 @@ export function AdminNav({ liveChatUnanswered = 0 }: { liveChatUnanswered?: numb
 
   return (
     <nav className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
-      {ITEMS.map(({ href, label, icon: Icon, exact, badgeKey }) => {
+      {items.map(({ href, label, icon: Icon, exact, badgeKey }) => {
         const active = isActive(href, exact)
         const count = badgeCount(badgeKey)
         return (

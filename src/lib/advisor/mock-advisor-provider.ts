@@ -1,4 +1,5 @@
-import type { AiProvider, ServiceAdvisorInput, ServiceAdvisorResult } from "./types"
+import { matchAssistantAnswers } from "@/lib/landing/assistant-answers"
+import type { AiProvider, LandingAssistantResult, ServiceAdvisorInput, ServiceAdvisorResult } from "./types"
 
 type MockSuggestion = {
   suggestedInspections: string[]
@@ -92,6 +93,15 @@ export class MockAdvisorProvider implements AiProvider {
     return {
       ...base,
       missingInfoWarnings: warnings,
+      provider: "mock",
+    }
+  }
+
+  async askLanding(question: string): Promise<LandingAssistantResult> {
+    const source = matchAssistantAnswers(question, 1)[0]
+    return {
+      answer: source?.answer ?? null,
+      sourceIds: source ? [source.id] : [],
       provider: "mock",
     }
   }

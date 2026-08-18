@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { establishSession } from "@/lib/session"
 import { prisma } from "@/lib/db"
 import { isDevLoginAllowed, safeRedirectPath } from "@/lib/dev-login"
 
@@ -33,11 +33,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const session = await getSession()
-  session.destroy()
-  session.userId = user.id
-  session.workshopId = user.workshopId
-  await session.save()
+  await establishSession(user.id, user.workshopId)
 
   return NextResponse.redirect(
     new URL(safeRedirectPath(url.searchParams.get("redirect")), request.url)

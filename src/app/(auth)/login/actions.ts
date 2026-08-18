@@ -1,7 +1,7 @@
 "use server"
 
 import { loginSchema } from "@/lib/validations/auth"
-import { getSession } from "@/lib/session"
+import { establishSession, getSession } from "@/lib/session"
 import { headers } from "next/headers"
 import {
   verifyCredentials,
@@ -67,11 +67,7 @@ export async function loginAction(formData: FormData) {
   }
 
   // Rotate the session on login (clear any pre-existing data first).
-  const session = await getSession()
-  session.destroy()
-  session.userId = result.userId
-  session.workshopId = result.workshopId
-  await session.save()
+  await establishSession(result.userId, result.workshopId)
 
   // API rotasıyla aynı sözleşme: planı bitmişse hedef /checkout.
   return {
