@@ -11,6 +11,13 @@ import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
+import { issuePasswordReset } from "@/lib/password-reset-delivery"
+import {
+  RESET_RESEND_COOLDOWN_MS,
+  formatCooldownWait,
+  resendCooldownRemainingMs,
+} from "@/lib/password-reset"
+import { canReceivePasswordReset } from "@/lib/user-identity"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -384,6 +391,75 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
   if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
   await AuditLogAction(order.workshopId, ctx.user.id, "BillingOrder", orderId, "billing_order_cancelled")
   revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/**
+ * Destek müdahalesi (BAK-97): kilitli kalmış bir kullanıcıya şifre sıfırlama
+ * bağlantısı gönder.
+ *
+ * Üç sınır bilerek burada duruyor:
+ *  1. **Bağlantı konsola DÖNMEZ.** Token'ı yalnız `issuePasswordReset` görür ve
+ *     yalnız e-postaya yazar; ele geçirilmiş bir yönetici hesabı bu aksiyonla
+ *     herhangi bir kiracı hesabına giremez.
+ *  2. **Kiracı izolasyonu.** `userId` istemciden gelir, sorgu onu SUNUCUDA
+ *     `workshopId` ile eşler; başka atölyenin kullanıcısı için token üretilemez.
+ *  3. **Tekrar gönderim sınırı.** Son token'ın yaşı DB'den okunur — bellekteki
+ *     `rateLimit` çok görevli çalışmada ve yeniden başlatmada güvenilmez.
+ */
+export async function sendUserPasswordReset(workshopId: string, userId: string): Promise<Result> {
+  const ctx = await requireAdminCapability("sendPasswordReset")
+  if (!workshopId || !userId) return { ok: false, error: "Kullanıcı seçilmedi." }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, workshopId },
+    select: { id: true, email: true, firstName: true, isActive: true, workshopId: true },
+  })
+  if (!user) return { ok: false, error: "Kullanıcı bu iş yerinde bulunamadı." }
+
+  if (!canReceivePasswordReset(user) || !user.email) {
+    return {
+      ok: false,
+      error: user.isActive
+        ? "Bu hesabın e-postası yok. Şifresini iş yeri sahibi Ayarlar → Ekip'ten sıfırlar."
+        : "Hesap pasif; önce iş yeri sahibi koltuğu yeniden etkinleştirmeli.",
+    }
+  }
+
+  const lastToken = await prisma.passwordResetToken.findFirst({
+    where: { userId: user.id, createdAt: { gte: new Date(Date.now() - RESET_RESEND_COOLDOWN_MS) } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  })
+  const waitMs = resendCooldownRemainingMs(lastToken?.createdAt)
+  if (waitMs > 0) {
+    return {
+      ok: false,
+      error: `Bu kullanıcıya az önce bir bağlantı gönderildi. ${formatCooldownWait(waitMs)} sonra tekrar deneyin.`,
+    }
+  }
+
+  const delivery = await issuePasswordReset(
+    { id: user.id, email: user.email, firstName: user.firstName, workshopId: user.workshopId },
+    { awaitDelivery: true },
+  )
+
+  // Denetim kaydı gönderim BAŞARISIZ olsa da yazılır: token üretilmiş ve
+  // kullanıcının önceki bağlantıları geçersizlenmiştir — bu bir olaydır.
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "User",
+    user.id,
+    "password_reset_sent",
+    JSON.stringify({ targetUserId: user.id, targetEmail: user.email, delivered: delivery.ok }),
+  )
+
+  if (!delivery.ok) {
+    return { ok: false, error: "Bağlantı üretildi ama e-posta gönderilemedi. İletişim kayıtlarına bakın." }
+  }
+
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }
 }
 

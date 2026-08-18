@@ -35,6 +35,7 @@ export type AdminCapability =
   | "viewAudit"
   | "viewHealth"
   | "impersonate"
+  | "sendPasswordReset"
   | "manageFlags"
   | "exportData"
   | "manageCatalog"
@@ -54,6 +55,9 @@ const CAPABILITIES: Record<AdminCapability, readonly AdminRole[]> = {
   confirmBilling: ["founder", "finance"],
   exportData: ["founder", "finance"],
   impersonate: ["founder", "support"],
+  // BAK-97 — destek müdahalesi: bağlantı yalnız kullanıcının kendi e-postasına
+  // gider, konsolda görünmez. Finans ve görüntüleyicinin işi değildir.
+  sendPasswordReset: ["founder", "support"],
   manageLiveChat: ["founder", "support"],
   // Dokümandaki matriste yok; demo/destek talebi akışı destek personelinin işi.
   manageLeads: ["founder", "support"],
