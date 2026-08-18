@@ -78,7 +78,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
           <Toaster />
-          <SiteAssistant />
+          <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />
         </TooltipProvider>
       </body>
     </html>

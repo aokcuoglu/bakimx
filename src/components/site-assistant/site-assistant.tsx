@@ -24,7 +24,7 @@ export type SuccessContext = "demo" | "support";
 
 const OPEN_KEY = "bakimx.assistant.open";
 
-export function SiteAssistant() {
+export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<AssistantView>("menu");
@@ -118,6 +118,7 @@ export function SiteAssistant() {
           view={view}
           successContext={successContext}
           query={query}
+          aiEnabled={aiEnabled}
           modal={transient}
           onNavigate={setView}
           onSuccess={(context) => {
