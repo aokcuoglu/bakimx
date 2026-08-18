@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Clock, Sparkles, PhoneIncoming, LifeBuoy, Building2, Landmark, ArrowRight } from "lucide-react"
 import { requireAdmin } from "@/lib/admin"
-import { getWorkshopRows, getLeadRows, getBillingData } from "@/app/admin/data"
+import { getWorkshopSummary, getLeadRows, getBillingData } from "@/app/admin/data"
 import { HealthBand } from "@/app/admin/health/health-band"
 
 export const dynamic = "force-dynamic"
@@ -9,22 +9,20 @@ export const dynamic = "force-dynamic"
 export default async function AdminHomePage() {
   await requireAdmin()
 
-  const [rows, leads, billing] = await Promise.all([
-    getWorkshopRows(),
+  const [workshops, leads, billing] = await Promise.all([
+    getWorkshopSummary(),
     getLeadRows(),
     getBillingData(),
   ])
 
-  const pending = rows.filter((r) => r.approvalStatus === "pending")
-  const requestCount = rows.filter((r) => r.requestedPlanTier).length
   const newDemoCount = leads.demoRows.filter((r) => r.status === "new").length
   const newSupportCount = leads.supportRows.filter((r) => r.status === "new").length
 
   const counters = [
-    { icon: Clock, value: pending.length, label: "onay bekliyor", href: "/admin/workshops", tone: "text-warning-strong" },
-    { icon: Sparkles, value: requestCount, label: "paket talebi", href: "/admin/workshops", tone: "text-primary" },
+    { icon: Clock, value: workshops.pending, label: "onay bekliyor", href: "/admin/workshops?approval=pending", tone: "text-warning-strong" },
+    { icon: Sparkles, value: workshops.planRequests, label: "paket talebi", href: "/admin/workshops", tone: "text-primary" },
     { icon: Landmark, value: billing.orderRows.length, label: "bekleyen havale", href: "/admin/billing", tone: "text-primary" },
-    { icon: Building2, value: rows.length, label: "toplam iş yeri", href: "/admin/workshops", tone: "text-muted-foreground" },
+    { icon: Building2, value: workshops.total, label: "toplam iş yeri", href: "/admin/workshops", tone: "text-muted-foreground" },
     { icon: PhoneIncoming, value: newDemoCount, label: "yeni demo talebi", href: "/admin/leads", tone: "text-primary" },
     { icon: LifeBuoy, value: newSupportCount, label: "yeni destek talebi", href: "/admin/leads", tone: "text-primary" },
   ]
@@ -54,11 +52,11 @@ export default async function AdminHomePage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-foreground">Dikkat gerektirenler</h2>
-        {pending.length === 0 && billing.orderRows.length === 0 ? (
+        {workshops.pending === 0 && billing.orderRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">Bekleyen iş yok. 👍</p>
         ) : (
           <div className="space-y-2">
-            {pending.map((w) => (
+            {workshops.pendingPreview.map((w) => (
               <Link
                 key={w.id}
                 href={`/admin/workshops/${w.id}`}
@@ -71,6 +69,17 @@ export default async function AdminHomePage() {
                 <ArrowRight className="size-4 text-muted-foreground" />
               </Link>
             ))}
+            {workshops.pending > workshops.pendingPreview.length && (
+              <Link
+                href="/admin/workshops?approval=pending"
+                className="flex items-center justify-between rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm transition-colors hover:border-primary/40"
+              >
+                <span className="text-muted-foreground">
+                  +{workshops.pending - workshops.pendingPreview.length} iş yeri daha onay bekliyor
+                </span>
+                <ArrowRight className="size-4 text-muted-foreground" />
+              </Link>
+            )}
             {billing.orderRows.length > 0 && (
               <Link
                 href="/admin/billing"
