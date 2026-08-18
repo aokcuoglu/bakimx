@@ -31,7 +31,11 @@ const IMPERSONATION_EXEMPT_MODELS = new Set([
  * Global read-only enforcement for founder impersonation. When the current
  * request carries an active read-only overlay, block writes to tenant-data
  * models. Consults the session via cookies() (request-scoped) — outside a
- * request (cron/scripts) getActiveImpersonation() returns null, so writes pass.
+ * request (cron/scripts) getImpersonationOverlay() returns null, so writes pass.
+ *
+ * BİLEREK çerez-only (BAK-96): iptal edilmiş bir overlay burada en fazla FAZLADAN
+ * kısıtlar — kapı yalnız yazmayı ENGELLER, veri açmaz. Yazma başına bir DB
+ * sorgusu eklemek (üstelik $transaction içinden) bu kazancı hak etmiyor.
  */
 function withImpersonationGuard(client: PrismaClient) {
   return client.$extends({
@@ -39,8 +43,8 @@ function withImpersonationGuard(client: PrismaClient) {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
           if (WRITE_OPS.has(operation) && (!model || !IMPERSONATION_EXEMPT_MODELS.has(model))) {
-            const { getActiveImpersonation } = await import("@/lib/session")
-            const imp = await getActiveImpersonation()
+            const { getImpersonationOverlay } = await import("@/lib/session")
+            const imp = await getImpersonationOverlay()
             if (imp?.readOnly) {
               throw new Error("Salt-okunur taklit (impersonation) oturumunda değişiklik yapılamaz.")
             }

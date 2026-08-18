@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { getActiveImpersonation } from "@/lib/session"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
@@ -30,7 +29,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
   }
-  const impersonation = await getActiveImpersonation()
+  // BAK-96 — ayrı bir çağrı YOK: etkin kimlik zaten overlay'den çözüldü ve orada
+  // iptal kontrolü yapıldı. Buradan tekrar sormak hem ikinci bir DB isteği hem de
+  // iptalden habersiz (çerez-only) ikinci bir doğruluk kaynağı olurdu.
+  const impersonation = Boolean(user.impersonatorAdminId)
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: user.workshopId },
