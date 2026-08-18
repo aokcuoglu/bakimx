@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { getActiveImpersonation } from "@/lib/session"
+import { getImpersonationOverlay } from "@/lib/session"
 import { getStorageProvider } from "@/lib/storage"
 import { parseCsv } from "@/lib/catalog/csv-parse"
 import {
@@ -111,7 +111,9 @@ function sha256(bytes: Uint8Array): string {
  * oturum katalogu güncelleyebilirdi.
  */
 async function assertWritable(): Promise<string | null> {
-  const impersonation = await getActiveImpersonation()
+  // `db.ts` yazma kapısıyla aynı gerekçe: kapı yalnız kısıtlar, o yüzden çerez
+  // yeterli — iptal edilmiş bayat bir overlay burada zaten "yazma" der (BAK-96).
+  const impersonation = await getImpersonationOverlay()
   if (impersonation?.readOnly) return "Salt-okunur taklit (impersonation) oturumunda değişiklik yapılamaz."
   return null
 }

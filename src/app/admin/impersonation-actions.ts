@@ -1,6 +1,7 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/session"
@@ -97,4 +98,45 @@ export async function stopImpersonation(): Promise<void> {
     await session.save()
   }
   redirect("/admin")
+}
+
+/**
+ * Başkasının açık impersonation oturumunu ZORLA kapat (BAK-96).
+ *
+ * `revokedAt` yazar; overlay çerezi olduğu gibi kalır ama BİR SONRAKİ istekte
+ * `getCurrentUser()` iptali görüp overlay'i yok sayar, yani kurucu kendi
+ * atölyesine düşer — hedef kiracının verisine bir daha erişemez.
+ *
+ * Yetki `impersonate` (görüntüleme `viewAudit` ile ayrı): oturumu kesebilen,
+ * oturumu başlatabilenle aynı sorumluluk sınıfıdır.
+ */
+export async function revokeImpersonation(sessionId: string): Promise<Result> {
+  const ctx = await requireAdminCapability("impersonate")
+  if (!sessionId) return { ok: false, error: "Oturum seçilmedi." }
+
+  const row = await prisma.impersonationSession.findUnique({
+    where: { id: sessionId },
+    select: { adminUserId: true, targetUserId: true, targetWorkshopId: true },
+  })
+  if (!row) return { ok: false, error: "Oturum bulunamadı." }
+
+  // Koşullu yazma: iki yönetici aynı anda basarsa ikincisi 0 satır günceller ve
+  // "zaten kapalı" der — çift denetim kaydı düşmez.
+  const revoked = await prisma.impersonationSession.updateMany({
+    where: { id: sessionId, endedAt: null, revokedAt: null },
+    data: { revokedAt: new Date() },
+  })
+  if (revoked.count === 0) return { ok: false, error: "Bu oturum zaten kapanmış." }
+
+  await AuditLogAction(
+    row.targetWorkshopId,
+    ctx.user.id,
+    "ImpersonationSession",
+    sessionId,
+    "impersonation_revoked",
+    JSON.stringify({ adminUserId: row.adminUserId, targetUserId: row.targetUserId }),
+  )
+
+  revalidatePath("/admin")
+  return { ok: true }
 }

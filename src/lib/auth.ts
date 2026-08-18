@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import type { UserRole } from "@prisma/client"
 import { assertWriteAccess } from "@/lib/plan"
+import { isImpersonationRevoked } from "@/lib/impersonation"
 import type { Permission } from "@/lib/roles"
 
 export interface AuthUser {
@@ -50,10 +51,10 @@ const USER_SELECT = {
  */
 async function readSessionState() {
   try {
-    const { getSession, getActiveImpersonation } = await import("@/lib/session")
-    const impersonation = await getActiveImpersonation()
+    const { getSession, getImpersonationOverlay } = await import("@/lib/session")
+    const overlay = await getImpersonationOverlay()
     const session = await getSession()
-    return { session, impersonation }
+    return { session, overlay }
   } catch {
     return null
   }
@@ -70,21 +71,26 @@ async function readSessionState() {
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const state = await readSessionState()
   if (!state) return null
-  const { session, impersonation } = state
+  const { session, overlay } = state
 
   // Impersonation overlay wins: resolve the EFFECTIVE user as the target. The
   // whole app scopes to the target tenant via the returned workshopId — no
   // per-query changes. The real admin identity stays on the overlay (audit).
-  if (impersonation) {
+  //
+  // BAK-96 — overlay tek başına YETMEZ: çerez durumsuz olduğu için iptal
+  // (`revokedAt`) yalnız DB'de görünür. Kontrol BİLEREK `readSessionState`'in
+  // try/catch'i DIŞINDADIR; orada olsaydı bir DB hatası "oturum yok"a düşer ve
+  // herkesi çıkışa yollardı (bkz. auth-session-errors.test.ts).
+  if (overlay && !(await isImpersonationRevoked(overlay.sessionId))) {
     const target = await prisma.user.findUnique({
-      where: { id: impersonation.targetUserId },
+      where: { id: overlay.targetUserId },
       select: USER_SELECT,
     })
     if (target) {
       return {
         ...target,
-        impersonatorAdminId: impersonation.adminUserId,
-        impersonationReadOnly: impersonation.readOnly,
+        impersonatorAdminId: overlay.adminUserId,
+        impersonationReadOnly: overlay.readOnly,
       }
     }
     // Target vanished — fall through to the real session rather than 500.
