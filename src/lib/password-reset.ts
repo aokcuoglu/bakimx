@@ -26,3 +26,31 @@ export function resetExpiry(from: Date = new Date()): Date {
 export function isResetExpired(expiresAt: Date): boolean {
   return expiresAt.getTime() < Date.now()
 }
+
+/**
+ * Konsoldan (BAK-97) aynı kullanıcıya tekrar bağlantı göndermek için beklenecek
+ * süre. Sayaç DB'deki son token'ın `createdAt`'idir, bellekteki `rateLimit`
+ * değil: konsol birden çok ECS görevinde çalışır ve süreç-içi sayaç yeniden
+ * başlatmada sıfırlanır.
+ *
+ * Pencere kullanıcının KENDİ talebini de kapsar — her yeni token öncekileri
+ * geçersiz kılar, yani art arda gönderim kullanıcının elindeki taze bağlantıyı
+ * öldürürdü.
+ */
+export const RESET_RESEND_COOLDOWN_MS = 5 * 60 * 1000 // 5 dk
+
+/** Yeni gönderim için kalan süre (ms). 0 ise gönderilebilir. */
+export function resendCooldownRemainingMs(
+  lastSentAt: Date | null | undefined,
+  now: Date = new Date()
+): number {
+  if (!lastSentAt) return 0
+  return Math.max(0, lastSentAt.getTime() + RESET_RESEND_COOLDOWN_MS - now.getTime())
+}
+
+/** Kalan süreyi kullanıcıya gösterilecek metne çevirir ("2 dakika" / "40 saniye"). */
+export function formatCooldownWait(remainingMs: number): string {
+  const seconds = Math.ceil(remainingMs / 1000)
+  if (seconds < 60) return `${seconds} saniye`
+  return `${Math.ceil(seconds / 60)} dakika`
+}

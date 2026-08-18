@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { Clock, Sparkles, PhoneIncoming, LifeBuoy, Building2, Landmark, ArrowRight } from "lucide-react"
-import { requireAdmin } from "@/lib/admin"
+import { can, getAdminContext } from "@/lib/admin"
 import { getWorkshopSummary, getLeadRows, getBillingData } from "@/app/admin/data"
 import { HealthBand } from "@/app/admin/health/health-band"
+import { ActiveImpersonations } from "@/app/admin/active-impersonations"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminHomePage() {
-  await requireAdmin()
+  const ctx = await getAdminContext()
 
   const [workshops, leads, billing] = await Promise.all([
     getWorkshopSummary(),
@@ -49,6 +50,10 @@ export default async function AdminHomePage() {
       </div>
 
       <HealthBand />
+
+      {/* Konsolun en hassas yeteneği — denetim görebilen herkes açık oturumları
+          görür, kesme yetkisi ayrıca `impersonate` ister (BAK-96). */}
+      {can(ctx, "viewAudit") && <ActiveImpersonations canRevoke={can(ctx, "impersonate")} />}
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-foreground">Dikkat gerektirenler</h2>

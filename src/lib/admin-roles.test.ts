@@ -46,6 +46,7 @@ describe("can() yetki matrisi", () => {
       "manageLeads",
       "manageAdmins",
       "exportData",
+      "sendPasswordReset",
     ]
     for (const cap of forbidden) {
       expect(can(ctx("readonly"), cap)).toBe(false)
@@ -59,6 +60,13 @@ describe("can() yetki matrisi", () => {
     expect(can(ctx("support"), "manageLiveChat")).toBe(true)
     expect(can(ctx("support"), "confirmBilling")).toBe(false)
     expect(can(ctx("support"), "manageAdmins")).toBe(false)
+  })
+
+  test("şifre sıfırlama gönderimi yalnız kurucu ve destektedir (BAK-97)", () => {
+    expect(can(ctx("founder"), "sendPasswordReset")).toBe(true)
+    expect(can(ctx("support"), "sendPasswordReset")).toBe(true)
+    expect(can(ctx("finance"), "sendPasswordReset")).toBe(false)
+    expect(can(ctx("readonly"), "sendPasswordReset")).toBe(false)
   })
 
   test("finans faturalandırmayı teyit eder, impersonate edemez", () => {

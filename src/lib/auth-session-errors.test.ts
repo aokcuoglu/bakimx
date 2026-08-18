@@ -14,7 +14,7 @@ import { test, expect, mock } from "bun:test"
 
 mock.module("@/lib/session", () => ({
   getSession: async () => ({ userId: "user-1" }),
-  getActiveImpersonation: async () => null,
+  getImpersonationOverlay: async () => null,
 }))
 
 test("DB erişilemezse hata yutulmaz, yukarı fırlar", async () => {
