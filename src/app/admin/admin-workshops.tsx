@@ -95,9 +95,8 @@ export function AdminWorkshops({
   workshops: AdminWorkshopRow[]
   canManage?: boolean
 }) {
-  if (workshops.length === 0) {
-    return <p className="text-sm text-muted-foreground">Henüz iş yeri yok.</p>
-  }
+  // Boş sonuç durumu (filtreli/filtresiz ayrımıyla) sayfaya aittir —
+  // bkz. `src/app/admin/workshops/page.tsx`.
   return (
     <div className="space-y-3">
       {workshops.map((w) => (

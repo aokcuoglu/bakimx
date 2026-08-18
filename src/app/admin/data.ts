@@ -5,32 +5,63 @@ import type { BillingCycle } from "@prisma/client"
 import type { AdminWorkshopRow } from "@/app/admin/admin-workshops"
 import type { AdminDemoRequestRow, AdminSupportRequestRow } from "@/app/admin/admin-requests"
 import type { AdminOrderRow, AdminSubRow, AdminTxnRow, AdminStuckTxnRow } from "@/app/admin/admin-billing"
+import {
+  WORKSHOP_PAGE_SIZE,
+  buildWorkshopWhere,
+  type WorkshopListQuery,
+} from "@/lib/admin-workshop-filters"
 
-/** Workshop list, ranked so actionable rows (pending approval, then upgrade
- *  requests) surface first. Shared by the ops home and the workshops page. */
-export async function getWorkshopRows(): Promise<AdminWorkshopRow[]> {
-  const workshops = await prisma.workshop.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      approvalStatus: true,
-      subscriptionStatus: true,
-      planTier: true,
-      requestedPlanTier: true,
-      trialEndsAt: true,
-      extraSeats: true,
-      createdAt: true,
-      // İlk kullanıcı artık e-postasız olabilir (BAK-40); sütun "iletişim
-      // e-postası" gösterdiği için e-postası olan ilk üyeyi seçiyoruz.
-      users: {
-        where: { email: { not: null } },
-        select: { email: true },
-        take: 1,
-        orderBy: { createdAt: "asc" },
+export interface WorkshopListResult {
+  rows: AdminWorkshopRow[]
+  /** Filtreye uyan TOPLAM kayıt — sayfadaki satır sayısı değil. */
+  total: number
+  totalPages: number
+}
+
+/**
+ * İş yeri listesinin tek sayfası. Arama, filtre ve sıralama sunucu tarafında;
+ * istemciye yalnız bir sayfalık satır gider (BAK-95).
+ *
+ * Sıralama "aksiyon gerektiren önce" kuralını korur ama artık SQL'de:
+ * `approvalStatus` Postgres enum bildirim sırasına göre sıralanır
+ * (`prisma/schema.prisma:113-117` — `pending` ilk), ardından paket talebi olan
+ * satırlar (`nulls: "last"`), sonra yeni kayıtlar. Bu enum sırası bağımlılığı
+ * `src/lib/admin-workshop-filters.test.ts` ile korunuyor.
+ */
+export async function getWorkshopRows(query: WorkshopListQuery): Promise<WorkshopListResult> {
+  const where = buildWorkshopWhere(query)
+  const [workshops, total] = await Promise.all([
+    prisma.workshop.findMany({
+      where,
+      orderBy: [
+        { approvalStatus: "asc" },
+        { requestedPlanTier: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ],
+      take: WORKSHOP_PAGE_SIZE,
+      skip: (query.page - 1) * WORKSHOP_PAGE_SIZE,
+      select: {
+        id: true,
+        name: true,
+        approvalStatus: true,
+        subscriptionStatus: true,
+        planTier: true,
+        requestedPlanTier: true,
+        trialEndsAt: true,
+        extraSeats: true,
+        createdAt: true,
+        // İlk kullanıcı artık e-postasız olabilir (BAK-40); sütun "iletişim
+        // e-postası" gösterdiği için e-postası olan ilk üyeyi seçiyoruz.
+        users: {
+          where: { email: { not: null } },
+          select: { email: true },
+          take: 1,
+          orderBy: { createdAt: "asc" },
+        },
       },
-    },
-  })
+    }),
+    prisma.workshop.count({ where }),
+  ])
 
   const rows: AdminWorkshopRow[] = workshops.map((w) => ({
     id: w.id,
@@ -45,10 +76,36 @@ export async function getWorkshopRows(): Promise<AdminWorkshopRow[]> {
     createdAt: w.createdAt.toISOString(),
   }))
 
-  const rank = (r: AdminWorkshopRow) =>
-    r.approvalStatus === "pending" ? 0 : r.requestedPlanTier ? 1 : 2
-  rows.sort((a, b) => rank(a) - rank(b))
-  return rows
+  return { rows, total, totalPages: Math.max(1, Math.ceil(total / WORKSHOP_PAGE_SIZE)) }
+}
+
+/** Ops ana sayfasının "Dikkat gerektirenler" listesinde gösterilen en fazla
+ *  kayıt — kalanı iş yerleri sayfasındaki filtreye devredilir. */
+const PENDING_PREVIEW_TAKE = 10
+
+export interface AdminWorkshopSummary {
+  total: number
+  pending: number
+  planRequests: number
+  /** En eski bekleyenden başlayan kısa liste; `pending` toplamı bundan büyük olabilir. */
+  pendingPreview: { id: string; name: string }[]
+}
+
+/** Ops ana sayfası sayaçları — tüm tabloyu çekmeden `count` ile hesaplanır. */
+export async function getWorkshopSummary(): Promise<AdminWorkshopSummary> {
+  const [total, pending, planRequests, pendingPreview] = await Promise.all([
+    prisma.workshop.count(),
+    prisma.workshop.count({ where: { approvalStatus: "pending" } }),
+    prisma.workshop.count({ where: { requestedPlanTier: { not: null } } }),
+    prisma.workshop.findMany({
+      where: { approvalStatus: "pending" },
+      orderBy: { createdAt: "asc" },
+      take: PENDING_PREVIEW_TAKE,
+      select: { id: true, name: true },
+    }),
+  ])
+
+  return { total, pending, planRequests, pendingPreview }
 }
 
 /** Public demo + support leads, "new" first. Shared by ops home and leads page. */
