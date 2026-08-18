@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
 import { resolvePhotoSrc } from "@/lib/photos/photo-src"
+import { groupPurchasePhotos, type PurchasePhoto } from "@/lib/photos/purchase-photos"
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { OrderChecklist, useChecklistState } from "@/components/technician/order-checklist"
 import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
@@ -162,6 +163,11 @@ export function TechnicianOrderDetail({
   const afterPhotos = galleryPhotos.filter((p) => p.phase === "delivery")
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
+
+  // Galeriden dışlanan alış kareleri kaybolmasın: ait oldukları kalemin kartında
+  // gösterilir (BAK-111). Teknisyen kutunun/fişin üzerindeki yazıyı okumak için
+  // fotoğrafa dokunup büyütebilsin diye kart içinde küçük şerit olarak durur.
+  const purchasePhotosByItem = groupPurchasePhotos(order.photos)
 
   // Dış alım silme/düzenleme kuralı (BAK-83, BAK-84) sunucudaki action ile AYNI
   // fonksiyondan okunur; butonlar yalnız gerçekten izinliyken çıkar, aksi halde
@@ -394,6 +400,7 @@ export function TechnicianOrderDetail({
         </div>
         <PurchasedItemsSection
           items={purchasedItems}
+          photosByItem={purchasePhotosByItem}
           orderId={order.id}
           vehicle={pickerVehicle}
           suppliers={suppliers}
@@ -731,6 +738,48 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
 }
 
 /**
+ * Dış alım kaleminin kartı içindeki fotoğraf şeridi (BAK-111).
+ *
+ * Teknisyen parça kutusunun/fişin üzerindeki yazıyı küçük karede okuyamıyordu;
+ * dokununca galeriyle AYNI tam ekran `PhotoLightbox` açılır (X, Escape, kaydırma
+ * ve çift dokunuşla yakınlaştırma oradan gelir). Kalemde birden çok kare varsa
+ * hepsi aynı lightbox içinde gezilir.
+ *
+ * Karenin genişliği 64px: mobil dokunma hedefi eşiğinin (44px) üstünde.
+ */
+function PurchasePhotoStrip({ photos, itemName }: { photos: PurchasePhoto[]; itemName: string }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  const lightboxPhotos: LightboxPhoto[] = photos.map((p) => ({
+    id: p.id,
+    label: itemName,
+    note: p.note,
+    fileUrl: p.src,
+  }))
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {photos.map((p, i) => (
+        <div key={p.id} className="w-16">
+          <PhotoThumbnail
+            src={p.src}
+            label={`${itemName} — parça fotoğrafı`}
+            onOpen={() => setLightboxIndex(i)}
+          />
+        </div>
+      ))}
+      <PhotoLightbox
+        photos={lightboxPhotos}
+        index={lightboxIndex ?? 0}
+        onIndexChange={setLightboxIndex}
+        open={lightboxIndex !== null}
+        onOpenChange={(next) => { if (!next) setLightboxIndex(null) }}
+      />
+    </div>
+  )
+}
+
+/**
  * Dış alım listesi — projenin ortak PARÇA KARTINI kullanır (BAK-84), yani
  * "Parça Talepleri" bölümüyle aynı yerleşim: ad + miktar, altında mono parça
  * numarası ve marka, sağda tutar, altta tarih/kaynak ve aksiyonlar.
@@ -740,6 +789,7 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
  */
 function PurchasedItemsSection({
   items,
+  photosByItem,
   orderId,
   vehicle,
   suppliers,
@@ -747,6 +797,8 @@ function PurchasedItemsSection({
   deleteDecision,
 }: {
   items: OrderData["items"]
+  /** Kalem kimliği → o kaleme ait gösterilebilir kareler (`groupPurchasePhotos`). */
+  photosByItem: Map<string, PurchasePhoto[]>
   orderId: string
   vehicle: PickerVehicle
   suppliers: SupplierInfo[]
@@ -758,13 +810,18 @@ function PurchasedItemsSection({
   }
   return (
     <div className="space-y-2">
-      {items.map((item) => (
+      {items.map((item) => {
+        const photos = photosByItem.get(item.id) ?? []
+        return (
         <PartCard
           key={item.id}
           name={item.name}
           quantity={item.quantity}
           partNo={item.sku}
           brand={item.brand}
+          // Fotoğrafı olmayan kalemde slot HİÇ verilmez: aksi halde boş bir
+          // kutu ve üst boşluğu kalırdı.
+          media={photos.length > 0 ? <PurchasePhotoStrip photos={photos} itemName={item.name} /> : null}
           badge={
             item.purchasePriceKurus != null ? (
               <span className="text-sm font-semibold text-foreground">
@@ -804,7 +861,8 @@ function PurchasedItemsSection({
             ) : null
           }
         />
-      ))}
+        )
+      })}
       {!deleteDecision.allowed && (
         <p className="text-xs text-muted-foreground/70">{deleteDecision.reason}</p>
       )}
