@@ -206,3 +206,14 @@ export const pdfTemplateSchema = z.object({
   servicePassportTemplate: z.string().optional().or(z.literal("")),
   collectionReceiptTemplate: z.string().optional().or(z.literal("")),
 })
+
+/**
+ * Ekip davet formu (BAK-131). Sunucu tarafındaki `inviteSchema`
+ * (`settings/team/actions.ts`) ile aynı kabul kurallarını paylaşır — "staff"
+ * bilerek yok, o yeni davette atanabilir değil.
+ */
+export const inviteMemberSchema = z.object({
+  email: z.email("Geçerli bir e-posta adresi giriniz"),
+  role: z.enum(["cirak", "usta", "manager", "owner"], { message: "Rol seçiniz" }),
+})
+export type InviteMemberFormValues = z.infer<typeof inviteMemberSchema>
