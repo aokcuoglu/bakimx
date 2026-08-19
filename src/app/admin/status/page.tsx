@@ -7,10 +7,16 @@ export const dynamic = "force-dynamic"
 export default async function AdminStatusPage() {
   await requireAdminCapability("manageStatusPage")
 
-  const incidents = await prisma.statusIncident.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  })
+  const [incidents, activeIncidents] = await Promise.all([
+    prisma.statusIncident.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.statusIncident.findMany({
+      where: { resolvedAt: null },
+      select: { severity: true },
+    }),
+  ])
 
   const rows = incidents.map((i) => ({
     id: i.id,
@@ -23,5 +29,10 @@ export default async function AdminStatusPage() {
     createdAt: i.createdAt.toISOString(),
   }))
 
-  return <StatusIncidentConsole incidents={rows} />
+  return (
+    <StatusIncidentConsole
+      incidents={rows}
+      activeSeverities={activeIncidents.map((incident) => incident.severity)}
+    />
+  )
 }

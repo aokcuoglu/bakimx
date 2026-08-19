@@ -37,14 +37,18 @@ export interface AdminStatusIncidentRow {
   createdAt: string
 }
 
-export function StatusIncidentConsole({ incidents }: { incidents: AdminStatusIncidentRow[] }) {
+export function StatusIncidentConsole({
+  incidents,
+  activeSeverities,
+}: {
+  incidents: AdminStatusIncidentRow[]
+  activeSeverities: AdminStatusIncidentRow["severity"][]
+}) {
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
   const [resolving, setResolving] = useState<AdminStatusIncidentRow | null>(null)
 
-  const overallStatus = deriveOverallStatus(
-    incidents.filter((i) => !i.resolvedAt).map((i) => i.severity)
-  )
+  const overallStatus = deriveOverallStatus(activeSeverities)
 
   return (
     <div className="space-y-6">

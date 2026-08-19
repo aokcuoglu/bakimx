@@ -12,14 +12,18 @@ export const dynamic = "force-dynamic"
 const HISTORY_LIMIT = 20
 
 export default async function StatusPage() {
-  const incidents = await prisma.statusIncident.findMany({
-    orderBy: { createdAt: "desc" },
-    take: HISTORY_LIMIT,
-  })
+  const [incidents, activeIncidents] = await Promise.all([
+    prisma.statusIncident.findMany({
+      orderBy: { createdAt: "desc" },
+      take: HISTORY_LIMIT,
+    }),
+    prisma.statusIncident.findMany({
+      where: { resolvedAt: null },
+      select: { severity: true },
+    }),
+  ])
 
-  const overallStatus = deriveOverallStatus(
-    incidents.filter((i) => !i.resolvedAt).map((i) => i.severity)
-  )
+  const overallStatus = deriveOverallStatus(activeIncidents.map((incident) => incident.severity))
 
   return (
     <>
