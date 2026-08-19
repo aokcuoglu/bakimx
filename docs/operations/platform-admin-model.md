@@ -235,8 +235,11 @@ Bugünkü kanallar ve boşlukları:
   `/terms`, `/acik-riza`). Eksik olan iç taraf: personelin müşteri verisine erişimi
   neye dayanıyor, saklama süreleri ne, veri ihlali bildirimi nasıl işliyor.
   Impersonation kaydı bu dosyanın en güçlü delili — kullanın.
-- **Yedekten geri dönüş provası.** RDS snapshot alınıyor; **geri dönüş hiç denenmedi**.
-  Denenmemiş yedek yedek değildir.
+- ~~**Yedekten geri dönüş provası.**~~ **Kapandı (BAK-120, 2026-08-19.)** İlk
+  tatbikat yapıldı — prod snapshot'ından geçici bir instance'a geri yükleme
+  6 dk 58 sn'de tamamlandı ve doğrulandı. Prosedür, RTO/RPO hedefleri, tatbikat
+  kaydı ve kalan boşluklar (bölge kaybı, statü sayfası):
+  [disaster-recovery.md](./disaster-recovery.md).
 - **Olay iletişimi.** Kesinti olduğunda müşteriye ne söyleneceği ve nereden
   söyleneceği tanımlı değil (statü sayfası yok).
 - **`security@bakimx.com`.** `SECURITY.md` bu adresi ve "makul sürede dönüş"ü vaat
