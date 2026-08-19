@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
+import { FileWarning } from "lucide-react"
 
 import { StatusBadge, PaymentBadge, PlateBadge } from "@/components/shared/status-badge"
 import { ActionsMenu, MobileActionsMenu } from "@/components/shared/actions-menu"
 import { StatCard } from "@/components/shared/stat-card"
 import { TechnicianAssign, type AssignableTechnician } from "@/components/orders/technician-assign"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatTRY } from "@/lib/format"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
@@ -23,6 +25,9 @@ type OrderRow = {
   grandTotal: number
   itemsCount: number
   hasPrice: boolean
+  invoiceNo: string | null
+  /** Fatura beklenen statüde numara girilmemiş — sunucuda hesaplanır. */
+  invoiceMissing: boolean
   vehicle: { plate: string; brand: string; model: string; id?: string }
   customer: {
     id?: string
@@ -60,12 +65,46 @@ function customerName(c: OrderRow["customer"]): string {
   return c.fullName || `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "Müşteri"
 }
 
+/** Faturası eksik iş emri rozeti — ikon + metin; anlam yalnız renkte değil. */
+function InvoiceMissingBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md border border-warning/20 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning-strong"
+      title="Fatura numarası girilmemiş"
+    >
+      <FileWarning className="size-3.5" aria-hidden="true" />
+      Fatura yok
+    </span>
+  )
+}
+
+function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing: boolean }) {
+  const value = (invoiceNo || "").trim()
+  if (value) {
+    return (
+      <span className="font-mono text-xs text-foreground" title={value}>
+        {value}
+      </span>
+    )
+  }
+  if (!missing) return <span className="text-muted-foreground/70">—</span>
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span />} className="inline-flex">
+        <InvoiceMissingBadge />
+      </TooltipTrigger>
+      <TooltipContent side="top">Fatura numarası girilmemiş</TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function OrderList({
   orders,
   kpis,
   activeStatus,
   activePayment,
   activeTechnician = "",
+  activeInvoice = "",
   technicians = [],
 }: {
   orders: OrderRow[]
@@ -73,6 +112,7 @@ export function OrderList({
   activeStatus: string
   activePayment: string
   activeTechnician?: string
+  activeInvoice?: string
   technicians?: AssignableTechnician[]
 }) {
   const kpiConfigs: KpiConfig[] = [
@@ -87,6 +127,7 @@ export function OrderList({
   const keptFilters = [
     activePayment ? `payment=${activePayment}` : "",
     activeTechnician ? `technician=${encodeURIComponent(activeTechnician)}` : "",
+    activeInvoice ? `invoice=${encodeURIComponent(activeInvoice)}` : "",
   ].filter(Boolean)
 
   return (
@@ -122,6 +163,7 @@ export function OrderList({
                 <th className="px-3 py-2 text-left font-semibold">Müşteri</th>
                 <th className="px-3 py-2 text-left font-semibold">Teknisyen</th>
                 <th className="px-3 py-2 text-left font-semibold">Durum</th>
+                <th className="px-3 py-2 text-left font-semibold">Fatura</th>
                 <th className="px-3 py-2 text-right font-semibold">Toplam</th>
                 <th className="px-3 py-2 text-left font-semibold">Tarih</th>
                 <th className="px-3 py-2 text-right font-semibold sticky right-0 border-l border-border bg-muted">İşlem</th>
@@ -194,6 +236,11 @@ export function OrderList({
                       <StatusBadge status={order.status} />
                       <PaymentBadge status={order.paymentStatus} />
                     </div>
+                  </td>
+                  <td className="px-3 py-2 align-top whitespace-nowrap">
+                    {/* Fatura numarası elle giriliyor; iş bitmiş emirde boş kalması
+                        gözden kaçan fatura demek — ikon + metinle işaretlenir. */}
+                    <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
                   </td>
                   <td className="px-3 py-2 align-top text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
                     {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
@@ -284,6 +331,8 @@ export function OrderList({
                 locked={isOrderLocked(order.status as OrderStatus)}
                 size="sm"
               />
+              {/* Aynı uyarı mobil kartta da görünmeli. */}
+              {order.invoiceMissing ? <InvoiceMissingBadge /> : null}
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <div className="text-muted-foreground">
