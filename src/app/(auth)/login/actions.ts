@@ -67,7 +67,7 @@ export async function loginAction(formData: FormData) {
   }
 
   // Rotate the session on login (clear any pre-existing data first).
-  await establishSession(result.userId, result.workshopId)
+  await establishSession(result.userId, result.workshopId, result.role)
 
   // API rotasıyla aynı sözleşme: planı bitmişse hedef /checkout.
   return {

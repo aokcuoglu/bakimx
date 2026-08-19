@@ -9,6 +9,7 @@ import {
   SESSION_LOOP_REASON,
   shouldClearSessionOnLogin,
 } from "@/lib/session-recovery"
+import { isTechnicianRestrictedRole, isRouteAllowedForTechnician } from "@/lib/technician-route-access"
 import type { NextRequest } from "next/server"
 
 // Two subdomains, one container (nginx preserves Host):
@@ -132,7 +133,8 @@ export async function middleware(request: NextRequest) {
         const session = await getSession()
         if (session?.userId) {
           if (isForcedLogout(request)) return clearSession(NextResponse.next())
-          return guardBounce(request, new URL("/dashboard", request.url))
+          const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+          return guardBounce(request, new URL(loginTarget, request.url))
         }
       }
       return clearBounceIfPresent(request, NextResponse.next())
@@ -142,6 +144,10 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
+    }
+    // BAK-106: usta/cirak/staff deny-by-default — izin listesi dışı /technician'a yönlenir.
+    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+      return NextResponse.redirect(new URL("/technician", request.url))
     }
     return clearBounceIfPresent(request, NextResponse.next())
   }
@@ -159,7 +165,14 @@ export async function middleware(request: NextRequest) {
 
   // ---- APP HOST (app.bakimx.com) ----
   if (host === "app.bakimx.com") {
-    if (pathname === "/") return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    if (pathname === "/") {
+      const session = await getSession()
+      if (session?.userId) {
+        const homeTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        return NextResponse.redirect(`${APP_ORIGIN}${homeTarget}`)
+      }
+      return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    }
     // landing / auth / public-token pages belong on the landing host
     if (isPublicPage(pathname)) {
       return NextResponse.redirect(`${LANDING_ORIGIN}${pathname}${search}`)
@@ -170,6 +183,10 @@ export async function middleware(request: NextRequest) {
       const target = encodeURIComponent(`${APP_ORIGIN}${pathname}${search}`)
       return NextResponse.redirect(`${LANDING_ORIGIN}/login?redirect=${target}`)
     }
+    // BAK-106: usta/cirak/staff deny-by-default
+    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+      return NextResponse.redirect(`${APP_ORIGIN}/technician`)
+    }
     return clearBounceIfPresent(request, NextResponse.next())
   }
 
@@ -179,7 +196,8 @@ export async function middleware(request: NextRequest) {
       const session = await getSession()
       if (session?.userId) {
         if (isForcedLogout(request)) return clearSession(NextResponse.next())
-        return guardBounce(request, `${APP_ORIGIN}/dashboard`)
+        const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        return guardBounce(request, `${APP_ORIGIN}${loginTarget}`)
       }
     }
     return clearBounceIfPresent(request, NextResponse.next())
