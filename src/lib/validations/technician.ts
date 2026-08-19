@@ -30,7 +30,10 @@ export const partsRequestSchema = z
     // "İşçilik adı") ve min(1) buradan önce ateşlerse o metin hiç görünmez.
     partName: z.string().max(200),
     partSku: z.string().optional().or(z.literal("")),
-    quantity: z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır").default(1),
+    quantity: z
+      .union([z.coerce.number().int().min(1, "Miktar en az 1 olmalıdır"), z.null()])
+      .transform((v) => v ?? 1)
+      .default(1),
     note: z.string().optional().or(z.literal("")),
     /** Katalogdan seçildiyse parça markası; serbest metin talebinde boş. */
     brand: z.string().max(120).optional().or(z.literal("")),

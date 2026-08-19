@@ -515,7 +515,7 @@ export async function createPartsRequestAction(formData: FormData) {
     type: (formData.get("type") as string) || "part",
     partName: (formData.get("partName") as string || "").trim(),
     partSku: (formData.get("partSku") as string) || "",
-    quantity: formData.get("quantity") as string,
+    quantity: (formData.get("quantity") as string) ?? undefined,
     note: (formData.get("note") as string) || "",
     brand: (formData.get("brand") as string) || "",
     tecdocArticleId: (formData.get("tecdocArticleId") as string) || "",

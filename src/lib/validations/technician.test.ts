@@ -58,6 +58,14 @@ test("dış işçilikte miktar 1'e sabitlenir", () => {
   if (r.success) expect(r.data.quantity).toBe(1)
 })
 
+test("dış işçilikte miktar gönderilmezse (null/undefined) default 1 geçerli olur", () => {
+  for (const quantity of [null, undefined]) {
+    const r = partsRequestSchema.safeParse({ ...base, type: "external_labor", quantity })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.quantity).toBe(1)
+  }
+})
+
 test("dış işçilikte tahmini tutar TL metninden kuruşa çevrilir", () => {
   const r = partsRequestSchema.safeParse({
     ...base,
