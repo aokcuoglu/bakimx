@@ -1,0 +1,51 @@
+import { describe, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
+const source = readFileSync(join(import.meta.dir, "technician-order-detail.tsx"), "utf8")
+const routeDir = join(import.meta.dir, "../../app/(app)/technician/orders/[id]")
+
+describe("teknisyen iş emri adım kabuğu", () => {
+  test("onaylanan beş görevi aynı sırayla sunar", () => {
+    const labels = [
+      "İşi başlat",
+      "Araç kontrolü",
+      "Yapılacak işler",
+      "Parça ve dış hizmet",
+      "Fotoğraf ve bitir",
+    ]
+
+    let previous = -1
+    for (const label of labels) {
+      const current = source.indexOf(`label: \"${label}\"`)
+      expect(current).toBeGreaterThan(previous)
+      previous = current
+    }
+  })
+
+  test("adımı URL'de korur ve sekme şeritlerini taşmada erişilebilir bırakır", () => {
+    expect(source).toContain('params.set("step", step)')
+    expect(source).toContain('overflow-x-auto')
+    expect(source).not.toContain('TabsList className="justify-center"')
+  })
+
+  test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
+    expect(source).toContain("Bu iş emri salt okunur")
+    expect(source).toContain("Bilgiler değiştirilemez; adımları inceleyebilirsiniz.")
+    expect(source).toContain("!locked && <TechnicianPhotoUpload")
+    expect(source).toContain("!locked && <AddInternalNoteForm")
+  })
+
+  test("işi tamamlamadan önce onay ister", () => {
+    expect(source).toContain("setCompleteDialogOpen(true)")
+    expect(source).toContain("İş tamamlandı olarak işaretlensin mi?")
+    expect(source).toContain("Bu işlem iş emrini kilitler.")
+  })
+
+  test("rota BrandSpinner yükleme ve eyleme dönük hata durumları taşır", () => {
+    expect(readFileSync(join(routeDir, "loading.tsx"), "utf8")).toContain("PageLoading")
+    const errorSource = readFileSync(join(routeDir, "error.tsx"), "utf8")
+    expect(errorSource).toContain("İş emri açılamadı")
+    expect(errorSource).toContain("Tekrar dene")
+  })
+})
