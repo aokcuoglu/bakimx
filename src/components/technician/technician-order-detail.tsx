@@ -109,6 +109,20 @@ type OrderData = {
   vehicleId: string
 }
 
+const TECHNICIAN_ORDER_STEPS = [
+  { id: "start", label: "İşi başlat" },
+  { id: "check", label: "Araç kontrolü" },
+  { id: "items", label: "Yapılacak işler" },
+  { id: "needs", label: "Parça ve dış hizmet" },
+  { id: "finish", label: "Fotoğraf ve bitir" },
+] as const
+
+type StepId = (typeof TECHNICIAN_ORDER_STEPS)[number]["id"]
+
+function isStepId(value: string | null): value is StepId {
+  return TECHNICIAN_ORDER_STEPS.some((step) => step.id === value)
+}
+
 export function TechnicianOrderDetail({
   order,
   technicians,
@@ -195,15 +209,9 @@ export function TechnicianOrderDetail({
   const completeReminder = completeChecklistReminder(completeChecklistLeft)
   const completeBlockedMessage = completeWorkBlockMessage(countIncompleteItems(order.items))
 
-  const steps = [
-    { id: "start", label: "İşi başlat" },
-    { id: "check", label: "Araç kontrolü" },
-    { id: "items", label: "Yapılacak işler" },
-    { id: "needs", label: "Parça ve dış hizmet" },
-    { id: "finish", label: "Fotoğraf ve bitir" },
-  ] as const
-  type StepId = (typeof steps)[number]["id"]
+  const steps = TECHNICIAN_ORDER_STEPS
   const requestedStep = searchParams.get("step")
+  const validRequestedStep = isStepId(requestedStep) ? requestedStep : null
   const derivedStep: StepId = locked
     ? "finish"
     : canStart
@@ -212,16 +220,38 @@ export function TechnicianOrderDetail({
         ? "check"
         : countIncompleteItems(order.items) > 0
           ? "items"
-          : "finish"
-  const currentStep: StepId = steps.some((step) => step.id === requestedStep)
-    ? requestedStep as StepId
-    : derivedStep
+          : "needs"
+  const [rememberedStep, setRememberedStep] = useState<StepId | null>(null)
+  const currentStep: StepId = locked
+    ? "finish"
+    : validRequestedStep ?? rememberedStep ?? derivedStep
   const currentIndex = steps.findIndex((step) => step.id === currentStep)
   const completedStepIds = locked
     ? steps.map((step) => step.id)
     : steps.slice(0, currentIndex).map((step) => step.id)
 
+  useEffect(() => {
+    if (locked || validRequestedStep) return
+
+    let savedStep: string | null = null
+    try {
+      savedStep = localStorage.getItem(`bakimx:technician-order:${order.id}:step`)
+    } catch {
+      // Depolama kapalıysa URL ve iş emri durumundan türetilen adım yeterlidir.
+    }
+
+    if (!isStepId(savedStep)) return
+    const frame = requestAnimationFrame(() => setRememberedStep(savedStep))
+    return () => cancelAnimationFrame(frame)
+  }, [locked, order.id, validRequestedStep])
+
   function goToStep(step: StepId) {
+    setRememberedStep(step)
+    try {
+      localStorage.setItem(`bakimx:technician-order:${order.id}:step`, step)
+    } catch {
+      // Depolama kapalıysa adım URL'de korunmaya devam eder.
+    }
     const params = new URLSearchParams(searchParams.toString())
     params.set("step", step)
     router.push(`${pathname}?${params.toString()}`, { scroll: false })

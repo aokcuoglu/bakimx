@@ -23,8 +23,18 @@ describe("teknisyen iş emri adım kabuğu", () => {
     }
   })
 
-  test("adımı URL'de korur ve sekme şeritlerini taşmada erişilebilir bırakır", () => {
+  test("adımı URL'de ve iş emri bazında cihazda korur", () => {
     expect(source).toContain('params.set("step", step)')
+    expect(source).toContain('localStorage.getItem(`bakimx:technician-order:${order.id}:step`)')
+    expect(source).toContain('localStorage.setItem(`bakimx:technician-order:${order.id}:step`, step)')
+    expect(source).toContain("validRequestedStep ?? rememberedStep ?? derivedStep")
+  })
+
+  test("işler tamamlanınca devam akışında parça ve dış hizmet adımını atlamaz", () => {
+    expect(source).toMatch(/countIncompleteItems\(order\.items\) > 0[\s\S]*\? "items"[\s\S]*: "needs"/)
+  })
+
+  test("sekme şeritlerini taşmada erişilebilir bırakır", () => {
     expect(source).toContain('overflow-x-auto')
     expect(source).not.toContain('TabsList className="justify-center"')
   })
