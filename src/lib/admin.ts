@@ -88,6 +88,33 @@ async function materializeEnvAdmins(): Promise<void> {
   })
 }
 
+/**
+ * Tablo boşken bootstrap'ı tetikleyip verilen userId için oluşan satırı döner.
+ * Tablo doluysa veya e-posta `ADMIN_EMAILS`'te değilse null döner.
+ *
+ * HER İKİ giriş yolu (şifreli + SSO) bu tek noktadan geçer. Bootstrap kararını
+ * birden fazla yere yazmak, BAK-114'ün kök nedeniydi.
+ */
+export async function bootstrapAdminIfEmpty(
+  userId: string,
+  email: string
+): Promise<{ id: string; role: AdminRole } | null> {
+  if (!isAdminEmail(email)) return null
+  if ((await prisma.platformAdmin.count()) > 0) return null
+
+  try {
+    await materializeEnvAdmins()
+  } catch (err) {
+    console.error("[admin] env bootstrap materialization failed:", err instanceof Error ? err.message : err)
+  }
+
+  const created = await prisma.platformAdmin.findUnique({
+    where: { userId },
+    select: { id: true, role: true },
+  })
+  return created
+}
+
 interface ResolvedAdmin {
   adminRole: AdminRole
   platformAdminId: string | null
@@ -113,16 +140,9 @@ async function resolveAdmin(user: AuthUser): Promise<ResolvedAdmin | null> {
     return { adminRole: row.role, platformAdminId: row.id }
   }
 
-  if (!isAdminEmail(user.email)) return null
-  // Tablo doluysa env'in sözü geçmez — offboarding tek noktadan (DB) yapılabilsin.
-  if ((await prisma.platformAdmin.count()) > 0) return null
-
-  try {
-    await materializeEnvAdmins()
-  } catch (err) {
-    console.error("[admin] env bootstrap materialization failed:", err instanceof Error ? err.message : err)
-  }
-  return { adminRole: "founder", platformAdminId: null }
+  const bootstrapped = await bootstrapAdminIfEmpty(user.id, user.email)
+  if (!bootstrapped) return null
+  return { adminRole: bootstrapped.role, platformAdminId: bootstrapped.id }
 }
 
 export async function isCurrentUserAdmin(): Promise<boolean> {

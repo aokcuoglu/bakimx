@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "jose"
 import { prisma } from "@/lib/db"
+import { bootstrapAdminIfEmpty } from "@/lib/admin"
 
 /**
  * `/admin` için Google Workspace SSO (OIDC) — BAK-94.
@@ -263,9 +264,10 @@ export interface SsoAdminAccount {
 /**
  * Doğrulanmış e-postanın karşılığı olan PLATFORM YÖNETİCİSİ, ya da yoksa null.
  *
- * Burada kayıt YARATILMAZ — bu, kabul kriterindeki "otomatik hesap açma yok"
- * maddesinin kod karşılığıdır. `bakimx.com` uzantılı her adres aksi hâlde ilk
- * girişte kendine konsol erişimi açardı.
+ * Otomatik hesap açma YOK — ama tablo boşken `ADMIN_EMAILS` bootstrap'ı
+ * şifreli yoldaki ile aynı `bootstrapAdminIfEmpty` yardımcısından geçer.
+ * `bakimx.com` uzantılı ama `ADMIN_EMAILS`'te adı geçmeyen bir adres, tablo
+ * boş olsa bile giremez.
  *
  * `userId`/`workshopId` reddedilen denemede de döner: denetim kaydı kiracıya
  * bağlı olduğu için (`AuditLog.workshopId` zorunlu) bu olmadan reddi
@@ -274,7 +276,7 @@ export interface SsoAdminAccount {
 export async function resolveSsoAdmin(
   email: string
 ): Promise<
-  | { ok: true; account: SsoAdminAccount }
+  | { ok: true; account: SsoAdminAccount; bootstrapped?: boolean }
   | { ok: false; reason: "no_admin_account"; userId?: string; workshopId?: string }
 > {
   const user = await prisma.user.findFirst({
@@ -290,12 +292,25 @@ export async function resolveSsoAdmin(
     where: { userId: user.id },
     select: { id: true, disabledAt: true },
   })
-  if (!admin || admin.disabledAt) {
+
+  if (admin) {
+    if (admin.disabledAt) {
+      return { ok: false, reason: "no_admin_account", userId: user.id, workshopId: user.workshopId }
+    }
+    return {
+      ok: true,
+      account: { userId: user.id, workshopId: user.workshopId, platformAdminId: admin.id },
+    }
+  }
+
+  const bootstrapped = await bootstrapAdminIfEmpty(user.id, email)
+  if (!bootstrapped) {
     return { ok: false, reason: "no_admin_account", userId: user.id, workshopId: user.workshopId }
   }
 
   return {
     ok: true,
-    account: { userId: user.id, workshopId: user.workshopId, platformAdminId: admin.id },
+    account: { userId: user.id, workshopId: user.workshopId, platformAdminId: bootstrapped.id },
+    bootstrapped: true,
   }
 }

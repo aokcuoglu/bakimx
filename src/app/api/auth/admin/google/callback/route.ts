@@ -111,8 +111,8 @@ export async function GET(request: Request) {
       lookup.account.userId,
       "PlatformAdmin",
       lookup.account.platformAdminId,
-      "platform_admin_sso_login",
-      JSON.stringify({ email: identity.value.email, hd: identity.value.hd })
+      lookup.bootstrapped ? "platform_admin_sso_bootstrap" : "platform_admin_sso_login",
+      JSON.stringify({ email: identity.value.email, hd: identity.value.hd, bootstrapped: !!lookup.bootstrapped })
     )
   } catch (err) {
     console.error("[admin-sso] giriş denetim kaydı yazılamadı:", err instanceof Error ? err.message : err)
