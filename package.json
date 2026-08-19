@@ -27,6 +27,8 @@
     "db:backfill-article-oems": "bunx tsx scripts/backfill-tecdoc-article-oems.ts",
     "db:prod-reset": "bunx tsx scripts/prod-reset.ts",
     "db:studio": "prisma studio",
+    "dr:drill": "bash scripts/dr-drill.sh",
+    "dr:verify": "bunx tsx scripts/dr-verify.ts",
     "workshop": "bun scripts/workshop-admin.ts",
     "test": "bun test",
     "test:e2e": "playwright test",

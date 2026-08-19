@@ -17,6 +17,7 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 |---|---|
 | Platform yönetim modeli — ekip erişimi, roller, konsol | [operations/platform-admin-model.md](./operations/platform-admin-model.md) |
 | Destek runbook — şikayet triyajı & test yöntemleri | [operations/support-runbook.md](./operations/support-runbook.md) |
+| Felaket kurtarma — geri yükleme prosedürü, RTO/RPO, tatbikat kaydı | [operations/disaster-recovery.md](./operations/disaster-recovery.md) |
 
 ## Ajan akışları
 
