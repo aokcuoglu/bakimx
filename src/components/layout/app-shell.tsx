@@ -289,7 +289,7 @@ export function AppShellChrome({
 
         <div className={cn("flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden transition-[padding] duration-200 ease-in-out", desktopContentPadding)}>
           <header className="sticky top-0 z-30 bg-white border-b border-border">
-            <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6 relative">
               <Button
                 type="button"
                 variant="ghost"
@@ -300,6 +300,12 @@ export function AppShellChrome({
               >
                 <Menu className="size-5" />
               </Button>
+
+              <div className="lg:hidden absolute left-1/2 -translate-x-1/2">
+                <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
+                  <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+                </Link>
+              </div>
 
               {pageTitle && (
                 <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
