@@ -356,6 +356,23 @@ export function TechnicianOrderDetail({
         </Button>
       </div>
 
+      {/* BAK-148: beklemeye alma/devam etme hızlı kararı adım/sekme içeriğine
+          gömülü değil, teknisyen hangi adımda olursa olsun burada durur. */}
+      {(canHold || canStart) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {canHold && (
+            <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}>
+              <Pause /> Beklemeye al
+            </Button>
+          )}
+          {canStart && (
+            <Button size="lg" onClick={handleStartWork} disabled={isPending}>
+              <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
+            </Button>
+          )}
+        </div>
+      )}
+
       {locked && (
         <Alert>
           <AlertTitle>Bu iş emri salt okunur</AlertTitle>
@@ -418,13 +435,7 @@ export function TechnicianOrderDetail({
                 canEdit={canEditOrder}
               />
               <WizardActions>
-                {canStart ? (
-                  <Button size="lg" onClick={handleStartWork} disabled={isPending}>
-                    <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
-                  </Button>
-                ) : (
-                  <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
-                )}
+                <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
               </WizardActions>
               {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
           </TabsContent>
@@ -545,7 +556,6 @@ export function TechnicianOrderDetail({
               {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
               {canComplete && completeReminder && <ChecklistReminder message={completeReminder} onReveal={() => goToStep("check")} />}
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("needs")}>Geri</Button>}>
-                {canHold && <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}><Pause /> Beklemeye al</Button>}
                 {canComplete && (
                   <Button variant="success" size="lg" onClick={() => setCompleteDialogOpen(true)} disabled={isPending || !!completeBlockedMessage}>
                     <CheckCircle2 /> İşi tamamla
