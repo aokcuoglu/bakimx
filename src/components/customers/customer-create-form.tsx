@@ -206,7 +206,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         variant={field.value === "individual" ? "default" : "ghost"}
                         size="sm"
                         className={cn(
-                          "min-h-11 gap-1.5",
+                          "gap-1.5",
                           field.value === "individual"
                             ? "bg-white text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
@@ -221,7 +221,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         variant={field.value === "corporate" ? "default" : "ghost"}
                         size="sm"
                         className={cn(
-                          "min-h-11 gap-1.5",
+                          "gap-1.5",
                           field.value === "corporate"
                             ? "bg-white text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
@@ -489,7 +489,6 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               variant={field.value === opt.key ? "default" : "outline"}
                               size="sm"
                               className={cn(
-                                "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border bg-white text-muted-foreground hover:bg-muted"
@@ -555,7 +554,6 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               variant={field.value === opt.key ? "default" : "outline"}
                               size="sm"
                               className={cn(
-                                "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border bg-white text-muted-foreground hover:bg-muted"

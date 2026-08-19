@@ -235,6 +235,9 @@ export function AppShellChrome({
   const [pageHeader, setPageHeader] = useState<PageHeaderState>({ showGlobalSearch: true })
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
   const [sidebarCollapsed, setSidebarCollapsed] = useState(initialSidebarCollapsed)
+  // ab2acb2 (BAK-136) mobil logo linkinde bunu kullanıyordu ama tanımı yalnız
+  // SidebarContent içindeydi; typecheck kırıktı.
+  const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
 
   function toggleSidebar() {
     const next = !sidebarCollapsed
@@ -271,7 +274,7 @@ export function AppShellChrome({
               variant="ghost"
               size="icon-lg"
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-1 right-1 z-10 size-11 text-navy-foreground/60 hover:bg-navy-foreground/10 hover:text-navy-foreground md:top-2 md:right-2 md:size-9"
+              className="absolute top-1 right-1 z-10 text-navy-foreground/60 hover:bg-navy-foreground/10 hover:text-navy-foreground md:top-2 md:right-2"
               aria-label="Menüyü kapat"
             >
               <X className="size-5" />
@@ -295,7 +298,7 @@ export function AppShellChrome({
                 variant="ghost"
                 size="icon-lg"
                 onClick={() => setSidebarOpen(true)}
-                className="-ml-2 size-11 lg:hidden"
+                className="-ml-2 lg:hidden"
                 aria-label="Menüyü aç"
               >
                 <Menu className="size-5" />
@@ -327,7 +330,7 @@ export function AppShellChrome({
                   <TechnicianNotificationsBell />
                 ) : (
                   <Tooltip>
-                    <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
+                    <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" aria-label="Bildirimler" />}>
                       <Bell className="size-5" />
                     </TooltipTrigger>
                     <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
@@ -455,7 +458,6 @@ function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
         type="button"
         variant="ghost"
         size="icon"
-        className="size-11 md:size-8"
         aria-label="Kullanıcı menüsü"
         aria-expanded={open}
         onClick={() => setOpen(!open)}

@@ -270,7 +270,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (
-          <span className="size-11" />
+          <span className="size-8" />
         )}
       </div>
 

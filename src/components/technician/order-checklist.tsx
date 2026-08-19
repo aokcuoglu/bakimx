@@ -428,9 +428,8 @@ function ChecklistRow({
         disabled={isBusy || locked}
         aria-pressed={isDone}
         onClick={() => state.toggle(item)}
-        // Mobilde 44px dokunma hedefi korunur; md+ masaüstünde satır kompakt.
         className={cn(
-          "flex min-h-11 flex-1 items-start gap-2.5 rounded-lg px-2 py-2 text-left md:min-h-0 md:py-1.5",
+          "flex min-h-8 flex-1 items-start gap-2.5 rounded-lg px-2 py-1.5 text-left",
           "cursor-pointer touch-manipulation transition-colors hover:bg-muted",
           // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL: iyimser tik
           // zaten göründüğü için soluklaştırmak "işlem geri alındı" gibi okunur.
@@ -476,7 +475,7 @@ function ChecklistRow({
           aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:size-8 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
         </button>
@@ -616,7 +615,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="h-11 w-full gap-1 text-xs font-medium text-muted-foreground md:h-9 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}

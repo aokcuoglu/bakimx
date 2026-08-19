@@ -28,7 +28,7 @@ type FilterValues = Record<string, string>
 
 /**
  * Mobil filtre yüzeyi: tek "Filtrele" tetikleyici (aktif filtre sayısı badge'i) +
- * bottom sheet içinde tam genişlik 44px alanlar.
+ * bottom sheet içinde tam genişlik alanlar.
  *
  * İki mod:
  * - **URL modu (varsayılan):** Uygula/Temizle `searchParams`'ı günceller → server-side

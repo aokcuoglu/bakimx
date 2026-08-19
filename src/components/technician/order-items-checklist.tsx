@@ -215,9 +215,8 @@ function ItemGroup({
               disabled={isBusy || locked}
               aria-pressed={isDone}
               onClick={() => onToggle(item)}
-              // Mobilde 44px dokunma hedefi korunur; md+ masaüstünde satır kompakt.
               className={cn(
-                "group w-full min-h-11 md:min-h-0 flex items-center gap-2.5 py-2 md:py-1.5 px-2 rounded-lg text-left",
+                "group w-full min-h-8 flex items-center gap-2.5 py-1.5 px-2 rounded-lg text-left",
                 "touch-manipulation cursor-pointer hover:bg-muted transition-colors",
                 // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL:
                 // iyimser tik zaten göründüğü için soluklaştırmak "işlem geri

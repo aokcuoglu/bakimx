@@ -214,7 +214,7 @@ export function PurchaseWizard({
                             onClick={() => setCycle(c)}
                             variant={cycle === c ? "default" : "ghost"}
                             className={cn(
-                              "min-h-11 flex-1",
+                              "flex-1",
                               cycle === c
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
@@ -397,7 +397,7 @@ export function PurchaseWizard({
                                 aria-pressed={selected}
                                 variant="outline"
                                 className={cn(
-                                  "h-auto min-h-11 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
+                                  "h-auto min-h-8 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
