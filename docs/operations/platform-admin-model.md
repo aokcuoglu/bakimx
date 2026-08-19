@@ -241,7 +241,7 @@ Bugünkü kanallar ve boşlukları:
 
 | Öncelik | İş | Gerekçe |
 |---|---|---|
-| **P0** | **`/admin` için Google Workspace SSO** | Tüm kiracı verisinin tek kapısı bugün tek faktörlü |
+| **P0** | **`/admin` için Google Workspace SSO** | Tüm kiracı verisinin tek kapısı bugün tek faktörlü — **kod BAK-94 ile geldi, yapılandırma bekliyor (§8)** |
 | ~~P0~~ | ~~`ADMIN_EMAILS` → DB tablosu + admin rolleri~~ | **BAK-93 ile geldi** — §2 |
 | **P1** | İş yeri listesinde arama + sayfalama | Destek akışının ilk adımı |
 | **P1** | Aktif impersonation ekranı + iptal (`revokedAt`) | Şemada var, kodda yok |
@@ -268,6 +268,74 @@ gelir ve yeni bir sır saklama yükü doğmaz.
 BAK-93 bunun **ilk halkasıdır**: SSO da bir `PlatformAdmin` satırına ve bir role
 bağlanacak; env allowlist'i üstünde SSO kurmak mümkün değildi. Sıra artık
 "kimlik sağlayıcı" katmanında.
+
+---
+
+## 8. Google Workspace SSO — kurulum ve açık maddeler (BAK-94)
+
+Kod `dev`'de. **Yapılandırma yapılmadığı sürece SSO KAPALIDIR** ve bu bilinçlidir:
+`GOOGLE_OIDC_CLIENT_ID` / `GOOGLE_OIDC_CLIENT_SECRET` yoksa `/admin-login` ekranı
+düğmeyi hiç çizmez, `/api/auth/admin/google/*` 404 döner ve durum
+`[admin-sso]` önekiyle loglanır. Sessizce şifre girişine düşmez.
+
+### 8.1 Ne çalışıyor
+
+| Kontrol | Nerede |
+|---|---|
+| Yetkilendirme isteği: `state` + `nonce` + PKCE (S256), el sıkışma şifreli tek kullanımlık çerezde | `src/lib/admin-sso.ts`, `src/lib/admin-sso-cookie.ts` |
+| Kimlik jetonu doğrulaması: JWKS imzası, `iss` / `aud` / `exp`, `nonce`, `email_verified`, `hd` | `verifyGoogleIdToken()` |
+| **Otomatik hesap açma YOK** — `User` **ve** etkin `PlatformAdmin` satırı şart, kayıt yaratılmaz | `resolveSsoAdmin()` |
+| Oturum: mevcut `establishSession()` — `authenticatedAt` damgası basılır | `src/app/api/auth/admin/google/callback/route.ts` |
+| Oturum iptali: `PlatformAdmin.sessionsValidFrom` SSO oturumlarında da geçerli (ikinci mekanizma yok) | `src/lib/admin.ts` |
+| Reddedilen deneme denetim kaydı (`platform_admin_sso_rejected`) | callback route |
+
+**`hd` neden sunucuda:** yetkilendirme isteğine `hd=bakimx.com` eklemek bir filtre
+değil, yalnız hesap seçicideki ipucudur — kişisel bir Gmail ile gelmeyi engellemez.
+Kapı kimlik jetonundaki `hd` + e-posta alan adı kontrolüdür. Testler:
+`src/lib/admin-sso.test.ts` (yerel anahtar çiftiyle, gerçek Google'a çıkmadan).
+
+**Denetim kaydının sınırı:** `AuditLog.workshopId` zorunlu olduğu için yalnız bir
+kiracıya bağlanabilen (yani `User` satırı olan) reddedilmiş denemeler tabloya
+yazılabilir. Hiç kullanıcı satırı olmayan bir `bakimx.com` denemesi yalnız sunucu
+logunda kalır. Platform seviyesinde denetim tablosu ayrı bir iştir.
+
+### 8.2 Yapılandırma (kodla teslim edilemez)
+
+1. Google Cloud → **APIs & Services → OAuth consent screen**: User type **Internal**.
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+   Kayıtlı redirect URI'lar birebir şunlar olmalı:
+   - `http://localhost:3000/api/auth/admin/google/callback`
+   - `https://app-dev.bakimx.com/api/auth/admin/google/callback`
+   - `https://app.bakimx.com/api/auth/admin/google/callback`
+
+   Prod'da konsol `app.bakimx.com` host'unda yaşadığı için callback adresi
+   landing host'undan gelen isteklerde de oraya kanonikleştirilir
+   (`resolveRedirectUri`); `bakimx.com` için ayrı URI kaydına gerek yoktur.
+3. Değerler ortam değişkeni olarak gelir — repoya yazılmaz:
+   - `GOOGLE_OIDC_CLIENT_ID` → SSM (`/bakimx/<env>/GOOGLE_OIDC_CLIENT_ID`)
+   - `GOOGLE_OIDC_CLIENT_SECRET` → Secrets Manager (`bakimx/<env>/google-oidc-client-secret`)
+   - `GOOGLE_OIDC_HD` (opsiyonel, varsayılan `bakimx.com`)
+4. **ECS taskdef/CDK bağlaması ayrı bir PR'dır ve parametreler yazıldıktan SONRA
+   yapılır.** Var olmayan bir SSM parametresini taskdef'e `secrets` olarak eklemek
+   task'ın hiç başlamamasına yol açar.
+
+### 8.3 Hâlâ açık — kod değil, karar
+
+- **Break-glass hesabı.** SSO tek kapı olduğunda Google tarafındaki bir arıza ya
+  da bozulmuş bir OAuth yapılandırması konsola erişimi tamamen kapatır. Şifreyle
+  girebilen tek bir acil durum hesabı gerekir: hangi adres, parola nerede duracak,
+  kim erişebilir. Karar verilince yordamı bu bölüme yazılacak. **Bugün böyle bir
+  hesap tanımlı değildir** — SSO yapılandırılmadan önce bu maddenin kapanması
+  gerekir, aksi hâlde tek kapı riski açıkta kalır.
+- **Workspace 2SV zorunluluğu.** SSO tek başına MFA getirmez; yalnız kimlik
+  doğrulamayı Google'a taşır. `admin.google.com → Security → Authentication →
+  2-Step Verification` tüm kullanıcılar için **Enforcement: On** değilse `/admin`
+  SSO'dan sonra da tek şifreyle açılıyor demektir. Bu adım koddan bağımsızdır ve
+  deploy beklemeden yapılabilir.
+- **Şifre yolu kapatılmadı.** Bugün SSO şifre girişinin *yanına* eklenmiştir:
+  `PlatformAdmin` satırı olan biri hâlâ `/login`'den e-posta/şifre ile girip
+  konsola ulaşabilir. Şifre yolunu yöneticiler için kapatmak, break-glass kararı
+  verilmeden yapılamaz — yoksa Google arızasında konsola girecek kimse kalmaz.
 
 ---
 
