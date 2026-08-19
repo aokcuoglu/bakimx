@@ -170,6 +170,50 @@ test("teknisyene atanmamış bir iş emrinin kaydı orderById'de bulunamaz ve at
   expect(result).toEqual([])
 })
 
+test("BAK-140: parça eklenmesi bildirim üretir, işçilik eklenmesi üretmez", async () => {
+  mockDb({
+    orders: [ORDER],
+    auditRows: [
+      {
+        id: "log-part",
+        action: "order_item_added",
+        metadataJson: JSON.stringify({ name: "Fren balatası", type: "part", quantity: 2 }),
+        orderId: "order-1",
+        entityType: "ServiceOrderItem",
+        entityId: "item-1",
+        createdAt: new Date("2026-01-02T10:00:00Z"),
+      },
+      {
+        id: "log-labor",
+        action: "order_item_added",
+        metadataJson: JSON.stringify({ name: "Yağ değişimi işçiliği", type: "labor", quantity: 1 }),
+        orderId: "order-1",
+        entityType: "ServiceOrderItem",
+        entityId: "item-2",
+        createdAt: new Date("2026-01-02T10:05:00Z"),
+      },
+    ],
+  })
+  const { getTechnicianNotifications } = await import("./notifications")
+
+  const result = await getTechnicianNotifications({
+    workshopId: "w1",
+    userId: "u1",
+    technicianId: "tech-1",
+    since: new Date("2026-01-01"),
+  })
+
+  expect(result).toEqual([
+    {
+      id: "log-part",
+      orderId: "order-1",
+      createdAt: "2026-01-02T10:00:00.000Z",
+      title: "Fren balatası eklendi",
+      description: "34 ABC 123 · İş Emri #42",
+    },
+  ])
+})
+
 test("workOrderNo yoksa açıklamada yalnız plaka görünür", async () => {
   mockDb({
     orders: [{ id: "order-1", workOrderNo: null, intakeForm: { vehicle: { plate: "34 ABC 123" } } }],
@@ -216,14 +260,19 @@ test("isTechnicianNotifiableAction yalnız Faz A kapsamındaki olayları geçiri
     expect(isTechnicianNotifiableAction(action)).toBe(true)
   }
 
-  for (const action of [
-    "order_item_added",
-    "photo_deleted",
-    "order_payment_changed_to_paid",
-    "customer_updated",
-  ]) {
+  for (const action of ["photo_deleted", "order_payment_changed_to_paid", "customer_updated"]) {
     expect(isTechnicianNotifiableAction(action)).toBe(false)
   }
+
+  // order_item_added parça/işçilik/dış işçilik arasında paylaşılır — ayrım
+  // yalnız metadata.type ile yapılabilir (BAK-140).
+  expect(isTechnicianNotifiableAction("order_item_added")).toBe(false)
+  expect(isTechnicianNotifiableAction("order_item_added", null)).toBe(false)
+  expect(isTechnicianNotifiableAction("order_item_added", JSON.stringify({ type: "labor" }))).toBe(false)
+  expect(isTechnicianNotifiableAction("order_item_added", JSON.stringify({ type: "external_labor" }))).toBe(
+    false
+  )
+  expect(isTechnicianNotifiableAction("order_item_added", JSON.stringify({ type: "part" }))).toBe(true)
 })
 
 test("buildNotificationDescription plaka ve iş emri numarasını birleştirir", async () => {
