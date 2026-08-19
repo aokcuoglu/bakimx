@@ -37,12 +37,12 @@ export function Header() {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8 lg:justify-between relative">
         <Link
           href="/"
           onClick={handleLogoClick}
           aria-label="BakimX ana sayfa"
-          className="flex items-center mr-4 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+          className="flex items-center shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 lg:mr-4 absolute lg:static left-1/2 -translate-x-1/2 lg:translate-x-0"
         >
           <BrandLogo variant="primary-light" size="lg" priority alt="BakimX" />
         </Link>
@@ -77,7 +77,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="lg:hidden ml-auto"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Menüyü kapat" : "Menüyü aç"}
         >
