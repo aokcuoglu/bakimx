@@ -17,7 +17,7 @@ Bunlar kodda doğrulanmış gerçeklerdir, tasarım hedefi değil.
 | Konu | Bugünkü durum | Kaynak |
 |---|---|---|
 | Konsol | `/admin`, 9 bölüm (Genel Bakış, İş Yerleri, Faturalandırma, Talepler, Canlı Destek, Ürün Kataloğu, Özellik Bayrakları, Denetim Kaydı, Sistem Sağlığı) | `src/app/admin/admin-nav.tsx:30` |
-| Üyelik | `PlatformAdmin` tablosu (BAK-93). `ADMIN_EMAILS` yalnız tablo boşken çalışan bootstrap yolu; ikisi de boşsa konsol **herkese 404** | `src/lib/admin.ts` |
+| Üyelik | `PlatformAdmin` tablosu (BAK-93). `ADMIN_EMAILS` yalnız tablo boşken çalışan bootstrap yolu; ikisi de boşsa konsol **herkese 404**. Karar şifreli giriş ve SSO için ORTAK (BAK-114) | `src/lib/admin-membership.ts` |
 | Kimlik | Admin, bir atölyeye ait normal bir `User` satırıdır; `PlatformAdmin` o kullanıcıya platform erişimi ekler | `prisma/schema.prisma` |
 | Rol | `founder \| support \| finance \| readonly`; `can()` §2'deki matristen karar verir | `src/lib/admin.ts` |
 | Oturum iptali | `PlatformAdmin.sessionsValidFrom` + oturumdaki `authenticatedAt` — erişimi kapatılan yönetici açık sekmesinde de 404 alır | `src/lib/admin.ts`, `src/lib/session.ts` |
@@ -104,6 +104,16 @@ okumasında adresleri `founder` olarak tabloya yazar. Tablo dolduğu andan sonra
 env'in hükmü yoktur: adı env'de geçen ama tabloda satırı olmayan kişi yönetici
 değildir. Prod kiracı sıfırlaması (`scripts/prod-reset.ts`) tabloyu boşalttığı
 için bu yol oradan dönüşte de çalışır.
+
+Bootstrap **her iki giriş yolunda** da çalışır — kararı `resolveAdminMembership()`
+(`src/lib/admin-membership.ts`) tek başına verir ve hem şifreli yol (`resolveAdmin`)
+hem Google SSO callback'i (`resolveSsoAdmin`) onu çağırır. BAK-114'e kadar öyle
+değildi: SSO doğrudan `platformAdmin.findUnique` okuyordu, yani boş tabloda
+`/admin-login` kendi kendine açılamayan bir kapıydı — konsolu açmak için önce
+şifreli yoldan geçmek gerekiyordu. Bu, `scripts/prod-reset.ts` sonrası ya da
+SSO-öncelikli kurulan yeni bir ortamda geri dönüşü elle DB müdahalesi olan bir
+kilitlenmeydi. Ayrışmanın tekrarını `src/lib/admin-membership.test.ts` içindeki
+kaynak tarayan test engeller.
 
 **`ADMIN_EMAILS` yine de ölü bir değişken değil.** Konsol üyeliği artık tabloda
 ama bu liste hâlâ **sistem bildirimlerinin alıcı listesidir**: yeni iş yeri
@@ -284,10 +294,12 @@ düğmeyi hiç çizmez, `/api/auth/admin/google/*` 404 döner ve durum
 |---|---|
 | Yetkilendirme isteği: `state` + `nonce` + PKCE (S256), el sıkışma şifreli tek kullanımlık çerezde | `src/lib/admin-sso.ts`, `src/lib/admin-sso-cookie.ts` |
 | Kimlik jetonu doğrulaması: JWKS imzası, `iss` / `aud` / `exp`, `nonce`, `email_verified`, `hd` | `verifyGoogleIdToken()` |
-| **Otomatik hesap açma YOK** — `User` **ve** etkin `PlatformAdmin` satırı şart, kayıt yaratılmaz | `resolveSsoAdmin()` |
+| **Otomatik hesap açma YOK** — `User` **ve** etkin `PlatformAdmin` satırı şart, kullanıcı hesabı yaratılmaz | `resolveSsoAdmin()` |
+| Üyelik kararı şifreli yolla ORTAK; boş tabloda `ADMIN_EMAILS` bootstrap'ı SSO'da da çalışır (BAK-114) | `resolveAdminMembership()` |
 | Oturum: mevcut `establishSession()` — `authenticatedAt` damgası basılır | `src/app/api/auth/admin/google/callback/route.ts` |
 | Oturum iptali: `PlatformAdmin.sessionsValidFrom` SSO oturumlarında da geçerli (ikinci mekanizma yok) | `src/lib/admin.ts` |
 | Reddedilen deneme denetim kaydı (`platform_admin_sso_rejected`) | callback route |
+| Bootstrap ile açılan ilk giriş ayrı olay: `platform_admin_sso_bootstrap` | callback route |
 
 **`hd` neden sunucuda:** yetkilendirme isteğine `hd=bakimx.com` eklemek bir filtre
 değil, yalnız hesap seçicideki ipucudur — kişisel bir Gmail ile gelmeyi engellemez.
