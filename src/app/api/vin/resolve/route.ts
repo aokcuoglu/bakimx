@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   // Cache hits are cheap, but every miss is a billed provider call — keep the
   // per-workshop window tight.
-  const limit = rateLimit(`vin:${user.workshopId}`, 10, 60_000)
+  const limit = await rateLimit(`vin:${user.workshopId}`, 10, 60_000)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla VIN sorgusu yapıldı. Lütfen biraz bekleyip tekrar deneyin." },

@@ -10,7 +10,7 @@ const INVALID_MESSAGE = "Sıfırlama bağlantısı geçersiz veya süresi dolmu�
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
-  const limit = rateLimit(`pwreset-confirm-ip:${ip}`, 10, 15 * 60 * 1000)
+  const limit = await rateLimit(`pwreset-confirm-ip:${ip}`, 10, 15 * 60 * 1000)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." },

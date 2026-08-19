@@ -35,7 +35,7 @@ const ATTEMPT_WINDOW_MS = 15 * 60_000
 export async function changeOwnPasswordAction(formData: FormData): Promise<Result> {
   const user = await requireAuth()
 
-  if (!rateLimit(`pwchange:${user.id}`, MAX_ATTEMPTS, ATTEMPT_WINDOW_MS).allowed) {
+  if (!(await rateLimit(`pwchange:${user.id}`, MAX_ATTEMPTS, ATTEMPT_WINDOW_MS)).allowed) {
     return { ok: false, error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." }
   }
 

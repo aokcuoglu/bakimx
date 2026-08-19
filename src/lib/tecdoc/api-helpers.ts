@@ -18,7 +18,7 @@ export async function tecdocRouteGuard(): Promise<NextResponse | { workshopId: s
 
   // Cache hits are cheap; misses are billed. A single drill-down fires several
   // calls, so this window is looser than the VIN route's.
-  const limit = rateLimit(`tecdoc:${user.workshopId}`, 30, 60_000)
+  const limit = await rateLimit(`tecdoc:${user.workshopId}`, 30, 60_000)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla katalog isteği yapıldı. Lütfen biraz bekleyip tekrar deneyin." },
