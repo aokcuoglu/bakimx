@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
 import {
   Users,
   UserPlus,
@@ -20,6 +21,15 @@ import type { UserRole } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import {
   Select,
   SelectContent,
@@ -28,6 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_RANK, rolesUpTo } from "@/lib/roles"
+import { typedResolver } from "@/lib/validations/resolver"
+import { inviteMemberSchema, type InviteMemberFormValues } from "@/lib/validations/settings"
 import {
   inviteMemberAction,
   resendInviteAction,
@@ -139,14 +151,17 @@ export function TeamManagement({
   const [accountMissingId, setAccountMissingId] = useState<string | null>(null)
   /** Dolu olduğu sürece geçici şifre penceresi açık kalır — kapanınca kaybolur. */
   const [issued, setIssued] = useState<IssuedCredentials | null>(null)
-  const [inviteEmail, setInviteEmail] = useState("")
+  const [lastInviteUrl, setLastInviteUrl] = useState("")
+  const [copied, setCopied] = useState(false)
+
   // Varsayılan "staff" idi; #183'te bu rol LEGACY oldu ve atanabilir listesinden
   // çıkarıldı. Varsayılan güncellenmediği için davet formu, seçenekler arasında
   // BULUNMAYAN "Personel (eski)" ile açılıyor ve dokunulmazsa yeni kullanıcı eski
   // role düşüyordu. Yeni davetin makul tabanı: Usta.
-  const [inviteRole, setInviteRole] = useState<UserRole>("usta")
-  const [lastInviteUrl, setLastInviteUrl] = useState("")
-  const [copied, setCopied] = useState(false)
+  const inviteForm = useForm<InviteMemberFormValues, unknown, InviteMemberFormValues>({
+    resolver: typedResolver(inviteMemberSchema),
+    defaultValues: { email: "", role: "usta" },
+  })
 
   const assignable = rolesUpTo(currentUserRole)
   // Rol atama kuralı korunur: kimse kendinden yüksek rol açamaz.
@@ -258,9 +273,9 @@ export function TeamManagement({
       )}
 
       {error && (
-        <div className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {lastInviteUrl && (
@@ -306,70 +321,88 @@ export function TeamManagement({
       )}
 
       {showInvite && canManage && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const fd = new FormData()
-            fd.set("email", inviteEmail)
-            fd.set("role", inviteRole)
-            run(
-              () => inviteMemberAction(fd),
-              (r) => {
-                setLastInviteUrl(r.inviteUrl || "")
-                setInviteEmail("")
-                setInviteRole("usta")
-                setShowInvite(false)
-              }
-            )
-          }}
-          className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
-        >
-          <h4 className="text-sm font-semibold text-foreground">Ekip üyesi davet et</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="E-posta *"
-              required
-            />
-            <Select items={ROLE_LABELS} value={inviteRole} onValueChange={(v) => v && setInviteRole(v as UserRole)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {assignable.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    <span className="flex flex-col items-start">
-                      <span>{ROLE_LABELS[r]}</span>
-                      <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isPending || !inviteEmail.trim()}
-              className="touch-manipulation"
-            >
-              {isPending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-              Davet Gönder
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => setShowInvite(false)}
-              className="touch-manipulation"
-            >
-              İptal
-            </Button>
-          </div>
-        </form>
+        <Form {...inviteForm}>
+          <form
+            onSubmit={inviteForm.handleSubmit((values) => {
+              const fd = new FormData()
+              fd.set("email", values.email)
+              fd.set("role", values.role)
+              run(
+                () => inviteMemberAction(fd),
+                (r) => {
+                  setLastInviteUrl(r.inviteUrl || "")
+                  inviteForm.reset({ email: "", role: "usta" })
+                  setShowInvite(false)
+                }
+              )
+            })}
+            className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
+          >
+            <h4 className="text-sm font-semibold text-foreground">Ekip üyesi davet et</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField
+                control={inviteForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-posta</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" placeholder="ornek@atolye.com" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={inviteForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rol</FormLabel>
+                    <FormControl>
+                      <Select items={ROLE_LABELS} value={field.value} onValueChange={(v) => v && field.onChange(v)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assignable.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              <span className="flex flex-col items-start">
+                                <span>{ROLE_LABELS[r]}</span>
+                                <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isPending}
+                className="touch-manipulation"
+              >
+                {isPending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                Davet Gönder
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={() => setShowInvite(false)}
+                className="touch-manipulation"
+              >
+                İptal
+              </Button>
+            </div>
+          </form>
+        </Form>
       )}
 
       {/* Members */}
