@@ -267,7 +267,7 @@ export function OrderChecklist({
           ? "border-success/30 bg-success/5"
           : progress.total > 0 && !locked
             ? "border-primary/25 bg-primary/[0.04]"
-            : "border-border bg-white"
+            : "border-border bg-card"
       )}
     >
       <Accordion value={open} onValueChange={(v) => onOpenChange(v as string[])}>
@@ -570,7 +570,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         type="button"
         variant="outline"
         onClick={() => setShow(true)}
-        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-white/60 text-primary hover:bg-white hover:text-primary"
+        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-card/60 text-primary hover:bg-card hover:text-primary"
       >
         <Plus className="size-4" />
         Kontrol maddesi ekle
@@ -599,7 +599,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
       onKeyDown={(e) => {
         if (e.key === "Escape") close()
       }}
-      className="mt-3 space-y-3 rounded-lg border border-border bg-white p-3 shadow-sm"
+      className="mt-3 space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm"
     >
       <p className="text-xs font-semibold text-foreground">Yeni kontrol maddesi</p>
 

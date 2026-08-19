@@ -11,6 +11,11 @@ const SCOPES = [
   join(SRC, "components", "settings"),
 ]
 
+const SHELL_FILES = [
+  join(SRC, "components", "layout", "app-shell.tsx"),
+  join(SRC, "components", "ui", "sidebar.tsx"),
+]
+
 function tsxFiles(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry)
@@ -22,7 +27,7 @@ function tsxFiles(dir: string, files: string[] = []): string[] {
 
 test("yönetim yüzeylerinde görünür ham interaktif kontrol yok", () => {
   const offenders: string[] = []
-  for (const file of SCOPES.flatMap((scope) => tsxFiles(scope))) {
+  for (const file of [...SCOPES.flatMap((scope) => tsxFiles(scope)), ...SHELL_FILES]) {
     const source = readFileSync(file, "utf8").replace(/<input\b[^>]*type=["']hidden["'][^>]*\/>/gs, "")
     source.split("\n").forEach((line, index) => {
       if (/<(?:button|input|select|textarea)\b/.test(line)) {

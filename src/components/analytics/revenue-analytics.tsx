@@ -11,7 +11,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
   accentBg: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>

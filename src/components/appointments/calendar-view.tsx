@@ -213,7 +213,7 @@ export function CalendarView({
       </div>
 
       {view === "month" ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border bg-muted">
             {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((d) => (
               <div key={d} className="px-2 py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
@@ -261,7 +261,7 @@ export function CalendarView({
           </div>
         </div>
       ) : view === "week" ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border">
             {dates.map((date) => {
               const today = isToday(date)
@@ -313,7 +313,7 @@ export function CalendarView({
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border bg-muted">
             <div className="text-sm font-semibold text-foreground">
               {baseDate.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}

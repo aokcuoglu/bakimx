@@ -57,7 +57,7 @@ export function CollectionsReport({ stats, dailyCollections, monthlyCollections,
         <StatCard label="Gecikmiş Alacak" value={stats.overdueReceivable} accent="red" isCurrency />
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4 sm:p-6">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
         <h4 className="text-sm font-semibold text-foreground mb-4">Ödeme Yöntemine Göre Dağılım</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
@@ -107,7 +107,7 @@ export function CollectionsReport({ stats, dailyCollections, monthlyCollections,
         )}
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h4 className="text-sm font-semibold text-foreground mb-3">Tarih Filtresi</h4>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
