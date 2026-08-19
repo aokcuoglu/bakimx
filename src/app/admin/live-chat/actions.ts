@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { requireAdminCapability } from "@/lib/admin"
+import { deliverAgentReplyEmail } from "@/lib/live-chat/server"
 import { parseHolidayList, parseWeeklySchedule } from "@/lib/live-chat/schedule"
 import {
   DEFAULT_GREETING,
@@ -28,9 +29,18 @@ export async function sendAgentReplyAction(conversationId: string, body: string)
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz mesaj" }
   }
 
+  // Yığın kararı için güncelleme ÖNCESİ damgalar okunur: aşağıdaki update
+  // `lastAgentMessageAt`i şimdiye çeker, sonra okunsaydı her yanıt "ilk yanıt"
+  // gibi görünüp ardışık mesajlar ayrı ayrı e-posta üretirdi.
   const conversation = await prisma.liveChatConversation.findUnique({
     where: { id: parsed.data.conversationId },
-    select: { id: true },
+    select: {
+      id: true,
+      visitorName: true,
+      visitorEmail: true,
+      lastAgentMessageAt: true,
+      lastVisitorMessageAt: true,
+    },
   })
   if (!conversation) return { ok: false, error: "Görüşme bulunamadı" }
 
@@ -58,6 +68,10 @@ export async function sendAgentReplyAction(conversationId: string, body: string)
       },
     }),
   ])
+
+  // Ziyaretçi sekmeyi kapattıysa yanıtı yalnız e-posta ulaştırır. Gönderim
+  // best-effort ve beklenmez: temsilcinin yanıtı sağlayıcı hatasıyla düşmesin.
+  void deliverAgentReplyEmail(conversation, parsed.data.body, now)
 
   revalidatePath(INBOX_PATH)
   return { ok: true }

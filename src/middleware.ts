@@ -22,7 +22,9 @@ const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
-const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/"]
+// /destek/<token>: canlı destek "sohbete dön" bağlantısı (BAK-99) — e-postadaki
+// bağlantı oturumsuz bir tarayıcıda açılır, auth kapısına takılırsa asla açılmaz.
+const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]

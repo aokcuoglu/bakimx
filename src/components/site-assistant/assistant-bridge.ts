@@ -28,16 +28,23 @@ export type AssistantBridgeState = {
   askBarVisible: boolean;
   /** Asistan paneli açık mı? */
   panelOpen: boolean;
+  /**
+   * `/destek/<token>` sayfası paneli canlı destek görünümünde açmak istiyor
+   * (BAK-99). Aynı sayfaya iki kez girilse de açılabilsin diye yine sayaç.
+   */
+  resumeNonce: number;
 };
 
 const INITIAL: AssistantBridgeState = Object.freeze({
   request: null,
   askBarVisible: false,
   panelOpen: false,
+  resumeNonce: 0,
 });
 
 let state: AssistantBridgeState = INITIAL;
 let nonce = 0;
+let resumeNonce = 0;
 
 const listeners = new Set<() => void>();
 
@@ -75,6 +82,16 @@ export function requestAssistantAnswers(query: string): void {
   emit({ ...state, request: { query: trimmed, nonce } });
 }
 
+/**
+ * E-postadaki bağlantıdan gelindi: paneli doğrudan sohbet görünümünde aç.
+ * Görüşme anahtarını çağıran `localStorage`a ÖNCEDEN yazmış olmalı — panel
+ * açılır açılmaz onu okuyup geçmişi çeker.
+ */
+export function requestLiveChatResume(): void {
+  resumeNonce += 1;
+  emit({ ...state, resumeNonce });
+}
+
 export function setAskBarVisible(visible: boolean): void {
   if (state.askBarVisible === visible) return;
   emit({ ...state, askBarVisible: visible });
@@ -89,5 +106,6 @@ export function setAssistantPanelOpen(open: boolean): void {
 export function resetAssistantBridge(): void {
   state = INITIAL;
   nonce = 0;
+  resumeNonce = 0;
   listeners.clear();
 }

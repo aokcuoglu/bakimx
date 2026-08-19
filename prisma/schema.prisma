@@ -1835,7 +1835,8 @@ model LiveChatConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages LiveChatMessage[]
+  messages     LiveChatMessage[]
+  resumeTokens LiveChatResumeToken[]
 
   @@index([status, lastMessageAt])
   @@index([lastMessageAt])
@@ -1844,6 +1845,31 @@ model LiveChatConversation {
 enum LiveChatConversationStatus {
   open
   closed
+}
+
+/// Ziyaretçinin e-postadaki bağlantıyla görüşmesine geri dönmesini sağlayan
+/// SÜRELİ anahtar (BAK-99).
+///
+/// NEDEN `publicToken` e-postaya konmuyor: o token görüşmenin kalıcı ve süresiz
+/// anahtarıdır. Düz metin olarak e-postaya girerse, o kutuya erişen (ya da
+/// iletilen e-postayı gören) herkes görüşmeyi süresiz açar ve iptal etmenin bir
+/// yolu olmaz. Bu tablo `PasswordResetToken` ile aynı deseni kurar: yalnız
+/// sha256 özeti saklanır, süresi vardır ve iptal edilebilir.
+model LiveChatResumeToken {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   LiveChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// sha256(ham token), hex. DB sızıntısı çalışan bir bağlantı ÜRETEMEZ.
+  tokenHash      String               @unique
+  expiresAt      DateTime
+  /// Yeni bağlantı üretilince öncekiler iptal edilir — `issuePasswordReset` deseni.
+  revokedAt      DateTime?
+  /// Bağlantının ilk/son açıldığı an; denetim izi.
+  lastUsedAt     DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId])
+  @@index([expiresAt])
 }
 
 model LiveChatMessage {
