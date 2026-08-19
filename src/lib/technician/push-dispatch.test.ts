@@ -118,6 +118,26 @@ test("bildirilebilir olmayan aksiyon DB'ye hiç sorulmadan elenir", async () => 
   expect(delivery).toBeNull()
 })
 
+test("BAK-140: parça eklenmesi push üretir, işçilik eklenmesi elenir", async () => {
+  setup()
+  const { resolveTechnicianPushDelivery } = await import("./push-dispatch")
+
+  const partDelivery = await resolveTechnicianPushDelivery({
+    ...BASE_EVENT,
+    action: "order_item_added",
+    metadataJson: JSON.stringify({ name: "Fren balatası", type: "part", quantity: 2 }),
+  })
+  expect(partDelivery).not.toBeNull()
+  expect(partDelivery?.payload.title).toBe("Fren balatası eklendi")
+
+  const laborDelivery = await resolveTechnicianPushDelivery({
+    ...BASE_EVENT,
+    action: "order_item_added",
+    metadataJson: JSON.stringify({ name: "Yağ değişimi işçiliği", type: "labor", quantity: 1 }),
+  })
+  expect(laborDelivery).toBeNull()
+})
+
 test("durum değişikliği (prefix'li aksiyon) da bildirilir", async () => {
   setup()
   const { resolveTechnicianPushDelivery } = await import("./push-dispatch")
