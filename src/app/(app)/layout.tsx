@@ -149,6 +149,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppShellChrome
           initialSidebarCollapsed={initialSidebarCollapsed}
           enabledFeatures={enabledFeatures}
+          userIdentity={{
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+          }}
         >
           {children}
         </AppShellChrome>

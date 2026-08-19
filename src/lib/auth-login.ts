@@ -50,6 +50,7 @@ export type LoginResult =
       ok: true
       userId: string
       workshopId: string
+      role: string
       /**
        * Sahibin ürettiği geçici şifreyle girildi — çağıran taraf kullanıcıyı
        * şifre değiştirme ekranına yönlendirir (ekran P1'de gelir).
@@ -143,6 +144,7 @@ async function findUserByIdentifier(identifier: string, workshopId?: string | nu
     isActive: true,
     workshopId: true,
     mustChangePassword: true,
+    role: true,
   } as const
 
   const value = identifier.trim()
@@ -220,6 +222,7 @@ export async function verifyCredentials({
     ok: true,
     userId: user.id,
     workshopId: user.workshopId,
+    role: user.role,
     mustChangePassword: user.mustChangePassword,
     planExpiredReason: isPlanExpiredLock(lockReason) ? lockReason : null,
   }

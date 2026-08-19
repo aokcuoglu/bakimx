@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     // Rotate the session on login: clear any pre-existing (possibly fixated)
     // session data before writing the authenticated identity.
-    await establishSession(result.userId, result.workshopId)
+    await establishSession(result.userId, result.workshopId, result.role)
 
     // Planı bitmiş workshop'lar uygulamaya değil satın alma akışına gider; app
     // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).

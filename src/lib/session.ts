@@ -31,6 +31,12 @@ export interface SessionData {
    * `isAdminSessionRevoked` bunu bilerek "iptal edilmiş" sayar.
    */
   authenticatedAt?: number
+  /**
+   * Kullanıcının rolü (BAK-106). Middleware'de rota kısıtlaması için okunur.
+   * Bu alan eklenmeden önce açılmış oturumlarda YOK; yoksa middleware kısıtlama
+   * uygulamaz ve layout fallback devreye girer.
+   */
+  role?: string
   impersonation?: ImpersonationOverlay
 }
 
@@ -91,12 +97,13 @@ export async function getSession() {
  * verify-email, dev-login) tutarlı olmak zorunda. Biri unutulursa o yoldan açılan
  * yönetici oturumu iptal edilemez hâle gelirdi — sessiz bir güvenlik açığı.
  */
-export async function establishSession(userId: string, workshopId: string): Promise<void> {
+export async function establishSession(userId: string, workshopId: string, role?: string): Promise<void> {
   const session = await getSession()
   session.destroy()
   session.userId = userId
   session.workshopId = workshopId
   session.authenticatedAt = Date.now()
+  if (role) session.role = role
   await session.save()
 }
 

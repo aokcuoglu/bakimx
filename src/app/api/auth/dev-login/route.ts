@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   const user = await prisma.user.findFirst({
     where: { email, isActive: true },
-    select: { id: true, workshopId: true },
+    select: { id: true, workshopId: true, role: true },
   })
   if (!user) {
     return NextResponse.json(
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     )
   }
 
-  await establishSession(user.id, user.workshopId)
+  await establishSession(user.id, user.workshopId, user.role)
 
   return NextResponse.redirect(
     new URL(safeRedirectPath(url.searchParams.get("redirect")), request.url)
