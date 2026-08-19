@@ -1,10 +1,22 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Loader2 } from "lucide-react"
+import Link from "next/link"
+import { Building2, ExternalLink, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  assignSupportRequest,
+  saveSupportRequestInternalNote,
+  setSupportRequestWorkshop,
   updateDemoRequestStatus,
   updateSupportRequestStatus,
 } from "@/app/admin/actions"
@@ -31,7 +43,24 @@ export interface AdminSupportRequestRow {
   message: string
   status: string
   createdAt: string
+  /** Bağlı kiracı; NULL = eşleşme bulunamadı ya da birden çok aday çıktı. */
+  workshopId: string | null
+  workshopName: string | null
+  assignedToUserId: string | null
+  assignedToLabel: string | null
+  /** YALNIZ konsol — müşteri yüzeylerine asla taşınmaz (BAK-98). */
+  internalNote: string | null
 }
+
+/** İş yeri bağlama ve atama açılır listelerinin içeriği. */
+export interface SupportRequestOptions {
+  workshops: { value: string; label: string }[]
+  admins: { value: string; label: string }[]
+}
+
+/** "Seçim yok" satırı — Base UI Select boş string'i geçerli bir değer sayar,
+ *  bu yüzden temizleme ayrı bir seçenek olarak sunulur. */
+const UNASSIGNED = "__none__"
 
 const DEMO_STATUSES: { value: string; label: string }[] = [
   { value: "new", label: "Yeni" },
@@ -148,22 +177,77 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
   )
 }
 
-function SupportRequestRow({ r, canManage }: { r: AdminSupportRequestRow; canManage: boolean }) {
+/** Konsol içi tek satırlık açılır liste — etiketi `items` ile verilir, aksi
+ *  hâlde Base UI Select tetikleyicide ham değeri basar. */
+function ManageSelect({
+  label,
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  disabled: boolean
+  onChange: (next: string) => void
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      {label}
+      <Select
+        items={options}
+        value={value}
+        disabled={disabled}
+        onValueChange={(v) => onChange(v === UNASSIGNED || v === null ? "" : v)}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </label>
+  )
+}
+
+function SupportRequestRow({
+  r,
+  canManage,
+  options,
+}: {
+  r: AdminSupportRequestRow
+  canManage: boolean
+  options: SupportRequestOptions
+}) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
+  const [note, setNote] = useState(r.internalNote ?? "")
+  const [noteSaved, setNoteSaved] = useState(false)
 
-  function run(next: string) {
+  function run(action: () => Promise<{ ok: true } | { ok: false; error: string }>) {
     setError("")
     startTransition(async () => {
-      const res = await updateSupportRequestStatus(r.id, next)
+      const res = await action()
       if (!res.ok) setError(res.error)
     })
   }
 
   const created = new Date(r.createdAt).toLocaleDateString("tr-TR")
 
+  const workshopOptions = [
+    { value: UNASSIGNED, label: "Bağlı değil" },
+    ...options.workshops,
+  ]
+  const adminOptions = [{ value: UNASSIGNED, label: "Atanmadı" }, ...options.admins]
+
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -180,6 +264,29 @@ function SupportRequestRow({ r, canManage }: { r: AdminSupportRequestRow; canMan
             <p className="text-sm font-medium text-foreground mt-1">{r.subject}</p>
           )}
           <p className="text-sm text-muted-foreground mt-1">{r.message}</p>
+
+          {/* Bağlı kayıttan iş yeri detayına tek tıkla geçiş — teşhisin ilk
+              adımı "bu kim?" sorusunu cevaplamak. */}
+          <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
+            {r.workshopId ? (
+              <Button
+                nativeButton={false}
+                variant="outline"
+                size="sm"
+                render={<Link href={`/admin/workshops/${r.workshopId}`} />}
+              >
+                <Building2 className="size-3.5" />
+                {r.workshopName ?? "İş yeri"}
+                <ExternalLink className="size-3.5" />
+              </Button>
+            ) : (
+              <span className="text-muted-foreground">Bağlı iş yeri yok</span>
+            )}
+            {r.assignedToLabel && (
+              <span className="text-muted-foreground">Atanan: {r.assignedToLabel}</span>
+            )}
+          </div>
+
           {error && <p className="text-sm text-destructive-strong mt-1">{error}</p>}
         </div>
 
@@ -192,11 +299,67 @@ function SupportRequestRow({ r, canManage }: { r: AdminSupportRequestRow; canMan
               value={s.value}
               label={s.label}
               disabled={pending}
-              onClick={() => run(s.value)}
+              onClick={() => run(() => updateSupportRequestStatus(r.id, s.value))}
             />
           ))}
         </div>
       </div>
+
+      {canManage ? (
+        <div className="grid gap-3 border-t pt-3 sm:grid-cols-2">
+          <ManageSelect
+            label="İş yeri"
+            value={r.workshopId ?? UNASSIGNED}
+            options={workshopOptions}
+            disabled={pending}
+            onChange={(next) => run(() => setSupportRequestWorkshop(r.id, next))}
+          />
+          <ManageSelect
+            label="Atanan"
+            value={r.assignedToUserId ?? UNASSIGNED}
+            options={adminOptions}
+            disabled={pending}
+            onChange={(next) => run(() => assignSupportRequest(r.id, next))}
+          />
+
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground sm:col-span-2">
+            İç not (müşteriye gösterilmez)
+            <Textarea
+              value={note}
+              disabled={pending}
+              rows={2}
+              onChange={(e) => {
+                setNote(e.target.value)
+                setNoteSaved(false)
+              }}
+            />
+          </label>
+          <div className="flex items-center gap-2 sm:col-span-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending || note === (r.internalNote ?? "")}
+              onClick={() =>
+                run(async () => {
+                  const res = await saveSupportRequestInternalNote(r.id, note)
+                  if (res.ok) setNoteSaved(true)
+                  return res
+                })
+              }
+            >
+              Notu kaydet
+            </Button>
+            {noteSaved && <span className="text-xs text-success-strong">Kaydedildi</span>}
+          </div>
+        </div>
+      ) : (
+        r.internalNote && (
+          <p className="border-t pt-3 text-sm text-muted-foreground whitespace-pre-wrap">
+            İç not: {r.internalNote}
+          </p>
+        )
+      )}
     </div>
   )
 }
@@ -224,9 +387,12 @@ export function AdminDemoRequests({
 export function AdminSupportRequests({
   requests,
   canManage = false,
+  options = { workshops: [], admins: [] },
 }: {
   requests: AdminSupportRequestRow[]
   canManage?: boolean
+  /** Bağlama/atama listeleri — yalnız `canManage` ise kullanılır. */
+  options?: SupportRequestOptions
 }) {
   if (requests.length === 0) {
     return <p className="text-sm text-muted-foreground">Henüz destek talebi yok.</p>
@@ -234,7 +400,7 @@ export function AdminSupportRequests({
   return (
     <div className="space-y-3">
       {requests.map((r) => (
-        <SupportRequestRow key={r.id} r={r} canManage={canManage} />
+        <SupportRequestRow key={r.id} r={r} canManage={canManage} options={options} />
       ))}
     </div>
   )

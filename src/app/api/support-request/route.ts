@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { resolveWorkshopIdByEmail } from "@/lib/support/workshop-link"
 
 const submissionCounts = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW = 60_000
@@ -79,6 +80,15 @@ export async function POST(request: Request) {
       )
     }
 
+    // Kiracı bağı best-effort: eşleştirme hatası talebin kaydını ENGELLEMEZ,
+    // yalnız bağsız bırakır (konsoldan elle bağlanabilir).
+    let workshopId: string | null = null
+    try {
+      workshopId = await resolveWorkshopIdByEmail(body.email)
+    } catch (err) {
+      console.error("[support-request] workshop match failed:", err)
+    }
+
     // Persist to database for admin console follow-up.
     try {
       await prisma.supportRequest.create({
@@ -90,6 +100,7 @@ export async function POST(request: Request) {
           subject: (body.subject ?? "").trim(),
           message: body.message.trim(),
           clientIp: ip,
+          workshopId,
         },
       })
     } catch (err) {
