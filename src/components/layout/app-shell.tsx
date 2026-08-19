@@ -7,6 +7,7 @@ import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch } from "@/components/layout/global-search-box"
 import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
 import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
+import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
 import { ROLE_LABELS } from "@/lib/roles"
 import type { UserRole } from "@prisma/client"
 import {
@@ -316,12 +317,16 @@ export function AppShellChrome({
 
               <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
                 {!isTechnicianRestrictedRole(userIdentity?.role) && <CreateCenterDialog />}
-                <Tooltip>
-                  <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
-                    <Bell className="size-5" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
-                </Tooltip>
+                {isTechnicianRestrictedRole(userIdentity?.role) ? (
+                  <TechnicianNotificationsBell />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
+                      <Bell className="size-5" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
+                  </Tooltip>
+                )}
                 <UserMenu userIdentity={userIdentity} />
               </div>
             </div>

@@ -598,6 +598,22 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
     data: { status: status as import("@prisma/client").PartsRequestStatus },
   })
 
+  // "requested" bu action'ın giriş durumu, bir karar değil — yalnız fiili karar
+  // anları (hazır/teslim) denetim kaydına düşer. Teknisyen bildirim yoklaması
+  // (BAK-109) bu kaydı okur; önceden yalnız `cancelled` ve `converted` için
+  // AuditLog satırı vardı, bu iki geçiş sessiz kalıyordu.
+  if (status === "prepared" || status === "delivered") {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "PartsRequest",
+      requestId,
+      `parts_request_${status}`,
+      JSON.stringify({ partName: request.partName }),
+      request.serviceOrderId,
+    )
+  }
+
   const statusLabels: Record<string, string> = {
     requested: "Talep Edildi",
     prepared: "Hazırlandı",
