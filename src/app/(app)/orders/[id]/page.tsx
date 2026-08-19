@@ -340,6 +340,7 @@ export default async function OrderDetailPage({
         editInitially={editInitially}
         laborCatalog={laborCatalog}
         canReopen={roleCan(user.role, "order.reopen")}
+        canEditInfo={roleCan(user.role, "order.edit")}
       />
     </AppShell>
   )
