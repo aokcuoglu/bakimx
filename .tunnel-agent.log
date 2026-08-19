@@ -1,0 +1,11 @@
+  (Ctrl-C to close. Keep this open while developing.)
+  Auto-reconnects if the session drops or goes mute; health probe every 60s.
+
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_4bc345b106ba415189341631921e981e_4bc345b106ba415189341631921e981e-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787120659-xocajnzrq3u8ckvt9ubh96fnke
+Port 5433 opened for sessionId botocore-session-1787120659-xocajnzrq3u8ckvt9ubh96fnke.
+Waiting for connections...
+
