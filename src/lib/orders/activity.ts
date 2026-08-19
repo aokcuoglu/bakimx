@@ -71,7 +71,7 @@ function paymentLabel(key: string): string {
   return (PAYMENT_STATUS as Record<string, { label: string }>)[key]?.label ?? key
 }
 
-type Built = { category: ActivityCategory; label: string; detail?: string } | null
+export type Built = { category: ActivityCategory; label: string; detail?: string } | null
 
 // Aksiyon + metadata → personel-içi TR etiket. Bilinmeyen aksiyonlar null döner
 // (log'a girmez) — kart yalnız anlamlı işlemleri gösterir.
@@ -197,6 +197,14 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
       const reason = typeof meta.reason === "string" && meta.reason ? meta.reason : null
       return { category: "part", label: `Parça talebi iptal edildi: ${name}`, detail: reason ?? undefined }
     }
+    case "parts_request_prepared": {
+      const name = String(meta.partName ?? "Parça")
+      return { category: "part", label: `Parça talebi hazırlandı: ${name}` }
+    }
+    case "parts_request_delivered": {
+      const name = String(meta.partName ?? "Parça")
+      return { category: "part", label: `Parça talebi teslim edildi: ${name}` }
+    }
     case "parts_request_reopened": {
       const name = String(meta.partName ?? "Parça")
       return { category: "part", label: `Parça talebi iptali geri alındı: ${name}` }
@@ -205,6 +213,15 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
     default:
       return null
   }
+}
+
+/**
+ * `AuditLog.action` + `metadataJson` çiftini personel-içi TR etikete çevirir.
+ * `buildEntry`'nin dışa açık kapısı — tek metadata parse/etiket kararı burada
+ * kalır, iş emri aktivite kartı ve teknisyen bildirimleri aynı kaynağı paylaşır.
+ */
+export function describeAuditAction(action: string, metadataJson: string | null): Built {
+  return buildEntry(action, safeParse(metadataJson))
 }
 
 /**
