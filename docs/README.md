@@ -17,6 +17,7 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 |---|---|
 | Platform yönetim modeli — ekip erişimi, roller, konsol | [operations/platform-admin-model.md](./operations/platform-admin-model.md) |
 | Destek runbook — şikayet triyajı & test yöntemleri | [operations/support-runbook.md](./operations/support-runbook.md) |
+| Kesinti iletişimi — duyuru kanalı, şablonlar, ne zaman duyurulur | [operations/incident-communication.md](./operations/incident-communication.md) |
 | Felaket kurtarma — geri yükleme prosedürü, RTO/RPO, tatbikat kaydı | [operations/disaster-recovery.md](./operations/disaster-recovery.md) |
 
 ## Ajan akışları
@@ -40,6 +41,7 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 | Genel bakış (EN) | [architecture/overview.md](./architecture/overview.md) |
 | Mimari analiz (TR) | [architecture/mimari-analiz.md](./architecture/mimari-analiz.md) |
 | Teknik analiz raporu | [architecture/analysis.md](./architecture/analysis.md) |
+| Canlı destek (live chat) — BakımX'in kendi destek masası, kiracıdan bağımsız | [architecture/live-chat.md](./architecture/live-chat.md) |
 | Diyagramlar | [architecture/](./architecture/) — `.mmd` kaynak + `.png`/`.svg` çıktı |
 
 ## Kayıtlar
