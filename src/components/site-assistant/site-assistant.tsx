@@ -44,6 +44,7 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
     getServerAssistantBridge,
   );
   const [appliedNonce, setAppliedNonce] = useState(0);
+  const [appliedResumeNonce, setAppliedResumeNonce] = useState(0);
 
   const persist = useCallback((next: boolean) => {
     try {
@@ -83,6 +84,22 @@ export function SiteAssistant({ aiEnabled = false }: { aiEnabled?: boolean }) {
       if (!open) {
         setOpen(true);
         setTransient(true);
+      }
+    }
+  }
+
+  // E-postadaki "sohbete dön" bağlantısı (BAK-99). Ask bar akışının aksine bu
+  // GEÇİCİ değil: ziyaretçi görüşmesine döndü, panelin açık kalması beklenir —
+  // başka bir sayfaya geçtiğinde de sohbeti açık bulmalı.
+  const resumeNonce = bridge.resumeNonce;
+  if (hydrated && resumeNonce !== appliedResumeNonce) {
+    setAppliedResumeNonce(resumeNonce);
+    if (resumeNonce > 0) {
+      setView("chat");
+      setTransient(false);
+      if (!open) {
+        setOpen(true);
+        persist(true);
       }
     }
   }

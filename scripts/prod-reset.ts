@@ -125,6 +125,7 @@ export const KEEP_TABLES = [
   "LiveChatSettings",
   "LiveChatConversation",
   "LiveChatMessage",
+  "LiveChatResumeToken",
   "_prisma_migrations",
 ]
 

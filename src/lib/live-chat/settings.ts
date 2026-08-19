@@ -13,14 +13,18 @@ export const DEFAULT_GREETING =
   "Merhaba! 👋 BakımX destek ekibindeyiz. Sorunuzu yazın, hemen yanıtlayalım."
 
 /**
- * DİKKAT — burada tutamayacağımız bir söz verme. Sistem ziyaretçiye e-posta
- * GÖNDERMİYOR: yanıt yalnız widget'ta görünür (ziyaretçi tarayıcısında saklanan
- * anahtarla sohbete geri döner). Metnin eski hâli "size buradan ve e-posta ile
- * dönüş yapalım" diyordu; bunun karşılığı kodda hiç olmadı. Ziyaretçiye e-posta
- * eklenirse söz geri konabilir.
+ * DİKKAT — burada tutamayacağımız bir söz verme. Metin bir dönem "size buradan
+ * ve e-posta ile dönüş yapalım" diyordu ve kodda karşılığı yoktu; o yüzden v0.14.1'de
+ * e-posta sözü kaldırılmıştı. BAK-99 ile söz gerçekten tutulur oldu: temsilci
+ * yanıt yazınca ziyaretçinin adresine bildirim + süreli "sohbete dön" bağlantısı
+ * gidiyor (`deliverAgentReplyEmail`, src/lib/live-chat/server.ts).
+ *
+ * Bu sabit yalnız YENİ kurulumların varsayılanıdır; ayar satırı DB'de bir kez
+ * yazıldıktan sonra buradaki değişiklik o satıra yansımaz — mevcut ortamlarda
+ * (prod dahil) metin Ayarlar ekranından güncellenmelidir.
  */
 export const DEFAULT_OFFLINE_MESSAGE =
-  "Şu an çevrimdışıyız. Mesajınızı bırakın — mesai başlar başlamaz buradan dönüş yapalım."
+  "Şu an çevrimdışıyız. Mesajınızı bırakın — mesai başlar başlamaz buradan ve e-posta ile dönüş yapalım."
 
 export const DEFAULT_RESPONSE_NOTE = "Genelde birkaç dakika içinde yanıtlıyoruz"
 

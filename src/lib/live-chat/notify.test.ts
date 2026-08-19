@@ -1,8 +1,13 @@
 import { describe, expect, test } from "bun:test"
 import {
   QUIET_WINDOW_MS,
+  VISITOR_EXCERPT_LIMIT,
+  agentReplyStartsNewBurst,
+  buildAgentReplyEmail,
   buildVisitorMessageEmail,
+  excerptForVisitorEmail,
   notifyAdminsOfVisitorMessage,
+  notifyVisitorOfAgentReply,
   startsNewBurst,
 } from "./notify"
 
@@ -172,5 +177,140 @@ describe("notifyAdminsOfVisitorMessage", () => {
       },
     })
     expect(result.sent).toBe(0)
+  })
+})
+
+describe("agentReplyStartsNewBurst", () => {
+  test("görüşmedeki ilk temsilci yanıtı her zaman bildirilir", () => {
+    expect(
+      agentReplyStartsNewBurst({
+        previousAgentMessageAt: null,
+        lastVisitorMessageAt: minutesAgo(2),
+        now: NOW,
+      }),
+    ).toBe(true)
+  })
+
+  test("ardışık temsilci mesajları tek e-posta üretir", () => {
+    expect(
+      agentReplyStartsNewBurst({
+        previousAgentMessageAt: minutesAgo(1),
+        lastVisitorMessageAt: minutesAgo(6),
+        now: NOW,
+      }),
+    ).toBe(false)
+  })
+
+  test("ziyaretçi araya yazdıysa yeni yanıt yeni yığındır", () => {
+    expect(
+      agentReplyStartsNewBurst({
+        previousAgentMessageAt: minutesAgo(10),
+        lastVisitorMessageAt: minutesAgo(3),
+        now: NOW,
+      }),
+    ).toBe(true)
+  })
+
+  test("sessizlik penceresi aşılınca yeniden bildirilir", () => {
+    const justOver = new Date(NOW.getTime() - QUIET_WINDOW_MS - 1000)
+    expect(
+      agentReplyStartsNewBurst({
+        previousAgentMessageAt: justOver,
+        lastVisitorMessageAt: null,
+        now: NOW,
+      }),
+    ).toBe(true)
+  })
+
+  test("pencerenin tam sınırı henüz yeni yığın değildir", () => {
+    const exactly = new Date(NOW.getTime() - QUIET_WINDOW_MS)
+    expect(
+      agentReplyStartsNewBurst({
+        previousAgentMessageAt: exactly,
+        lastVisitorMessageAt: null,
+        now: NOW,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe("excerptForVisitorEmail", () => {
+  test("kısa yanıt olduğu gibi taşınır", () => {
+    expect(excerptForVisitorEmail("  Yarın 09:00'da bekliyoruz.  ")).toBe("Yarın 09:00'da bekliyoruz.")
+  })
+
+  test("uzun yanıt özetlenir", () => {
+    const long = "a".repeat(VISITOR_EXCERPT_LIMIT + 50)
+    const excerpt = excerptForVisitorEmail(long)
+    expect(excerpt.length).toBe(VISITOR_EXCERPT_LIMIT + 1)
+    expect(excerpt.endsWith("…")).toBe(true)
+  })
+})
+
+describe("buildAgentReplyEmail", () => {
+  const base = {
+    visitorName: "Ayşe",
+    visitorEmail: "ayse@example.com",
+    body: "Merhaba, randevunuzu yarın 10:00'a aldık.",
+    resumeUrl: "https://bakimx.com/destek/abc123",
+  }
+
+  test("devam bağlantısını CTA olarak verir", () => {
+    expect(buildAgentReplyEmail(base).html).toContain("https://bakimx.com/destek/abc123")
+  })
+
+  test("HTML kaçışı uygulanır", () => {
+    const { html } = buildAgentReplyEmail({ ...base, body: "<script>alert(1)</script>" })
+    expect(html).not.toContain("<script>")
+    expect(html).toContain("&lt;script&gt;")
+  })
+
+  test("görüşme geçmişi taşınmaz — yalnız son yanıt", () => {
+    const { html } = buildAgentReplyEmail({ ...base, body: "Son yanıt" })
+    expect(html).toContain("Son yanıt")
+    expect(html).not.toContain("Ziyaretçi:")
+  })
+
+  test("uzun yanıt gövdede özetlenir", () => {
+    const { html } = buildAgentReplyEmail({ ...base, body: "b".repeat(VISITOR_EXCERPT_LIMIT + 100) })
+    expect(html).toContain("…")
+    expect(html).not.toContain("b".repeat(VISITOR_EXCERPT_LIMIT + 1))
+  })
+})
+
+describe("notifyVisitorOfAgentReply", () => {
+  const n = {
+    visitorName: "Ayşe",
+    visitorEmail: "ayse@example.com",
+    body: "Merhaba",
+    resumeUrl: "https://bakimx.com/destek/abc123",
+  }
+
+  test("ziyaretçinin adresine gider", async () => {
+    let to: string | null = null
+    const result = await notifyVisitorOfAgentReply(n, {
+      send: async (recipient) => {
+        to = recipient
+        return { success: true }
+      },
+    })
+    expect(to).toBe("ayse@example.com")
+    expect(result.sent).toBe(true)
+  })
+
+  test("sağlayıcı başarısız dönerse çağıran akış düşmez", async () => {
+    const result = await notifyVisitorOfAgentReply(n, {
+      send: async () => ({ success: false, error: "smtp down" }),
+    })
+    expect(result.sent).toBe(false)
+  })
+
+  test("sağlayıcı throw ederse yutulur", async () => {
+    const result = await notifyVisitorOfAgentReply(n, {
+      send: async () => {
+        throw new Error("boom")
+      },
+    })
+    expect(result.sent).toBe(false)
   })
 })
