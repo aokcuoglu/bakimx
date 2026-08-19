@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { formatDateTime } from "@/lib/utils-client"
+import { TechnicianPushToggle } from "@/components/technician/technician-push-toggle"
 
 type TechnicianNotification = {
   id: string
@@ -200,6 +201,8 @@ export function TechnicianNotificationsBell() {
             ))}
           </ul>
         )}
+        {/* BAK-129 (Faz B): panel KAPALIYKEN de bildirim almak için cihaz aboneliği. */}
+        <TechnicianPushToggle />
       </PopoverContent>
     </Popover>
   )

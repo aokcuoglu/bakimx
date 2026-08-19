@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useOptimistic, useRef, useState, useTransition } from "react"
 import type { RefObject } from "react"
 import {
-  Check, CheckCircle2, CheckSquare, ListChecks, Loader2, Plus, Square, Trash2, Undo2,
+  Check, CheckCircle2, CheckSquare, ListChecks, Plus, Square, Trash2, Undo2,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -383,7 +384,7 @@ function ChecklistSection({
             disabled={bulkPending}
             className="ml-auto gap-1 text-primary hover:text-primary"
           >
-            {bulkPending ? <Loader2 className="size-3 animate-spin" /> : <ListChecks className="size-3" />}
+            {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <ListChecks className="size-3" />}
             Tümünü işaretle
           </Button>
         )}
@@ -636,7 +637,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
 
       <div className="flex gap-2">
         <Button type="submit" size="lg" disabled={isPending || !description.trim()} className="touch-manipulation">
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {isPending ? <BrandSpinner size={16} className="!flex-row !gap-0" /> : <Plus className="size-4" />}
           Ekle
         </Button>
         <Button

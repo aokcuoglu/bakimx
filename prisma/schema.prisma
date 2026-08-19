@@ -55,6 +55,7 @@ model Workshop {
 
   settings               WorkshopSettings?
   users                  User[]
+  pushSubscriptions      PushSubscription[]
   customers              Customer[]
   vehicles               Vehicle[]
   intakes                VehicleIntakeForm[]
@@ -307,6 +308,8 @@ model User {
   grantedPlatformAdmins PlatformAdmin[]      @relation("PlatformAdminCreatedBy")
   /// Bu personele ATANMIŞ destek talepleri (BAK-98).
   supportRequests       SupportRequest[]     @relation("SupportRequestAssignee")
+  /// BAK-129: Bu hesabın Web Push abonelikleri (cihaz/tarayıcı başına bir satır).
+  pushSubscriptions     PushSubscription[]
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -2425,4 +2428,37 @@ model StatusIncident {
   @@index([resolvedAt])
   @@index([createdAt])
   @@map("status_incidents")
+}
+
+/// Web Push aboneliği (BAK-129, Faz B — teknisyen bildirimleri panel KAPALIYKEN).
+///
+/// Cihaz/tarayıcı başına bir satır: aynı kullanıcının telefonu ve tableti iki
+/// ayrı abonelik tutar. `endpoint` push servisinin (FCM / Mozilla / Apple)
+/// ürettiği global benzersiz adrestir, bu yüzden gerçek kimlik odur — aynı
+/// tarayıcı yeniden abone olduğunda satır GÜNCELLENİR, yenisi açılmaz.
+///
+/// `workshopId` kullanıcıdan türetilir ama sütun olarak da tutulur: gönderim
+/// sorgusu aboneliği tek adımda kiracıya göre daraltabilsin diye (bkz.
+/// src/lib/technician/push-dispatch.ts). Kullanıcı silinince abonelik de gider.
+model PushSubscription {
+  id         String   @id @default(cuid())
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Push servisinin uç adresi — RFC 8030. Global benzersiz.
+  endpoint String @unique
+  /// RFC 8291 içerik şifreleme anahtarları (`subscription.getKey()`, base64url).
+  p256dh String
+  auth   String
+
+  /// Tanılama için: aboneliği açan tarayıcı/PWA. Kişisel veri taşımaz.
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workshopId, userId])
+  @@index([userId])
 }
