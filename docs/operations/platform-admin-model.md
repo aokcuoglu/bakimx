@@ -331,23 +331,41 @@ logunda kalır. Platform seviyesinde denetim tablosu ayrı bir iştir.
    yapılır.** Var olmayan bir SSM parametresini taskdef'e `secrets` olarak eklemek
    task'ın hiç başlamamasına yol açar.
 
-### 8.3 Hâlâ açık — kod değil, karar
+### 8.3 Break-glass erişimi
 
-- **Break-glass hesabı.** SSO tek kapı olduğunda Google tarafındaki bir arıza ya
-  da bozulmuş bir OAuth yapılandırması konsola erişimi tamamen kapatır. Şifreyle
-  girebilen tek bir acil durum hesabı gerekir: hangi adres, parola nerede duracak,
-  kim erişebilir. Karar verilince yordamı bu bölüme yazılacak. **Bugün böyle bir
-  hesap tanımlı değildir** — SSO yapılandırılmadan önce bu maddenin kapanması
-  gerekir, aksi hâlde tek kapı riski açıkta kalır.
-- **Workspace 2SV zorunluluğu.** SSO tek başına MFA getirmez; yalnız kimlik
-  doğrulamayı Google'a taşır. `admin.google.com → Security → Authentication →
-  2-Step Verification` tüm kullanıcılar için **Enforcement: On** değilse `/admin`
-  SSO'dan sonra da tek şifreyle açılıyor demektir. Bu adım koddan bağımsızdır ve
-  deploy beklemeden yapılabilir.
-- **Şifre yolu kapatılmadı.** Bugün SSO şifre girişinin *yanına* eklenmiştir:
-  `PlatformAdmin` satırı olan biri hâlâ `/login`'den e-posta/şifre ile girip
-  konsola ulaşabilir. Şifre yolunu yöneticiler için kapatmak, break-glass kararı
-  verilmeden yapılamaz — yoksa Google arızasında konsola girecek kimse kalmaz.
+Google Workspace veya OAuth yapılandırması kullanılamadığında tek kurtarma yolu
+`breakglass@bakimx.com` hesabıdır. Bu adres yalnız kimliği belirler; yetki yine
+etkin `PlatformAdmin` satırından gelir. Hesabın sahibi `alpkaan@bakimx.com` ve
+başka yetkili yoktur. BakımX parolası Google Workspace'ten bağımsız, çevrimdışı
+bir dosyada tutulur; dosya bulut eşitlemesine alınmaz ve parola issue, sohbet,
+log veya repo içeriğine yazılmaz.
+
+**Kullanım yordamı:**
+
+1. Yalnız Google SSO ile `/admin` erişimi kesildiğinde olay ve gerekçe kaydedilir.
+2. `/login` ekranında `breakglass@bakimx.com` ve çevrimdışı kopyadaki BakımX
+   parolası kullanılır. Başarılı giriş denetimde
+   `platform_admin_break_glass_login` olarak ayrı görünür.
+3. Sorun giderildikten sonra Google SSO ile normal giriş doğrulanır.
+4. Break-glass parolası hemen değiştirilir ve çevrimdışı kopya yeni parolayla
+   güncellenir. Eski kopya güvenli biçimde imha edilir.
+5. `/admin/admins` üzerinden break-glass hesabının **Oturumları kapat** işlemi
+   çalıştırılır; `sessionsValidFrom` önceki oturumları bir sonraki istekte geçersiz
+   kılar. Denetim kaydında hem acil giriş hem oturum iptali kontrol edilir.
+
+Hesap ve çevrimdışı kopya üç ayda bir prova edilir: parola girişinin çalıştığı,
+ayrı denetim olayının oluştuğu ve oturum iptalinin açık sekmeyi kapattığı
+doğrulanır; prova bitince parola yine döndürülür.
+
+**Workspace 2SV:** 19 Ağustos 2026'da workspace sahibi, tüm kullanıcılar için
+2 Adımlı Doğrulama zorunluluğunu açtığını teyit etti. Bu dış konsol ayarı repodan
+bağımsızdır; çeyreklik provada açık olduğu ayrıca kontrol edilir.
+
+Normal platform yöneticilerinin parola oturumu atölye uygulamasında geçerli kalsa
+da `/admin` yetkisi vermez. Konsol yalnız `google_sso` damgalı oturumu veya
+`breakglass@bakimx.com` hesabının parola oturumunu kabul eder. Eski, yöntem damgası
+taşımayan oturumlar fail-closed reddedilir. Localhost QA için `/api/auth/dev-login`
+ayrı `development` damgası taşır ve production ortamında zaten kapalıdır.
 
 ---
 

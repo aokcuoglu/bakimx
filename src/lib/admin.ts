@@ -4,6 +4,7 @@ import { getCurrentUser, type AuthUser } from "@/lib/auth"
 import { getSession } from "@/lib/session"
 import { can, isAdminSessionRevoked, type AdminCapability } from "@/lib/admin-roles"
 import { resolveAdminMembership } from "@/lib/admin-membership"
+import { isAdminAuthenticationAllowed } from "@/lib/admin-break-glass"
 
 /**
  * Platform (BakımX personeli) yetkilendirmesi — `/admin` konsolunun kapısı.
@@ -46,12 +47,15 @@ export interface AdminContext {
 }
 
 /** Oturum damgası; istek kapsamı dışında (cron/script/build) undefined. */
-async function sessionAuthenticatedAt(): Promise<number | undefined> {
+async function adminSessionState(): Promise<{
+  authenticatedAt: number | undefined
+  authMethod: "password" | "google_sso" | "development" | undefined
+}> {
   try {
     const session = await getSession()
-    return session.authenticatedAt
+    return { authenticatedAt: session.authenticatedAt, authMethod: session.authMethod }
   } catch {
-    return undefined
+    return { authenticatedAt: undefined, authMethod: undefined }
   }
 }
 
@@ -67,9 +71,16 @@ interface ResolvedAdmin {
  * mevcut oturum çerezinin damgası `sessionsValidFrom`'dan eskiyse reddet (BAK-93).
  */
 async function resolveAdmin(user: AuthUser): Promise<ResolvedAdmin | null> {
+  const session = await adminSessionState()
+  if (!isAdminAuthenticationAllowed({
+    email: user.email,
+    authMethod: session.authMethod,
+    isDevelopment: process.env.NODE_ENV === "development",
+  })) return null
+
   const membership = await resolveAdminMembership(user)
   if (!membership) return null
-  if (isAdminSessionRevoked(await sessionAuthenticatedAt(), membership.sessionsValidFrom)) return null
+  if (isAdminSessionRevoked(session.authenticatedAt, membership.sessionsValidFrom)) return null
   return { adminRole: membership.adminRole, platformAdminId: membership.platformAdminId }
 }
 
