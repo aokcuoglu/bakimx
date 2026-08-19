@@ -39,6 +39,22 @@ describe("teknisyen iş emri adım kabuğu", () => {
     expect(source).not.toContain('TabsList className="justify-center"')
   })
 
+  test("beş adım baştan tamamı görünür TabsTrigger olarak render edilir (BAK-137)", () => {
+    expect(source).toContain('<TabsTrigger key={step.id} value={step.id}>')
+    expect(source).toContain('{steps.map((step, i) => (')
+    // Üst seviye adım gezinmesi artık WizardStepper (yalnız geçmiş adımlara
+    // dönüşe izin veren bileşik rayı) değil, hepsi baştan tıklanabilir Tabs.
+    expect(source).not.toContain("WizardStepper")
+  })
+
+  test("kilitli iş emrinde bile adımlar arasında serbestçe gezinilebilir (BAK-137)", () => {
+    // currentStep artık `locked` durumunda "finish"e zorlanmıyor — kilit
+    // yalnız düzenlemeyi durdurur, sekme değiştirmeyi değil.
+    expect(source).not.toMatch(/currentStep: StepId = locked\s*\n\s*\? "finish"/)
+    expect(source).toContain('const currentStep: StepId = validRequestedStep ?? rememberedStep ?? derivedStep')
+    expect(source).toContain('<Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>')
+  })
+
   test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
     expect(source).toContain("Bu iş emri salt okunur")
     expect(source).toContain("Bilgiler değiştirilemez; adımları inceleyebilirsiniz.")
