@@ -174,6 +174,52 @@ type IntakeDetailProps = {
   order: { id: string; status: string; paymentStatus: string; items: { id: string; type: string; name: string; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null }[] } | null
 }
 
+/**
+ * BAK-102 — "Aracı Getiren" / "Aracı Teslim Alacak" okuma bloğu. Değer boş olsa
+ * da render edilir: alan opsiyonel olduğu için gizlenirse servis kullanıcısı
+ * böyle bir alanın var olduğunu hiç görmüyor. Boşken ne anlama geldiğini yazar
+ * ve yetkisi varsa mevcut düzenleme editörünü açan tek bir aksiyon sunar.
+ */
+function HandoverPerson({
+  label,
+  name,
+  phone,
+  emptyText,
+  onAdd,
+}: {
+  label: string
+  name: string | null
+  phone: string | null
+  emptyText: string
+  /** Verilmezse (yetki yok / emir kilitli) yalnız bilgi görünür. */
+  onAdd?: () => void
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+      {name ? (
+        <>
+          <p className="text-sm text-foreground break-words">{name}</p>
+          {phone && (
+            <a href={`tel:${phone}`} className="text-xs text-primary hover:text-primary/80 break-all">
+              {phone}
+            </a>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">{emptyText}</p>
+          {onAdd && (
+            <Button variant="link" size="sm" onClick={onAdd} className="px-0">
+              <Plus className="size-3.5" /> Bilgi ekle
+            </Button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 export function WorkOrderDetail({
   intake,
   order,
@@ -183,6 +229,7 @@ export function WorkOrderDetail({
   editInitially = false,
   laborCatalog,
   canReopen = false,
+  canEditInfo = false,
 }: {
   intake: IntakeDetailProps
   order: OrderDetailData
@@ -197,6 +244,10 @@ export function WorkOrderDetail({
   // #183 — teslim edilmiş iş emrini yeniden açma yetkisi (yalnız Yönetici).
   // Karar SUNUCUDA verilir; burada yalnız görünürlük. Asıl kapı action'da.
   canReopen?: boolean
+  // BAK-102 — "Şikayet & Notlar" kartındaki düzenleme aksiyonu yetkisi
+  // (`order.edit`). Karar SUNUCUDA verilir (`updateIntakeDetailsAction` →
+  // `requireWritableWorkshop("order.edit")`); burada yalnız görünürlük.
+  canEditInfo?: boolean
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -229,7 +280,11 @@ export function WorkOrderDetail({
   // Intake info edit (complaint/note/mileage)
   // ?edit=1 ile gelindiğinde kart daha ilk render'da açık olsun (önce okuma
   // görünümü çizip sonra düzenlemeye atlama titremesi olmasın).
-  const openInfoEditor = editInitially && !orderLocked
+  const openInfoEditor = editInitially && !orderLocked && canEditInfo
+
+  // BAK-102 — düzenleme aksiyonları (başlıktaki "Düzenle" ve boş getiren/teslim
+  // alacak bloğundaki "Bilgi ekle") yalnız yetkili ve kilitli olmayan emirde.
+  const canOpenInfoEditor = canEditInfo && !orderLocked
 
   // #183 — teslim edilmiş iş emrini yeniden açma. Gerekçe zorunlu: denetim
   // kaydında "neden geri alındı" sorusunun cevabı dursun.
@@ -953,7 +1008,7 @@ export function WorkOrderDetail({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Şikayet & Notlar</span>
-                {!editingInfo && !orderLocked && (
+                {!editingInfo && canOpenInfoEditor && (
                   <button
                     onClick={startEditInfo}
                     className="flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 px-2 py-1 rounded-lg touch-manipulation"
@@ -1033,30 +1088,26 @@ export function WorkOrderDetail({
                       <p className="mt-1 text-[11px] text-muted-foreground italic">Bu not müşteri çıktısında gösterilmez</p>
                     </div>
                   )}
-                  {/* Getiren/teslim alacak kişi yalnız kaydedildiyse görünür —
-                      vakaların çoğunda müşteri aracı kendi getirip alıyor. */}
-                  {(order.intake.droppedOffByName || order.intake.pickedUpByName) && (
-                    <div className="pt-3 border-t grid gap-3 sm:grid-cols-2">
-                      {order.intake.droppedOffByName && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Getiren</p>
-                          <p className="text-sm text-foreground">{order.intake.droppedOffByName}</p>
-                          {order.intake.droppedOffByPhone && (
-                            <p className="text-xs text-muted-foreground">{order.intake.droppedOffByPhone}</p>
-                          )}
-                        </div>
-                      )}
-                      {order.intake.pickedUpByName && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Aracı Teslim Alacak</p>
-                          <p className="text-sm text-foreground">{order.intake.pickedUpByName}</p>
-                          {order.intake.pickedUpByPhone && (
-                            <p className="text-xs text-muted-foreground">{order.intake.pickedUpByPhone}</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* BAK-102 — blok BOŞKEN DE görünür. Alan opsiyonel ama gizli
+                      olduğu sürece servis kullanıcısı var olduğunu fark etmiyor;
+                      teslim anında tek dokunuşla doldurulabilsin diye boş durum
+                      da yazılıyor. */}
+                  <div className="pt-3 border-t grid gap-3 sm:grid-cols-2">
+                    <HandoverPerson
+                      label="Aracı Getiren"
+                      name={order.intake.droppedOffByName}
+                      phone={order.intake.droppedOffByPhone}
+                      emptyText="Belirtilmedi — aracı müşterinin kendisi getirdi"
+                      onAdd={canOpenInfoEditor ? startEditInfo : undefined}
+                    />
+                    <HandoverPerson
+                      label="Aracı Teslim Alacak"
+                      name={order.intake.pickedUpByName}
+                      phone={order.intake.pickedUpByPhone}
+                      emptyText="Belirtilmedi — aracı müşterinin kendisi teslim alacak"
+                      onAdd={canOpenInfoEditor ? startEditInfo : undefined}
+                    />
+                  </div>
                 </div>
               )}
             </CardContent>
