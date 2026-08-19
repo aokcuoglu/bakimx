@@ -310,6 +310,8 @@ model User {
   supportRequests       SupportRequest[]     @relation("SupportRequestAssignee")
   /// BAK-129: Bu hesabın Web Push abonelikleri (cihaz/tarayıcı başına bir satır).
   pushSubscriptions     PushSubscription[]
+  /// BAK-138: Bu hesabın elle düzelttiği işçilik süresi kayıtları.
+  editedLaborSessions   LaborSession[]       @relation("LaborSessionEditedBy")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1526,13 +1528,24 @@ model LaborSession {
   startTime       DateTime
   endTime         DateTime?
   durationMinutes Int?
+  /// Bu sürede ne yapıldığı (BAK-138). Bitirirken ya da sonradan girilir.
   note            String?
+  /// BAK-138 — MANUEL DÜZELTME İZİ. Sayaçla (start/stop) oluşan kayıt sonradan
+  /// elle düzeltildiyse dolar; boş kalması "saatler sayaçtan geldi" demektir.
+  /// Bu ayrım raporlamanın güvenilirliği için şart: düzeltilmiş bir süre ile
+  /// ölçülmüş bir süre aynı kolonda durur, ayırt edilmezse ikisi karışır.
+  /// NE değiştiği burada DEĞİL, `AuditLog` (`labor_session_edited`) satırının
+  /// before/after metadata'sında durur — kayıt üzerinde yalnız "kim, ne zaman".
+  editedAt        DateTime?
+  editedByUserId  String?
+  editedByUser    User?        @relation("LaborSessionEditedBy", fields: [editedByUserId], references: [id])
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
   @@index([technicianId])
+  @@index([editedByUserId])
 }
 
 enum CommunicationType {

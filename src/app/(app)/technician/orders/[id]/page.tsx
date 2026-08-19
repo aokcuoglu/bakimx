@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
 import { TechnicianOrderDetail } from "@/components/technician/technician-order-detail"
+import { userDisplayName } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { computeRemainingAmount } from "@/lib/cashbox/status"
@@ -47,7 +48,14 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       checklistItems: { orderBy: { sortOrder: "asc" } },
       internalNotes: { orderBy: { createdAt: "desc" } },
       partsRequests: { orderBy: { createdAt: "desc" } },
-      laborSessions: { orderBy: { startTime: "desc" } },
+      laborSessions: {
+        orderBy: { startTime: "desc" },
+        include: {
+          // BAK-138: "elle düzeltildi · kim" izi. `select` yerine `include`
+          // çünkü kaydın diğer alanları da gerekiyor.
+          editedByUser: { select: { firstName: true, lastName: true, email: true, username: true } },
+        },
+      },
     },
   })
 
@@ -248,6 +256,8 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       endTime: l.endTime ? l.endTime.toISOString() : null,
       durationMinutes: l.durationMinutes,
       note: l.note,
+      editedAt: l.editedAt ? l.editedAt.toISOString() : null,
+      editedByName: userDisplayName(l.editedByUser),
     })),
     paidAmount,
     remainingAmount,

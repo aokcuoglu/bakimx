@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
-  Camera, Plus, StickyNote, Timer,
+  Camera, Plus, StickyNote,
   Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
@@ -35,8 +35,12 @@ import {
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
   addInternalNoteAction, deleteInternalNoteAction,
-  startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
+import {
+  LaborSessionCard,
+  StopLaborButton,
+  type TechnicianLaborSessionRow,
+} from "@/components/technician/labor-session-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -103,7 +107,7 @@ type OrderData = {
   checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
   partsRequests: TechnicianPartsRequest[]
-  laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
+  laborSessions: TechnicianLaborSessionRow[]
   paidAmount: number
   remainingAmount: number
   vehicleId: string
@@ -146,9 +150,6 @@ export function TechnicianOrderDetail({
   const statusColor = statusInfo?.color || "bg-muted text-foreground"
 
   const activeLabor = order.laborSessions.find((l) => !l.endTime)
-  const totalLaborMinutes = order.laborSessions
-    .filter((l) => l.durationMinutes)
-    .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
   const locked = isOrderLocked(order.status as OrderStatus)
 
@@ -283,20 +284,6 @@ export function TechnicianOrderDetail({
     })
   }
 
-  function handleStartLabor() {
-    startTransition(async () => {
-      await startLaborSessionAction(order.id)
-      router.refresh()
-    })
-  }
-
-  function handleStopLabor() {
-    startTransition(async () => {
-      await stopLaborSessionAction(order.id)
-      router.refresh()
-    })
-  }
-
   return (
     <div className="space-y-4 sm:space-y-5">
       <div className="flex items-center text-sm text-muted-foreground">
@@ -354,11 +341,7 @@ export function TechnicianOrderDetail({
           <span className="text-xs text-muted-foreground">
             {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
           </span>
-          {!locked && (
-            <Button variant="destructive" size="lg" onClick={handleStopLabor} disabled={isPending} className="ml-auto">
-              <Pause /> Durdur
-            </Button>
-          )}
+          {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
         </div>
       )}
 
@@ -391,49 +374,13 @@ export function TechnicianOrderDetail({
               </div>
               <ComplaintCard complaint={order.intake.customerComplaint} />
 
-              <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Timer className="size-4 text-muted-foreground" />
-            İşçilik Süresi
-          </h3>
-          {totalLaborMinutes > 0 && (
-            <span className="text-sm font-medium text-foreground">
-              Toplam: {Math.floor(totalLaborMinutes / 60)}s {totalLaborMinutes % 60}dk
-            </span>
-          )}
-        </div>
-
-        {!activeLabor && !locked && (
-          <Button
-            variant="success"
-            size="lg"
-            onClick={handleStartLabor}
-            disabled={isPending || !canStart && !canHold}
-            className="touch-manipulation"
-          >
-            <Play className="size-4" />
-            İşçilik Başlat
-          </Button>
-        )}
-
-        {order.laborSessions.filter((l) => l.endTime).length > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {order.laborSessions.filter((l) => l.endTime).map((session) => (
-              <div key={session.id} className="flex items-center justify-between text-xs text-muted-foreground py-1.5 px-2 rounded bg-muted">
-                <span>
-                  {new Date(session.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                  {" → "}
-                  {new Date(session.endTime!).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <span className="font-medium">
-                  {session.durationMinutes ? `${Math.floor(session.durationMinutes / 60)}s ${session.durationMinutes % 60}dk` : "—"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-              </div>
+              <LaborSessionCard
+                orderId={order.id}
+                sessions={order.laborSessions}
+                locked={locked}
+                canStart={canStart || canHold}
+                canEdit={canEditOrder}
+              />
               <WizardActions>
                 {canStart ? (
                   <Button size="lg" onClick={handleStartWork} disabled={isPending}>
