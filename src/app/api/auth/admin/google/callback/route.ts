@@ -19,7 +19,9 @@ import { establishSession } from "@/lib/session"
  * Sıra bilinçlidir — pahalı işten önce ucuz kapı: yapılandırma → `state` →
  * token değişimi → jeton doğrulaması (imza/`iss`/`aud`/`exp`/`nonce`/
  * `email_verified`/`hd`) → DB'de PLATFORM YÖNETİCİSİ kaydı. Son adım olmadan
- * oturum açılmaz; burada hesap YARATILMAZ.
+ * oturum açılmaz; burada kullanıcı hesabı YARATILMAZ. Tek yazma, tablo boşken
+ * `ADMIN_EMAILS` üyeliğini kuran ortak bootstrap'tır (BAK-114) ve ayrı bir
+ * denetim olayı olarak kaydedilir.
  */
 export const dynamic = "force-dynamic"
 
@@ -105,13 +107,17 @@ export async function GET(request: Request) {
   // `PlatformAdmin.sessionsValidFrom` ile iptal SSO oturumlarında da işler (BAK-93).
   await establishSession(lookup.account.userId, lookup.account.workshopId)
 
+  // Bootstrap ile açılan ilk giriş AYRI bir olaydır: `PlatformAdmin` tablosu
+  // boşken `ADMIN_EMAILS` üyeliği yazdı (BAK-114). Sıradan bir SSO girişinden
+  // ayırt edilebilmesi denetimin işi.
   try {
     await AuditLogAction(
       lookup.account.workshopId,
       lookup.account.userId,
       "PlatformAdmin",
-      lookup.account.platformAdminId,
-      "platform_admin_sso_login",
+      // Bootstrap yazması başarısız olduysa satır id'si yok; kayıt kullanıcıya bağlanır.
+      lookup.account.platformAdminId ?? lookup.account.userId,
+      lookup.account.viaEnvBootstrap ? "platform_admin_sso_bootstrap" : "platform_admin_sso_login",
       JSON.stringify({ email: identity.value.email, hd: identity.value.hd })
     )
   } catch (err) {

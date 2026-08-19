@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose"
+import { resolveAdminMembership } from "@/lib/admin-membership"
 import { prisma } from "@/lib/db"
 
 /**
@@ -12,7 +13,9 @@ import { prisma } from "@/lib/db"
  * 1. **Otomatik hesap açma YOK.** Google yalnız kimliği doğrular, yetkiyi DB
  *    verir. `PlatformAdmin` satırı olmayan bir `bakimx.com` hesabı, Google
  *    girişi başarılı olsa bile konsola giremez ve kendine kayıt yaratamaz
- *    (`resolveSsoAdmin`).
+ *    (`resolveSsoAdmin`). Tek istisna, şifreli yolla ortak olan `ADMIN_EMAILS`
+ *    bootstrap'ıdır: tablo BOŞKEN listedeki adres girebilir ve satırı yazılır
+ *    (BAK-114) — listede olmayan bir adres o durumda da giremez.
  * 2. **`hd` SUNUCUDA doğrulanır.** Yetkilendirme isteğine `hd=bakimx.com`
  *    eklemek bir filtre değil, yalnız hesap seçicideki ipucudur — kişisel Gmail
  *    ile gelmeyi engellemez. Karar `verifyGoogleIdToken` içindeki kimlik
@@ -257,15 +260,20 @@ export async function exchangeCodeForIdToken(params: {
 export interface SsoAdminAccount {
   userId: string
   workshopId: string
-  platformAdminId: string
+  /** `PlatformAdmin.id`; yalnız bootstrap yazması başarısız olduysa null. */
+  platformAdminId: string | null
+  /** Üyelik bu girişte `ADMIN_EMAILS` bootstrap'ıyla açıldıysa true. */
+  viaEnvBootstrap: boolean
 }
 
 /**
  * Doğrulanmış e-postanın karşılığı olan PLATFORM YÖNETİCİSİ, ya da yoksa null.
  *
- * Burada kayıt YARATILMAZ — bu, kabul kriterindeki "otomatik hesap açma yok"
- * maddesinin kod karşılığıdır. `bakimx.com` uzantılı her adres aksi hâlde ilk
- * girişte kendine konsol erişimi açardı.
+ * Üyelik kararı şifreli yolla ORTAK yardımcıdadır (`resolveAdminMembership`,
+ * BAK-114). Burada kullanıcı hesabı YARATILMAZ — "otomatik hesap açma yok"
+ * maddesi budur; `bakimx.com` uzantılı her adres aksi hâlde ilk girişte kendine
+ * konsol erişimi açardı. Ortak yardımcının yazdığı tek satır, tablo boşken
+ * `ADMIN_EMAILS` listesindeki adresler için açılan `founder` bootstrap'ıdır.
  *
  * `userId`/`workshopId` reddedilen denemede de döner: denetim kaydı kiracıya
  * bağlı olduğu için (`AuditLog.workshopId` zorunlu) bu olmadan reddi
@@ -279,23 +287,26 @@ export async function resolveSsoAdmin(
 > {
   const user = await prisma.user.findFirst({
     where: { email: { equals: email, mode: "insensitive" } },
-    select: { id: true, workshopId: true, isActive: true },
+    select: { id: true, email: true, workshopId: true, isActive: true },
   })
   if (!user) return { ok: false, reason: "no_admin_account" }
   if (!user.isActive) {
     return { ok: false, reason: "no_admin_account", userId: user.id, workshopId: user.workshopId }
   }
 
-  const admin = await prisma.platformAdmin.findUnique({
-    where: { userId: user.id },
-    select: { id: true, disabledAt: true },
-  })
-  if (!admin || admin.disabledAt) {
+  // Kimlik Google tarafından doğrulanmış e-postadır; DB satırı da onunla bulundu.
+  const membership = await resolveAdminMembership({ id: user.id, email: user.email ?? email })
+  if (!membership) {
     return { ok: false, reason: "no_admin_account", userId: user.id, workshopId: user.workshopId }
   }
 
   return {
     ok: true,
-    account: { userId: user.id, workshopId: user.workshopId, platformAdminId: admin.id },
+    account: {
+      userId: user.id,
+      workshopId: user.workshopId,
+      platformAdminId: membership.platformAdminId,
+      viaEnvBootstrap: membership.viaEnvBootstrap,
+    },
   }
 }

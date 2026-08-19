@@ -27,6 +27,7 @@ const ACTION_LABELS: Record<string, string> = {
   platform_admin_enabled: "Yönetici erişimi açıldı",
   platform_admin_sessions_revoked: "Yönetici oturumları kapatıldı",
   platform_admin_sso_login: "Google SSO ile giriş yapıldı",
+  platform_admin_sso_bootstrap: "Google SSO ile ilk giriş (env bootstrap)",
   platform_admin_sso_rejected: "Google SSO girişi reddedildi",
   impersonation_started: "Taklit oturumu başladı",
   impersonation_ended: "Taklit oturumu kapandı",
