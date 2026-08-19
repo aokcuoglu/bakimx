@@ -223,6 +223,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
     })),
     partsRequests: order.partsRequests.map((p) => ({
       id: p.id,
+      type: p.type,
       partName: p.partName,
       partSku: p.partSku,
       brand: p.brand,
@@ -237,6 +238,8 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       // neden gelmediğini ekranında görsün, ofisi aramak zorunda kalmasın.
       cancelledAt: p.cancelledAt ? p.cancelledAt.toISOString() : null,
       cancelReason: p.cancelReason,
+      supplierName: p.supplierName,
+      estimatedPriceKurus: p.estimatedPriceKurus,
       createdAt: p.createdAt.toISOString(),
     })),
     laborSessions: order.laborSessions.map((l) => ({

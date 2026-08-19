@@ -1450,6 +1450,12 @@ model PartsRequest {
   serviceOrder   ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
   requestedById  String?
   requestedBy    Technician?        @relation(fields: [requestedById], references: [id])
+  /// Talebin cinsi. BAK-105 öncesi her talep parçadır; DEFAULT part olduğu için
+  /// mevcut satırlar backfill'siz doğru değeri alır.
+  type           PartsRequestType   @default(part)
+  /// Parça talebinde parça adı, dış işçilik talebinde işçiliğin adı
+  /// (ör. "Rot balans ayarı"). Tek kolon: talebin geri kalan makinesi
+  /// (karar kapısı, iptal, kaleme çevirme) iki tipte de aynı çalışır.
   partName       String
   partSku        String?
   /// Katalogdan seçildiyse parça markası (TecDoc supplier adı); serbest metinde null.
@@ -1471,6 +1477,14 @@ model PartsRequest {
   cancelledAt    DateTime?
   /// İptal gerekçesi — ATÖLYE İÇİ not, müşteri yüzeyine çıkmaz.
   cancelReason   String?
+  /// YALNIZ dış işçilikte: teknisyenin bildirdiği tahmini tutar (kuruş, KDV
+  /// hariç). Satış fiyatı DEĞİL, atölyenin ödeyeceği maliyet tahminidir; kaleme
+  /// çevrilirken ServiceOrderItem.purchasePriceKurus'a taşınır, satış fiyatını
+  /// ofis ayrıca girer.
+  estimatedPriceKurus Int?
+  /// YALNIZ dış işçilikte: işi yapan firma (serbest metin, Supplier kaydı
+  /// aranmaz — usta sahada firma kartı açamaz). Kaleme supplierName olarak geçer.
+  supplierName   String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -1478,6 +1492,14 @@ model PartsRequest {
   @@index([serviceOrderId])
   @@index([status])
   @@index([requestedById])
+}
+
+enum PartsRequestType {
+  part
+  /// Dışarıya yaptırılan işçilik (rot-balans, şarj dinamosu vb.). Parça değildir:
+  /// stok düşümü yapılmaz, katalog/TecDoc alanları boş kalır. Kaleme çevrilince
+  /// OrderItemType.external_labor olur.
+  external_labor
 }
 
 enum PartsRequestStatus {
