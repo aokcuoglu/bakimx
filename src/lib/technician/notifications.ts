@@ -20,6 +20,26 @@ const EXACT_NOTIFIABLE_ACTIONS: readonly string[] = [
 ]
 const ORDER_STATUS_ACTION_PREFIX = "order_status_changed_to_"
 
+/**
+ * Bir `AuditLog.action` teknisyene bildirim üretir mi?
+ *
+ * Faz B (Web Push, BAK-129) bu yordamı ve aşağıdaki metin kurucusunu YENİDEN
+ * KULLANIR — panel açıkken (yoklama) ve kapalıyken (push) aynı olay kümesi ve
+ * aynı etiketler geçerli olsun diye. İkinci bir bildirim listesi tutulmaz.
+ */
+export function isTechnicianNotifiableAction(action: string): boolean {
+  return EXACT_NOTIFIABLE_ACTIONS.includes(action) || action.startsWith(ORDER_STATUS_ACTION_PREFIX)
+}
+
+/** Bildirimin ikinci satırı: "34 ABC 123 · İş Emri #42". */
+export function buildNotificationDescription(
+  plate: string | null | undefined,
+  workOrderNo: string | null | undefined,
+): string | undefined {
+  const orderLabel = workOrderNo ? `İş Emri #${workOrderNo}` : null
+  return [plate, orderLabel].filter(Boolean).join(" · ") || undefined
+}
+
 export type TechnicianNotification = {
   id: string
   orderId: string
@@ -82,13 +102,12 @@ export async function getTechnicianNotifications({
     const built = describeAuditAction(row.action, row.metadataJson)
     if (!built) continue
 
-    const orderLabel = order.workOrderNo ? `İş Emri #${order.workOrderNo}` : null
     notifications.push({
       id: row.id,
       orderId,
       createdAt: row.createdAt.toISOString(),
       title: built.label,
-      description: [order.intakeForm.vehicle.plate, orderLabel].filter(Boolean).join(" · ") || undefined,
+      description: buildNotificationDescription(order.intakeForm.vehicle.plate, order.workOrderNo),
     })
   }
   return notifications
