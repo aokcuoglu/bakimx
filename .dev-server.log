@@ -1,0 +1,298 @@
+$ next dev
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.9:3000
+- Environments: .env.local
+✓ Ready in 173ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+ GET /register 200 in 580ms (next.js: 476ms, proxy.ts: 3ms, application-code: 101ms)
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async requireAdmin (src/lib/admin.ts:38:16)
+    at async AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '3305762032'
+}
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async requireAdmin (src/lib/admin.ts:38:16)
+    at async AdminBillingPage (src/app/admin/billing/page.tsx:8:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '3094795187'
+}
+ GET /register 200 in 1713ms (next.js: 1244ms, proxy.ts: 42ms, application-code: 428ms)
+ GET /admin/billing 500 in 1684ms (next.js: 1132ms, proxy.ts: 6ms, application-code: 547ms)
+[browser] Uncaught PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at requireAdmin (src/lib/admin.ts:38:16)
+    at AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+[browser] [global error boundary] PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at requireAdmin (src/lib/admin.ts:38:16)
+    at AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+ GET /register 200 in 54ms (next.js: 8ms, proxy.ts: 3ms, application-code: 43ms)
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async requireAdmin (src/lib/admin.ts:38:16)
+    at async AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '3305762032'
+}
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async requireAdmin (src/lib/admin.ts:38:16)
+    at async AdminBillingPage (src/app/admin/billing/page.tsx:8:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '3094795187'
+}
+ GET /admin/billing 500 in 95ms (next.js: 2ms, proxy.ts: 7ms, application-code: 85ms)
+[browser] Uncaught PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at requireAdmin (src/lib/admin.ts:38:16)
+    at AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+[browser] [global error boundary] PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at requireAdmin (src/lib/admin.ts:38:16)
+    at AdminLayout (src/app/admin/layout.tsx:17:3)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+ GET / 200 in 101ms (next.js: 30ms, proxy.ts: 4ms, application-code: 67ms)
+[browser] Image with src "/landing/partners/mutlu.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async AppLayout (src/app/(app)/layout.tsx:29:16)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '2645846542'
+}
+⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./src/lib/db.ts}["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await {imported module ./src/lib/db.ts}["prisma"].user.findUnique(
+
+    at <unknown> (src/lib/auth.ts:95:34)
+    at async getCurrentUser (src/lib/auth.ts:95:16)
+    at async getAppData (src/app/(app)/data.ts:13:16)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:42:30)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                                  ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   }) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'User' },
+  clientVersion: '7.8.0',
+  digest: '2410337994'
+}
+ GET /dashboard 200 in 116ms (next.js: 19ms, proxy.ts: 3ms, application-code: 93ms)
+[browser] Uncaught PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at AppLayout (src/app/(app)/layout.tsx:29:16)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+[browser] [global error boundary] PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at AppLayout (src/app/(app)/layout.tsx:29:16)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+[browser] [global error boundary] PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+/Users/void/www/bakimx/.next/dev/server/chunks/ssr/[root-of-the-server]__0r5kljl._.js:393:152
+
+  390 // Target vanished — fall through to the real session rather than 500.
+  391 }
+  392 if (!session?.userId) return null;
+→ 393 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at getCurrentUser (src/lib/auth.ts:95:16)
+    at AppLayout (src/app/(app)/layout.tsx:29:16)
+  93 |   if (!session?.userId) return null
+  94 |
+> 95 |   const user = await prisma.user.findUnique({
+     |                ^
+  96 |     where: { id: session.userId },
+  97 |     select: USER_SELECT,
+  98 |   })
+[?25h
+error: script "dev" exited with code 143
