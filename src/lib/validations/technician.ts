@@ -105,3 +105,93 @@ export const partsRequestCancelSchema = z.object({
 })
 
 export type PartsRequestCancelInput = z.infer<typeof partsRequestCancelSchema>
+
+// ── İşçilik süresi kaydı (BAK-138) ───────────────────────────────────────────
+
+/** Not alanının üst sınırı — "bu sürede ne yapıldı" bir özet, rapor değil. */
+export const LABOR_SESSION_NOTE_MAX = 500
+
+const laborSessionNoteField = z
+  .string()
+  .trim()
+  .max(LABOR_SESSION_NOTE_MAX, `Açıklama en fazla ${LABOR_SESSION_NOTE_MAX} karakter olabilir`)
+  .optional()
+  .or(z.literal(""))
+
+/**
+ * Sayacı durdururken girilen açıklama. Zorunlu DEĞİL: teknisyenin elini kolunu
+ * bağlamamalı, not sonradan da eklenebiliyor.
+ */
+export const laborSessionNoteSchema = z.object({ note: laborSessionNoteField })
+
+export type LaborSessionNoteInput = z.infer<typeof laborSessionNoteSchema>
+
+/**
+ * Aralık kuralları — TEK KAYNAK. Hem istemci formu (yerel `datetime-local`
+ * metni) hem sunucu şeması (ISO/UTC) buradan geçer; kural iki yere kopyalanırsa
+ * biri güncellenip diğeri unutulur ve sunucu formun kabul ettiğini reddeder.
+ */
+export function laborSessionRangeError(
+  start: Date,
+  end: Date,
+): { field: "start" | "end"; message: string } | null {
+  if (Number.isNaN(start.getTime())) return { field: "start", message: "Geçerli bir başlangıç saati giriniz" }
+  if (Number.isNaN(end.getTime())) return { field: "end", message: "Geçerli bir bitiş saati giriniz" }
+  if (end.getTime() <= start.getTime()) {
+    return { field: "end", message: "Bitiş saati başlangıçtan sonra olmalıdır" }
+  }
+  // Gelecek yasak: işçilik süresi ÖLÇÜLEN bir şeydir, planlanan değil. Bir
+  // dakikalık pay istemci/sunucu saat farkı için — kullanıcı "şimdi"yi seçtiğinde
+  // saniye farkıyla reddedilmesin.
+  const limit = Date.now() + 60_000
+  if (start.getTime() > limit) return { field: "start", message: "Başlangıç saati gelecekte olamaz" }
+  if (end.getTime() > limit) return { field: "end", message: "Bitiş saati gelecekte olamaz" }
+  return null
+}
+
+/**
+ * SUNUCU şeması: bitmiş bir işçilik süresi kaydının elle düzeltilmesi.
+ *
+ * Saatler ISO-8601 (UTC) gelir — form `datetime-local` gösterir ama istemci
+ * göndermeden önce `toISOString()` ile çevirir. Yerel saat metnini
+ * ("2026-08-19T18:40") sunucuda parse etmek, sunucu UTC'de koştuğu için
+ * atölyenin saatini kaydırırdı.
+ *
+ * `durationMinutes` BİLEREK alınmaz: süre her zaman aralıktan türetilir, iki
+ * ayrı doğruluk kaynağı olmaz.
+ */
+export const laborSessionEditSchema = z
+  .object({
+    startTime: z.coerce.date({ error: "Geçerli bir başlangıç saati giriniz" }),
+    endTime: z.coerce.date({ error: "Geçerli bir bitiş saati giriniz" }),
+    note: laborSessionNoteField,
+  })
+  .superRefine((data, ctx) => {
+    const err = laborSessionRangeError(data.startTime, data.endTime)
+    if (err) {
+      ctx.addIssue({ code: "custom", path: [err.field === "start" ? "startTime" : "endTime"], message: err.message })
+    }
+  })
+
+export type LaborSessionEditInput = z.infer<typeof laborSessionEditSchema>
+
+/**
+ * İSTEMCİ şeması: alanlar `datetime-local` girdisinin ürettiği YEREL saat
+ * metnidir ("2026-08-19T18:40"). `new Date(...)` tarayıcıda bunu yerel saat
+ * olarak çözer, gönderimde `toISOString()` UTC'ye çevirir.
+ */
+export const laborSessionEditFormSchema = z
+  .object({
+    startLocal: z.string().min(1, "Başlangıç saati zorunludur"),
+    endLocal: z.string().min(1, "Bitiş saati zorunludur"),
+    note: laborSessionNoteField,
+  })
+  .superRefine((data, ctx) => {
+    if (!data.startLocal || !data.endLocal) return
+    const err = laborSessionRangeError(new Date(data.startLocal), new Date(data.endLocal))
+    if (err) {
+      ctx.addIssue({ code: "custom", path: [err.field === "start" ? "startLocal" : "endLocal"], message: err.message })
+    }
+  })
+
+export type LaborSessionEditFormInput = z.infer<typeof laborSessionEditFormSchema>

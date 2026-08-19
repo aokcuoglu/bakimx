@@ -31,6 +31,17 @@ export function formatMileage(km: number): string {
 }
 
 /**
+ * Dakika → "2s 15dk" / "45dk". İşçilik süresi bu biçimle üç yerde görünüyor
+ * (teknisyen paneli, iş emri ekranı, işlem geçmişi); tek kaynak burada durur
+ * ki üç ekran aynı süreyi farklı yazmasın.
+ */
+export function formatMinutes(total: number): string {
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  return hours > 0 ? `${hours}s ${minutes}dk` : `${minutes}dk`
+}
+
+/**
  * Normalize a phone number input to a standard Turkish mobile format.
  * Strips non-digit characters, handles leading 0/90.
  */
@@ -136,4 +147,22 @@ export function customerDisplayName(customer: {
   const first = (customer.firstName || "").trim()
   const last = (customer.lastName || "").trim()
   return [first, last].filter(Boolean).join(" ") || "Müşteri"
+}
+
+/**
+ * Bir personel hesabının ekranda gösterilecek adı. Kayıt yoksa `null` döner —
+ * çağıran yer "Sistem" mi yoksa hiçbir şey mi yazacağına kendisi karar verir.
+ *
+ * E-posta ve kullanıcı adı ikisi de NULL olabilir (BAK-40: e-postasız usta
+ * hesabı), bu yüzden zincirin sonunda genel bir etiket durur.
+ */
+export function userDisplayName(
+  user:
+    | { firstName?: string | null; lastName?: string | null; email?: string | null; username?: string | null }
+    | null
+    | undefined,
+): string | null {
+  if (!user) return null
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
+  return name || user.email || user.username || "Kullanıcı"
 }

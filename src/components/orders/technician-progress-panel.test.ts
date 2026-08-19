@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { formatMinutes } from "./technician-progress-panel"
+import { formatMinutes } from "@/lib/format"
 
 const SOURCE = readFileSync(join(import.meta.dir, "technician-progress-panel.tsx"), "utf8")
 

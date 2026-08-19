@@ -1,7 +1,7 @@
 import "server-only"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { formatTRY } from "@/lib/format"
+import { formatMinutes, formatTRY, userDisplayName } from "@/lib/format"
 import { formatDate } from "@/lib/utils-client"
 import {
   ORDER_STATUS,
@@ -49,9 +49,7 @@ type ActorRef = {
 } | null
 
 function formatActor(actor: ActorRef): string {
-  if (!actor) return "Sistem"
-  const name = [actor.firstName, actor.lastName].filter(Boolean).join(" ").trim()
-  return name || actor.email || actor.username || "Kullanıcı"
+  return userDisplayName(actor) ?? "Sistem"
 }
 
 function safeParse(json: string | null): Record<string, unknown> {
@@ -173,6 +171,39 @@ function buildEntry(action: string, meta: Record<string, unknown>): Built {
       return { category: "tech", label: "Çalışma beklemeye alındı" }
     case "work_completed":
       return { category: "tech", label: "Çalışma tamamlandı" }
+
+    // BAK-138: işçilik sayacı. Sayaç olayları ile ELLE düzeltme ayrı
+    // etiketlerdir — "18:40 → 19:25" satırının ölçülmüş mü yoksa sonradan
+    // yazılmış mı olduğu, işlem geçmişinde tek bakışta görünmeli.
+    case "labor_session_started":
+      return { category: "labor", label: "İşçilik sayacı başlatıldı" }
+    case "labor_session_stopped": {
+      const minutes = typeof meta.durationMinutes === "number" ? meta.durationMinutes : null
+      const note = typeof meta.note === "string" && meta.note ? meta.note : null
+      return {
+        category: "labor",
+        label: "İşçilik sayacı durduruldu",
+        detail: [minutes != null ? formatMinutes(minutes) : null, note].filter(Boolean).join(" · ") || undefined,
+      }
+    }
+    case "labor_session_edited": {
+      const before = (meta.before ?? {}) as Record<string, unknown>
+      const after = (meta.after ?? {}) as Record<string, unknown>
+      const beforeMin = typeof before.durationMinutes === "number" ? before.durationMinutes : null
+      const afterMin = typeof after.durationMinutes === "number" ? after.durationMinutes : null
+      const changed: string[] = []
+      if (beforeMin !== afterMin) {
+        changed.push(
+          `${beforeMin != null ? formatMinutes(beforeMin) : "—"} → ${afterMin != null ? formatMinutes(afterMin) : "—"}`,
+        )
+      }
+      if ((before.note ?? null) !== (after.note ?? null)) changed.push("açıklama güncellendi")
+      return {
+        category: "labor",
+        label: "İşçilik süresi elle düzeltildi",
+        detail: changed.join(" · ") || undefined,
+      }
+    }
 
     case "order_item_completed": {
       const name = String(meta.name ?? "Kalem")

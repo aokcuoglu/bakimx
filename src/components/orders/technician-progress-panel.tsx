@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckSquare, ListChecks, Square, StickyNote, Timer } from "lucide-react"
 import { CHECKLIST_CATEGORIES, type ChecklistCategoryKey } from "@/lib/constants"
 import { summarizeChecklist } from "@/lib/technician/gates"
+import { formatMinutes } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 /**
@@ -28,6 +29,11 @@ export interface TechnicianLaborSession {
   startTime: string
   endTime: string | null
   durationMinutes: number | null
+  /// BAK-138: bu sürede ne yapıldığı.
+  note: string | null
+  /// BAK-138: doluysa saatler sayaçtan değil, elle düzeltmeden geliyor.
+  editedAt: string | null
+  editedByName: string | null
 }
 
 export interface TechnicianInternalNote {
@@ -38,13 +44,6 @@ export interface TechnicianInternalNote {
 }
 
 const CATEGORY_ORDER: ChecklistCategoryKey[] = ["inspection", "repair", "delivery"]
-
-/** 135 → "2s 15dk", 45 → "45dk". Teknisyen panelindeki biçimle aynı. */
-export function formatMinutes(total: number): string {
-  const hours = Math.floor(total / 60)
-  const minutes = total % 60
-  return hours > 0 ? `${hours}s ${minutes}dk` : `${minutes}dk`
-}
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
@@ -191,14 +190,26 @@ export function TechnicianProgressPanel({
               {finishedLabor.map((session) => (
                 <li
                   key={session.id}
-                  className="flex items-center justify-between gap-2 text-xs text-muted-foreground py-1.5 px-2 rounded bg-muted"
+                  className="space-y-1 rounded bg-muted px-2 py-1.5 text-xs text-muted-foreground"
                 >
-                  <span>
-                    {formatTime(session.startTime)} → {formatTime(session.endTime!)}
-                  </span>
-                  <span className="font-medium">
-                    {session.durationMinutes ? formatMinutes(session.durationMinutes) : "—"}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span>
+                      {formatTime(session.startTime)} → {formatTime(session.endTime!)}
+                    </span>
+                    <span className="font-medium">
+                      {/* `!= null`: 0 dakikalık kayıt da bir süredir, "—" değil. */}
+                      {session.durationMinutes != null ? formatMinutes(session.durationMinutes) : "—"}
+                    </span>
+                  </div>
+                  {session.note && (
+                    <p className="whitespace-pre-wrap break-words text-foreground">{session.note}</p>
+                  )}
+                  {session.editedAt && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Elle düzeltildi · {formatDateTime(session.editedAt)}
+                      {session.editedByName ? ` · ${session.editedByName}` : ""}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
