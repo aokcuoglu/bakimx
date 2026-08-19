@@ -15,16 +15,25 @@ import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
+import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
 
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; payment?: string; technician?: string }>
+  searchParams: Promise<{
+    q?: string
+    status?: string
+    payment?: string
+    technician?: string
+    invoice?: string
+  }>
 }) {
   const params = await searchParams
   const q = (params.q || "").trim()
   const status = (params.status || "").trim()
   const payment = (params.payment || "").trim()
+  // Fatura filtresi statüden bağımsız, saf veri filtresi: "?invoice=with|without".
+  const invoiceFilter = resolveInvoiceFilter(params.invoice)
 
   const { user, workshop } = await getAppData()
   const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
@@ -44,6 +53,7 @@ export default async function OrdersPage({
         ...(status ? { status: status as import("@prisma/client").OrderStatus } : {}),
         ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
         ...technicianFilter.where,
+        ...invoiceFilter.where,
         ...(q
           ? {
               OR: [
@@ -70,7 +80,7 @@ export default async function OrdersPage({
     }),
   ])
 
-  const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value)
+  const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value || invoiceFilter.value)
 
   const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
   const activeStatuses = ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"]
@@ -100,6 +110,8 @@ export default async function OrdersPage({
       grandTotal: totals.grandTotal,
       itemsCount: o.items.length,
       hasPrice: totals.hasAnyPrice,
+      invoiceNo: o.invoiceNo,
+      invoiceMissing: isInvoiceMissing(o.status, o.invoiceNo),
       vehicle: {
         id: o.intakeForm.vehicle.id,
         plate: o.intakeForm.vehicle.plate,
@@ -156,11 +168,12 @@ export default async function OrdersPage({
               className="pl-10"
             />
           </div>
-          {/* Mobilde üç filtre + buton tek satıra sığmıyordu (buton kırpılıyordu);
-              dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra dönüyor. */}
+          {/* Dört filtre dar ekranda 2'li ızgaraya düşüp geniş ekranda satıra
+              dönüyor; seçimler anında uygulandığı için görünür buton yok. */}
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <FilterSelect
               name="status"
+              autoSubmit
               className="w-full sm:w-auto"
               defaultValue={status}
               placeholder="Tüm Durumlar"
@@ -178,6 +191,7 @@ export default async function OrdersPage({
             />
             <FilterSelect
               name="payment"
+              autoSubmit
               className="w-full sm:w-auto"
               defaultValue={payment}
               placeholder="Tüm Ödemeler"
@@ -190,6 +204,7 @@ export default async function OrdersPage({
             />
             <FilterSelect
               name="technician"
+              autoSubmit
               className="w-full sm:w-auto"
               defaultValue={technicianFilter.value}
               placeholder="Tüm Ustalar"
@@ -199,7 +214,27 @@ export default async function OrdersPage({
                 ...technicians.map((t) => ({ value: t.id, label: t.fullName })),
               ]}
             />
-            <Button variant="outline" size="default" type="submit" className="w-full sm:w-auto">
+            <FilterSelect
+              name="invoice"
+              autoSubmit
+              className="w-full sm:w-auto"
+              defaultValue={invoiceFilter.value}
+              placeholder="Tüm Faturalar"
+              options={[
+                { value: "", label: "Tüm Faturalar" },
+                { value: INVOICE_WITH, label: "Fatura kesildi" },
+                { value: INVOICE_WITHOUT, label: "Fatura kesilmedi" },
+              ]}
+            />
+            {/* Seçim kutuları anında uygular; düğme yalnız yedek. Metin araması
+                Enter ile gönderilir (tek metin alanı olduğu için tarayıcı örtük
+                submit yapar), JS yokken de bu düğme formu gönderir. */}
+            <Button
+              variant="outline"
+              size="default"
+              type="submit"
+              className="sr-only focus:not-sr-only focus:w-full sm:focus:w-auto"
+            >
               <Filter className="size-4" />
               Filtrele
             </Button>
@@ -212,6 +247,7 @@ export default async function OrdersPage({
           activeStatus={status}
           activePayment={payment}
           activeTechnician={technicianFilter.value}
+          activeInvoice={invoiceFilter.value}
           technicians={technicians}
         />
 

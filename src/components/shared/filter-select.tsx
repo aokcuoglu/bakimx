@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Select,
   SelectContent,
@@ -17,6 +17,12 @@ type FilterSelectProps = {
   placeholder?: string
   options: Option[]
   className?: string
+  /**
+   * Seçim değişince bağlı GET formunu kendiliğinden gönderir ("Filtrele"
+   * düğmesine basmaya gerek kalmaz). Varsayılan kapalı: bileşen beş sayfada
+   * paylaşılıyor, davranış değişikliği yalnız açıkça isteyen sayfaya girsin.
+   */
+  autoSubmit?: boolean
 }
 
 export function FilterSelect({
@@ -25,13 +31,32 @@ export function FilterSelect({
   placeholder,
   options,
   className,
+  autoSubmit = false,
 }: FilterSelectProps) {
   const [value, setValue] = useState(defaultValue)
+  const hiddenRef = useRef<HTMLInputElement>(null)
+  const pendingSubmit = useRef(false)
+
+  // Submit, state DOM'a yansıdıktan SONRA tetiklenmeli; aynı tick'te
+  // requestSubmit çağrılırsa gizli input hâlâ eski değeri taşır.
+  useEffect(() => {
+    if (!pendingSubmit.current) return
+    pendingSubmit.current = false
+    hiddenRef.current?.form?.requestSubmit()
+  }, [value])
 
   return (
     <>
-      <input type="hidden" name={name} value={value} />
-      <Select items={options} value={value} onValueChange={(v) => setValue(v ?? "")}>
+      <input type="hidden" name={name} value={value} ref={hiddenRef} />
+      <Select
+        items={options}
+        value={value}
+        onValueChange={(v) => {
+          const next = v ?? ""
+          if (autoSubmit && next !== value) pendingSubmit.current = true
+          setValue(next)
+        }}
+      >
         <SelectTrigger className={className}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
