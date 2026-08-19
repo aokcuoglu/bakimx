@@ -6,6 +6,7 @@ import { bpsToPercent } from "@/lib/money"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
+import { useOrderSync } from "@/hooks/use-order-sync"
 import {
   ArrowLeft, Pause, Play,
   Camera, Plus, StickyNote, Timer,
@@ -140,6 +141,10 @@ export function TechnicianOrderDetail({
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
+
+  // BAK-140: ofis personeli/dış alım bu iş emrine parça eklediğinde teknisyen
+  // sayfayı yenilemeden görsün — office tarafındaki aynı desen (work-order-detail.tsx).
+  useOrderSync(order.id)
 
   const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
   const statusLabel = statusInfo?.label || order.status
