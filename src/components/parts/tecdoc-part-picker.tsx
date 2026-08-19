@@ -612,7 +612,7 @@ export function TecdocPartPicker({
                     key={node.id}
                     type="button"
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
-                    className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left text-sm border-b border-border/60 hover:bg-muted"
+                    className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left text-sm border-b border-border/60 hover:bg-muted"
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}

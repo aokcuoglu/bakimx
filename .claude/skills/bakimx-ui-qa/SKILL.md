@@ -15,15 +15,16 @@ Review the UI/UX impact of the current implementation.
 - Blue/navy professional SaaS style
 - Avoid cluttered desktop-only layouts
 
-Sizing and color rules are fixed: `docs/ui-control-sizing.md` for the 44px mobile
-/ 36px `md+` control matrix, `AGENTS.md` for the shadcn primitives and semantic
+Sizing and color rules are fixed: `docs/ui-control-sizing.md` for the upstream
+shadcn `nova` control scale (single scale, no breakpoints; `lg`/`xl` primary CTAs
+are the two documented exceptions), `AGENTS.md` for the shadcn primitives and semantic
 color tokens. `src/components/ui/control-sizing.test.ts`,
 `src/lib/ui-contract.test.ts`, and `src/lib/theme-tokens.test.ts` enforce them at
 build time — a visual review that contradicts those tests is wrong.
 
 ## Check
 1. Mobile responsiveness
-2. Tap targets (44px minimum on phones)
+2. Tap targets follow `docs/ui-control-sizing.md` (32px standard controls, taller `lg`/`xl` CTAs and bottom nav)
 3. Form validation clarity
 4. Empty states
 5. Loading states

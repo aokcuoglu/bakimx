@@ -216,7 +216,7 @@ export function VinCandidateList({
             type="button"
             onClick={() => onSelect(c)}
             className={cn(
-              "w-full min-h-11 flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+              "w-full min-h-8 flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
               selected
                 ? "border-primary bg-primary/5 text-foreground"
                 : "border-transparent bg-background hover:border-border"

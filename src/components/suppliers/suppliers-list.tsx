@@ -174,11 +174,11 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               <SelectItem value="passive">Pasif</SelectItem>
             </SelectContent>
           </Select>
-          <Button type="submit" variant="outline" className="h-11 md:h-8">
+          <Button type="submit" variant="outline">
             Ara
           </Button>
           {hasFilters && (
-            <Button type="button" variant="ghost" onClick={clearFilters} className="h-11 md:h-8">
+            <Button type="button" variant="ghost" onClick={clearFilters}>
               <X className="size-3.5" />
               Temizle
             </Button>
