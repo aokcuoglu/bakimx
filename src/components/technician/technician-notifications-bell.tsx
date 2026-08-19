@@ -48,8 +48,10 @@ export function TechnicianNotificationsBell() {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<TechnicianNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [pollError, setPollError] = useState(false)
   const cursorRef = useRef<string | null>(null)
   const inFlightRef = useRef(false)
+  const tickRef = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
     cursorRef.current = new Date().toISOString()
@@ -64,10 +66,15 @@ export function TechnicianNotificationsBell() {
           `/api/technician/notifications?since=${encodeURIComponent(cursorRef.current)}`,
           { cache: "no-store" },
         )
-        if (!res.ok) return
+        if (!res.ok) {
+          if (!cancelled) setPollError(true)
+          return
+        }
         const data = (await res.json()) as { notifications?: TechnicianNotification[] }
         const notifications = data.notifications ?? []
-        if (cancelled || notifications.length === 0) return
+        if (cancelled) return
+        setPollError(false)
+        if (notifications.length === 0) return
 
         cursorRef.current = notifications[notifications.length - 1].createdAt
 
@@ -86,11 +93,14 @@ export function TechnicianNotificationsBell() {
         setItems((prev) => [...notifications].reverse().concat(prev).slice(0, MAX_VISIBLE))
         setUnreadCount((prev) => prev + notifications.length)
       } catch {
-        // Çevrimdışı/geçici ağ hatası — sessizce geç, sonraki turda yeniden dene.
+        // Çevrimdışı/geçici ağ hatası — sessizce geç, ama durumu göster ki
+        // "Henüz bildirim yok" ile karıştırılmasın; sonraki turda yeniden dene.
+        if (!cancelled) setPollError(true)
       } finally {
         inFlightRef.current = false
       }
     }
+    tickRef.current = tick
 
     const start = () => {
       if (timer) return
@@ -120,6 +130,10 @@ export function TechnicianNotificationsBell() {
       document.removeEventListener("visibilitychange", onVisibility)
     }
   }, [router])
+
+  function handleRetry() {
+    void tickRef.current()
+  }
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
@@ -158,7 +172,14 @@ export function TechnicianNotificationsBell() {
         <PopoverHeader>
           <PopoverTitle>Bildirimler</PopoverTitle>
         </PopoverHeader>
-        {items.length === 0 ? (
+        {pollError ? (
+          <div className="flex flex-col items-center gap-2 px-1 py-4 text-center">
+            <p className="text-sm text-destructive-strong">Bildirimler alınamadı</p>
+            <Button type="button" variant="outline" size="sm" onClick={handleRetry}>
+              Tekrar dene
+            </Button>
+          </div>
+        ) : items.length === 0 ? (
           <p className="px-1 py-4 text-center text-sm text-muted-foreground">Henüz bildirim yok.</p>
         ) : (
           <ul className="flex flex-col gap-1">
