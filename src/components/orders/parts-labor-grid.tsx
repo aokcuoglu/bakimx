@@ -28,7 +28,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store, AlertTriangle } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store, AlertTriangle, MoreHorizontal, ReceiptText } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { splitRowActions } from "@/lib/orders/row-actions"
 import { PurchaseDetailDialog } from "@/components/purchases/purchase-detail-dialog"
 import { cn } from "@/lib/utils"
 import { searchLaborItems } from "@/lib/labor/search"
@@ -304,7 +312,8 @@ export function PartsLaborEditor({
             {vatPerLine && <col className="w-16" />}{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
-            <col className="w-12" />{/* Sil */}
+            {/* İşlem — en çok iki 36px ikon + boşluk (BAK-104, bkz. RowActions) */}
+            <col className="w-24" />
           </colgroup>
           <TableHeader className="sticky top-0 z-10 bg-muted">
             <TableRow className="hover:bg-transparent">
@@ -1290,15 +1299,27 @@ type RowEditor = ReturnType<typeof useRowEditor>
 // Autocomplete yalnız "sonuç yok + Enter" ile commit ediyor; blur'da yazılan ad
 // sessizce eski haline dönüyordu) → yanıltıcı affordance kaldırıldı.
 // Her iki durumda da ad hatalıysa satır silinip yeniden eklenir.
-function PartIdentity({ row }: { row: Row }) {
-  const title = row.bakimxProductId != null
+/**
+ * BAK-104 — `oneLine`: masaüstü tablo satırında ad TEK satırda kalır ve taşarsa
+ * kırpılır. Sarmalı ad satır yüksekliğini iki-üç katına çıkarıp aynı satırdaki
+ * miktar/fiyat/toplam hücrelerini dikeyde kaydırıyor, tablo tırtıklı okunuyordu.
+ * Tam ad `title`'da (hover ipucu) ve mobil kartta sarılı hâliyle görünür.
+ */
+function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
+  const lockNote = row.bakimxProductId != null
     ? "BakımX kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
     : row.tecdocArticleId != null
       ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
       : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
+  // Kırpılan adda `title` ÖNCE tam adı vermeli: kullanıcı hover'da okumak
+  // istediği şey kilit gerekçesi değil, görünmeyen ad.
+  const title = oneLine ? `${row.name} — ${lockNote}` : lockNote
   return (
     <div
-      className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 py-1"
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-x-1.5 gap-y-0.5 py-1",
+        oneLine ? "flex-nowrap" : "flex-wrap",
+      )}
       title={title}
     >
       {row.sku && (
@@ -1306,23 +1327,35 @@ function PartIdentity({ row }: { row: Row }) {
           {row.sku}
         </span>
       )}
-      <span className="min-w-0 whitespace-normal break-words text-sm font-medium text-foreground">{row.name}</span>
+      <span
+        className={cn(
+          "min-w-0 text-sm font-medium text-foreground",
+          oneLine ? "truncate" : "whitespace-normal break-words",
+        )}
+      >
+        {row.name}
+      </span>
     </div>
   )
 }
 
 // Liste satırının ad hücresi. Parçada ad SALT-OKUNUR (bkz. PartIdentity);
 // işçilikte serbest metin olarak düzenlenebilir (debounce'lu otosave çalışıyor).
-// Satır-içi aksiyonlar (parça detayı ⓘ, tedarikçi fiyat karşılaştırma) her
-// durumda görünür.
-function PartField({ row, ed, vehicle, onCell, onShowDetail }: {
-  row: Row; ed: RowEditor; vehicle?: PickerVehicle; onCell: OnCell
-  onShowDetail: OnShowDetail
+//
+// BAK-104 — satır-içi aksiyon ikonları (parça detayı ⓘ, tedarikçi fiyatı 🏷)
+// BURADAN ÇIKARILDI. Ad hücresinin içinde durdukları için konumları satırdan
+// satıra kayıyor (adın uzunluğuna göre), adın yerini yiyor ve dış alım
+// satırında tür kolonundan taşan üçüncü ikonla üst üste biniyorlardı. Artık
+// hepsi satırın sağındaki tek aksiyon grubunda (`RowActions`).
+function PartField({ row, ed, onCell, oneLine }: {
+  row: Row; ed: RowEditor; onCell: OnCell
+  /** Masaüstü tablo satırı: ad tek satırda kırpılır (bkz. PartIdentity). */
+  oneLine?: boolean
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       {ed.isPart ? (
-        <PartIdentity row={row} />
+        <PartIdentity row={row} oneLine={oneLine} />
       ) : (
         <Input
           value={row.name}
@@ -1332,65 +1365,8 @@ function PartField({ row, ed, vehicle, onCell, onShowDetail }: {
           className="text-sm"
         />
       )}
-      {/* Katalog bağlantılı kalem → özellik/görsel/uygunluk detayı. Eklemeden
-          sonra da erişilebilir olmalı (usta parçayı takarken ölçüye bakıyor). */}
-      {ed.isPart && row.tecdocArticleId != null && (
-        <button
-          type="button"
-          aria-label="Parça detayı"
-          title="Özellikler, görsel ve uygunluk"
-          onClick={() =>
-            onShowDetail({
-              target: {
-                tecdocArticleId: row.tecdocArticleId!,
-                productName: row.name,
-                articleNo: row.sku ?? "",
-                supplierName: row.brand ?? "",
-                vehicleTypeId: vehicle?.catalogVehicleTypeId ?? null,
-              },
-            })
-          }
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:size-8"
-        >
-          <Info className="size-4" />
-        </button>
-      )}
-      {ed.isPart && row.name.trim() !== "" && (
-        <PartPriceCompare row={row} ed={ed} onCell={onCell} />
-      )}
       {row.__saving && <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />}
     </div>
-  )
-}
-
-// Tedarikçi fiyat karşılaştırma tetikleyicisi + popup (mock veri). Yalnız parça
-// satırında VE ad doluyken PartField'de mount edilir → masaüstü <tr> ve mobil
-// kart aynı bileşeni paylaşır. Fiyat uygula → satırın Birim Fiyat'ına yazar.
-function PartPriceCompare({ row, ed, onCell }: { row: Row; ed: RowEditor; onCell: OnCell }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      {/* İkon buton: liste satırının statik görünümünü bozmadan, "Parça detayı"
-          (ⓘ) ile aynı ölçü/stilde ikinci satır-içi aksiyon. Mobilde de dokunma
-          hedefi 36px kalsın diye size-9. */}
-      <button
-        type="button"
-        data-slot="price-compare"
-        onClick={() => setOpen(true)}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label="Tedarikçi fiyatlarını karşılaştır"
-        title="Tedarikçi fiyatlarını karşılaştır"
-      >
-        <Tags className="size-4" />
-      </button>
-      <SupplierPriceDialog
-        open={open}
-        onOpenChange={setOpen}
-        part={{ name: row.name, sku: row.sku, brand: row.brand }}
-        editable={ed.editable}
-        onApply={(priceKurus) => onCell(row, { unitPrice: priceKurus })}
-      />
-    </>
   )
 }
 
@@ -1494,8 +1470,8 @@ function PriceCell({ row, ed, wide, align = "end" }: {
  * İki işi birden yapar: fiyat revize edilmemişken uyarır, revize edildikten
  * SONRA da maliyeti görünür tutar (kullanıcı isteği: "satın alma fiyatını da bir
  * yerde görmeye devam edebilmesi lazım"). Alımın tedarikçi/tarih/fiş fotoğrafı
- * detayı hâlâ tür kolonundaki 🏷 ikonunda (PurchaseDetailButton) — burası yalnız
- * rakam, çünkü kapanışta bakılan şey rakam.
+ * detayı hâlâ satır aksiyonlarındaki 🧾 "Satın alma detayı" adımında (bkz.
+ * `RowActions`) — burası yalnız rakam, çünkü kapanışta bakılan şey rakam.
  *
  * Tutar NET'tir (KDV hariç) ve üstündeki birim fiyat da net gösterilir (BAK-75)
  * — iki rakam aynı tabanda, göz kıyaslaması doğru.
@@ -1620,44 +1596,6 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
   )
 }
 
-// Dış alım (source=purchase) satırında görünen detay/düzenle tetikleyicisi. İkon →
-// PurchaseDetailDialog açar (alış fiyatı/tedarikçi/tarih/foto görüntüle + düzenle).
-function PurchaseDetailButton({ row, orderId, editable }: { row: Row; orderId: string; editable: boolean }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => setOpen(true)}
-        className="shrink-0 text-muted-foreground hover:text-primary"
-        aria-label="Satın alma detayı"
-        title="Satın alma detayı"
-      >
-        <Tags className="size-4" />
-      </Button>
-      <PurchaseDetailDialog
-        open={open}
-        onOpenChange={setOpen}
-        orderId={orderId}
-        editable={editable}
-        item={{
-          id: row.id,
-          name: row.name,
-          sku: row.sku,
-          quantity: row.quantity,
-          purchasePriceKurus: row.purchasePriceKurus ?? null,
-          supplierName: row.supplierName ?? null,
-          purchasedAt: row.purchasedAt ?? null,
-          purchasedByName: row.purchasedByName ?? null,
-          purchasePhotoId: row.purchasePhotoId ?? null,
-        }}
-      />
-    </>
-  )
-}
-
 // Başarılı otosave ("Kaydedildi") veya yeni ekleme ("Eklendi") sonrası 2 sn'lik
 // onay işareti. Masaüstünde dar kolonlara sığması için iconOnly, mobil kart
 // başlığında metinli sürüm.
@@ -1676,12 +1614,212 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
   )
 }
 
-function DeleteButton({ row, onRemove }: { row: Row; onRemove: (row: Row) => void }) {
+// ── Satır aksiyonları: tek grup, en çok iki dokunma hedefi (BAK-104) ─────────
+/**
+ * Bir kalem satırının TÜM aksiyonları burada toplanır: parça detayı, tedarikçi
+ * fiyat karşılaştırma, satın alma detayı ve sil.
+ *
+ * Neden tek grup: aksiyonlar önceden üç ayrı yere dağılmıştı (ⓘ ve 🏷 ad
+ * hücresinin içinde, satın alma 🏷'i tür kolonunda, sil en sağda). Sonuç, dış
+ * alım satırında tür kolonunun taşıp ikonun marka alanının üstüne binmesi ve
+ * ikonların satırdan satıra yer değiştirmesiydi (Kızıldağ Oto geri bildirimi).
+ *
+ * İkiyi geçen aksiyon `splitRowActions` ile ⋯ menüsüne iner → aksiyon kolonu
+ * her satırda aynı genişlikte, dokunma hedefleri ayrık kalır.
+ *
+ * Ayrıca satın alma detayı artık 🏷 (Tags) değil 🧾 (ReceiptText) ikonu
+ * kullanır: aynı satırda tedarikçi fiyat karşılaştırma da 🏷 idi, iki farklı
+ * aksiyon ayırt edilemiyordu.
+ */
+function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail }: {
+  row: Row
+  ed: RowEditor
+  orderId?: string
+  vehicle?: PickerVehicle
+  onCell: OnCell
+  onRemove: (row: Row) => void
+  onShowDetail: OnShowDetail
+}) {
+  const [priceOpen, setPriceOpen] = useState(false)
+  const [purchaseOpen, setPurchaseOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const actions: Array<{
+    key: string
+    tone: "default" | "danger"
+    label: string
+    hint: string
+    Icon: typeof Info
+    run: () => void
+  }> = []
+
+  // Katalog bağlantılı kalem → özellik/görsel/uygunluk detayı. Eklemeden sonra
+  // da erişilebilir olmalı (usta parçayı takarken ölçüye bakıyor).
+  if (ed.isPart && row.tecdocArticleId != null) {
+    actions.push({
+      key: "detail", tone: "default", label: "Parça detayı",
+      hint: "Özellikler, görsel ve uygunluk", Icon: Info,
+      run: () => onShowDetail({
+        target: {
+          tecdocArticleId: row.tecdocArticleId!,
+          productName: row.name,
+          articleNo: row.sku ?? "",
+          supplierName: row.brand ?? "",
+          vehicleTypeId: vehicle?.catalogVehicleTypeId ?? null,
+        },
+      }),
+    })
+  }
+  if (ed.isPart && row.name.trim() !== "") {
+    actions.push({
+      key: "price", tone: "default", label: "Tedarikçi fiyatları",
+      hint: "Tedarikçi fiyatlarını karşılaştır", Icon: Tags,
+      run: () => setPriceOpen(true),
+    })
+  }
+  if (row.source === "purchase" && orderId) {
+    actions.push({
+      key: "purchase", tone: "default", label: "Satın alma detayı",
+      hint: "Alış fiyatı, tedarikçi, tarih ve fiş fotoğrafı", Icon: ReceiptText,
+      run: () => setPurchaseOpen(true),
+    })
+  }
+  if (ed.editable) {
+    actions.push({
+      key: "delete", tone: "danger", label: "Satırı sil",
+      hint: "Satırı sil", Icon: Trash2,
+      run: () => setConfirmDelete(true),
+    })
+  }
+
+  const { inline, overflow } = splitRowActions(actions)
+  const byKey = new Map(actions.map((a) => [a.key, a]))
+
   return (
-    <Button type="button" variant="ghost" size="icon-sm" onClick={() => onRemove(row)}
-      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong" aria-label="Satırı sil">
-      <Trash2 className="size-4" />
-    </Button>
+    <>
+      {/* Dizilim: ⋯ önce, satır-içi aksiyonlar sonra. Yıkıcı aksiyon her zaman
+          listenin sonunda kurulduğu için sil ikonu HER satırda en sağdaki
+          slotta durur — bazı satırda ⋯ olup bazısında olmaması kolonu
+          kaydırmaz. */}
+      <div className="flex items-center justify-end gap-0.5">
+        {overflow.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`${row.name || "Satır"} — diğer işlemler`}
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56">
+              {overflow.map((a, i) => {
+                const action = byKey.get(a.key)!
+                const prev = i > 0 ? byKey.get(overflow[i - 1].key)! : null
+                return (
+                  <div key={action.key}>
+                    {prev && prev.tone !== action.tone && <DropdownMenuSeparator />}
+                    <DropdownMenuItem
+                      variant={action.tone === "danger" ? "destructive" : "default"}
+                      onClick={action.run}
+                    >
+                      <action.Icon className="size-4" />
+                      {action.label}
+                    </DropdownMenuItem>
+                  </div>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {inline.map((a) => {
+          const action = byKey.get(a.key)!
+          return (
+            <Tooltip key={action.key}>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={action.run}
+                    aria-label={action.hint}
+                    className={cn(
+                      "text-muted-foreground",
+                      action.tone === "danger"
+                        ? "hover:bg-destructive/10 hover:text-destructive-strong"
+                        : "hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <action.Icon className="size-4" />
+                  </Button>
+                }
+              />
+              <TooltipContent>{action.hint}</TooltipContent>
+            </Tooltip>
+          )
+        })}
+      </div>
+
+      {/* Yıkıcı aksiyon onay ister — tek tıkla silinen kalem geri alınamıyordu. */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kalem silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">{row.name || "Adsız kalem"}</span>
+              {" "}iş emrinden kaldırılacak ve toplamlardan düşecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => { setConfirmDelete(false); onRemove(row) }}
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Yalnız aksiyonu VARSA mount edilir: dialog kapalıyken de mock teklif
+          listesini hesaplıyor (useMemo), her işçilik satırı için boşa çalışmasın. */}
+      {byKey.has("price") && (
+        <SupplierPriceDialog
+          open={priceOpen}
+          onOpenChange={setPriceOpen}
+          part={{ name: row.name, sku: row.sku, brand: row.brand }}
+          editable={ed.editable}
+          onApply={(priceKurus) => onCell(row, { unitPrice: priceKurus })}
+        />
+      )}
+
+      {row.source === "purchase" && orderId && (
+        <PurchaseDetailDialog
+          open={purchaseOpen}
+          onOpenChange={setPurchaseOpen}
+          orderId={orderId}
+          editable={ed.editable}
+          item={{
+            id: row.id,
+            name: row.name,
+            sku: row.sku,
+            quantity: row.quantity,
+            purchasePriceKurus: row.purchasePriceKurus ?? null,
+            supplierName: row.supplierName ?? null,
+            purchasedAt: row.purchasedAt ?? null,
+            purchasedByName: row.purchasedByName ?? null,
+            purchasePhotoId: row.purchasePhotoId ?? null,
+          }}
+        />
+      )}
+    </>
   )
 }
 
@@ -1929,22 +2067,23 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
 
   return (
     <TableRow className={cn(GHOST_ROW, "align-middle")}>
-      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti + (dış alımda) detay ikonu */}
+      {/* Tür: sol renk aksanı (mutlak bar) + tür çipi + kaynak rozeti.
+          BAK-104 — dış alım detay ikonu buradan ÇIKTI: çip + rozet + ikon üçlüsü
+          w-40'lık kolona sığmıyor, ikon alt satıra düşüp ad kolonundaki
+          Marka/Kategori satırının üstüne biniyordu. Artık `RowActions` içinde. */}
       <TableCell className="relative py-3.5 pl-[18px]">
         <span className={cn("absolute inset-y-2 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          {row.source === "purchase" && orderId && (
-            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
-          )}
         </div>
       </TableCell>
 
-      {/* Parça / İşçilik: ad (hayalet) + parça için Marka/Kategori meta satırı */}
+      {/* Parça / İşçilik: ad (hayalet, tek satır — taşarsa kırpılır) + parça
+          için Marka/Kategori meta satırı */}
       <TableCell className="whitespace-normal py-3.5">
         <div className="min-w-0">
-          <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
+          <PartField row={row} ed={ed} onCell={onCell} oneLine />
           <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
           {showMeta && (
             // Marka + Kategori HER ZAMAN tek satır: sabit genişlik yerine esneyen
@@ -1982,19 +2121,27 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
         </div>
       </TableCell>
 
-      {/* Toplam (vurgulu, KDV DAHİL) + otosave onayı */}
-      <TableCell className="py-3.5">
+      {/* Toplam (vurgulu, KDV DAHİL) + otosave onayı — tutar tek satırda kalır */}
+      <TableCell className="py-3.5 whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           <RowFlash kind={flash} iconOnly />
           <TotalField lineTotal={ed.grossLineTotal} strong vatIncluded={ed.vatKurus != null && ed.vatKurus > 0} />
         </div>
       </TableCell>
 
-      {/* Sil (yalnız hover'da belirir) */}
+      {/* Satır aksiyonları — tek grup, en çok iki dokunma hedefi (BAK-104).
+          Artık hover'da belirmiyor: grup ad hücresinden buraya taşınan
+          detay/fiyat aksiyonlarını da taşıyor, gizli kalırsa bulunamazlar. */}
       <TableCell className="py-3.5">
-        <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
-        </div>
+        <RowActions
+          row={row}
+          ed={ed}
+          orderId={orderId}
+          vehicle={vehicle}
+          onCell={onCell}
+          onRemove={onRemove}
+          onShowDetail={onShowDetail}
+        />
       </TableCell>
     </TableRow>
   )
@@ -2023,17 +2170,22 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       {/* Sol tür aksanı */}
       <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
 
-      {/* Başlık: tür çipi + kaynak rozeti + (dış alımda) detay ikonu · sil */}
+      {/* Başlık: tür çipi + kaynak rozeti · satır aksiyonları (tek grup) */}
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <TypeChip type={type} />
           <SourceBadge source={row.source} />
-          {row.source === "purchase" && orderId && (
-            <PurchaseDetailButton row={row} orderId={orderId} editable={ed.editable} />
-          )}
           <RowFlash kind={flash} />
         </div>
-        {ed.editable && <DeleteButton row={row} onRemove={onRemove} />}
+        <RowActions
+          row={row}
+          ed={ed}
+          orderId={orderId}
+          vehicle={vehicle}
+          onCell={onCell}
+          onRemove={onRemove}
+          onShowDetail={onShowDetail}
+        />
       </div>
 
       {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
@@ -2043,7 +2195,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
-        <PartField row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
+        <PartField row={row} ed={ed} onCell={onCell} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
       </div>
@@ -2056,27 +2208,42 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         </div>
       )}
 
-      {/* Fiş satırı: Miktar · KDV · Birim Fiyat = Toplam (tek satırda, yığılmadan).
-          Birim fiyat NET, Toplam KDV DAHİL; tick açıksa altta "+₺X KDV" notu durur.
-          BAK-91 — `flex-wrap`: 390px'lik ekranda satır 368px istiyordu ve 296px'lik
-          karttan TAŞIYORDU (toplam tutar ve alış fiyatı notu sağdan kesiliyordu).
-          Sığmayınca fiyat grubu kendi satırına iner; geniş kartta düzen aynı. */}
-      <div className="mt-3 flex flex-wrap items-start gap-x-2 gap-y-2 border-t border-border pt-3">
-        <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
-        {vatPerLine && (
-          <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
-            <VatCell row={row} ed={ed} onCell={onCell} />
-            KDV
-          </label>
-        )}
-        <div className="ml-auto flex flex-col items-end gap-0.5">
-          <div className="flex items-center gap-2">
+      {/* Fiş bloğu: Miktar/KDV bir satır, ardından ETİKETLİ tutar satırları.
+          BAK-104 — eski düzen "Miktar · KDV · ₺Birim = ₺Toplam"ı tek satıra
+          sığdırmaya çalışıyordu; 360px'lik ekranda (kart içi 296px) grup
+          sarınca sağa yaslı iki çıplak rakam kalıyor, hangisinin birim hangisinin
+          toplam olduğu okunmuyordu ("fiyat net gözükmüyor"). Artık her tutar
+          kendi satırında, solda etiketi, sağda rakamı: kart genişliğine bakmadan
+          daima tam görünür, yatay kaydırma gerekmez.
+          Birim fiyat NET, Toplam KDV DAHİL. */}
+      <div className="mt-3 space-y-2 border-t border-border pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+          {vatPerLine && (
+            <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
+              <VatCell row={row} ed={ed} onCell={onCell} />
+              KDV ekle
+            </label>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="shrink-0 text-xs text-muted-foreground">Birim fiyat</span>
+          <div className="flex min-w-0 flex-col items-end gap-0.5">
             <PriceField row={row} ed={ed} />
-            <span className="text-sm text-muted-foreground">=</span>
-            <TotalField lineTotal={ed.grossLineTotal} strong />
+            <PurchaseCostHint row={row} ed={ed} />
           </div>
-          {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
-          <PurchaseCostHint row={row} ed={ed} />
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+          <span className="shrink-0 text-xs font-medium text-foreground">Toplam</span>
+          <div className="flex min-w-0 flex-col items-end gap-0.5">
+            {/* `vatIncluded` VERİLMEZ: hemen altındaki VatHint zaten tutarıyla
+                birlikte "₺X KDV dahil" yazıyor, ikisi birden "KDV dahil"i
+                üst üste iki kez tekrar ediyordu. */}
+            <TotalField lineTotal={ed.grossLineTotal} strong />
+            {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
+          </div>
         </div>
       </div>
     </div>

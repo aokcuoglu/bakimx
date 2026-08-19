@@ -6,6 +6,10 @@ import { cn } from "@/lib/utils"
 import { BrandLogo } from "@/components/shared/brand-logo"
 import { GlobalSearch } from "@/components/layout/global-search-box"
 import { CreateCenterDialog } from "@/components/layout/create-center-dialog"
+import { isTechnicianRestrictedRole } from "@/lib/technician-route-access"
+import { TechnicianNotificationsBell } from "@/components/technician/technician-notifications-bell"
+import { ROLE_LABELS } from "@/lib/roles"
+import type { UserRole } from "@prisma/client"
 import {
   LayoutDashboard,
   Car,
@@ -34,11 +38,20 @@ import {
   Calendar,
   Receipt,
   PackageSearch,
+  UserCircle,
 } from "lucide-react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+
+export type UserIdentity = {
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  username: string | null
+  role: UserRole
+}
 
 type NavItem = {
   href: string
@@ -205,6 +218,7 @@ export function AppShellChrome({
   children,
   initialSidebarCollapsed = false,
   enabledFeatures = [],
+  userIdentity,
 }: {
   children: React.ReactNode
   initialSidebarCollapsed?: boolean
@@ -214,6 +228,7 @@ export function AppShellChrome({
    * anahtarı bu listede varsa çıkar.
    */
   enabledFeatures?: string[]
+  userIdentity?: UserIdentity
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -245,6 +260,7 @@ export function AppShellChrome({
             collapsed={sidebarCollapsed}
             onToggleCollapse={toggleSidebar}
             enabledFeatures={enabledFeatures}
+            userIdentity={userIdentity}
           />
         </aside>
 
@@ -265,6 +281,7 @@ export function AppShellChrome({
                 pathname={pathname}
                 onClose={() => setSidebarOpen(false)}
                 enabledFeatures={enabledFeatures}
+                userIdentity={userIdentity}
               />
             </div>
           </SheetContent>
@@ -299,14 +316,18 @@ export function AppShellChrome({
               {!showGlobalSearch && <div className="flex-1" />}
 
               <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
-                <CreateCenterDialog />
-                <Tooltip>
-                  <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
-                    <Bell className="size-5" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
-                </Tooltip>
-                <UserMenu />
+                {!isTechnicianRestrictedRole(userIdentity?.role) && <CreateCenterDialog />}
+                {isTechnicianRestrictedRole(userIdentity?.role) ? (
+                  <TechnicianNotificationsBell />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Bildirimler" />}>
+                      <Bell className="size-5" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
+                  </Tooltip>
+                )}
+                <UserMenu userIdentity={userIdentity} />
               </div>
             </div>
             {(pageTitle || pageActions) && (
@@ -322,27 +343,44 @@ export function AppShellChrome({
       </div>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border safe-area-bottom">
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
-          <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
-          <MobileNavLink
-            href="/orders"
-            label="İş Emirleri"
-            icon={WrenchIcon}
-            active={pathname === "/orders" || pathname.startsWith("/orders/")}
-          />
-          <MobileNavLink
-            href="/technician"
-            label="Teknisyen"
-            icon={HardHat}
-            active={pathname === "/technician" || pathname.startsWith("/technician/")}
-          />
-          <MobileNavLink
-            href="/customers"
-            label="Müşteriler"
-            icon={Users}
-            active={pathname.startsWith("/customers") || pathname.startsWith("/vehicles")}
-          />
-        </div>
+        {isTechnicianRestrictedRole(userIdentity?.role) ? (
+          <div className="grid grid-cols-2 gap-1 px-2 py-1.5">
+            <MobileNavLink
+              href="/technician"
+              label="Teknisyen"
+              icon={HardHat}
+              active={pathname === "/technician" || pathname.startsWith("/technician/")}
+            />
+            <MobileNavLink
+              href="/account"
+              label="Hesabım"
+              icon={UserCircle}
+              active={pathname === "/account" || pathname.startsWith("/account/")}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
+            <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
+            <MobileNavLink
+              href="/orders"
+              label="İş Emirleri"
+              icon={WrenchIcon}
+              active={pathname === "/orders" || pathname.startsWith("/orders/")}
+            />
+            <MobileNavLink
+              href="/technician"
+              label="Teknisyen"
+              icon={HardHat}
+              active={pathname === "/technician" || pathname.startsWith("/technician/")}
+            />
+            <MobileNavLink
+              href="/customers"
+              label="Müşteriler"
+              icon={Users}
+              active={pathname.startsWith("/customers") || pathname.startsWith("/vehicles")}
+            />
+          </div>
+        )}
       </nav>
     </div>
     </SetPageHeaderContext.Provider>
@@ -374,18 +412,106 @@ function MobileNavLink({
   )
 }
 
-function UserMenu() {
+function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleEscape)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [open])
+
+  const displayName = userIdentity
+    ? [userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username || "Kullanıcı"
+    : "Kullanıcı"
+  const initials = userIdentity
+    ? [userIdentity.firstName?.[0], userIdentity.lastName?.[0]].filter(Boolean).join("").toUpperCase() || displayName[0]?.toUpperCase() || "?"
+    : "?"
+  const roleLabel = userIdentity ? ROLE_LABELS[userIdentity.role] : ""
+  const identifierText = userIdentity?.email || userIdentity?.username || ""
+
   return (
-    <form action="/api/auth/logout" method="POST">
-      <Tooltip>
-        <TooltipTrigger render={<Button type="submit" variant="ghost" size="icon" className="size-11 md:size-8" aria-label="Çıkış Yap" />}>
-          <LogOut className="size-4" />
-        </TooltipTrigger>
-        <TooltipContent side="top">Çıkış Yap</TooltipContent>
-      </Tooltip>
-    </form>
+    <div className="relative" ref={menuRef}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11 md:size-8"
+        aria-label="Kullanıcı menüsü"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+          {initials}
+        </span>
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-64 rounded-lg border border-border bg-white shadow-lg z-50 py-1">
+          <div className="px-3 py-2.5 border-b border-border">
+            <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+            {identifierText && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{identifierText}</p>
+            )}
+            {roleLabel && (
+              <span className="inline-block mt-1 text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                {roleLabel}
+              </span>
+            )}
+          </div>
+          <div className="py-1">
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+            >
+              <UserCircle className="size-4 text-muted-foreground" />
+              Hesabım
+            </Link>
+          </div>
+          <div className="border-t border-border py-1">
+            <form action="/api/auth/logout" method="POST">
+              <button
+                type="submit"
+                className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors w-full text-left"
+              >
+                <LogOut className="size-4 text-muted-foreground" />
+                Çıkış Yap
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
+
+const TECHNICIAN_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Teknisyen",
+    items: [
+      { href: "/technician", label: "Teknisyen Paneli", icon: HardHat },
+    ],
+  },
+  {
+    label: "Hesap",
+    items: [
+      { href: "/account", label: "Hesabım", icon: UserCircle },
+    ],
+  },
+]
 
 function SidebarContent({
   pathname,
@@ -393,16 +519,18 @@ function SidebarContent({
   collapsed = false,
   onToggleCollapse,
   enabledFeatures = [],
+  userIdentity,
 }: {
   pathname: string
   onClose?: () => void
   collapsed?: boolean
   onToggleCollapse?: () => void
   enabledFeatures?: string[]
+  userIdentity?: UserIdentity
 }) {
-  // Kapı kapalı bağlantı menüden düşer. Kapısı olmayan satır (çoğunluk) hiç
-  // etkilenmez — `feature` alanı yoksa koşul zaten geçilir.
-  const visibleGroups = NAV_GROUPS.map((group) => ({
+  const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
+
+  const visibleGroups = (isTechRole ? TECHNICIAN_NAV_GROUPS : NAV_GROUPS).map((group) => ({
     ...group,
     items: group.items.filter((item) => !item.feature || enabledFeatures.includes(item.feature)),
   })).filter((group) => group.items.length > 0)
@@ -456,7 +584,7 @@ function SidebarContent({
       <div className={cn("py-5 border-b border-navy-foreground/10", collapsed ? "px-2" : "px-5")}>
         <div className={collapsed ? "flex justify-center" : "flex items-center"}>
           <Tooltip>
-            <TooltipTrigger render={<Link href="/dashboard" onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
+            <TooltipTrigger render={<Link href={isTechRole ? "/technician" : "/dashboard"} onClick={onClose} aria-label="BakimX" className="flex items-center group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-deep">
               {collapsed ? (
                 <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
               ) : (
@@ -604,25 +732,53 @@ function SidebarContent({
 
       <div className={cn("border-t border-navy-foreground/10", collapsed ? "p-2" : "p-3")}>
         {collapsed ? (
-          <form action="/api/auth/logout" method="POST">
+          <div className="space-y-1">
             <Tooltip>
-              <TooltipTrigger render={<Button type="submit" variant="ghost" size="icon" aria-label="Çıkış Yap" className="w-full" />}>
-                <LogOut className="size-4" />
+              <TooltipTrigger render={<Link href="/account" onClick={onClose} aria-label="Hesabım" className="flex items-center justify-center size-9 rounded-lg text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground transition-colors mx-auto" />}>
+                <UserCircle className="size-4" />
               </TooltipTrigger>
-              <TooltipContent side="top">Çıkış Yap</TooltipContent>
+              <TooltipContent side="right">Hesabım</TooltipContent>
             </Tooltip>
-          </form>
+            <form action="/api/auth/logout" method="POST">
+              <Tooltip>
+                <TooltipTrigger render={<Button type="submit" variant="ghost" size="icon" aria-label="Çıkış Yap" className="w-full" />}>
+                  <LogOut className="size-4" />
+                </TooltipTrigger>
+                <TooltipContent side="right">Çıkış Yap</TooltipContent>
+              </Tooltip>
+            </form>
+          </div>
         ) : (
-          <form action="/api/auth/logout" method="POST">
-            <Button
-              type="submit"
-              variant="ghost"
-              className="h-auto w-full justify-start gap-2.5 px-3 py-2 text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground"
+          <div className="space-y-1">
+            {userIdentity && (
+              <div className="px-3 py-1.5 mb-1">
+                <p className="text-xs font-medium text-navy-foreground/80 truncate">
+                  {[userIdentity.firstName, userIdentity.lastName].filter(Boolean).join(" ") || userIdentity.email || userIdentity.username}
+                </p>
+                <p className="text-[10px] text-navy-foreground/50 truncate">
+                  {ROLE_LABELS[userIdentity.role]}
+                </p>
+              </div>
+            )}
+            <Link
+              href="/account"
+              onClick={onClose}
+              className="group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground transition-all"
             >
-              <LogOut className="size-4" />
-              Çıkış Yap
-            </Button>
-          </form>
+              <UserCircle className="size-4" />
+              Hesabım
+            </Link>
+            <form action="/api/auth/logout" method="POST">
+              <Button
+                type="submit"
+                variant="ghost"
+                className="h-auto w-full justify-start gap-2.5 px-3 py-2 text-navy-foreground/60 hover:bg-navy-foreground/5 hover:text-navy-foreground"
+              >
+                <LogOut className="size-4" />
+                Çıkış Yap
+              </Button>
+            </form>
+          </div>
         )}
       </div>
     </div>

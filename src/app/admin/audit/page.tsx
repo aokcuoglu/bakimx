@@ -17,11 +17,23 @@ const ACTION_LABELS: Record<string, string> = {
   admin_extra_seats_set: "Ek koltuk ayarlandı",
   billing_order_confirmed: "Havale teyit edildi",
   billing_order_cancelled: "Sipariş iptal edildi",
+  admin_support_request_status: "Destek talebi durumu değişti",
+  admin_support_request_linked: "Destek talebi iş yerine bağlandı",
+  admin_support_request_assigned: "Destek talebi atandı",
+  admin_support_request_note: "Destek talebi iç notu güncellendi",
   platform_admin_added: "Platform yöneticisi eklendi",
   platform_admin_role_changed: "Yönetici rolü değişti",
   platform_admin_disabled: "Yönetici erişimi kapatıldı",
   platform_admin_enabled: "Yönetici erişimi açıldı",
   platform_admin_sessions_revoked: "Yönetici oturumları kapatıldı",
+  platform_admin_sso_login: "Google SSO ile giriş yapıldı",
+  platform_admin_sso_bootstrap: "Google SSO ile ilk giriş (env bootstrap)",
+  platform_admin_sso_rejected: "Google SSO girişi reddedildi",
+  platform_admin_break_glass_login: "Acil durum hesabıyla giriş yapıldı",
+  impersonation_started: "Taklit oturumu başladı",
+  impersonation_ended: "Taklit oturumu kapandı",
+  impersonation_revoked: "Taklit oturumu iptal edildi",
+  password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
 }
 
 interface AuditSearchParams {

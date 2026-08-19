@@ -26,7 +26,7 @@ const GENERIC_ERROR = "İşlem sırasında bir hata oluştu. Lütfen tekrar dene
  */
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
-  const limit = rateLimit(`checkout:${ip}`, MAX_ATTEMPTS, WINDOW_MS)
+  const limit = await rateLimit(`checkout:${ip}`, MAX_ATTEMPTS, WINDOW_MS)
   if (!limit.allowed) {
     return NextResponse.json({ error: "Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar deneyin." }, { status: 429 })
   }
@@ -101,6 +101,14 @@ export async function POST(request: Request) {
               settings: { create: {} },
             },
           })
+          const ownerTechnician = await tx.technician.create({
+            data: {
+              workshopId: workshop.id,
+              fullName: `${data.firstName} ${data.lastName}`.trim(),
+              phone: data.phone,
+              role: "yonetici",
+            },
+          })
           await tx.user.create({
             data: {
               email: data.email,
@@ -109,6 +117,7 @@ export async function POST(request: Request) {
               lastName: data.lastName,
               workshopId: workshop.id,
               role: "owner",
+              technicianId: ownerTechnician.id,
             },
           })
           await tx.billingOrder.create({

@@ -52,6 +52,36 @@ export function PhotoLightbox({
     [count, index, onIndexChange]
   )
 
+  // Kapanış geri bildirimi ref üzerinden okunur: çağıranlar `onOpenChange`i satır
+  // içi ok fonksiyonu olarak veriyor, aşağıdaki geçmiş efektinin bağımlılığına
+  // konsaydı her boyamada yeni bir geçmiş girdisi eklenirdi.
+  const onOpenChangeRef = React.useRef(onOpenChange)
+  React.useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  }, [onOpenChange])
+
+  // Mobil "geri" hareketi sayfadan çıkmasın, ÖNCE fotoğrafı kapatsın: telefonda
+  // büyütülmüş kareyi kapatmanın refleks yolu geri tuşudur, X değil.
+  // Girdi eklenirken Next'in kendi geçmiş durumu (`window.history.state`)
+  // korunur — üzerine yazmak App Router'ın gezinti durumunu bozar.
+  React.useEffect(() => {
+    if (!open) return
+    window.history.pushState({ ...window.history.state, bakimxLightbox: true }, "")
+
+    function onPop() {
+      onOpenChangeRef.current(false)
+    }
+    window.addEventListener("popstate", onPop)
+
+    return () => {
+      window.removeEventListener("popstate", onPop)
+      // X/Escape ile kapandıysa eklediğimiz girdi hâlâ tepede; onu geri alalım
+      // ki kullanıcının bir sonraki "geri"si gerçekten önceki sayfaya dönsün.
+      // Geri tuşuyla kapandıysa girdi zaten düşmüştür, işaret bulunmaz.
+      if (window.history.state?.bakimxLightbox) window.history.back()
+    }
+  }, [open])
+
   // Body scroll kilidi + klavye gezintisi (yalnızca açıkken).
   React.useEffect(() => {
     if (!open) return

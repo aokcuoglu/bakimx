@@ -11,6 +11,13 @@ import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
 import type { DemoRequestStatus, SupportRequestStatus } from "@prisma/client"
 import { workshopApprovedEmail, workshopRejectedEmail } from "@/lib/emails/system-emails"
 import { sendSystemEmail } from "@/lib/emails/send-system-email"
+import { issuePasswordReset } from "@/lib/password-reset-delivery"
+import {
+  RESET_RESEND_COOLDOWN_MS,
+  formatCooldownWait,
+  resendCooldownRemainingMs,
+} from "@/lib/password-reset"
+import { canReceivePasswordReset } from "@/lib/user-identity"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -173,23 +180,150 @@ export async function updateDemoRequestStatus(
   return { ok: true }
 }
 
+/** İç notun konsolda okunabilir kalması için üst sınır; sınırsız metin
+ *  denetim kaydını ve liste sorgusunu şişirir. */
+const INTERNAL_NOTE_MAX = 2000
+
+/** Destek talebi denetim kaydı — YALNIZ kiracıya bağlı talepler için.
+ *  `AuditLog.workshopId` zorunlu olduğundan bağsız bir talebin düşecek yeri yok;
+ *  bağlandığı anda sonraki her işlem kiracının denetim kaydında görünür. */
+async function logSupportRequest(
+  workshopId: string | null,
+  actorUserId: string,
+  requestId: string,
+  action: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  if (!workshopId) return
+  await AuditLogAction(
+    workshopId,
+    actorUserId,
+    "SupportRequest",
+    requestId,
+    action,
+    metadata ? JSON.stringify(metadata) : undefined
+  )
+}
+
 /** Update the workflow status of a public support request.
- *  No AuditLog — SupportRequest is not workshop-scoped; its `status`/`updatedAt`
- *  fields already track changes. AuditLog is workshop-bound and inappropriate
- *  for public leads. */
+ *  Kiracıya bağlıysa AuditLog'a düşer (BAK-98); bağsız talepte `status`/`updatedAt`
+ *  tek iz olarak kalır. */
 export async function updateSupportRequestStatus(
   requestId: string,
   status: string
 ): Promise<Result> {
-  await requireAdminCapability("manageLeads")
+  const ctx = await requireAdminCapability("manageLeads")
   if (!requestId) return { ok: false, error: "Talep seçilmedi." }
   if (!SUPPORT_STATUSES.includes(status as SupportRequestStatus)) {
     return { ok: false, error: "Geçersiz durum." }
   }
 
-  await prisma.supportRequest.update({
+  const updated = await prisma.supportRequest.update({
     where: { id: requestId },
     data: { status: status as SupportRequestStatus },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(updated.workshopId, ctx.user.id, requestId, "admin_support_request_status", {
+    status,
+  })
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Şikayeti bir iş yerine bağla ya da bağı kaldır (boş `workshopId`).
+ *  Denetim kaydı bağın DURDUĞU tarafa yazılır: bağlarken yeni kiracıya,
+ *  bağı kaldırırken eski kiracıya — aksi hâlde işlem hiçbir yerde görünmezdi. */
+export async function setSupportRequestWorkshop(
+  requestId: string,
+  workshopId: string
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+
+  const nextWorkshopId = workshopId.trim() || null
+  if (nextWorkshopId) {
+    const exists = await prisma.workshop.findUnique({
+      where: { id: nextWorkshopId },
+      select: { id: true },
+    })
+    if (!exists) return { ok: false, error: "İş yeri bulunamadı." }
+  }
+
+  const current = await prisma.supportRequest.findUnique({
+    where: { id: requestId },
+    select: { workshopId: true },
+  })
+  if (!current) return { ok: false, error: "Talep bulunamadı." }
+
+  await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { workshopId: nextWorkshopId },
+  })
+  await logSupportRequest(
+    nextWorkshopId ?? current.workshopId,
+    ctx.user.id,
+    requestId,
+    "admin_support_request_linked",
+    { workshopId: nextWorkshopId }
+  )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Talebi bir platform yöneticisine ata ya da atamayı kaldır (boş `userId`).
+ *  Yalnız ETKİN yönetici atanabilir — pasif bir hesaba atanan talep sahipsiz
+ *  kalırdı. */
+export async function assignSupportRequest(requestId: string, userId: string): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+
+  const nextUserId = userId.trim() || null
+  if (nextUserId) {
+    const admin = await prisma.platformAdmin.findUnique({
+      where: { userId: nextUserId },
+      select: { disabledAt: true },
+    })
+    if (!admin || admin.disabledAt) {
+      return { ok: false, error: "Yalnız etkin yöneticilere atama yapılabilir." }
+    }
+  }
+
+  const updated = await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { assignedToUserId: nextUserId },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(
+    updated.workshopId,
+    ctx.user.id,
+    requestId,
+    "admin_support_request_assigned",
+    { assignedToUserId: nextUserId }
+  )
+  revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/** Konsol içi not. Metnin kendisi denetim kaydına YAZILMAZ — not serbest metin
+ *  ve kişisel veri taşıyabilir; kaydın amacı "kim ne zaman düzenledi". */
+export async function saveSupportRequestInternalNote(
+  requestId: string,
+  note: string
+): Promise<Result> {
+  const ctx = await requireAdminCapability("manageLeads")
+  if (!requestId) return { ok: false, error: "Talep seçilmedi." }
+  if (note.length > INTERNAL_NOTE_MAX) {
+    return { ok: false, error: `Not en fazla ${INTERNAL_NOTE_MAX} karakter olabilir.` }
+  }
+
+  const trimmed = note.trim()
+  const updated = await prisma.supportRequest.update({
+    where: { id: requestId },
+    data: { internalNote: trimmed || null },
+    select: { workshopId: true },
+  })
+  await logSupportRequest(updated.workshopId, ctx.user.id, requestId, "admin_support_request_note", {
+    cleared: trimmed.length === 0,
   })
   revalidatePath("/admin", "layout")
   return { ok: true }
@@ -384,6 +518,76 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
   if (cancelled.count === 0) return { ok: false, error: "Yalnızca bekleyen sipariş iptal edilebilir." }
   await AuditLogAction(order.workshopId, ctx.user.id, "BillingOrder", orderId, "billing_order_cancelled")
   revalidatePath("/admin", "layout")
+  return { ok: true }
+}
+
+/**
+ * Destek müdahalesi (BAK-97): kilitli kalmış bir kullanıcıya şifre sıfırlama
+ * bağlantısı gönder.
+ *
+ * Üç sınır bilerek burada duruyor:
+ *  1. **Bağlantı konsola DÖNMEZ.** Token'ı yalnız `issuePasswordReset` görür ve
+ *     yalnız e-postaya yazar; ele geçirilmiş bir yönetici hesabı bu aksiyonla
+ *     herhangi bir kiracı hesabına giremez.
+ *  2. **Kiracı izolasyonu.** `userId` istemciden gelir, sorgu onu SUNUCUDA
+ *     `workshopId` ile eşler; başka atölyenin kullanıcısı için token üretilemez.
+ *  3. **Tekrar gönderim sınırı.** Son token'ın yaşı DB'den okunur. `rateLimit`
+ *     BAK-116'dan beri paylaşımlı sayaç kullanıyor ama pencereleri dakikalık ve
+ *     satırları süpürülebilir; token yaşı kalıcı kaydın kendisinden okunmalı.
+ */
+export async function sendUserPasswordReset(workshopId: string, userId: string): Promise<Result> {
+  const ctx = await requireAdminCapability("sendPasswordReset")
+  if (!workshopId || !userId) return { ok: false, error: "Kullanıcı seçilmedi." }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, workshopId },
+    select: { id: true, email: true, firstName: true, isActive: true, workshopId: true },
+  })
+  if (!user) return { ok: false, error: "Kullanıcı bu iş yerinde bulunamadı." }
+
+  if (!canReceivePasswordReset(user) || !user.email) {
+    return {
+      ok: false,
+      error: user.isActive
+        ? "Bu hesabın e-postası yok. Şifresini iş yeri sahibi Ayarlar → Ekip'ten sıfırlar."
+        : "Hesap pasif; önce iş yeri sahibi koltuğu yeniden etkinleştirmeli.",
+    }
+  }
+
+  const lastToken = await prisma.passwordResetToken.findFirst({
+    where: { userId: user.id, createdAt: { gte: new Date(Date.now() - RESET_RESEND_COOLDOWN_MS) } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  })
+  const waitMs = resendCooldownRemainingMs(lastToken?.createdAt)
+  if (waitMs > 0) {
+    return {
+      ok: false,
+      error: `Bu kullanıcıya az önce bir bağlantı gönderildi. ${formatCooldownWait(waitMs)} sonra tekrar deneyin.`,
+    }
+  }
+
+  const delivery = await issuePasswordReset(
+    { id: user.id, email: user.email, firstName: user.firstName, workshopId: user.workshopId },
+    { awaitDelivery: true },
+  )
+
+  // Denetim kaydı gönderim BAŞARISIZ olsa da yazılır: token üretilmiş ve
+  // kullanıcının önceki bağlantıları geçersizlenmiştir — bu bir olaydır.
+  await AuditLogAction(
+    workshopId,
+    ctx.user.id,
+    "User",
+    user.id,
+    "password_reset_sent",
+    JSON.stringify({ targetUserId: user.id, targetEmail: user.email, delivered: delivery.ok }),
+  )
+
+  if (!delivery.ok) {
+    return { ok: false, error: "Bağlantı üretildi ama e-posta gönderilemedi. İletişim kayıtlarına bakın." }
+  }
+
+  revalidatePath(`/admin/workshops/${workshopId}`, "page")
   return { ok: true }
 }
 

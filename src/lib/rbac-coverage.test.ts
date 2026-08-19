@@ -42,6 +42,10 @@ const ALLOWLIST = new Map<string, string>([
     "(app)/account/actions.ts::changeOwnPasswordAction",
     "Kendi şifresini değiştirme kimlik işlemidir, izin gerektirmez. Kapı geçici şifreli kullanıcıyı reddettiği için (assertPasswordChanged) buradan geçseydi kilit hiç açılamazdı; mevcut şifre bcrypt ile ayrıca doğrulanır.",
   ],
+  [
+    "(app)/account/actions.ts::updateOwnProfileAction",
+    "Kendi ad-soyadını güncelleme kişisel kimlik işlemidir; her rol yapabilmeli ve plan kilidi altında da çalışması doğru davranış.",
+  ],
 ])
 
 const MUTATION = /\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\(/

@@ -9,6 +9,7 @@ import {
   SESSION_LOOP_REASON,
   shouldClearSessionOnLogin,
 } from "@/lib/session-recovery"
+import { isTechnicianRestrictedRole, isRouteAllowedForTechnician } from "@/lib/technician-route-access"
 import type { NextRequest } from "next/server"
 
 // Two subdomains, one container (nginx preserves Host):
@@ -18,11 +19,16 @@ const APP_ORIGIN = "https://app.bakimx.com"
 const LANDING_ORIGIN = "https://bakimx.com"
 
 // Pages served on the landing host. Everything else is app surface.
-const PUBLIC_EXACT = new Set(["/", "/login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar"])
+// /admin-login: platform personelinin Google SSO kapısı (BAK-94). Oturum
+// AÇMADAN erişilebilmesi gerekir, yani public; konsolun kendisi (`/admin`)
+// yönetici olmayana 404 vermeye devam eder.
+const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar", "/status"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
-const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/"]
+// /destek/<token>: canlı destek "sohbete dön" bağlantısı (BAK-99) — e-postadaki
+// bağlantı oturumsuz bir tarayıcıda açılır, auth kapısına takılırsa asla açılmaz.
+const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
@@ -127,7 +133,8 @@ export async function middleware(request: NextRequest) {
         const session = await getSession()
         if (session?.userId) {
           if (isForcedLogout(request)) return clearSession(NextResponse.next())
-          return guardBounce(request, new URL("/dashboard", request.url))
+          const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+          return guardBounce(request, new URL(loginTarget, request.url))
         }
       }
       return clearBounceIfPresent(request, NextResponse.next())
@@ -137,6 +144,10 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
+    }
+    // BAK-106: usta/cirak/staff deny-by-default — izin listesi dışı /technician'a yönlenir.
+    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+      return NextResponse.redirect(new URL("/technician", request.url))
     }
     return clearBounceIfPresent(request, NextResponse.next())
   }
@@ -154,7 +165,14 @@ export async function middleware(request: NextRequest) {
 
   // ---- APP HOST (app.bakimx.com) ----
   if (host === "app.bakimx.com") {
-    if (pathname === "/") return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    if (pathname === "/") {
+      const session = await getSession()
+      if (session?.userId) {
+        const homeTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        return NextResponse.redirect(`${APP_ORIGIN}${homeTarget}`)
+      }
+      return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
+    }
     // landing / auth / public-token pages belong on the landing host
     if (isPublicPage(pathname)) {
       return NextResponse.redirect(`${LANDING_ORIGIN}${pathname}${search}`)
@@ -165,6 +183,10 @@ export async function middleware(request: NextRequest) {
       const target = encodeURIComponent(`${APP_ORIGIN}${pathname}${search}`)
       return NextResponse.redirect(`${LANDING_ORIGIN}/login?redirect=${target}`)
     }
+    // BAK-106: usta/cirak/staff deny-by-default
+    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+      return NextResponse.redirect(`${APP_ORIGIN}/technician`)
+    }
     return clearBounceIfPresent(request, NextResponse.next())
   }
 
@@ -174,7 +196,8 @@ export async function middleware(request: NextRequest) {
       const session = await getSession()
       if (session?.userId) {
         if (isForcedLogout(request)) return clearSession(NextResponse.next())
-        return guardBounce(request, `${APP_ORIGIN}/dashboard`)
+        const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        return guardBounce(request, `${APP_ORIGIN}${loginTarget}`)
       }
     }
     return clearBounceIfPresent(request, NextResponse.next())
@@ -193,5 +216,10 @@ export const config = {
   // primary-dark.png) anonim çekildiği için kök PNG'ler de PUBLIC olmalı.
   // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) ve landing
   // marketing asset'leri (/landing/**) hariç bırakılır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  //
+  // /sw.js (BAK-129): service worker kökten servis edilmeli — auth kapısına
+  // takılırsa /login'e 307'lenir, tarayıcı JavaScript yerine HTML alır ve
+  // kayıt "unsupported MIME type" ile düşer. İçeriğinde kiracıya ait hiçbir
+  // veri yok; payload'ı push mesajı taşır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

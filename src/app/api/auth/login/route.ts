@@ -12,6 +12,7 @@ import {
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
 import { isEmailIdentifier } from "@/lib/user-identity"
+import { auditBreakGlassLogin } from "@/lib/admin-break-glass"
 
 function tooManyAttempts(retryAfterMs: number) {
   return NextResponse.json(
@@ -23,7 +24,7 @@ function tooManyAttempts(retryAfterMs: number) {
 export async function POST(request: Request) {
   try {
     const ip = clientIpFromHeaders(request.headers)
-    const limit = loginRateLimit(ip)
+    const limit = await loginRateLimit(ip)
     if (!limit.allowed) return tooManyAttempts(limit.retryAfterMs)
 
     const formData = await request.formData()
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const accountLimit = loginAccountRateLimit(parsed.data.identifier, workshopId)
+    const accountLimit = await loginAccountRateLimit(parsed.data.identifier, workshopId)
     if (!accountLimit.allowed) return tooManyAttempts(accountLimit.retryAfterMs)
 
     const result = await verifyCredentials({
@@ -74,7 +75,12 @@ export async function POST(request: Request) {
 
     // Rotate the session on login: clear any pre-existing (possibly fixated)
     // session data before writing the authenticated identity.
-    await establishSession(result.userId, result.workshopId)
+    await establishSession(result.userId, result.workshopId, result.role)
+    await auditBreakGlassLogin({
+      identifier: parsed.data.identifier,
+      userId: result.userId,
+      workshopId: result.workshopId,
+    })
 
     // Planı bitmiş workshop'lar uygulamaya değil satın alma akışına gider; app
     // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).

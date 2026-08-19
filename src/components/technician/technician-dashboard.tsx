@@ -50,11 +50,13 @@ type OrderRow = {
 export function TechnicianDashboard({
   technicians,
   selectedTechnicianId,
+  canSelectTechnician,
   stats,
   orders,
 }: {
   technicians: TechnicianInfo[]
   selectedTechnicianId: string
+  canSelectTechnician: boolean
   stats: DashboardStats
   orders: OrderRow[]
 }) {
@@ -101,29 +103,31 @@ export function TechnicianDashboard({
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
           <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
         </div>
-        <Select
-          value={optimisticId}
-          onValueChange={handleTechnicianChange}
-        >
-          <SelectTrigger aria-label="Teknisyen seç">
-            <SelectValue placeholder="Teknisyen seç">
-              {(value: string | null) => {
-                if (!value) return null
-                const tech = technicians.find((t) => t.id === value)
-                if (!tech) return value
-                const roleLabel = (TECHNICIAN_ROLES as Record<string, { label: string }>)[tech.role]?.label || tech.role
-                return `${tech.fullName} — ${roleLabel}`
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {technicians.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.fullName} — {(TECHNICIAN_ROLES as Record<string, { label: string }>)[t.role]?.label || t.role}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {canSelectTechnician && (
+          <Select
+            value={optimisticId}
+            onValueChange={handleTechnicianChange}
+          >
+            <SelectTrigger aria-label="Teknisyen seç">
+              <SelectValue placeholder="Teknisyen seç">
+                {(value: string | null) => {
+                  if (!value) return null
+                  const tech = technicians.find((t) => t.id === value)
+                  if (!tech) return value
+                  const roleLabel = (TECHNICIAN_ROLES as Record<string, { label: string }>)[tech.role]?.label || tech.role
+                  return `${tech.fullName} — ${roleLabel}`
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {technicians.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.fullName} — {(TECHNICIAN_ROLES as Record<string, { label: string }>)[t.role]?.label || t.role}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div
@@ -137,7 +141,7 @@ export function TechnicianDashboard({
           {kpiCards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.label} className="rounded-lg border border-border bg-white p-4">
+              <div key={card.label} className="rounded-lg border border-border bg-card p-4">
                 <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
                   <Icon className="size-4" />
                 </div>

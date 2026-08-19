@@ -1,18 +1,19 @@
 import { notFound, redirect } from "next/navigation"
 import type { AdminRole } from "@prisma/client"
 import { getCurrentUser, type AuthUser } from "@/lib/auth"
-import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/session"
 import { can, isAdminSessionRevoked, type AdminCapability } from "@/lib/admin-roles"
+import { resolveAdminMembership } from "@/lib/admin-membership"
+import { isAdminAuthenticationAllowed } from "@/lib/admin-break-glass"
 
 /**
  * Platform (BakımX personeli) yetkilendirmesi — `/admin` konsolunun kapısı.
  * Kiracı içi rollerle (`UserRole`, `src/lib/roles.ts`) ilgisi yoktur.
  *
- * Üyelik `PlatformAdmin` tablosundadır (BAK-93). `ADMIN_EMAILS` env değişkeni
- * YALNIZ bootstrap yoludur: tablo boşken devreye girer ve ilk yönetici okumasında
- * satırları kendisi yazar. Tablo dolduğu andan itibaren tek kaynak DB'dir — env'de
- * adı geçen ama tabloda satırı olmayan biri yönetici DEĞİLDİR.
+ * Üyelik `PlatformAdmin` tablosundadır (BAK-93). Üyelik kararının kendisi
+ * `@/lib/admin-membership` içindedir ve Google SSO yolu (`@/lib/admin-sso`) ile
+ * PAYLAŞILIR (BAK-114) — `ADMIN_EMAILS` bootstrap'ının iki yoldan yalnız birinde
+ * çalışması, boş tabloda `/admin-login`'i açılamaz hâle getirmişti.
  *
  * Rol/yetenek tablosu ve saf yardımcılar `@/lib/admin-roles` içindedir (istemci
  * bileşenleri oradan import eder); buradan yeniden ihraç edilir ki sunucu tarafı
@@ -27,19 +28,8 @@ export {
   can,
   isAdminSessionRevoked,
 } from "@/lib/admin-roles"
+export { getAdminEmails, isAdminEmail } from "@/lib/admin-membership"
 export type { AdminRole, AdminCapability }
-
-export function getAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean)
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false
-  return getAdminEmails().includes(email.trim().toLowerCase())
-}
 
 /**
  * Yönetici her zaman e-postalı bir hesaptır — üyelik `PlatformAdmin.userId`
@@ -52,40 +42,21 @@ export type AdminUser = AuthUser & { email: string }
 export interface AdminContext {
   user: AdminUser
   adminRole: AdminRole
-  /** `PlatformAdmin.id`, ya da env bootstrap'ıyla girilmişse null. */
+  /** `PlatformAdmin.id`; yalnız bootstrap yazması başarısız olduysa null. */
   platformAdminId: string | null
 }
 
 /** Oturum damgası; istek kapsamı dışında (cron/script/build) undefined. */
-async function sessionAuthenticatedAt(): Promise<number | undefined> {
+async function adminSessionState(): Promise<{
+  authenticatedAt: number | undefined
+  authMethod: "password" | "google_sso" | "development" | undefined
+}> {
   try {
     const session = await getSession()
-    return session.authenticatedAt
+    return { authenticatedAt: session.authenticatedAt, authMethod: session.authMethod }
   } catch {
-    return undefined
+    return { authenticatedAt: undefined, authMethod: undefined }
   }
-}
-
-/**
- * Env allowlist'i tabloya taşır (tek seferlik, idempotent). `skipDuplicates`
- * eşzamanlı iki isteğin yarışını zararsız kılar. Best-effort: yazma hatası
- * konsola giriş yapılmasını ENGELLEMEZ (çağıran yakalar) — aksi hâlde geçici bir
- * yazma sorunu kurucuyu kendi konsolundan kilitlerdi.
- */
-async function materializeEnvAdmins(): Promise<void> {
-  const emails = getAdminEmails()
-  if (emails.length === 0) return
-
-  const users = await prisma.user.findMany({
-    where: { email: { in: emails, mode: "insensitive" } },
-    select: { id: true },
-  })
-  if (users.length === 0) return
-
-  await prisma.platformAdmin.createMany({
-    data: users.map((u) => ({ userId: u.id, role: "founder" as const })),
-    skipDuplicates: true,
-  })
 }
 
 interface ResolvedAdmin {
@@ -96,33 +67,21 @@ interface ResolvedAdmin {
 /**
  * Etkin kullanıcının platform rolü, ya da yönetici değilse null.
  *
- * Sıra: (1) DB satırı — devre dışıysa veya oturumu iptal edilmişse reddet,
- * (2) satır yoksa ve env'de adı geçiyorsa YALNIZ tablo boşken bootstrap.
+ * Üyelik kararı ortak yardımcıdadır; burada yalnız ŞİFRELİ yola özgü adım kalır:
+ * mevcut oturum çerezinin damgası `sessionsValidFrom`'dan eskiyse reddet (BAK-93).
  */
 async function resolveAdmin(user: AuthUser): Promise<ResolvedAdmin | null> {
-  if (!user.email) return null
+  const session = await adminSessionState()
+  if (!isAdminAuthenticationAllowed({
+    email: user.email,
+    authMethod: session.authMethod,
+    isDevelopment: process.env.NODE_ENV === "development",
+  })) return null
 
-  const row = await prisma.platformAdmin.findUnique({
-    where: { userId: user.id },
-    select: { id: true, role: true, disabledAt: true, sessionsValidFrom: true },
-  })
-
-  if (row) {
-    if (row.disabledAt) return null
-    if (isAdminSessionRevoked(await sessionAuthenticatedAt(), row.sessionsValidFrom)) return null
-    return { adminRole: row.role, platformAdminId: row.id }
-  }
-
-  if (!isAdminEmail(user.email)) return null
-  // Tablo doluysa env'in sözü geçmez — offboarding tek noktadan (DB) yapılabilsin.
-  if ((await prisma.platformAdmin.count()) > 0) return null
-
-  try {
-    await materializeEnvAdmins()
-  } catch (err) {
-    console.error("[admin] env bootstrap materialization failed:", err instanceof Error ? err.message : err)
-  }
-  return { adminRole: "founder", platformAdminId: null }
+  const membership = await resolveAdminMembership(user)
+  if (!membership) return null
+  if (isAdminSessionRevoked(session.authenticatedAt, membership.sessionsValidFrom)) return null
+  return { adminRole: membership.adminRole, platformAdminId: membership.platformAdminId }
 }
 
 export async function isCurrentUserAdmin(): Promise<boolean> {

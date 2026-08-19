@@ -1,9 +1,15 @@
+import Link from "next/link"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
+import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/db"
 import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
 import { getTechnicianDashboardStats, getTechnicianOrders } from "@/lib/technician/queries"
-import { resolveSelectedTechnicianId, TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
+import {
+  canSelectAnyTechnician,
+  resolveSelectedTechnicianId,
+  TECHNICIAN_PARAM,
+} from "@/lib/technician/selected-technician"
 
 export const dynamic = "force-dynamic"
 
@@ -20,12 +26,14 @@ export default async function TechnicianPage({
     orderBy: { fullName: "asc" },
   })
 
-  // Seçili teknisyen URL'den gelir; atölyenin kendi listesine doğrulanır ve
-  // tanınmayan bir id ilk teknisyene düşer. Önce giriş yapan kullanıcının bağlı
-  // teknisyeni kontrol edilir (BAK-39): bağlı ise URL parametresi kullanılmaz,
-  // bağlı değilse URL veya ilk teknisyen fallback'i uygulanır.
+  // Yönetici hesapları da birleşik personel yapısında bir teknisyen kaydına
+  // bağlıdır; bu bağ ekip içinden başka birini seçmelerini engellemez. Saha
+  // rolleri ise BAK-39 gereği yalnız kendi atamalarını görür.
+  const canSelectTechnician = canSelectAnyTechnician(user.role)
   const selectedTechnicianId = resolveSelectedTechnicianId(
-    user.technicianId || params[TECHNICIAN_PARAM],
+    canSelectTechnician
+      ? params[TECHNICIAN_PARAM]
+      : user.technicianId,
     technicians.map((t) => t.id)
   )
 
@@ -37,9 +45,12 @@ export default async function TechnicianPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
             <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
           </div>
-          <div className="text-center py-16 text-muted-foreground">
-            <p className="text-base font-medium">Henüz teknisyen kaydı yok</p>
-            <p className="text-sm mt-1">Önce İş Yeri Profili sayfasından bir teknisyen ekleyin</p>
+          <div className="text-center py-16 space-y-4">
+            <div className="text-muted-foreground">
+              <p className="text-base font-medium">Henüz teknisyen kaydı yok</p>
+              <p className="text-sm mt-1">Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</p>
+            </div>
+            <Button render={<Link href="/settings?tab=team" />}>Ekip Sayfasına Git</Button>
           </div>
         </div>
       </AppShell>
@@ -62,6 +73,7 @@ export default async function TechnicianPage({
           isActive: t.isActive,
         }))}
         selectedTechnicianId={selectedTechnicianId}
+        canSelectTechnician={canSelectTechnician}
         stats={stats}
         orders={orders}
       />

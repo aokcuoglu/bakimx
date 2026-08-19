@@ -5,6 +5,7 @@ import {
   getAssistantBridge,
   getServerAssistantBridge,
   requestAssistantAnswers,
+  requestLiveChatResume,
   resetAssistantBridge,
   setAskBarVisible,
   setAssistantPanelOpen,
@@ -101,7 +102,26 @@ describe("asistan köprüsü", () => {
       request: null,
       askBarVisible: false,
       panelOpen: false,
+      resumeNonce: 0,
     });
+  });
+});
+
+describe("canlı destek devam isteği (BAK-99)", () => {
+  test("her istek sayacı artırır — aynı bağlantı iki kez açılsa da panel açılır", () => {
+    expect(getAssistantBridge().resumeNonce).toBe(0);
+    requestLiveChatResume();
+    expect(getAssistantBridge().resumeNonce).toBe(1);
+    requestLiveChatResume();
+    expect(getAssistantBridge().resumeNonce).toBe(2);
+  });
+
+  test("aboneler haberdar edilir", () => {
+    let notified = 0;
+    const unsubscribe = subscribeAssistantBridge(() => notified++);
+    requestLiveChatResume();
+    unsubscribe();
+    expect(notified).toBe(1);
   });
 });
 

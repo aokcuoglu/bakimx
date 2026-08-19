@@ -23,7 +23,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const ip = clientIpFromHeaders(request.headers)
-  const limit = rateLimit(`resend-verify:${user.workshopId}:${ip}`, RL_MAX, RL_WINDOW_MS)
+  const limit = await rateLimit(`resend-verify:${user.workshopId}:${ip}`, RL_MAX, RL_WINDOW_MS)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla istek. Lütfen birkaç dakika sonra tekrar deneyin." },

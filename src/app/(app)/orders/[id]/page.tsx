@@ -164,6 +164,7 @@ export default async function OrderDetailPage({
     })),
     partsRequests: order.partsRequests.map((p) => ({
       id: p.id,
+      type: p.type,
       partName: p.partName,
       partSku: p.partSku,
       brand: p.brand,
@@ -176,6 +177,8 @@ export default async function OrderDetailPage({
       convertedAt: p.convertedAt ? p.convertedAt.toISOString() : null,
       cancelledAt: p.cancelledAt ? p.cancelledAt.toISOString() : null,
       cancelReason: p.cancelReason,
+      supplierName: p.supplierName,
+      estimatedPriceKurus: p.estimatedPriceKurus,
     })),
     checklistItems: order.checklistItems.map((c) => ({
       id: c.id,
@@ -340,6 +343,7 @@ export default async function OrderDetailPage({
         editInitially={editInitially}
         laborCatalog={laborCatalog}
         canReopen={roleCan(user.role, "order.reopen")}
+        canEditInfo={roleCan(user.role, "order.edit")}
       />
     </AppShell>
   )

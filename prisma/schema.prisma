@@ -55,6 +55,7 @@ model Workshop {
 
   settings               WorkshopSettings?
   users                  User[]
+  pushSubscriptions      PushSubscription[]
   customers              Customer[]
   vehicles               Vehicle[]
   intakes                VehicleIntakeForm[]
@@ -91,6 +92,7 @@ model Workshop {
   laborCatalogItems      LaborCatalogItem[]
   bakimxOrders           BakimxOrder[]
   vehicleHistoryGrants   VehicleHistoryGrant[]
+  supportRequests        SupportRequest[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -304,6 +306,10 @@ model User {
   deletedChecklistItems ChecklistItem[]      @relation("ChecklistItemDeletedBy")
   platformAdmin         PlatformAdmin?       @relation("PlatformAdminUser")
   grantedPlatformAdmins PlatformAdmin[]      @relation("PlatformAdminCreatedBy")
+  /// Bu personele ATANMIŞ destek talepleri (BAK-98).
+  supportRequests       SupportRequest[]     @relation("SupportRequestAssignee")
+  /// BAK-129: Bu hesabın Web Push abonelikleri (cihaz/tarayıcı başına bir satır).
+  pushSubscriptions     PushSubscription[]
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -758,6 +764,7 @@ model Technician {
 
 enum TechnicianRole {
   usta
+  cirak
   teknisyen
   servis_danismani
   yonetici
@@ -1447,6 +1454,12 @@ model PartsRequest {
   serviceOrder   ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
   requestedById  String?
   requestedBy    Technician?        @relation(fields: [requestedById], references: [id])
+  /// Talebin cinsi. BAK-105 öncesi her talep parçadır; DEFAULT part olduğu için
+  /// mevcut satırlar backfill'siz doğru değeri alır.
+  type           PartsRequestType   @default(part)
+  /// Parça talebinde parça adı, dış işçilik talebinde işçiliğin adı
+  /// (ör. "Rot balans ayarı"). Tek kolon: talebin geri kalan makinesi
+  /// (karar kapısı, iptal, kaleme çevirme) iki tipte de aynı çalışır.
   partName       String
   partSku        String?
   /// Katalogdan seçildiyse parça markası (TecDoc supplier adı); serbest metinde null.
@@ -1468,6 +1481,14 @@ model PartsRequest {
   cancelledAt    DateTime?
   /// İptal gerekçesi — ATÖLYE İÇİ not, müşteri yüzeyine çıkmaz.
   cancelReason   String?
+  /// YALNIZ dış işçilikte: teknisyenin bildirdiği tahmini tutar (kuruş, KDV
+  /// hariç). Satış fiyatı DEĞİL, atölyenin ödeyeceği maliyet tahminidir; kaleme
+  /// çevrilirken ServiceOrderItem.purchasePriceKurus'a taşınır, satış fiyatını
+  /// ofis ayrıca girer.
+  estimatedPriceKurus Int?
+  /// YALNIZ dış işçilikte: işi yapan firma (serbest metin, Supplier kaydı
+  /// aranmaz — usta sahada firma kartı açamaz). Kaleme supplierName olarak geçer.
+  supplierName   String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -1475,6 +1496,14 @@ model PartsRequest {
   @@index([serviceOrderId])
   @@index([status])
   @@index([requestedById])
+}
+
+enum PartsRequestType {
+  part
+  /// Dışarıya yaptırılan işçilik (rot-balans, şarj dinamosu vb.). Parça değildir:
+  /// stok düşümü yapılmaz, katalog/TecDoc alanları boş kalır. Kaleme çevrilince
+  /// OrderItemType.external_labor olur.
+  external_labor
 }
 
 enum PartsRequestStatus {
@@ -1747,11 +1776,28 @@ model SupportRequest {
   message      String
   clientIp     String?
   status       SupportRequestStatus @default(new)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+
+  /// Şikayeti açan kiracı. Kayıt anında e-posta TEK bir atölyeye eşleşirse
+  /// otomatik dolar; birden çok aday çıkarsa NULL kalır ve konsoldan elle
+  /// bağlanır — yanlış kiracıya bağlamak, bağsız bırakmaktan pahalıdır.
+  workshopId String?
+  workshop   Workshop? @relation(fields: [workshopId], references: [id])
+
+  /// Talebi üstlenen BakımX personeli — platform yöneticisinin `User` kaydı.
+  assignedToUserId String?
+  assignedTo       User?   @relation("SupportRequestAssignee", fields: [assignedToUserId], references: [id])
+
+  /// YALNIZ /admin konsolunda görünen iç not; hiçbir müşteri yüzeyi bu modeli
+  /// okumaz. Kaynak taraması: `src/lib/support/internal-note-visibility.test.ts`.
+  internalNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
+  @@index([workshopId])
+  @@index([assignedToUserId])
 }
 
 enum SupportRequestStatus {
@@ -1815,7 +1861,8 @@ model LiveChatConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages LiveChatMessage[]
+  messages     LiveChatMessage[]
+  resumeTokens LiveChatResumeToken[]
 
   @@index([status, lastMessageAt])
   @@index([lastMessageAt])
@@ -1824,6 +1871,31 @@ model LiveChatConversation {
 enum LiveChatConversationStatus {
   open
   closed
+}
+
+/// Ziyaretçinin e-postadaki bağlantıyla görüşmesine geri dönmesini sağlayan
+/// SÜRELİ anahtar (BAK-99).
+///
+/// NEDEN `publicToken` e-postaya konmuyor: o token görüşmenin kalıcı ve süresiz
+/// anahtarıdır. Düz metin olarak e-postaya girerse, o kutuya erişen (ya da
+/// iletilen e-postayı gören) herkes görüşmeyi süresiz açar ve iptal etmenin bir
+/// yolu olmaz. Bu tablo `PasswordResetToken` ile aynı deseni kurar: yalnız
+/// sha256 özeti saklanır, süresi vardır ve iptal edilebilir.
+model LiveChatResumeToken {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   LiveChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// sha256(ham token), hex. DB sızıntısı çalışan bir bağlantı ÜRETEMEZ.
+  tokenHash      String               @unique
+  expiresAt      DateTime
+  /// Yeni bağlantı üretilince öncekiler iptal edilir — `issuePasswordReset` deseni.
+  revokedAt      DateTime?
+  /// Bağlantının ilk/son açıldığı an; denetim izi.
+  lastUsedAt     DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId])
+  @@index([expiresAt])
 }
 
 model LiveChatMessage {
@@ -2308,4 +2380,85 @@ model BakimxOrderItem {
   @@index([orderId])
   @@index([bakimxProductId])
   @@map("bakimx_order_items")
+}
+
+/// Süreçler arası paylaşımlı sabit-pencere (fixed window) rate limit sayacı
+/// (BAK-116). Bellekteki `Map` her ECS task'ında ayrı bir sayaç tuttuğu için
+/// etkin eşik task sayısıyla çarpılıyordu; bu tablo tek gerçek sayacı tutar.
+///
+/// Satırlar kısa ömürlüdür: `resetAt` geçtikten sonra sayaç sıfırlanır ve
+/// `src/lib/rate-limit.ts` süresi dolmuş satırları periyodik olarak siler.
+model RateLimitCounter {
+  /// Kova anahtarı — ör. `login:203.0.113.7`, `login:acct:email:a@b.com`.
+  key   String @id
+  count Int
+  /// Pencerenin bittiği an; bu andan sonraki ilk istek sayacı 1'e çeker.
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+/// Bir olayın ciddiyeti. `operational` bilerek burada YOK — bu enum yalnız aktif
+/// bir sorunu tanımlar; genel durum (`operational` dahil) `deriveOverallStatus`
+/// ile açık olay YOKLUĞUNDAN türetilir (bkz. `src/lib/status-page.ts`).
+enum StatusIncidentSeverity {
+  degraded
+  major_outage
+}
+
+/// Dahili, ücretsiz public statü sayfasının (BAK-128) kaynağı. `resolvedAt` NULL
+/// olan satırlar "aktif" sayılır; genel platform durumu bunların en yüksek
+/// ciddiyetinden türetilir. Geçmiş için satır asla silinmez, yalnız çözülür.
+model StatusIncident {
+  id       String                  @id @default(cuid())
+  title    String
+  severity StatusIncidentSeverity
+  message  String
+
+  /// Yayınlayan yönetici — `PlatformAdmin` değil e-posta: konsol geçmişi
+  /// yöneticinin ekipten ayrılmasından sonra da okunabilir kalmalı.
+  createdByEmail String @map("created_by_email")
+
+  resolvedAt     DateTime? @map("resolved_at")
+  resolutionNote String?   @map("resolution_note")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([resolvedAt])
+  @@index([createdAt])
+  @@map("status_incidents")
+}
+
+/// Web Push aboneliği (BAK-129, Faz B — teknisyen bildirimleri panel KAPALIYKEN).
+///
+/// Cihaz/tarayıcı başına bir satır: aynı kullanıcının telefonu ve tableti iki
+/// ayrı abonelik tutar. `endpoint` push servisinin (FCM / Mozilla / Apple)
+/// ürettiği global benzersiz adrestir, bu yüzden gerçek kimlik odur — aynı
+/// tarayıcı yeniden abone olduğunda satır GÜNCELLENİR, yenisi açılmaz.
+///
+/// `workshopId` kullanıcıdan türetilir ama sütun olarak da tutulur: gönderim
+/// sorgusu aboneliği tek adımda kiracıya göre daraltabilsin diye (bkz.
+/// src/lib/technician/push-dispatch.ts). Kullanıcı silinince abonelik de gider.
+model PushSubscription {
+  id         String   @id @default(cuid())
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Push servisinin uç adresi — RFC 8030. Global benzersiz.
+  endpoint String @unique
+  /// RFC 8291 içerik şifreleme anahtarları (`subscription.getKey()`, base64url).
+  p256dh String
+  auth   String
+
+  /// Tanılama için: aboneliği açan tarayıcı/PWA. Kişisel veri taşımaz.
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workshopId, userId])
+  @@index([userId])
 }

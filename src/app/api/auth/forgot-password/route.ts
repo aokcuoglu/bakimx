@@ -3,22 +3,16 @@ import { prisma } from "@/lib/db"
 import { forgotPasswordSchema } from "@/lib/validations/auth"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
-import { sendSystemEmail } from "@/lib/emails/send-system-email"
-import { passwordResetEmail } from "@/lib/emails/system-emails"
-import { generateResetToken, resetExpiry } from "@/lib/password-reset"
+import { issuePasswordReset } from "@/lib/password-reset-delivery"
 import { canReceivePasswordReset } from "@/lib/user-identity"
 
 const GENERIC_MESSAGE =
   "Eğer bu e-posta bir hesaba bağlıysa, şifre sıfırlama bağlantısı gönderildi."
 
-function appUrl(): string {
-  return (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "")
-}
-
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
 
-  const ipLimit = rateLimit(`pwreset-ip:${ip}`, 5, 15 * 60 * 1000)
+  const ipLimit = await rateLimit(`pwreset-ip:${ip}`, 5, 15 * 60 * 1000)
   if (!ipLimit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." },
@@ -45,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   // E-posta bazlı limit aşıldıysa da generic yanıt (enumeration sızıntısı yok)
-  const emailLimit = rateLimit(`pwreset-email:${parsed.data.email}`, 3, 15 * 60 * 1000)
+  const emailLimit = await rateLimit(`pwreset-email:${parsed.data.email}`, 3, 15 * 60 * 1000)
   if (emailLimit.allowed) {
     try {
       const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
@@ -54,26 +48,13 @@ export async function POST(request: Request) {
       // e-postayla arıyor, yani zaten eşleşemez — kapı yine de açıkça duruyor ki
       // sorgu bir gün gevşerse token e-postasız hesaba yazılmasın.
       if (canReceivePasswordReset(user) && user?.email) {
-        await prisma.passwordResetToken.updateMany({
-          where: { userId: user.id, usedAt: null },
-          data: { usedAt: new Date() },
-        })
-
-        const { token, tokenHash } = generateResetToken()
-        await prisma.passwordResetToken.create({
-          data: { userId: user.id, tokenHash, expiresAt: resetExpiry() },
-        })
-
-        const resetUrl = `${appUrl()}/reset-password/${token}`
-        const mail = passwordResetEmail({ resetUrl, firstName: user.firstName ?? undefined })
-        void sendSystemEmail({
-          to: user.email,
-          subject: mail.subject,
-          html: mail.html,
+        // Token üretimi + e-posta: konsoldaki destek aksiyonuyla (BAK-97) ORTAK yol.
+        await issuePasswordReset({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
           workshopId: user.workshopId,
-          templateKey: "password_reset",
-          audience: "workshop",
-        }).catch(() => {})
+        })
       }
     } catch {
       // swallow: fall through to the generic response (no existence oracle on DB errors)

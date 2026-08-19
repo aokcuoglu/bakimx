@@ -30,6 +30,7 @@ import {
   USERNAME_MIN_LENGTH,
 } from "@/lib/user-identity"
 import { generateTempPassword } from "@/lib/temp-password"
+import { personnelName, technicianRoleForUser } from "@/lib/personnel"
 
 type Ok = { ok: true; inviteUrl?: string }
 /**
@@ -49,10 +50,10 @@ export type IssuedCredentials = {
 }
 type CredentialsResult = { ok: true; credentials: IssuedCredentials } | Err
 
-const roleSchema = z.enum(["staff", "manager", "owner"])
+const roleSchema = z.enum(["cirak", "usta", "manager", "owner"])
 const inviteSchema = z.object({
   email: z.email("Geçerli bir e-posta adresi giriniz"),
-  role: roleSchema.default("staff"),
+  role: roleSchema.default("usta"),
 })
 
 /**
@@ -309,7 +310,13 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
 
     const target = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, workshopId: true, role: true, email: true },
+      select: {
+        id: true,
+        workshopId: true,
+        role: true,
+        email: true,
+        technicianId: true,
+      },
     })
     assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
     // Cannot modify someone outranking you (e.g. a manager touching an owner).
@@ -343,6 +350,12 @@ export async function updateMemberRoleAction(userId: string, role: string): Prom
         }
       }
       await tx.user.update({ where: { id: userId }, data: { role: newRole } })
+      if (target!.technicianId) {
+        await tx.technician.update({
+          where: { id: target!.technicianId },
+          data: { role: technicianRoleForUser(newRole) },
+        })
+      }
     })
     await AuditLogAction(
       user.workshopId,
@@ -368,7 +381,7 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
 
     const target = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, workshopId: true, role: true },
+      select: { id: true, workshopId: true, role: true, technicianId: true },
     })
     assertWorkshopAccess(target, user.workshopId, "Kullanıcı")
     if (ROLE_RANK[target!.role] > ROLE_RANK[user.role]) {
@@ -392,6 +405,9 @@ export async function setMemberActiveAction(userId: string, isActive: boolean): 
         await assertSeatAvailableTx(tx, user.workshopId)
       }
       await tx.user.update({ where: { id: userId }, data: { isActive } })
+      if (target!.technicianId) {
+        await tx.technician.update({ where: { id: target!.technicianId }, data: { isActive } })
+      }
     })
     await AuditLogAction(
       user.workshopId,
@@ -426,7 +442,7 @@ export async function checkUsernameAvailabilityAction(
   }
 
   // Tuş başına bir sorgu atılmasın diye üst sınır; form zaten debounce'lu.
-  if (!rateLimit(`username-check:${user.id}`, 60, 60_000).allowed) {
+  if (!(await rateLimit(`username-check:${user.id}`, 60, 60_000)).allowed) {
     return { available: false, error: "Çok fazla deneme. Bir dakika sonra tekrar deneyin." }
   }
 
@@ -475,6 +491,7 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
       return fail(parsed.error.issues[0]?.message ?? "Geçersiz bilgiler")
     }
     const { firstName, lastName, role } = parsed.data
+    const technicianId = String(formData.get("technicianId") ?? "").trim() || null
     const username = normalizeUsername(parsed.data.username)
     if (!isValidUsername(username)) return fail(USERNAME_FORMAT_MESSAGE)
 
@@ -492,6 +509,33 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
       await tx.$queryRaw`SELECT id FROM "Workshop" WHERE id = ${user.workshopId} FOR UPDATE`
       await assertSeatAvailableTx(tx, user.workshopId)
 
+      const technician = technicianId
+        ? await tx.technician.findFirst({
+            where: {
+              id: technicianId,
+              workshopId: user.workshopId,
+              linkedUsers: { none: {} },
+            },
+          })
+        : await tx.technician.create({
+            data: {
+              workshopId: user.workshopId,
+              fullName: personnelName(firstName, lastName, username),
+              phone: "",
+              role: technicianRoleForUser(role),
+            },
+          })
+      if (!technician) throw new Error("Personel kaydı bulunamadı veya başka bir hesaba bağlı.")
+      if (technicianId) {
+        await tx.technician.update({
+          where: { id: technician.id },
+          data: {
+            fullName: personnelName(firstName, lastName, username),
+            role: technicianRoleForUser(role),
+            isActive: true,
+          },
+        })
+      }
       return tx.user.create({
         data: {
           email: null,
@@ -503,6 +547,7 @@ export async function createLocalMemberAction(formData: FormData): Promise<Crede
           role,
           isActive: true,
           mustChangePassword: true,
+          technicianId: technician.id,
         },
         select: { id: true, firstName: true, lastName: true, username: true },
       })

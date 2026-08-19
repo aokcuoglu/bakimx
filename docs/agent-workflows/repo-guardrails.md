@@ -220,8 +220,9 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 | `src/components/ui/tabs-overflow.test.ts` | Kaydırılabilir sekme şeridinde düz `justify-center` (taşan şeritte ilk sekme erişilemez oluyor — #277) |
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
 | `src/lib/intake/photo-visibility.test.ts` | Fotoğraf okuyan sorguda `VISIBLE_PHOTO` filtresinin unutulması — soft-delete edilmiş kare galeride/PDF'te geri görünür |
+| `src/lib/test-mock-isolation.test.ts` | Kendi test dosyası olan bir modülün `mock.module` ile sahtelenmesi — sahte süreç geneli kalıcıdır ve asıl testi dosya sırasına göre düşürür (§7) |
 
-`rbac-coverage` ve `photo-visibility` bilinçli istisnalar için gerekçeli bir
+`rbac-coverage`, `photo-visibility` ve `test-mock-isolation` bilinçli istisnalar için gerekçeli bir
 allowlist tutar. İstisna gerekiyorsa oraya **gerekçesiyle** ekle; testi gevşetme
 ya da taramayı daraltma.
 
@@ -250,3 +251,26 @@ Squash mesajına işaretçiyi ne zaman ekleyeceksin:
 
 app-dev'in bayat kalması normaldir ve bir arıza değildir; sürüm öncesi zaten elle
 deploy ediliyor ([releasing.md](../releasing.md) §Sürüm çıkarma adım 2).
+
+## 7. `mock.module` süreç geneli ve KALICI — geri alınamaz
+
+`bun test` tüm dosyaları tek süreçte koşar. `mock.module("X", …)` bir dosyada
+çağrıldığında X'in kayıt defterindeki girdisi **kalıcı olarak** değişir; dosya
+bittiğinde geri alınmaz ve `mock.restore()` bunu kapsamaz. Sonuç: X'i asıl test
+eden dosya, sahteleyen dosyadan SONRA çalışırsa gerçek modül yerine sahteyi alır.
+
+Bu bir sıra kumarıdır: dosya keşif sırası platforma göre değişir. 19-08'de
+[PR #427](https://github.com/aokcuoglu/bakimx/pull/427) lokalde 1580/1580 yeşilken
+CI'da `src/lib/push/send.test.ts`'in **dördü de** düştü — `push-dispatch.test.ts`
+`@/lib/push/send`'i sahteliyordu ve CI'da ondan önce koşuyordu. Dört testin de
+aldığı `{sent: 1, failed: 0, removed: 0}` sahtenin sabit dönüş değeriydi.
+
+Kural: **kendi test dosyası olan bir modülü sahteleme.** Sahtelemek istediğin şey
+test ettiğin şeyse, kodu ayır — BAK-129'da alıcı çözümlemesi
+(`resolveTechnicianPushDelivery`) gönderimden ayrıldı ve test artık
+`@/lib/push/send`'i hiç yüklemiyor. `src/lib/test-mock-isolation.test.ts` bunu
+tarar; gerçekten gerekiyorsa allowlist'e gerekçesiyle ekle.
+
+Lokalde tek dosya çalıştırmak bu sınıfı **yakalamaz** — `bun test`i tam koş, ve
+sıra şüphesi varsa sahteleyen dosyayı alfabetik olarak öne alacak bir kopyayla
+dene.

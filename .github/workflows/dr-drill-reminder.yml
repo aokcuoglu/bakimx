@@ -1,0 +1,83 @@
+name: DR drill reminder
+
+# Üç ayda bir yedekten geri dönüş tatbikatı için issue açar.
+#
+# NEDEN: BAK-120'ye kadar RDS snapshot'ı alınıyordu ama hiç geri dönülmemişti.
+# İlk tatbikat 2026-08-19'da yapıldı ve başarılı oldu — ama tek seferlik bir
+# tatbikat, altı ay sonra hâlâ geri dönebildiğimizi kanıtlamaz. Hatırlatmayı bir
+# insanın takvimine değil depoya bağlıyoruz.
+#
+# DÜRÜSTLÜK NOTU: bu workflow tatbikat YAPMAZ, hatırlatır. Tatbikatı koşan
+# `scripts/dr-drill.sh`'tir ve onu bir insan çalıştırır — AWS kimlik bilgileri
+# bilinçli olarak bu workflow'a verilmedi (CI'nin prod hesabında instance
+# yaratabilmesi, kazandırdığından büyük bir yetki olurdu).
+#
+# İki sınırı daha var, ikisi de GitHub'ın kendi davranışı:
+#   1. `schedule` yalnız VARSAYILAN DALDAKİ (main) sürümden koşar — bu dosya bir
+#      release ile main'e girmeden hiç tetiklenmez.
+#   2. GitHub 60 gün aktivite görmeyen depoda zamanlanmış workflow'ları durdurur.
+#
+# Maliyet: yılda 4 çalıştırma × ~1 dk (bkz. repo-guardrails.md §6).
+on:
+  schedule:
+    # Şubat / Mayıs / Ağustos / Kasım'ın 1'i, 06:00 UTC.
+    - cron: "0 6 1 2,5,8,11 *"
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Open the quarterly drill issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Açık bir tatbikat issue'su varken ikincisini açma: gürültü, hatırlatıcıyı
+          # görmezden gelinen bir şeye dönüştürür.
+          existing="$(gh issue list --repo "${{ github.repository }}" \
+            --state open --label dr-drill --limit 1 --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "Açık tatbikat issue'su zaten var (#$existing) — yenisi açılmadı."
+            exit 0
+          fi
+
+          gh label create dr-drill --repo "${{ github.repository }}" \
+            --description "Yedekten geri dönüş tatbikatı" --color 0e8a16 2>/dev/null || true
+
+          # Gövde dosyaya yazılır: heredoc'u doğrudan `gh`'a boru etmek YAML blok
+          # skalerinden taşıyor (satırlar sütun 0'a inince `run:` bloğu biter).
+          cat > /tmp/dr-drill-issue.md <<'BODY'
+          Çeyreklik yedekten geri dönüş tatbikatı zamanı.
+
+          **Koş:**
+
+          ```sh
+          bash scripts/dr-drill.sh
+          ```
+
+          Script en yeni **otomatik** snapshot'tan geçici bir instance açar, doğrular
+          ve her çıkış yolunda siler. Kaynak veritabanına dokunmaz.
+
+          **Bittiğinde:**
+
+          - [ ] `docs/operations/disaster-recovery.md` §5 tablosuna satır eklendi
+            (tarih, kaynak snapshot, süre, sonuç).
+          - [ ] Süre RTO hedefinin (§2) dışına çıktıysa sebebi yazıldı.
+          - [ ] Doğrulama kırmızı döndüyse issue açık bırakıldı — tatbikat başarısızdır
+            ve **yedeğimiz olmadığı** anlamına gelir.
+          - [ ] Geçici instance gerçekten silindi:
+            `aws rds describe-db-instances --profile bakimx-prod --region eu-central-1 --query "DBInstances[?starts_with(DBInstanceIdentifier,'bakimx-dr-drill')].DBInstanceIdentifier"`
+
+          Prosedürün tamamı: `docs/operations/disaster-recovery.md`
+          BODY
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "DR tatbikatı — çeyreklik yedekten geri dönüş provası" \
+            --label dr-drill \
+            --body-file /tmp/dr-drill-issue.md

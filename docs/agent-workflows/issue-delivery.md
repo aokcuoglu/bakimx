@@ -184,6 +184,12 @@ bun install   # if bun.lock changed
   yukarıdaki "Merge yetkisi" notu.
 - Prefer squash merge unless repository policy or release history requires a
   different method. Never use admin bypass.
+- **Squash mesajını yazarken `[deploy-dev]` gerekip gerekmediğine karar ver.** PR
+  yeni bir Prisma migration ekliyorsa işaretçi ZORUNLUDUR — dev veritabanı
+  `migrate deploy`'u yalnız o deploy'un içinde alır, unutulursa app-dev'in şeması
+  koddan geri kalır. Diğer durumlar ve gerekçesi:
+  [repo-guardrails.md](./repo-guardrails.md) §6. 18-08'de BAK-98'in migration'ı
+  bu yüzden dev'e uygulanmadı.
 - A deployment workflow triggered after merge is distinct from PR validation.
   Report its status; do not claim deployment success before it completes.
 

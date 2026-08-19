@@ -37,6 +37,14 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | `workshop-admin.ts` | `bun run workshop` | İş yeri/kullanıcı yönetimi CLI'ı (`list`, `approve`, `reject`, `set-plan`, `set-seats`) |
 | `release.mjs` | `bun run release` | Sürüm bump + tag + release notu akışı (bkz. `docs/releasing.md`) |
 | `project-board-sync.sh` | `bun run project:sync` | Factory - BakimX panosunda kapalı issue'ların kartını Done'a çeker (`-- --dry-run` ile rapor) |
+| `dr-drill.sh` | `bun run dr:drill` | Yedekten geri dönüş tatbikatı: en yeni otomatik snapshot → geçici instance → doğrula → sil |
+| `dr-verify.ts` | `bun run dr:verify` | Geri yüklenmiş bir DB'yi salt-okunur doğrular (bağlantı, migration bütünlüğü, veri, tazelik) |
+
+> **DR tatbikatı kaynak veritabanına dokunmaz** ve her çıkış yolunda (hata,
+> Ctrl-C dahil) geçici instance'ı siler. `--keep` verirsen silmez — bittiğinde
+> `bash scripts/dr-drill.sh teardown <id>` çalıştırmayı unutma, saatlik ücret
+> yazar. Prosedür ve tatbikat kaydı:
+> [`docs/operations/disaster-recovery.md`](../docs/operations/disaster-recovery.md).
 
 > **`set-plan` ve ücretli dönem:** `set-plan <id|email> <tier> active` tek başına
 > yalnız paket + durum yazar; `currentPeriodEnd` boş kalır ve plan "süresiz"

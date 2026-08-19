@@ -25,6 +25,15 @@ function writeToken(token: string | null): void {
   }
 }
 
+/**
+ * Görüşme anahtarını dışarıdan yerleştirir — e-postadaki devam bağlantısı
+ * (`/destek/<token>`) başka bir cihazda açıldığında kullanılır (BAK-99).
+ * Anahtarın adı tek yerde kalsın diye kanca bunu kendisi dışa açar.
+ */
+export function adoptLiveChatToken(token: string): void {
+  writeToken(token);
+}
+
 export interface StartPayload {
   name: string;
   email: string;

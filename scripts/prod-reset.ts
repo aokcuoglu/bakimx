@@ -93,6 +93,14 @@ export const TENANT_TABLES = [
   // bootstrap'ından yeniden kurulur (bkz. dosya başı, `src/lib/admin.ts`).
   "PlatformAdmin",
   "CronRun",
+  // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
+  // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri
+  // yeniden açar; kalsaydı yeni kiracının olayları eski cihazlara giderdi.
+  "PushSubscription",
+  // Paylaşımlı rate limit sayacı (BAK-116): kalıcı veri değil, dakikalık kova.
+  // Anahtarları IP ve e-posta taşıdığı için korunanlarda değil burada — boşalması
+  // yalnız o anki pencereyi sıfırlar.
+  "RateLimitCounter",
   // BakımX sipariş TALEBİ (BAK-60): katalog tablolarının aksine kiracıya aittir
   // (`workshop_id` taşır), dolayısıyla korunanlarda değil burada. Kalem tablosu
   // aynı TRUNCATE listesinde olduğu için FK sırası sorun değil.
@@ -125,6 +133,10 @@ export const KEEP_TABLES = [
   "LiveChatSettings",
   "LiveChatConversation",
   "LiveChatMessage",
+  "LiveChatResumeToken",
+  // Herkese açık durum sayfası (BAK-128) platform geneli olay geçmişidir;
+  // hiçbir atölyeye ait olmadığı için kiracı sıfırlamasında korunur.
+  "status_incidents",
   "_prisma_migrations",
 ]
 

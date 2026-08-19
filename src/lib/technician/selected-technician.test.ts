@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { resolveSelectedTechnicianId } from "@/lib/technician/selected-technician"
+import {
+  canSelectAnyTechnician,
+  resolveSelectedTechnicianId,
+} from "@/lib/technician/selected-technician"
 
 const IDS = ["tech_1", "tech_2"]
 
@@ -28,4 +31,15 @@ test("baştaki/sondaki boşluk kırpılır", () => {
 test("teknisyen listesi boşken seçim yapılmaz", () => {
   expect(resolveSelectedTechnicianId("tech_1", [])).toBeNull()
   expect(resolveSelectedTechnicianId("", [])).toBeNull()
+})
+
+test("yönetici rolleri ekipteki teknisyenler arasında geçiş yapabilir", () => {
+  expect(canSelectAnyTechnician("owner")).toBe(true)
+  expect(canSelectAnyTechnician("manager")).toBe(true)
+})
+
+test("saha rolleri yalnız kendi teknisyen kaydını görür", () => {
+  expect(canSelectAnyTechnician("usta")).toBe(false)
+  expect(canSelectAnyTechnician("cirak")).toBe(false)
+  expect(canSelectAnyTechnician("staff")).toBe(false)
 })

@@ -12,7 +12,18 @@
  * hattı).
  */
 
+import type { UserRole } from "@prisma/client"
+
 export const TECHNICIAN_PARAM = "technician"
+
+/**
+ * Yönetici rollerinin personel kaydı da olabilir; bu bağ onların ekip panelinde
+ * başka bir teknisyeni seçmesini engellememeli. Saha rolleri ise yalnız kendi
+ * personel kaydına sabitlenir.
+ */
+export function canSelectAnyTechnician(role: UserRole): boolean {
+  return role === "owner" || role === "manager"
+}
 
 export function resolveSelectedTechnicianId(
   raw: string | null | undefined,

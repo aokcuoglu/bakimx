@@ -13,6 +13,7 @@ import {
   PackageSearch,
   MessagesSquare,
   ShieldUser,
+  Radio,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AdminCapability } from "@/lib/admin-roles"
@@ -48,6 +49,7 @@ const ITEMS: NavItem[] = [
   { href: "/admin/flags", label: "Özellik Bayrakları", icon: ToggleLeft, capability: "manageFlags" },
   { href: "/admin/audit", label: "Denetim Kaydı", icon: ScrollText, capability: "viewAudit" },
   { href: "/admin/health", label: "Sistem Sağlığı", icon: Activity, capability: "viewHealth" },
+  { href: "/admin/status", label: "Durum Sayfası", icon: Radio, capability: "manageStatusPage" },
   { href: "/admin/admins", label: "Yöneticiler", icon: ShieldUser, capability: "manageAdmins" },
 ]
 

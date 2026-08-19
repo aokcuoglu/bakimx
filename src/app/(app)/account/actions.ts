@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
@@ -34,7 +35,7 @@ const ATTEMPT_WINDOW_MS = 15 * 60_000
 export async function changeOwnPasswordAction(formData: FormData): Promise<Result> {
   const user = await requireAuth()
 
-  if (!rateLimit(`pwchange:${user.id}`, MAX_ATTEMPTS, ATTEMPT_WINDOW_MS).allowed) {
+  if (!(await rateLimit(`pwchange:${user.id}`, MAX_ATTEMPTS, ATTEMPT_WINDOW_MS)).allowed) {
     return { ok: false, error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." }
   }
 
@@ -68,6 +69,36 @@ export async function changeOwnPasswordAction(formData: FormData): Promise<Resul
 
   // Kapı `(app)/layout.tsx`'te oturum kullanıcısından okunuyor — önbellek
   // temizlenmezse kullanıcı şifreyi değiştirdiği hâlde aynı ekranda kalır.
+  revalidatePath("/", "layout")
+  return { ok: true }
+}
+
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1, "Ad gerekli").max(50),
+  lastName: z.string().min(1, "Soyad gerekli").max(50),
+})
+
+export async function updateOwnProfileAction(formData: FormData): Promise<Result> {
+  const user = await requireAuth()
+
+  const parsed = updateProfileSchema.safeParse({
+    firstName: String(formData.get("firstName") ?? "").trim(),
+    lastName: String(formData.get("lastName") ?? "").trim(),
+  })
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz bilgiler" }
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+    },
+  })
+
+  await AuditLogAction(user.workshopId, user.id, "User", user.id, "profile_updated")
+
   revalidatePath("/", "layout")
   return { ok: true }
 }

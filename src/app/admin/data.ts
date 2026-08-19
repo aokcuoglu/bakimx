@@ -108,8 +108,47 @@ export async function getWorkshopSummary(): Promise<AdminWorkshopSummary> {
   return { total, pending, planRequests, pendingPreview }
 }
 
+/** Destek talebi listesinin sunucu tarafı filtresi. Boş = filtre yok. */
+export interface LeadFilters {
+  /** Yalnız bu iş yerine bağlı destek talepleri. */
+  supportWorkshopId?: string
+}
+
+/** Konsolun destek talebi satırındaki açılır listeleri besler. */
+export interface SupportConsoleOptions {
+  workshops: { value: string; label: string }[]
+  admins: { value: string; label: string }[]
+}
+
+/** Yönetici adı — ad/soyad yoksa e-postaya düşer (her yönetici e-postalıdır). */
+function adminLabel(user: {
+  email: string | null
+  firstName: string | null
+  lastName: string | null
+}): string {
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
+  return name || user.email || "—"
+}
+
+/** İş yeri bağlama ve atama listeleri. Yalnız etkin yöneticiler atanabilir. */
+export async function getSupportConsoleOptions(): Promise<SupportConsoleOptions> {
+  const [workshops, admins] = await Promise.all([
+    prisma.workshop.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.platformAdmin.findMany({
+      where: { disabledAt: null },
+      orderBy: { createdAt: "asc" },
+      select: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    }),
+  ])
+
+  return {
+    workshops: workshops.map((w) => ({ value: w.id, label: w.name })),
+    admins: admins.map((a) => ({ value: a.user.id, label: adminLabel(a.user) })),
+  }
+}
+
 /** Public demo + support leads, "new" first. Shared by ops home and leads page. */
-export async function getLeadRows(): Promise<{
+export async function getLeadRows(filters: LeadFilters = {}): Promise<{
   demoRows: AdminDemoRequestRow[]
   supportRows: AdminSupportRequestRow[]
 }> {
@@ -129,6 +168,7 @@ export async function getLeadRows(): Promise<{
       },
     }),
     prisma.supportRequest.findMany({
+      where: filters.supportWorkshopId ? { workshopId: filters.supportWorkshopId } : undefined,
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
@@ -140,6 +180,13 @@ export async function getLeadRows(): Promise<{
         message: true,
         status: true,
         createdAt: true,
+        // `internalNote` YALNIZ bu konsol sorgusunda seçilir; müşteri yüzeyleri
+        // SupportRequest'i hiç okumaz (bkz. internal-note-visibility.test.ts).
+        internalNote: true,
+        workshopId: true,
+        workshop: { select: { name: true } },
+        assignedToUserId: true,
+        assignedTo: { select: { email: true, firstName: true, lastName: true } },
       },
     }),
   ])
@@ -155,7 +202,12 @@ export async function getLeadRows(): Promise<{
     .sort(newFirst)
 
   const supportRows: AdminSupportRequestRow[] = supportRequests
-    .map((s) => ({ ...s, createdAt: s.createdAt.toISOString() }))
+    .map(({ workshop, assignedTo, ...s }) => ({
+      ...s,
+      createdAt: s.createdAt.toISOString(),
+      workshopName: workshop?.name ?? null,
+      assignedToLabel: assignedTo ? adminLabel(assignedTo) : null,
+    }))
     .sort(newFirst)
 
   return { demoRows, supportRows }

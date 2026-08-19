@@ -27,7 +27,7 @@ export async function bakimxCatalogRouteGuard(): Promise<NextResponse | { worksh
 
   // DB-only sorgu: TecDoc penceresinden (30/dk) gevşek. Kapı burada kotayı
   // değil, tek atölyenin katalog taramasıyla veritabanını yormasını sınırlar.
-  const limit = rateLimit(`bakimx-catalog:${user.workshopId}`, 120, 60_000)
+  const limit = await rateLimit(`bakimx-catalog:${user.workshopId}`, 120, 60_000)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla katalog isteği yapıldı. Lütfen biraz bekleyip tekrar deneyin." },
@@ -65,7 +65,7 @@ export async function bakimxCatalogWriteGuard(
 
   // Yazma penceresi okumadan DAR: sipariş talebi tuş vuruşuyla değil, düğmeyle
   // oluşur. Kova da ayrı — katalog taraması sipariş verme hakkını yemesin.
-  const limit = rateLimit(`bakimx-order:${user.workshopId}`, 20, 60_000)
+  const limit = await rateLimit(`bakimx-order:${user.workshopId}`, 20, 60_000)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla sipariş isteği gönderildi. Lütfen biraz bekleyip tekrar deneyin." },

@@ -35,17 +35,40 @@ export function WizardStepper({
       {/* Mobil (ve compact): yatay şerit */}
       <ol className={`flex items-center gap-1.5 ${compact ? "" : "lg:hidden"}`}>
         {steps.map((s, i) => {
-          const state = s.id === currentId ? "current" : done.has(s.id) ? "done" : i < currentIndex ? "past" : "todo"
+          const isCurrent = s.id === currentId
+          const state = isCurrent ? "current" : done.has(s.id) ? "done" : i < currentIndex ? "past" : "todo"
+          const reachable = (state === "done" || state === "past") && !!onStepClick
+          const bar = (
+            <span
+              aria-hidden
+              className={`h-1.5 rounded-full ${
+                state === "todo" ? "bg-muted" : state === "current" ? "bg-primary" : "bg-primary/40"
+              }`}
+            />
+          )
           return (
             <li key={s.id} className="flex min-w-0 flex-1 flex-col gap-1">
-              <span
-                aria-hidden
-                className={`h-1.5 rounded-full ${
-                  state === "todo" ? "bg-muted" : state === "current" ? "bg-primary" : "bg-primary/40"
-                }`}
-              />
-              {s.id === currentId && (
-                <span className="truncate text-xs font-medium text-foreground">
+              {reachable ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto min-h-11 w-full flex-col items-stretch gap-1 px-1 py-1 md:min-h-9"
+                  onClick={() => onStepClick(s.id)}
+                >
+                  {bar}
+                  <span className="sr-only">
+                    {i + 1}. {s.label} — bu adıma dön
+                  </span>
+                </Button>
+              ) : (
+                bar
+              )}
+              {isCurrent && (
+                <span
+                  className="truncate text-xs font-medium text-foreground"
+                  aria-current="step"
+                >
                   {i + 1}. {s.label}
                 </span>
               )}

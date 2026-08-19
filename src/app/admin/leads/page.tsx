@@ -1,12 +1,32 @@
+import Link from "next/link"
 import { can, getAdminContext } from "@/lib/admin"
-import { getLeadRows } from "@/app/admin/data"
+import { getLeadRows, getSupportConsoleOptions } from "@/app/admin/data"
 import { AdminDemoRequests, AdminSupportRequests } from "@/app/admin/admin-requests"
+import { Button } from "@/components/ui/button"
+import { FilterSelect } from "@/components/shared/filter-select"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminLeadsPage() {
+interface LeadsSearchParams {
+  workshopId?: string
+}
+
+export default async function AdminLeadsPage({
+  searchParams,
+}: {
+  // `searchParams` bir Promise'tir ve `await` edilmelidir; doğrudan okumak
+  // typecheck yeşilken çalışma zamanında `undefined` verir (AGENTS.md, PR #336).
+  searchParams: Promise<LeadsSearchParams>
+}) {
   const ctx = await getAdminContext()
-  const { demoRows, supportRows } = await getLeadRows()
+  const sp = await searchParams
+  const workshopId = sp.workshopId?.trim() || ""
+
+  const [{ demoRows, supportRows }, options] = await Promise.all([
+    getLeadRows({ supportWorkshopId: workshopId || undefined }),
+    getSupportConsoleOptions(),
+  ])
+  const canManage = can(ctx, "manageLeads")
 
   return (
     <div className="space-y-8">
@@ -15,7 +35,7 @@ export default async function AdminLeadsPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Demo Talepleri</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Public demo talepleri. Yeni olanlar üstte.</p>
         </div>
-        <AdminDemoRequests requests={demoRows} canManage={can(ctx, "manageLeads")} />
+        <AdminDemoRequests requests={demoRows} canManage={canManage} />
       </div>
 
       <div className="space-y-3 pt-2">
@@ -23,7 +43,32 @@ export default async function AdminLeadsPage() {
           <h2 className="text-lg font-bold text-foreground">Destek Talepleri</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Public destek talepleri. Yeni olanlar üstte.</p>
         </div>
-        <AdminSupportRequests requests={supportRows} canManage={can(ctx, "manageLeads")} />
+
+        {/* GET formu — filtre URL'de yaşar, ekran destek görüşmesinde bağlantı
+            olarak paylaşılabilir (iş yeri listesindeki desenin aynısı). */}
+        <form method="get" className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground sm:min-w-64">
+            İş yeri
+            <FilterSelect
+              name="workshopId"
+              defaultValue={workshopId}
+              placeholder="Tüm iş yerleri"
+              options={[{ value: "", label: "Tüm iş yerleri" }, ...options.workshops]}
+            />
+          </label>
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline">
+              Filtrele
+            </Button>
+            {workshopId && (
+              <Button nativeButton={false} variant="ghost" render={<Link href="/admin/leads" />}>
+                Temizle
+              </Button>
+            )}
+          </div>
+        </form>
+
+        <AdminSupportRequests requests={supportRows} canManage={canManage} options={options} />
       </div>
     </div>
   )

@@ -69,15 +69,23 @@ yapıyorsanız o worktree'ye ayrı bir veritabanı verin.
 
 ## 4. Yedekleme & geri yükleme
 
-- **Otomatik:** RDS otomatik yedekleme + point-in-time recovery. Saklama süresi
-  ve pencere CDK'da (`bakimx-prod-*` stack'leri) tanımlı.
-- **Geri yükleme:** RDS snapshot'ından yeni bir örneğe restore edilir; ardından
-  ECS servisinin `DATABASE_URL`'i yeni endpoint'e çevrilir.
-- **Foto/görsel (S3/R2):** DB yedeği yalnız obje anahtarlarını tutar, dosyalar
-  object storage'da. Bucket'ta **versiyonlama/lifecycle** açık olmalı ki foto
-  kaybı da kurtarılabilsin.
-- **Restore tatbikatı:** En az bir kez atılabilir bir ortamda restore'u test
-  edin — test edilmemiş yedek = bilinmeyen RTO.
+Prosedürün tamamı, RTO/RPO hedefleri ve tatbikat kaydı:
+[operations/disaster-recovery.md](./operations/disaster-recovery.md). Buradaki
+liste yalnız özet.
+
+- **Otomatik:** RDS otomatik yedekleme + point-in-time recovery. Prod'da saklama
+  **7 gün**, pencere 02:00–03:00 UTC; dev'de 3 gün. CDK'da (`bakimx-prod-*`
+  stack'leri) tanımlı.
+- **Geri yükleme:** RDS snapshot'ından ya da PITR ile **yeni** bir örneğe restore
+  edilir (canlı yerinde onarılmaz); doğrulandıktan sonra `bakimx/prod/db-url`
+  sırrı yeni endpoint'e çevrilip ECS servisi yenilenir.
+- **Foto/görsel (S3):** DB yedeği yalnız obje anahtarlarını tutar, dosyalar
+  object storage'da. `bakimx-media-prod` versiyonlaması **açık** (eski sürüm 365
+  gün yaşar), yani silinen fotoğraf geri alınabilir.
+- **Restore tatbikatı:** `bash scripts/dr-drill.sh` — geçici bir instance'a geri
+  yükler, `scripts/dr-verify.ts` ile doğrular, siler. İlk tatbikat 2026-08-19'da
+  yapıldı: 6 dk 58 sn, başarılı. Çeyreklik tekrarını
+  `.github/workflows/dr-drill-reminder.yml` hatırlatır.
 
 ---
 

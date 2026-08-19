@@ -11,6 +11,7 @@ import {
   partsRequestEditSchema,
   partsRequestSchema,
 } from "@/lib/validations/technician"
+import { partsRequestToItemFields, partsRequestTypeLabel } from "@/lib/orders/parts-request-item"
 import { canTransitionOrder, isOrderLocked } from "@/lib/status-transitions"
 import { seedChecklistFromTemplate } from "@/lib/technician/checklist-seed"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
@@ -511,12 +512,15 @@ export async function createPartsRequestAction(formData: FormData) {
 
   const raw = {
     serviceOrderId: formData.get("serviceOrderId") as string,
+    type: (formData.get("type") as string) || "part",
     partName: (formData.get("partName") as string || "").trim(),
     partSku: (formData.get("partSku") as string) || "",
-    quantity: formData.get("quantity") as string,
+    quantity: (formData.get("quantity") as string) ?? undefined,
     note: (formData.get("note") as string) || "",
     brand: (formData.get("brand") as string) || "",
     tecdocArticleId: (formData.get("tecdocArticleId") as string) || "",
+    supplierName: (formData.get("supplierName") as string) || "",
+    estimatedPrice: (formData.get("estimatedPrice") as string) || "",
   }
 
   const parsed = partsRequestSchema.safeParse(raw)
@@ -530,16 +534,21 @@ export async function createPartsRequestAction(formData: FormData) {
   if (!order) return { error: "İş emri bulunamadı" }
   if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
 
+  // Alan temizliği zod transform'unda yapıldı (tipe göre katalog VEYA tutar
+  // alanları boşlanır) — burada parsed.data olduğu gibi yazılır.
   await prisma.partsRequest.create({
     data: {
       workshopId: user.workshopId,
       serviceOrderId: raw.serviceOrderId,
+      type: parsed.data.type,
       partName: parsed.data.partName,
       partSku: parsed.data.partSku || null,
       quantity: parsed.data.quantity,
       note: parsed.data.note || null,
       brand: parsed.data.brand || null,
       tecdocArticleId: parsed.data.tecdocArticleId ?? null,
+      supplierName: parsed.data.supplierName || null,
+      estimatedPriceKurus: parsed.data.estimatedPriceKurus ?? null,
       status: "requested",
     },
   })
@@ -550,7 +559,9 @@ export async function createPartsRequestAction(formData: FormData) {
     workshopId: user.workshopId,
     intakeFormId: order.intakeFormId,
     eventType: "parts_requested",
-    description: `Parça talep edildi: ${parsed.data.partName}`,
+    // MÜŞTERİYE AÇIK olay (parts_requested passport denylist'inde değil) —
+    // tedarikçi ve tahmini tutar bilerek yazılmaz, yalnız ne istendiği yazılır.
+    description: `${partsRequestTypeLabel(parsed.data.type)} talep edildi: ${parsed.data.partName}`,
   })
 
   revalidatePath(`/technician/orders/${raw.serviceOrderId}`)
@@ -586,6 +597,22 @@ export async function updatePartsRequestStatusAction(requestId: string, status: 
     where: { id: requestId, workshopId: user.workshopId },
     data: { status: status as import("@prisma/client").PartsRequestStatus },
   })
+
+  // "requested" bu action'ın giriş durumu, bir karar değil — yalnız fiili karar
+  // anları (hazır/teslim) denetim kaydına düşer. Teknisyen bildirim yoklaması
+  // (BAK-109) bu kaydı okur; önceden yalnız `cancelled` ve `converted` için
+  // AuditLog satırı vardı, bu iki geçiş sessiz kalıyordu.
+  if (status === "prepared" || status === "delivered") {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "PartsRequest",
+      requestId,
+      `parts_request_${status}`,
+      JSON.stringify({ partName: request.partName }),
+      request.serviceOrderId,
+    )
+  }
 
   const statusLabels: Record<string, string> = {
     requested: "Talep Edildi",
@@ -854,14 +881,8 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
       data: {
         workshopId: user.workshopId,
         serviceOrderId: request.serviceOrderId,
-        type: "part",
-        name: request.partName,
-        sku: request.partSku,
-        brand: request.brand,
-        quantity: request.quantity,
-        note: request.note,
-        tecdocArticleId: request.tecdocArticleId,
-        source: request.tecdocArticleId ? "catalog" : "manual",
+        // Tip bazlı eşleme tek yerde ve saf: src/lib/orders/parts-request-item.ts
+        ...partsRequestToItemFields(request),
       },
     })
     return true
@@ -874,14 +895,14 @@ export async function convertPartsRequestToOrderItemAction(requestId: string) {
     "PartsRequest",
     requestId,
     "parts_request_converted",
-    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName })
+    JSON.stringify({ orderId: request.serviceOrderId, partName: request.partName, type: request.type })
   )
 
   await addTimelineEvent({
     workshopId: user.workshopId,
     intakeFormId: order.intakeFormId,
     eventType: "parts_request_converted",
-    description: `Parça talebi kaleme eklendi: ${request.partName}`,
+    description: `${partsRequestTypeLabel(request.type)} talebi kaleme eklendi: ${request.partName}`,
   })
 
   revalidatePath(`/orders/${request.serviceOrderId}`)
