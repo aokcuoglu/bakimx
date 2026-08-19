@@ -193,34 +193,34 @@ test("iş yeri kodu çözümlemesi: geçersiz/bilinmeyen kod null döner", async
   expect(await resolveWorkshopIdByLoginCode("admin")).toBeNull() // rezerve
 })
 
-test("hesap bazlı limit: bir ustanın hatalı denemeleri ekibi kilitlemez", () => {
+test("hesap bazlı limit: bir ustanın hatalı denemeleri ekibi kilitlemez", async () => {
   // Aynı atölye (aynı IP) — kovalar `(workshopId, kullanıcı adı)` başına ayrı.
   for (let i = 0; i < 8; i++) {
-    expect(loginAccountRateLimit("ahmet", "ws-rl").allowed).toBe(true)
+    expect((await loginAccountRateLimit("ahmet", "ws-rl")).allowed).toBe(true)
   }
-  const blocked = loginAccountRateLimit("ahmet", "ws-rl")
+  const blocked = await loginAccountRateLimit("ahmet", "ws-rl")
   expect(blocked.allowed).toBe(false)
   expect(blocked.retryAfterMs).toBeGreaterThan(0)
 
   // Yan masadaki usta hiç etkilenmez.
-  expect(loginAccountRateLimit("mehmet", "ws-rl").allowed).toBe(true)
+  expect((await loginAccountRateLimit("mehmet", "ws-rl")).allowed).toBe(true)
   // Başka atölyedeki aynı isimli kullanıcı da ayrı kovadadır.
-  expect(loginAccountRateLimit("ahmet", "ws-rl-2").allowed).toBe(true)
+  expect((await loginAccountRateLimit("ahmet", "ws-rl-2")).allowed).toBe(true)
 })
 
-test("e-posta kimliği tenant'tan bağımsız tek kovadır", () => {
+test("e-posta kimliği tenant'tan bağımsız tek kovadır", async () => {
   for (let i = 0; i < 8; i++) {
-    expect(loginAccountRateLimit("kilit@bakimx.com", null).allowed).toBe(true)
+    expect((await loginAccountRateLimit("kilit@bakimx.com", null)).allowed).toBe(true)
   }
-  expect(loginAccountRateLimit("kilit@bakimx.com", null).allowed).toBe(false)
+  expect((await loginAccountRateLimit("kilit@bakimx.com", null)).allowed).toBe(false)
   // workshopId verilse bile aynı kova — e-posta global benzersiz.
-  expect(loginAccountRateLimit("kilit@bakimx.com", "ws-rl").allowed).toBe(false)
+  expect((await loginAccountRateLimit("kilit@bakimx.com", "ws-rl")).allowed).toBe(false)
 })
 
-test("IP limiti paylaşımlı atölye wifi'sini taşır", () => {
+test("IP limiti paylaşımlı atölye wifi'sini taşır", async () => {
   // 8'de kesseydi tek atölyeden giren 6 usta birbirini kilitlerdi.
   for (let i = 0; i < 40; i++) {
-    expect(loginRateLimit("203.0.113.7").allowed).toBe(true)
+    expect((await loginRateLimit("203.0.113.7")).allowed).toBe(true)
   }
-  expect(loginRateLimit("203.0.113.7").allowed).toBe(false)
+  expect((await loginRateLimit("203.0.113.7")).allowed).toBe(false)
 })

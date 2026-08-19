@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const reference = typeof form.get("reference") === "string" ? (form.get("reference") as string) : null
 
   // 1) IP rate limit.
-  const limit = rateLimit(`payment:${ip}`, RL_MAX, RL_WINDOW_MS)
+  const limit = await rateLimit(`payment:${ip}`, RL_MAX, RL_WINDOW_MS)
   if (!limit.allowed) {
     return resultRedirect(request, reference, "rate")
   }

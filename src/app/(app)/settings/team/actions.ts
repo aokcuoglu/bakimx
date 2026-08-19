@@ -442,7 +442,7 @@ export async function checkUsernameAvailabilityAction(
   }
 
   // Tuş başına bir sorgu atılmasın diye üst sınır; form zaten debounce'lu.
-  if (!rateLimit(`username-check:${user.id}`, 60, 60_000).allowed) {
+  if (!(await rateLimit(`username-check:${user.id}`, 60, 60_000)).allowed) {
     return { available: false, error: "Çok fazla deneme. Bir dakika sonra tekrar deneyin." }
   }
 

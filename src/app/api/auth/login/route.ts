@@ -24,7 +24,7 @@ function tooManyAttempts(retryAfterMs: number) {
 export async function POST(request: Request) {
   try {
     const ip = clientIpFromHeaders(request.headers)
-    const limit = loginRateLimit(ip)
+    const limit = await loginRateLimit(ip)
     if (!limit.allowed) return tooManyAttempts(limit.retryAfterMs)
 
     const formData = await request.formData()
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const accountLimit = loginAccountRateLimit(parsed.data.identifier, workshopId)
+    const accountLimit = await loginAccountRateLimit(parsed.data.identifier, workshopId)
     if (!accountLimit.allowed) return tooManyAttempts(accountLimit.retryAfterMs)
 
     const result = await verifyCredentials({

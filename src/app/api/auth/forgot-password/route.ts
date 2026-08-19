@@ -12,7 +12,7 @@ const GENERIC_MESSAGE =
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
 
-  const ipLimit = rateLimit(`pwreset-ip:${ip}`, 5, 15 * 60 * 1000)
+  const ipLimit = await rateLimit(`pwreset-ip:${ip}`, 5, 15 * 60 * 1000)
   if (!ipLimit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." },
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   // E-posta bazlı limit aşıldıysa da generic yanıt (enumeration sızıntısı yok)
-  const emailLimit = rateLimit(`pwreset-email:${parsed.data.email}`, 3, 15 * 60 * 1000)
+  const emailLimit = await rateLimit(`pwreset-email:${parsed.data.email}`, 3, 15 * 60 * 1000)
   if (emailLimit.allowed) {
     try {
       const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })

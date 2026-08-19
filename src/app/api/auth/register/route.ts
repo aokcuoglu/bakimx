@@ -33,7 +33,7 @@ const EMAIL_SEND_ERROR = "Doğrulama e-postası gönderilemedi. Lütfen tekrar d
 
 export async function POST(request: Request) {
   const ip = clientIpFromHeaders(request.headers)
-  const limit = rateLimit(`register:${ip}`, REGISTER_MAX_ATTEMPTS, REGISTER_WINDOW_MS)
+  const limit = await rateLimit(`register:${ip}`, REGISTER_MAX_ATTEMPTS, REGISTER_WINDOW_MS)
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Çok fazla deneme yapıldı. Lütfen bir süre sonra tekrar deneyin." },

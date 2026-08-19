@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { getPlanState, isPlanExpiredLock, type PlanExpiredLockReason } from "@/lib/plan"
-import { rateLimit } from "@/lib/rate-limit"
+import { rateLimit, type RateLimitResult } from "@/lib/rate-limit"
 import { isEmailIdentifier, isValidUsername, normalizeUsername } from "@/lib/user-identity"
 import { isValidWorkshopCode, normalizeWorkshopCode } from "@/lib/workshop-code"
 
@@ -18,7 +18,8 @@ import { isValidWorkshopCode, normalizeWorkshopCode } from "@/lib/workshop-code"
  *    comparison against a fixed dummy hash so the response timing matches the
  *    wrong-password path (no fast "user not found" exit).
  *  - rate limiting: per-client-IP cap PLUS a per-account cap
- *    (see `loginRateLimit` / `loginAccountRateLimit`).
+ *    (see `loginRateLimit` / `loginAccountRateLimit`). Sayaç Postgres'te
+ *    paylaşılır (BAK-116), yani eşik ECS task sayısıyla çarpılmaz.
  */
 
 // Pre-computed bcrypt hash (cost 12) of a random string. Never matches a real
@@ -85,7 +86,7 @@ export function clientIpFromHeaders(headers: Headers): string {
  * Paylaşımlı NAT'ı (tek atölye wifi'si) taşıyacak kadar geniştir; hesabı asıl
  * koruyan `loginAccountRateLimit`'tir. İkisi birlikte çağrılmalı.
  */
-export function loginRateLimit(ip: string): { allowed: boolean; retryAfterMs: number } {
+export async function loginRateLimit(ip: string): Promise<RateLimitResult> {
   return rateLimit(`login:${ip}`, LOGIN_IP_MAX_ATTEMPTS, LOGIN_WINDOW_MS)
 }
 
@@ -97,10 +98,10 @@ export function loginRateLimit(ip: string): { allowed: boolean; retryAfterMs: nu
  * E-posta yolunda `workshopId` bilinmez (henüz kullanıcıya bakılmadı); e-posta
  * global benzersiz olduğu için kimliğin kendisi zaten hesabı tekilleştirir.
  */
-export function loginAccountRateLimit(
+export async function loginAccountRateLimit(
   identifier: string,
   workshopId?: string | null
-): { allowed: boolean; retryAfterMs: number } {
+): Promise<RateLimitResult> {
   const value = identifier.trim().toLowerCase()
   const scope = isEmailIdentifier(value) ? "email" : (workshopId ?? "unknown")
   return rateLimit(`login:acct:${scope}:${value}`, LOGIN_ACCOUNT_MAX_ATTEMPTS, LOGIN_WINDOW_MS)

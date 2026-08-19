@@ -169,10 +169,11 @@ MFA ve offboarding dışında, kodda doğrulanan üç nokta:
    `impersonation_ended` yazılıyor (`impersonation-actions.ts:69,94`) ama denetim
    sayfasının etiket/filtre tablosunda yok (`audit/page.tsx:13`) — en hassas olay
    ne filtrelenebiliyor ne okunabilir etiketle görünüyor.
-3. **Rate limit process başına.** `src/lib/rate-limit.ts:1` bellek içi bir Map;
-   dosyanın kendi notu da bunu söylüyor. ECS'te birden fazla task koştuğunda —
-   rolling deploy sırasında **her zaman** en az iki task olur — etkin eşik task
-   sayısıyla çarpılır. Paylaşımlı bir sayaca (Redis/Postgres) taşınmalı.
+3. ~~**Rate limit process başına.**~~ **BAK-116 ile kapandı.** Sayaç artık
+   Postgres'te (`RateLimitCounter`) tutuluyor ve tek deyimlik atomik artırımla
+   güncelleniyor, yani eşik ECS task sayısıyla çarpılmıyor. Süreç-içi Map
+   birinci kademe olarak duruyor: paylaşımlı depo erişilemezse istek
+   reddedilmez (fail-open) ama bugünkü koruma taban olarak ayakta kalır.
 
 Ayrıca: repoda `robots.ts`/`robots.txt` yok. `/admin` anonim kullanıcıya 404
 döndüğü için bu bir güvenlik açığı değil, ama `www.bakimx.com` için SEO tarafında
@@ -257,7 +258,7 @@ Bugünkü kanallar ve boşlukları:
 | **P1** | Aktif impersonation ekranı + iptal (`revokedAt`) | Şemada var, kodda yok |
 | **P1** | Impersonation olaylarını denetim filtresine/etiketlerine ekle | En hassas olay bugün görünmüyor |
 | **P1** | Konsoldan şifre sıfırlama bağlantısı gönderme | Destek bugün konsolda bitmiyor |
-| **P2** | Rate limit'i paylaşımlı sayaca taşı | Çok task'lı ECS'te eşik çarpılıyor |
+| ~~P2~~ | ~~Rate limit'i paylaşımlı sayaca taşı~~ | **BAK-116 ile geldi** — §3.3 |
 | **P2** | `SupportRequest`: `workshopId` + atama + iç not | Şikayet ↔ kiracı bağı |
 | **P2** | Etiket/rozet temizliği (§4 / 2-3-4) | Tutarlılık; yeni personelin öğrenme yükü |
 | **P3** | Çeyreklik erişim gözden geçirmesi, statü sayfası | Portföy büyüdükçe |
