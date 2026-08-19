@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { bpsToPercent } from "@/lib/money"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ArrowLeft, Pause, Play,
@@ -39,6 +39,9 @@ import {
 } from "@/app/(app)/technician/actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { WizardActions, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
 import {
   PartsRequestSection,
   type TechnicianPartsRequest,
@@ -106,6 +109,20 @@ type OrderData = {
   vehicleId: string
 }
 
+const TECHNICIAN_ORDER_STEPS = [
+  { id: "start", label: "İşi başlat" },
+  { id: "check", label: "Araç kontrolü" },
+  { id: "items", label: "Yapılacak işler" },
+  { id: "needs", label: "Parça ve dış hizmet" },
+  { id: "finish", label: "Fotoğraf ve bitir" },
+] as const
+
+type StepId = (typeof TECHNICIAN_ORDER_STEPS)[number]["id"]
+
+function isStepId(value: string | null): value is StepId {
+  return TECHNICIAN_ORDER_STEPS.some((step) => step.id === value)
+}
+
 export function TechnicianOrderDetail({
   order,
   technicians,
@@ -119,7 +136,10 @@ export function TechnicianOrderDetail({
   canEditOrder: boolean
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
 
   const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
   const statusLabel = statusInfo?.label || order.status
@@ -140,20 +160,6 @@ export function TechnicianOrderDetail({
   // hatırlatma bölümü açıp oraya kaydırır.
   const [checklistOpen, setChecklistOpen] = useState<string[]>([])
   const checklistRef = useRef<HTMLDivElement>(null)
-
-  function revealChecklist() {
-    setChecklistOpen(["checklist"])
-    // Panel bir sonraki boyamada açılıyor; kaydırmayı ondan sonraya bırak.
-    // Odak önce alınır ve `preventScroll` ile kendi sıçramasını yapmaz —
-    // aksi halde tarayıcının odak kaydırması smooth animasyonu iptal ediyor.
-    requestAnimationFrame(() => {
-      checklistRef.current?.querySelector<HTMLButtonElement>('[data-slot="accordion-trigger"]')
-        ?.focus({ preventScroll: true })
-      // `behavior` bilerek verilmiyor: html'deki `scroll-smooth` geçerli olsun,
-      // hareket tercihi tek yerden (CSS) yönetilebilsin.
-      checklistRef.current?.scrollIntoView({ block: "start" })
-    })
-  }
 
   // Alış fotoğrafları (serviceOrderItemId != null) dahili-yalnızdır; onarım
   // galerilerine sızmaması için hepsinden dışlanır.
@@ -203,6 +209,55 @@ export function TechnicianOrderDetail({
   const completeReminder = completeChecklistReminder(completeChecklistLeft)
   const completeBlockedMessage = completeWorkBlockMessage(countIncompleteItems(order.items))
 
+  const steps = TECHNICIAN_ORDER_STEPS
+  const requestedStep = searchParams.get("step")
+  const validRequestedStep = isStepId(requestedStep) ? requestedStep : null
+  const derivedStep: StepId = locked
+    ? "finish"
+    : canStart
+      ? "start"
+      : startChecklistLeft > 0
+        ? "check"
+        : countIncompleteItems(order.items) > 0
+          ? "items"
+          : "needs"
+  const [rememberedStep, setRememberedStep] = useState<StepId | null>(null)
+  const currentStep: StepId = locked
+    ? "finish"
+    : validRequestedStep ?? rememberedStep ?? derivedStep
+  const currentIndex = steps.findIndex((step) => step.id === currentStep)
+  const completedStepIds = locked
+    ? steps.map((step) => step.id)
+    : steps.slice(0, currentIndex).map((step) => step.id)
+
+  useEffect(() => {
+    if (locked || validRequestedStep) return
+
+    let savedStep: string | null = null
+    try {
+      savedStep = localStorage.getItem(`bakimx:technician-order:${order.id}:step`)
+    } catch {
+      // Depolama kapalıysa URL ve iş emri durumundan türetilen adım yeterlidir.
+    }
+
+    if (!isStepId(savedStep)) return
+    const frame = requestAnimationFrame(() => setRememberedStep(savedStep))
+    return () => cancelAnimationFrame(frame)
+  }, [locked, order.id, validRequestedStep])
+
+  function goToStep(step: StepId) {
+    setRememberedStep(step)
+    try {
+      localStorage.setItem(`bakimx:technician-order:${order.id}:step`, step)
+    } catch {
+      // Depolama kapalıysa adım URL'de korunmaya devam eder.
+    }
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("step", step)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   function handleStartWork() {
     startTransition(async () => {
       const res = await startWorkAction(order.id)
@@ -222,6 +277,8 @@ export function TechnicianOrderDetail({
     startTransition(async () => {
       const res = await completeWorkAction(order.id)
       if (res && "error" in res && res.error) toast.error(res.error)
+      else toast.success("İş tamamlandı.")
+      setCompleteDialogOpen(false)
       router.refresh()
     })
   }
@@ -281,26 +338,60 @@ export function TechnicianOrderDetail({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <VehicleCard vehicle={order.vehicle} />
-        <CustomerCard customer={order.customer} />
-      </div>
+      {locked && (
+        <Alert>
+          <AlertTitle>Bu iş emri salt okunur</AlertTitle>
+          <AlertDescription>
+            Bu iş emri {order.status === "cancelled" ? "iptal edildi" : "teslim edildi"}. Bilgiler değiştirilemez; adımları inceleyebilirsiniz.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <ComplaintCard complaint={order.intake.customerComplaint} />
+      {activeLabor && (
+        <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
+          <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
+          <span className="text-sm font-medium text-foreground">İşçilik sürüyor</span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
+          </span>
+          {!locked && (
+            <Button variant="destructive" size="lg" onClick={handleStopLabor} disabled={isPending} className="ml-auto">
+              <Pause /> Durdur
+            </Button>
+          )}
+        </div>
+      )}
 
-      {/* Kontrol listesi kapalı başlar — mobilde açıkken ekranın çoğunu
-          kaplıyordu. Başlıktaki ilerleme çubuğu ve kalan madde sayısı açmadan
-          da durumu anlatır; alttaki hatırlatma bölümü açıp buraya kaydırır. */}
-      <OrderChecklist
-        orderId={order.id}
-        state={checklist}
-        locked={locked}
-        open={checklistOpen}
-        onOpenChange={setChecklistOpen}
-        containerRef={checklistRef}
-      />
+      <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+        <WizardStepper
+          steps={[...steps]}
+          currentId={currentStep}
+          completedIds={completedStepIds}
+          onStepClick={(id) => goToStep(id as StepId)}
+        />
 
-      <div className="rounded-lg border border-border bg-white p-4">
+        <section className="min-w-0 space-y-4" aria-live="polite">
+          <WizardHeading
+            eyebrow={`Adım ${currentIndex + 1} / ${steps.length}`}
+            title={steps[currentIndex].label}
+            description={
+              currentStep === "start" ? "Araç ve şikâyeti kontrol edip tamire başlayın." :
+              currentStep === "check" ? "Araç kontrollerini ve mevcut hasarları gözden geçirin." :
+              currentStep === "items" ? "Yapılan işleri işaretleyin ve gerekli notları ekleyin." :
+              currentStep === "needs" ? "Parça veya dış işçilik talebi açın; dış alımları kaydedin." :
+              "Fotoğrafları ekleyip son kontrollerden sonra işi tamamlayın."
+            }
+          />
+
+          {currentStep === "start" && (
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <VehicleCard vehicle={order.vehicle} />
+                <CustomerCard customer={order.customer} />
+              </div>
+              <ComplaintCard complaint={order.intake.customerComplaint} />
+
+              <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <Timer className="size-4 text-muted-foreground" />
@@ -313,25 +404,7 @@ export function TechnicianOrderDetail({
           )}
         </div>
 
-        {activeLabor ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
-            <div className="size-2 rounded-full bg-success animate-pulse" />
-            <span className="text-sm text-foreground font-medium">İşçilik devam ediyor</span>
-            <span className="text-xs text-muted-foreground">
-              Başlangıç: {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-            </span>
-            <Button
-              variant="destructive"
-              size="lg"
-              onClick={handleStopLabor}
-              disabled={isPending}
-              className="ml-auto touch-manipulation"
-            >
-              <Pause className="size-4" />
-              Durdur
-            </Button>
-          </div>
-        ) : (
+        {!activeLabor && !locked && (
           <Button
             variant="success"
             size="lg"
@@ -360,38 +433,63 @@ export function TechnicianOrderDetail({
             ))}
           </div>
         )}
-      </div>
+              </div>
+              <WizardActions>
+                {canStart ? (
+                  <Button size="lg" onClick={handleStartWork} disabled={isPending}>
+                    <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
+                  </Button>
+                ) : (
+                  <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
+                )}
+              </WizardActions>
+              {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
+            </>
+          )}
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
-          <Camera className="size-4 text-muted-foreground" />
-          Onarım Fotoğrafları
-        </h3>
-        <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-        <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-        <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-        {galleryPhotos.length === 0 && (
-          <p className="text-sm text-muted-foreground/70">Henüz fotoğraf eklenmedi.</p>
-        )}
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine fotoğraf eklenemez</p>
-        ) : (
-          <TechnicianPhotoUpload
-            intakeFormId={order.intake.id}
-            orderStatus={order.status}
-            existingPhotoTypes={order.photos.map((p) => p.type)}
-          />
-        )}
-      </div>
+          {currentStep === "check" && (
+            <>
+              <OrderChecklist orderId={order.id} state={checklist} locked={locked} open={checklistOpen} onOpenChange={setChecklistOpen} containerRef={checklistRef} />
+              {order.damageMarks.length > 0 && <DamageMarks marks={order.damageMarks} />}
+              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("start")}>Geri</Button>}>
+                <Button size="lg" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
+              </WizardActions>
+            </>
+          )}
 
-      <PartsRequestSection
-        orderId={order.id}
-        vehicle={pickerVehicle}
-        requests={order.partsRequests}
-        locked={locked}
-      />
+          {currentStep === "items" && (
+            <>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
+                {order.totals.hasAnyPrice && <OrderTotals order={order} />}
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <StickyNote /> İç Notlar <span className="text-xs font-normal text-muted-foreground">(Müşteriye görünmez)</span>
+                </h3>
+                <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
+                {!locked && <AddInternalNoteForm orderId={order.id} />}
+              </div>
+              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("check")}>Geri</Button>}>
+                <Button size="lg" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
+              </WizardActions>
+            </>
+          )}
 
-      <div className="rounded-lg border border-border bg-white p-4">
+          {currentStep === "needs" && (
+            <>
+              <Tabs defaultValue="requests">
+                <div className="max-w-full overflow-x-auto pb-1">
+                  <TabsList>
+                    <TabsTrigger value="requests">Talepler ({order.partsRequests.length})</TabsTrigger>
+                    <TabsTrigger value="purchases">Dış alımlar ({purchasedItems.length})</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="requests">
+                  <PartsRequestSection orderId={order.id} vehicle={pickerVehicle} requests={order.partsRequests} locked={locked} />
+                </TabsContent>
+                <TabsContent value="purchases">
+                  <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <ShoppingCart className="size-4 text-muted-foreground" />
@@ -407,9 +505,7 @@ export function TechnicianOrderDetail({
           technicians={technicians}
           deleteDecision={purchaseDelete}
         />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine parça eklenemez</p>
-        ) : (
+        {!locked && (
           <AddPurchaseButton
             orderId={order.id}
             vehicle={pickerVehicle}
@@ -418,120 +514,108 @@ export function TechnicianOrderDetail({
             defaultTechnicianId={order.assignedTechnicianId}
           />
         )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("items")}>Geri</Button>}>
+                <Button size="lg" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
+              </WizardActions>
+            </>
+          )}
+
+          {currentStep === "finish" && (
+            <>
+              <Tabs defaultValue="photos">
+                <div className="max-w-full overflow-x-auto pb-1">
+                  <TabsList>
+                    <TabsTrigger value="photos">Fotoğraflar</TabsTrigger>
+                    <TabsTrigger value="review">Son kontrol</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="photos">
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground"><Camera /> Onarım Fotoğrafları</h3>
+                    <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                    <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                    <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                    {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
+                    {!locked && <TechnicianPhotoUpload intakeFormId={order.intake.id} orderStatus={order.status} existingPhotoTypes={order.photos.map((p) => p.type)} />}
+                  </div>
+                </TabsContent>
+                <TabsContent value="review">
+                  <div className="space-y-2 rounded-lg border border-border bg-card p-4">
+                    <ReviewRow label="Araç kontrolü" detail={`${checklist.items.filter((item) => item.isCompleted && !item.deletedAt).length}/${checklist.items.filter((item) => !item.deletedAt).length}`} complete={completeChecklistLeft === 0} />
+                    <ReviewRow label="Yapılacak işler" detail={completeBlockedMessage ?? "Tümü tamamlandı"} complete={!completeBlockedMessage} />
+                    <ReviewRow label="Bekleyen talepler" detail={`${order.partsRequests.filter((request) => request.status === "requested").length}`} complete={!order.partsRequests.some((request) => request.status === "requested")} />
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
+              {canComplete && completeReminder && <ChecklistReminder message={completeReminder} onReveal={() => goToStep("check")} />}
+              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("needs")}>Geri</Button>}>
+                {canHold && <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}><Pause /> Beklemeye al</Button>}
+                {canComplete && (
+                  <Button variant="success" size="lg" onClick={() => setCompleteDialogOpen(true)} disabled={isPending || !!completeBlockedMessage}>
+                    <CheckCircle2 /> İşi tamamla
+                  </Button>
+                )}
+              </WizardActions>
+            </>
+          )}
+        </section>
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
-          <StickyNote className="size-4 text-muted-foreground" />
-          İç Notlar
-          <span className="text-[10px] font-normal text-muted-foreground/70 ml-1">(Müşteriye görünmez)</span>
-        </h3>
-        <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
-        {locked ? (
-          <p className="text-xs text-muted-foreground/70 mt-2">Teslim edilmiş/iptal edilmiş iş emrine iç not eklenemez</p>
-        ) : (
-          <AddInternalNoteForm orderId={order.id} />
-        )}
-      </div>
+      <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İş tamamlandı olarak işaretlensin mi?</AlertDialogTitle>
+            <AlertDialogDescription>Bu işlem iş emrini kilitler. Devam etmek istediğinize emin misiniz?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCompleteWork} disabled={isPending}>İşi tamamla</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
 
-      <div className="rounded-lg border border-border bg-white p-4">
-        {/* Başlık ve sayaç bilerek bileşenin içinde: "Tümünü tamamla" ve tek tek
-            işaretleme iyimser durumla anında güncelleniyor, sayaç dışarıda
-            kalsaydı tiklerin gerisinde kalırdı (BAK-21). */}
-        <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
-        {order.totals.hasAnyPrice && (
-          <div className="mt-3 pt-3 border-t border-border space-y-1">
-            {order.totals.discountAmount > 0 && (
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>İndirim</span>
-                <span>-{formatTRY(order.totals.discountAmount)}</span>
-              </div>
-            )}
-            {order.totals.taxAmount > 0 && (
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span>
-                <span>{formatTRY(order.totals.taxAmount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm font-semibold text-foreground">
-              <span>Toplam</span>
-              <span>{formatTRY(order.totals.grandTotal)}</span>
-            </div>
+function DamageMarks({ marks }: { marks: OrderData["damageMarks"] }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Mevcut Hasarlar</h3>
+      <div className="space-y-1.5">
+        {marks.map((mark) => (
+          <div key={mark.id} className="flex min-h-11 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
+            <span className="font-medium text-foreground">{mark.zone}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-foreground">{mark.damageType}</span>
+            <span className="text-xs text-muted-foreground">({mark.severity})</span>
+            {mark.note && <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{mark.note}</span>}
           </div>
-        )}
+        ))}
       </div>
+    </div>
+  )
+}
 
-      {order.damageMarks.length > 0 && (
-        <div className="rounded-lg border border-border bg-white p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Hasar Kayıtları</h3>
-          <div className="space-y-1.5">
-            {order.damageMarks.map((d) => (
-              <div key={d.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded bg-destructive/10">
-                <span className="font-medium text-foreground">{d.zone}</span>
-                <span className="text-foreground/60">·</span>
-                <span className="text-foreground">{d.damageType}</span>
-                <span className="text-foreground/50 text-xs">({d.severity})</span>
-                {d.note && <span className="text-foreground/60 text-xs ml-auto">{d.note}</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+function OrderTotals({ order }: { order: OrderData }) {
+  return (
+    <div className="mt-3 space-y-1 border-t border-border pt-3">
+      {order.totals.discountAmount > 0 && <div className="flex justify-between text-xs text-muted-foreground"><span>İndirim</span><span>-{formatTRY(order.totals.discountAmount)}</span></div>}
+      {order.totals.taxAmount > 0 && <div className="flex justify-between text-xs text-muted-foreground"><span>KDV (%{bpsToPercent(order.taxRate ?? 0)})</span><span>{formatTRY(order.totals.taxAmount)}</span></div>}
+      <div className="flex justify-between text-sm font-semibold text-foreground"><span>Toplam</span><span>{formatTRY(order.totals.grandTotal)}</span></div>
+    </div>
+  )
+}
 
-      <div className="mt-2 border-t border-border -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 space-y-2">
-        <div className="flex gap-2 sm:justify-center">
-          {canStart && (
-            <Button
-              size="lg"
-              onClick={handleStartWork}
-              disabled={isPending}
-              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-            >
-              <Play className="size-5" />
-              {order.status === "waiting_parts" ? "Tamire Devam Et" : "Tamire Başla"}
-            </Button>
-          )}
-          {canHold && (
-            <Button
-              variant="warning"
-              size="lg"
-              onClick={handleHoldWork}
-              disabled={isPending}
-              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-            >
-              <Pause className="size-5" />
-              Beklemeye Al
-            </Button>
-          )}
-          {canComplete && (
-            <Button
-              variant="success"
-              size="lg"
-              onClick={handleCompleteWork}
-              disabled={isPending || !!completeBlockedMessage}
-              className="flex-1 sm:flex-initial gap-2 px-6 font-semibold touch-manipulation"
-            >
-              <CheckCircle2 className="size-5" />
-              Tamamla
-            </Button>
-          )}
-          {!canStart && !canHold && !canComplete && (
-            <div className="flex-1 text-center text-sm text-muted-foreground py-2">
-              Bu iş emri için şu anda işlem yapılamaz
-            </div>
-          )}
-        </div>
-        {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
-        {/* Kontrol maddeleri hiçbir butonu kilitlemez; hatırlatma yalnız listeyi
-            açıp oraya kaydırır. Engel mesajıyla karışmasın diye uyarı değil,
-            nötr tonda. */}
-        {canStart && startReminder && (
-          <ChecklistReminder message={startReminder} onReveal={revealChecklist} />
-        )}
-        {canComplete && completeReminder && (
-          <ChecklistReminder message={completeReminder} onReveal={revealChecklist} />
-        )}
-      </div>
+function ReviewRow({ label, detail, complete }: { label: string; detail: string; complete: boolean }) {
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
+      <span className="font-medium text-foreground">{complete ? "✓" : "!"} {label}</span>
+      <span className="text-right text-xs text-muted-foreground">{detail}</span>
     </div>
   )
 }

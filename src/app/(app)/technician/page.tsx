@@ -3,7 +3,11 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
 import { getTechnicianDashboardStats, getTechnicianOrders } from "@/lib/technician/queries"
-import { resolveSelectedTechnicianId, TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
+import {
+  canSelectAnyTechnician,
+  resolveSelectedTechnicianId,
+  TECHNICIAN_PARAM,
+} from "@/lib/technician/selected-technician"
 
 export const dynamic = "force-dynamic"
 
@@ -20,12 +24,14 @@ export default async function TechnicianPage({
     orderBy: { fullName: "asc" },
   })
 
-  // Seçili teknisyen URL'den gelir; atölyenin kendi listesine doğrulanır ve
-  // tanınmayan bir id ilk teknisyene düşer. Önce giriş yapan kullanıcının bağlı
-  // teknisyeni kontrol edilir (BAK-39): bağlı ise URL parametresi kullanılmaz,
-  // bağlı değilse URL veya ilk teknisyen fallback'i uygulanır.
+  // Yönetici hesapları da birleşik personel yapısında bir teknisyen kaydına
+  // bağlıdır; bu bağ ekip içinden başka birini seçmelerini engellemez. Saha
+  // rolleri ise BAK-39 gereği yalnız kendi atamalarını görür.
+  const canSelectTechnician = canSelectAnyTechnician(user.role)
   const selectedTechnicianId = resolveSelectedTechnicianId(
-    user.technicianId || params[TECHNICIAN_PARAM],
+    canSelectTechnician
+      ? params[TECHNICIAN_PARAM]
+      : user.technicianId,
     technicians.map((t) => t.id)
   )
 
@@ -62,6 +68,7 @@ export default async function TechnicianPage({
           isActive: t.isActive,
         }))}
         selectedTechnicianId={selectedTechnicianId}
+        canSelectTechnician={canSelectTechnician}
         stats={stats}
         orders={orders}
       />
