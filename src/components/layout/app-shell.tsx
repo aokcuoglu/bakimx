@@ -335,7 +335,10 @@ function AppSidebar({
           </SidebarMenuItem>
           <SidebarMenuItem>
             <form action="/api/auth/logout" method="POST" className="w-full">
-              <SidebarMenuButton render={<button type="submit" />} tooltip="Çıkış Yap">
+              <SidebarMenuButton
+                render={<Button type="submit" variant="ghost" size="sm" />}
+                tooltip="Çıkış Yap"
+              >
                 <LogOut className="size-4" />
                 <span>Çıkış Yap</span>
               </SidebarMenuButton>
@@ -570,13 +573,15 @@ function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
           </div>
           <div className="border-t border-border py-1">
             <form action="/api/auth/logout" method="POST">
-              <button
+              <Button
                 type="submit"
-                className="flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors w-full text-left"
+                variant="ghost"
+                size="sm"
+                className="h-auto w-full justify-start gap-2.5 rounded-none px-3 py-2 font-normal"
               >
                 <LogOut className="size-4 text-muted-foreground" />
                 Çıkış Yap
-              </button>
+              </Button>
             </form>
           </div>
         </div>
