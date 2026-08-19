@@ -93,6 +93,10 @@ export const TENANT_TABLES = [
   // bootstrap'ından yeniden kurulur (bkz. dosya başı, `src/lib/admin.ts`).
   "PlatformAdmin",
   "CronRun",
+  // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
+  // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri
+  // yeniden açar; kalsaydı yeni kiracının olayları eski cihazlara giderdi.
+  "PushSubscription",
   // Paylaşımlı rate limit sayacı (BAK-116): kalıcı veri değil, dakikalık kova.
   // Anahtarları IP ve e-posta taşıdığı için korunanlarda değil burada — boşalması
   // yalnız o anki pencereyi sıfırlar.

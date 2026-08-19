@@ -216,5 +216,10 @@ export const config = {
   // primary-dark.png) anonim çekildiği için kök PNG'ler de PUBLIC olmalı.
   // Kökteki tüm görsel dosyaları (svg/png/jpg/jpeg/webp/gif/ico) ve landing
   // marketing asset'leri (/landing/**) hariç bırakılır.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
+  //
+  // /sw.js (BAK-129): service worker kökten servis edilmeli — auth kapısına
+  // takılırsa /login'e 307'lenir, tarayıcı JavaScript yerine HTML alır ve
+  // kayıt "unsupported MIME type" ile düşer. İçeriğinde kiracıya ait hiçbir
+  // veri yok; payload'ı push mesajı taşır.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|landing/|[^/]+\\.(?:svg|png|jpe?g|webp|gif|ico)$).*)"],
 }

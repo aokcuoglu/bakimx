@@ -196,3 +196,41 @@ test("workOrderNo yoksa açıklamada yalnız plaka görünür", async () => {
 
   expect(result[0].description).toBe("34 ABC 123")
 })
+
+/**
+ * BAK-129: aşağıdaki iki yordamı Faz B'nin push tetikleyicisi de kullanır.
+ * Sözleşmeleri ayrıca sabitlenir — biri değişirse iki kanal birden kayar.
+ */
+test("isTechnicianNotifiableAction yalnız Faz A kapsamındaki olayları geçirir", async () => {
+  mockDb({ orders: [], auditRows: [] })
+  const { isTechnicianNotifiableAction } = await import("./notifications")
+
+  for (const action of [
+    "technician_assigned",
+    "parts_request_prepared",
+    "parts_request_delivered",
+    "parts_request_cancelled",
+    "order_status_changed_to_in_progress",
+    "order_status_changed_to_delivered",
+  ]) {
+    expect(isTechnicianNotifiableAction(action)).toBe(true)
+  }
+
+  for (const action of [
+    "order_item_added",
+    "photo_deleted",
+    "order_payment_changed_to_paid",
+    "customer_updated",
+  ]) {
+    expect(isTechnicianNotifiableAction(action)).toBe(false)
+  }
+})
+
+test("buildNotificationDescription plaka ve iş emri numarasını birleştirir", async () => {
+  mockDb({ orders: [], auditRows: [] })
+  const { buildNotificationDescription } = await import("./notifications")
+
+  expect(buildNotificationDescription("34 ABC 123", "42")).toBe("34 ABC 123 · İş Emri #42")
+  expect(buildNotificationDescription("34 ABC 123", null)).toBe("34 ABC 123")
+  expect(buildNotificationDescription(null, null)).toBeUndefined()
+})

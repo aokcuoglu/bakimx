@@ -110,6 +110,44 @@ AI_PROVIDER=mock
 - `AI_PROVIDER=deepseek`: DeepSeek Chat API; `DEEPSEEK_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: deepseek-chat)
 - `AI_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
 
+### Web Push (Teknisyen Bildirimleri) Ortam Değişkenleri
+
+```env
+# BAK-129 (Faz B). İkisi de BOŞ ise Web Push sessizce devre dışıdır —
+# uygulama-içi bildirim (Faz A) çalışmaya devam eder, hiçbir şey kırılmaz.
+# VAPID_PUBLIC_KEY=BM...   (base64url, ~87 karakter)
+# VAPID_PRIVATE_KEY=...    (base64url, ~43 karakter — GİZLİ)
+
+# RFC 8292 `sub` alanı; opsiyonel, varsayılan mailto:destek@bakimx.com
+# VAPID_SUBJECT=mailto:destek@bakimx.com
+```
+
+Anahtar çifti bir kez üretilir ve **ortam başına sabit kalır** — değiştirilirse
+mevcut tüm abonelikler geçersiz olur ve kullanıcıların bildirimleri yeniden
+açması gerekir:
+
+```sh
+bun run push:vapid-keys
+```
+
+Üretimde anahtarlar SSM Parameter Store'a yazılır (diğer sağlayıcı env'leriyle
+aynı konvansiyon, `/bakimx/<env>/<VAR>`); özel anahtar `SecureString` olmalıdır:
+
+```sh
+aws ssm put-parameter --name /bakimx/prod/VAPID_PUBLIC_KEY  --type String       --value "BM..." --overwrite
+aws ssm put-parameter --name /bakimx/prod/VAPID_PRIVATE_KEY --type SecureString --value "..."    --overwrite
+```
+
+**Neden `NEXT_PUBLIC_*` değil:** açık anahtar da runtime'da SSM'den gelir, build
+sırasında gömülemez. İstemci onu `GET /api/technician/push` ucundan alır.
+
+**Web Push davranışı:**
+- Anahtarlar yoksa `dispatchTechnicianPush` tek bir DB sorgusu bile yapmadan çıkar
+- Olay kaynağı Faz A ile aynı (`AuditLog` → `isTechnicianNotifiableAction`); ayrı bir bildirim listesi yoktur
+- Gönderim yalnız iş emrine atanmış teknisyenin **kendi atölyesindeki** hesabına gider; işlemi yapan kişiye kendi işleminin bildirimi gitmez
+- Push servisi `404`/`410` dönerse abonelik satırı otomatik silinir
+- iOS'ta yalnız "Ana Ekrana Ekle" ile kurulmuş PWA'da çalışır (iOS 16.4+); Safari sekmesinde arayüz bunu açıkça yazar
+
 ### İletişim Ortam Değişkenleri
 
 ```env

@@ -34,7 +34,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  serverExternalPackages: ["heic-convert", "tesseract.js", "sharp"],
+  // web-push Node-only (node:crypto/https). Bundler'a girmesin — audit
+  // chokepoint'inden dinamik import ediliyor (BAK-129).
+  serverExternalPackages: ["heic-convert", "tesseract.js", "sharp", "web-push"],
   env: {
     // Sürüm derleme zamanında package.json'dan gömülür (tek kaynak).
     // npm_package_version env'ine bağlı değil; script dışı build'lerde de doğru çalışır.
