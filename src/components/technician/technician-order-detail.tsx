@@ -648,7 +648,7 @@ function ChecklistReminder({ message, onReveal }: { message: string; onReveal: (
 
 function VehicleCard({ vehicle }: { vehicle: OrderData["vehicle"] }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 mb-2">
         <Car className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold text-foreground">Araç</h3>
@@ -669,7 +669,7 @@ function CustomerCard({ customer }: { customer: OrderData["customer"] }) {
     : customer.fullName || [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "Müşteri"
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 mb-2">
         <User className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold text-foreground">Müşteri</h3>
@@ -688,7 +688,7 @@ function CustomerCard({ customer }: { customer: OrderData["customer"] }) {
 
 function ComplaintCard({ complaint }: { complaint: string }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="text-sm font-semibold text-foreground mb-2">Müşteri Şikayeti</h3>
       <p className="text-sm text-foreground whitespace-pre-wrap">{complaint}</p>
     </div>
