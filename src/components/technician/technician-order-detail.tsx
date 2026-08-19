@@ -56,6 +56,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
+import type { OrderItem } from "@/components/orders/order-management-panel"
+import type { LaborCatalogRow } from "@/lib/labor/types"
+import { TechnicianPartsLaborSection } from "@/components/technician/technician-parts-labor-section"
 import { workOrderPath } from "@/lib/technician/cross-links"
 import {
   countRemainingChecklist,
@@ -66,6 +69,21 @@ import {
   START_REMINDER_CATEGORIES,
   COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
+
+/**
+ * Teknisyen DTO'sundaki kalem. `OrderItem` ofis düzenleyicisinin sözleşmesidir
+ * ve dış alım alanlarını "opsiyonel" tutar (eski çağrı yerleri hiç göndermiyordu);
+ * teknisyen sayfası bunların HEPSİNİ dolduruyor, o yüzden burada zorunluya
+ * daraltılır — panelin kendi bileşenleri (dış alım kartı, kalem kontrol listesi,
+ * tamamlama kapısı) `undefined` kabul etmiyor.
+ */
+type TechnicianOrderItem = OrderItem & {
+  tecdocArticleId: number | null
+  purchasePriceKurus: number | null
+  supplierName: string | null
+  purchasedAt: string | null
+  completedAt: string | null
+}
 
 type OrderData = {
   id: string
@@ -93,7 +111,10 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; brand: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; tecdocArticleId: number | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
+  // BAK-141 — kalemler artık ofis düzenleyicisine (PartsLaborGrid) de gidiyor,
+  // bu yüzden tip onun sözleşmesinden TÜRETİLİR: iki ekranın alan listesi
+  // ayrışırsa typecheck söyler, kullanıcı fark etmez.
+  items: TechnicianOrderItem[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
   // engineDisplacement/enginePower/firstRegistrationDate: parça kataloğu
   // bileşenlerinin beklediği PickerVehicle alanları (araç varyantı ipuçları).
@@ -128,12 +149,19 @@ export function TechnicianOrderDetail({
   order,
   technicians,
   suppliers,
+  laborCatalog,
   canEditOrder,
 }: {
   order: OrderData
   technicians: TechnicianInfo[]
   suppliers: SupplierInfo[]
-  /** Kullanıcı `order.edit` taşıyor mu — dış alım silme kuralının ikinci ekseni. */
+  /** İşçilik kataloğu — paylaşılan kalem düzenleyicisinin autocomplete kaynağı. */
+  laborCatalog: LaborCatalogRow[]
+  /**
+   * Kullanıcı `order.edit` taşıyor mu. İki yerde okunur: dış alım silme
+   * kuralının rol ekseni (BAK-83) ve "Parça & İşçilik" düzenleyicisinin
+   * görünürlüğü (BAK-141).
+   */
   canEditOrder: boolean
 }) {
   const router = useRouter()
@@ -383,7 +411,7 @@ export function TechnicianOrderDetail({
               currentStep === "start" ? "Araç ve şikâyeti kontrol edip tamire başlayın." :
               currentStep === "check" ? "Araç kontrollerini ve mevcut hasarları gözden geçirin." :
               currentStep === "items" ? "Yapılan işleri işaretleyin ve gerekli notları ekleyin." :
-              currentStep === "needs" ? "Parça veya dış işçilik talebi açın; dış alımları kaydedin." :
+              currentStep === "needs" ? "Kullanılan parça ve işçilikleri girin; gerekirse talep açın veya dış alım kaydedin." :
               "Fotoğrafları ekleyip son kontrollerden sonra işi tamamlayın."
             }
           />
@@ -483,13 +511,29 @@ export function TechnicianOrderDetail({
 
           {currentStep === "needs" && (
             <>
-              <Tabs defaultValue="requests">
+              {/* BAK-141 — "Parça & İşçilik" ilk sekme ve `order.edit` taşıyan
+                  kullanıcıda VARSAYILAN: müşterinin isteği teknisyenin kalemi
+                  doğrudan girebilmesi, talep açması değil. İzni olmayan (çırak)
+                  eski varsayılanda kalır — ona düzenleyici zaten açılmıyor. */}
+              <Tabs defaultValue={canEditOrder ? "kalemler" : "requests"}>
                 <div className="max-w-full overflow-x-auto pb-1">
                   <TabsList>
+                    <TabsTrigger value="kalemler">Parça &amp; İşçilik ({order.items.length})</TabsTrigger>
                     <TabsTrigger value="requests">Talepler ({order.partsRequests.length})</TabsTrigger>
                     <TabsTrigger value="purchases">Dış alımlar ({purchasedItems.length})</TabsTrigger>
                   </TabsList>
                 </div>
+                <TabsContent value="kalemler">
+                  <TechnicianPartsLaborSection
+                    orderId={order.id}
+                    status={order.status}
+                    items={order.items}
+                    vehicle={pickerVehicle}
+                    laborCatalog={laborCatalog}
+                    taxRateBps={order.taxRate}
+                    canEditOrder={canEditOrder}
+                  />
+                </TabsContent>
                 <TabsContent value="requests">
                   <PartsRequestSection orderId={order.id} vehicle={pickerVehicle} requests={order.partsRequests} locked={locked} />
                 </TabsContent>

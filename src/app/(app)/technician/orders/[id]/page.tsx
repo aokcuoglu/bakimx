@@ -9,6 +9,8 @@ import { computeRemainingAmount } from "@/lib/cashbox/status"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
 import { roleCan } from "@/lib/roles"
+import { getLaborCatalog } from "@/lib/labor/queries"
+import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 
 export const dynamic = "force-dynamic"
 
@@ -39,7 +41,16 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           },
         },
       },
-      items: { orderBy: { createdAt: "asc" } },
+      items: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı +
+          // alan teknisyen — ofis tarafındaki düzenleyicinin dış alım detay
+          // modalı bu iki alanı okur (BAK-141, paylaşılan PartsLaborGrid).
+          photos: { where: VISIBLE_PHOTO, select: { id: true } },
+          purchasedBy: { select: { fullName: true } },
+        },
+      },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
       // BİLİNÇLİ olarak `ACTIVE_CHECKLIST_ITEM` ile filtrelenmez: seed kararı
       // silinen maddelerin `templateKey`ine muhtaç ve panel silinenleri "geri
@@ -96,6 +107,10 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
     orderBy: { fullName: "asc" },
   })
 
+  // Sahadaki düzenleyicinin işçilik autocomplete'i ofistekiyle aynı katalogdan
+  // beslenir — teknisyen serbest metin yazmak zorunda kalmasın (BAK-141).
+  const laborCatalog = await getLaborCatalog(user.workshopId, { activeOnly: true })
+
   const suppliers = await prisma.supplier.findMany({
     where: { workshopId: user.workshopId, isActive: true },
     select: { id: true, name: true },
@@ -128,22 +143,34 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       partsCount: totals.partsCount,
       laborCount: totals.laborCount,
     },
+    // BAK-141 — alan listesi ofis DTO'su (`/orders/[id]/page.tsx`) ile aynı:
+    // iki ekran artık AYNI düzenleyiciyi (PartsLaborGrid) besliyor, eksik bir
+    // alan sahada satırı ofistekinden farklı gösterirdi.
     items: order.items.map((i) => ({
       id: i.id,
       type: i.type,
       name: i.name,
       sku: i.sku,
       brand: i.brand,
+      category: i.category,
+      categoryId: i.categoryId,
       unit: i.unit,
       quantity: i.quantity,
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
+      // BAK-53 — satır KDV'ye tabi mi. Taşınmazsa sunucu değeri yazar ama
+      // refresh'te kutu eski hâline döner.
+      includeVat: i.includeVat,
       note: i.note,
       source: i.source,
       tecdocArticleId: i.tecdocArticleId,
+      bakimxProductId: i.bakimxProductId,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,
+      supplierId: i.supplierId,
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
+      purchasedByName: i.purchasedBy?.fullName ?? null,
+      purchasePhotoId: i.photos[0]?.id ?? null,
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,
     })),
     customer: {
@@ -264,9 +291,12 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
           role: t.role,
         }))}
         suppliers={suppliers}
-        // Dış alım silme kuralının rol ekseni (BAK-83): teslime hazır iş emrinde
-        // kaydı yalnız iş emrini düzenleyebilenler kaldırabilir.
-        canEditOrder={roleCan(user.role, "order.edit")}
+        laborCatalog={laborCatalog}
+        // İki eksende kullanılır: dış alım silme kuralının rol ekseni (BAK-83 —
+        // teslime hazır iş emrinde kaydı yalnız düzenleyebilenler kaldırır) ve
+        // "Parça & İşçilik" düzenleyicisinin görünürlüğü (BAK-141). İkisi de aynı
+        // izne (`order.edit`) dayanır; bkz. src/lib/technician/item-editing.ts.
+        canEditOrder={roleCan(user.role, ORDER_ITEM_PERMISSION)}
       />
     </AppShell>
   )
