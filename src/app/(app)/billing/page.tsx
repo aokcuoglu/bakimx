@@ -51,7 +51,7 @@ export default async function BillingPage({
       {sp.pendingBlocked === "1" && pendingOrder && (
         <PendingOrderAlert reference={pendingOrder.reference} method={pendingOrder.method} />
       )}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Link href="/dashboard" className="hover:text-foreground">Ana Panel</Link>
           <span className="mx-2">/</span>

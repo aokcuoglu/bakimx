@@ -341,8 +341,8 @@ export function DemoRequestSection() {
 
                   <Button
                     type="submit"
-                    size="lg"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-base"
+                    size="default"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

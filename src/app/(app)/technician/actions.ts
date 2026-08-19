@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache"
 import {
   checklistItemSchema,
   internalNoteSchema,
+  laborSessionEditSchema,
+  laborSessionNoteSchema,
   partsRequestCancelSchema,
   partsRequestEditSchema,
   partsRequestSchema,
@@ -647,7 +649,7 @@ export async function startLaborSessionAction(orderId: string) {
   })
   if (activeSession) return { error: "Zaten aktif bir işçilik oturumu var" }
 
-  await prisma.laborSession.create({
+  const created = await prisma.laborSession.create({
     data: {
       workshopId: user.workshopId,
       serviceOrderId: orderId,
@@ -655,14 +657,34 @@ export async function startLaborSessionAction(orderId: string) {
     },
   })
 
+  // BAK-138: Sayaç olayları da denetim kaydına düşer. Gerekçe: kayıt sonradan
+  // elle düzeltilebiliyor; "saat sayaçtan mı geldi, elle mi girildi" sorusunun
+  // cevabı yalnız bu satırlar varsa kalıcı olur.
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "LaborSession",
+    created.id,
+    "labor_session_started",
+    JSON.stringify({ startTime: created.startTime.toISOString() }),
+    orderId,
+  )
+
   revalidatePath(`/technician/orders/${orderId}`)
   revalidatePath(`/orders/${orderId}`)
   return { success: true }
 }
 
-export async function stopLaborSessionAction(orderId: string) {
+/**
+ * Sayacı durdurur. `note` opsiyoneldir — teknisyen "bu sürede ne yaptım"ı
+ * bitirirken yazabilir, boş bırakıp sonradan da ekleyebilir (BAK-138).
+ */
+export async function stopLaborSessionAction(orderId: string, note?: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
   const { user } = await requireWritableWorkshop("order.status")
+
+  const parsed = laborSessionNoteSchema.safeParse({ note: note ?? "" })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Geçersiz açıklama" }
 
   const activeSession = await prisma.laborSession.findFirst({
     where: { serviceOrderId: orderId, workshopId: user.workshopId, endTime: null },
@@ -672,18 +694,125 @@ export async function stopLaborSessionAction(orderId: string) {
   const now = new Date()
   const durationMs = now.getTime() - activeSession.startTime.getTime()
   const durationMinutes = Math.round(durationMs / 60000)
+  const cleanNote = parsed.data.note?.trim() || null
 
-  await prisma.laborSession.updateMany({
-    where: { id: activeSession.id, workshopId: user.workshopId },
+  // Koşullu yazma (`endTime: null`): iki sekmeden aynı anda "Durdur" basılırsa
+  // ikincisi kaybeder ve bitmiş bir kaydın saati sessizce ezilmez.
+  const stopped = await prisma.laborSession.updateMany({
+    where: { id: activeSession.id, workshopId: user.workshopId, endTime: null },
     data: {
       endTime: now,
       durationMinutes,
+      // Not YALNIZ doluysa yazılır: boş gönderim var olan bir notu silmesin.
+      ...(cleanNote ? { note: cleanNote } : {}),
     },
   })
+  if (stopped.count === 0) return { error: "İşçilik bu sırada durduruldu, sayfayı yenileyin" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "LaborSession",
+    activeSession.id,
+    "labor_session_stopped",
+    JSON.stringify({
+      startTime: activeSession.startTime.toISOString(),
+      endTime: now.toISOString(),
+      durationMinutes,
+      note: cleanNote,
+    }),
+    orderId,
+  )
 
   revalidatePath(`/technician/orders/${orderId}`)
   revalidatePath(`/orders/${orderId}`)
   return { success: true, durationMinutes }
+}
+
+/**
+ * Bitmiş bir işçilik süresi kaydının saatlerini ve açıklamasını elle düzeltir
+ * (BAK-138).
+ *
+ * YETKİ — `order.edit`: sayacı başlatıp durdurmak `order.status` iken, oluşmuş
+ * bir KAYDI geriye dönük değiştirmek iş emri verisini düzenlemektir. Pratikte
+ * ikisini de usta/servis müdürü/yönetici taşır, çırak taşımaz. Kaydı yalnız
+ * "sahibi" düzeltsin kuralı bilerek konmadı: `LaborSession.technicianId` bu
+ * akışta hiç doldurulmuyor (sayacı kim başlattı bilgisi kayıtta yok), yani
+ * sahiplik kontrolü bugün her kaydı kilitlerdi.
+ *
+ * DEVAM EDEN kayıt düzenlenemez: bitiş saati henüz yok, "aralık" diye bir şey
+ * yok. Önce durdurulur, sonra düzeltilir.
+ *
+ * `durationMinutes` her zaman aralıktan yeniden türetilir — kullanıcıdan süre
+ * alınmaz, böylece saatler ile süre birbirinden ayrı düşemez.
+ */
+export async function updateLaborSessionAction(sessionId: string, formData: FormData) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const parsed = laborSessionEditSchema.safeParse({
+    startTime: (formData.get("startTime") as string) || "",
+    endTime: (formData.get("endTime") as string) || "",
+    note: (formData.get("note") as string) || "",
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+
+  const session = await prisma.laborSession.findFirst({
+    where: { id: sessionId, workshopId: user.workshopId },
+  })
+  if (!session) return { error: "İşçilik kaydı bulunamadı" }
+  if (!session.endTime) return { error: "Devam eden işçilik düzenlenemez; önce durdurun" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: session.serviceOrderId, workshopId: user.workshopId },
+    select: { id: true, status: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { startTime, endTime } = parsed.data
+  const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+  const note = parsed.data.note?.trim() || null
+
+  const updated = await prisma.laborSession.updateMany({
+    where: { id: sessionId, workshopId: user.workshopId, endTime: { not: null } },
+    data: {
+      startTime,
+      endTime,
+      durationMinutes,
+      note,
+      editedAt: new Date(),
+      editedByUserId: user.id,
+    },
+  })
+  if (updated.count === 0) return { error: "Kayıt bu sırada değişti, sayfayı yenileyin" }
+
+  await AuditLogAction(
+    user.workshopId,
+    user.id,
+    "LaborSession",
+    sessionId,
+    "labor_session_edited",
+    JSON.stringify({
+      before: {
+        startTime: session.startTime.toISOString(),
+        endTime: session.endTime.toISOString(),
+        durationMinutes: session.durationMinutes,
+        note: session.note,
+      },
+      after: {
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        durationMinutes,
+        note,
+      },
+    }),
+    session.serviceOrderId,
+  )
+
+  revalidatePath(`/technician/orders/${session.serviceOrderId}`)
+  revalidatePath(`/orders/${session.serviceOrderId}`)
+  return { success: true }
 }
 
 export async function createTechnicianAction(formData: FormData) {

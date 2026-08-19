@@ -56,7 +56,7 @@ export async function resolveTechnicianPushDelivery(
   // Sırayla en ucuz kapı önce: yapılandırma yoksa (lokal/anahtarsız ortam)
   // ve olay bildirilebilir değilse tek bir DB sorgusu bile yapılmaz.
   if (!isWebPushConfigured()) return null
-  if (!isTechnicianNotifiableAction(event.action)) return null
+  if (!isTechnicianNotifiableAction(event.action, event.metadataJson)) return null
 
   const orderId = resolveOrderId(event)
   if (!orderId) return null

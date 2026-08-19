@@ -6,9 +6,10 @@ import { bpsToPercent } from "@/lib/money"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
+import { useOrderSync } from "@/hooks/use-order-sync"
 import {
   ArrowLeft, Pause, Play,
-  Camera, Plus, StickyNote, Timer,
+  Camera, Plus, StickyNote,
   Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
@@ -35,13 +36,17 @@ import {
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
   addInternalNoteAction, deleteInternalNoteAction,
-  startLaborSessionAction, stopLaborSessionAction,
 } from "@/app/(app)/technician/actions"
+import {
+  LaborSessionCard,
+  StopLaborButton,
+  type TechnicianLaborSessionRow,
+} from "@/components/technician/labor-session-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { WizardActions, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
+import { WizardActions, WizardHeading } from "@/components/intake/wizard-ui"
 import {
   PartsRequestSection,
   type TechnicianPartsRequest,
@@ -55,6 +60,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
 import type { OrderStatus } from "@prisma/client"
+import type { OrderItem } from "@/components/orders/order-management-panel"
+import type { LaborCatalogRow } from "@/lib/labor/types"
+import { TechnicianPartsLaborSection } from "@/components/technician/technician-parts-labor-section"
 import { workOrderPath } from "@/lib/technician/cross-links"
 import {
   countRemainingChecklist,
@@ -65,6 +73,21 @@ import {
   START_REMINDER_CATEGORIES,
   COMPLETE_REMINDER_CATEGORIES,
 } from "@/lib/technician/gates"
+
+/**
+ * Teknisyen DTO'sundaki kalem. `OrderItem` ofis düzenleyicisinin sözleşmesidir
+ * ve dış alım alanlarını "opsiyonel" tutar (eski çağrı yerleri hiç göndermiyordu);
+ * teknisyen sayfası bunların HEPSİNİ dolduruyor, o yüzden burada zorunluya
+ * daraltılır — panelin kendi bileşenleri (dış alım kartı, kalem kontrol listesi,
+ * tamamlama kapısı) `undefined` kabul etmiyor.
+ */
+type TechnicianOrderItem = OrderItem & {
+  tecdocArticleId: number | null
+  purchasePriceKurus: number | null
+  supplierName: string | null
+  purchasedAt: string | null
+  completedAt: string | null
+}
 
 type OrderData = {
   id: string
@@ -92,7 +115,10 @@ type OrderData = {
     partsCount: number
     laborCount: number
   }
-  items: { id: string; type: string; name: string; sku: string | null; brand: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; source: string | null; tecdocArticleId: number | null; purchasePriceKurus: number | null; supplierName: string | null; purchasedAt: string | null; completedAt: string | null }[]
+  // BAK-141 — kalemler artık ofis düzenleyicisine (PartsLaborGrid) de gidiyor,
+  // bu yüzden tip onun sözleşmesinden TÜRETİLİR: iki ekranın alan listesi
+  // ayrışırsa typecheck söyler, kullanıcı fark etmez.
+  items: TechnicianOrderItem[]
   customer: { id: string; firstName: string | null; lastName: string | null; fullName: string | null; companyName: string | null; type: string; phone: string; email: string | null }
   // engineDisplacement/enginePower/firstRegistrationDate: parça kataloğu
   // bileşenlerinin beklediği PickerVehicle alanları (araç varyantı ipuçları).
@@ -103,7 +129,7 @@ type OrderData = {
   checklistItems: { id: string; category: string; description: string; isCompleted: boolean; isRequired: boolean; completedAt: string | null; note: string | null; sortOrder: number; deletedAt: string | null }[]
   internalNotes: { id: string; content: string; isPinned: boolean; createdAt: string }[]
   partsRequests: TechnicianPartsRequest[]
-  laborSessions: { id: string; startTime: string; endTime: string | null; durationMinutes: number | null; note: string | null }[]
+  laborSessions: TechnicianLaborSessionRow[]
   paidAmount: number
   remainingAmount: number
   vehicleId: string
@@ -127,12 +153,19 @@ export function TechnicianOrderDetail({
   order,
   technicians,
   suppliers,
+  laborCatalog,
   canEditOrder,
 }: {
   order: OrderData
   technicians: TechnicianInfo[]
   suppliers: SupplierInfo[]
-  /** Kullanıcı `order.edit` taşıyor mu — dış alım silme kuralının ikinci ekseni. */
+  /** İşçilik kataloğu — paylaşılan kalem düzenleyicisinin autocomplete kaynağı. */
+  laborCatalog: LaborCatalogRow[]
+  /**
+   * Kullanıcı `order.edit` taşıyor mu. İki yerde okunur: dış alım silme
+   * kuralının rol ekseni (BAK-83) ve "Parça & İşçilik" düzenleyicisinin
+   * görünürlüğü (BAK-141).
+   */
   canEditOrder: boolean
 }) {
   const router = useRouter()
@@ -141,14 +174,15 @@ export function TechnicianOrderDetail({
   const [isPending, startTransition] = useTransition()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
 
+  // BAK-140: ofis personeli/dış alım bu iş emrine parça eklediğinde teknisyen
+  // sayfayı yenilemeden görsün — office tarafındaki aynı desen (work-order-detail.tsx).
+  useOrderSync(order.id)
+
   const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
   const statusLabel = statusInfo?.label || order.status
   const statusColor = statusInfo?.color || "bg-muted text-foreground"
 
   const activeLabor = order.laborSessions.find((l) => !l.endTime)
-  const totalLaborMinutes = order.laborSessions
-    .filter((l) => l.durationMinutes)
-    .reduce((sum, l) => sum + (l.durationMinutes || 0), 0)
 
   const locked = isOrderLocked(order.status as OrderStatus)
 
@@ -222,16 +256,14 @@ export function TechnicianOrderDetail({
           ? "items"
           : "needs"
   const [rememberedStep, setRememberedStep] = useState<StepId | null>(null)
-  const currentStep: StepId = locked
-    ? "finish"
-    : validRequestedStep ?? rememberedStep ?? derivedStep
+  // Kilit yalnız DÜZENLEMEYİ durdurur (BAK-137): kilitli iş emrinde de her
+  // sekme serbestçe gezilebilsin diye currentStep artık "finish"e sabitlenmez,
+  // derivedStep sadece varsayılan iniş noktasını belirler.
+  const currentStep: StepId = validRequestedStep ?? rememberedStep ?? derivedStep
   const currentIndex = steps.findIndex((step) => step.id === currentStep)
-  const completedStepIds = locked
-    ? steps.map((step) => step.id)
-    : steps.slice(0, currentIndex).map((step) => step.id)
 
   useEffect(() => {
-    if (locked || validRequestedStep) return
+    if (validRequestedStep) return
 
     let savedStep: string | null = null
     try {
@@ -243,7 +275,7 @@ export function TechnicianOrderDetail({
     if (!isStepId(savedStep)) return
     const frame = requestAnimationFrame(() => setRememberedStep(savedStep))
     return () => cancelAnimationFrame(frame)
-  }, [locked, order.id, validRequestedStep])
+  }, [order.id, validRequestedStep])
 
   function goToStep(step: StepId) {
     setRememberedStep(step)
@@ -279,20 +311,6 @@ export function TechnicianOrderDetail({
       if (res && "error" in res && res.error) toast.error(res.error)
       else toast.success("İş tamamlandı.")
       setCompleteDialogOpen(false)
-      router.refresh()
-    })
-  }
-
-  function handleStartLabor() {
-    startTransition(async () => {
-      await startLaborSessionAction(order.id)
-      router.refresh()
-    })
-  }
-
-  function handleStopLabor() {
-    startTransition(async () => {
-      await stopLaborSessionAction(order.id)
       router.refresh()
     })
   }
@@ -338,6 +356,23 @@ export function TechnicianOrderDetail({
         </Button>
       </div>
 
+      {/* BAK-148: beklemeye alma/devam etme hızlı kararı adım/sekme içeriğine
+          gömülü değil, teknisyen hangi adımda olursa olsun burada durur. */}
+      {(canHold || canStart) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {canHold && (
+            <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}>
+              <Pause /> Beklemeye al
+            </Button>
+          )}
+          {canStart && (
+            <Button size="lg" onClick={handleStartWork} disabled={isPending}>
+              <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
+            </Button>
+          )}
+        </div>
+      )}
+
       {locked && (
         <Alert>
           <AlertTitle>Bu iş emri salt okunur</AlertTitle>
@@ -354,23 +389,25 @@ export function TechnicianOrderDetail({
           <span className="text-xs text-muted-foreground">
             {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
           </span>
-          {!locked && (
-            <Button variant="destructive" size="lg" onClick={handleStopLabor} disabled={isPending} className="ml-auto">
-              <Pause /> Durdur
-            </Button>
-          )}
+          {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <WizardStepper
-          steps={[...steps]}
-          currentId={currentStep}
-          completedIds={completedStepIds}
-          onStepClick={(id) => goToStep(id as StepId)}
-        />
+      {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
+          önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
+          kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
+      <Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>
+        <div className="max-w-full overflow-x-auto pb-1">
+          <TabsList className="w-max">
+            {steps.map((step, i) => (
+              <TabsTrigger key={step.id} value={step.id}>
+                {i + 1}. {step.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-        <section className="min-w-0 space-y-4" aria-live="polite">
+        <section className="min-w-0 space-y-4 mt-4" aria-live="polite">
           <WizardHeading
             eyebrow={`Adım ${currentIndex + 1} / ${steps.length}`}
             title={steps[currentIndex].label}
@@ -378,87 +415,40 @@ export function TechnicianOrderDetail({
               currentStep === "start" ? "Araç ve şikâyeti kontrol edip tamire başlayın." :
               currentStep === "check" ? "Araç kontrollerini ve mevcut hasarları gözden geçirin." :
               currentStep === "items" ? "Yapılan işleri işaretleyin ve gerekli notları ekleyin." :
-              currentStep === "needs" ? "Parça veya dış işçilik talebi açın; dış alımları kaydedin." :
+              currentStep === "needs" ? "Kullanılan parça ve işçilikleri girin; gerekirse talep açın veya dış alım kaydedin." :
               "Fotoğrafları ekleyip son kontrollerden sonra işi tamamlayın."
             }
           />
 
-          {currentStep === "start" && (
-            <>
+          <TabsContent value="start" className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <VehicleCard vehicle={order.vehicle} />
                 <CustomerCard customer={order.customer} />
               </div>
               <ComplaintCard complaint={order.intake.customerComplaint} />
 
-              <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Timer className="size-4 text-muted-foreground" />
-            İşçilik Süresi
-          </h3>
-          {totalLaborMinutes > 0 && (
-            <span className="text-sm font-medium text-foreground">
-              Toplam: {Math.floor(totalLaborMinutes / 60)}s {totalLaborMinutes % 60}dk
-            </span>
-          )}
-        </div>
-
-        {!activeLabor && !locked && (
-          <Button
-            variant="success"
-            size="lg"
-            onClick={handleStartLabor}
-            disabled={isPending || !canStart && !canHold}
-            className="touch-manipulation"
-          >
-            <Play className="size-4" />
-            İşçilik Başlat
-          </Button>
-        )}
-
-        {order.laborSessions.filter((l) => l.endTime).length > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {order.laborSessions.filter((l) => l.endTime).map((session) => (
-              <div key={session.id} className="flex items-center justify-between text-xs text-muted-foreground py-1.5 px-2 rounded bg-muted">
-                <span>
-                  {new Date(session.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                  {" → "}
-                  {new Date(session.endTime!).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <span className="font-medium">
-                  {session.durationMinutes ? `${Math.floor(session.durationMinutes / 60)}s ${session.durationMinutes % 60}dk` : "—"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-              </div>
+              <LaborSessionCard
+                orderId={order.id}
+                sessions={order.laborSessions}
+                locked={locked}
+                canStart={canStart || canHold}
+                canEdit={canEditOrder}
+              />
               <WizardActions>
-                {canStart ? (
-                  <Button size="lg" onClick={handleStartWork} disabled={isPending}>
-                    <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
-                  </Button>
-                ) : (
-                  <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
-                )}
+                <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
               </WizardActions>
               {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "check" && (
-            <>
+          <TabsContent value="check" className="space-y-4">
               <OrderChecklist orderId={order.id} state={checklist} locked={locked} open={checklistOpen} onOpenChange={setChecklistOpen} containerRef={checklistRef} />
               {order.damageMarks.length > 0 && <DamageMarks marks={order.damageMarks} />}
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("start")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "items" && (
-            <>
+          <TabsContent value="items" className="space-y-4">
               <div className="rounded-lg border border-border bg-card p-4">
                 <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
                 {order.totals.hasAnyPrice && <OrderTotals order={order} />}
@@ -473,18 +463,32 @@ export function TechnicianOrderDetail({
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("check")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "needs" && (
-            <>
-              <Tabs defaultValue="requests">
+          <TabsContent value="needs" className="space-y-4">
+              {/* BAK-141 — "Parça & İşçilik" ilk sekme ve `order.edit` taşıyan
+                  kullanıcıda VARSAYILAN: müşterinin isteği teknisyenin kalemi
+                  doğrudan girebilmesi, talep açması değil. İzni olmayan (çırak)
+                  eski varsayılanda kalır — ona düzenleyici zaten açılmıyor. */}
+              <Tabs defaultValue={canEditOrder ? "kalemler" : "requests"}>
                 <div className="max-w-full overflow-x-auto pb-1">
                   <TabsList>
+                    <TabsTrigger value="kalemler">Parça &amp; İşçilik ({order.items.length})</TabsTrigger>
                     <TabsTrigger value="requests">Talepler ({order.partsRequests.length})</TabsTrigger>
                     <TabsTrigger value="purchases">Dış alımlar ({purchasedItems.length})</TabsTrigger>
                   </TabsList>
                 </div>
+                <TabsContent value="kalemler">
+                  <TechnicianPartsLaborSection
+                    orderId={order.id}
+                    status={order.status}
+                    items={order.items}
+                    vehicle={pickerVehicle}
+                    laborCatalog={laborCatalog}
+                    taxRateBps={order.taxRate}
+                    canEditOrder={canEditOrder}
+                  />
+                </TabsContent>
                 <TabsContent value="requests">
                   <PartsRequestSection orderId={order.id} vehicle={pickerVehicle} requests={order.partsRequests} locked={locked} />
                 </TabsContent>
@@ -520,11 +524,9 @@ export function TechnicianOrderDetail({
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("items")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "finish" && (
-            <>
+          <TabsContent value="finish" className="space-y-4">
               <Tabs defaultValue="photos">
                 <div className="max-w-full overflow-x-auto pb-1">
                   <TabsList>
@@ -554,17 +556,15 @@ export function TechnicianOrderDetail({
               {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
               {canComplete && completeReminder && <ChecklistReminder message={completeReminder} onReveal={() => goToStep("check")} />}
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("needs")}>Geri</Button>}>
-                {canHold && <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}><Pause /> Beklemeye al</Button>}
                 {canComplete && (
                   <Button variant="success" size="lg" onClick={() => setCompleteDialogOpen(true)} disabled={isPending || !!completeBlockedMessage}>
                     <CheckCircle2 /> İşi tamamla
                   </Button>
                 )}
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
         </section>
-      </div>
+      </Tabs>
 
       <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
         <AlertDialogContent>
@@ -1092,7 +1092,7 @@ function AddInternalNoteForm({ orderId }: { orderId: string }) {
       <Button
         type="submit"
         variant="warning"
-        size="lg"
+        size="default"
         disabled={isPending || !content.trim()}
         className="touch-manipulation"
       >
