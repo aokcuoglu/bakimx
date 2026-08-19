@@ -42,6 +42,7 @@ export type AdminCapability =
   | "manageLiveChat"
   | "manageLeads"
   | "manageAdmins"
+  | "manageStatusPage"
 
 /**
  * Yetki matrisi — kaynak: `docs/operations/platform-admin-model.md` §2.
@@ -64,6 +65,8 @@ const CAPABILITIES: Record<AdminCapability, readonly AdminRole[]> = {
   manageFlags: ["founder"],
   manageCatalog: ["founder"],
   manageAdmins: ["founder"],
+  // Kesinti iletişimi destek ekibinin de işi (BAK-119/BAK-128) — founder'a kilitli değil.
+  manageStatusPage: ["founder", "support"],
 }
 
 /** Capability check against the {@link CAPABILITIES} matrix. */

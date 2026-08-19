@@ -130,6 +130,9 @@ export const KEEP_TABLES = [
   "LiveChatConversation",
   "LiveChatMessage",
   "LiveChatResumeToken",
+  // Herkese açık durum sayfası (BAK-128) platform geneli olay geçmişidir;
+  // hiçbir atölyeye ait olmadığı için kiracı sıfırlamasında korunur.
+  "status_incidents",
   "_prisma_migrations",
 ]
 

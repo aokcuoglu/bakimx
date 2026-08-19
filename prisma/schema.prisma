@@ -2394,3 +2394,35 @@ model RateLimitCounter {
 
   @@index([resetAt])
 }
+
+/// Bir olayın ciddiyeti. `operational` bilerek burada YOK — bu enum yalnız aktif
+/// bir sorunu tanımlar; genel durum (`operational` dahil) `deriveOverallStatus`
+/// ile açık olay YOKLUĞUNDAN türetilir (bkz. `src/lib/status-page.ts`).
+enum StatusIncidentSeverity {
+  degraded
+  major_outage
+}
+
+/// Dahili, ücretsiz public statü sayfasının (BAK-128) kaynağı. `resolvedAt` NULL
+/// olan satırlar "aktif" sayılır; genel platform durumu bunların en yüksek
+/// ciddiyetinden türetilir. Geçmiş için satır asla silinmez, yalnız çözülür.
+model StatusIncident {
+  id       String                  @id @default(cuid())
+  title    String
+  severity StatusIncidentSeverity
+  message  String
+
+  /// Yayınlayan yönetici — `PlatformAdmin` değil e-posta: konsol geçmişi
+  /// yöneticinin ekipten ayrılmasından sonra da okunabilir kalmalı.
+  createdByEmail String @map("created_by_email")
+
+  resolvedAt     DateTime? @map("resolved_at")
+  resolutionNote String?   @map("resolution_note")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([resolvedAt])
+  @@index([createdAt])
+  @@map("status_incidents")
+}
