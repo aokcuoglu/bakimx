@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -254,7 +254,7 @@ function EditLaborSessionDialog({
                   <FormItem className="flex-1">
                     <FormLabel>Başlangıç</FormLabel>
                     <FormControl>
-                      <Input {...field} type="datetime-local" />
+                      <DateTimePicker {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -267,7 +267,7 @@ function EditLaborSessionDialog({
                   <FormItem className="flex-1">
                     <FormLabel>Bitiş</FormLabel>
                     <FormControl>
-                      <Input {...field} type="datetime-local" />
+                      <DateTimePicker {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
