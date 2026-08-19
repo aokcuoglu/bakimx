@@ -42,16 +42,21 @@ export function AddLocalMemberForm({
   assignableRoles,
   onCreated,
   onCancel,
+  technicianId,
+  initialFullName = "",
 }: {
   assignableRoles: UserRole[]
   onCreated: (credentials: IssuedCredentials) => void
   onCancel: () => void
+  technicianId?: string
+  initialFullName?: string
 }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const [seatLimited, setSeatLimited] = useState(false)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const nameParts = initialFullName.trim().split(/\s+/)
+  const [firstName, setFirstName] = useState(nameParts.shift() ?? "")
+  const [lastName, setLastName] = useState(nameParts.join(" "))
   const [username, setUsername] = useState("")
   const [role, setRole] = useState<UserRole>(assignableRoles[0] ?? "usta")
   /** Son gelen sunucu cevabı, HANGİ kullanıcı adına ait olduğuyla birlikte. */
@@ -111,6 +116,7 @@ export function AddLocalMemberForm({
     fd.set("lastName", lastName)
     fd.set("username", normalized)
     fd.set("role", role)
+    if (technicianId) fd.set("technicianId", technicianId)
     startTransition(async () => {
       const res = await createLocalMemberAction(fd)
       if (res.ok) {
@@ -134,7 +140,9 @@ export function AddLocalMemberForm({
       className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3 mb-4"
     >
       <div>
-        <h4 className="text-sm font-semibold text-foreground">E-postasız kullanıcı ekle</h4>
+        <h4 className="text-sm font-semibold text-foreground">
+          {technicianId ? "Personelin giriş hesabını tamamla" : "E-postasız kullanıcı ekle"}
+        </h4>
         <p className="text-xs text-muted-foreground mt-0.5">
           E-posta adresi olmayan usta ve çıraklar için. Sistem tek seferlik bir geçici şifre üretir.
         </p>

@@ -11,7 +11,7 @@ import type { UserRole } from "@prisma/client"
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   owner: "Yönetici",
-  manager: "Servis Müdürü",
+  manager: "Servis Danışmanı",
   usta: "Usta",
   cirak: "Çırak",
   staff: "Personel (eski)",

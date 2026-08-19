@@ -14,6 +14,7 @@ import {
   RotateCw,
   X,
   ShieldCheck,
+  TriangleAlert,
 } from "lucide-react"
 import type { UserRole } from "@prisma/client"
 import { cn } from "@/lib/utils"
@@ -34,7 +35,6 @@ import {
   revokeInviteAction,
   updateMemberRoleAction,
   setMemberActiveAction,
-  setMemberTechnicianAction,
 } from "@/app/(app)/settings/team/actions"
 import { AddLocalMemberForm } from "@/components/settings/add-local-member-form"
 import {
@@ -66,6 +66,12 @@ export type PendingInvite = {
   email: string
   role: UserRole
   expiresAt: string
+}
+export type AccountMissingPersonnel = {
+  id: string
+  fullName: string
+  role: string
+  isActive: boolean
 }
 
 // Sabit renk YOK — tema token'ları (bkz. proje UI kuralları). Rozet tonu
@@ -107,7 +113,7 @@ export function TeamManagement({
   seatLimit,
   workshopName,
   loginCode,
-  technicians,
+  accountMissingPersonnel,
   logoUrl,
 }: {
   members: TeamMember[]
@@ -120,8 +126,8 @@ export function TeamManagement({
   workshopName: string
   /** `Workshop.loginCode` — kullanıcı adıyla girişte hangi tenant olduğunu çözer. */
   loginCode: string
-  /** BAK-39: Teknicyen listesi; üye seçimiyle eşleştirilmesi için. */
-  technicians: { id: string; fullName: string; isActive: boolean }[]
+  /** Migration'ın sessizce hesap uyduramadığı eski personel kayıtları. */
+  accountMissingPersonnel: AccountMissingPersonnel[]
   logoUrl?: string
 }) {
   const atLimit = seatUsed >= seatLimit
@@ -130,6 +136,7 @@ export function TeamManagement({
   const [error, setError] = useState("")
   const [showInvite, setShowInvite] = useState(false)
   const [showAddLocal, setShowAddLocal] = useState(false)
+  const [accountMissingId, setAccountMissingId] = useState<string | null>(null)
   /** Dolu olduğu sürece geçici şifre penceresi açık kalır — kapanınca kaybolur. */
   const [issued, setIssued] = useState<IssuedCredentials | null>(null)
   const [inviteEmail, setInviteEmail] = useState("")
@@ -140,12 +147,6 @@ export function TeamManagement({
   const [inviteRole, setInviteRole] = useState<UserRole>("usta")
   const [lastInviteUrl, setLastInviteUrl] = useState("")
   const [copied, setCopied] = useState(false)
-
-  // BAK-39: Teknicyen seçimi için label ve seçim haritası
-  const technicianLabels = technicians.reduce(
-    (acc, t) => ({ ...acc, [t.id]: t.fullName }),
-    {} as Record<string, string>
-  )
 
   const assignable = rolesUpTo(currentUserRole)
   // Rol atama kuralı korunur: kimse kendinden yüksek rol açamaz.
@@ -206,7 +207,7 @@ export function TeamManagement({
                 de "Usta" ve "Yönetici" geçiyor. Metin, hangisinin YETKİ verdiğini
                 söylemek zorunda (#274). */}
             <p className="text-xs text-muted-foreground">
-              Uygulamaya giriş yapan kullanıcılar. Rol, kişinin uygulamada neyi yapabileceğini belirler.
+              Tüm personel ve uygulama yetkileri tek listede yönetilir.
             </p>
           </div>
         </div>
@@ -217,6 +218,7 @@ export function TeamManagement({
               <Button
                 size="lg"
                 onClick={() => {
+                  setAccountMissingId(null)
                   setShowAddLocal((s) => !s)
                   setShowInvite(false)
                 }}
@@ -286,9 +288,17 @@ export function TeamManagement({
       {showAddLocal && canManage && localAssignable.length > 0 && (
         <AddLocalMemberForm
           assignableRoles={localAssignable}
-          onCancel={() => setShowAddLocal(false)}
+          onCancel={() => {
+            setShowAddLocal(false)
+            setAccountMissingId(null)
+          }}
+          technicianId={accountMissingId ?? undefined}
+          initialFullName={
+            accountMissingPersonnel.find((person) => person.id === accountMissingId)?.fullName
+          }
           onCreated={(credentials) => {
             setShowAddLocal(false)
+            setAccountMissingId(null)
             setIssued(credentials)
             router.refresh()
           }}
@@ -413,28 +423,6 @@ export function TeamManagement({
                       ))}
                     </SelectContent>
                   </Select>
-                  {/* BAK-39: Teknicyen seçimi — kullanıcı bir teknicyen kaydıyla
-                      eşleştirilirse, panelde kendi işlerini görecek. */}
-                  {technicians.length > 0 && (
-                    <Select
-                      items={technicianLabels}
-                      value={m.technicianId || ""}
-                      disabled={isPending}
-                      onValueChange={(v) => run(() => setMemberTechnicianAction(m.id, v || null))}
-                    >
-                      <SelectTrigger size="sm" className="text-xs">
-                        <SelectValue placeholder="Teknisyen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Bağlantı yok</SelectItem>
-                        {technicians.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.fullName} {!t.isActive && "(Pasif)"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
                   {/* E-postasız üyenin "şifremi unuttum" yolu yok — sıfırlama
                       buradan geçer ve yeni geçici şifre üretir. */}
                   {isLocalMember(m) && (
@@ -475,6 +463,42 @@ export function TeamManagement({
           )
         })}
       </div>
+
+      {accountMissingPersonnel.length > 0 && (
+        <div className="mt-5 space-y-2" aria-label="Hesabı eksik personel">
+          <h4 className="text-sm font-semibold text-foreground">Hesabı tamamlanacak personel</h4>
+          {accountMissingPersonnel.map((person) => (
+            <div
+              key={person.id}
+              role="alert"
+              className="flex items-start gap-3 rounded-lg border border-warning/20 bg-warning/10 p-3"
+            >
+              <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning-strong" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{person.fullName}</p>
+                <p className="text-xs text-warning-strong">
+                  Bu eski personel kaydının giriş hesabı yok. Yanlış kişiye iş geçmişi bağlanmaması için otomatik eşleştirilmedi.
+                </p>
+                {canManage && localAssignable.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      setAccountMissingId(person.id)
+                      setShowAddLocal(true)
+                      setShowInvite(false)
+                    }}
+                  >
+                    Giriş hesabını tamamla
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pending invites */}
       {invites.length > 0 && (

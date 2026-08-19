@@ -116,6 +116,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     }),
     prisma.technician.findMany({
       where: { workshopId: user.workshopId },
+      include: { linkedUsers: { select: { id: true } } },
       orderBy: [{ isActive: "desc" }, { fullName: "asc" }],
     }),
   ])
@@ -127,7 +128,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     expiresAt: i.expiresAt.toISOString(),
   }))
 
-  const serializedTechnicians = technicians.map((t) => ({
+  const accountMissingPersonnel = technicians.filter((t) => t.linkedUsers.length === 0).map((t) => ({
     id: t.id,
     fullName: t.fullName,
     phone: t.phone,
@@ -155,7 +156,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           user={serializedUser}
           members={members}
           invites={serializedInvites}
-          technicians={serializedTechnicians}
+          accountMissingPersonnel={accountMissingPersonnel}
           seatUsed={seatUsage.used}
           seatLimit={seatLimit}
         />

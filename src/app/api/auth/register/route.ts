@@ -150,6 +150,14 @@ export async function POST(request: Request) {
               },
             })
 
+            const ownerTechnician = await tx.technician.create({
+              data: {
+                workshopId: ws.id,
+                fullName: `${data.firstName} ${data.lastName}`.trim(),
+                phone: data.phone,
+                role: "yonetici",
+              },
+            })
             await tx.user.create({
               data: {
                 email: data.email,
@@ -159,20 +167,9 @@ export async function POST(request: Request) {
                 workshopId: ws.id,
                 // The self-serve registrant is the workshop's first user → owner.
                 role: "owner",
+                technicianId: ownerTechnician.id,
               },
             })
-
-            // Create initial team members (technicians) if provided
-            if (data.teamMembers && data.teamMembers.length > 0) {
-              await tx.technician.createMany({
-                data: data.teamMembers.map((m) => ({
-                  workshopId: ws.id,
-                  fullName: m.fullName,
-                  phone: "",
-                  role: m.role,
-                })),
-              })
-            }
 
             return ws
           })

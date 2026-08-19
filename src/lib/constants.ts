@@ -332,6 +332,7 @@ export type SupplierStatusKey = keyof typeof SUPPLIER_STATUS
 
 export const TECHNICIAN_ROLES = {
   usta: { label: "Usta", color: "bg-warning/10 text-foreground border-warning/20" },
+  cirak: { label: "Çırak", color: "bg-warning/10 text-foreground border-warning/20" },
   teknisyen: { label: "Teknisyen", color: "bg-primary/10 text-foreground border-primary/20" },
   servis_danismani: { label: "Servis Danışmanı", color: "bg-secondary text-secondary-foreground border-border" },
   yonetici: { label: "Yönetici", color: "bg-success/10 text-foreground border-success/20" },

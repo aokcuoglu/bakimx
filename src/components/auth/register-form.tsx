@@ -47,7 +47,6 @@ import {
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { formatPhoneTR } from "@/lib/format"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
-import { PLAN_SEATS } from "@/lib/plan"
 import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
 
@@ -209,7 +208,6 @@ export function RegisterForm() {
         weekdayStart: values.weekdayStart,
         weekdayEnd: values.weekdayEnd,
         workingDays: values.workingDays,
-        teamMembers: values.teamMembers.length > 0 ? values.teamMembers : undefined,
         kvkkConsent: true,
       }
 
@@ -783,8 +781,10 @@ function StepTeam({ form }: { form: WizardForm }) {
     name: "teamMembers",
   })
 
-  const selectedPlan = form.watch("selectedPlan")
-  const maxMembers = PLAN_SEATS[selectedPlan] - 1
+  // BAK-107: Personel kaydı artık giriş hesabından ayrı açılamaz. İlk kayıt
+  // sırasında geçici şifre/davet teslimi yapılamadığı için ekip, kurulumdan
+  // sonra Ayarlar > Ekip'teki tek yüzeyden eklenir.
+  const maxMembers = 0
   const canAdd = maxMembers > 0 && fields.length < maxMembers
 
   useEffect(() => {
@@ -803,9 +803,7 @@ function StepTeam({ form }: { form: WizardForm }) {
           Ekibiniz
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {maxMembers > 0
-            ? `İlk ekip üyelerinizi ekleyin (en fazla ${maxMembers} kişi). Bu adımı atlayıp sonra da ekleyebilirsiniz.`
-            : "Başlangıç paketinde ek kullanıcı bulunmaz. Ekip üyesi eklemek için Profesyonel veya Premium pakete geçiş yapabilirsiniz."}
+          İş yerini kurduktan sonra personelinizi Ayarlar &gt; Ekip ekranından ekleyin. Her personele giriş hesabı birlikte açılır.
         </p>
       </div>
 
@@ -813,7 +811,7 @@ function StepTeam({ form }: { form: WizardForm }) {
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <Users className="mx-auto size-8 text-muted-foreground/50" />
           <p className="mt-2 text-sm text-muted-foreground">
-            Bu adım Başlangıç paketi için geçerli değil — isterseniz atlayabilirsiniz.
+            Personel ekleme, hesap bilgilerinin güvenle teslim edilebilmesi için kurulumdan sonra yapılır.
           </p>
         </div>
       ) : fields.length === 0 ? (

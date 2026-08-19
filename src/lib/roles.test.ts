@@ -13,6 +13,10 @@ import type { UserRole } from "@prisma/client"
 
 const ALL_ROLES: UserRole[] = ["owner", "manager", "usta", "cirak", "staff"]
 
+test("manager yetkileri Servis Danışmanı etiketiyle gösterilir", () => {
+  expect(ROLE_LABELS.manager).toBe("Servis Danışmanı")
+})
+
 test("her rol için etiket, açıklama, sıra ve izin listesi tanımlı", () => {
   for (const r of ALL_ROLES) {
     expect(ROLE_LABELS[r]).toBeTruthy()
