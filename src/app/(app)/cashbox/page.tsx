@@ -125,7 +125,7 @@ export default async function CashboxPage() {
           <div className="lg:col-span-2 space-y-5">
             <RecentCollectionsSection collections={recentCollections} />
           </div>
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <MethodBreakdownSection breakdown={methodBreakdown} />
             <OpenReceivablesSection receivables={openReceivables.slice(0, 5)} />
           </div>

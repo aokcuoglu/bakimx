@@ -23,7 +23,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
   const isReadOnly = error.message?.includes("Salt-okunur")
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 sm:px-6 text-center">
       <div className="flex size-12 items-center justify-center rounded-full bg-amber-100">
         <AlertTriangle className="size-6 text-amber-600" />
       </div>

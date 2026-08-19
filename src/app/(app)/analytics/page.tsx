@@ -44,7 +44,7 @@ export default async function AnalyticsPage() {
 
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Operasyonel Analiz">
-      <div className="space-y-6 max-w-full">
+      <div className="space-y-4 sm:space-y-6 max-w-full">
         <div className="rounded-lg bg-gradient-to-br from-navy to-navy-light text-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-xl sm:text-2xl font-bold">Operasyonel Analiz</h2>
           <p className="text-sm text-muted-foreground/50 mt-1">
