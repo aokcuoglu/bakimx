@@ -44,7 +44,7 @@ export function TecdocArticleRow({
       <button
         type="button"
         onClick={onSelect}
-        className="min-h-11 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+        className="min-h-8 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
       >
         {article.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -91,7 +91,7 @@ export function TecdocArticleRow({
           aria-label="Parça detayı"
           title="Özellikler, görsel ve uygunluk"
           onClick={() => onShowDetail(article)}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
         >
           <Info className="size-4" />
         </button>

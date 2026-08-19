@@ -88,8 +88,11 @@ test("oluşturulan müşteri listeye eklenip araç formunda seçilir", () => {
   expect(FORM).toContain('form.setValue("customerId", id')
 })
 
-test("müşteri ekleme aksiyonu mobil dokunma hedefini korur", () => {
-  expect(FORM).toContain('className="min-h-11 text-primary"')
+test("müşteri ekleme aksiyonu vurgulu bir buton olarak kalır", () => {
+  // Yükseklik ezmesi BAK-150'de kaldırıldı; ölçek artık Button varyantından
+  // geliyor (docs/ui-control-sizing.md).
+  expect(FORM).toContain('className="text-primary"')
+  expect(FORM).toContain("Yeni müşteri ekle")
 })
 
 test("hiç müşteri yokken de araç formu açılır", () => {

@@ -266,7 +266,7 @@ function PartsRequestCard({
                 <DropdownMenuTrigger
                   disabled={isPending}
                   aria-label={`${request.partName} için diğer işlemler`}
-                  className="inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-md border border-border transition-colors hover:bg-muted disabled:opacity-50 md:size-9"
+                  className="inline-flex size-8 shrink-0 touch-manipulation items-center justify-center rounded-md border border-border transition-colors hover:bg-muted disabled:opacity-50"
                 >
                   <MoreHorizontal className="size-4 text-muted-foreground" />
                 </DropdownMenuTrigger>

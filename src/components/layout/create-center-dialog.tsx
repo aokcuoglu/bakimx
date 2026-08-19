@@ -29,7 +29,7 @@ export function CreateCenterDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button type="button" size="lg" className="h-11 w-11 px-0 sm:w-auto sm:px-3 md:h-8" aria-label="Yeni kayıt oluştur" />
+          <Button type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur" />
         }
       >
         <Plus className="size-4" />
@@ -42,7 +42,7 @@ export function CreateCenterDialog() {
               type="button"
               variant="ghost"
               size="icon-lg"
-              className="absolute top-1 right-1 size-11 md:top-2 md:right-2 md:size-9"
+              className="absolute top-1 right-1 md:top-2 md:right-2"
               aria-label="Oluşturma merkezini kapat"
             />
           }

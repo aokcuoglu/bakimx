@@ -221,11 +221,18 @@ function AppHeader({
   userIdentity?: UserIdentity
 }) {
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
+  const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
 
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
+      <div className="relative flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
         <SidebarTrigger className="-ml-2 lg:hidden" />
+
+        <div className="absolute left-1/2 -translate-x-1/2 lg:hidden">
+          <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
+            <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+          </Link>
+        </div>
 
         {pageTitle && (
           <div className="hidden min-w-0 md:flex md:max-w-48 md:flex-col lg:max-w-64">
@@ -242,8 +249,8 @@ function AppHeader({
         {!showGlobalSearch && <div className="flex-1" />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
-          {!isTechnicianRestrictedRole(userIdentity?.role) && <CreateCenterDialog />}
-          {isTechnicianRestrictedRole(userIdentity?.role) ? (
+          {!isTechRole && <CreateCenterDialog />}
+          {isTechRole ? (
             <TechnicianNotificationsBell />
           ) : (
             <Tooltip>
