@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   // Süreç-içi limiter çok instance arasında koordineli değildir; yatay
   // ölçeklemede ortak Redis/Postgres deposuna taşınmalıdır.
-  if (!rateLimit(`landing-assistant:${clientIp(request)}`, 10, 60_000).allowed) return fallback()
+  if (!(await rateLimit(`landing-assistant:${clientIp(request)}`, 10, 60_000)).allowed) return fallback()
 
   try {
     const result = await askWithTimeout(parsed.data.question)

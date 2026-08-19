@@ -531,8 +531,9 @@ export async function cancelBillingOrder(orderId: string): Promise<Result> {
  *     herhangi bir kiracı hesabına giremez.
  *  2. **Kiracı izolasyonu.** `userId` istemciden gelir, sorgu onu SUNUCUDA
  *     `workshopId` ile eşler; başka atölyenin kullanıcısı için token üretilemez.
- *  3. **Tekrar gönderim sınırı.** Son token'ın yaşı DB'den okunur — bellekteki
- *     `rateLimit` çok görevli çalışmada ve yeniden başlatmada güvenilmez.
+ *  3. **Tekrar gönderim sınırı.** Son token'ın yaşı DB'den okunur. `rateLimit`
+ *     BAK-116'dan beri paylaşımlı sayaç kullanıyor ama pencereleri dakikalık ve
+ *     satırları süpürülebilir; token yaşı kalıcı kaydın kendisinden okunmalı.
  */
 export async function sendUserPasswordReset(workshopId: string, userId: string): Promise<Result> {
   const ctx = await requireAdminCapability("sendPasswordReset")

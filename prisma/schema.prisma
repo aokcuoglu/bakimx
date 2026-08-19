@@ -2378,3 +2378,19 @@ model BakimxOrderItem {
   @@index([bakimxProductId])
   @@map("bakimx_order_items")
 }
+
+/// Süreçler arası paylaşımlı sabit-pencere (fixed window) rate limit sayacı
+/// (BAK-116). Bellekteki `Map` her ECS task'ında ayrı bir sayaç tuttuğu için
+/// etkin eşik task sayısıyla çarpılıyordu; bu tablo tek gerçek sayacı tutar.
+///
+/// Satırlar kısa ömürlüdür: `resetAt` geçtikten sonra sayaç sıfırlanır ve
+/// `src/lib/rate-limit.ts` süresi dolmuş satırları periyodik olarak siler.
+model RateLimitCounter {
+  /// Kova anahtarı — ör. `login:203.0.113.7`, `login:acct:email:a@b.com`.
+  key   String @id
+  count Int
+  /// Pencerenin bittiği an; bu andan sonraki ilk istek sayacı 1'e çeker.
+  resetAt DateTime
+
+  @@index([resetAt])
+}

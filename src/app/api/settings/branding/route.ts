@@ -5,7 +5,7 @@ import { apiErrorResponse } from "@/lib/api-errors"
 
 export async function POST(request: Request) {
   const clientId = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown"
-  const { allowed, retryAfterMs } = rateLimit(`settings-branding:${clientId}`)
+  const { allowed, retryAfterMs } = await rateLimit(`settings-branding:${clientId}`)
   if (!allowed) {
     return NextResponse.json(
       { error: "Çok fazla istek. Lütfen bekleyin." },

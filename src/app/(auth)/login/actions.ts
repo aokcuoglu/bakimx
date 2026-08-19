@@ -40,7 +40,7 @@ export async function loginAction(formData: FormData) {
   }
 
   const ip = clientIpFromHeaders(await headers())
-  const limit = loginRateLimit(ip)
+  const limit = await loginRateLimit(ip)
   if (!limit.allowed) {
     return { error: TOO_MANY_ATTEMPTS_MESSAGE }
   }
@@ -53,7 +53,7 @@ export async function loginAction(formData: FormData) {
     if (!workshopId) return { error: INVALID_CREDENTIALS_MESSAGE }
   }
 
-  const accountLimit = loginAccountRateLimit(parsed.data.identifier, workshopId)
+  const accountLimit = await loginAccountRateLimit(parsed.data.identifier, workshopId)
   if (!accountLimit.allowed) {
     return { error: TOO_MANY_ATTEMPTS_MESSAGE }
   }
