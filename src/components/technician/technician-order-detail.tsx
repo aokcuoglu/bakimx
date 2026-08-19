@@ -41,7 +41,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { WizardActions, WizardHeading, WizardStepper } from "@/components/intake/wizard-ui"
+import { WizardActions, WizardHeading } from "@/components/intake/wizard-ui"
 import {
   PartsRequestSection,
   type TechnicianPartsRequest,
@@ -222,16 +222,14 @@ export function TechnicianOrderDetail({
           ? "items"
           : "needs"
   const [rememberedStep, setRememberedStep] = useState<StepId | null>(null)
-  const currentStep: StepId = locked
-    ? "finish"
-    : validRequestedStep ?? rememberedStep ?? derivedStep
+  // Kilit yalnız DÜZENLEMEYİ durdurur (BAK-137): kilitli iş emrinde de her
+  // sekme serbestçe gezilebilsin diye currentStep artık "finish"e sabitlenmez,
+  // derivedStep sadece varsayılan iniş noktasını belirler.
+  const currentStep: StepId = validRequestedStep ?? rememberedStep ?? derivedStep
   const currentIndex = steps.findIndex((step) => step.id === currentStep)
-  const completedStepIds = locked
-    ? steps.map((step) => step.id)
-    : steps.slice(0, currentIndex).map((step) => step.id)
 
   useEffect(() => {
-    if (locked || validRequestedStep) return
+    if (validRequestedStep) return
 
     let savedStep: string | null = null
     try {
@@ -243,7 +241,7 @@ export function TechnicianOrderDetail({
     if (!isStepId(savedStep)) return
     const frame = requestAnimationFrame(() => setRememberedStep(savedStep))
     return () => cancelAnimationFrame(frame)
-  }, [locked, order.id, validRequestedStep])
+  }, [order.id, validRequestedStep])
 
   function goToStep(step: StepId) {
     setRememberedStep(step)
@@ -362,15 +360,21 @@ export function TechnicianOrderDetail({
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <WizardStepper
-          steps={[...steps]}
-          currentId={currentStep}
-          completedIds={completedStepIds}
-          onStepClick={(id) => goToStep(id as StepId)}
-        />
+      {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
+          önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
+          kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
+      <Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>
+        <div className="max-w-full overflow-x-auto pb-1">
+          <TabsList className="w-max">
+            {steps.map((step, i) => (
+              <TabsTrigger key={step.id} value={step.id}>
+                {i + 1}. {step.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-        <section className="min-w-0 space-y-4" aria-live="polite">
+        <section className="min-w-0 space-y-4 mt-4" aria-live="polite">
           <WizardHeading
             eyebrow={`Adım ${currentIndex + 1} / ${steps.length}`}
             title={steps[currentIndex].label}
@@ -383,8 +387,7 @@ export function TechnicianOrderDetail({
             }
           />
 
-          {currentStep === "start" && (
-            <>
+          <TabsContent value="start" className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <VehicleCard vehicle={order.vehicle} />
                 <CustomerCard customer={order.customer} />
@@ -444,21 +447,17 @@ export function TechnicianOrderDetail({
                 )}
               </WizardActions>
               {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "check" && (
-            <>
+          <TabsContent value="check" className="space-y-4">
               <OrderChecklist orderId={order.id} state={checklist} locked={locked} open={checklistOpen} onOpenChange={setChecklistOpen} containerRef={checklistRef} />
               {order.damageMarks.length > 0 && <DamageMarks marks={order.damageMarks} />}
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("start")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "items" && (
-            <>
+          <TabsContent value="items" className="space-y-4">
               <div className="rounded-lg border border-border bg-card p-4">
                 <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
                 {order.totals.hasAnyPrice && <OrderTotals order={order} />}
@@ -473,11 +472,9 @@ export function TechnicianOrderDetail({
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("check")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "needs" && (
-            <>
+          <TabsContent value="needs" className="space-y-4">
               <Tabs defaultValue="requests">
                 <div className="max-w-full overflow-x-auto pb-1">
                   <TabsList>
@@ -520,11 +517,9 @@ export function TechnicianOrderDetail({
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("items")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
 
-          {currentStep === "finish" && (
-            <>
+          <TabsContent value="finish" className="space-y-4">
               <Tabs defaultValue="photos">
                 <div className="max-w-full overflow-x-auto pb-1">
                   <TabsList>
@@ -561,10 +556,9 @@ export function TechnicianOrderDetail({
                   </Button>
                 )}
               </WizardActions>
-            </>
-          )}
+          </TabsContent>
         </section>
-      </div>
+      </Tabs>
 
       <AlertDialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
         <AlertDialogContent>
