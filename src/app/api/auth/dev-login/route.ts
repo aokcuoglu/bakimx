@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     )
   }
 
-  await establishSession(user.id, user.workshopId, user.role)
+  await establishSession(user.id, user.workshopId, user.role, "development")
 
   return NextResponse.redirect(
     new URL(safeRedirectPath(url.searchParams.get("redirect")), request.url)
