@@ -103,7 +103,7 @@ aşağısı gerçek bir olayda elle yürütülecek hâlidir.
 | Ne | Kim | Nasıl |
 |---|---|---|
 | Kurtarma kararı, hedef zaman noktası | alpkaan (tek yetkili) | — |
-| Etkilenen kiracılara bildirim | alpkaan | Atölye iletişim bilgileri `/admin` → İş Yerleri; statü sayfası **yok** (§6) |
+| Etkilenen kiracılara bildirim | alpkaan | Atölye iletişim bilgileri `/admin` → İş Yerleri; kamuya açık anons [x.com/bakimxcom](https://x.com/bakimxcom), şablonlar [incident-communication.md](./incident-communication.md) (BAK-119) |
 | Kayıt | kurtarmayı yürüten | Olay sonrası bu dosyanın §5 tablosuna satır + issue |
 
 Kurtarmaya başlamadan **kaybın kapsamını yazıya dök**: hangi tablolar, hangi
@@ -297,9 +297,10 @@ Kapatılmadı, gizlenmiyor:
   S3 replikasyonu yok. `eu-central-1` bütünüyle giderse ya da AWS hesabı ele
   geçirilirse bu prosedür işlemez. Kapatmanın yolu: günlük snapshot kopyası +
   S3 CRR (aylık birkaç dolar); MVP evresinde bilinçli olarak alınmadı.
-- **Statü sayfası yok.** Kesintide müşteriye nereden haber verileceği tanımsız —
-  bugün tek yol tek tek aramak
-  ([platform-admin-model.md](./platform-admin-model.md) §6).
+- **Dahili statü sayfası yok.** Kesinti iletişiminin interim kanalı BAK-119 ile
+  kondu (X hesabı + anons şablonları,
+  [incident-communication.md](./incident-communication.md)); geçmiş olay arşivi
+  tutan ve konsoldan güncellenen `/status` sayfası hâlâ yok (BAK-128, backlog).
 - **Multi-AZ kapalı.** AZ kaybında otomatik failover yok, kurtarma elle restore.
   RTO hedefi (4 saat) buna göre kondu.
 - **Kısmi (tek kiracı) geri yükleme script'i yok.** §3/1 elle SQL ile yapılır;

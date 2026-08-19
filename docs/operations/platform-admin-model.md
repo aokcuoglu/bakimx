@@ -241,8 +241,12 @@ Bugünkü kanallar ve boşlukları:
   6 dk 58 sn'de tamamlandı ve doğrulandı. Prosedür, RTO/RPO hedefleri, tatbikat
   kaydı ve kalan boşluklar (bölge kaybı, statü sayfası):
   [disaster-recovery.md](./disaster-recovery.md).
-- **Olay iletişimi.** Kesinti olduğunda müşteriye ne söyleneceği ve nereden
-  söyleneceği tanımlı değil (statü sayfası yok).
+- **Olay iletişimi.** ~~Kesinti olduğunda müşteriye ne söyleneceği ve nereden
+  söyleneceği tanımlı değil (statü sayfası yok).~~ BAK-119 ile interim çözüm
+  teslim edildi: [x.com/bakimxcom](https://x.com/bakimxcom), `hey@bakimx.com`
+  yönetiyor, hazır anons şablonları
+  [incident-communication.md](./incident-communication.md). Dahili `/status`
+  sayfası (geçmiş olay arşivi + konsoldan güncelleme) BAK-128'de backlog'da.
 - **`security@bakimx.com`.** `SECURITY.md` bu adresi ve "makul sürede dönüş"ü vaat
   ediyor — kutunun gerçekten okunduğundan emin olun.
 - **www içerik yönetimi.** Landing metinleri kodda; her metin değişikliği bir deploy.
