@@ -46,6 +46,7 @@ const footerLinks = {
   company: [
     { label: "Demo Talep Et", href: "/demo" },
     { label: "İletişim", href: "#" },
+    { label: "Sistem Durumu", href: "/status" },
   ],
   legal: [
     { label: "Kullanım Koşulları", href: "/terms" },
