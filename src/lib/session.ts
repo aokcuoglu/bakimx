@@ -31,6 +31,8 @@ export interface SessionData {
    * `isAdminSessionRevoked` bunu bilerek "iptal edilmiş" sayar.
    */
   authenticatedAt?: number
+  /** `/admin` kapısı parola oturumunu SSO oturumundan ayırır (BAK-94). */
+  authMethod?: "password" | "google_sso" | "development"
   /**
    * Kullanıcının rolü (BAK-106). Middleware'de rota kısıtlaması için okunur.
    * Bu alan eklenmeden önce açılmış oturumlarda YOK; yoksa middleware kısıtlama
@@ -97,12 +99,18 @@ export async function getSession() {
  * verify-email, dev-login) tutarlı olmak zorunda. Biri unutulursa o yoldan açılan
  * yönetici oturumu iptal edilemez hâle gelirdi — sessiz bir güvenlik açığı.
  */
-export async function establishSession(userId: string, workshopId: string, role?: string): Promise<void> {
+export async function establishSession(
+  userId: string,
+  workshopId: string,
+  role?: string,
+  authMethod: SessionData["authMethod"] = "password"
+): Promise<void> {
   const session = await getSession()
   session.destroy()
   session.userId = userId
   session.workshopId = workshopId
   session.authenticatedAt = Date.now()
+  session.authMethod = authMethod
   if (role) session.role = role
   await session.save()
 }

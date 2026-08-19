@@ -12,6 +12,7 @@ import {
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "@/lib/auth-login"
 import { isEmailIdentifier } from "@/lib/user-identity"
+import { auditBreakGlassLogin } from "@/lib/admin-break-glass"
 
 function tooManyAttempts(retryAfterMs: number) {
   return NextResponse.json(
@@ -75,6 +76,11 @@ export async function POST(request: Request) {
     // Rotate the session on login: clear any pre-existing (possibly fixated)
     // session data before writing the authenticated identity.
     await establishSession(result.userId, result.workshopId, result.role)
+    await auditBreakGlassLogin({
+      identifier: parsed.data.identifier,
+      userId: result.userId,
+      workshopId: result.workshopId,
+    })
 
     // Planı bitmiş workshop'lar uygulamaya değil satın alma akışına gider; app
     // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).

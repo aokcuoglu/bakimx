@@ -105,7 +105,7 @@ export async function GET(request: Request) {
 
   // Tek oturum mekanizması: `authenticatedAt` damgası burada da basılır, böylece
   // `PlatformAdmin.sessionsValidFrom` ile iptal SSO oturumlarında da işler (BAK-93).
-  await establishSession(lookup.account.userId, lookup.account.workshopId)
+  await establishSession(lookup.account.userId, lookup.account.workshopId, undefined, "google_sso")
 
   // Bootstrap ile açılan ilk giriş AYRI bir olaydır: `PlatformAdmin` tablosu
   // boşken `ADMIN_EMAILS` üyeliği yazdı (BAK-114). Sıradan bir SSO girişinden

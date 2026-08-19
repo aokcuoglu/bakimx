@@ -29,6 +29,7 @@ const ACTION_LABELS: Record<string, string> = {
   platform_admin_sso_login: "Google SSO ile giriş yapıldı",
   platform_admin_sso_bootstrap: "Google SSO ile ilk giriş (env bootstrap)",
   platform_admin_sso_rejected: "Google SSO girişi reddedildi",
+  platform_admin_break_glass_login: "Acil durum hesabıyla giriş yapıldı",
   impersonation_started: "Taklit oturumu başladı",
   impersonation_ended: "Taklit oturumu kapandı",
   impersonation_revoked: "Taklit oturumu iptal edildi",
