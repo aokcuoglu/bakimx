@@ -7,6 +7,8 @@ import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
 import { getEffectiveFeatures } from "@/lib/features"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
+import { ROLE_LABELS } from "@/lib/roles"
+import { Badge } from "@/components/ui/badge"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
@@ -32,15 +34,8 @@ const ACTION_LABELS: Record<string, string> = {
   workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
   password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
 }
-const ROLE_LABELS: Record<string, string> = { owner: "Sahip", manager: "Yönetici", staff: "Personel" }
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium", className)}>
-      {children}
-    </span>
-  )
-}
+const APPROVAL_LABELS: Record<string, string> = { pending: "Onay bekliyor", approved: "Onaylı", rejected: "Reddedildi" }
+const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Aktif", past_due: "Ödeme gecikti", canceled: "İptal" }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -129,9 +124,15 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-foreground">{workshop.name}</h1>
-              <Badge className={APPROVAL_BADGE[workshop.approvalStatus] ?? "bg-muted"}>{workshop.approvalStatus}</Badge>
-              <Badge className={SUB_BADGE[workshop.subscriptionStatus] ?? "bg-muted"}>{workshop.subscriptionStatus}</Badge>
-              <Badge className="bg-muted text-muted-foreground">{TIER_LABELS[workshop.planTier] ?? workshop.planTier}</Badge>
+              <Badge variant="outline" className={cn("text-[11px]", APPROVAL_BADGE[workshop.approvalStatus] ?? "bg-muted")}>
+                {APPROVAL_LABELS[workshop.approvalStatus] ?? workshop.approvalStatus}
+              </Badge>
+              <Badge variant="outline" className={cn("text-[11px]", SUB_BADGE[workshop.subscriptionStatus] ?? "bg-muted")}>
+                {SUB_LABELS[workshop.subscriptionStatus] ?? workshop.subscriptionStatus}
+              </Badge>
+              <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
+                {TIER_LABELS[workshop.planTier] ?? workshop.planTier}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {[workshop.city, workshop.district].filter(Boolean).join(" / ")}
@@ -192,8 +193,12 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-1.5">
                   <span className="flex items-center gap-1.5">
-                    <Badge className="bg-muted text-muted-foreground">{ROLE_LABELS[u.role] ?? u.role}</Badge>
-                    {!u.isActive && <Badge className="bg-destructive/10 text-destructive-strong">pasif</Badge>}
+                    <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">{ROLE_LABELS[u.role]}</Badge>
+                    {!u.isActive && (
+                      <Badge variant="outline" className="text-[11px] bg-destructive/10 text-destructive-strong">
+                        pasif
+                      </Badge>
+                    )}
                   </span>
                   {/* Buton yalnız akışa GİREBİLEN koltuklarda: e-postasız veya pasif
                       hesap token almaz (canReceivePasswordReset), aksiyon zaten reddeder. */}
@@ -237,7 +242,17 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-foreground">{formatMinor(o.amountMinor)}</span>
-                    <Badge className={o.status === "confirmed" ? "bg-success/10 text-success-strong" : o.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-warning/10 text-warning-strong"}>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[11px]",
+                        o.status === "confirmed"
+                          ? "bg-success/10 text-success-strong"
+                          : o.status === "cancelled"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-warning/10 text-warning-strong"
+                      )}
+                    >
                       {ORDER_STATUS_LABELS[o.status] ?? o.status}
                     </Badge>
                   </span>
@@ -279,7 +294,17 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                       {c.type} · {c.templateKey ?? "—"}
                     </span>
                     <span className="flex items-center gap-2 text-xs">
-                      <Badge className={c.status === "failed" ? "bg-destructive/10 text-destructive-strong" : c.status === "sent" ? "bg-success/10 text-success-strong" : "bg-muted text-muted-foreground"}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[11px]",
+                          c.status === "failed"
+                            ? "bg-destructive/10 text-destructive-strong"
+                            : c.status === "sent"
+                              ? "bg-success/10 text-success-strong"
+                              : "bg-muted text-muted-foreground"
+                        )}
+                      >
                         {c.status}
                       </Badge>
                       <span className="text-muted-foreground">{c.sentAt.toLocaleDateString("tr-TR")}</span>
@@ -312,7 +337,10 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
                   <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-foreground">{s.provider} · {s.direction}</span>
                     <span className="flex items-center gap-2 text-xs">
-                      <Badge className={s.status === "failed" ? "bg-destructive/10 text-destructive-strong" : "bg-muted text-muted-foreground"}>
+                      <Badge
+                        variant="outline"
+                        className={cn("text-[11px]", s.status === "failed" ? "bg-destructive/10 text-destructive-strong" : "bg-muted text-muted-foreground")}
+                      >
                         {s.status}
                       </Badge>
                       <span className="text-muted-foreground">{s.syncedAt.toLocaleDateString("tr-TR")}</span>

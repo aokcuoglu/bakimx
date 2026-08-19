@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Sparkles, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 
 export interface AdminWorkshopRow {
@@ -35,14 +36,8 @@ const SUB_BADGE: Record<string, string> = {
   past_due: "bg-warning/10 text-warning-strong",
   canceled: "bg-muted text-muted-foreground",
 }
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium", className)}>
-      {children}
-    </span>
-  )
-}
+const APPROVAL_LABELS: Record<string, string> = { pending: "Onay bekliyor", approved: "Onaylı", rejected: "Reddedildi" }
+const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Aktif", past_due: "Ödeme gecikti", canceled: "İptal" }
 
 function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
   const trial = w.trialEndsAt ? new Date(w.trialEndsAt).toLocaleDateString("tr-TR") : null
@@ -55,11 +50,17 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
             <Link href={`/admin/workshops/${w.id}`} className="font-semibold text-foreground hover:text-primary hover:underline">
               {w.name}
             </Link>
-            <Badge className={APPROVAL_BADGE[w.approvalStatus] ?? "bg-muted"}>{w.approvalStatus}</Badge>
-            <Badge className={SUB_BADGE[w.subscriptionStatus] ?? "bg-muted"}>{w.subscriptionStatus}</Badge>
-            <Badge className="bg-muted text-muted-foreground">{TIER_LABELS[w.planTier] ?? w.planTier}</Badge>
+            <Badge variant="outline" className={cn("text-[11px]", APPROVAL_BADGE[w.approvalStatus] ?? "bg-muted")}>
+              {APPROVAL_LABELS[w.approvalStatus] ?? w.approvalStatus}
+            </Badge>
+            <Badge variant="outline" className={cn("text-[11px]", SUB_BADGE[w.subscriptionStatus] ?? "bg-muted")}>
+              {SUB_LABELS[w.subscriptionStatus] ?? w.subscriptionStatus}
+            </Badge>
+            <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
+              {TIER_LABELS[w.planTier] ?? w.planTier}
+            </Badge>
             {w.requestedPlanTier && (
-              <Badge className="bg-primary/15 text-foreground">
+              <Badge variant="outline" className="text-[11px] bg-primary/15 text-foreground">
                 <Sparkles className="size-3 mr-1" /> Talep: {TIER_LABELS[w.requestedPlanTier] ?? w.requestedPlanTier}
               </Badge>
             )}
