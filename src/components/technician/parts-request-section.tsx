@@ -71,7 +71,7 @@ export function PartsRequestSection({
   const pendingCount = requests.filter((r) => r.status !== "delivered" && r.status !== "cancelled").length
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           <Package className="size-4 text-muted-foreground" />

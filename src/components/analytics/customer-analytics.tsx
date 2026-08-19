@@ -11,7 +11,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent }: {
   accent: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <Icon className={`size-4 ${accent}`} />
@@ -54,7 +54,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
         />
       </div>
 
-      <div className="rounded-lg border border-border bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
           <TrendingUp className="size-4 text-success-strong" />
           <h3 className="text-base font-semibold text-foreground">En Yüksek Değerli Müşteriler</h3>

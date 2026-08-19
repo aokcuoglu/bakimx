@@ -285,7 +285,7 @@ export function TeamManagement({
             Davet bağlantısını kişiye iletin (e-posta da gönderildi). 7 gün geçerlidir.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate text-xs bg-white border rounded px-2 py-1.5">{lastInviteUrl}</code>
+            <code className="flex-1 truncate text-xs bg-card border rounded px-2 py-1.5">{lastInviteUrl}</code>
             <Button
               type="button"
               variant="outline"
@@ -415,7 +415,7 @@ export function TeamManagement({
               key={m.id}
               className={cn(
                 "flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border",
-                m.isActive ? "border-border bg-white" : "border-border bg-muted opacity-60"
+                m.isActive ? "border-border bg-card" : "border-border bg-muted opacity-60"
               )}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">

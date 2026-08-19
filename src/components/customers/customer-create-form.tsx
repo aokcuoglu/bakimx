@@ -189,7 +189,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Temel Bilgiler</h3>
@@ -208,7 +208,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         className={cn(
                           "min-h-11 gap-1.5",
                           field.value === "individual"
-                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -223,7 +223,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         className={cn(
                           "min-h-11 gap-1.5",
                           field.value === "corporate"
-                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -420,7 +420,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               )}
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header>
                 <h3 className="text-sm font-semibold text-foreground">Vergi / Kimlik Bilgileri</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Fatura ve resmi kayıtlar için</p>
@@ -441,7 +441,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               />
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-3">
               <header className="flex items-center gap-2">
                 <FileText className="size-4 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">Müşteri Notu</h3>
@@ -462,7 +462,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           </div>
 
           <aside className="space-y-5">
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header>
                 <h3 className="text-sm font-semibold text-foreground">Müşteri Profili</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Etiket, kaynak, fiyat grubu</p>
@@ -492,7 +492,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                                 "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
@@ -558,7 +558,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                                 "min-h-11",
                                 field.value === opt.key
                                   ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
@@ -614,7 +614,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               </div>
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-3">
               <header className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">İletişim İzinleri</h3>

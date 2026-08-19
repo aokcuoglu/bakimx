@@ -227,7 +227,7 @@ export function PartDetailDialog({
                     <button
                       type="button"
                       onClick={() => setLightboxOpen(true)}
-                      className="group relative rounded-lg border bg-white p-2"
+                      className="group relative rounded-lg border bg-card p-2"
                       aria-label="Görseli büyüt"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -108,7 +108,7 @@ export function OrdersReport({
         <StatCard label="İptal" value={stats.cancelled} accent="red" />
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h4 className="text-sm font-semibold text-foreground mb-3">Filtreler</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>

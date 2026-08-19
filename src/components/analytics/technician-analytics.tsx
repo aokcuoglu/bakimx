@@ -6,7 +6,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
             <TrendingUp className="size-4 text-success-strong" />
             <h3 className="text-base font-semibold text-foreground">En Hızlı Teknisyenler</h3>
@@ -43,7 +43,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
             <Users className="size-4 text-primary" />
             <h3 className="text-base font-semibold text-foreground">En Yoğun Teknisyenler</h3>
@@ -79,7 +79,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
           <HardHat className="size-4 text-muted-foreground" />
           <h3 className="text-base font-semibold text-foreground">Teknisyen Performans Özeti</h3>

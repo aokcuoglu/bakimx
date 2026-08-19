@@ -107,7 +107,7 @@ function PhotoGalleryCard({
   return (
     <div
       className={cn(
-        "rounded-lg border overflow-hidden bg-white",
+        "rounded-lg border overflow-hidden bg-card",
         onOpen && "cursor-pointer transition hover:border-primary/40 hover:shadow-sm"
       )}
       onClick={onOpen}
