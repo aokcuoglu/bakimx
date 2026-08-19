@@ -55,6 +55,18 @@ describe("teknisyen iş emri adım kabuğu", () => {
     expect(source).toContain('<Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>')
   })
 
+  test("beklemeye al/devam et hızlı aksiyonları adım içeriğinden bağımsız, üstte durur (BAK-148)", () => {
+    const quickActionsIndex = source.indexOf("(canHold || canStart) &&")
+    const tabsNavIndex = source.indexOf("<Tabs value={currentStep}")
+    expect(quickActionsIndex).toBeGreaterThan(-1)
+    expect(quickActionsIndex).toBeLessThan(tabsNavIndex)
+
+    // Her iki metin de tam olarak BİR yerde geçer — adım içeriğinde
+    // (ör. "start"/"finish" TabsContent) tekrarlanan bir kopyası kalmamalı.
+    expect(source.split("Beklemeye al").length - 1).toBe(1)
+    expect(source.split('"Tamire devam et"').length - 1).toBe(1)
+  })
+
   test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
     expect(source).toContain("Bu iş emri salt okunur")
     expect(source).toContain("Bilgiler değiştirilemez; adımları inceleyebilirsiniz.")
