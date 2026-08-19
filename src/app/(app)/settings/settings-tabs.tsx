@@ -10,8 +10,12 @@ import { WorkingHoursForm } from "@/components/settings/working-hours-form"
 import { AppointmentRulesForm } from "@/components/settings/appointment-rules-form"
 import { PdfTemplatesForm } from "@/components/settings/pdf-templates-form"
 import { SecurityInfo } from "@/components/settings/security-info"
-import { TeamManagement, type TeamMember, type PendingInvite } from "@/components/settings/team-management"
-import { TechnicianManagement, type TechnicianRow } from "@/components/settings/technician-management"
+import {
+  TeamManagement,
+  type AccountMissingPersonnel,
+  type PendingInvite,
+  type TeamMember,
+} from "@/components/settings/team-management"
 import type { UserRole } from "@prisma/client"
 import {
   Building2,
@@ -117,7 +121,7 @@ export function SettingsTabs({
   user,
   members,
   invites,
-  technicians,
+  accountMissingPersonnel,
   seatUsed,
   seatLimit,
 }: {
@@ -127,7 +131,7 @@ export function SettingsTabs({
   user: UserData
   members: TeamMember[]
   invites: PendingInvite[]
-  technicians: TechnicianRow[]
+  accountMissingPersonnel: AccountMissingPersonnel[]
   seatUsed: number
   seatLimit: number
 }) {
@@ -208,8 +212,7 @@ export function SettingsTabs({
         <TabsContent value="appointment-rules"><AppointmentRulesForm settings={settings} /></TabsContent>
         <TabsContent value="pdf-templates"><PdfTemplatesForm settings={settings} /></TabsContent>
         <TabsContent value="team">
-          <div className="space-y-5 sm:space-y-6">
-            <TeamManagement
+          <TeamManagement
               members={members}
               invites={invites}
               currentUserId={user.id}
@@ -219,11 +222,9 @@ export function SettingsTabs({
               seatLimit={seatLimit}
               workshopName={workshop.name}
               loginCode={workshop.loginCode}
-              technicians={technicians.map((t) => ({ id: t.id, fullName: t.fullName, isActive: t.isActive }))}
+              accountMissingPersonnel={accountMissingPersonnel}
               logoUrl={workshop.logoUrl || undefined}
-            />
-            <TechnicianManagement technicians={technicians} />
-          </div>
+          />
         </TabsContent>
         <TabsContent value="security"><SecurityInfo workshop={workshop} user={user} /></TabsContent>
       </Tabs>

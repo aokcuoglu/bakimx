@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { hashInviteToken, isInviteExpired } from "@/lib/invite"
 import { assertSeatAvailableTx } from "@/lib/rbac"
+import { personnelName, technicianRoleForUser } from "@/lib/personnel"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -78,6 +79,14 @@ export async function acceptInviteAction(token: string, formData: FormData): Pro
       // a plan downgrade or any combined over-allocation since the invite was sent.
       await assertSeatAvailableTx(tx, fresh.workshopId)
 
+      const technician = await tx.technician.create({
+        data: {
+          workshopId: fresh.workshopId,
+          fullName: personnelName(parsed.data.firstName, parsed.data.lastName, fresh.email),
+          phone: "",
+          role: technicianRoleForUser(fresh.role),
+        },
+      })
       return tx.user.create({
         data: {
           email: fresh.email,
@@ -87,6 +96,7 @@ export async function acceptInviteAction(token: string, formData: FormData): Pro
           workshopId: fresh.workshopId,
           role: fresh.role,
           isActive: true,
+          technicianId: technician.id,
         },
       })
     })

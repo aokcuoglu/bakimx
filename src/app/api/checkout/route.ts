@@ -101,6 +101,14 @@ export async function POST(request: Request) {
               settings: { create: {} },
             },
           })
+          const ownerTechnician = await tx.technician.create({
+            data: {
+              workshopId: workshop.id,
+              fullName: `${data.firstName} ${data.lastName}`.trim(),
+              phone: data.phone,
+              role: "yonetici",
+            },
+          })
           await tx.user.create({
             data: {
               email: data.email,
@@ -109,6 +117,7 @@ export async function POST(request: Request) {
               lastName: data.lastName,
               workshopId: workshop.id,
               role: "owner",
+              technicianId: ownerTechnician.id,
             },
           })
           await tx.billingOrder.create({
