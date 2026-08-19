@@ -141,7 +141,7 @@ export function TechnicianDashboard({
           {kpiCards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.label} className="rounded-lg border border-border bg-white p-4">
+              <div key={card.label} className="rounded-lg border border-border bg-card p-4">
                 <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
                   <Icon className="size-4" />
                 </div>

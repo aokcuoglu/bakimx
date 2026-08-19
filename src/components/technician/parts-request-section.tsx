@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 import {
-  CheckCircle2, Info, Loader2, Minus, Package, PackageSearch, Plus, Send,
+  CheckCircle2, Info, Minus, Package, PackageSearch, Plus, Send,
   TriangleAlert, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -320,7 +321,7 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
 
         {prefetching && !selection && (
           <p className="flex items-center gap-1.5 px-1 pt-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <BrandSpinner size={14} className="!flex-row !gap-0" />
             Araca uygun parçalar hazırlanıyor…
           </p>
         )}
@@ -352,7 +353,7 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
             disabled={isPending || !canSubmit}
             className="touch-manipulation"
           >
-            {isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+            {isPending ? <BrandSpinner size={16} className="!flex-row !gap-0" /> : <Send className="size-3.5" />}
             Talep Et
           </Button>
           <Button

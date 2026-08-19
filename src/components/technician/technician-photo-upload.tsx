@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Camera, Loader2, Plus, Upload } from "lucide-react"
+import { Camera, Plus, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -149,7 +150,7 @@ export function TechnicianPhotoUpload({
               disabled={submitting || !type}
               onClick={handleSubmit}
             >
-              {submitting ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+              {submitting ? <BrandSpinner size={16} className="!flex-row !gap-0" /> : <Upload className="size-4" />}
               {submitting ? "Yükleniyor…" : file ? "Yükle ve Kaydet" : "Kayıt Ekle"}
             </Button>
             <Button
