@@ -101,7 +101,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <div className="rounded-lg border border-border bg-card p-4 space-y-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Receipt className="size-4 text-muted-foreground" />

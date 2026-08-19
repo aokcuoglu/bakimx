@@ -1,0 +1,863 @@
+  (Ctrl-C to close. Keep this open while developing.)
+  Auto-reconnects if the session drops or goes mute; health probe every 60s.
+
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_4bc345b106ba415189341631921e981e_4bc345b106ba415189341631921e981e-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787120659-xocajnzrq3u8ckvt9ubh96fnke
+Port 5433 opened for sessionId botocore-session-1787120659-xocajnzrq3u8ckvt9ubh96fnke.
+Waiting for connections...
+
+✗ Tunnel stopped answering — recycling the session ...
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-nki7hae5b68bun75kf7323tq7e
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2543628361_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-lvjb8srdfksl47sfazqz9uk52i
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3838245387_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-p3sg8p2yrg8klpk4t9hp43ivxa
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2238607196_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-3fajjtxnjlb7uzib73j3ni8o5u
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1546385593_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-3orh963e7olcscf6ueyhzrluue
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4292490837_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ddpp87su8rlqpclkh5jeie5648
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/275450798_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-cofydsoaaidtgq6qigc9hclqay
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3582080512_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-z5e94j9bc3scdhfhla9qgpbrda
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1158629616_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-y246x4arb55vqf2ljjs6sd7nlq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3484512688_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-9dh8dnqurzkexl5fv7ldd62pny
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/881219181_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ukc4ueuiivli8vxcp6i245lbj4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2369270711_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ycqugpv7v7looyip4qxfln87ui
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1997777664_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-9alcvphgvpaj6cklaq8phzjy84
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3664945629_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-7grjl7dk33c4tjdv874jeovxuu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3637759325_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-hnv454b9tb5uzhs65irt9y56qy
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2209252861_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ydyy582fnxsvqr9crdrf6to9c4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3744786232_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-pylfeq5qhaxaldd895e3aodta4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2564637375_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-5r88r7jg4qznzhq4kfbn6fptlu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1642142272_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ofa2j6oxaqypiljek7hp67ak8y
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1841795041_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-o4t8ah2jin4srdafop3pe27cpa
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4131121438_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-5oxkj9vlle3ntl4z7pq2rkc7ku
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3063212930_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-b87p2v2kculnz64zknribpid7u
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1120421888_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ss6fqkrgylvgtuqtnzlxvspifi
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1870334041_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ho6q29dgnx68ckbn5tur7vdlai
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1357615202_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-q9zf636pxx9zan89gqqlhvunxy
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2775465090_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-x3gxqeikceesxq6udj4bvxl8kq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3486507193_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-fqspeyra2tjidxh5i6qkvifeu8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/843134358_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-c8cviea4vpzlnav5iptpyv7te8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/760228936_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-9bpkf7fg66rlll6y4rv2iuycs8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3715691619_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-pdrblv4dliq5qp68n5fvfdybqu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3772317407_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_66b0524799c547f4ba9418aeeaa8dcaa_66b0524799c547f4ba9418aeeaa8dcaa-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-p6ig65y668c6q49ohchus923ha
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/715523693_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_None
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+aws: [ERROR]: An error occurred (ValidationException) when calling the StartSession operation: Invalid target ID format
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_None
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+aws: [ERROR]: An error occurred (ValidationException) when calling the StartSession operation: Invalid target ID format
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_None
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+aws: [ERROR]: An error occurred (ValidationException) when calling the StartSession operation: Invalid target ID format
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-o4qdqe7sdn8pubxbl66q9falee
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3938411751_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-9fehhvdutnlyn2f36rt5urbe34
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3490415674_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-rfxroetke3purbq7zoi29lktn4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3563988833_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-lkscygiv95y7bxpxh3oh3ftypu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4115438582_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-jhfqbskgko8akraoysbvta9gza
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3837294701_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-n9t3eu2eso68zeveqfhilcdu7q
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/242794644_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-9q78ue4isvpytct9lloj74d8hu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/116061440_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-klj4r6rfnvvx9lxr7gsr8bqb74
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3854218000_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-zhjgb7e6lbgr25apttiz8b3zde
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/220758548_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-46q9siypyvvi42bte2h38qxgri
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1205256767_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-6thalj6hbrevpohodurf2reine
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2159378639_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-t4euhf3c79xvjtitcpdyovizg8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1375386035_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-fthdzizf7jitlbfdcrsvx4v8oi
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2083831132_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-gebdh59bsllueyij4k828u45ce
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1050837609_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-7u2forkqabe2p3x5zrs6q9gji4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2844825441_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-zisrnbc2qlovk5jzejg3yi9e8e
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2223505362_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-xp67kdsfqygds2h9ivbhn3an9y
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1073392796_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-7dbzgky94sqip9hdt73u6jes4y
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/761318488_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-igy3j9k7ceqxphtp8sg9ea6lhy
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/904956325_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ufjtcv5spnqous4y8o7rincizi
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1108011086_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-jqqgcevouy53uofrtx5hsljgae
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/423923470_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-kcbyx3ii8t3ohivcvcse2fldl4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3504706860_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-l3ggnfi5bnykutc6araaq5bcb4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3395492302_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-uoafil2gyx6gaeiay6vi4pttzy
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2258388589_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-ykyuobs34zgu4qna4kqalkuo9y
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/671676388_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-r44isj2xi6nr783pqljvr2n9h4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3456190108_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-t9ldp5fleealyisind7uky3gpa
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2764472333_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-dpffkus5nf9b23ykpyuy7hxht8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1700341083_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-f22kcyziiv23oy7lscdagfjhl4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4230930718_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-8g9a946trgc26rkhsktgkie7i8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/824454006_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_3136598e3cf64928943bc32461678ad9_3136598e3cf64928943bc32461678ad9-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787125331-oazgb5rviehooein3zhxiqngg8
+
+
+SessionId: botocore-session-1787125331-oazgb5rviehooein3zhxiqngg8 : Your session timed out due to inactivity and has been terminated.
+
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-eoqj99ll6kohkuazhncpubbeba
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/93961039_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-r95r9ciuo8ycnolgct44til9j4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3895167395_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-7vovitqti4d3trzxxjnvr3zyz4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1366854085_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-8pznj5u8ns4yxyxjdnchsebq2e
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1556582031_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-hge3cecncjuccf3oqcbvueqfpu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1010900787_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-jnqng3nj2qc8xr3i3afcdlolue
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3353322516_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-yce3kcdck48okgj4qzpkftia48
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1264410760_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-zpdlsbxcol92e9xc32s8onrt5y
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/82135113_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-2t6cj8vtv36vfilvicndjzhrhq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/912247185_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-uky65ntkrnefjjnilpgoxqa9z4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2286088541_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-3d49loysaj8x3tyjvklag6aypi
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/945044625_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-xedkjqpod5j4f5qvouitki3lp8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1566278324_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-y54ngnkgrq9ngrx3n4deafzzxe
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2786927863_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-6rpc8lkzbccnoevbearby4cxqe
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/752633655_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-3g3f3teonp7x2efphj76ikpuky
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2384694297_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-ndtp283ji7c8zd39o3gs6dpfku
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2660764147_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-zny8tlblz4yx3lyycbakurbuba
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/360179728_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-ief32pkqir6y3ptntpui4tnxcq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/74874451_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-vplvzjxkucfgvhzouisa6veaje
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1165278669_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-udr67dqpndnnen5ozxsqoehvra
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2350210720_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-cabesjkdnvynga7xd8xrizg6f4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3679953402_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-i7xp7jx7h46p7jqrl6q6xjlh7u
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2471530824_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-evv64lrjcnia4bg2gzeo9xz2ve
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3933460713_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-f4zcqkzflj8pcon7seez92jeye
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1311293846_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-nxc8zxaaj96xxrbp6niqrkhfae
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3667430928_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-g6fshyvpsnrnpn8pc9z4kvhpv8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3388869878_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-2l5dkx8c3hvno3ogerbjqpdsi4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3756951379_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-vosoztho5vzyhff5dkpxtn35de
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1837994312_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-kxxipsribhp98euq96k3vc5g9q
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4155061559_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-qxa7ofbl4et8uerbtgb3kjahj8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2849749244_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_16aecc8a3f384d23884b7a2d5739e0c1_16aecc8a3f384d23884b7a2d5739e0c1-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-pttvctd5263e4r8y4juyjoho2u
+
+
+SessionId: botocore-session-1787128147-pttvctd5263e4r8y4juyjoho2u : Your session timed out due to inactivity and has been terminated.
+
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-srbvioonf6u25pe962fut3hazq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/129092345_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-p2e72krshcou6a8pf3gkuku7ue
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/570040546_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-7schfuejkbf652u28hijbbzg2e
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3898168696_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-t2xrvzse6zd6scylyblc9e6ao8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3038859692_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-ouonb3oz99ril8jy43nbfsxdje
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3048679045_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-kii44fu8eil9i9z45xzq326afe
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3466584489_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-v6fos2caxddzlb39gkcpb3qbt4
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/829178836_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-koj5s3sqoy42z7lcps4lth9f4i
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/999713567_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-x22rnsbz34ipuep5j3vx48ob54
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3116144476_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-zbvbq4s5h4vpcnaxr3a2dgiga8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2773158120_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-6k4f5gnja8jls3dt7jgzyukckq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3045408199_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-27i2u9q9z37t55rfibzlgp7388
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3998423029_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-u3efzposvd83lnlnxtbu8ja5pu
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1929922941_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-vaeb2dbfoquse43bofezyhvsz8
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/4072744801_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-kolxlfpebdkpojuc23uxr45i5q
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1065005788_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-e5ljdiontcztec733v9d9avkxa
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3367722270_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-nfsikrdj25fvd4id7unx7enyyq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/892309537_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-oqtvvs97j4bojq3pi7ceyaohni
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/3230094173_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-e2qkkverx4ecorrcyzrep5y8su
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/399447368_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-5qsjdkh8euctn6ialisa8lrpjy
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/1142817922_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-zpizhxzzq3554xekrgy898h8aa
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2295942425_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-tx4fo766nclzf8cysbjuyoohlq
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2174485272_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-eh8dlvqfqivh89nttsbkkodv4u
+Cannot perform start session: listen unix /tmp/multica-task-1674751842/2277999423_session_manager_plugin_mux.sock: bind: no such file or directory
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+→ Resolving RUNNING ECS task for bakimx-dev-app-svc ...
+  Target: ecs:bakimx-dev-cluster_f67d44108b944492836aeae09b024d4b_f67d44108b944492836aeae09b024d4b-0527074092
+  Tunnel: localhost:5433 → bakimx-dev-db.c7gyk8ccwwbg.eu-central-1.rds.amazonaws.com:5432
+
+Starting session with SessionId: botocore-session-1787128147-hblha5zd78u5ys32tv4ll2s7j4
+
+
+SessionId: botocore-session-1787128147-hblha5zd78u5ys32tv4ll2s7j4 : Your session timed out due to inactivity and has been terminated.
+
+→ Session ended — reconnecting in 5s (Ctrl-C to stop) ...
+✗ localhost:5433 is now held by a healthy tunnel — another one is open. Exiting.
+/Users/void/www/bakimx/scripts/tunnel-health.sh: line 16: 71127 Terminated: 15          health_loop
+
+→ Tunnel closed.

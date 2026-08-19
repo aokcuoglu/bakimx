@@ -137,7 +137,7 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={start}
                     className={buttonVariants({
-                      size: "lg",
+                      size: "default",
                       className:
                         "w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
                     })}
@@ -151,7 +151,7 @@ export function RuhsatDemoSection() {
                     onClick={reset}
                     className={buttonVariants({
                       variant: "outline",
-                      size: "lg",
+                      size: "default",
                       className: "w-full gap-2 border-primary/30",
                     })}
                   >
@@ -257,9 +257,9 @@ export function RuhsatDemoSection() {
                 <Link
                   href="/register"
                   className={buttonVariants({
-                    size: "lg",
+                    size: "default",
                     className:
-                      "gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-8 shadow-lg shadow-primary/25",
+                      "gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 sm:px-8 shadow-lg shadow-primary/25",
                   })}
                 >
                   15 Gün Ücretsiz Dene
@@ -267,7 +267,7 @@ export function RuhsatDemoSection() {
                 </Link>
                 <Link
                   href="/demo"
-                  className={buttonVariants({ variant: "outline", size: "lg", className: "px-8 border-primary/30" })}
+                  className={buttonVariants({ variant: "outline", size: "default", className: "px-4 sm:px-8 border-primary/30" })}
                 >
                   Demo İste
                 </Link>

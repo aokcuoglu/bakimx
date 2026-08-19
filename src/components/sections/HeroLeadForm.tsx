@@ -104,7 +104,7 @@ export function HeroLeadForm() {
         </p>
         <Link
           href="/register"
-          className={buttonVariants({ size: "lg", className: "mt-5 w-full gap-2" })}
+          className={buttonVariants({ size: "default", className: "mt-5 w-full gap-2" })}
         >
           7 Gün Ücretsiz Dene
           <ArrowRight className="h-4 w-4" />
@@ -211,7 +211,7 @@ export function HeroLeadForm() {
             )}
           </div>
         </div>
-        <Button type="submit" size="lg" className="w-full text-base" disabled={isSubmitting}>
+        <Button type="submit" size="default" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

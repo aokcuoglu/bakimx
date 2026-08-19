@@ -24,7 +24,7 @@ export default async function AccountPage() {
 
   return (
     <AppShell pageTitle="Hesabım" constrained>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <section className="rounded-lg border border-border bg-white p-4 sm:p-6">
           <h2 className="text-base font-semibold text-foreground mb-4">Profil Bilgileri</h2>
           <AccountProfileForm
