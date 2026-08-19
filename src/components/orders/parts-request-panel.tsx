@@ -31,7 +31,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
+import { formatKurus } from "@/lib/money"
 import { PARTS_REQUEST_STATUS } from "@/lib/constants"
+import { isExternalLaborRequest } from "@/lib/orders/parts-request-item"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
   partsRequestCancelSchema,
@@ -49,6 +51,8 @@ import {
 
 export interface PartsRequestRow {
   id: string
+  /** "part" | "external_labor" — dış işçilikte katalog alanları boştur (BAK-105). */
+  type: string
   partName: string
   partSku: string | null
   brand: string | null
@@ -61,6 +65,10 @@ export interface PartsRequestRow {
   convertedAt: string | null
   cancelledAt: string | null
   cancelReason: string | null
+  /** Dış işçilikte işi yapan firma; kaleme `supplierName` olarak taşınır. */
+  supplierName: string | null
+  /** Dış işçilikte ustanın bildirdiği tahmini MALİYET (kuruş) — satış fiyatı değil. */
+  estimatedPriceKurus: number | null
 }
 
 /**
@@ -107,7 +115,7 @@ export function PartsRequestPanel({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Package className="size-4" />
-          Parça Talepleri
+          Parça &amp; İşçilik Talepleri
           <span className="text-xs font-normal text-muted-foreground/70">({requests.length})</span>
         </h3>
         {undecidedCount > 0 && (
@@ -121,10 +129,11 @@ export function PartsRequestPanel({
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-strong" />
           <div className="min-w-0">
-            <p className="font-medium">Karar bekleyen parça talebi var.</p>
+            <p className="font-medium">Karar bekleyen parça/işçilik talebi var.</p>
             <p className="text-xs text-muted-foreground">
               Her talebi ya iş emrine kalem olarak ekleyin ya da iptal edin. Karar verilmeden iş emri
-              teslime hazırlanamaz ve teslim edilemez.
+              teslime hazırlanamaz ve teslim edilemez. Dış işçilik talebi kaleme eklendiğinde
+              &quot;Dış İşçilik&quot; kalemi olarak açılır; satış fiyatını siz girersiniz.
             </p>
           </div>
         </div>
@@ -168,6 +177,7 @@ function PartsRequestCard({
   const converted = request.convertedAt != null
   const cancelled = request.status === "cancelled"
   const decided = converted || cancelled
+  const externalLabor = isExternalLaborRequest(request)
 
   function run(action: () => Promise<{ error?: string } | void>, successMessage: string) {
     startTransition(async () => {
@@ -194,8 +204,18 @@ function PartsRequestCard({
             <span className="text-sm font-medium text-foreground break-words">{request.partName}</span>
             {request.partSku && <span className="font-mono text-xs text-muted-foreground">{request.partSku}</span>}
             {request.brand && <span className="text-xs text-muted-foreground">{request.brand}</span>}
-            <span className="text-xs text-muted-foreground">×{request.quantity}</span>
+            {/* Dış işçilikte miktar yok: tek iştir, sunucu 1'e sabitler. */}
+            {!externalLabor && <span className="text-xs text-muted-foreground">×{request.quantity}</span>}
           </div>
+          {externalLabor && (request.supplierName || request.estimatedPriceKurus != null) && (
+            <p className="mt-0.5 text-xs text-muted-foreground break-words">
+              {request.supplierName}
+              {request.supplierName && request.estimatedPriceKurus != null && " · "}
+              {request.estimatedPriceKurus != null && (
+                <>Tahmini tutar {formatKurus(request.estimatedPriceKurus)}</>
+              )}
+            </p>
+          )}
           {request.note && <p className="mt-0.5 text-xs text-muted-foreground break-words">{request.note}</p>}
           <p className="mt-0.5 text-[10px] text-muted-foreground/70">
             {request.requestedByName ? `${request.requestedByName} · ` : ""}
@@ -210,6 +230,11 @@ function PartsRequestCard({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {externalLabor && (
+            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-foreground">
+              Dış İşçilik
+            </span>
+          )}
           <span
             className={cn(
               "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
@@ -295,6 +320,7 @@ function EditPartsRequestDialog({
   onError: (msg: string) => void
 }) {
   const [isPending, startTransition] = useTransition()
+  const externalLabor = request != null && isExternalLaborRequest(request)
   const form = useForm<PartsRequestEditInput, unknown, PartsRequestEditInput>({
     resolver: typedResolver(partsRequestEditSchema),
     defaultValues: { partName: "", partSku: "", brand: "", quantity: 1, note: "" },
@@ -334,10 +360,11 @@ function EditPartsRequestDialog({
     <Dialog open={request != null} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Parça talebini düzenle</DialogTitle>
+          <DialogTitle>{externalLabor ? "Dış işçilik talebini düzenle" : "Parça talebini düzenle"}</DialogTitle>
           <DialogDescription>
             Talep henüz kaleme eklenmedi; bilgileri düzeltebilirsiniz. Kaleme eklendikten sonra
             düzeltme iş emri kalemi üzerinden yapılır.
+            {externalLabor && " Tedarikçi ve tutar kaleme eklendikten sonra kalem satırında düzenlenir."}
           </DialogDescription>
         </DialogHeader>
 
@@ -348,16 +375,18 @@ function EditPartsRequestDialog({
               name="partName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parça adı</FormLabel>
+                  <FormLabel>{externalLabor ? "İşçilik adı" : "Parça adı"}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Örn. Yağ pompası" />
+                    <Input {...field} placeholder={externalLabor ? "Örn. Rot balans ayarı" : "Örn. Yağ pompası"} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            {/* Parça no / marka / miktar YALNIZ parça talebinde: dış işçilikte
+                katalog alanı yok ve miktar sunucuda 1'e sabit. */}
+            <div className={cn("flex flex-col gap-3 sm:flex-row", externalLabor && "hidden")}>
               <FormField
                 control={form.control}
                 name="partSku"
@@ -478,9 +507,14 @@ function CancelPartsRequestDialog({
     <Dialog open={request != null} onOpenChange={(open) => { if (!open) close() }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Parça talebini iptal et</DialogTitle>
+          <DialogTitle>Talebi iptal et</DialogTitle>
           <DialogDescription>
-            {request ? `"${request.partName}" talebi için parça alınmayacak.` : ""} Gerekçe atölye içinde
+            {request
+              ? isExternalLaborRequest(request)
+                ? `"${request.partName}" işçiliği yaptırılmayacak.`
+                : `"${request.partName}" talebi için parça alınmayacak.`
+              : ""}{" "}
+            Gerekçe atölye içinde
             kalır, müşteriye gösterilmez. Karar yanlışsa daha sonra geri alabilirsiniz.
           </DialogDescription>
         </DialogHeader>

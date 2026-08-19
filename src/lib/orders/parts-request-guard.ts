@@ -53,5 +53,7 @@ export function undecidedPartsRequestsMessage(requests: readonly DecidablePartsR
   const shown = names.slice(0, 2).join(", ")
   const rest = names.length - 2
   const list = rest > 0 ? `${shown} (+${rest})` : shown
-  return `Karar bekleyen parça talebi var: ${list}. Her talebi ya kaleme ekleyin ya da iptal edin.`
+  // "parça/işçilik": aynı kapı BAK-105'ten beri dış işçilik taleplerini de
+  // kapsıyor; metin tipi ayırt etmez, isim listesi zaten hangisi olduğunu söyler.
+  return `Karar bekleyen parça/işçilik talebi var: ${list}. Her talebi ya kaleme ekleyin ya da iptal edin.`
 }
