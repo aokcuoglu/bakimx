@@ -1082,7 +1082,7 @@ function AddInternalNoteForm({ orderId }: { orderId: string }) {
       <Button
         type="submit"
         variant="warning"
-        size="lg"
+        size="default"
         disabled={isPending || !content.trim()}
         className="touch-manipulation"
       >
