@@ -43,6 +43,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
   durumdur, sökülecek bir artık değil. `ui/sidebar.tsx` BAK-189'da Radix
   `Slot`'a geçti — artık `render` değil `asChild` alır. Bir bileşeni
   düzenlemeden önce import satırına bak.
+- **Combobox/Autocomplete'te Escape'i call-site'ta ELLE korumaya çalışma.**
+  Base UI Escape'te yalnız listeyi kapatmıyor: Combobox'ta commit edilmiş seçimi,
+  Autocomplete'te (liste kapalıyken) serbest metni de siliyor. Ayrıca Radix
+  `DismissableLayer` Escape'i document/capture'da dinlediği için diyalog içindeki
+  bir Base UI popup'ında tek Escape hem popup'ı hem diyaloğu kapatıyordu. İkisinin
+  de guard'ı artık paylaşılan bileşenlerde — `ui/combobox.tsx`
+  (`keepSelectionOnEscape`), `ui/autocomplete.tsx` ve `ui/base-ui-popup.ts`
+  (`yieldEscapeToBaseUIPopup`, `Dialog`/`Sheet`/`AlertDialog` içinde). Call-site'a
+  `preventBaseUIHandler()` kopyalaman gerekmez; `src/lib/ui-contract.test.ts` geri
+  sızmasını da engeller (BAK-190).
 - **`data-open:` / `data-closed:` / `data-checked:` / `data-unchecked:` /
   `data-active:` / `data-horizontal:` / `data-vertical:` Base UI kalıntısı
   DEĞİLDİR ve Radix bileşenlerinde ÇALIŞIR.** `globals.css`in içeri aldığı

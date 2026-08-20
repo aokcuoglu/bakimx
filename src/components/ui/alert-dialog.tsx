@@ -4,6 +4,7 @@ import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { yieldEscapeToBaseUIPopup } from "@/components/ui/base-ui-popup"
 import { Button } from "@/components/ui/button"
 
 function AlertDialog({
@@ -47,6 +48,7 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  onEscapeKeyDown,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm"
@@ -56,6 +58,7 @@ function AlertDialogContent({
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
+        onEscapeKeyDown={(event) => yieldEscapeToBaseUIPopup(event, onEscapeKeyDown)}
         data-size={size}
         className={cn(
           "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",

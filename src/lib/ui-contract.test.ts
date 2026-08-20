@@ -343,3 +343,65 @@ test("tooltip giriş animasyonu iki açılış durumunu da açıkça yazar", () 
     .filter((literal) => /(?<![\w[=-])data-open[:/]/.test(literal))
   expect(inClassStrings).toEqual([])
 })
+
+/**
+ * Escape kapısı — Base UI (Combobox/Autocomplete) ile Radix overlay'lerinin
+ * arasındaki iki sessiz veri kaybı yolu (BAK-190, tarayıcıda ölçüldü):
+ *
+ *  1. Base UI Escape'te yalnız listeyi kapatmıyor; Combobox'ta COMMIT EDİLMİŞ
+ *     seçimi, Autocomplete'te liste kapalıyken serbest metni de siliyor.
+ *  2. Radix `DismissableLayer` Escape'i document/capture'da dinlediği için
+ *     (`@radix-ui/react-dismissable-layer/dist/index.mjs:105`) diyalog içindeki
+ *     bir Base UI popup'ında tek Escape hem popup'ı hem diyaloğu kapatıyordu.
+ *
+ * Guard'lar 12 call-site'a dağıtılmıştı ve 6'sında hiç yoktu. Artık paylaşılan
+ * bileşende duruyorlar; buradan düşerlerse hata sessizce geri gelir, hiçbir
+ * derleyici uyarmaz.
+ */
+test("Base UI girişleri Escape'te değeri koruyor", () => {
+  const combobox = readFileSync(join(SRC, "components", "ui", "combobox.tsx"), "utf8")
+  const autocomplete = readFileSync(join(SRC, "components", "ui", "autocomplete.tsx"), "utf8")
+
+  // Combobox: her iki giriş de (düz + chip'li) ortak guard'a bağlı olmalı.
+  expect(combobox).toContain("function keepSelectionOnEscape(")
+  expect(combobox.match(/onKeyDown=\{keepSelectionOnEscape\(onKeyDown\)\}/g)).toHaveLength(2)
+
+  // Autocomplete: serbest metin yalnız liste KAPALIYKEN korunur; liste açıkken
+  // Escape'in listeyi kapatma davranışı kalmalı.
+  expect(autocomplete).toContain("event.preventBaseUIHandler()")
+  expect(autocomplete).toContain('aria-expanded") !== "true"')
+})
+
+test("Radix overlay'leri ilk Escape'i açık Base UI popup'ına bırakıyor", () => {
+  const helper = readFileSync(join(SRC, "components", "ui", "base-ui-popup.ts"), "utf8")
+  // Radix'in tek kaçış kapısı `preventDefault`; `stopPropagation` işe yaramaz
+  // (olay capture fazında Radix'e zaten ulaşmıştır). Yorumda geçen ANLATIM bulgu
+  // değil — yalnız kodda çağrılması yanlış.
+  const code = helper.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+  expect(code).toContain("event.preventDefault()")
+  expect(code).not.toContain("stopPropagation")
+
+  for (const file of ["dialog.tsx", "sheet.tsx", "alert-dialog.tsx"]) {
+    const source = readFileSync(join(SRC, "components", "ui", file), "utf8")
+    expect(source).toContain("onEscapeKeyDown={(event) => yieldEscapeToBaseUIPopup(event, onEscapeKeyDown)}")
+  }
+})
+
+/**
+ * Guard artık paylaşılan bileşende; call-site'a geri kopyalanması iki yazımın
+ * ayrışmasına ve "burada var, şurada yok" borcuna dönüyordu. Item `onClick`
+ * içindeki kullanım ayrı bir şey (seçim commit'i), o serbest.
+ */
+test("Escape guard'ı call-site'lara geri sızmadı", () => {
+  const offenders: string[] = []
+  for (const file of tsxFiles(join(SRC, "components"))) {
+    const rel = relative(SRC, file)
+    if (rel.startsWith("components/ui/")) continue
+    readFileSync(file, "utf8").split("\n").forEach((line, index) => {
+      if (/preventBaseUIHandler/.test(line) && /Escape/.test(line)) {
+        offenders.push(`${rel}:${index + 1}`)
+      }
+    })
+  }
+  expect(offenders).toEqual([])
+})
