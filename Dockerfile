@@ -38,6 +38,13 @@ ARG SESSION_COOKIE_NAME=
 ARG SESSION_COOKIE_DOMAIN=
 ENV SESSION_COOKIE_NAME=$SESSION_COOKIE_NAME
 ENV SESSION_COOKIE_DOMAIN=$SESSION_COOKIE_DOMAIN
+# Public analytics configuration is compiled into the browser bundle by Next.js.
+# Deployment workflows pass environment-specific repository variables as build args;
+# defaults keep local/unspecified builds safely disabled.
+ARG NEXT_PUBLIC_ANALYTICS_ENABLED=false
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID=
+ENV NEXT_PUBLIC_ANALYTICS_ENABLED=$NEXT_PUBLIC_ANALYTICS_ENABLED
+ENV NEXT_PUBLIC_GA_MEASUREMENT_ID=$NEXT_PUBLIC_GA_MEASUREMENT_ID
 RUN npm run build
 
 FROM base AS runner
