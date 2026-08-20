@@ -188,11 +188,11 @@ export function OrderList({
                         altında kırpılan marka/model. */}
                     <div className="max-w-[11rem]">
                       {order.vehicle.id ? (
-                        <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                        <Link href={`/vehicles/${order.vehicle.id}`}>
                           <PlateBadge plate={order.vehicle.plate} size="sm" />
                         </Link>
                       ) : (
-                        <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
+                        <PlateBadge plate={order.vehicle.plate} size="sm" />
                       )}
                       <div
                         className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
@@ -296,11 +296,11 @@ export function OrderList({
                     {order.workOrderNo}
                   </Link>
                   {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                    <Link href={`/vehicles/${order.vehicle.id}`}>
                       <PlateBadge plate={order.vehicle.plate} size="sm" />
                     </Link>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
+                    <PlateBadge plate={order.vehicle.plate} size="sm" />
                   )}
                 </div>
                 <Link

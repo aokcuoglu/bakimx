@@ -412,7 +412,7 @@ export function TeamManagement({
               key={m.id}
               className={cn(
                 "flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border",
-                m.isActive ? "border-border bg-card" : "border-border bg-muted opacity-60"
+                m.isActive ? "border-border bg-card" : "border-border bg-muted"
               )}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">

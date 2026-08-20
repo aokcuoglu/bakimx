@@ -73,7 +73,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                 key={t.id}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-lg border",
-                  t.isActive ? "border-border bg-card" : "border-border bg-muted opacity-60"
+                  t.isActive ? "border-border bg-card" : "border-border bg-muted"
                 )}
               >
                 <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
