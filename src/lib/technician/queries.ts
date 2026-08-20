@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
+import {
+  technicianOrderDetailWhere,
+  technicianOrderListWhere,
+} from "@/lib/technician/order-visibility"
 
 type OStat = import("@prisma/client").OrderStatus
 
@@ -92,14 +96,11 @@ export interface TechnicianOrderRow {
 
 export async function getTechnicianOrders(
   workshopId: string,
-  technicianId: string,
+  technicianId?: string,
   status?: string
 ): Promise<TechnicianOrderRow[]> {
-  const where: import("@prisma/client").Prisma.ServiceOrderWhereInput = {
-    workshopId,
-    assignedTechnicianId: technicianId,
-    ...(status ? { status: status as OStat } : { status: { notIn: NOT_DELIVERED_CANCELLED } }),
-  }
+  const where: import("@prisma/client").Prisma.ServiceOrderWhereInput =
+    technicianOrderListWhere(workshopId, technicianId, status)
 
   const orders = await prisma.serviceOrder.findMany({
     where,
@@ -152,11 +153,10 @@ export async function getTechnicianOrders(
 
 export async function getTechnicianOrderDetail(
   workshopId: string,
-  orderId: string,
-  technicianId: string
+  orderId: string
 ) {
   const order = await prisma.serviceOrder.findFirst({
-    where: { id: orderId, workshopId, assignedTechnicianId: technicianId },
+    where: technicianOrderDetailWhere(workshopId, orderId),
     include: {
       intakeForm: {
         include: {
