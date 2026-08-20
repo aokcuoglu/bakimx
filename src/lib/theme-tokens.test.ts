@@ -495,10 +495,19 @@ test("opaklık modifier'lı metin sınıfları AA (4.5:1) geçer", () => {
  *     bir varyantın arkasındakiler durum stilidir, durağan metni soldurmaz.
  *   - `opacity-0` ve `opacity-100` atlanır: biri öğeyi tamamen gizler (kontrast
  *     sorusu değil), diğeri zaten tam opak.
- *   - Yalnız aynı satırda bir `text-*` utility'si varsa bakılır, yani öğenin
- *     metin biçimlendirdiği kesinse. YAKALAMADIĞI şey: metin taşıyan bir
- *     KAPSAYICIYA (`bg-muted opacity-60` gibi) konan opaklık — içindeki yazı
- *     yine solar. Onun statik ayrımı yok; sıradaki iş olarak duruyor.
+ *
+ * KAPSAM GENİŞLEMESİ (BAK-167): ilk yazımda yalnız aynı satırda bir `text-*`
+ * utility'si olan satırlara bakılıyordu, yani öğenin metin biçimlendirdiği
+ * kesinse. O yazımın kaçırdığı sınıf yorumda "sıradaki iş" diye duruyordu ve
+ * gerçekten de dışarıda kalmıştı: metni TAŞIYAN kapsayıcıya konan opaklık.
+ * Üç somut örnek çıktı — plaka rozeti (`<PlateBadge className="opacity-60">`,
+ * altı çağrı yeri, "TR" şeridi 2.71:1) ve pasif üye/teknisyen kartları
+ * (`bg-muted opacity-60`, metin 2.44:1). Kapı artık ÖN EKSİZ her `opacity-*`
+ * kullanımını ister; `text-*` şartı kalktı.
+ *
+ * Ölçüm hâlâ yapılamıyor (opaklık renk adı taşımaz, soldurulan ton çağrı
+ * yerinden miras alınır), yani kural yine gerekçe ister: kaldır ya da neden
+ * güvenli olduğunu — ölçebiliyorsan ölçüsüyle — allowlist'e yaz.
  * ------------------------------------------------------------------------- */
 
 type OpacityUtilityException = {
@@ -525,21 +534,81 @@ const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
       "Dolu `bg-foreground/70` zemininde duran büyüteç ikonu; hover'da tam opaklığa " +
       "çıkıyor ve anlamı görselin kendisi taşıyor — metin değil.",
   },
+
+  // --- Metin taşımayan ikonlar (BAK-167 kapsam genişlemesiyle taramaya girdi)
+  {
+    file: "components/ui/date-picker.tsx",
+    className: "opacity-60",
+    reason:
+      "Tetikleyicinin sağındaki takvim ikonu; seçili tarih metni aynı düğmede tam " +
+      "opaklıkta ve alan `FormLabel` ile etiketli — ikon kaldırılsa bilgi kaybı yok.",
+  },
+  {
+    file: "components/ui/date-time-picker.tsx",
+    className: "opacity-60",
+    reason: "date-picker.tsx ile aynı tetikleyici deseni; takvim ikonu, metin tam opaklıkta.",
+  },
+  {
+    file: "components/intake/grouped-photo-gallery.tsx",
+    className: "opacity-20",
+    reason: EMPTY_STATE_ICON,
+  },
+  {
+    file: "components/intake/approval-timeline.tsx",
+    className: "opacity-30",
+    reason: EMPTY_STATE_ICON,
+  },
+  {
+    file: "components/orders/order-activity-log.tsx",
+    className: "opacity-30",
+    reason: EMPTY_STATE_ICON,
+  },
+
+  // --- Etkisiz (disabled/pending) durumlar — WCAG 1.4.3 muafiyeti
+  {
+    file: "components/technician/technician-dashboard.tsx",
+    className: "opacity-60",
+    reason:
+      "`isPending` sırasında `pointer-events-none` ile birlikte veriliyor; sunucu " +
+      "eylemi dönene kadar süren geçici etkisiz durum, durağan metin değil.",
+  },
+
+  // --- İkon ve görsel: soldurulan şey metin değil
+  {
+    file: "components/ui/combobox.tsx",
+    className: "opacity-50",
+    reason:
+      "Çipin ✕ kaldırma düğmesi; içinde metin yok (yalnız `XIcon`), silinecek etiket " +
+      "aynı çipte tam opaklıkta duruyor ve hover'da tam opaklığa çıkıyor.",
+  },
+  {
+    file: "components/sections/PartnersStrip.tsx",
+    className: "opacity-60",
+    reason:
+      "Landing iş ortağı logoları — `grayscale` ile birlikte verilen bilinçli monokrom " +
+      "işlem, hover'da tam renge dönüyor. Soldurulan şey `<Image>`, metin değil; " +
+      "ortak adı `alt` metninde tam olarak duruyor.",
+  },
+
+  // --- Ölçülebilen ve geçen tek durak
+  {
+    file: "components/layout/app-shell.tsx",
+    className: "opacity-60",
+    reason:
+      "Kenar çubuğunda 'yakında' menü öğesi; opaklık bu öğenin TEK ayırt edici " +
+      "işareti (rozet yok), kaldırılsa bilgi kaybolur. Ölçüldü: sidebar zemininde " +
+      "`sidebar-foreground` %60'ta 7.14:1 — AA'nın epey üstünde.",
+  },
 ]
 
-test("tek başına opacity-* metin öğesinde kullanılmaz", () => {
+test("tek başına opacity-* durağan öğede kullanılmaz", () => {
   const OPACITY_UTILITY_RE = /(?<![\w:.-])opacity-(\d{1,3})\b/g
-  // Öğenin metin biçimlendirdiğinin kanıtı: ön eksiz bir `text-*` utility'si.
-  // Kapanış `\b` DEĞİL: `text-[10px]` köşeli parantezle bitiyor ve `]` sonrası
-  // kelime sınırı oluşmadığı için o yazımı sessizce kaçırıyordu.
-  const TEXT_UTILITY_RE = /(?<![\w:.-])text-(?:\[[^\]]*\]|xs|sm|base|lg|xl|[2-9]xl|[a-z][a-z0-9-]*)(?![\w-])/
   const failures: string[] = []
   const usedExceptions = new Set<string>()
 
   for (const file of walk(SRC)) {
     const rel = file.slice(SRC.length + 1)
     readFileSync(file, "utf8").split("\n").forEach((line, i) => {
-      if (!TEXT_UTILITY_RE.test(line)) return
       for (const m of line.matchAll(OPACITY_UTILITY_RE)) {
         const value = Number(m[1])
         if (value === 0 || value >= 100) continue
@@ -549,7 +618,7 @@ test("tek başına opacity-* metin öğesinde kullanılmaz", () => {
           continue
         }
         failures.push(
-          `${rel}:${i + 1} → ${m[0]} metin taşıyan öğede` +
+          `${rel}:${i + 1} → ${m[0]} durağan öğede` +
             ` (kaldır ya da gerekçesiyle OPACITY_UTILITY_EXCEPTIONS'a ekle)`
         )
       }

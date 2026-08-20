@@ -92,7 +92,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                     </Link>
                   </td>
                   <td className="px-4 py-2">
-                    <Link href={`/vehicles/${r.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                    <Link href={`/vehicles/${r.vehicle.id}`}>
                       <PlateBadge plate={r.vehicle.plate} size="sm" />
                     </Link>
                   </td>
@@ -136,7 +136,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm font-bold text-foreground">{r.workOrderNo}</span>
-                  <PlateBadge plate={r.vehicle.plate} size="sm" className="opacity-60" />
+                  <PlateBadge plate={r.vehicle.plate} size="sm" />
                 </div>
                 <p className="mt-1.5 text-sm font-semibold text-foreground truncate">{r.name}</p>
                 <p className="text-xs text-muted-foreground truncate">

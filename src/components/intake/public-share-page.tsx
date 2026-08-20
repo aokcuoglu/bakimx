@@ -143,7 +143,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <p className="text-sm text-navy-foreground/70">Araç Kabul ve İşlem Özeti</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-brand/10 text-brand text-xs px-3 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 bg-navy-foreground/10 text-navy-foreground text-xs px-3 py-1 rounded-full">
               <Shield className="size-3.5" />
               <span className="font-medium">Güvenli Bağlantı</span>
             </div>
