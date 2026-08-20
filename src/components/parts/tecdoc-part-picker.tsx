@@ -26,6 +26,7 @@ import { VinLinkPrompt } from "./vin-link-prompt"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch, fetchBakimxProductsByTecdocCategory } from "@/lib/parts/bakimx-client"
+import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
 import { buildBakimxCategoryBranch, isBakimxNode } from "@/lib/parts/bakimx-tree"
 import type { ArticleSummary, CategoryMatch, CategoryNode } from "@/lib/tecdoc/types"
 import { CATEGORY_MATCH_LIMIT, searchCategoryTree } from "@/lib/tecdoc/tree"
@@ -156,6 +157,17 @@ export function TecdocPartPicker({
     q: trimmedQuery,
     limit: SEARCH_LIMIT,
     vehicleTypeId,
+  })
+
+  // Global aramanın GetirBakım ayağı (BAK-183). Yalnız GLOBAL aramada çalışır:
+  // kategori drill-down'ı GetirBakım taksonomisini tanımıyor ve her dal
+  // açılışında dış servise sorgu göndermek boşa maliyet olurdu. `getirbakimCatalog`
+  // kapısı kapalı atölyede uç 403 döner → liste hep boş → satırlar hiç render
+  // edilmez, aramanın geri kalanı etkilenmez.
+  const { products: getirbakimResults, searching: getirbakimSearching } = useGetirbakimSearch({
+    enabled: open && globalSearch,
+    q: trimmedQuery,
+    limit: SEARCH_LIMIT,
   })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
@@ -584,6 +596,8 @@ export function TecdocPartPicker({
                 bakimxProducts={bakimxSearchResults}
                 bakimxSearching={bakimxSearching}
                 onBakimxSelect={onSelectBakimx ? selectBakimx : undefined}
+                getirbakimProducts={getirbakimResults}
+                getirbakimSearching={getirbakimSearching}
                 vehicleTypeId={vehicleTypeId}
                 brandFilter={searchBrand}
                 onBrandFilterChange={setSearchBrand}
