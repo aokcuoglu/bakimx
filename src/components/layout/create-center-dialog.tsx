@@ -27,27 +27,23 @@ export function CreateCenterDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur" />
-        }
-      >
-        <Plus className="size-4" />
-        <span className="hidden sm:inline">Oluştur</span>
+      <DialogTrigger asChild>
+        <Button type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur">
+          <Plus className="size-4" />
+          <span className="hidden sm:inline">Oluştur</span>
+        </Button>
       </DialogTrigger>
       <DialogContent showCloseButton={false} className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 overflow-y-auto rounded-b-none sm:top-1/2 sm:bottom-auto sm:max-w-xl sm:-translate-y-1/2 sm:rounded-xl">
-        <DialogClose
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-lg"
-              className="absolute top-1 right-1 md:top-2 md:right-2"
-              aria-label="Oluşturma merkezini kapat"
-            />
-          }
-        >
-          <X className="size-5" />
+        <DialogClose asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-lg"
+            className="absolute top-1 right-1 md:top-2 md:right-2"
+            aria-label="Oluşturma merkezini kapat"
+          >
+            <X className="size-5" />
+          </Button>
         </DialogClose>
         <DialogHeader>
           <DialogTitle>Ne oluşturmak istiyorsunuz?</DialogTitle>

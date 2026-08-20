@@ -1704,19 +1704,17 @@ function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail 
       <div className="flex items-center justify-end gap-0.5">
         {overflow.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`${row.name || "Satır"} — diğer işlemler`}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              }
-            />
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`${row.name || "Satır"} — diğer işlemler`}
+                className="text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {overflow.map((a, i) => {
                 const action = byKey.get(a.key)!
@@ -1741,25 +1739,23 @@ function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail 
           const action = byKey.get(a.key)!
           return (
             <Tooltip key={action.key}>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={action.run}
-                    aria-label={action.hint}
-                    className={cn(
-                      "text-muted-foreground",
-                      action.tone === "danger"
-                        ? "hover:bg-destructive/10 hover:text-destructive-strong"
-                        : "hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <action.Icon className="size-4" />
-                  </Button>
-                }
-              />
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={action.run}
+                  aria-label={action.hint}
+                  className={cn(
+                    "text-muted-foreground",
+                    action.tone === "danger"
+                      ? "hover:bg-destructive/10 hover:text-destructive-strong"
+                      : "hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <action.Icon className="size-4" />
+                </Button>
+              </TooltipTrigger>
               <TooltipContent>{action.hint}</TooltipContent>
             </Tooltip>
           )

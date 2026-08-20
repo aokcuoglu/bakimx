@@ -506,31 +506,31 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                           <Tooltip>
-                            <TooltipTrigger render={
+                            <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleToggle(t.id, t.isActive)}
                                 disabled={toggling === t.id}
-                              />
-                            }>
-                              {t.isActive ? (
-                                <ToggleRight className="size-5 text-success-strong" />
-                              ) : (
-                                <ToggleLeft className="size-5 text-muted-foreground/70" />
-                              )}
+                              >
+                                {t.isActive ? (
+                                  <ToggleRight className="size-5 text-success-strong" />
+                                ) : (
+                                  <ToggleLeft className="size-5 text-muted-foreground/70" />
+                                )}
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">{t.isActive ? "Deaktif et" : "Aktif et"}</TooltipContent>
                           </Tooltip>
                           <Tooltip>
-                            <TooltipTrigger render={
+                            <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setDeleteToken(t.id)}
-                              />
-                            }>
-                              <Trash2 className="size-4" />
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Sil</TooltipContent>
                           </Tooltip>
