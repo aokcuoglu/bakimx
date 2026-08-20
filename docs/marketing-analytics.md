@@ -2,6 +2,13 @@
 
 The client contract is disabled by default. Set `NEXT_PUBLIC_ANALYTICS_ENABLED=true` to emit the `bakimx:analytics` browser event. Set `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-…` to additionally load the built-in GA4 adapter. With no measurement ID, another provider may consume the browser event without changing product code.
 
+AWS deployment builds read environment-specific GitHub repository variables:
+
+- dev: `DEV_NEXT_PUBLIC_ANALYTICS_ENABLED`, `DEV_NEXT_PUBLIC_GA_MEASUREMENT_ID`
+- production: `PROD_NEXT_PUBLIC_ANALYTICS_ENABLED`, `PROD_NEXT_PUBLIC_GA_MEASUREMENT_ID`
+
+Both deploy workflows fail before image construction unless the enable flag is exactly `true` and the measurement ID has a `G-…` shape. These values are compiled into the browser bundle and cannot be supplied later through the ECS task definition.
+
 Payloads are allowlisted in `src/lib/marketing-analytics.ts`. Never add names, email addresses, phone numbers, business/invoice details, addresses, notes, full URLs, or free text. `source_page` is pathname-only and `referrer_host` is hostname-only. Keep GA4 enhanced measurement and automatic page views disabled to avoid duplicate page events.
 
 ## Release verification
