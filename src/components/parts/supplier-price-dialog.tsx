@@ -83,15 +83,15 @@ export function SupplierPriceDialog({
 function StockIndicator({ offer }: { offer: SupplierOffer }) {
   if (offer.stock === "in_stock") {
     return (
-      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-        <span className="size-1.5 rounded-full bg-emerald-500" /> Stokta
+      <span className="inline-flex items-center gap-1 text-success-strong">
+        <span className="size-1.5 rounded-full bg-success" /> Stokta
       </span>
     )
   }
   if (offer.stock === "low_stock") {
     return (
-      <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-        <span className="size-1.5 rounded-full bg-amber-500" /> Son {offer.stockQty} adet
+      <span className="inline-flex items-center gap-1 text-warning-strong">
+        <span className="size-1.5 rounded-full bg-warning" /> Son {offer.stockQty} adet
       </span>
     )
   }
@@ -117,7 +117,7 @@ function OfferCard({
     <div
       className={cn(
         "rounded-lg border p-3 transition-colors",
-        cheapest ? "border-emerald-500/60 bg-emerald-500/5" : "border-border bg-card"
+        cheapest ? "border-success/60 bg-success/5" : "border-border bg-card"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -126,7 +126,7 @@ function OfferCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{offer.supplierName}</span>
             {cheapest && (
-              <Badge className="bg-emerald-500 text-white hover:bg-emerald-500">En uygun</Badge>
+              <Badge className="bg-success text-success-foreground hover:bg-success">En uygun</Badge>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -147,7 +147,7 @@ function OfferCard({
 
         {/* Sağ: fiyat + uygula */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className={cn("text-base font-semibold tabular-nums", cheapest ? "text-emerald-600 dark:text-emerald-400" : "text-foreground")}>
+          <span className={cn("text-base font-semibold tabular-nums", cheapest ? "text-success-strong" : "text-foreground")}>
             {formatTRY(offer.priceKurus)}
           </span>
           {editable && (

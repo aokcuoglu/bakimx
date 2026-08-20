@@ -100,7 +100,7 @@ function AgingBucketCard({ bucket, colorIndex }: { bucket: Awaited<ReturnType<ty
           <p className={cn("text-lg font-bold", color.text)}>{formatTRY(bucket.totalAmount)}</p>
         </div>
       </div>
-      <div className="divide-y divide-slate-50">
+      <div className="divide-y divide-border">
         {bucket.customers.map((customer, idx) => (
           <div key={idx} className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/60 transition-colors">
             <div className="min-w-0">

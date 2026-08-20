@@ -66,8 +66,8 @@ export default async function BillingPage({
         </div>
 
         {pendingOrder && (
-          <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
-            <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+            <Clock className="size-5 text-warning-strong shrink-0 mt-0.5" />
             <div className="text-sm flex-1">
               <p className="font-medium text-foreground">
                 Bekleyen ödeme · {getPlanPackage(pendingOrder.planTier)?.name} ({pendingOrder.billingCycle === "monthly" ? "Aylık" : "Yıllık"}) · {formatMinor(pendingOrder.amountMinor)}

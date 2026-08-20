@@ -234,7 +234,7 @@ test("-strong tonları açık yüzeyde ve tonlu zeminde AA geçer", () => {
   for (const which of ["root", "dark"] as const) {
     const vars = themeBlock(which)
     const card = vars.card
-    for (const name of ["success", "warning", "destructive", "primary"]) {
+    for (const name of ["success", "warning", "destructive", "primary", "item-labor", "item-external"]) {
       const strong = vars[`${name}-strong`]
       const fill = vars[name]
       if (!strong || !fill || !card) {
@@ -262,7 +262,7 @@ test("-strong tonları açık yüzeyde ve tonlu zeminde AA geçer", () => {
  * yakalayamaz).
  */
 test("metin için çıplak text-<renk> yerine -strong kullanılır", () => {
-  const bare = /\btext-(success|warning|destructive)(?![-\w])/
+  const bare = /\btext-(success|warning|destructive|item-labor|item-external)(?![-\w])/
   const offenders: string[] = []
 
   for (const file of walk(SRC)) {
