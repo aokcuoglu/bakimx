@@ -11,9 +11,15 @@ function Tabs({
   orientation = "horizontal",
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  // `orientation` burada destructure ediliyordu ve Root'a GEÇİRİLMİYORDU.
+  // Sınıflar `data-orientation`a baktığı için görünüm doğru çıkar, ama Radix ok
+  // tuşu gezinmesini kendi `orientation` prop'undan okur — dikey bir şeritte
+  // klavye yatay davranırdı. Bugün dikey kullanım yok (BAK-189 taraması), yani
+  // hata gizli; ilk dikey şeritte patlardı.
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
+      orientation={orientation}
       data-orientation={orientation}
       className={cn(
         "group/tabs flex gap-2 data-horizontal:flex-col",

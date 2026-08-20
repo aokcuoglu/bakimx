@@ -43,15 +43,32 @@ This version has breaking changes — APIs, conventions, and file structure may 
   durumdur, sökülecek bir artık değil. `ui/sidebar.tsx` BAK-189'da Radix
   `Slot`'a geçti — artık `render` değil `asChild` alır. Bir bileşeni
   düzenlemeden önce import satırına bak.
-- **Durum sınıfları Radix yazımıyla yazılır: `data-[state=...]`.** Base UI
-  `data-open` / `data-closed` / `data-checked` / `data-unchecked` /
-  `data-active` / `data-pressed` yazar, Radix ise hepsini tek bir `data-state`
-  içine koyar. Tailwind v4 `data-checked:` kısayolunu `[data-checked]` VARLIK
-  seçicisine derler, yani yanlış yazım geçerli bir sınıf üretir ama HİÇBİR
-  ZAMAN eşleşmez — tip denetimi de lint de göremez. BAK-189'da 11 dosyada
-  ~100 sınıf bu yüzden ölüydü (anahtarın zemin rengi yoktu, checkbox
-  işaretliyken dolmuyordu, aktif sekme vurgulanmıyordu, overlay animasyonları
-  çalışmıyordu). `src/lib/ui-contract.test.ts` geri gelmesini engeller.
+- **`data-open:` / `data-closed:` / `data-checked:` / `data-unchecked:` /
+  `data-active:` / `data-horizontal:` / `data-vertical:` Base UI kalıntısı
+  DEĞİLDİR ve Radix bileşenlerinde ÇALIŞIR.** `globals.css`in içeri aldığı
+  `shadcn/tailwind.css` bunları `@custom-variant` olarak tanımlar ve her biri
+  İKİ seçici üretir — Radix'in `data-state="…"` / `data-orientation="…"`
+  yazımı ve Base UI'ın varlık niteliği
+  (`node_modules/shadcn/dist/tailwind.css:28-88`):
+
+  ```css
+  .data-checked\:bg-primary:where([data-state="checked"]),
+  .data-checked\:bg-primary:where([data-checked]:not([data-checked="false"]))
+  ```
+
+  Yani kısayol iki kütüphaneyi köprüleyen bilinçli bir shim; `data-[state=…]`e
+  çevirmek gereksiz bir fark üretir. (BAK-189'un ilk teslimatı, PR #463, bunları
+  "ölü" sanıp çevirdi — tarayıcı ölçümü çeviri ÖNCESİ hâlin de çalıştığını
+  gösterdi. Ayrıntı ve kanıt: `src/lib/ui-contract.test.ts`.) Kapı artık asıl
+  riski, KÖPRÜNÜN KAYBOLMASINI bekçiler.
+  **İstisna Tooltip:** Radix durumu `open` değil `instant-open` / `delayed-open`
+  yazar, `data-open:` orada tutmaz — iki durum da açıkça yazılır. Radix'in
+  `on`/`off` (Toggle) ve `indeterminate` (Checkbox) durumları için de kısayol
+  yoktur; onlarda `data-[state=…]` şart.
+- **Dikey `Tabs` / `ToggleGroup`'ta `orientation` prop'unu Root'a GEÇİR.**
+  Sınıflar `data-orientation`a bakar ama Radix ok tuşu gezinmesini kendi
+  `orientation` prop'undan okur; ikisi ayrışırsa görünüm dikey, klavye yatay
+  kalır (BAK-189).
 - Radix hattındaki bileşenlerde kompozisyon `asChild` ile yapılır — `render` ve
   `nativeButton` **yok** (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
 - Accordion Radix API'sini kullanır: `type="single" collapsible` ya da `type="multiple"`

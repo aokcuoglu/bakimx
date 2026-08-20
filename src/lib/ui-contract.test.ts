@@ -251,51 +251,95 @@ test("Radix hattındaki bileşen çağrılarında Base UI render/nativeButton ka
   expect(offenders).toEqual([])
 })
 
-/**
- * Base UI ve Radix AYNI durumu FARKLI yazar ve bu fark sessizdir (BAK-189).
+/* ------------------------------------------------------------------------- *
+ * `data-open:` / `data-checked:` — ÖLÜ DEĞİL, köprülü (BAK-189 düzeltmesi)
  *
- * Base UI: `data-open` / `data-closed` / `data-checked` / `data-unchecked` /
- * `data-active` / `data-pressed` — her biri ayrı bir attribute.
- * Radix: hepsi tek bir `data-state="open|closed|checked|unchecked|active|on"`.
+ * BAK-189'un ilk teslimatı (PR #463) bu kısayolları "Base UI kalıntısı, Radix'te
+ * hiç eşleşmiyor" diye 11 dosyada `data-[state=...]`e çevirdi ve aynı iddiayı
+ * bir kapıya yazdı. İDDİA YANLIŞTI; tarayıcıda ölçüldü:
  *
- * BAK-152…BAK-155'te bileşenler Radix'e geçti ama sınıflar Base UI yazımında
- * kaldı. Tailwind v4 `data-checked:` kısayolunu `[data-checked]` VARLIK
- * seçicisine derler (ölçüldü), yani sınıf geçerli üretilir ama hiçbir zaman
- * eşleşmez — ne TypeScript ne lint ne de kontrast taraması görür. Sonucu
- * kozmetik değildi: `switch.tsx`'te hem `data-checked:bg-primary` hem
- * `data-unchecked:bg-input` ölüydü, yani anahtarın HİÇ zemin rengi yoktu ve
- * başparmak açıkken kaymıyordu; `checkbox.tsx` işaretliyken dolmuyordu;
- * `tabs.tsx`'te aktif sekmenin vurgusu yoktu; altı overlay ailesinde giriş/
- * çıkış animasyonu çalışmıyordu.
+ *   - Çeviri ÖNCESİ hâlde `Switch` zeminini değiştiriyor (gri → mavi),
+ *     başparmak `calc(100% - 2px)` kayıyor, `Checkbox` işaretliyken doluyor,
+ *     aktif sekmenin alt çizgisi `opacity: 1`, dialog `animation-name: enter`.
+ *   - Sebebi `globals.css:10`un içeri aldığı `shadcn/tailwind.css`
+ *     (`node_modules/shadcn/dist/tailwind.css:28-88`): bu adları
+ *     `@custom-variant` olarak tanımlar ve HER BİRİ İKİ seçici üretir —
  *
- * Kural: bu varyantları yalnız iki durumda kullanabilirsin —
- *   1. dosya gerçekten Base UI primitive'i kullanıyorsa (`@base-ui/react`
- *      import'u var: `combobox.tsx`, `autocomplete.tsx`), ya da
- *   2. attribute'u dosyanın KENDİSİ yazıyorsa (`sidebar.tsx` `data-active`'i
- *      elle basar; orada `data-active:` doğru seçicidir).
- * Radix bir bileşende doğru yazım `data-[state=...]`'tir.
- */
-const BASE_UI_STATE_VARIANTS = ["open", "closed", "checked", "unchecked", "active", "pressed"]
+ *       .data-checked\:bg-primary:where([data-state="checked"]),
+ *       .data-checked\:bg-primary:where([data-checked]:not([data-checked="false"]))
+ *
+ * Yani kısayol, iki kütüphaneyi köprüleyen bilinçli bir shim. Çeviri zararsızdı
+ * ama gereksizdi; asıl zarar KURALIN kendisiydi — çalışan bir yazımı yasaklayan
+ * bir kapı, sonraki her okuru aynı yanlış teşhise götürür.
+ *
+ * Gerçek risk sınıfın kendisi değil, KÖPRÜNÜN KAYBOLMASI: `shadcn` paketi
+ * güncellenip bu blok değişirse kısayolu kullanan her sınıf tek seferde ve
+ * sessizce ölür. Kapı artık onu bekçiler.
+ * ------------------------------------------------------------------------- */
 
-test("Radix bileşenlerinde Base UI data-attribute yazımı kalmadı", () => {
-  const offenders: string[] = []
+/** Kısayol adı → Radix tarafında eşleşmesi ZORUNLU seçici parçası. */
+const SHADCN_STATE_VARIANTS: Record<string, string> = {
+  "data-open": '[data-state="open"]',
+  "data-closed": '[data-state="closed"]',
+  "data-checked": '[data-state="checked"]',
+  "data-unchecked": '[data-state="unchecked"]',
+  "data-active": '[data-state="active"]',
+  "data-horizontal": '[data-orientation="horizontal"]',
+  "data-vertical": '[data-orientation="vertical"]',
+}
 
-  for (const file of tsxFiles(SRC)) {
-    const source = readFileSync(file, "utf8")
-    const usesBaseUi = source.includes("@base-ui/react")
-    if (usesBaseUi) continue
-    source.split("\n").forEach((line, index) => {
-      for (const state of BASE_UI_STATE_VARIANTS) {
-        // `data-<state>:` bir Tailwind varyantı; `data-<state>=` ise attribute
-        // yazımıdır ve aranan şey değildir.
-        if (!new RegExp(`(?<![\\w-])data-${state}:`).test(line)) continue
-        if (source.includes(`data-${state}=`)) continue
-        offenders.push(
-          `${relative(SRC, file)}:${index + 1} → data-${state}: (Radix \`data-[state=${state}]\` yazar)`
-        )
-      }
-    })
+/** `@custom-variant <ad> { … }` bloğunun gövdesini çıkarır. */
+function customVariantBody(css: string, name: string): string | null {
+  const start = css.indexOf(`@custom-variant ${name} {`)
+  if (start === -1) return null
+  let depth = 0
+  for (let i = css.indexOf("{", start); i < css.length; i++) {
+    if (css[i] === "{") depth++
+    else if (css[i] === "}" && --depth === 0) return css.slice(start, i + 1)
+  }
+  return null
+}
+
+test("shadcn durum kısayolları Radix yazımına köprü kurmayı sürdürüyor", () => {
+  const css = readFileSync(
+    join(SRC, "..", "node_modules", "shadcn", "dist", "tailwind.css"),
+    "utf8"
+  )
+  const failures: string[] = []
+
+  for (const [variant, radixSelector] of Object.entries(SHADCN_STATE_VARIANTS)) {
+    const body = customVariantBody(css, variant)
+    if (!body) {
+      failures.push(`@custom-variant ${variant} kayboldu — kısayolu kullanan her sınıf öldü`)
+      continue
+    }
+    if (!body.includes(radixSelector)) {
+      failures.push(`${variant} artık ${radixSelector} ile eşleşmiyor — Radix tarafı koptu`)
+    }
   }
 
-  expect(offenders).toEqual([])
+  expect(failures).toEqual([])
+})
+
+/**
+ * Kısayolun TUTMADIĞI tek yer: Radix Tooltip durumu hiç `open` yazmaz,
+ * `instant-open` ya da `delayed-open` yazar
+ * (`@radix-ui/react-tooltip/dist/index.mjs:109`). `data-open:` bu yüzden
+ * tooltip'te sessizce eşleşmez — hızlı ardışık hover'da (skipDelay penceresi)
+ * ipucu animasyonsuz beliriyordu. İki durum da açıkça yazılmak zorunda.
+ *
+ * Aynı boşluk Radix'in kısayolu olmayan diğer durumları için de geçerli:
+ * Toggle `on`/`off`, Checkbox `indeterminate`.
+ */
+test("tooltip giriş animasyonu iki açılış durumunu da açıkça yazar", () => {
+  const source = readFileSync(join(SRC, "components", "ui", "tooltip.tsx"), "utf8")
+
+  expect(source).toContain("data-[state=delayed-open]:animate-in")
+  expect(source).toContain("data-[state=instant-open]:animate-in")
+  // `data-open:` tooltip'te ölüdür — geri sızarsa yanlış güven verir. Yalnız
+  // sınıf dizelerine bakılır; yorumda geçen ANLATIM bulgu değil.
+  const inClassStrings = [...source.matchAll(/"([^"\n]*)"/g)]
+    .map((m) => m[1])
+    .filter((literal) => /(?<![\w[=-])data-open[:/]/.test(literal))
+  expect(inClassStrings).toEqual([])
 })

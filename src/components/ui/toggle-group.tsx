@@ -32,12 +32,15 @@ function ToggleGroup({
     spacing?: number
     orientation?: "horizontal" | "vertical"
   }) {
+  // Tabs ile aynı ayrışma (BAK-189): Radix roving focus `orientation` prop'unu
+  // okur, sınıflar `data-orientation`ı. İkisi de yazılır.
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
       data-variant={variant}
       data-size={size}
       data-spacing={spacing}
+      orientation={orientation}
       data-orientation={orientation}
       style={{ "--gap": spacing } as React.CSSProperties}
       className={cn(
