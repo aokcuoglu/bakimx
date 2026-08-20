@@ -31,4 +31,9 @@ export const OTO_SERVIS_PROGRAMI_FAQS = [
     answer:
       "Hayır. BakımX tarayıcı üzerinden kullanılır; bilgisayara program kurmanız gerekmez. Hesabınızı açtıktan sonra telefon, tablet veya bilgisayardan giriş yapabilirsiniz.",
   },
+  {
+    question: "Oto servis programında kasa, tahsilat veya cari hesap takibi var mı?",
+    answer:
+      "Evet. Profesyonel pakette kasa, tahsilat ve müşteri alacak yaşlandırma takibi yer alır; bu kayıtlar servis operasyonuyla aynı yerde tutulur. e-Fatura/e-Arşiv entegrasyonu ayrı bir yol haritası maddesidir ve şu an aktif değildir.",
+  },
 ] as const
