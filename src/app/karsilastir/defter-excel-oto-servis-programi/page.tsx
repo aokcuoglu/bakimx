@@ -65,7 +65,11 @@ export default function ComparisonPage() {
             <h2 id="tablo-baslik" className="text-3xl font-bold tracking-tight">Ölçütlere göre karşılaştırma</h2>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">Tablo genel çalışma biçimlerini karşılaştırır. Excel dosyanızın yapısı veya servisinizdeki defter düzeni farklı sonuçlar verebilir.</p>
             <p className="mt-3 text-xs font-medium text-muted-foreground sm:hidden">Tüm seçenekleri görmek için tabloyu yatay kaydırın.</p>
-            <div className="mt-8 overflow-x-auto rounded-2xl border bg-card">
+            <div
+              aria-label="Defter, Excel ve oto servis programı karşılaştırma tablosu"
+              className="mt-8 overflow-x-auto rounded-2xl border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              tabIndex={0}
+            >
               <table className="min-w-[760px] w-full border-collapse text-left text-sm">
                 <thead className="bg-muted/60">
                   <tr>
