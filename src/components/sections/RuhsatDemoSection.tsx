@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import {
   ScanLine,
@@ -133,31 +133,26 @@ export function RuhsatDemoSection() {
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                 {phase === "idle" ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={start}
-                    className={buttonVariants({
-                      size: "default",
-                      className:
-                        "w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90",
-                    })}
+                    size="default"
+                    className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <ScanLine className="h-4 w-4" />
                     Örnek ruhsatı okut
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     type="button"
                     onClick={reset}
-                    className={buttonVariants({
-                      variant: "outline",
-                      size: "default",
-                      className: "w-full gap-2 border-primary/30",
-                    })}
+                    variant="outline"
+                    size="default"
+                    className="w-full gap-2 border-primary/30"
                   >
                     <RotateCcw className="h-4 w-4" />
                     Yeniden oynat
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -262,7 +257,7 @@ export function RuhsatDemoSection() {
                       "gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 sm:px-8 shadow-lg shadow-primary/25",
                   })}
                 >
-                  15 Gün Ücretsiz Dene
+                  7 Gün Ücretsiz Dene
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

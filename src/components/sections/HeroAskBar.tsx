@@ -114,7 +114,7 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
             // Panel kapalıyken o `id` DOM'da yok; var olmayan bir düğüme
             // işaret eden `aria-controls` ekran okuyucuda kırık referanstır.
             aria-controls={panelOpen ? ASSISTANT_PANEL_ID : undefined}
-            className="h-10 rounded-full pl-9 pr-4 shadow-sm md:h-9"
+            className="rounded-full pl-9 pr-4 shadow-sm"
           />
         </div>
         <Button type="submit" size="lg" disabled={value.trim().length === 0} className="gap-2 rounded-full px-4 sm:px-6">
