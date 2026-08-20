@@ -48,7 +48,7 @@ These are the natural candidates for the AWS build-out (see §12).
 | Concern | Technology |
 |---|---|
 | Styling | Tailwind CSS v4 (`@tailwindcss/postcss`), `tw-animate-css` |
-| Components | shadcn, Base UI (`@base-ui/react`), `class-variance-authority`, `tailwind-merge`, `clsx` |
+| Components | shadcn/ui radix-nova (`radix-ui`; `@base-ui/react` yalnız Combobox/Autocomplete/Sidebar), `class-variance-authority`, `tailwind-merge`, `clsx` |
 | Icons / animation | `lucide-react`, `framer-motion` |
 | Forms / validation | `react-hook-form` + `@hookform/resolvers` + **Zod 4** (shared server/client validation) |
 | Misc UI | `next-themes`, `sonner` (toasts), `qrcode.react` |

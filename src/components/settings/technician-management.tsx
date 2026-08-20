@@ -88,7 +88,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                       {roleInfo?.label || t.role}
                     </span>
                     {!t.isActive && (
-                      <span className="text-[10px] font-medium text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         Pasif
                       </span>
                     )}

@@ -111,17 +111,17 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                         <span className="text-xs text-muted-foreground">{quote.vehicle.brand} {quote.vehicle.model}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/70 text-xs">—</span>
+                      <span className="text-muted-foreground text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <QuoteStatusBadge status={quote.status} />
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-foreground">
-                    {quote.grandTotal != null ? formatTRY(quote.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                    {quote.grandTotal != null ? formatTRY(quote.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {quote.validUntil ? formatDate(quote.validUntil) : <span className="text-muted-foreground/70">—</span>}
+                    {quote.validUntil ? formatDate(quote.validUntil) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {formatDate(quote.createdAt)}
@@ -197,7 +197,7 @@ export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: Qu
                 )}
               </div>
               <div className="font-semibold text-foreground">
-                {quote.grandTotal != null ? formatTRY(quote.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                {quote.grandTotal != null ? formatTRY(quote.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
               </div>
             </div>
           </div>

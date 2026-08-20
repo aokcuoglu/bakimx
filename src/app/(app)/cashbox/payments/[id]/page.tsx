@@ -172,7 +172,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
 
               <Link
                 href={`/orders/${collection.serviceOrder.id}`}
-                className="block text-center text-sm text-primary hover:text-primary/80 font-medium mt-2"
+                className="block text-center text-sm text-primary hover:underline font-medium mt-2"
               >
                 İş Emri Detayına Git →
               </Link>

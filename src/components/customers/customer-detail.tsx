@@ -283,7 +283,7 @@ export function CustomerDetail({
                           {v.vin ? `VIN: ${v.vin}` : "VIN girilmemiş"}
                         </p>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70" />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </Link>
                   </li>
                 ))}
@@ -331,7 +331,7 @@ export function CustomerDetail({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-foreground">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </p>
                           {i.order.estimatedDeliveryAt ? (
                             <p className="text-[11px] text-muted-foreground">
@@ -403,7 +403,7 @@ export function CustomerDetail({
                           ) : null}
                         </div>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70" />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </Link>
                   </li>
                 ))}
@@ -435,7 +435,7 @@ export function CustomerDetail({
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                         </div>
-                        <span className="text-xs text-muted-foreground/70">{formatDate(i.createdAt)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(i.createdAt)}</span>
                       </div>
                     </li>
                   )
@@ -643,7 +643,7 @@ function ConsentRow({ icon, label, granted }: { icon: React.ReactNode; label: st
       <span
         className={cn(
           "inline-flex items-center gap-1 text-xs font-medium",
-          granted ? "text-success-strong" : "text-muted-foreground/70"
+          granted ? "text-success-strong" : "text-muted-foreground"
         )}
       >
         {granted ? (

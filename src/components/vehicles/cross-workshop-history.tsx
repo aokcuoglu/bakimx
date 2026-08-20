@@ -203,7 +203,7 @@ export function WorkshopChip({ name, city }: { name: string; city?: string | nul
     <span className="inline-flex h-5 items-center gap-1 rounded-full border border-border bg-muted px-2 text-[11px] font-medium text-muted-foreground">
       <Building2 className="size-3" />
       {name}
-      {city ? <span className="text-muted-foreground/70">· {city}</span> : null}
+      {city ? <span className="text-muted-foreground">· {city}</span> : null}
     </span>
   )
 }

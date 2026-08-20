@@ -70,7 +70,7 @@ export function BrandsList({ brands }: { brands: AdminCatalogBrandRow[] }) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/catalog" className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href="/admin/catalog" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <div>

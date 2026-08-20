@@ -79,7 +79,7 @@ function AgingBucketCard({ bucket, colorIndex }: { bucket: Awaited<ReturnType<ty
             <p className="text-xs text-muted-foreground">Alacak yok</p>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground/70 text-center py-4">Bu grupta alacak bulunmuyor.</p>
+        <p className="text-sm text-muted-foreground text-center py-4">Bu grupta alacak bulunmuyor.</p>
       </div>
     )
   }

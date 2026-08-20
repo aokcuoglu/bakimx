@@ -79,7 +79,7 @@ export function PartSupplierPricesField({
         <div className="rounded-lg border border-dashed p-4 text-center">
           <Store className="size-6 mx-auto mb-2 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">Bu parça için henüz tedarikçi eklenmedi.</p>
-          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5">
             Alış fiyatı tedarikçi bazlı tutulur; en az bir tedarikçi ekleyin.
           </p>
         </div>

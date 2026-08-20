@@ -102,7 +102,7 @@ export function BakimxProductRow({
               <span className="font-semibold tabular-nums text-foreground">
                 Alış: {formatTRY(product.displayPriceKurus)}
               </span>
-              <span className="text-muted-foreground/70">KDV hariç</span>
+              <span className="text-muted-foreground">KDV hariç</span>
               <span className={cn(outOfStock ? "text-warning-strong" : "text-muted-foreground")}>
                 · {bakimxStockLabel(product)}
               </span>

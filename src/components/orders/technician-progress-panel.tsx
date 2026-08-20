@@ -80,7 +80,7 @@ function ChecklistCategoryBlock({
         >
           {info.label}
         </span>
-        <span className="text-xs text-muted-foreground/70">
+        <span className="text-xs text-muted-foreground">
           {items.filter((i) => i.isCompleted).length}/{items.length}
         </span>
       </div>
@@ -90,7 +90,7 @@ function ChecklistCategoryBlock({
             {item.isCompleted ? (
               <CheckSquare className="size-5 text-success-strong shrink-0 mt-0.5" aria-hidden />
             ) : (
-              <Square className="size-5 text-muted-foreground/70 shrink-0 mt-0.5" aria-hidden />
+              <Square className="size-5 text-muted-foreground shrink-0 mt-0.5" aria-hidden />
             )}
             <div className="flex-1 min-w-0">
               <span className={cn("text-sm", item.isCompleted ? "text-success-strong" : "text-foreground")}>
@@ -99,7 +99,7 @@ function ChecklistCategoryBlock({
               <span className="sr-only">{item.isCompleted ? " — tamamlandı" : " — bekliyor"}</span>
               {item.note && <p className="text-xs text-muted-foreground mt-0.5">{item.note}</p>}
               {item.completedAt && (
-                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   {formatDateTime(item.completedAt)}
                 </p>
               )}

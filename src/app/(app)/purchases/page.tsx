@@ -113,7 +113,7 @@ export default async function PurchasesPage({
 
         <form action="/purchases" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q}

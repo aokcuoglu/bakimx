@@ -29,9 +29,9 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{d.customerName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] font-mono text-muted-foreground/70">{d.workOrderNo}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground">{d.workOrderNo}</span>
                   {d.estimatedDeliveryAt && (
-                    <span className="text-[11px] text-muted-foreground/70">{formatTime(d.estimatedDeliveryAt)}</span>
+                    <span className="text-[11px] text-muted-foreground">{formatTime(d.estimatedDeliveryAt)}</span>
                   )}
                 </div>
               </div>

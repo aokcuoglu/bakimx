@@ -60,7 +60,7 @@ export default function NotFound() {
 
           <div className="mt-7 flex flex-col items-center gap-1.5 border-t border-border pt-5">
             <BrandLogo variant="icon-light" size="md" />
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               BakimX — Dijital Araç Kabul Platformu
             </p>
           </div>

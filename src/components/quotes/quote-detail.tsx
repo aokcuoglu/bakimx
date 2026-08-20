@@ -424,7 +424,7 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
             <button
               type="button"
               disabled
-              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border bg-card text-muted-foreground/70 text-sm cursor-not-allowed touch-manipulation"
+              className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border bg-card text-muted-foreground text-sm cursor-not-allowed touch-manipulation"
               title="PDF çıktısı yakında"
             >
               <Printer className="size-4" />
@@ -461,7 +461,7 @@ function SummaryRow({
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
-      <span className={cn(muted ? "text-muted-foreground/70" : "text-foreground", large && "text-lg font-bold text-foreground")}>
+      <span className={cn(muted ? "text-muted-foreground" : "text-foreground", large && "text-lg font-bold text-foreground")}>
         {value}
       </span>
     </div>

@@ -117,14 +117,14 @@ export function PhotoLightbox({
         className="flex shrink-0 items-center justify-between px-4 py-3 text-white safe-area-top"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-sm font-medium tabular-nums text-white/80">
+        <span className="text-sm font-medium tabular-nums text-white">
           {index + 1} / {count}
         </span>
         <button
           type="button"
           aria-label="Kapat"
           onClick={() => onOpenChange(false)}
-          className="inline-flex size-12 items-center justify-center rounded-full text-white/90 hover:bg-white/10 touch-manipulation"
+          className="inline-flex size-12 items-center justify-center rounded-full text-white hover:bg-white/10 touch-manipulation"
         >
           <X className="size-6" />
         </button>
@@ -135,7 +135,7 @@ export function PhotoLightbox({
         className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <Loader2 className="absolute size-8 animate-spin text-white/30" />
+        <Loader2 className="absolute size-8 animate-spin text-white" />
         {src && (
           <motion.img
             key={current.id}
@@ -166,7 +166,7 @@ export function PhotoLightbox({
               type="button"
               aria-label="Önceki"
               onClick={() => go(-1)}
-              className="absolute left-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white/90 hover:bg-black/50 touch-manipulation"
+              className="absolute left-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 touch-manipulation"
             >
               <ChevronLeft className="size-6" />
             </button>
@@ -174,7 +174,7 @@ export function PhotoLightbox({
               type="button"
               aria-label="Sonraki"
               onClick={() => go(1)}
-              className="absolute right-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white/90 hover:bg-black/50 touch-manipulation"
+              className="absolute right-2 top-1/2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 touch-manipulation"
             >
               <ChevronRight className="size-6" />
             </button>
@@ -188,7 +188,7 @@ export function PhotoLightbox({
           className="shrink-0 space-y-1 px-4 py-3 text-center safe-area-bottom"
           onClick={(e) => e.stopPropagation()}
         >
-          {current.label && <div className="text-sm text-white/80">{current.label}</div>}
+          {current.label && <div className="text-sm text-white">{current.label}</div>}
           {current.note && (
             <div className="text-sm text-white whitespace-pre-wrap break-words">{current.note}</div>
           )}

@@ -325,7 +325,7 @@ export function OrderChecklist({
             ))}
 
             {active.length === 0 && (
-              <p className="text-sm text-muted-foreground/70">
+              <p className="text-sm text-muted-foreground">
                 Bu iş emrinde kontrol maddesi kalmadı.
               </p>
             )}
@@ -333,7 +333,7 @@ export function OrderChecklist({
             <RemovedChecklistItems items={removed} state={state} locked={locked} />
 
             {locked ? (
-              <p className="mt-2 text-xs text-muted-foreground/70">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez
               </p>
             ) : (
@@ -370,7 +370,7 @@ function ChecklistSection({
         <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium", info.color)}>
           {info.label}
         </span>
-        <span className="text-xs tabular-nums text-muted-foreground/70">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {done}/{items.length}
         </span>
         {/* Aşama bazlı toplu işaretleme: teslim kontrolleri araç tamir
@@ -450,7 +450,7 @@ function ChecklistRow({
         >
           {isDone
             ? <CheckSquare className="size-5 text-success-strong" />
-            : <Square className="size-5 text-muted-foreground/70 group-hover:text-muted-foreground" />}
+            : <Square className="size-5 text-muted-foreground group-hover:text-foreground" />}
         </span>
 
         <span className="min-w-0 flex-1">
@@ -475,7 +475,7 @@ function ChecklistRow({
           aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
         </button>

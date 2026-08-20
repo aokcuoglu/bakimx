@@ -49,14 +49,14 @@ export function AuthVisualPanel() {
           className="space-y-5"
         >
           <div className="w-16 h-1 bg-brand rounded-full" />
-          <blockquote className="text-xl lg:text-2xl font-medium text-white leading-relaxed">
+          <blockquote className="text-xl lg:text-2xl font-medium text-navy-foreground leading-relaxed">
             &ldquo;Servis kabul sürecini daha düzenli ve profesyonel yönetiyoruz.&rdquo;
           </blockquote>
           <div className="space-y-1">
-            <p className="text-sm font-medium text-white/90">Demo Kullanıcı Görüşü</p>
+            <p className="text-sm font-medium text-navy-foreground/90">Demo Kullanıcı Görüşü</p>
             <p className="text-sm font-medium text-brand">Özel Servis İşletmesi</p>
           </div>
-          <p className="text-sm text-white/70 leading-relaxed max-w-xs">
+          <p className="text-sm text-navy-foreground/70 leading-relaxed max-w-xs">
             BakimX ile araç kabul, hasar kaydı ve müşteri onayı tek akışta yönetilir.
           </p>
         </motion.div>

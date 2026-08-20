@@ -671,15 +671,15 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-start gap-2">
-                  <Camera className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+                  <Camera className="size-4 text-muted-foreground mt-0.5 shrink-0" />
                   <span>Plaka ve marka bilgileri zorunludur.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+                  <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
                   <span>Şase numarası (VIN) ruhsattan otomatik okunabilir veya manuel girilebilir.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="size-4 text-muted-foreground/70 mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>
+                  <span className="size-4 text-muted-foreground mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>
                   <span>Tüm alanlar sonradan düzenlenebilir.</span>
                 </div>
               </CardContent>

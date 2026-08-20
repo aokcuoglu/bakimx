@@ -145,7 +145,7 @@ export function OrderItemsChecklist({
       <div className="flex items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-semibold text-foreground">
           Yapılacak İşler
-          <span className="ml-2 text-xs font-normal text-muted-foreground/70 tabular-nums">
+          <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
             {done}/{total}
           </span>
         </h3>
@@ -167,7 +167,7 @@ export function OrderItemsChecklist({
       </div>
 
       {total === 0 ? (
-        <p className="text-sm text-muted-foreground/70">Bu iş emrinde henüz parça veya işçilik kalemi yok.</p>
+        <p className="text-sm text-muted-foreground">Bu iş emrinde henüz parça veya işçilik kalemi yok.</p>
       ) : (
         <div className="space-y-3">
           <ItemGroup title="Parçalar" items={parts} locked={locked} busyIds={busyIds} flashIds={flashIds} onToggle={toggle} />
@@ -195,7 +195,7 @@ function ItemGroup({
     <div>
       <div className="flex items-center gap-1.5 mb-1">
         <span className="text-xs font-medium text-foreground">{title}</span>
-        <span className="text-xs text-muted-foreground/70 tabular-nums">{done}/{items.length}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{done}/{items.length}</span>
       </div>
       <div>
         {items.map((item) => {
@@ -241,7 +241,7 @@ function ItemGroup({
               >
                 {isDone
                   ? <CheckSquare className="size-5 text-success-strong" />
-                  : <Square className="size-5 text-muted-foreground/70" />}
+                  : <Square className="size-5 text-muted-foreground" />}
               </span>
 
               <span className="flex-1 min-w-0">

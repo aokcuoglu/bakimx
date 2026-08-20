@@ -101,11 +101,11 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                     {r.sku && <div className="text-[11px] text-muted-foreground">{r.sku}</div>}
                   </td>
                   <td className="px-4 py-2 text-foreground">
-                    {r.supplierName || <span className="text-muted-foreground/70">—</span>}
+                    {r.supplierName || <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-2 text-center tabular-nums text-foreground">{r.quantity}</td>
                   <td className="px-4 py-2 text-right font-semibold text-foreground tabular-nums">
-                    {r.purchasePriceKurus != null ? formatTRY(r.purchasePriceKurus) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                    {r.purchasePriceKurus != null ? formatTRY(r.purchasePriceKurus) : <span className="text-muted-foreground font-normal">—</span>}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">{formatDate(r.purchasedAt)}</td>
                   <td className="px-4 py-2 sticky right-0 bg-card group-hover:bg-muted/60">

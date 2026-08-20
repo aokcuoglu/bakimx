@@ -25,7 +25,7 @@
 | Dil | **TypeScript** (strict mod) | JavaScript'in tip güvenli, hata yakalayan sürümü |
 | Framework | **Next.js 16** (App Router) | Hem web sayfalarını hem sunucu kodunu tek çatıda üreten modern web çatısı |
 | Arayüz | **React 19** | Ekran bileşenlerini oluşturan kütüphane |
-| Tasarım | **Tailwind CSS 4 + shadcn / Base UI + framer-motion** | Hızlı, tutarlı ve animasyonlu mobil öncelikli arayüz |
+| Tasarım | **Tailwind CSS 4 + shadcn/ui (radix-nova) + framer-motion** | Hızlı, tutarlı ve animasyonlu mobil öncelikli arayüz |
 | Veritabanı | **PostgreSQL** | Tüm verinin tutulduğu ilişkisel veritabanı |
 | ORM | **Prisma 7** (pg adapter) | Veritabanı tablolarını kod tarafında güvenle yönetmeyi sağlayan katman |
 | Oturum/Güvenlik | **iron-session + bcryptjs** | Şifreli oturum çerezi ve parola hash'leme (parolaları düz metin saklamama) |

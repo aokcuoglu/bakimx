@@ -209,7 +209,7 @@ function FallbackAction({
         <span className="block truncate text-xs leading-tight text-muted-foreground">{description}</span>
       </span>
       {trailing}
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70 transition-transform group-hover/button:translate-x-0.5" />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/button:translate-x-0.5" />
     </Button>
   );
 }

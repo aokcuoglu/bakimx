@@ -64,7 +64,7 @@ function MessageBubble({ message }: { message: LiveChatMessageWire }) {
         )}
       >
         <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>
-        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-primary-foreground/70" : "text-muted-foreground")}>
+        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-primary-foreground" : "text-muted-foreground")}>
           {isVisitor ? "Siz" : "Destek"} · {formatTime(message.createdAt)}
         </p>
       </div>

@@ -257,7 +257,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <Car className="size-5" />
             </div>
             <div className="min-w-0">
@@ -298,7 +298,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     <div className="size-2 rounded-full bg-primary mt-2 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-foreground">{e.description}</p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">{formatDateTime(e.createdAt)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(e.createdAt)}</p>
                     </div>
                   </div>
                 ))}
@@ -336,11 +336,11 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-foreground">
-                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                         </p>
                         <p className="text-[11px] text-muted-foreground">{formatDate(i.createdAt)}</p>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                      <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                     </Link>
                   ) : null
                 )}
@@ -372,7 +372,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           </div>
                           {dm.note ? <p className="text-xs text-muted-foreground mt-0.5">{dm.note}</p> : null}
                         </div>
-                        <span className="text-[11px] text-muted-foreground/70 shrink-0">{formatDate(dm.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(dm.createdAt)}</span>
                       </div>
                     </div>
                   )
@@ -400,7 +400,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
                       <div className="px-2 py-1.5">
                         <p className="text-[11px] font-medium text-foreground truncate">{pt?.label || p.label || p.type}</p>
-                        <p className="text-[10px] text-muted-foreground/70">{formatDate(p.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
                       </div>
                     </div>
                   )
@@ -432,7 +432,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                         ) : null}
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                    <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -460,7 +460,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     <span className="inline-flex items-center gap-1"><Phone className="size-3" />{customer.phone}</span>
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 ml-auto" />
+                <ChevronRight className="size-4 text-muted-foreground shrink-0 ml-auto" />
               </Link>
             </CardContent>
           </Card>
@@ -500,7 +500,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           <p className="text-sm font-medium text-foreground truncate">
                             {t.label || "Pasaport Linki"}
                           </p>
-                          <p className="text-[11px] text-muted-foreground/70 font-mono truncate mt-0.5">
+                          <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
                             /p/{t.token.slice(0, 16)}...
                           </p>
                         </div>
@@ -516,7 +516,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                                 {t.isActive ? (
                                   <ToggleRight className="size-5 text-success-strong" />
                                 ) : (
-                                  <ToggleLeft className="size-5 text-muted-foreground/70" />
+                                  <ToggleLeft className="size-5 text-muted-foreground" />
                                 )}
                               </Button>
                             </TooltipTrigger>

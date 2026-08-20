@@ -429,7 +429,7 @@ export function TeamManagement({
                       {ROLE_LABELS[m.role]}
                     </span>
                     {!m.isActive && (
-                      <span className="text-[10px] font-medium text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Pasif</span>
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Pasif</span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{memberIdentity(m)}</p>

@@ -303,7 +303,7 @@ export function VehicleDetail({
                     ) : null}
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 ml-auto" />
+                <ChevronRight className="size-4 text-muted-foreground shrink-0 ml-auto" />
               </Link>
             </div>
           </SectionCard>
@@ -357,7 +357,7 @@ export function VehicleDetail({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-foreground">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </p>
                           {i.order.estimatedDeliveryAt ? (
                             <p className="text-[11px] text-muted-foreground">
@@ -383,7 +383,7 @@ export function VehicleDetail({
                       <div className="text-right shrink-0">
                         <p className="text-[11px] text-muted-foreground">{formatDate(o.servicedAt)}</p>
                         {/* Başka servisin tutarı hiçbir koşulda gösterilmez. */}
-                        <p className="text-[11px] text-muted-foreground/70">Tutar gizli</p>
+                        <p className="text-[11px] text-muted-foreground">Tutar gizli</p>
                       </div>
                     </div>
                   )
@@ -442,7 +442,7 @@ export function VehicleDetail({
                         ) : null}
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                    <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -486,7 +486,7 @@ export function VehicleDetail({
                             <p className="text-xs text-muted-foreground mt-0.5">{dm.note}</p>
                           ) : null}
                         </div>
-                        <span className="text-[11px] text-muted-foreground/70 shrink-0">{formatDate(dm.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(dm.createdAt)}</span>
                       </div>
                       <div className="mt-1">
                         <Link
@@ -537,7 +537,7 @@ export function VehicleDetail({
                         <p className="text-[11px] font-medium text-foreground truncate">
                           {pt?.label || p.label || p.type}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/70">{formatDate(p.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
                       </div>
                     </Link>
                   )

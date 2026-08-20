@@ -17,7 +17,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent }: {
         <Icon className={`size-4 ${accent}`} />
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   )
 }
@@ -84,7 +84,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:text-primary/80">
+                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:underline">
                         {c.name}
                       </Link>
                     </td>

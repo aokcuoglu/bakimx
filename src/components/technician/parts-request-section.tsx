@@ -85,7 +85,7 @@ export function PartsRequestSection({
       </div>
 
       {locked ? (
-        <p className="text-xs text-muted-foreground/70 mb-2">
+        <p className="text-xs text-muted-foreground mb-2">
           Teslim edilmiş/iptal edilmiş iş emrinde talep açılamaz
         </p>
       ) : (
@@ -623,7 +623,7 @@ function PartsRequestList({ requests, locked }: { requests: TechnicianPartsReque
 
   if (requests.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground/70">
+      <p className="text-sm text-muted-foreground">
         Henüz talep yok. İhtiyacın olan parçayı yukarıdan arayıp talep et; dışarıda yaptırdığın bir iş varsa
         &quot;Dış İşçilik&quot; sekmesinden gir — ofis karar verince burada görürsün.
       </p>

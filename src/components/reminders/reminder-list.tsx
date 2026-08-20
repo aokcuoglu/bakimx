@@ -162,7 +162,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
         <CardContent className="pt-0 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 placeholder="Müşteri, plaka, başlık ara..."
                 value={search}
@@ -217,7 +217,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               <p className="text-sm">Henüz hatırlatma bulunmuyor</p>
               <Link
                 href="/reminders/new"
-                className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
+                className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:underline font-medium"
               >
                 <Plus className="size-3.5" />
                 Yeni hatırlatma oluştur
@@ -253,7 +253,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                             <Link href={`/customers/${r.customer.id}`} className="text-foreground hover:text-primary">
                               {customerName(r.customer)}
                             </Link>
-                            <p className="text-[11px] text-muted-foreground/70">{r.customer.phone}</p>
+                            <p className="text-[11px] text-muted-foreground">{r.customer.phone}</p>
                           </div>
                         </td>
                         <td className="py-3 px-3">
@@ -268,18 +268,18 @@ export function ReminderList({ initialReminders, stats }: Props) {
                         <td className="py-3 px-3 text-foreground">
                           {r.dueDate ? (
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="size-3 text-muted-foreground/70" />
+                              <Calendar className="size-3 text-muted-foreground" />
                               {formatDate(r.dueDate)}
                             </span>
-                          ) : <span className="text-muted-foreground/70">—</span>}
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-3 px-3 text-foreground">
                           {r.dueMileage ? (
                             <span className="inline-flex items-center gap-1">
-                              <Gauge className="size-3 text-muted-foreground/70" />
+                              <Gauge className="size-3 text-muted-foreground" />
                               {r.dueMileage.toLocaleString("tr-TR")} km
                             </span>
-                          ) : <span className="text-muted-foreground/70">—</span>}
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-3 px-3">
                           <ReminderStatusBadge status={r.status} />

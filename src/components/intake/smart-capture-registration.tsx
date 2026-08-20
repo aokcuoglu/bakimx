@@ -248,7 +248,7 @@ export function SmartCaptureRegistration() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {saveResult.customerCreated ? "Müşteriler bölümüne yeni kayıt eklendi." : "Mevcut müşteri kaydı kullanıldı."}
                 </p>
-                <Link href={`/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:underline">
                   Müşteriyi görüntüle
                 </Link>
               </div>
@@ -276,7 +276,7 @@ export function SmartCaptureRegistration() {
                     VIN eşleşti — araca uygun parçalar iş emrinde hazır
                   </p>
                 )}
-                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:underline">
                   Aracı görüntüle
                 </Link>
               </div>
@@ -508,7 +508,7 @@ export function SmartCaptureRegistration() {
             </Button>
             <div className="flex items-center gap-3 w-full max-w-md">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground/70">veya dosyadan</span>
+              <span className="text-xs text-muted-foreground">veya dosyadan</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -558,15 +558,15 @@ export function SmartCaptureRegistration() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
-            <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Kamera ile tarayın: ruhsat otomatik algılanıp çerçeveye oturunca çekilir. Dilerseniz dosyadan da yükleyebilirsiniz.</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <CheckCircle2 className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Okunan bilgiler kaydedilmeden önce onayınıza sunulur.</span>
           </div>
           <div className="flex items-start gap-2">
-            <AlertTriangle className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <AlertTriangle className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Otomatik okuma hatalı olabilir. Lütfen tüm alanları kontrol edin.</span>
           </div>
         </CardContent>

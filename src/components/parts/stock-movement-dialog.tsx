@@ -84,7 +84,7 @@ export function StockMovementDialog({
               <ToggleGroupItem value="out" className="flex-1">Çıkış</ToggleGroupItem>
               <ToggleGroupItem value="adjustment" className="flex-1">Düzeltme</ToggleGroupItem>
             </ToggleGroup>
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               {type === "in" ? "Stoğa ekleme yapar" : type === "out" ? "Stoktan düşüş yapar" : "Stok miktarını doğrudan belirlediğiniz değere ayarlar"}
             </p>
           </div>

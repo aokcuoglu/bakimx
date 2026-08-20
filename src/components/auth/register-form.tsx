@@ -355,7 +355,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
                 i < currentStep && "border-primary bg-primary text-primary-foreground",
                 i === currentStep && "border-primary bg-primary/10 text-primary",
-                i > currentStep && "border-muted-foreground/30 text-muted-foreground/50",
+                i > currentStep && "border-muted-foreground/30 text-muted-foreground",
               )}
               aria-current={i === currentStep ? "step" : undefined}
             >
@@ -364,7 +364,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <span
               className={cn(
                 "text-[11px] font-medium hidden sm:block whitespace-nowrap",
-                i <= currentStep ? "text-foreground" : "text-muted-foreground/60",
+                i <= currentStep ? "text-foreground" : "text-muted-foreground",
               )}
             >
               {step.label}
@@ -536,7 +536,7 @@ function StepBusinessInfo({
             <FormLabel>İş yeri adı</FormLabel>
             <FormControl>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} placeholder="Örnek Oto Servis" className="pl-9" />
               </div>
             </FormControl>
@@ -558,7 +558,7 @@ function StepBusinessInfo({
             <FormLabel>Telefon</FormLabel>
             <FormControl>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   {...field}
                   type="tel"
@@ -637,7 +637,7 @@ function StepBusinessInfo({
             </FormLabel>
             <FormControl>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} type="email" placeholder="servis@isyeri.com" className="pl-9" />
               </div>
             </FormControl>
@@ -922,7 +922,7 @@ function StepAccountInfo({
               <FormLabel>Ad</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                   <Input {...field} placeholder="Adınız" className="pl-9" />
                 </div>
               </FormControl>
@@ -953,7 +953,7 @@ function StepAccountInfo({
             <FormLabel>E-posta</FormLabel>
             <FormControl>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} type="email" autoComplete="email" placeholder="ornek@email.com" className="pl-9" />
               </div>
             </FormControl>
@@ -970,7 +970,7 @@ function StepAccountInfo({
             <FormLabel>Şifre</FormLabel>
             <FormControl>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   {...field}
                   type={showPassword ? "text" : "password"}

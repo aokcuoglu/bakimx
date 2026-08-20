@@ -71,14 +71,14 @@ export function TecdocArticleRow({
             </span>
           )}
           {context && (
-            <span className="block text-[11px] text-muted-foreground/70 truncate">{context}</span>
+            <span className="block text-[11px] text-muted-foreground truncate">{context}</span>
           )}
           {bakimxMatch && (
             <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
               <span className="font-semibold tabular-nums text-foreground">
                 {formatTRY(bakimxMatch.displayPriceKurus)}
               </span>
-              <span className="text-muted-foreground/70">KDV hariç</span>
+              <span className="text-muted-foreground">KDV hariç</span>
               <span className="text-muted-foreground">· {bakimxStockLabel(bakimxMatch)}</span>
               {discountNote && <span className="text-success-strong">· {discountNote}</span>}
             </span>

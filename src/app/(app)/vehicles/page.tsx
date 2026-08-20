@@ -141,7 +141,7 @@ export default async function VehiclesPage({
           </div>
         </div>
 
-        <div className="hidden sm:block text-xs text-muted-foreground/70 -mt-2">
+        <div className="hidden sm:block text-xs text-muted-foreground -mt-2">
           Plaka tanıma entegrasyonu yakında.
         </div>
 

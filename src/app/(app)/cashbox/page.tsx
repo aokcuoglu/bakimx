@@ -206,7 +206,7 @@ function RecentCollectionsSection({ collections }: { collections: import("@/lib/
                             {c.serviceOrder.workOrderNo || "—"}
                           </Link>
                         ) : (
-                          <span className="text-muted-foreground/70">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-foreground">{formatTRY(c.amount)}</td>
@@ -372,7 +372,7 @@ function DailyChartSection({ dailyCollections }: { dailyCollections: Array<{ dat
                   className="w-full rounded-t-md bg-primary transition-all min-h-[4px]"
                   style={{ height: `${Math.max(2, pct)}%` }}
                 />
-                <span className="text-[10px] text-muted-foreground/70 font-medium truncate max-w-full">{d.label}</span>
+                <span className="text-[10px] text-muted-foreground font-medium truncate max-w-full">{d.label}</span>
               </div>
             )
           })}

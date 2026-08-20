@@ -79,7 +79,7 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
                 Geçici şifre
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="currentPassword"
                   name="currentPassword"
@@ -107,7 +107,7 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
                 Yeni şifre
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="password"
                   name="password"
@@ -126,7 +126,7 @@ export function ForcePasswordChange({ displayName }: { displayName: string }) {
                 Yeni şifre (tekrar)
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"

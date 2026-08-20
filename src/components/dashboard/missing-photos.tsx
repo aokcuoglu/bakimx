@@ -27,13 +27,13 @@ export function MissingPhotos({ items }: { items: MissingPhotoItem[] }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <PlateBadge plate={item.plate} />
-                  <span className="text-xs font-mono text-muted-foreground/70">{item.workOrderNo}</span>
+                  <span className="text-xs font-mono text-muted-foreground">{item.workOrderNo}</span>
                 </div>
                 <p className="text-sm text-foreground truncate">{item.customerName}</p>
               </div>
               <div className="text-right shrink-0">
                 <span className="text-xs font-semibold text-destructive-strong">-{item.missingCount}</span>
-                <ChevronRight className="size-3.5 text-muted-foreground/50 mt-0.5 ml-auto" />
+                <ChevronRight className="size-3.5 text-muted-foreground mt-0.5 ml-auto" />
               </div>
             </Link>
           ))

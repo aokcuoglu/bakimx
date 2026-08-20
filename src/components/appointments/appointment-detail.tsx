@@ -230,7 +230,7 @@ export function AppointmentDetail({
                 </div>
                 <Link
                   href={`/customers/${appointment.customer.id}`}
-                    className="text-sm text-primary hover:text-primary/80 font-medium"
+                    className="text-sm text-primary hover:underline font-medium"
                 >
                   Müşteri Detayı →
                 </Link>
@@ -256,7 +256,7 @@ export function AppointmentDetail({
                   </div>
                   <Link
                     href={`/vehicles/${appointment.vehicle.id}`}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
+                  className="text-sm text-primary hover:underline font-medium"
                   >
                     Araç Detayı →
                   </Link>
@@ -327,7 +327,7 @@ export function AppointmentDetail({
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-6 px-2.5 text-xs",
-                    reminderInfo?.color || "bg-muted text-muted-foreground/70 border-border"
+                    reminderInfo?.color || "bg-muted text-muted-foreground border-border"
                   )}
                 >
                   {reminderInfo?.label || appointment.reminderStatus}

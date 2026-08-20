@@ -491,7 +491,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           ))}
                         </div>
                       </FormControl>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                      <p className="text-[11px] text-muted-foreground mt-1.5">
                         Önizleme: <CustomerTagBadge tag={tag} />
                       </p>
                       <FormMessage />
@@ -555,7 +555,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         </div>
                       </FormControl>
                       {priceGroup ? (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
                           Önizleme: <PriceGroupBadge group={priceGroup} />
                         </p>
                       ) : null}
@@ -581,7 +581,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           className="max-w-[10rem]"
                         />
                       </FormControl>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -680,9 +680,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         <Input {...field} type="date" className="mt-1.5" />
                       </FormControl>
                       {kvkkApprovedAt ? (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
                       ) : (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1">Henüz kaydedilmedi</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Henüz kaydedilmedi</p>
                       )}
                       <FormMessage />
                     </FormItem>
@@ -703,7 +703,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground/70">
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <Phone className="size-3" />
           <span>Telefon numaraları otomatik olarak +90 formatına normalleştirilir.</span>
         </div>

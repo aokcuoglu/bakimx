@@ -520,7 +520,7 @@ export function TecdocPartPicker({
                 bilmeyen kullanıcı ağaçta dolaşmak zorunda kalmasın. */}
             <div className="mt-3 space-y-2">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -621,7 +621,7 @@ export function TecdocPartPicker({
                         <span className="shrink-0 text-xs text-muted-foreground">{node.productCount}</span>
                       )}
                     </span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </button>
                 ))}
                 {currentNodes.length === 0 && (

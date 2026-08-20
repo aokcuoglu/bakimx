@@ -396,7 +396,7 @@ export function LaborSessionCard({
               {session.note ? (
                 <p className="break-words whitespace-pre-wrap text-foreground">{session.note}</p>
               ) : (
-                canEdit && !locked && <p className="text-muted-foreground/70">Açıklama yok</p>
+                canEdit && !locked && <p className="text-muted-foreground">Açıklama yok</p>
               )}
               {session.editedAt && (
                 <p className="text-[11px] text-muted-foreground">

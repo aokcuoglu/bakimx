@@ -39,7 +39,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
             {settings.provider === "mock" ? (
               <CheckCircle2 className="size-5 text-success-strong shrink-0 mt-0.5" />
             ) : (
-              <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
+              <XCircle className="size-5 text-muted-foreground shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">Uygulama İçi Takvim</div>
@@ -58,7 +58,7 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
             ) : settings.provider === "google" && !settings.googleConfigured ? (
               <XCircle className="size-5 text-destructive-strong shrink-0 mt-0.5" />
             ) : (
-              <XCircle className="size-5 text-muted-foreground/50 shrink-0 mt-0.5" />
+              <XCircle className="size-5 text-muted-foreground shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">Google Calendar</div>
@@ -67,13 +67,13 @@ export function CalendarSettings({ settings }: CalendarSettingsProps) {
               </div>
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ID</code>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground/70"}>
+                  <span className={settings.googleConfigured ? "text-success-strong" : "text-muted-foreground"}>
                     {settings.googleConfigured ? "✓" : "○"}
                   </span>
                   <code className="font-mono text-muted-foreground">GOOGLE_CALENDAR_ACCESS_TOKEN</code>
@@ -109,7 +109,7 @@ CALENDAR_PROVIDER=mock
 # GOOGLE_CALENDAR_ACCESS_TOKEN=your-access-token
 # GOOGLE_CALENDAR_API_URL=https://www.googleapis.com/calendar/v3`}
           </pre>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Uygulamayı yeniden başlattıktan sonra değişiklikler etkili olur. Google kimlik bilgileri olmadan <code className="text-muted-foreground">google</code> sağlayıcısı seçilirse sistem otomatik olarak uygulama içi takvime döner.
           </p>
         </div>

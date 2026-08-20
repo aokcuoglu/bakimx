@@ -374,7 +374,7 @@ function InfoRow({
     <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className={cn("text-sm text-foreground flex items-center gap-1.5", mono && "font-mono text-xs")}>
-        {Icon && <Icon className="size-3.5 text-muted-foreground/70" />}
+        {Icon && <Icon className="size-3.5 text-muted-foreground" />}
         {value}
       </span>
     </div>

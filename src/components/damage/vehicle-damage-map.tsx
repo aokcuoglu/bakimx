@@ -213,7 +213,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                     x={zone.lx} y={zone.ly}
                     textAnchor="middle" dominantBaseline="middle"
                     fill="currentColor" fontSize="7" fontWeight="500"
-                    className="text-muted-foreground/60"
+                    className="text-muted-foreground"
                     style={{ pointerEvents: "none" }}
                   >
                     {VEHICLE_ZONES[zone.id as keyof typeof VEHICLE_ZONES] || zone.id}

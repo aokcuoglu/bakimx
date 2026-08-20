@@ -564,7 +564,7 @@ function SummaryRow({
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
-      <span className={cn(muted ? "text-muted-foreground/70" : "text-foreground", large && "text-lg font-bold text-foreground")}>
+      <span className={cn(muted ? "text-muted-foreground" : "text-foreground", large && "text-lg font-bold text-foreground")}>
         {value}
       </span>
     </div>

@@ -162,7 +162,7 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
             E-posta veya kullanıcı adı
           </Label>
           <div className="relative">
-            <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               id="identifier"
               name="identifier"
@@ -188,7 +188,7 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
               İş yeri kodu
             </Label>
             <div className="relative">
-              <Store className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+              <Store className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
               <Input
                 id="workshopCode"
                 name="workshopCode"
@@ -211,7 +211,7 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
             Şifre
           </Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               id="password"
               name="password"

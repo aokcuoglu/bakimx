@@ -12,7 +12,7 @@ export function CriticalStockSuppliersWidget({ suppliers }: { suppliers: Critica
           <Truck className="size-4 text-primary" />
           <h3 className="text-sm font-semibold text-primary">Kritik Stok Tedarikçileri</h3>
         </div>
-        <Link href="/suppliers" className="text-xs text-primary hover:text-primary/80 font-medium">
+        <Link href="/suppliers" className="text-xs text-primary hover:underline font-medium">
           Tümünü Gör →
         </Link>
       </div>

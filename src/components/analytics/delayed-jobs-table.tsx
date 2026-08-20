@@ -55,7 +55,7 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
               return (
                 <tr key={job.id} className="border-b border-border hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:text-primary/80">
+                    <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:underline">
                       {job.workOrderNo}
                     </Link>
                     {badge && (
@@ -72,13 +72,13 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
-                      <User className="size-3.5 text-muted-foreground/70" />
+                      <User className="size-3.5 text-muted-foreground" />
                       {job.customerName}
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
-                      <Car className="size-3.5 text-muted-foreground/70" />
+                      <Car className="size-3.5 text-muted-foreground" />
                       {job.plate}
                     </span>
                   </td>

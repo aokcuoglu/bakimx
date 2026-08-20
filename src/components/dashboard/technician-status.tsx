@@ -107,7 +107,7 @@ export function TechnicianStatusWidget({
                   )}
                 </div>
               </div>
-              <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground/50" />
+              <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground" />
             </Link>
           )
         })}

@@ -164,7 +164,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
       <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <BellRing className="size-5" />
             </div>
             <div className="min-w-0">
@@ -409,7 +409,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 href={`/vehicles/${reminder.vehicle.id}`}
                 className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-navy text-white flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-lg bg-navy text-navy-foreground flex items-center justify-center shrink-0">
                   <Car className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -420,7 +420,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                     {reminder.vehicle.brand} {reminder.vehicle.model}
                   </p>
                   {reminder.vehicle.mileage != null ? (
-                    <p className="text-xs text-muted-foreground/70">
+                    <p className="text-xs text-muted-foreground">
                       KM: {reminder.vehicle.mileage.toLocaleString("tr-TR")}
                     </p>
                   ) : null}
