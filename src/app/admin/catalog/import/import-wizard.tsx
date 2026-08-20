@@ -207,14 +207,12 @@ export function CatalogImportWizard({
               <Select
                 value={brandId}
                 onValueChange={(v) => {
-                  setBrandId(v ?? "")
+                  setBrandId(v)
                   resetPreview()
                 }}
               >
                 <SelectTrigger id="import-brand" className="w-full">
-                  <SelectValue placeholder="Marka seçin">
-                    {(value: string | null) => (value ? brands.find((b) => b.id === value)?.name ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Marka seçin" />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map((brand) => (
@@ -234,16 +232,12 @@ export function CatalogImportWizard({
               <Select
                 value={mode}
                 onValueChange={(v) => {
-                  setMode((v ?? "upsert") as CatalogImportMode)
+                  setMode(v as CatalogImportMode)
                   resetPreview()
                 }}
               >
                 <SelectTrigger id="import-mode" className="w-full">
-                  <SelectValue placeholder="Mod seçin">
-                    {(value: string | null) =>
-                      value ? CATALOG_IMPORT_MODE_LABELS[value as CatalogImportMode] ?? value : null
-                    }
-                  </SelectValue>
+                  <SelectValue placeholder="Mod seçin" />
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(CATALOG_IMPORT_MODE_LABELS) as CatalogImportMode[]).map((value) => (

@@ -50,15 +50,15 @@ test("yönetim yüzeylerinde sabit durum rengi yok", () => {
 })
 
 /**
- * Button/Badge (BAK-152) ve overlay ailesi (BAK-153) Radix hattına geçti:
- * kompozisyon `asChild` ile yapılır. Base UI'ye özgü `render` / `nativeButton`
- * prop'ları artık tip hatası vermez — Radix'in prop tipleri bilinmeyen prop'u
- * sessizce yutar ve DOM'a düşer (React da `render` için uyarı basmaz). Kapı
- * bu yüzden testte duruyor.
+ * Button/Badge (BAK-152), overlay ailesi (BAK-153) ve form ailesi (BAK-154)
+ * Radix hattına geçti: kompozisyon `asChild` ile yapılır. Base UI'ye özgü
+ * `render` / `nativeButton` prop'ları artık tip hatası vermez — Radix'in prop
+ * tipleri bilinmeyen prop'u sessizce yutar ve DOM'a düşer (React da `render`
+ * için uyarı basmaz). Kapı bu yüzden testte duruyor.
  *
- * Kapsam bilerek dar: `render` henüz göç etmemiş ailelerde (Select, Combobox,
- * Autocomplete, InputGroup, SidebarMenuButton — BAK-154/155) hâlâ geçerli,
- * `FormField` ise react-hook-form'un kendi render prop'u.
+ * Kapsam bilerek dar: `render` henüz göç etmemiş ailelerde (Combobox,
+ * Autocomplete, SidebarMenuButton — BAK-155) hâlâ geçerli, `FormField` ise
+ * react-hook-form'un kendi render prop'u ve LİSTEYE GİRMEZ.
  */
 const RADIX_TAGS = [
   "Button",
@@ -75,6 +75,19 @@ const RADIX_TAGS = [
   "TooltipTrigger",
   "DropdownMenuTrigger",
   "DropdownMenuSubTrigger",
+  // form ailesi (BAK-154)
+  "SelectTrigger",
+  "SelectValue",
+  "SelectItem",
+  "SelectIcon",
+  "TabsTrigger",
+  "AccordionTrigger",
+  "Toggle",
+  "ToggleGroupItem",
+  "Checkbox",
+  "Switch",
+  "FormControl",
+  "InputGroupButton",
 ]
 
 /** Bir JSX açılış etiketinin gövdesini süslü parantez/dize farkındalığıyla çıkarır. */

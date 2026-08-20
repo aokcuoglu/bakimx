@@ -101,7 +101,7 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Saat Dilimi</FormLabel>
-                  <Select items={TIMEZONES} value={field.value} onValueChange={(v) => v && field.onChange(v)}>
+                  <Select value={field.value} onValueChange={(v) => v && field.onChange(v)}>
                     <FormControl>
                       <SelectTrigger className="w-full sm:w-72">
                         <SelectValue />

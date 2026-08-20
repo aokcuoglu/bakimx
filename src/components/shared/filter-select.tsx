@@ -49,10 +49,9 @@ export function FilterSelect({
     <>
       <input type="hidden" name={name} value={value} ref={hiddenRef} />
       <Select
-        items={options}
         value={value}
         onValueChange={(v) => {
-          const next = v ?? ""
+          const next = v
           if (autoSubmit && next !== value) pendingSubmit.current = true
           setValue(next)
         }}

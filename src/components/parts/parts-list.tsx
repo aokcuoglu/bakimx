@@ -17,12 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { PartsTabsNav } from "@/app/(app)/parts/parts-tabs-nav"
 
-const STATUS_LABELS: Record<string, string> = {
-  in_stock: "Stokta",
-  critical: "Kritik Stokta",
-  out_of_stock: "Stokta Yok",
-  inactive: "Pasif",
-}
 
 type PartWithDates = {
   id: string
@@ -153,12 +147,10 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <div className="flex flex-wrap gap-2">
             <Select
               value={currentFilters.status}
-              onValueChange={(v) => applyFilter("status", v ?? "all")}
+              onValueChange={(v) => applyFilter("status", v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Tümü">
-                  {(value: string | null) => (value && value !== "all" ? STATUS_LABELS[value] ?? value : null)}
-                </SelectValue>
+                <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>
@@ -172,7 +164,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
             {categories.length > 0 && (
               <Select
                 value={currentFilters.category}
-                onValueChange={(v) => applyFilter("category", v ?? "")}
+                onValueChange={(v) => applyFilter("category", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tüm Kategoriler" />
@@ -189,7 +181,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
             {brands.length > 0 && (
               <Select
                 value={currentFilters.brand}
-                onValueChange={(v) => applyFilter("brand", v ?? "")}
+                onValueChange={(v) => applyFilter("brand", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tüm Markalar" />

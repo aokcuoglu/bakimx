@@ -255,8 +255,7 @@ export function WorkOrderDetail({
 
   useOrderSync(order.id)
 
-  function handleTabChange(key: string | null) {
-    if (!key) return
+  function handleTabChange(key: string) {
     router.replace(`/orders/${order.id}?tab=${key}`, { scroll: false })
   }
 
@@ -1240,8 +1239,8 @@ export function WorkOrderDetail({
 
           {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
               kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
-          <Accordion>
-            <AccordionItem className="border-0">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="ai-advisor" className="border-0">
               <AccordionTrigger className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card px-4 py-3 hover:no-underline">
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <Sparkles className="size-4 text-primary" /> AI Öneri Al
@@ -1375,16 +1374,9 @@ export function WorkOrderDetail({
                   <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
-                  <Select value={photoType} onValueChange={(v) => setPhotoType(v ?? "")}>
+                  <Select value={photoType} onValueChange={(v) => setPhotoType(v)}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seçiniz...">
-                        {(value: string | null) => {
-                          if (!value) return null
-                          const val = PHOTO_TYPES[value as keyof typeof PHOTO_TYPES]
-                          if (!val) return value
-                          return `${val.label} ${val.required ? "(Zorunlu)" : "(Opsiyonel)"}`
-                        }}
-                      </SelectValue>
+                      <SelectValue placeholder="Seçiniz..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Seçiniz...</SelectItem>
@@ -1396,11 +1388,9 @@ export function WorkOrderDetail({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Aşama</Label>
-                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v ?? "intake")}>
+                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v)}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Aşama seçin">
-                        {(value: string | null) => (value ? PHOTO_PHASES[value as PhotoPhaseKey]?.label ?? value : null)}
-                      </SelectValue>
+                      <SelectValue placeholder="Aşama seçin" />
                     </SelectTrigger>
                     <SelectContent>
                       {(Object.keys(PHOTO_PHASES) as PhotoPhaseKey[]).map((key) => (

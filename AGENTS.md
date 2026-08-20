@@ -31,14 +31,24 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (radix-nova style)
 - **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
 - **Primitive hattı geçiş halinde** (`components.json` → `"style": "radix-nova"`, BAK-152).
-  Radix'e taşınanlar (`radix-ui` paketi, `asChild`): Button, Badge, Label, Separator.
-  Kalanlar hâlâ `@base-ui/react` ve `render` prop'unu kullanır (Dialog, Select, Tooltip,
-  Sidebar, Combobox…). Bir bileşeni düzenlemeden önce import satırına bak.
-- Button/Badge kompozisyonu `asChild` ile yapılır — `render` ve `nativeButton` **yok**
-  (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
-- Accordion uses Base UI API (no `type`/`collapsible` props)
-- Select `onValueChange` receives `(value: string | null)`
-- Form: react-hook-form + zod + shadcn Form component (uses @radix-ui/react-slot transitively)
+  Radix'e taşınanlar (`radix-ui` paketi, `asChild`): çekirdek (Button, Badge, Label,
+  Separator — BAK-152), overlay (Dialog, AlertDialog, Sheet, Popover, Tooltip,
+  DropdownMenu — BAK-153), form (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs,
+  Accordion, Form, InputGroup — BAK-154).
+  Hâlâ `@base-ui/react` + `render` prop'unu kullanan **yalnız üçü kaldı**: Combobox,
+  Autocomplete ve `sidebar.tsx`/`item.tsx` içindeki `useRender`/`mergeProps` (BAK-155).
+  Bir bileşeni düzenlemeden önce import satırına bak.
+- Radix hattındaki bileşenlerde kompozisyon `asChild` ile yapılır — `render` ve
+  `nativeButton` **yok** (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
+- Accordion Radix API'sini kullanır: `type="single" collapsible` ya da `type="multiple"`
+  **zorunlu**, `AccordionItem` `value` **zorunlu**
+- Select `onValueChange` `(value: string)` alır. `<SelectItem value="">` Radix'te yasak;
+  `select.tsx` boş dizeyi bileşen sınırında nöbetçi bir değere çevirip geri döndürür,
+  yani çağrı yerlerinde "boş dize = seçim yok" sözleşmesi aynen geçerli. Boş seçimde
+  tetikleyicide metin görünmesi gerekiyorsa `<SelectValue placeholder="…" />` ver.
+- ToggleGroup `type="single"` grubunda öğeler `role="radio"` alır ve `aria-pressed`
+  **basılmaz** — seçili görünümü `data-[state=on]:` ile ver, `aria-pressed:` ile değil
+- Form: react-hook-form + zod + shadcn Form component (`Slot` `radix-ui` paketinden)
 - Toast: sonner (<Toaster /> in root layout)
 - Prisma ORM with PostgreSQL
 - Storage: mock (default) / S3-compatible (MinIO local / Cloudflare R2 production)
@@ -57,8 +67,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - on/off switches → `<Switch>` (NOT checkbox for toggle)
 - **`<Link>` as button:** use `<Button asChild><Link href={...}>…</Link></Button>` — the link is the
   child and carries the children (NOT `<Link><Button>…</Button></Link>`)
-- **Base UI trigger + Radix Button:** `<TooltipTrigger render={<Button asChild />}><Link …>…</Link></TooltipTrigger>` —
-  the trigger's children become the Slot child; do not nest `render` inside `render`
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
 - **Semantic colors have three roles — pick the right token:**

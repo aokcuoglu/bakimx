@@ -113,15 +113,7 @@ export function TechnicianDashboard({
             onValueChange={handleTechnicianChange}
           >
             <SelectTrigger aria-label="Teknisyen seç">
-              <SelectValue placeholder="Teknisyen seç">
-                {(value: string | null) => {
-                  if (!value) return null
-                  const tech = technicians.find((t) => t.id === value)
-                  if (!tech) return value
-                  const roleLabel = (TECHNICIAN_ROLES as Record<string, { label: string }>)[tech.role]?.label || tech.role
-                  return `${tech.fullName} — ${roleLabel}`
-                }}
-              </SelectValue>
+              <SelectValue placeholder="Teknisyen seç" />
             </SelectTrigger>
             <SelectContent>
               {technicians.map((t) => (

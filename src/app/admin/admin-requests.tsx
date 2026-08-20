@@ -196,10 +196,9 @@ function ManageSelect({
     <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
       <Select
-        items={options}
         value={value}
         disabled={disabled}
-        onValueChange={(v) => onChange(v === UNASSIGNED || v === null ? "" : v)}
+        onValueChange={(v) => onChange(v === UNASSIGNED ? "" : v)}
       >
         <SelectTrigger className="w-full">
           <SelectValue />

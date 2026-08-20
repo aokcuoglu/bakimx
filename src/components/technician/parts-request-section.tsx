@@ -252,8 +252,9 @@ function PartsRequestComposer({ orderId, vehicle }: { orderId: string; vehicle: 
       </span>
 
       <ToggleGroup
-        value={[requestType]}
-        onValueChange={(v) => { if (v.length) changeType(v[0] as PartsRequestTypeKey) }}
+        type="single"
+        value={requestType}
+        onValueChange={(v) => { if (v) changeType(v as PartsRequestTypeKey) }}
         variant="outline"
         className="mb-3 w-full"
       >

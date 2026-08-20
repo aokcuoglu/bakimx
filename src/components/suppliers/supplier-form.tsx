@@ -242,13 +242,9 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
                   <FormItem>
                     <FormLabel>Durum</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "true")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Durum">
-                            {(value: string | null) =>
-                              value === "true" ? "Aktif" : value === "false" ? "Pasif" : null
-                            }
-                          </SelectValue>
+                          <SelectValue placeholder="Durum" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="true">Aktif</SelectItem>

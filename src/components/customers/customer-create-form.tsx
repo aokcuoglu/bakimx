@@ -42,14 +42,6 @@ import { formatPhoneTR, toTrUpper } from "@/lib/format"
 import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
 import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
 
-const SOURCE_LABELS: Record<string, string> = {
-  referral: "Tavsiye",
-  google: "Google",
-  social_media: "Sosyal Medya",
-  walk_in: "Yoldan Geldi",
-  existing: "Mevcut Müşteri",
-  other: "Diğer",
-}
 
 export type CustomerFormInitial = {
   id?: string
@@ -513,11 +505,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                     <FormItem>
                       <FormLabel>Müşteri Kaynağı</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçilmedi">
-                              {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : null)}
-                            </SelectValue>
+                            <SelectValue placeholder="Seçilmedi" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Seçilmedi</SelectItem>

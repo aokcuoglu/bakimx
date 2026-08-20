@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import {
   VEHICLE_TYPES,
   VEHICLE_FUEL_TYPES,
-  vehicleTypeLabel,
-  fuelTypeLabel,
   ocrVehicleTypeToSlug,
   ocrFuelToSlug,
   tecdocFuelToFormValue,
@@ -399,11 +397,9 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v ?? "")}>
+                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
                   <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
-                    <SelectValue placeholder="Seçiniz">
-                      {(value) => vehicleTypeLabel(value) || "Seçiniz"}
-                    </SelectValue>
+                    <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
@@ -414,11 +410,9 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label>Yakıt Cinsi</Label>
-                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v ?? "")}>
+                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seçiniz">
-                      {(value) => fuelTypeLabel(value) || "Seçiniz"}
-                    </SelectValue>
+                    <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {VEHICLE_FUEL_TYPES.map((ft) => (

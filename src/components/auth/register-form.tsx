@@ -845,7 +845,7 @@ function StepTeam({ form }: { form: WizardForm }) {
                   name={`teamMembers.${index}.role`}
                   render={({ field: f }) => (
                     <FormItem className="w-40">
-                      <Select value={f.value} onValueChange={(v) => f.onChange(v ?? "usta")}>
+                      <Select value={f.value} onValueChange={(v) => f.onChange(v)}>
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Rol" />

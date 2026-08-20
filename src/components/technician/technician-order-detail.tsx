@@ -392,7 +392,7 @@ export function TechnicianOrderDetail({
       {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
           önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
           kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
-      <Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>
+      <Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>
         <div className="max-w-full overflow-x-auto pb-1">
           <TabsList className="w-max">
             {steps.map((step, i) => (

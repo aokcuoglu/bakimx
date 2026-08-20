@@ -171,7 +171,7 @@ export function HeroLeadForm() {
             <Label htmlFor="hero-city">Şehir</Label>
             <Select
               value={formData.city}
-              onValueChange={(value) => setFormData({ ...formData, city: value ?? "" })}
+              onValueChange={(value) => setFormData({ ...formData, city: value })}
             >
               <SelectTrigger id="hero-city" className="w-full">
                 <SelectValue placeholder="Şehir seçin" />
@@ -192,7 +192,7 @@ export function HeroLeadForm() {
             <Label htmlFor="hero-monthlyVehicles">Aylık araç adedi</Label>
             <Select
               value={formData.monthlyVehicles}
-              onValueChange={(value) => setFormData({ ...formData, monthlyVehicles: value ?? "" })}
+              onValueChange={(value) => setFormData({ ...formData, monthlyVehicles: value })}
             >
               <SelectTrigger id="hero-monthlyVehicles" className="w-full">
                 <SelectValue placeholder="Seçin" />

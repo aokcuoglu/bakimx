@@ -272,25 +272,19 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       <FormControl>
                         <Select
                           value={field.value}
-                          onValueChange={(v) => field.onChange(v ?? "")}
+                          onValueChange={(v) => field.onChange(v)}
                           disabled={vehicleLoading || vehicles.length === 0}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue>
-                              {(value: string | null) => {
-                                const v = vehicles.find((v) => v.id === value)
-                                if (v) return `${v.plate} — ${v.brand} ${v.model}`
-                                return (
-                                  <span className="text-muted-foreground">
-                                    {vehicleLoading
-                                      ? "Araçlar yükleniyor…"
-                                      : vehicles.length === 0
-                                        ? "Bu müşterinin kayıtlı aracı yok"
-                                        : "Araç seçin (isteğe bağlı)"}
-                                  </span>
-                                )
-                              }}
-                            </SelectValue>
+                            <SelectValue
+                              placeholder={
+                                vehicleLoading
+                                  ? "Araçlar yükleniyor…"
+                                  : vehicles.length === 0
+                                    ? "Bu müşterinin kayıtlı aracı yok"
+                                    : "Araç seçin (isteğe bağlı)"
+                              }
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {vehicles.map((v) => (

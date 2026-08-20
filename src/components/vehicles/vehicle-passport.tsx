@@ -767,7 +767,7 @@ function VisibilityToggle({ label, checked, onChange }: { label: string; checked
       <span className="text-sm text-foreground">{label}</span>
       <Checkbox
         checked={checked}
-        onCheckedChange={(c) => onChange(c)}
+        onCheckedChange={(c) => onChange(c === true)}
       />
     </label>
   )

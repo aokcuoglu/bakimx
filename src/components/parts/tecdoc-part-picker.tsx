@@ -657,11 +657,7 @@ export function TecdocPartPicker({
                   <div className="sticky top-0 z-10 bg-popover px-3 py-2 border-b">
                     <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v && v !== "all" ? v : "")}>
                       <SelectTrigger className="h-9">
-                        {/* Base UI Select.Value HAM değeri basar → "all" seçiliyken
-                            tetikleyicide "all" yazıyordu; etiketi render-fn ile veriyoruz. */}
-                        <SelectValue>
-                          {(v: string | null) => (v && v !== "all" ? v : "Tüm markalar")}
-                        </SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tüm markalar</SelectItem>

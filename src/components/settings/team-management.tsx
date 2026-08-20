@@ -360,17 +360,14 @@ export function TeamManagement({
                   <FormItem>
                     <FormLabel>Rol</FormLabel>
                     <FormControl>
-                      <Select items={ROLE_LABELS} value={field.value} onValueChange={(v) => v && field.onChange(v)}>
+                      <Select value={field.value} onValueChange={(v) => v && field.onChange(v)}>
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {assignable.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              <span className="flex flex-col items-start">
-                                <span>{ROLE_LABELS[r]}</span>
-                                <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
-                              </span>
+                            <SelectItem key={r} value={r} description={ROLE_DESCRIPTIONS[r]}>
+                              {ROLE_LABELS[r]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -442,7 +439,6 @@ export function TeamManagement({
               {manageable && (
                 <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <Select
-                    items={ROLE_LABELS}
                     value={m.role}
                     disabled={isPending}
                     onValueChange={(v) => v && run(() => updateMemberRoleAction(m.id, v))}

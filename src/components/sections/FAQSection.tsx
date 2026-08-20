@@ -85,9 +85,10 @@ export function FAQSection() {
           </motion.div>
           <div className="lg:col-span-2">
             <Accordion
+              type="multiple"
               className="w-full"
               value={openItems}
-              onValueChange={(value) => setOpenItems(value as string[])}
+              onValueChange={setOpenItems}
             >
               {entries.map((entry, index) => (
                 <motion.div

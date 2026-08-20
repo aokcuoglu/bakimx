@@ -38,21 +38,7 @@ type Props = {
   stats: Record<string, number>
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  upcoming: "Yaklaşan",
-  due_soon: "Yaklaşıyor",
-  overdue: "Gecikmiş",
-  completed: "Tamamlandı",
-  postponed: "Ertelendi",
-  cancelled: "İptal",
-}
 
-const DATE_LABELS: Record<string, string> = {
-  today: "Bugün",
-  week: "Bu Hafta",
-  month: "Bu Ay",
-  overdue: "Geciken",
-}
 
 function customerName(c: ReminderRow["customer"]): string {
   if (c.type === "corporate") return c.companyName || "Kurumsal"
@@ -187,9 +173,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
             <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}>
                 <SelectTrigger className="w-[130px] text-sm">
-                  <SelectValue placeholder="Durum">
-                    {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>
@@ -203,13 +187,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               </Select>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || "")}>
                 <SelectTrigger className="w-[140px] text-sm">
-                  <SelectValue placeholder="Bakım Türü">
-                    {(value: string | null) =>
-                      value
-                        ? (MAINTENANCE_REMINDER_TYPES as Record<string, { label: string }>)[value]?.label ?? value
-                        : null
-                    }
-                  </SelectValue>
+                  <SelectValue placeholder="Bakım Türü" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>
@@ -220,9 +198,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               </Select>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v || "")}>
                 <SelectTrigger className="w-[130px] text-sm">
-                  <SelectValue placeholder="Tarih">
-                    {(value: string | null) => (value ? DATE_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Tarih" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>

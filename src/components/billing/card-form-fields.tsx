@@ -121,9 +121,9 @@ export function CardFormFields({
 
       <div className="grid grid-cols-[1fr_1fr_1fr] gap-3">
         <Field label="Ay" error={undefined}>
-          <Select value={month} onValueChange={(v) => setMonth(v ?? "")} disabled={submitting}>
+          <Select value={month} onValueChange={(v) => setMonth(v)} disabled={submitting}>
             <SelectTrigger className="w-full" aria-label="Son kullanma ayı">
-              <SelectValue placeholder="AA">{(v) => (v ? String(v) : "AA")}</SelectValue>
+              <SelectValue placeholder="AA" />
             </SelectTrigger>
             <SelectContent>
               {MONTHS.map((m) => (
@@ -135,9 +135,9 @@ export function CardFormFields({
           </Select>
         </Field>
         <Field label="Yıl" error={undefined}>
-          <Select value={year} onValueChange={(v) => setYear(v ?? "")} disabled={submitting}>
+          <Select value={year} onValueChange={(v) => setYear(v)} disabled={submitting}>
             <SelectTrigger className="w-full" aria-label="Son kullanma yılı">
-              <SelectValue placeholder="YYYY">{(v) => (v ? String(v) : "YYYY")}</SelectValue>
+              <SelectValue placeholder="YYYY" />
             </SelectTrigger>
             <SelectContent>
               {YEARS.map((y) => (
