@@ -118,8 +118,10 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           <Truck className="size-5 text-primary" />
           Tedarikçiler
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/suppliers/new" />}>
-          <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
+        <Button size="sm" className="w-full sm:w-auto" asChild>
+          <Link href="/suppliers/new">
+            <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
+          </Link>
         </Button>
       </div>
 
@@ -250,14 +252,18 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}`} />} />}>
-                          <Eye className="size-3.5" />
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" asChild />}>
+                          <Link href={`/suppliers/${s.id}`}>
+                            <Eye className="size-3.5" />
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}/edit`} />} />}>
-                          <Edit3 className="size-3.5" />
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" asChild />}>
+                          <Link href={`/suppliers/${s.id}/edit`}>
+                            <Edit3 className="size-3.5" />
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
                       </Tooltip>

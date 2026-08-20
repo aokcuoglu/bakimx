@@ -28,10 +28,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **PostgreSQL:** localhost:5432 (bakimx / bakimx)
 
 ## Tech Stack
-- Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (base-nova style)
+- Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (radix-nova style)
 - **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
-- Uses `@base-ui/react` (NOT Radix) for shadcn/ui primitives
-- Button uses `render` prop (NOT `asChild`) for link rendering
+- **Primitive hattı geçiş halinde** (`components.json` → `"style": "radix-nova"`, BAK-152).
+  Radix'e taşınanlar (`radix-ui` paketi, `asChild`): Button, Badge, Label, Separator.
+  Kalanlar hâlâ `@base-ui/react` ve `render` prop'unu kullanır (Dialog, Select, Tooltip,
+  Sidebar, Combobox…). Bir bileşeni düzenlemeden önce import satırına bak.
+- Button/Badge kompozisyonu `asChild` ile yapılır — `render` ve `nativeButton` **yok**
+  (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
 - Accordion uses Base UI API (no `type`/`collapsible` props)
 - Select `onValueChange` receives `(value: string | null)`
 - Form: react-hook-form + zod + shadcn Form component (uses @radix-ui/react-slot transitively)
@@ -51,7 +55,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `fixed inset-0` modals → `<Dialog>` or `<Sheet>`
   - toggle button groups → `<ToggleGroup>` + `<ToggleGroupItem>`
   - on/off switches → `<Switch>` (NOT checkbox for toggle)
-- **`<Link>` as button:** use `<Button nativeButton={false} render={<Link href={...} />}>` (NOT `<Link><Button>...</Button></Link>`)
+- **`<Link>` as button:** use `<Button asChild><Link href={...}>…</Link></Button>` — the link is the
+  child and carries the children (NOT `<Link><Button>…</Button></Link>`)
+- **Base UI trigger + Radix Button:** `<TooltipTrigger render={<Button asChild />}><Link …>…</Link></TooltipTrigger>` —
+  the trigger's children become the Slot child; do not nest `render` inside `render`
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
 - **Semantic colors have three roles — pick the right token:**

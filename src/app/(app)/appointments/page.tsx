@@ -106,13 +106,10 @@ export default async function AppointmentsPage({
       workshopName={workshop?.name}
       pageTitle="Randevular"
       pageActions={
-        <Button
-          nativeButton={false}
-          size="icon"
-          render={<Link href="/appointments/new" />}
-          aria-label="Yeni randevu"
-        >
-          <Plus className="size-5" />
+        <Button size="icon" asChild aria-label="Yeni randevu">
+          <Link href="/appointments/new">
+            <Plus className="size-5" />
+          </Link>
         </Button>
       }
     >
@@ -128,14 +125,11 @@ export default async function AppointmentsPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">Randevular</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
           </div>
-          <Button
-            nativeButton={false}
-            size="default"
-            className="hidden sm:inline-flex"
-            render={<Link href="/appointments/new" />}
-          >
-            <Plus className="size-4" />
-            Yeni Randevu
+          <Button size="default" className="hidden sm:inline-flex" asChild>
+            <Link href="/appointments/new">
+              <Plus className="size-4" />
+              Yeni Randevu
+            </Link>
           </Button>
         </div>
 

@@ -219,14 +219,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 <span className="hidden sm:inline">İptal</span>
               </button>
             ) : null}
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/reminders/${reminder.id}/edit`} />}
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Düzenle</span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/reminders/${reminder.id}/edit`}>
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Düzenle</span>
+              </Link>
             </Button>
           </div>
         </div>

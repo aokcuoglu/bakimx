@@ -344,15 +344,11 @@ export function TechnicianOrderDetail({
         {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
             kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
             gidip aynı işi listede yeniden aramak gerekiyordu. */}
-        <Button
-          nativeButton={false}
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          render={<Link href={workOrderPath(order.id)} />}
-        >
-          <FileText />
-          İş Emri
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href={workOrderPath(order.id)}>
+            <FileText />
+            İş Emri
+          </Link>
         </Button>
       </div>
 

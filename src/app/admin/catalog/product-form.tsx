@@ -609,8 +609,10 @@ export function CatalogProductForm({
             {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
             {isEdit ? "Güncelle" : "Ürünü oluştur"}
           </Button>
-          <Button type="button" variant="outline" nativeButton={false} render={<Link href="/admin/catalog" />}>
-            İptal
+          <Button variant="outline" asChild>
+            <Link href="/admin/catalog">
+              İptal
+            </Link>
           </Button>
         </div>
       </form>

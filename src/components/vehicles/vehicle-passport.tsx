@@ -276,13 +276,10 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/vehicles/${vehicle.id}`} />}
-            >
-              Araç Detayı
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/vehicles/${vehicle.id}`}>
+                Araç Detayı
+              </Link>
             </Button>
           </div>
         </div>
@@ -566,13 +563,11 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                               {copied === t.token ? <CheckCircle2 className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
                               {copied === t.token ? "Kopyalandı!" : "Linki Kopyala"}
                             </button>
-                            <Button
-                              nativeButton={false}
-                              variant="outline"
-                              render={<Link href={`/p/${t.token}`} target="_blank" />}
-                            >
-                              <ExternalLink className="size-3.5" />
-                              Önizle
+                            <Button variant="outline" asChild>
+                              <Link href={`/p/${t.token}`} target="_blank">
+                                <ExternalLink className="size-3.5" />
+                                Önizle
+                              </Link>
                             </Button>
                           </div>
                           <div className="flex justify-center mt-2">
