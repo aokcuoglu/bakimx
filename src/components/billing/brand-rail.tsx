@@ -99,7 +99,7 @@ export function BrandRail({
           <ul className="mt-6 hidden space-y-3 text-sm md:block">
             {(pkg?.highlights ?? []).slice(0, 4).map((h) => (
               <li key={h} className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-success/25 text-navy-foreground">
                   <Check className="size-3" strokeWidth={3} />
                 </span>
                 <span className="text-navy-foreground/85">{h}</span>

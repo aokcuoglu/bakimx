@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ? 1
         : path === "/oto-servis-programi"
           ? 0.9
-          : path === "/fiyatlar" || path === "/demo"
+          : path === "/is-emri-programi" || path === "/fiyatlar" || path === "/demo"
             ? 0.8
             : path === "/dijital-arac-kabul"
               ? 0.7

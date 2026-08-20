@@ -24,8 +24,8 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 sm:px-6 text-center">
-      <div className="flex size-12 items-center justify-center rounded-full bg-amber-100">
-        <AlertTriangle className="size-6 text-amber-600" />
+      <div className="flex size-12 items-center justify-center rounded-full bg-warning/15">
+        <AlertTriangle className="size-6 text-warning-strong" />
       </div>
       <div className="space-y-1">
         <h1 className="text-lg font-semibold text-foreground">

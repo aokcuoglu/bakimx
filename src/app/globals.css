@@ -1,4 +1,12 @@
 @import "tailwindcss";
+/* Tailwind v4 içerik tarayıcısı proje kökünü gezer — `docs/` altındaki
+   uygulama planlarının kod bloklarındaki sınıf adları da ÜRETİLEN CSS'e
+   gerçek kural olarak giriyordu (BAK-178'de ölçüldü: 13 ölü palet kuralı,
+   hiçbiri `src`'de kullanılmıyor). İki zararı var: kullanıcının indirdiği
+   pakette ölü kural taşımak ve "bu sınıf CSS'te var mı" doğrulamasını
+   yanıltmak — bir sınıf yalnız bir plan belgesinde geçtiği için var
+   görünebiliyordu. Belgeler kaynak değil, kapsam dışı. */
+@source not "../../docs";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -48,6 +56,15 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-warning-strong: var(--warning-strong);
+  /* Kalem türü ekseni (parça / işçilik / dış işçilik) — durum değil KATEGORİ
+     rengi. `part` zaten `primary` token'ını kullanıyor; diğer ikisi ham palette
+     yazılıydı (BAK-178). Rol adıyla token'landı ki koyu tema, kontrast kapısı
+     ve olası palet değişimi bunları da kapsasın. Uyarı anlamı taşımazlar —
+     `warning` ile aynı kehribar olması tesadüf değil ama eşanlamlı değil. */
+  --color-item-labor: var(--item-labor);
+  --color-item-labor-strong: var(--item-labor-strong);
+  --color-item-external: var(--item-external);
+  --color-item-external-strong: var(--item-external-strong);
   --color-navy: #071F49;
   --color-navy-foreground: #FFFFFF;
   --color-navy-light: #031432;
@@ -326,6 +343,13 @@
   --warning: oklch(0.70 0.18 85);
   --warning-foreground: oklch(0.20 0.04 260);
   --warning-strong: oklch(0.47 0.18 85);
+  /* Kalem türü kategori tonları (BAK-178). Dolgu tonu aksan şeridi/çip zemini,
+     -strong tonu çip metni içindir. ÖLÇÜM (kart / sayfa / muted zemin ve her
+     birinin `/10` tonlu hâli): işçilik 6.87–5.63:1, dış işçilik 7.65–6.05:1. */
+  --item-labor: oklch(0.70 0.18 85);
+  --item-labor-strong: oklch(0.47 0.18 85);
+  --item-external: oklch(0.60 0.22 292);
+  --item-external-strong: oklch(0.47 0.22 292);
   --chart-1: oklch(0.543 0.213 260);
   --chart-2: oklch(0.70 0.18 230);
   --chart-3: oklch(0.45 0.15 260);
@@ -374,6 +398,13 @@
   --warning: oklch(0.75 0.15 85);
   --warning-foreground: oklch(0.15 0.05 260);
   --warning-strong: oklch(0.75 0.15 85);
+  /* Koyu temada işçilik tonu temel renkle aynı (success/warning deseni);
+     dış işçiliğin moru metin olarak biraz açılmak zorunda — ÖLÇÜM 6.95–4.95:1
+     (en kötü durum: `bg-item-external/10` tonlu `muted` panel). */
+  --item-labor: oklch(0.75 0.15 85);
+  --item-labor-strong: oklch(0.75 0.15 85);
+  --item-external: oklch(0.70 0.18 292);
+  --item-external-strong: oklch(0.72 0.16 292);
   --chart-1: oklch(0.63 0.20 258);
   --chart-2: oklch(0.55 0.22 260);
   --chart-3: oklch(0.45 0.15 260);
