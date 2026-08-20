@@ -48,7 +48,7 @@ type StatusCounts = {
 function ReminderStatusBadge({ status }: { status: string }) {
   const info = REMINDER_STATUS[status as keyof typeof REMINDER_STATUS]
   const label = info?.label || status
-  const color = info?.color || "bg-muted text-muted-foreground/70 border-border"
+  const color = info?.color || "bg-muted text-muted-foreground border-border"
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-5 px-2 text-[11px]", color)}>
       {label}
@@ -156,12 +156,12 @@ export function AppointmentList({
                         <span className="text-xs text-muted-foreground">{a.vehicle.brand} {a.vehicle.model}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/70 text-xs">—</span>
+                      <span className="text-muted-foreground text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs text-muted-foreground line-clamp-2">
-                      {a.customerRequest || <span className="text-muted-foreground/70">—</span>}
+                      {a.customerRequest || <span className="text-muted-foreground">—</span>}
                     </span>
                   </td>
                   <td className="px-4 py-3">

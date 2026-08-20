@@ -190,7 +190,7 @@ export function PublicVehiclePassportPage({
   return (
     <div className="min-h-screen bg-muted print:bg-white print:text-black">
       {/* Header */}
-      <header className="bg-navy text-white p-5 print:hidden">
+      <header className="bg-navy text-navy-foreground p-5 print:hidden">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -199,10 +199,10 @@ export function PublicVehiclePassportPage({
               )}
               <div>
                 <h1 className="font-bold text-lg">{workshop.name}</h1>
-                <p className="text-sm text-white/70">Dijital Servis Pasaportu</p>
+                <p className="text-sm text-navy-foreground/70">Dijital Servis Pasaportu</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-white/50">
+            <div className="flex items-center gap-1.5 text-navy-foreground/50">
               <Shield className="size-4" />
               <span className="text-xs">Güvenli Bağlantı</span>
             </div>
@@ -230,7 +230,7 @@ export function PublicVehiclePassportPage({
         {/* Vehicle & Customer */}
         <div className="bg-card border border-border rounded-lg p-4 print:border print:border-border">
           <div className="flex items-start gap-3">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <Car className="size-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -248,9 +248,9 @@ export function PublicVehiclePassportPage({
           </div>
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center gap-2 text-sm">
-              <Phone className="size-3.5 text-muted-foreground/70" />
+              <Phone className="size-3.5 text-muted-foreground" />
               <span className="font-medium text-foreground">{customerName}</span>
-              <span className="text-muted-foreground/70">•</span>
+              <span className="text-muted-foreground">•</span>
               <span className="text-muted-foreground">{customer.phone}</span>
             </div>
           </div>
@@ -310,7 +310,7 @@ export function PublicVehiclePassportPage({
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground/70">{fmtDate(wo.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground">{fmtDate(wo.createdAt)}</span>
                   </div>
                   <div className="mb-2 flex items-center gap-2">
                     {wo.fuelLevelAtIntake != null && (
@@ -324,7 +324,7 @@ export function PublicVehiclePassportPage({
                         <div key={i} className="flex justify-between text-xs">
                           <span>
                             <span className={`inline-block size-1.5 rounded-full mr-1.5 ${item.type === "part" ? "bg-primary" : "bg-primary/60"}`} />
-                            {item.name} <span className="text-muted-foreground/70">×{item.quantity}</span>
+                            {item.name} <span className="text-muted-foreground">×{item.quantity}</span>
                           </span>
                           {item.totalPrice != null && item.totalPrice > 0 ? (
                             <span className="font-medium">{formatTRY(item.totalPrice)}</span>
@@ -362,9 +362,9 @@ export function PublicVehiclePassportPage({
                     <span className="font-medium">{dm.zoneLabel}</span>
                     <span className="text-muted-foreground"> — {dm.damageTypeLabel}</span>
                     <span className="text-xs ml-1 px-1.5 py-0.5 bg-muted rounded-full print:border print:border-border">{dm.severityLabel}</span>
-                    {dm.note && <p className="text-muted-foreground/60 text-xs mt-0.5">{dm.note}</p>}
+                    {dm.note && <p className="text-muted-foreground text-xs mt-0.5">{dm.note}</p>}
                   </div>
-                  <span className="text-[11px] text-muted-foreground/60 shrink-0">{fmtDate(dm.createdAt)}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0">{fmtDate(dm.createdAt)}</span>
                 </div>
               ))}
             </div>
@@ -383,7 +383,7 @@ export function PublicVehiclePassportPage({
                 <div key={idx} className="flex items-center gap-2 text-sm">
                   <CheckCircle2 className="size-3.5 text-success-strong print:text-black shrink-0" />
                   <span>{p.label}</span>
-                  <span className="text-xs text-muted-foreground/60 ml-auto">{fmtDate(p.createdAt)}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{fmtDate(p.createdAt)}</span>
                 </div>
               ))}
             </div>
@@ -432,7 +432,7 @@ export function PublicVehiclePassportPage({
                   <div className="size-2 rounded-full bg-primary mt-1.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-foreground">{e.description}</p>
-                    <p className="text-xs text-muted-foreground/70">{fmtDateTime(e.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{fmtDateTime(e.createdAt)}</p>
                   </div>
                 </div>
               ))}
@@ -462,7 +462,7 @@ export function PublicVehiclePassportPage({
 
         {/* Data Safety Notice */}
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 print:border print:border-primary/30 text-center">
-          <Shield className="size-4 text-primary/60 mx-auto mb-1.5 print:hidden" />
+          <Shield className="size-4 text-primary mx-auto mb-1.5 print:hidden" />
           <p className="text-xs text-foreground">
             Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
           </p>
@@ -481,11 +481,13 @@ export function PublicVehiclePassportPage({
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button nativeButton={false} render={<Link href={`/p/${passportToken.token}/pdf`} target="_blank" />} className="w-full" size="xl">
-            <FileDown className="size-5" />
-            Yazdırılabilir sayfayı aç
+          <Button asChild className="w-full" size="xl">
+            <Link href={`/p/${passportToken.token}/pdf`} target="_blank">
+              <FileDown className="size-5" />
+              Yazdırılabilir sayfayı aç
+            </Link>
           </Button>
-          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
+          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <Share2 className="size-5" />
             WhatsApp ile Paylaş
           </Button>
@@ -493,7 +495,7 @@ export function PublicVehiclePassportPage({
             {copied ? <CheckCircle2 className="size-5 text-success-strong" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
           </Button>
-          <p className="text-center text-xs text-muted-foreground/60 px-4">
+          <p className="text-center text-xs text-muted-foreground px-4">
             Bu sayfanın çıktısını alabilir veya PDF olarak kaydedebilirsiniz.
           </p>
         </div>
@@ -501,9 +503,9 @@ export function PublicVehiclePassportPage({
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 py-4 border-t border-border print:border-border">
           <BrandLogo variant="icon-light" size="sm" alt="BakimX" />
-          <span className="text-xs text-muted-foreground/60 print:text-muted-foreground">ile oluşturuldu</span>
-          <span className="text-xs text-muted-foreground/40 print:text-muted-foreground/60">•</span>
-          <span className="text-xs text-muted-foreground/60 print:text-muted-foreground">
+          <span className="text-xs text-muted-foreground print:text-muted-foreground">ile oluşturuldu</span>
+          <span className="text-xs text-muted-foreground/40 print:text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground print:text-muted-foreground">
             <span className="print:hidden">{fmtDate(passportToken.createdAt)}</span>
             <span className="hidden print:inline">{fmtDate(passportToken.createdAt)}</span>
           </span>

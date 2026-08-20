@@ -25,7 +25,7 @@ function KpiCard({ label, value, icon: Icon, href, accent, accentBg, subtitle }:
         </div>
       </div>
       <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </Link>
   )
 }

@@ -73,10 +73,11 @@ function ConversationList({
             key={f.value}
             size="sm"
             variant={filter === f.value ? "default" : "outline"}
-            nativeButton={false}
-            render={<Link href={`/admin/live-chat?filter=${f.value}`} />}
+            asChild
           >
-            {f.label}
+            <Link href={`/admin/live-chat?filter=${f.value}`}>
+              {f.label}
+            </Link>
           </Button>
         ))}
       </div>
@@ -168,11 +169,12 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
           size="icon"
           variant="ghost"
           className="lg:hidden"
-          nativeButton={false}
           aria-label="Listeye dön"
-          render={<Link href={`/admin/live-chat?filter=${filter}`} />}
+          asChild
         >
-          <ArrowLeft className="size-4" />
+          <Link href={`/admin/live-chat?filter=${filter}`}>
+            <ArrowLeft className="size-4" />
+          </Link>
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{thread.visitorName}</p>
@@ -219,7 +221,7 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
                 <p
                   className={cn(
                     "mt-1 text-[10px]",
-                    isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
+                    isAgent ? "text-primary-foreground" : "text-muted-foreground",
                   )}
                 >
                   {isAgent ? message.agentEmail || "Destek" : thread.visitorName} · {formatTime(message.createdAt)}

@@ -30,7 +30,6 @@ import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import {
-  findCustomerOptionLabel,
   toCustomerOptions,
   withCustomerOption,
   type CustomerLike,
@@ -219,17 +218,12 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormLabel>Müşteri *</FormLabel>
                       <Select
                         value={field.value}
-                        onValueChange={(v) => field.onChange(v ?? "")}
+                        onValueChange={(v) => field.onChange(v)}
                         disabled={customerOptions.length === 0}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin">
-                              {(value) =>
-                                findCustomerOptionLabel(customerOptions, value) ??
-                                (customerOptions.length === 0 ? "Henüz müşteri yok" : "Müşteri seçin")
-                              }
-                            </SelectValue>
+                            <SelectValue placeholder="Müşteri seçin" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -249,7 +243,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="min-h-11 text-primary"
+                    className="text-primary"
                     onClick={() => setCustomerModalOpen(true)}
                   >
                     <Plus className="size-4" />
@@ -320,14 +314,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Araç Tipi</FormLabel>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Araç tipi seçin">
-                                {(value) =>
-                                  VEHICLE_TYPES.find((t) => t.value === value)?.label ?? "Araç tipi seçin"
-                                }
-                              </SelectValue>
+                              <SelectValue placeholder="Araç tipi seçin" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -473,14 +463,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Yakıt Tipi</FormLabel>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Seçiniz">
-                                {(value) =>
-                                  VEHICLE_FUEL_TYPES.find((ft) => ft.value === value)?.label ?? "Seçiniz"
-                                }
-                              </SelectValue>
+                              <SelectValue placeholder="Seçiniz" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -502,14 +488,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Şanzıman</FormLabel>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçiniz">
-                              {(value) =>
-                                VEHICLE_TRANSMISSIONS.find((t) => t.value === value)?.label ?? "Seçiniz"
-                              }
-                            </SelectValue>
+                            <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -689,15 +671,15 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-start gap-2">
-                  <Camera className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+                  <Camera className="size-4 text-muted-foreground mt-0.5 shrink-0" />
                   <span>Plaka ve marka bilgileri zorunludur.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+                  <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
                   <span>Şase numarası (VIN) ruhsattan otomatik okunabilir veya manuel girilebilir.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="size-4 text-muted-foreground/70 mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>
+                  <span className="size-4 text-muted-foreground mt-0.5 shrink-0 flex items-center justify-center text-xs font-bold">i</span>
                   <span>Tüm alanlar sonradan düzenlenebilir.</span>
                 </div>
               </CardContent>

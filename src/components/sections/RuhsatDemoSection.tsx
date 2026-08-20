@@ -179,7 +179,7 @@ export function RuhsatDemoSection() {
             <div className="p-5 sm:p-6">
               {phase === "idle" ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
                     <ScanLine className="size-6" />
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -228,7 +228,7 @@ export function RuhsatDemoSection() {
                             </motion.div>
                           ))}
                         </div>
-                        <p className="mt-4 text-xs italic text-muted-foreground/80">
+                        <p className="mt-4 text-xs italic text-muted-foreground">
                           VIN&apos;iyle eşleşen, araca uygun katalog parçaları. Fiyatları kendi
                           kataloğunuzdan siz belirlersiniz.
                         </p>
@@ -296,9 +296,9 @@ function RuhsatDoc({
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             T.C. — Araç Tescil Belgesi
           </p>
-          <p className="text-[10px] text-muted-foreground/70">Ruhsat (örnek / temsili)</p>
+          <p className="text-[10px] text-muted-foreground">Ruhsat (örnek / temsili)</p>
         </div>
-        <div className="rounded bg-primary/10 px-2 py-1 text-[10px] font-mono font-semibold text-primary">
+        <div className="rounded bg-primary/10 px-2 py-1 text-[10px] font-mono font-semibold text-primary-strong">
           34 ABC 123
         </div>
       </div>
@@ -314,8 +314,8 @@ function RuhsatDoc({
           ["P.3", "DİZEL"],
         ].map(([code, val]) => (
           <div key={code} className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60">{code}</p>
-            <p className="truncate font-mono text-[11px] text-foreground/70">{val}</p>
+            <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{code}</p>
+            <p className="truncate font-mono text-[11px] text-foreground">{val}</p>
           </div>
         ))}
       </div>
@@ -365,7 +365,7 @@ function FieldCell({
       }`}
     >
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {field.label} <span className="text-muted-foreground/50">({field.code})</span>
+        {field.label} <span className="text-muted-foreground">({field.code})</span>
       </p>
       <div className="mt-0.5 flex items-center gap-1.5">
         {shown ? (

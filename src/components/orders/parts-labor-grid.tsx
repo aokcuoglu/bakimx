@@ -702,17 +702,6 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
       }}
     >
       <AutocompleteInput
-        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor
-        // (bilinen tuzak, bkz. quote-create-form.tsx LaborNameAutocomplete) —
-        // yazılan işçilik adı yok oluyor ve satır sessizce filtrelenip
-        // kaybolabiliyor. Liste AÇIKKEN Escape'in listeyi kapatma davranışı
-        // korunmalı, o yüzden yalnız kapalıyken susturuyoruz (aria-expanded=
-        // "false").
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && e.currentTarget.getAttribute("aria-expanded") !== "true") {
-            e.preventBaseUIHandler()
-          }
-        }}
         render={
           <Input
             placeholder="İşçilik ara veya kendi kalemini yaz"
@@ -1423,7 +1412,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
   const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
     return (
-      <span data-slot="price-field" className={cn("text-sm tabular-nums", tone, row.unitPrice == null && "text-muted-foreground/70")}>
+      <span data-slot="price-field" className={cn("text-sm tabular-nums", tone, row.unitPrice == null && "text-muted-foreground")}>
         {row.unitPrice != null ? formatTRY(row.unitPrice) : "—"}
       </span>
     )
@@ -1528,7 +1517,7 @@ function TotalField({ lineTotal, strong, vatIncluded }: {
       <span className={cn(
         "tabular-nums",
         strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
-        lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
+        lineTotal == null ? "text-xs font-normal text-muted-foreground" : "text-foreground",
       )}>
         {lineTotal != null ? formatTRY(lineTotal) : "—"}
       </span>
@@ -1543,9 +1532,9 @@ function TotalField({ lineTotal, strong, vatIncluded }: {
 // başlığı). Parça=lacivert, İşçilik=amber, Dış İşçilik=mor.
 function TypeChip({ type }: { type: ItemType }) {
   const cfg: Record<ItemType, { Icon: typeof Wrench; cls: string }> = {
-    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary" },
-    labor: { Icon: Wrench, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-    external_labor: { Icon: ExternalLink, cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary-strong" },
+    labor: { Icon: Wrench, cls: "bg-item-labor/10 text-item-labor-strong" },
+    external_labor: { Icon: ExternalLink, cls: "bg-item-external/10 text-item-external-strong" },
   }
   const { Icon, cls } = cfg[type]
   return (
@@ -1704,19 +1693,17 @@ function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail 
       <div className="flex items-center justify-end gap-0.5">
         {overflow.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`${row.name || "Satır"} — diğer işlemler`}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              }
-            />
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`${row.name || "Satır"} — diğer işlemler`}
+                className="text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {overflow.map((a, i) => {
                 const action = byKey.get(a.key)!
@@ -1741,25 +1728,23 @@ function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail 
           const action = byKey.get(a.key)!
           return (
             <Tooltip key={action.key}>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={action.run}
-                    aria-label={action.hint}
-                    className={cn(
-                      "text-muted-foreground",
-                      action.tone === "danger"
-                        ? "hover:bg-destructive/10 hover:text-destructive-strong"
-                        : "hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <action.Icon className="size-4" />
-                  </Button>
-                }
-              />
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={action.run}
+                  aria-label={action.hint}
+                  className={cn(
+                    "text-muted-foreground",
+                    action.tone === "danger"
+                      ? "hover:bg-destructive/10 hover:text-destructive-strong"
+                      : "hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <action.Icon className="size-4" />
+                </Button>
+              </TooltipTrigger>
               <TooltipContent>{action.hint}</TooltipContent>
             </Tooltip>
           )
@@ -1877,7 +1862,7 @@ function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
 // düzenlenebilir alanların gri çip/hayalet kutusu YERİNE düz metin → kullanıcı
 // tıklanacak bir kutu aramaz. oneLine: masaüstü satırında kısalt, mobilde sar.
 function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine?: boolean; title?: string }) {
-  if (!value) return <span className="text-[11px] text-muted-foreground/40">—</span>
+  if (!value) return <span className="text-[11px] text-muted-foreground">—</span>
   return (
     <span
       className={cn(
@@ -1962,8 +1947,8 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
 // border-collapse'tan bağımsız her zaman görünür).
 const ROW_ACCENT: Record<ItemType, string> = {
   part: "bg-primary",
-  labor: "bg-amber-500",
-  external_labor: "bg-violet-500",
+  labor: "bg-item-labor",
+  external_labor: "bg-item-external",
 }
 
 // ── Hayalet-satır: liste hücrelerindeki form kontrolleri düz metin gibi okunur;

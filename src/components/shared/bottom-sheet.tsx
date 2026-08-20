@@ -44,7 +44,7 @@ export function BottomSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      {trigger ? <SheetTrigger render={trigger} /> : null}
+      {trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : null}
       <SheetContent
         side="bottom"
         showCloseButton={false}

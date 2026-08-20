@@ -190,7 +190,7 @@ export function CatalogProductForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <div className="flex items-center gap-3">
-          <Link href="/admin/catalog" className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href="/admin/catalog" className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <h1 className="text-xl font-bold text-foreground">{isEdit ? "Ürünü Düzenle" : "Yeni Ürün"}</h1>
@@ -245,13 +245,9 @@ export function CatalogProductForm({
                   <FormItem>
                     <FormLabel>Marka *</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Marka seçin">
-                            {(value: string | null) =>
-                              value ? brands.find((b) => b.id === value)?.name ?? value : null
-                            }
-                          </SelectValue>
+                          <SelectValue placeholder="Marka seçin" />
                         </SelectTrigger>
                         <SelectContent>
                           {brands.map((b) => (
@@ -274,13 +270,9 @@ export function CatalogProductForm({
                   <FormItem>
                     <FormLabel>BakımX kategorisi</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Kategori seçin">
-                            {(value: string | null) =>
-                              value ? BAKIMX_CATEGORIES.find((c) => c.key === value)?.label ?? value : null
-                            }
-                          </SelectValue>
+                          <SelectValue placeholder="Kategori seçin" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">Kategorisiz</SelectItem>
@@ -309,13 +301,7 @@ export function CatalogProductForm({
                         disabled={loadingCategories}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder={loadingCategories ? "Yükleniyor..." : "TecDoc kategorisi seçin"}>
-                            {(value: string | null) =>
-                              value && tecdocCategories.length > 0
-                                ? tecdocCategories.find((c) => c.id === Number(value))?.name ?? value
-                                : null
-                            }
-                          </SelectValue>
+                          <SelectValue placeholder={loadingCategories ? "Yükleniyor..." : "TecDoc kategorisi seçin"} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">Eşleştirilmiyor</SelectItem>
@@ -436,12 +422,10 @@ export function CatalogProductForm({
                     <FormControl>
                       <Select
                         value={String(field.value)}
-                        onValueChange={(v) => field.onChange(Number(v ?? "20"))}
+                        onValueChange={(v) => field.onChange(Number(v))}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="KDV">
-                            {(value: string | null) => (value ? `%${value}` : null)}
-                          </SelectValue>
+                          <SelectValue placeholder="KDV" />
                         </SelectTrigger>
                         <SelectContent>
                           {VAT_RATES.map((rate) => (
@@ -609,8 +593,10 @@ export function CatalogProductForm({
             {pending ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Save className="size-3.5 mr-1" />}
             {isEdit ? "Güncelle" : "Ürünü oluştur"}
           </Button>
-          <Button type="button" variant="outline" nativeButton={false} render={<Link href="/admin/catalog" />}>
-            İptal
+          <Button variant="outline" asChild>
+            <Link href="/admin/catalog">
+              İptal
+            </Link>
           </Button>
         </div>
       </form>

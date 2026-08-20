@@ -80,7 +80,7 @@ export function AddPurchaseButton(props: {
         variant="ghost"
         size="sm"
         onClick={() => setOpen(true)}
-        className="mt-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:text-primary/80"
+        className="mt-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:underline"
       >
         <Plus className="size-4" />
         Parça Aldım
@@ -491,11 +491,9 @@ function PurchaseFormSheet({
         {!editing && technicians.length > 0 && (
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
-            <Select value={technicianId} onValueChange={(v) => setTechnicianId(v ?? "")}>
+            <Select value={technicianId} onValueChange={(v) => setTechnicianId(v)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seçiniz">
-                  {(value) => technicians.find((t) => t.id === value)?.fullName || "Seçiniz"}
-                </SelectValue>
+                <SelectValue placeholder="Seçiniz" />
               </SelectTrigger>
               <SelectContent>
                 {technicians.map((t) => (

@@ -148,18 +148,12 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         <Select
                           value={field.value}
                           onValueChange={(v) => {
-                            field.onChange(v ?? "")
+                            field.onChange(v)
                             form.setValue("vehicleId", "")
                           }}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin...">
-                              {(value: string | null) => {
-                                if (!value) return null
-                                const c = customers.find((c) => c.id === value)
-                                return c ? `${customerLabel(c)} (${c.phone})` : value
-                              }}
-                            </SelectValue>
+                            <SelectValue placeholder="Müşteri seçin..." />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Müşteri seçin...</SelectItem>
@@ -172,7 +166,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                         <Plus className="size-3" />
                         Yeni müşteri ekle
                       </Link>
@@ -189,16 +183,10 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                       <FormControl>
                         <Select
                           value={field.value}
-                          onValueChange={(v) => field.onChange(v ?? "")}
+                          onValueChange={(v) => field.onChange(v)}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder={customerId ? "Araç seçin..." : "Önce müşteri seçin"}>
-                              {(value: string | null) => {
-                                if (!value) return null
-                                const v = customerVehicles.find((v) => v.id === value)
-                                return v ? `${v.plate} - ${v.brand} ${v.model}` : value
-                              }}
-                            </SelectValue>
+                            <SelectValue placeholder={customerId ? "Araç seçin..." : "Önce müşteri seçin"} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">{customerId ? "Araç seçin..." : "Önce müşteri seçin"}</SelectItem>
@@ -211,7 +199,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                         <Plus className="size-3" />
                         Yeni araç ekle
                       </Link>
@@ -261,9 +249,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => v && field.onChange(v)}>
                           <SelectTrigger>
-                            <SelectValue>
-                              {(value: string | null) => (value ? typeLabel(value) : null)}
-                            </SelectValue>
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="periodic_maintenance">Periyodik Bakım</SelectItem>
@@ -310,7 +296,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                     )}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground/70">Planlanan tarih veya KM&apos;den en az biri zorunludur.</p>
+                <p className="text-xs text-muted-foreground">Planlanan tarih veya KM&apos;den en az biri zorunludur.</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
@@ -428,9 +414,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                       <FormControl>
                         <Select value={field.value} onValueChange={(v) => { if (v) field.onChange(v) }}>
                           <SelectTrigger>
-                            <SelectValue>
-                              {(value: string | null) => (value ? channelLabel(value) : null)}
-                            </SelectValue>
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Yok</SelectItem>
@@ -442,7 +426,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Info className="size-3" />
                         Bu sürümde gerçek SMS/WhatsApp gönderimi yapılmaz. Hatırlatma kaydı ve takip altyapısı hazırlanır.
                       </p>
@@ -490,8 +474,10 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-3 border-t border-border pt-4">
-          <Button nativeButton={false} variant="outline" render={<Link href="/reminders" />}>
-            İptal
+          <Button variant="outline" asChild>
+            <Link href="/reminders">
+              İptal
+            </Link>
           </Button>
           <Button type="submit" disabled={loading} className="gap-1.5">
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}

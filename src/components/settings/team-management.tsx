@@ -89,7 +89,7 @@ export type AccountMissingPersonnel = {
 // Sabit renk YOK — tema token'ları (bkz. proje UI kuralları). Rozet tonu
 // yetkinin ağırlığını yansıtır: yönetici > müdür > usta > çırak > eski kayıt.
 const ROLE_BADGE: Record<UserRole, string> = {
-  owner: "bg-primary/10 text-primary border-primary/20",
+  owner: "bg-primary/10 text-primary-strong border-primary/20",
   manager: "bg-primary/5 text-foreground border-primary/20",
   usta: "bg-success/10 text-success-strong border-success/20",
   cirak: "bg-warning/10 text-warning-strong border-warning/20",
@@ -285,7 +285,7 @@ export function TeamManagement({
             Davet bağlantısını kişiye iletin (e-posta da gönderildi). 7 gün geçerlidir.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate text-xs bg-white border rounded px-2 py-1.5">{lastInviteUrl}</code>
+            <code className="flex-1 truncate text-xs bg-card border rounded px-2 py-1.5">{lastInviteUrl}</code>
             <Button
               type="button"
               variant="outline"
@@ -360,17 +360,14 @@ export function TeamManagement({
                   <FormItem>
                     <FormLabel>Rol</FormLabel>
                     <FormControl>
-                      <Select items={ROLE_LABELS} value={field.value} onValueChange={(v) => v && field.onChange(v)}>
+                      <Select value={field.value} onValueChange={(v) => v && field.onChange(v)}>
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {assignable.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              <span className="flex flex-col items-start">
-                                <span>{ROLE_LABELS[r]}</span>
-                                <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
-                              </span>
+                            <SelectItem key={r} value={r} description={ROLE_DESCRIPTIONS[r]}>
+                              {ROLE_LABELS[r]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -415,7 +412,7 @@ export function TeamManagement({
               key={m.id}
               className={cn(
                 "flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border",
-                m.isActive ? "border-border bg-white" : "border-border bg-muted opacity-60"
+                m.isActive ? "border-border bg-card" : "border-border bg-muted"
               )}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -432,7 +429,7 @@ export function TeamManagement({
                       {ROLE_LABELS[m.role]}
                     </span>
                     {!m.isActive && (
-                      <span className="text-[10px] font-medium text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Pasif</span>
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Pasif</span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{memberIdentity(m)}</p>
@@ -442,7 +439,6 @@ export function TeamManagement({
               {manageable && (
                 <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <Select
-                    items={ROLE_LABELS}
                     value={m.role}
                     disabled={isPending}
                     onValueChange={(v) => v && run(() => updateMemberRoleAction(m.id, v))}

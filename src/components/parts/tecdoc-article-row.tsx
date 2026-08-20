@@ -44,7 +44,7 @@ export function TecdocArticleRow({
       <button
         type="button"
         onClick={onSelect}
-        className="min-h-11 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+        className="min-h-8 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
       >
         {article.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -71,14 +71,14 @@ export function TecdocArticleRow({
             </span>
           )}
           {context && (
-            <span className="block text-[11px] text-muted-foreground/70 truncate">{context}</span>
+            <span className="block text-[11px] text-muted-foreground truncate">{context}</span>
           )}
           {bakimxMatch && (
             <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
               <span className="font-semibold tabular-nums text-foreground">
                 {formatTRY(bakimxMatch.displayPriceKurus)}
               </span>
-              <span className="text-muted-foreground/70">KDV hariç</span>
+              <span className="text-muted-foreground">KDV hariç</span>
               <span className="text-muted-foreground">· {bakimxStockLabel(bakimxMatch)}</span>
               {discountNote && <span className="text-success-strong">· {discountNote}</span>}
             </span>
@@ -91,7 +91,7 @@ export function TecdocArticleRow({
           aria-label="Parça detayı"
           title="Özellikler, görsel ve uygunluk"
           onClick={() => onShowDetail(article)}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
         >
           <Info className="size-4" />
         </button>

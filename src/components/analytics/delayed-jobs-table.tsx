@@ -19,7 +19,7 @@ function statusBadge(status: string): { label: string; color: string } | null {
 export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
   if (jobs.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-white p-8 text-center">
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
         <div className="inline-flex size-12 items-center justify-center rounded-full bg-success/10 text-success-strong mb-3">
           <Clock className="size-6" />
         </div>
@@ -30,7 +30,7 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="px-4 sm:px-6 py-4 border-b border-border">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-foreground">Geciken İş Emirleri</h3>
@@ -55,7 +55,7 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
               return (
                 <tr key={job.id} className="border-b border-border hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:text-primary/80">
+                    <Link href={`/orders/${job.id}`} className="font-medium text-primary hover:underline">
                       {job.workOrderNo}
                     </Link>
                     {badge && (
@@ -72,13 +72,13 @@ export function DelayedJobsTable({ jobs }: { jobs: DelayedJobRow[] }) {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
-                      <User className="size-3.5 text-muted-foreground/70" />
+                      <User className="size-3.5 text-muted-foreground" />
                       {job.customerName}
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <span className="flex items-center gap-1.5 text-foreground">
-                      <Car className="size-3.5 text-muted-foreground/70" />
+                      <Car className="size-3.5 text-muted-foreground" />
                       {job.plate}
                     </span>
                   </td>

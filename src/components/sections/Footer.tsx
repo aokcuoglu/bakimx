@@ -37,6 +37,10 @@ const socialLinks = [
 
 const footerLinks = {
   product: [
+    { label: "Oto Servis Programı", href: "/oto-servis-programi" },
+    { label: "Dijital Araç Kabul", href: "/dijital-arac-kabul" },
+    { label: "İş Emri Programı", href: "/is-emri-programi" },
+    { label: "Defter, Excel ve Program", href: "/karsilastir/defter-excel-oto-servis-programi" },
     { label: "Canlı Demo", href: "/#ruhsat-demo" },
     { label: "Özellikler", href: "/#ozellikler" },
     { label: "Neden BakimX", href: "/#neden" },
@@ -61,7 +65,7 @@ export function Footer() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <footer className="border-t bg-navy text-white">
+    <footer className="border-t bg-navy text-navy-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
         <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
@@ -78,10 +82,10 @@ export function Footer() {
             >
               <BrandLogo variant="primary-dark" size="lg" alt="BakimX" />
             </Link>
-            <p className="text-sm text-white/70 leading-relaxed max-w-xs">
+            <p className="text-sm text-navy-foreground/70 leading-relaxed max-w-xs">
               Oto servisler için eksiksiz servis yönetim platformu.
             </p>
-            <p className="mt-3 text-xs text-white/50">
+            <p className="mt-3 text-xs text-navy-foreground/50">
               Türkiye&apos;deki oto servisler için geliştiriliyor.
             </p>
             <div className="mt-5 flex items-center gap-3">
@@ -92,7 +96,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-navy-foreground/70 transition-colors hover:bg-white/20 hover:text-navy-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
@@ -112,11 +116,11 @@ export function Footer() {
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, delay: (i + 1) * 0.08 }}
             >
-              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-white/90">{group.title}</h3>
+              <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-navy-foreground/90">{group.title}</h3>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
                 {group.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="text-sm text-white/60 hover:text-white transition-colors">
+                    <a href={link.href} className="text-sm text-navy-foreground/60 hover:text-navy-foreground transition-colors">
                       {link.label}
                     </a>
                   </li>
@@ -128,10 +132,10 @@ export function Footer() {
 
         <div className="mt-6 pt-4 sm:mt-8 sm:pt-5 border-t border-white/10">
           <div className="flex flex-row flex-wrap justify-between items-center gap-x-4 gap-y-1">
-            <p className="text-xs sm:text-sm text-white/50">
+            <p className="text-xs sm:text-sm text-navy-foreground/50">
               &copy; {currentYear} BakimX. Tüm hakları saklıdır.
             </p>
-            <span className="text-xs text-white/60">
+            <span className="text-xs text-navy-foreground/60">
               v{process.env.NEXT_PUBLIC_APP_VERSION}
             </span>
           </div>

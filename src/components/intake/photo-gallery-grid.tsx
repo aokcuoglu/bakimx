@@ -107,7 +107,7 @@ function PhotoGalleryCard({
   return (
     <div
       className={cn(
-        "rounded-lg border overflow-hidden bg-white",
+        "rounded-lg border overflow-hidden bg-card",
         onOpen && "cursor-pointer transition hover:border-primary/40 hover:shadow-sm"
       )}
       onClick={onOpen}
@@ -140,7 +140,7 @@ function PhotoGalleryCard({
       <div className="p-2 space-y-1">
         <span className="block text-xs font-medium truncate">{typeLabel}</span>
         {photo.note && (
-          <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words line-clamp-2">{photo.note}</p>
+          <p className="text-xs text-foreground whitespace-pre-wrap break-words line-clamp-2">{photo.note}</p>
         )}
         {photo.fileName && (
           <p className="text-[11px] text-muted-foreground truncate">{photo.fileName}</p>
@@ -191,7 +191,7 @@ function PhotoThumbnail({ photoId, fileUrl }: { photoId: string; fileUrl: string
   if (loading) {
     return (
       <div className="flex items-center justify-center w-full h-full">
-        <Loader2 className="size-6 text-muted-foreground/40 animate-spin" />
+        <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
     )
   }

@@ -11,13 +11,13 @@ function StatCard({ label, value, subtitle, icon: Icon, accent }: {
   accent: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <Icon className={`size-4 ${accent}`} />
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   )
 }
@@ -54,7 +54,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
         />
       </div>
 
-      <div className="rounded-lg border border-border bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
           <TrendingUp className="size-4 text-success-strong" />
           <h3 className="text-base font-semibold text-foreground">En Yüksek Değerli Müşteriler</h3>
@@ -84,7 +84,7 @@ export function CustomerAnalyticsSection({ analytics }: { analytics: CustomerAna
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:text-primary/80">
+                      <Link href={`/customers/${c.id}`} className="font-medium text-primary hover:underline">
                         {c.name}
                       </Link>
                     </td>

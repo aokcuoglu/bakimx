@@ -79,7 +79,7 @@ export function PartSupplierPricesField({
         <div className="rounded-lg border border-dashed p-4 text-center">
           <Store className="size-6 mx-auto mb-2 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">Bu parça için henüz tedarikçi eklenmedi.</p>
-          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5">
             Alış fiyatı tedarikçi bazlı tutulur; en az bir tedarikçi ekleyin.
           </p>
         </div>
@@ -94,22 +94,16 @@ export function PartSupplierPricesField({
                   <Label className="text-xs">Tedarikçi *</Label>
                   <Select
                     value={row.supplierId}
-                    onValueChange={(v: string | null) => {
+                    onValueChange={(v: string) => {
                       if (v === "__new__") {
                         openModal(index)
                         return
                       }
-                      patchRow(index, { supplierId: v ?? "" })
+                      patchRow(index, { supplierId: v })
                     }}
                   >
                     <SelectTrigger className="w-full" aria-invalid={!!rowError}>
-                      <SelectValue placeholder="Tedarikçi seçin">
-                        {(v: string | null) => {
-                          if (!v) return null
-                          const s = options.find((o) => o.id === v)
-                          return s ? s.name : v
-                        }}
-                      </SelectValue>
+                      <SelectValue placeholder="Tedarikçi seçin" />
                     </SelectTrigger>
                     <SelectContent>
                       {options

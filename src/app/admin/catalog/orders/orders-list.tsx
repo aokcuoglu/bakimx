@@ -122,8 +122,10 @@ export function OrdersList({
             işaretlendiğinde düşer.
           </p>
         </div>
-        <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog" />}>
-          <ArrowLeft className="size-3.5 mr-1" /> Katalog
+        <Button size="sm" variant="outline" asChild>
+          <Link href="/admin/catalog">
+            <ArrowLeft className="size-3.5 mr-1" /> Katalog
+          </Link>
         </Button>
       </div>
 
@@ -131,14 +133,10 @@ export function OrdersList({
         <CardContent className="flex flex-wrap gap-2 p-4">
           <Select
             value={filters.status}
-            onValueChange={(v) => pushFilters({ status: (v ?? "all") as OrderStatusFilter })}
+            onValueChange={(v) => pushFilters({ status: v as OrderStatusFilter })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Tüm durumlar">
-                {(value: string | null) =>
-                  value ? STATUS_FILTERS.find((s) => s.value === value)?.label ?? value : null
-                }
-              </SelectValue>
+              <SelectValue placeholder="Tüm durumlar" />
             </SelectTrigger>
             <SelectContent>
               {STATUS_FILTERS.map((s) => (
@@ -149,13 +147,9 @@ export function OrdersList({
             </SelectContent>
           </Select>
 
-          <Select value={filters.workshopId} onValueChange={(v) => pushFilters({ workshopId: v ?? "" })}>
+          <Select value={filters.workshopId} onValueChange={(v) => pushFilters({ workshopId: v })}>
             <SelectTrigger>
-              <SelectValue placeholder="Tüm atölyeler">
-                {(value: string | null) =>
-                  value ? workshops.find((w) => w.id === value)?.name ?? value : null
-                }
-              </SelectValue>
+              <SelectValue placeholder="Tüm atölyeler" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm atölyeler</SelectItem>

@@ -213,7 +213,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
                     x={zone.lx} y={zone.ly}
                     textAnchor="middle" dominantBaseline="middle"
                     fill="currentColor" fontSize="7" fontWeight="500"
-                    className="text-muted-foreground/60"
+                    className="text-muted-foreground"
                     style={{ pointerEvents: "none" }}
                   >
                     {VEHICLE_ZONES[zone.id as keyof typeof VEHICLE_ZONES] || zone.id}
@@ -276,7 +276,7 @@ export function VehicleDamageMap({ damageMarks, onZoneClick, onRemoveMark, vehic
               variant="outline"
               size="lg"
               onClick={() => firstFree && onZoneClick(firstFree)}
-              className="h-auto min-h-12 flex-col items-start gap-0 px-3 py-2 text-left"
+              className="h-auto min-h-10 flex-col items-start gap-0 px-3 py-2 text-left"
             >
               <div className="text-xs font-medium">{g.label}</div>
               <div className="text-[10px] text-muted-foreground mt-0.5">

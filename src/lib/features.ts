@@ -10,6 +10,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   "vinLookup",
   "partsCatalog",
   "bakimxCatalog",
+  "getirbakimCatalog",
 ]
 
 export const FEATURE_LABELS: Record<GatedFeature, string> = {
@@ -20,6 +21,7 @@ export const FEATURE_LABELS: Record<GatedFeature, string> = {
   vinLookup: "VIN'den araç tanıma",
   partsCatalog: "Araca uygun parça kataloğu",
   bakimxCatalog: "BakımX ürün kataloğu",
+  getirbakimCatalog: "GetirBakım stok/fiyat",
 }
 
 export function isGatedFeature(key: string): key is GatedFeature {

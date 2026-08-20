@@ -40,7 +40,7 @@ export function EmptyState({
       {isLinkAction ? (
         <Link
           href={(action as EmptyStateAction).href}
-          className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
+          className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:underline font-medium"
         >
           {(action as EmptyStateAction).label}
         </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { CheckCircle2, Loader2, Phone, Building2, User, MapPin, Hash, MessageSquare } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TR_CITIES } from "@/lib/tr-cities";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 interface FormData {
   name: string;
@@ -56,6 +57,7 @@ export function DemoRequestSection() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const submitRef = useRef(false);
 
   function validate(): FormErrors {
     const errs: FormErrors = {};
@@ -77,11 +79,13 @@ export function DemoRequestSection() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitRef.current) return;
     const validationErrors = validate();
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) return;
 
+    submitRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -92,6 +96,7 @@ export function DemoRequestSection() {
       });
 
       if (res.ok) {
+        trackMarketingEvent("demo_submitted", { form_location: "demo_page" });
         setIsSuccess(true);
       } else {
         try {
@@ -118,6 +123,7 @@ export function DemoRequestSection() {
     } catch {
       setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." });
     } finally {
+      submitRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -271,7 +277,7 @@ export function DemoRequestSection() {
                       <Select
                         value={formData.city}
                         onValueChange={(value) =>
-                          setFormData({ ...formData, city: value ?? "" })
+                          setFormData({ ...formData, city: value })
                         }
                       >
                         <SelectTrigger id="city" className="w-full">
@@ -301,7 +307,7 @@ export function DemoRequestSection() {
                     <Select
                       value={formData.monthlyVehicles}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, monthlyVehicles: value ?? "" })
+                        setFormData({ ...formData, monthlyVehicles: value })
                       }
                     >
                       <SelectTrigger id="monthlyVehicles" className="w-full">
@@ -366,12 +372,12 @@ export function DemoRequestSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <div className="rounded-lg bg-navy text-white p-6 sm:p-8 h-full flex flex-col justify-between">
+            <div className="rounded-lg bg-navy text-navy-foreground p-6 sm:p-8 h-full flex flex-col justify-between">
               <div>
                 <h3 className="text-xl font-bold leading-tight">
                   BakimX demo sürecinde neler var?
                 </h3>
-                <p className="mt-3 text-white/70 text-sm leading-relaxed">
+                <p className="mt-3 text-navy-foreground/70 text-sm leading-relaxed">
                   Demo talebinizi aldıktan sonra sizinle iletişime geçecek,
                   işletmenize özel kullanım senaryosunu birlikte
                   şekillendireceğiz.
@@ -383,7 +389,7 @@ export function DemoRequestSection() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Birebir tanıtım</p>
-                      <p className="text-xs text-white/60 mt-0.5">İşletmenize özel canlı demo</p>
+                      <p className="text-xs text-navy-foreground/60 mt-0.5">İşletmenize özel canlı demo</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 rounded-lg bg-white/5 border border-white/10 p-3">
@@ -392,7 +398,7 @@ export function DemoRequestSection() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">İşletme analizi</p>
-                      <p className="text-xs text-white/60 mt-0.5">Servisinize uygun plan önerisi</p>
+                      <p className="text-xs text-navy-foreground/60 mt-0.5">Servisinize uygun plan önerisi</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 rounded-lg bg-white/5 border border-white/10 p-3">
@@ -401,7 +407,7 @@ export function DemoRequestSection() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Hızlı başlangıç</p>
-                      <p className="text-xs text-white/60 mt-0.5">Kurulum desteği ile hemen başlayın</p>
+                      <p className="text-xs text-navy-foreground/60 mt-0.5">Kurulum desteği ile hemen başlayın</p>
                     </div>
                   </div>
                 </div>
@@ -409,7 +415,7 @@ export function DemoRequestSection() {
               <div className="mt-8 pt-6 border-t border-white/10">
                 <ul className="space-y-2.5">
                   {benefitItems.map((item) => (
-                    <li key={item} className="flex items-center gap-2.5 text-sm text-white/80">
+                    <li key={item} className="flex items-center gap-2.5 text-sm text-navy-foreground/80">
                       <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                       {item}
                     </li>

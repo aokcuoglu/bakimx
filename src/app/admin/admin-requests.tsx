@@ -196,10 +196,9 @@ function ManageSelect({
     <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
       <Select
-        items={options}
         value={value}
         disabled={disabled}
-        onValueChange={(v) => onChange(v === UNASSIGNED || v === null ? "" : v)}
+        onValueChange={(v) => onChange(v === UNASSIGNED ? "" : v)}
       >
         <SelectTrigger className="w-full">
           <SelectValue />
@@ -269,15 +268,12 @@ function SupportRequestRow({
               adımı "bu kim?" sorusunu cevaplamak. */}
           <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
             {r.workshopId ? (
-              <Button
-                nativeButton={false}
-                variant="outline"
-                size="sm"
-                render={<Link href={`/admin/workshops/${r.workshopId}`} />}
-              >
-                <Building2 className="size-3.5" />
-                {r.workshopName ?? "İş yeri"}
-                <ExternalLink className="size-3.5" />
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/admin/workshops/${r.workshopId}`}>
+                  <Building2 className="size-3.5" />
+                  {r.workshopName ?? "İş yeri"}
+                  <ExternalLink className="size-3.5" />
+                </Link>
               </Button>
             ) : (
               <span className="text-muted-foreground">Bağlı iş yeri yok</span>

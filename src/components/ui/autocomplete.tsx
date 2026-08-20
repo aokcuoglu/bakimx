@@ -12,8 +12,27 @@ import { cn } from "@/lib/utils"
  */
 const Autocomplete = AutocompletePrimitive.Root
 
-function AutocompleteInput({ ...props }: AutocompletePrimitive.Input.Props) {
-  return <AutocompletePrimitive.Input data-slot="autocomplete-input" {...props} />
+function AutocompleteInput({ onKeyDown, ...props }: AutocompletePrimitive.Input.Props) {
+  return (
+    <AutocompletePrimitive.Input
+      data-slot="autocomplete-input"
+      onKeyDown={(event) => {
+        onKeyDown?.(event)
+        // Liste KAPALIYKEN Base UI Escape'te input değerini sessizce temizliyor —
+        // serbest yazılan metin (tedarikçi adı, işçilik adı, marka) yok oluyor.
+        // Liste AÇIKKEN Escape'in listeyi kapatma davranışı korunmalı, o yüzden
+        // yalnız kapalıyken susturuyoruz. Tarayıcıda ölçüldü: guard'sız 2. Escape
+        // değeri boşaltıyor, guard'lı ikisinde de değer duruyor (BAK-190).
+        if (
+          event.key === "Escape" &&
+          event.currentTarget.getAttribute("aria-expanded") !== "true"
+        ) {
+          event.preventBaseUIHandler()
+        }
+      }}
+      {...props}
+    />
+  )
 }
 
 function AutocompleteContent({

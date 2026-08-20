@@ -1,6 +1,9 @@
+"use client"
+
 import Link from "next/link"
 import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
 import type { TodayDelivery } from "@/lib/dashboard/queries"
+import { useDashboardPage, DashboardPagination } from "@/components/dashboard/dashboard-pagination"
 
 function formatTime(iso: string | null): string {
   if (!iso) return ""
@@ -8,18 +11,20 @@ function formatTime(iso: string | null): string {
 }
 
 export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(deliveries)
+
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Bugün Teslim Edilecekler</h3>
       </div>
-      <div className="divide-y divide-border">
+      <div className="max-h-96 divide-y divide-border overflow-y-auto">
         {deliveries.length === 0 ? (
           <p className="px-4 py-6 text-sm text-muted-foreground text-center">
             Bugün teslim edilecek iş emri yok.
           </p>
         ) : (
-          deliveries.map((d) => (
+          pageItems.map((d) => (
             <Link
               key={d.id}
               href={`/orders/${d.id}`}
@@ -29,9 +34,9 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{d.customerName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] font-mono text-muted-foreground/70">{d.workOrderNo}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground">{d.workOrderNo}</span>
                   {d.estimatedDeliveryAt && (
-                    <span className="text-[11px] text-muted-foreground/70">{formatTime(d.estimatedDeliveryAt)}</span>
+                    <span className="text-[11px] text-muted-foreground">{formatTime(d.estimatedDeliveryAt)}</span>
                   )}
                 </div>
               </div>
@@ -40,6 +45,7 @@ export function TodayDeliveries({ deliveries }: { deliveries: TodayDelivery[] })
           ))
         )}
       </div>
+      <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   )
 }

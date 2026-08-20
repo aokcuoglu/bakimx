@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
+  path: "/terms",
   title: "Kullanım Koşulları ve Hizmet Sözleşmesi",
-  description:
-    "BakımX oto servis yönetim platformunun kullanım koşulları ve hizmet sözleşmesi.",
-};
+  description: "BakımX oto servis yönetim platformunun kullanım koşulları ve hizmet sözleşmesi.",
+});
 
 export default function TermsPage() {
   return (

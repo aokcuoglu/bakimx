@@ -38,21 +38,7 @@ type Props = {
   stats: Record<string, number>
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  upcoming: "Yaklaşan",
-  due_soon: "Yaklaşıyor",
-  overdue: "Gecikmiş",
-  completed: "Tamamlandı",
-  postponed: "Ertelendi",
-  cancelled: "İptal",
-}
 
-const DATE_LABELS: Record<string, string> = {
-  today: "Bugün",
-  week: "Bu Hafta",
-  month: "Bu Ay",
-  overdue: "Geciken",
-}
 
 function customerName(c: ReminderRow["customer"]): string {
   if (c.type === "corporate") return c.companyName || "Kurumsal"
@@ -166,15 +152,17 @@ export function ReminderList({ initialReminders, stats }: Props) {
             Hatırlatmalar
             <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <Button nativeButton={false} size="sm" className="gap-1.5" render={<Link href="/reminders/new" />}>
-            <Plus className="size-4" />
-            Yeni Hatırlatma
+          <Button size="sm" className="gap-1.5" asChild>
+            <Link href="/reminders/new">
+              <Plus className="size-4" />
+              Yeni Hatırlatma
+            </Link>
           </Button>
         </CardHeader>
         <CardContent className="pt-0 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 placeholder="Müşteri, plaka, başlık ara..."
                 value={search}
@@ -185,9 +173,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
             <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "")}>
                 <SelectTrigger className="w-[130px] text-sm">
-                  <SelectValue placeholder="Durum">
-                    {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>
@@ -201,13 +187,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               </Select>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v || "")}>
                 <SelectTrigger className="w-[140px] text-sm">
-                  <SelectValue placeholder="Bakım Türü">
-                    {(value: string | null) =>
-                      value
-                        ? (MAINTENANCE_REMINDER_TYPES as Record<string, { label: string }>)[value]?.label ?? value
-                        : null
-                    }
-                  </SelectValue>
+                  <SelectValue placeholder="Bakım Türü" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>
@@ -218,9 +198,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               </Select>
               <Select value={dateFilter} onValueChange={(v) => setDateFilter(v || "")}>
                 <SelectTrigger className="w-[130px] text-sm">
-                  <SelectValue placeholder="Tarih">
-                    {(value: string | null) => (value ? DATE_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Tarih" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tümü</SelectItem>
@@ -239,7 +217,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
               <p className="text-sm">Henüz hatırlatma bulunmuyor</p>
               <Link
                 href="/reminders/new"
-                className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
+                className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:underline font-medium"
               >
                 <Plus className="size-3.5" />
                 Yeni hatırlatma oluştur
@@ -275,7 +253,7 @@ export function ReminderList({ initialReminders, stats }: Props) {
                             <Link href={`/customers/${r.customer.id}`} className="text-foreground hover:text-primary">
                               {customerName(r.customer)}
                             </Link>
-                            <p className="text-[11px] text-muted-foreground/70">{r.customer.phone}</p>
+                            <p className="text-[11px] text-muted-foreground">{r.customer.phone}</p>
                           </div>
                         </td>
                         <td className="py-3 px-3">
@@ -290,18 +268,18 @@ export function ReminderList({ initialReminders, stats }: Props) {
                         <td className="py-3 px-3 text-foreground">
                           {r.dueDate ? (
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="size-3 text-muted-foreground/70" />
+                              <Calendar className="size-3 text-muted-foreground" />
                               {formatDate(r.dueDate)}
                             </span>
-                          ) : <span className="text-muted-foreground/70">—</span>}
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-3 px-3 text-foreground">
                           {r.dueMileage ? (
                             <span className="inline-flex items-center gap-1">
-                              <Gauge className="size-3 text-muted-foreground/70" />
+                              <Gauge className="size-3 text-muted-foreground" />
                               {r.dueMileage.toLocaleString("tr-TR")} km
                             </span>
-                          ) : <span className="text-muted-foreground/70">—</span>}
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-3 px-3">
                           <ReminderStatusBadge status={r.status} />
@@ -427,11 +405,11 @@ export function ReminderList({ initialReminders, stats }: Props) {
 
 function KpiCards({ stats }: { stats: Record<string, number> }) {
   const items = [
-    { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "due_soon", label: "Yaklaşıyor", color: "bg-warning/10 text-warning-strong border-warning/20" },
     { key: "overdue", label: "Geciken", color: "bg-destructive/10 text-destructive-strong border-destructive/20" },
     { key: "completed", label: "Tamamlanan", color: "bg-success/10 text-success-strong border-success/20" },
-    { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "cancelled", label: "İptal", color: "bg-muted text-muted-foreground border-border" },
   ]
   return (
@@ -442,7 +420,7 @@ function KpiCards({ stats }: { stats: Record<string, number> }) {
           className={cn("rounded-lg border px-3 py-2.5 text-center", item.color)}
         >
           <p className="text-lg sm:text-xl font-bold">{stats[item.key] || 0}</p>
-          <p className="text-[10px] sm:text-xs font-medium opacity-80">{item.label}</p>
+          <p className="text-[10px] sm:text-xs font-medium">{item.label}</p>
         </div>
       ))}
     </div>

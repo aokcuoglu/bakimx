@@ -43,7 +43,7 @@ export function BeforeAfterSection() {
             <ul className="mt-5 space-y-3.5">
               {beforeItems.map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm sm:text-base text-muted-foreground">
-                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive-strong/60" />
+                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive-strong" />
                   {item}
                 </li>
               ))}

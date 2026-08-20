@@ -9,8 +9,9 @@ import { prisma } from "@/lib/db"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
-export const metadata = { title: "Satın Al" }
+export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
 
 const HAVALE = getHavaleInstructions()
 
@@ -80,8 +81,10 @@ export default async function CheckoutPage({
             </div>
           </div>
           {isCard && (
-            <Button nativeButton={false} render={<Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`} />} size="lg" className="mt-5 w-full">
-              Ödemeye devam et
+            <Button asChild size="lg" className="mt-5 w-full">
+              <Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}>
+                Ödemeye devam et
+              </Link>
             </Button>
           )}
         </div>

@@ -78,7 +78,7 @@ export function SetPasswordForm({
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">E-posta</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input value={email} disabled readOnly className="pl-9 bg-muted/50" />
           </div>
         </div>
@@ -87,7 +87,7 @@ export function SetPasswordForm({
           <div className="space-y-2">
             <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">Ad</Label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
               <Input id="firstName" name="firstName" required placeholder="Adınız" className="pl-9" />
             </div>
           </div>
@@ -100,7 +100,7 @@ export function SetPasswordForm({
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium text-muted-foreground">Şifre</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               id="password"
               name="password"
@@ -114,7 +114,7 @@ export function SetPasswordForm({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               tabIndex={-1}
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
@@ -126,7 +126,7 @@ export function SetPasswordForm({
         <div className="space-y-2">
           <Label htmlFor="passwordConfirm" className="text-sm font-medium text-muted-foreground">Şifre (tekrar)</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               id="passwordConfirm"
               name="passwordConfirm"

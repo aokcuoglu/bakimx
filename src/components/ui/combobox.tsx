@@ -49,12 +49,29 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   )
 }
 
+/**
+ * Base UI'da Escape yalnız listeyi kapatmıyor, COMMIT EDİLMİŞ seçimi de temizliyor
+ * → form alanında sessiz veri kaybı (il temizlenince ilçe de cascade sıfırlanıyordu;
+ * chip'li alanda TÜM seçim siliniyordu). Tarayıcıda ölçüldü: "Beta" seçiliyken
+ * guard'sız Escape sonrası input boş, guard'lı "Beta" duruyor — listeyi kapatma
+ * davranışı iki durumda da korunuyor (BAK-190).
+ */
+function keepSelectionOnEscape(
+  onKeyDown: ComboboxPrimitive.Input.Props["onKeyDown"]
+): ComboboxPrimitive.Input.Props["onKeyDown"] {
+  return (event) => {
+    onKeyDown?.(event)
+    if (event.key === "Escape") event.preventBaseUIHandler()
+  }
+}
+
 function ComboboxInput({
   className,
   children,
   disabled = false,
   showTrigger = true,
   showClear = false,
+  onKeyDown,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
@@ -64,15 +81,19 @@ function ComboboxInput({
     <InputGroup className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input
         render={<InputGroupInput disabled={disabled} />}
+        onKeyDown={keepSelectionOnEscape(onKeyDown)}
         {...props}
       />
       <InputGroupAddon align="inline-end">
         {showTrigger && (
-          <InputGroupButton
-            size="icon-xs"
-            variant="ghost"
-            render={<ComboboxTrigger />}
-            data-slot="input-group-button"
+          <ComboboxTrigger
+            render={
+              <InputGroupButton
+                size="icon-xs"
+                variant="ghost"
+                data-slot="input-group-button"
+              />
+            }
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             disabled={disabled}
           />
@@ -262,12 +283,14 @@ function ComboboxChip({
 
 function ComboboxChipsInput({
   className,
+  onKeyDown,
   ...props
 }: ComboboxPrimitive.Input.Props) {
   return (
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       className={cn("min-w-16 flex-1 outline-none", className)}
+      onKeyDown={keepSelectionOnEscape(onKeyDown)}
       {...props}
     />
   )

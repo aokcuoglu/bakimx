@@ -65,7 +65,6 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
 
       <td className="px-3 py-2">
         <Select
-          items={ADMIN_ROLE_LABELS}
           value={admin.role}
           onValueChange={(v) => v && v !== admin.role && run(() => changePlatformAdminRole(admin.id, v))}
           disabled={pending}
@@ -75,11 +74,8 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
           </SelectTrigger>
           <SelectContent>
             {ADMIN_ROLES.map((r) => (
-              <SelectItem key={r} value={r}>
-                <span className="flex flex-col items-start">
-                  <span>{ADMIN_ROLE_LABELS[r]}</span>
-                  <span className="text-xs text-muted-foreground">{ADMIN_ROLE_DESCRIPTIONS[r]}</span>
-                </span>
+              <SelectItem key={r} value={r} description={ADMIN_ROLE_DESCRIPTIONS[r]}>
+                {ADMIN_ROLE_LABELS[r]}
               </SelectItem>
             ))}
           </SelectContent>

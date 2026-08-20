@@ -164,14 +164,14 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6 pb-24 lg:pb-6">
         <div className="flex items-center text-sm text-muted-foreground">
           <Button
-            type="button"
             variant="link"
-            nativeButton={false}
             className="p-0 h-auto text-muted-foreground hover:text-foreground inline-flex items-center gap-1 touch-manipulation"
-            render={<Link href="/cashbox/payments" />}
+            asChild
           >
-            <ArrowLeft className="size-3.5" />
-            Tahsilatlar
+            <Link href="/cashbox/payments">
+              <ArrowLeft className="size-3.5" />
+              Tahsilatlar
+            </Link>
           </Button>
           <span className="mx-2">/</span>
           <span className="text-foreground font-medium">Yeni Tahsilat</span>
@@ -253,18 +253,10 @@ export function CollectionCreateForm({ customers, orders, preselectedCustomerId,
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-medium text-muted-foreground">İş Emri (opsiyonel)</FormLabel>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full mt-1.5">
-                              <SelectValue placeholder="İş emri seçin (opsiyonel)">
-                                {(value: string | null) => {
-                                  if (!value) return null
-                                  const o = filteredOrders.find((o) => o.id === value)
-                                  return o ? (
-                                    <>{o.workOrderNo || "—"} &bull; {o.vehicle.plate} &bull; Kalan: {formatTRY(o.remainingAmount)}</>
-                                  ) : value
-                                }}
-                              </SelectValue>
+                              <SelectValue placeholder="İş emri seçin (opsiyonel)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

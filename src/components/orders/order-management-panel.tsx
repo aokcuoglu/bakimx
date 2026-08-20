@@ -353,7 +353,7 @@ export function PricingSummaryCard({
 
         <div className="pt-3 border-t">
           {locked ? (
-            <p className="text-xs text-muted-foreground/70 text-center">
+            <p className="text-xs text-muted-foreground text-center">
               Teslim edilmiş veya iptal edilmiş iş emrinde fiyatlandırma düzenlenemez
             </p>
           ) : editingMeta ? (
@@ -422,7 +422,7 @@ function SummaryRow({
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
-      <span className={cn(muted ? "text-muted-foreground/70" : toneColor, large && "text-lg font-bold text-foreground", bold && !large && toneColor)}>
+      <span className={cn(muted ? "text-muted-foreground" : toneColor, large && "text-lg font-bold text-foreground", bold && !large && toneColor)}>
         {value}
       </span>
     </div>
@@ -505,10 +505,10 @@ export function PaymentHistoryCard({
                       <p className="text-xs text-destructive-strong mt-0.5 truncate">{c.cancellationReason}</p>
                     )}
                     {!isRowCancelled && c.referenceNo && (
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">Ref: {c.referenceNo}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Ref: {c.referenceNo}</p>
                     )}
                   </div>
-                  <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                  <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                 </Link>
               )
             })}

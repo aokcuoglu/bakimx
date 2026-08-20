@@ -161,10 +161,10 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive-strong px-4 py-3 text-sm">{actionError}</div>
       ) : null}
 
-      <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <BellRing className="size-5" />
             </div>
             <div className="min-w-0">
@@ -202,7 +202,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 </button>
                 <button
                   onClick={() => setShowPostpone(!showPostpone)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Clock className="size-4" />
                   <span className="hidden sm:inline">Ertele</span>
@@ -219,14 +219,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 <span className="hidden sm:inline">İptal</span>
               </button>
             ) : null}
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/reminders/${reminder.id}/edit`} />}
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Düzenle</span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/reminders/${reminder.id}/edit`}>
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Düzenle</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -237,7 +234,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("create-appointment")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary-strong hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <CalendarClock className="size-3.5" />
                 Randevu Oluştur
@@ -412,7 +409,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 href={`/vehicles/${reminder.vehicle.id}`}
                 className="flex items-center gap-3 rounded-lg p-2 -m-2 hover:bg-muted transition-colors"
               >
-                <div className="size-10 rounded-lg bg-navy text-white flex items-center justify-center shrink-0">
+                <div className="size-10 rounded-lg bg-navy text-navy-foreground flex items-center justify-center shrink-0">
                   <Car className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -423,7 +420,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                     {reminder.vehicle.brand} {reminder.vehicle.model}
                   </p>
                   {reminder.vehicle.mileage != null ? (
-                    <p className="text-xs text-muted-foreground/70">
+                    <p className="text-xs text-muted-foreground">
                       KM: {reminder.vehicle.mileage.toLocaleString("tr-TR")}
                     </p>
                   ) : null}

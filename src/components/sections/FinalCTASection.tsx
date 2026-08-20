@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 export function FinalCTASection() {
   const prefersReducedMotion = useReducedMotion();
@@ -52,6 +53,7 @@ export function FinalCTASection() {
         >
           <Link
             href="/register"
+            onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "final_primary" })}
             className={buttonVariants({ size: "lg", className: "gap-2 px-8 text-base shadow-lg shadow-primary/25" })}
           >
             7 Gün Ücretsiz Dene
@@ -59,6 +61,7 @@ export function FinalCTASection() {
           </Link>
           <Link
             href="/#demo-form"
+            onClick={() => trackMarketingEvent("demo_cta_click", { cta_location: "final_secondary", destination: "form" })}
             className={buttonVariants({ variant: "outline", size: "lg", className: "border-primary/25 px-8 text-base" })}
           >
             Demo İste

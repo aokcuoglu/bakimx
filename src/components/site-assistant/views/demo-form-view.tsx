@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { TR_CITIES } from "@/lib/tr-cities";
 import type { SuccessContext } from "../site-assistant";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 interface DemoFormViewProps {
   onBack: () => void;
@@ -54,6 +55,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
   const [data, setData] = useState<FormData>(EMPTY);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const submitRef = useRef(false);
 
   function validate(): FormErrors {
     const e: FormErrors = {};
@@ -68,10 +70,12 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
   async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
+    if (submitRef.current) return;
     const v = validate();
     setErrors(v);
     if (Object.keys(v).length > 0) return;
 
+    submitRef.current = true;
     setSubmitting(true);
     try {
       const res = await fetch("/api/demo-request", {
@@ -80,6 +84,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
         body: JSON.stringify(data),
       });
       if (res.ok) {
+        trackMarketingEvent("demo_submitted", { form_location: "assistant" });
         onSuccess("demo");
         return;
       }
@@ -89,6 +94,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
     } catch {
       setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." });
     } finally {
+      submitRef.current = false;
       setSubmitting(false);
     }
   }
@@ -123,7 +129,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="da-city">Şehir *</Label>
-        <Select value={data.city} onValueChange={(value) => setData({ ...data, city: value ?? "" })}>
+        <Select value={data.city} onValueChange={(value) => setData({ ...data, city: value })}>
           <SelectTrigger id="da-city" className="w-full">
             <SelectValue placeholder="Şehir seçin" />
           </SelectTrigger>
@@ -140,15 +146,9 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="da-vehicles">Aylık ortalama araç adedi *</Label>
-        <Select value={data.monthlyVehicles} onValueChange={(value) => setData({ ...data, monthlyVehicles: value ?? "" })}>
+        <Select value={data.monthlyVehicles} onValueChange={(value) => setData({ ...data, monthlyVehicles: value })}>
           <SelectTrigger id="da-vehicles" className="w-full">
-            <SelectValue placeholder="Seçin">
-              {(value: string | null) => {
-                if (!value) return null;
-                const option = MONTHLY_VEHICLE_OPTIONS.find((opt) => opt.value === value);
-                return option ? option.label : value;
-              }}
-            </SelectValue>
+            <SelectValue placeholder="Seçin" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

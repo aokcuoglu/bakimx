@@ -89,11 +89,11 @@ export function TechnicianDashboard({
   const completedOrders = orders.filter((o) => ["ready_for_delivery", "delivered"].includes(o.status))
 
   const kpiCards = [
-    { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary" },
+    { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary-strong" },
     { label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
     { label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
     { label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
-    { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary" },
+    { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary-strong" },
   ]
 
   return (
@@ -101,7 +101,11 @@ export function TechnicianDashboard({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {canSelectTechnician
+              ? "Seçili teknisyenin iş atamalarını yönetin"
+              : "Atölyedeki iş emirlerini görüntüleyin, kendi görevlerinizi yönetin"}
+          </p>
         </div>
         {canSelectTechnician && (
           <Select
@@ -109,15 +113,7 @@ export function TechnicianDashboard({
             onValueChange={handleTechnicianChange}
           >
             <SelectTrigger aria-label="Teknisyen seç">
-              <SelectValue placeholder="Teknisyen seç">
-                {(value: string | null) => {
-                  if (!value) return null
-                  const tech = technicians.find((t) => t.id === value)
-                  if (!tech) return value
-                  const roleLabel = (TECHNICIAN_ROLES as Record<string, { label: string }>)[tech.role]?.label || tech.role
-                  return `${tech.fullName} — ${roleLabel}`
-                }}
-              </SelectValue>
+              <SelectValue placeholder="Teknisyen seç" />
             </SelectTrigger>
             <SelectContent>
               {technicians.map((t) => (
@@ -231,7 +227,7 @@ function OrderCard({ order }: { order: OrderRow }) {
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{order.customerComplaint}</p>
           )}
         </div>
-        <ChevronRight className="size-5 text-muted-foreground/70 shrink-0 mt-1" />
+        <ChevronRight className="size-5 text-muted-foreground shrink-0 mt-1" />
       </div>
 
       {order.checklistProgress.total > 0 && (

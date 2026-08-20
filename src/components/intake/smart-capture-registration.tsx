@@ -239,7 +239,7 @@ export function SmartCaptureRegistration() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                 <User className="size-5" />
               </div>
               <div className="min-w-0">
@@ -248,7 +248,7 @@ export function SmartCaptureRegistration() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {saveResult.customerCreated ? "Müşteriler bölümüne yeni kayıt eklendi." : "Mevcut müşteri kaydı kullanıldı."}
                 </p>
-                <Link href={`/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/customers/${saveResult.customerId}`} className="mt-3 inline-flex text-sm font-medium text-primary hover:underline">
                   Müşteriyi görüntüle
                 </Link>
               </div>
@@ -257,7 +257,7 @@ export function SmartCaptureRegistration() {
 
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                 <Car className="size-5" />
               </div>
               <div className="min-w-0">
@@ -271,12 +271,12 @@ export function SmartCaptureRegistration() {
                       : "Mevcut araç bilgileri güncellendi."}
                 </p>
                 {saveResult.catalogLinked && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary-strong">
                     <CheckCircle2 className="size-3 shrink-0" />
                     VIN eşleşti — araca uygun parçalar iş emrinde hazır
                   </p>
                 )}
-                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:text-primary/80">
+                <Link href={`/vehicles/${saveResult.vehicleId}`} className="mt-3 flex text-sm font-medium text-primary hover:underline">
                   Aracı görüntüle
                 </Link>
               </div>
@@ -288,7 +288,7 @@ export function SmartCaptureRegistration() {
           <CardContent className="py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
@@ -298,14 +298,11 @@ export function SmartCaptureRegistration() {
                   </p>
                 </div>
               </div>
-              <Button
-                nativeButton={false}
-                size="lg"
-                render={<Link href={saveResult.intakeUrl} />}
-                className="shrink-0 gap-2"
-              >
-                İş Emrine Devam Et
-                <ArrowRight className="size-4" />
+              <Button size="lg" asChild className="shrink-0 gap-2">
+                <Link href={saveResult.intakeUrl}>
+                  İş Emrine Devam Et
+                  <ArrowRight className="size-4" />
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -340,7 +337,7 @@ export function SmartCaptureRegistration() {
       <Card>
         <CardContent className="py-16">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center animate-pulse">
+            <div className="size-16 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center animate-pulse">
               <ScanLine className="size-8" />
             </div>
             <div>
@@ -511,7 +508,7 @@ export function SmartCaptureRegistration() {
             </Button>
             <div className="flex items-center gap-3 w-full max-w-md">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground/70">veya dosyadan</span>
+              <span className="text-xs text-muted-foreground">veya dosyadan</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -520,7 +517,7 @@ export function SmartCaptureRegistration() {
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <div className="size-14 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center">
                   <Upload className="size-7" />
                 </div>
                 <div>
@@ -561,15 +558,15 @@ export function SmartCaptureRegistration() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
-            <ScanLine className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <ScanLine className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Kamera ile tarayın: ruhsat otomatik algılanıp çerçeveye oturunca çekilir. Dilerseniz dosyadan da yükleyebilirsiniz.</span>
           </div>
           <div className="flex items-start gap-2">
-            <CheckCircle2 className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <CheckCircle2 className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Okunan bilgiler kaydedilmeden önce onayınıza sunulur.</span>
           </div>
           <div className="flex items-start gap-2">
-            <AlertTriangle className="size-4 text-muted-foreground/70 mt-0.5 shrink-0" />
+            <AlertTriangle className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <span>Otomatik okuma hatalı olabilir. Lütfen tüm alanları kontrol edin.</span>
           </div>
         </CardContent>

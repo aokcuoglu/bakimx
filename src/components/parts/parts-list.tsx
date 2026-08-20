@@ -17,12 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { PartsTabsNav } from "@/app/(app)/parts/parts-tabs-nav"
 
-const STATUS_LABELS: Record<string, string> = {
-  in_stock: "Stokta",
-  critical: "Kritik Stokta",
-  out_of_stock: "Stokta Yok",
-  inactive: "Pasif",
-}
 
 type PartWithDates = {
   id: string
@@ -116,15 +110,17 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Package className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/parts/new" />}>
-          <Plus className="size-3.5 mr-1" /> Yeni Parça
+        <Button size="sm" className="w-full sm:w-auto" asChild>
+          <Link href="/parts/new">
+            <Plus className="size-3.5 mr-1" /> Yeni Parça
+          </Link>
         </Button>
       </div>
 
       <PartsTabsNav active="parts" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary-strong" accentBg="bg-primary/10" />
         <KpiStat label="Stokta Olan" value={kpis.inStock} icon={Package} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Kritik Stokta" value={kpis.critical} icon={AlertTriangle} accent="text-destructive-strong" accentBg="bg-destructive/10" />
         <KpiStat label="Stokta Yok" value={kpis.outOfStock} icon={AlertTriangle} accent="text-muted-foreground" accentBg="bg-muted" />
@@ -135,7 +131,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
         <CardContent className="p-4 space-y-3">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -151,12 +147,10 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <div className="flex flex-wrap gap-2">
             <Select
               value={currentFilters.status}
-              onValueChange={(v) => applyFilter("status", v ?? "all")}
+              onValueChange={(v) => applyFilter("status", v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Tümü">
-                  {(value: string | null) => (value && value !== "all" ? STATUS_LABELS[value] ?? value : null)}
-                </SelectValue>
+                <SelectValue placeholder="Tümü" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tümü</SelectItem>
@@ -170,7 +164,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
             {categories.length > 0 && (
               <Select
                 value={currentFilters.category}
-                onValueChange={(v) => applyFilter("category", v ?? "")}
+                onValueChange={(v) => applyFilter("category", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tüm Kategoriler" />
@@ -187,7 +181,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
             {brands.length > 0 && (
               <Select
                 value={currentFilters.brand}
-                onValueChange={(v) => applyFilter("brand", v ?? "")}
+                onValueChange={(v) => applyFilter("brand", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tüm Markalar" />
@@ -241,14 +235,14 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                     {part.sku && <div>{part.sku}</div>}
                     {part.oemNo && <div className="text-[10px]">{part.oemNo}</div>}
-                    {!part.sku && !part.oemNo && <span className="text-muted-foreground/50">—</span>}
+                    {!part.sku && !part.oemNo && <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">{part.brand || <span className="text-muted-foreground/50">—</span>}</td>
-                  <td className="px-4 py-3 text-sm text-foreground">{part.category || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{part.brand || <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{part.category || <span className="text-muted-foreground">—</span>}</td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-semibold text-sm",
-                       part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
+                       part.stockQty <= 0 ? "text-muted-foreground" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                      )}>
                        {formatStockQty(part.stockQty)}
                      </span>
@@ -262,10 +256,10 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-sm text-muted-foreground">{part.shelfLocation || "—"}</td>
                   <td className="px-4 py-3 text-sm">
                     {part.supplier ? (
-                       <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                       <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:underline">{part.supplier.name}</Link>
                     ) : part.supplierName ? (
                       <span className="text-foreground">{part.supplierName}</span>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <StockStatusBadge
@@ -277,28 +271,40 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}`} />} />}>
-                          <Eye className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/parts/${part.id}`}>
+                              <Eye className="size-3.5" />
+                            </Link>
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}/edit`} />} />}>
-                          <Edit3 className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/parts/${part.id}/edit`}>
+                              <Edit3 className="size-3.5" />
+                            </Link>
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
                       </Tooltip>
                       {part.isActive ? (
                         <Tooltip>
-                          <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => handleDeactivate(part.id)} />}>
-                            <Archive className="size-3.5" />
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeactivate(part.id)}>
+                              <Archive className="size-3.5" />
+                            </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top">Pasifleştir</TooltipContent>
                         </Tooltip>
                       ) : null}
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => handleDelete(part.id)} disabled={deleting === part.id} />}>
-                          <Trash2 className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(part.id)} disabled={deleting === part.id}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Sil</TooltipContent>
                       </Tooltip>
@@ -327,7 +333,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                     <p className="text-sm font-semibold text-foreground truncate">{part.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {part.sku && <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{part.sku}</span>}
-                      {part.oemNo && <span className="text-[10px] font-mono text-muted-foreground/70">{part.oemNo}</span>}
+                      {part.oemNo && <span className="text-[10px] font-mono text-muted-foreground">{part.oemNo}</span>}
                     </div>
                   </div>
                   <StockStatusBadge stockQty={part.stockQty} criticalStockQty={part.criticalStockQty} isActive={part.isActive} />
@@ -342,18 +348,18 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 <div className="flex items-center justify-between text-xs">
                   <span className={cn(
                     "font-semibold",
-                    part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
+                    part.stockQty <= 0 ? "text-muted-foreground" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                    )}>
                      Stok: {formatStockQty(part.stockQty)} {part.unit}
                    </span>
                   {(part.supplier || part.supplierName) && (
-                    <span className="text-muted-foreground/70 truncate max-w-[120px]">
+                    <span className="text-muted-foreground truncate max-w-[120px]">
                       {part.supplier ? (
-                         <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                         <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:underline">{part.supplier.name}</Link>
                       ) : part.supplierName}
                     </span>
                   )}
-                  {part.shelfLocation && !part.supplier && !part.supplierName && <span className="text-muted-foreground/70">Raf: {part.shelfLocation}</span>}
+                  {part.shelfLocation && !part.supplier && !part.supplierName && <span className="text-muted-foreground">Raf: {part.shelfLocation}</span>}
                 </div>
               </CardContent>
             </Card>

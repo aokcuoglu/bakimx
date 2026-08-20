@@ -106,13 +106,10 @@ export default async function AppointmentsPage({
       workshopName={workshop?.name}
       pageTitle="Randevular"
       pageActions={
-        <Button
-          nativeButton={false}
-          size="icon"
-          render={<Link href="/appointments/new" />}
-          aria-label="Yeni randevu"
-        >
-          <Plus className="size-5" />
+        <Button size="icon" asChild aria-label="Yeni randevu">
+          <Link href="/appointments/new">
+            <Plus className="size-5" />
+          </Link>
         </Button>
       }
     >
@@ -128,20 +125,17 @@ export default async function AppointmentsPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">Randevular</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis randevularını planlayın ve yönetin</p>
           </div>
-          <Button
-            nativeButton={false}
-            size="default"
-            className="hidden sm:inline-flex"
-            render={<Link href="/appointments/new" />}
-          >
-            <Plus className="size-4" />
-            Yeni Randevu
+          <Button size="default" className="hidden sm:inline-flex" asChild>
+            <Link href="/appointments/new">
+              <Plus className="size-4" />
+              Yeni Randevu
+            </Link>
           </Button>
         </div>
 
         <form action="/appointments" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q}
@@ -160,7 +154,7 @@ export default async function AppointmentsPage({
         </form>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          <CalendarDays className="size-4 text-muted-foreground/70 shrink-0" />
+          <CalendarDays className="size-4 text-muted-foreground shrink-0" />
           {dateTabs.map((tab) => {
             const isActive = activeDate === tab.key
             const href = isActive
@@ -175,7 +169,7 @@ export default async function AppointmentsPage({
                 className={cn(
                   "h-8 px-3 inline-flex items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors touch-manipulation",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/10 text-primary-strong"
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >
@@ -215,7 +209,7 @@ export default async function AppointmentsPage({
             </p>
             <Link
               href="/appointments/new"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:text-primary/80 font-medium"
+              className="inline-flex items-center gap-1.5 mt-4 text-sm text-primary hover:underline font-medium"
             >
               <Plus className="size-4" />
               Yeni Randevu

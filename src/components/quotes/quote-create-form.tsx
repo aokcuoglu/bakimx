@@ -272,25 +272,19 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       <FormControl>
                         <Select
                           value={field.value}
-                          onValueChange={(v) => field.onChange(v ?? "")}
+                          onValueChange={(v) => field.onChange(v)}
                           disabled={vehicleLoading || vehicles.length === 0}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue>
-                              {(value: string | null) => {
-                                const v = vehicles.find((v) => v.id === value)
-                                if (v) return `${v.plate} — ${v.brand} ${v.model}`
-                                return (
-                                  <span className="text-muted-foreground">
-                                    {vehicleLoading
-                                      ? "Araçlar yükleniyor…"
-                                      : vehicles.length === 0
-                                        ? "Bu müşterinin kayıtlı aracı yok"
-                                        : "Araç seçin (isteğe bağlı)"}
-                                  </span>
-                                )
-                              }}
-                            </SelectValue>
+                            <SelectValue
+                              placeholder={
+                                vehicleLoading
+                                  ? "Araçlar yükleniyor…"
+                                  : vehicles.length === 0
+                                    ? "Bu müşterinin kayıtlı aracı yok"
+                                    : "Araç seçin (isteğe bağlı)"
+                              }
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {vehicles.map((v) => (
@@ -318,7 +312,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="min-h-11 text-primary"
+                      className="text-primary"
                       onClick={() => setVehicleModalOpen(true)}
                     >
                       <Plus className="size-4" />
@@ -570,7 +564,7 @@ function SummaryRow({
   return (
     <div className={cn("flex items-center justify-between text-sm", bold && "font-semibold")}>
       <span className={cn("text-muted-foreground", bold && "text-foreground")}>{label}</span>
-      <span className={cn(muted ? "text-muted-foreground/70" : "text-foreground", large && "text-lg font-bold text-foreground")}>
+      <span className={cn(muted ? "text-muted-foreground" : "text-foreground", large && "text-lg font-bold text-foreground")}>
         {value}
       </span>
     </div>

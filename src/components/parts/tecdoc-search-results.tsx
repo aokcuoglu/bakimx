@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { TecdocArticleRow } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
+import { GetirbakimProductRow } from "./getirbakim-product-row"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
 import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
 
@@ -23,6 +25,11 @@ import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
  * doğrulanmış, önce onlar görünmeli (aynı gerekçe suggestions.ts'te). `bakimxCatalog`
  * kapısı kapalı atölyede liste hep boş gelir → bölüm hiç render edilmez, geri kalan
  * arama hiç etkilenmez.
+ *
+ * GETİRBAKIM (BAK-183) AYNI BÖLÜMÜN İÇİNDE listelenir, dördüncü bir liste
+ * açılmaz (BAK-182 kararı) — satırları kaynak rozetiyle ayrılır. Kendi özellik
+ * kapısı (`getirbakimCatalog`) BakımX kataloğununkinden ayrı: kapalıyken bu
+ * satırlar hiç gelmez, BakımX ürünleri etkilenmez.
  */
 export function TecdocSearchResults({
   query,
@@ -33,6 +40,8 @@ export function TecdocSearchResults({
   bakimxProducts,
   bakimxSearching,
   onBakimxSelect,
+  getirbakimProducts,
+  getirbakimSearching,
   vehicleTypeId,
   brandFilter,
   onBrandFilterChange,
@@ -51,6 +60,9 @@ export function TecdocSearchResults({
   bakimxProducts?: BakimxProductSummary[]
   bakimxSearching?: boolean
   onBakimxSelect?: (p: BakimxProductSummary) => void
+  /** GetirBakım eşleşmeleri — okuma amaçlı, satırlar tıklanamaz (BAK-183). */
+  getirbakimProducts?: GetirbakimProduct[]
+  getirbakimSearching?: boolean
   /** Rozet eşleşmesi araca bağlı ürünleri de kapsasın diye (BAK-46). */
   vehicleTypeId?: number | null
   brandFilter: string
@@ -98,13 +110,15 @@ export function TecdocSearchResults({
   }, [articles, brandFilter])
 
   const visibleBakimx = onBakimxSelect ? (bakimxProducts ?? []) : []
-  // "Sonuç yok" ancak ÜÇ bölüm de boşken doğrudur. TecDoc araması hiç çalışmamış
-  // olabilir (araç kataloğa bağlı değil → `articles` null kalır); o durumda karar
-  // yalnız BakımX tarafına bakar.
-  const anyPending = searching || !!bakimxSearching
+  const visibleGetirbakim = getirbakimProducts ?? []
+  // "Sonuç yok" ancak BÜTÜN bölümler boşken doğrudur. TecDoc araması hiç
+  // çalışmamış olabilir (araç kataloğa bağlı değil → `articles` null kalır); o
+  // durumda karar yalnız katalog taraflarına bakar.
+  const anyPending = searching || !!bakimxSearching || !!getirbakimSearching
   const nothingFound =
     categories.length === 0 &&
     visibleBakimx.length === 0 &&
+    visibleGetirbakim.length === 0 &&
     (visibleArticles == null ? !!onBakimxSelect : visibleArticles.length === 0)
 
   return (
@@ -117,7 +131,7 @@ export function TecdocSearchResults({
               key={`${c.node.id}-${c.path}`}
               type="button"
               onClick={() => onCategorySelect(c)}
-              className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left border-b border-border/60 hover:bg-muted"
+              className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left border-b border-border/60 hover:bg-muted"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>
@@ -125,7 +139,7 @@ export function TecdocSearchResults({
                   <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
                 )}
               </span>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </button>
           ))}
           {categoryOverflow > 0 && (
@@ -178,11 +192,19 @@ export function TecdocSearchResults({
         </section>
       )}
 
-      {visibleBakimx.length > 0 && (
+      {(visibleBakimx.length > 0 || visibleGetirbakim.length > 0) && (
         <section>
-          <SectionHeading>BakımX Ürünleri ({visibleBakimx.length}{bakimxSearching ? "…" : ""})</SectionHeading>
+          {/* Tek bölüm, iki kaynak: sayaç ikisini birden sayar, GetirBakım
+              satırları kendi rozetiyle ayrılır (BAK-183). */}
+          <SectionHeading>
+            BakımX Ürünleri ({visibleBakimx.length + visibleGetirbakim.length}
+            {bakimxSearching || getirbakimSearching ? "…" : ""})
+          </SectionHeading>
           {visibleBakimx.map((p) => (
             <BakimxProductRow key={p.id} product={p} onSelect={() => onBakimxSelect?.(p)} />
+          ))}
+          {visibleGetirbakim.map((p) => (
+            <GetirbakimProductRow key={`gb-${p.id}`} product={p} />
           ))}
         </section>
       )}
@@ -196,7 +218,7 @@ export function TecdocSearchResults({
           {/* Kapsam notu yalnız TecDoc araması GERÇEKTEN çalıştıysa doğrudur;
               araç kataloğa bağlı değilken (`articles` null) yanıltıcı olurdu. */}
           {visibleArticles != null && (
-            <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
               Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır; OEM numarası ise
               detayı bir kez açılmış parçalarda aranır. Aradığınız parçayı kategorilerden
               ilerleyerek getirebilirsiniz.
@@ -242,7 +264,7 @@ function BrandChip({
       className={cn(
         "inline-flex min-h-8 max-w-[12rem] items-center gap-1 truncate rounded-full border px-2.5 text-xs font-medium transition-colors touch-manipulation",
         active
-          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground/70"
+          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground"
           : "border-border bg-background text-foreground hover:bg-muted",
       )}
     >

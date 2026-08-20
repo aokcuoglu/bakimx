@@ -53,11 +53,6 @@ export function MultiStringCombobox({
           id={id}
           placeholder={value.length === 0 ? placeholder : ""}
           disabled={disabled}
-          onKeyDown={(event) => {
-            // Base UI: liste kapalıyken Escape TÜM seçimi siler (ComboboxInput "clear on escape").
-            // Form alanında bu sessiz veri kaybı → engelle; listeyi kapatma davranışı korunur.
-            if (event.key === "Escape") event.preventBaseUIHandler()
-          }}
         />
       </ComboboxChips>
       <ComboboxContent anchor={anchorRef}>

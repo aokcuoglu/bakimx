@@ -270,7 +270,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (
-          <span className="size-11" />
+          <span className="size-8" />
         )}
       </div>
 
@@ -304,7 +304,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         )}
 
         {status === "ready" && (
-          <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white/90">
+          <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">
             Ruhsatı açıp çerçeveye yerleştirin, deklanşöre basın
           </p>
         )}
@@ -320,7 +320,7 @@ export function RegistrationScanner({ onCapture, onClose }: Props) {
         {isFallback && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
             <AlertTriangle className="size-10 text-warning-strong" />
-            <p className="max-w-sm text-sm text-white/90">
+            <p className="max-w-sm text-sm text-white">
               {status === "denied" && "Kamera izni verilmedi. Lütfen tarayıcı ayarlarından izin verin veya dosyadan yükleyin."}
               {status === "unsupported" && "Bu cihaz/tarayıcı canlı kamerayı desteklemiyor. Lütfen dosyadan yükleyin."}
               {status === "error" && (errorMsg || "Kamera açılamadı. Lütfen dosyadan yükleyin.")}

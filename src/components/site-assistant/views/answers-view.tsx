@@ -174,10 +174,8 @@ export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersVie
   );
 }
 
-// `md:h-auto` şart: Button size varyantındaki `md:h-9` twMerge'de `h-auto` ile
-// aynı gruba düşmediği için md+ ekranda satırı 36px'e sabitler ve `p-3` ölü kalır.
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left md:h-auto " +
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left " +
   "hover:border-primary/40 hover:bg-primary/5";
 
 function FallbackAction({
@@ -203,7 +201,7 @@ function FallbackAction({
       className={cn(ROW_CLASS, emphasis && "border-primary/40 bg-primary/5")}
       onClick={onClick}
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover/button:bg-primary/15">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-strong transition-colors group-hover/button:bg-primary/15">
         <Icon className="size-5" />
       </span>
       <span className="min-w-0 flex-1 space-y-0.5">
@@ -211,7 +209,7 @@ function FallbackAction({
         <span className="block truncate text-xs leading-tight text-muted-foreground">{description}</span>
       </span>
       {trailing}
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70 transition-transform group-hover/button:translate-x-0.5" />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/button:translate-x-0.5" />
     </Button>
   );
 }

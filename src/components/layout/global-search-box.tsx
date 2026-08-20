@@ -24,7 +24,7 @@ const MIN_QUERY = 2
  * gider ve kutuyu temizler. part-search-input.tsx ile aynı Base UI Autocomplete
  * desenini izler (serbest metin + async `items`, `filter={null}`).
  */
-export function GlobalSearch({ className }: { className?: string }) {
+export function GlobalSearch({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UnifiedResult[]>([])
@@ -79,11 +79,12 @@ export function GlobalSearch({ className }: { className?: string }) {
                 placeholder="Plaka veya müşteri ara"
                 aria-label="Plaka veya müşteri ara"
                 className="text-sm"
+                autoFocus={autoFocus}
               />
             }
           />
           <InputGroupAddon align="inline-start">
-            <Search aria-hidden className="size-4 text-muted-foreground/70" />
+            <Search aria-hidden className="size-4 text-muted-foreground" />
           </InputGroupAddon>
         </InputGroup>
       </div>

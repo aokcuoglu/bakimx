@@ -267,17 +267,17 @@ export function OrderChecklist({
           ? "border-success/30 bg-success/5"
           : progress.total > 0 && !locked
             ? "border-primary/25 bg-primary/[0.04]"
-            : "border-border bg-white"
+            : "border-border bg-card"
       )}
     >
-      <Accordion value={open} onValueChange={(v) => onOpenChange(v as string[])}>
+      <Accordion type="multiple" value={open} onValueChange={onOpenChange}>
         <AccordionItem value="checklist" className="border-0">
           <AccordionTrigger className="items-center gap-3 py-3 hover:no-underline">
             <span
               aria-hidden
               className={cn(
                 "grid size-9 shrink-0 place-items-center rounded-lg",
-                allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary"
+                allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary-strong"
               )}
             >
               {allDone ? <CheckCircle2 className="size-5" /> : <ListChecks className="size-5" />}
@@ -325,7 +325,7 @@ export function OrderChecklist({
             ))}
 
             {active.length === 0 && (
-              <p className="text-sm text-muted-foreground/70">
+              <p className="text-sm text-muted-foreground">
                 Bu iş emrinde kontrol maddesi kalmadı.
               </p>
             )}
@@ -333,7 +333,7 @@ export function OrderChecklist({
             <RemovedChecklistItems items={removed} state={state} locked={locked} />
 
             {locked ? (
-              <p className="mt-2 text-xs text-muted-foreground/70">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Teslim edilmiş/iptal edilmiş iş emrinde kontrol maddesi eklenemez
               </p>
             ) : (
@@ -370,7 +370,7 @@ function ChecklistSection({
         <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium", info.color)}>
           {info.label}
         </span>
-        <span className="text-xs tabular-nums text-muted-foreground/70">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {done}/{items.length}
         </span>
         {/* Aşama bazlı toplu işaretleme: teslim kontrolleri araç tamir
@@ -428,9 +428,8 @@ function ChecklistRow({
         disabled={isBusy || locked}
         aria-pressed={isDone}
         onClick={() => state.toggle(item)}
-        // Mobilde 44px dokunma hedefi korunur; md+ masaüstünde satır kompakt.
         className={cn(
-          "flex min-h-11 flex-1 items-start gap-2.5 rounded-lg px-2 py-2 text-left md:min-h-0 md:py-1.5",
+          "flex min-h-8 flex-1 items-start gap-2.5 rounded-lg px-2 py-1.5 text-left",
           "cursor-pointer touch-manipulation transition-colors hover:bg-muted",
           // Sunucu yanıtı beklenirken satır kilitli ama SOLUK DEĞİL: iyimser tik
           // zaten göründüğü için soluklaştırmak "işlem geri alındı" gibi okunur.
@@ -451,7 +450,7 @@ function ChecklistRow({
         >
           {isDone
             ? <CheckSquare className="size-5 text-success-strong" />
-            : <Square className="size-5 text-muted-foreground/70 group-hover:text-muted-foreground" />}
+            : <Square className="size-5 text-muted-foreground group-hover:text-foreground" />}
         </span>
 
         <span className="min-w-0 flex-1">
@@ -476,7 +475,7 @@ function ChecklistRow({
           aria-label={`"${item.description}" maddesini bu iş emrinden sil`}
           onClick={() => state.remove(item)}
           disabled={isBusy}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:size-8 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-strong disabled:pointer-events-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Trash2 className="size-4" />
         </button>
@@ -571,7 +570,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         type="button"
         variant="outline"
         onClick={() => setShow(true)}
-        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-white/60 text-primary hover:bg-white hover:text-primary"
+        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-card/60 text-primary hover:bg-card hover:text-primary"
       >
         <Plus className="size-4" />
         Kontrol maddesi ekle
@@ -600,15 +599,16 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
       onKeyDown={(e) => {
         if (e.key === "Escape") close()
       }}
-      className="mt-3 space-y-3 rounded-lg border border-border bg-white p-3 shadow-sm"
+      className="mt-3 space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm"
     >
       <p className="text-xs font-semibold text-foreground">Yeni kontrol maddesi</p>
 
       <div className="space-y-1.5">
         <span className="block text-xs text-muted-foreground">Hangi aşamada?</span>
         <ToggleGroup
-          value={[category]}
-          onValueChange={(v) => { if (v.length) setCategory(v[0] as ChecklistCategoryKey) }}
+          type="single"
+          value={category}
+          onValueChange={(v) => { if (v) setCategory(v as ChecklistCategoryKey) }}
           className="grid w-full grid-cols-3"
         >
           {CATEGORY_ORDER.map((cat) => (
@@ -616,7 +616,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="h-11 w-full gap-1 text-xs font-medium text-muted-foreground md:h-9 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}

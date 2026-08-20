@@ -65,7 +65,7 @@ export function TechniciansReport({ stats, performance, roleLabels }: Technician
             <tr key={row.id} className="hover:bg-muted">
               <td className="px-4 py-2.5 font-medium text-foreground">{row.fullName}</td>
               <td className="px-4 py-2.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary-strong">
                   {roleLabels[row.role] || row.role}
                 </span>
               </td>

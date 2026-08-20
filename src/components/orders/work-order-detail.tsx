@@ -201,7 +201,7 @@ function HandoverPerson({
         <>
           <p className="text-sm text-foreground break-words">{name}</p>
           {phone && (
-            <a href={`tel:${phone}`} className="text-xs text-primary hover:text-primary/80 break-all">
+            <a href={`tel:${phone}`} className="text-xs text-primary hover:underline break-all">
               {phone}
             </a>
           )}
@@ -255,8 +255,7 @@ export function WorkOrderDetail({
 
   useOrderSync(order.id)
 
-  function handleTabChange(key: string | null) {
-    if (!key) return
+  function handleTabChange(key: string) {
     router.replace(`/orders/${order.id}?tab=${key}`, { scroll: false })
   }
 
@@ -848,16 +847,17 @@ export function WorkOrderDetail({
           {deliverySentCode && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
-              <button
+              <Button
                 type="button"
+                size="lg"
+                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
                 onClick={() => {
                   const text = `BakimX teslim onay kodunuz: ${deliverySentCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`
                   window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
               >
                 WhatsApp ile Gönder
-              </button>
+              </Button>
             </div>
           )}
           <Input
@@ -1172,17 +1172,18 @@ export function WorkOrderDetail({
                   <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
                     <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
                   </Link>
-                  <button
+                  <Button
                     type="button"
+                    size="lg"
+                    className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
                     onClick={() => {
                       if (!shareLinkFull) return
                       const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
                       window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
                     }}
-                    className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
                   >
                     <Share2 className="size-4" /> WhatsApp ile Paylaş
-                  </button>
+                  </Button>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -1240,8 +1241,8 @@ export function WorkOrderDetail({
 
           {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
               kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
-          <Accordion>
-            <AccordionItem className="border-0">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="ai-advisor" className="border-0">
               <AccordionTrigger className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card px-4 py-3 hover:no-underline">
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <Sparkles className="size-4 text-primary" /> AI Öneri Al
@@ -1375,16 +1376,9 @@ export function WorkOrderDetail({
                   <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
-                  <Select value={photoType} onValueChange={(v) => setPhotoType(v ?? "")}>
+                  <Select value={photoType} onValueChange={(v) => setPhotoType(v)}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seçiniz...">
-                        {(value: string | null) => {
-                          if (!value) return null
-                          const val = PHOTO_TYPES[value as keyof typeof PHOTO_TYPES]
-                          if (!val) return value
-                          return `${val.label} ${val.required ? "(Zorunlu)" : "(Opsiyonel)"}`
-                        }}
-                      </SelectValue>
+                      <SelectValue placeholder="Seçiniz..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Seçiniz...</SelectItem>
@@ -1396,11 +1390,9 @@ export function WorkOrderDetail({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Aşama</Label>
-                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v ?? "intake")}>
+                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v)}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Aşama seçin">
-                        {(value: string | null) => (value ? PHOTO_PHASES[value as PhotoPhaseKey]?.label ?? value : null)}
-                      </SelectValue>
+                      <SelectValue placeholder="Aşama seçin" />
                     </SelectTrigger>
                     <SelectContent>
                       {(Object.keys(PHOTO_PHASES) as PhotoPhaseKey[]).map((key) => (
@@ -1537,14 +1529,11 @@ export function WorkOrderDetail({
               dışında, sekmenin başında durur (BAK-23). */}
           {canOpenTechnicianView(order.assignedTechnicianId) && (
             <div className="flex justify-end">
-              <Button
-                nativeButton={false}
-                variant="outline"
-                size="sm"
-                render={<Link href={technicianOrderPath(order.id)} />}
-              >
-                <HardHat />
-                Teknisyen Panelinde Aç
+              <Button variant="outline" size="sm" asChild>
+                <Link href={technicianOrderPath(order.id)}>
+                  <HardHat />
+                  Teknisyen Panelinde Aç
+                </Link>
               </Button>
             </div>
           )}
@@ -1618,12 +1607,12 @@ function MobileTotalsBar({
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calculator className="size-4" />
           Genel Toplam
-          <span className="text-xs text-muted-foreground/70">· {itemCount} kalem</span>
+          <span className="text-xs text-muted-foreground">· {itemCount} kalem</span>
         </span>
         {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
             (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
         {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
-          <span className="truncate text-[11px] text-muted-foreground/70">
+          <span className="truncate text-[11px] text-muted-foreground">
             {[
               `Ara toplam ${formatTRY(totals.subtotal)}`,
               totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,

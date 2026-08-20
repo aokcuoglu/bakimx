@@ -204,14 +204,11 @@ export function CustomerDetail({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-             <Button
-               nativeButton={false}
-               variant="outline"
-               size="sm"
-               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
-             >
-               <Wrench className="size-4" />
-               Yeni İş Emri
+             <Button variant="outline" size="sm" asChild>
+               <Link href={`/orders/new?customerId=${customer.id}`}>
+                 <Wrench className="size-4" />
+                 Yeni İş Emri
+               </Link>
              </Button>
             <Button
               type="button"
@@ -286,7 +283,7 @@ export function CustomerDetail({
                           {v.vin ? `VIN: ${v.vin}` : "VIN girilmemiş"}
                         </p>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70" />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </Link>
                   </li>
                 ))}
@@ -334,7 +331,7 @@ export function CustomerDetail({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-foreground">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </p>
                           {i.order.estimatedDeliveryAt ? (
                             <p className="text-[11px] text-muted-foreground">
@@ -406,7 +403,7 @@ export function CustomerDetail({
                           ) : null}
                         </div>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70" />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </Link>
                   </li>
                 ))}
@@ -438,7 +435,7 @@ export function CustomerDetail({
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">{i.customerComplaint}</p>
                         </div>
-                        <span className="text-xs text-muted-foreground/70">{formatDate(i.createdAt)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(i.createdAt)}</span>
                       </div>
                     </li>
                   )
@@ -621,7 +618,7 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
 function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
     <div className={cn("rounded-lg px-3 py-2.5 border border-border/60", accent)}>
-      <p className="text-[11px] font-medium opacity-80 uppercase tracking-wider">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wider">{label}</p>
       <p className="text-base font-bold mt-0.5 truncate">{value}</p>
     </div>
   )
@@ -646,7 +643,7 @@ function ConsentRow({ icon, label, granted }: { icon: React.ReactNode; label: st
       <span
         className={cn(
           "inline-flex items-center gap-1 text-xs font-medium",
-          granted ? "text-success-strong" : "text-muted-foreground/70"
+          granted ? "text-success-strong" : "text-muted-foreground"
         )}
       >
         {granted ? (

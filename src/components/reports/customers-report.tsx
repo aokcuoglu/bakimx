@@ -69,7 +69,7 @@ export function CustomersReport({ stats, topBySpend, mostVisited, filters }: Cus
         <StatCard label="Tekrar Eden" value={stats.returning} accent="purple" />
       </div>
 
-      <div className="rounded-lg border border-border bg-white p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h4 className="text-sm font-semibold text-foreground mb-3">Tarih Filtresi</h4>
         <div className="flex flex-wrap gap-3 items-end">
           <div>

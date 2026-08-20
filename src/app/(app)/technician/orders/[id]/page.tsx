@@ -12,6 +12,7 @@ import { ensureChecklistSeeded } from "@/lib/technician/checklist-seed"
 import { roleCan } from "@/lib/roles"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
+import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -20,11 +21,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   const { user, workshop } = await getAppData()
 
   const order = await prisma.serviceOrder.findFirst({
-    where: {
-      id,
-      workshopId: user.workshopId,
-      assignedTechnicianId: { not: null },
-    },
+    where: technicianOrderDetailWhere(user.workshopId, id),
     include: {
       intakeForm: {
         include: {

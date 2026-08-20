@@ -290,7 +290,7 @@ export function CameraScanner({
             {torchOn ? <Zap className="size-5 text-warning-strong" /> : <ZapOff className="size-5" />}
           </Button>
         ) : (
-          <span className="size-11" />
+          <span className="size-8" />
         )}
       </div>
 
@@ -320,7 +320,7 @@ export function CameraScanner({
               </div>
               <div className="flex-1 bg-black/40 backdrop-blur-md" />
             </div>
-            <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white/90">{hint}</p>
+            <p className="absolute inset-x-0 top-4 text-center text-sm font-medium text-white">{hint}</p>
           </>
         )}
 
@@ -353,7 +353,7 @@ export function CameraScanner({
             {status === "error" && (
               <div className="flex flex-col items-center gap-3 text-center">
                 <AlertTriangle className="size-8 text-warning-strong" />
-                <p className="max-w-sm text-sm text-white/90">{errorMsg}</p>
+                <p className="max-w-sm text-sm text-white">{errorMsg}</p>
                 <Button variant="outline" onClick={retake} className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20">
                   <RefreshCw className="size-4" /> Tekrar çek
                 </Button>
@@ -366,7 +366,7 @@ export function CameraScanner({
         {isFallback && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
             <AlertTriangle className="size-10 text-warning-strong" />
-            <p className="max-w-sm text-sm text-white/90">
+            <p className="max-w-sm text-sm text-white">
               {status === "denied"
                 ? "Kamera izni verilmedi. Tarayıcı ayarlarından izin verin veya dosyadan yükleyin."
                 : errorMsg || "Bu cihaz/tarayıcı canlı kamerayı desteklemiyor. Lütfen dosyadan yükleyin."}

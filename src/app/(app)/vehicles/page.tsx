@@ -96,8 +96,10 @@ export default async function VehiclesPage({
       workshopName={workshop?.name}
       pageTitle="Araçlar"
       pageActions={
-        <Button nativeButton={false} size="icon" render={<Link href="/vehicles/new" />} aria-label="Yeni araç">
-          <Plus className="size-5" />
+        <Button size="icon" asChild aria-label="Yeni araç">
+          <Link href="/vehicles/new">
+            <Plus className="size-5" />
+          </Link>
         </Button>
       }
     >
@@ -117,20 +119,29 @@ export default async function VehiclesPage({
           </div>
           <div className="flex items-center gap-2">
             <Tooltip>
-              <TooltipTrigger render={<Button variant="outline" size="default" disabled />}>
-                <ScanLine className="size-4" />
-                <span className="hidden sm:inline">Plaka Tara</span>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="default" disabled>
+                  <ScanLine className="size-4" />
+                  <span className="hidden sm:inline">Plaka Tara</span>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
             </Tooltip>
-            <Button nativeButton={false} variant="default" size="default" className="hidden sm:inline-flex" render={<Link href="/vehicles/new" />}>
-              <Plus className="size-4" />
-              Yeni Araç
+            <Button
+              variant="default"
+              size="default"
+              className="hidden sm:inline-flex"
+              asChild
+            >
+              <Link href="/vehicles/new">
+                <Plus className="size-4" />
+                Yeni Araç
+              </Link>
             </Button>
           </div>
         </div>
 
-        <div className="hidden sm:block text-xs text-muted-foreground/70 -mt-2">
+        <div className="hidden sm:block text-xs text-muted-foreground -mt-2">
           Plaka tanıma entegrasyonu yakında.
         </div>
 

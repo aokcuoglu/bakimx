@@ -46,7 +46,7 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   sms: "bg-success/10 text-success-strong",
   whatsapp: "bg-success/10 text-success-strong",
-  email: "bg-primary/10 text-primary",
+  email: "bg-primary/10 text-primary-strong",
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -89,14 +89,14 @@ export function CommunicationLogList({ logs, stats }: { logs: LogEntry[]; stats:
         {/* flex-wrap şart: ToggleGroup varsayılanda `w-fit flex-row` ve içeride
             sarmıyor — beşinci durum butonu eklenince 390px ekranda grup 456px'e
             çıkıp taşıyordu (buton erişilemez hâle geliyordu). */}
-        <ToggleGroup className="flex-wrap" value={[filter]} onValueChange={(v) => { if (v.length) setFilter(v[0] as "all" | "sms" | "whatsapp" | "email") }} variant="outline">
+        <ToggleGroup type="single" className="flex-wrap" value={filter} onValueChange={(v) => { if (v) setFilter(v as "all" | "sms" | "whatsapp" | "email") }} variant="outline">
           {(["all", "sms", "whatsapp", "email"] as const).map((f) => (
             <ToggleGroupItem key={f} value={f} className="px-3 py-1.5 text-xs">
               {f === "all" ? "Tümü" : TYPE_LABELS[f] || f}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-        <ToggleGroup className="flex-wrap" value={[statusFilter]} onValueChange={(v) => { if (v.length) setStatusFilter(v[0] as "all" | StatusKey) }} variant="outline">
+        <ToggleGroup type="single" className="flex-wrap" value={statusFilter} onValueChange={(v) => { if (v) setStatusFilter(v as "all" | StatusKey) }} variant="outline">
           {(["all", ...STATUSES] as const).map((s) => (
             <ToggleGroupItem key={s} value={s} className="px-3 py-1.5 text-xs">
               {s === "all" ? "Tüm Durum" : communicationStatusLabel(s)}

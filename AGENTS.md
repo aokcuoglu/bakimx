@@ -28,13 +28,68 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **PostgreSQL:** localhost:5432 (bakimx / bakimx)
 
 ## Tech Stack
-- Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (base-nova style)
+- Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (radix-nova style)
 - **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
-- Uses `@base-ui/react` (NOT Radix) for shadcn/ui primitives
-- Button uses `render` prop (NOT `asChild`) for link rendering
-- Accordion uses Base UI API (no `type`/`collapsible` props)
-- Select `onValueChange` receives `(value: string | null)`
-- Form: react-hook-form + zod + shadcn Form component (uses @radix-ui/react-slot transitively)
+- **Primitive hattı Radix'tir; geçiş KAPANDI** (`components.json` → `"style":
+  "radix-nova"`, BAK-152…BAK-156). Radix'e taşınanlar (`radix-ui` paketi,
+  `asChild`): çekirdek (Button, Badge, Label, Separator — BAK-152), overlay
+  (Dialog, AlertDialog, Sheet, Popover, Tooltip, DropdownMenu — BAK-153), form
+  (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs, Accordion, Form,
+  InputGroup — BAK-154), Item ailesi (BAK-155).
+  `@base-ui/react` **bilinçli olarak** İKİ yüzeyde kalır — Radix'te dengi yok
+  (`radix-ui@1.6.7` içinde combobox/autocomplete girdisi yoktur, upstream
+  shadcn da bunları Base UI üstünde verir): `ui/combobox.tsx` ve
+  `ui/autocomplete.tsx`. Paket bu yüzden `package.json`'da durur; bu beklenen
+  durumdur, sökülecek bir artık değil. `ui/sidebar.tsx` BAK-189'da Radix
+  `Slot`'a geçti — artık `render` değil `asChild` alır. Bir bileşeni
+  düzenlemeden önce import satırına bak.
+- **Combobox/Autocomplete'te Escape'i call-site'ta ELLE korumaya çalışma.**
+  Base UI Escape'te yalnız listeyi kapatmıyor: Combobox'ta commit edilmiş seçimi,
+  Autocomplete'te (liste kapalıyken) serbest metni de siliyor. Ayrıca Radix
+  `DismissableLayer` Escape'i document/capture'da dinlediği için diyalog içindeki
+  bir Base UI popup'ında tek Escape hem popup'ı hem diyaloğu kapatıyordu. İkisinin
+  de guard'ı artık paylaşılan bileşenlerde — `ui/combobox.tsx`
+  (`keepSelectionOnEscape`), `ui/autocomplete.tsx` ve `ui/base-ui-popup.ts`
+  (`yieldEscapeToBaseUIPopup`, `Dialog`/`Sheet`/`AlertDialog` içinde). Call-site'a
+  `preventBaseUIHandler()` kopyalaman gerekmez; `src/lib/ui-contract.test.ts` geri
+  sızmasını da engeller (BAK-190).
+- **`data-open:` / `data-closed:` / `data-checked:` / `data-unchecked:` /
+  `data-active:` / `data-horizontal:` / `data-vertical:` Base UI kalıntısı
+  DEĞİLDİR ve Radix bileşenlerinde ÇALIŞIR.** `globals.css`in içeri aldığı
+  `shadcn/tailwind.css` bunları `@custom-variant` olarak tanımlar ve her biri
+  İKİ seçici üretir — Radix'in `data-state="…"` / `data-orientation="…"`
+  yazımı ve Base UI'ın varlık niteliği
+  (`node_modules/shadcn/dist/tailwind.css:28-88`):
+
+  ```css
+  .data-checked\:bg-primary:where([data-state="checked"]),
+  .data-checked\:bg-primary:where([data-checked]:not([data-checked="false"]))
+  ```
+
+  Yani kısayol iki kütüphaneyi köprüleyen bilinçli bir shim; `data-[state=…]`e
+  çevirmek gereksiz bir fark üretir. (BAK-189'un ilk teslimatı, PR #463, bunları
+  "ölü" sanıp çevirdi — tarayıcı ölçümü çeviri ÖNCESİ hâlin de çalıştığını
+  gösterdi. Ayrıntı ve kanıt: `src/lib/ui-contract.test.ts`.) Kapı artık asıl
+  riski, KÖPRÜNÜN KAYBOLMASINI bekçiler.
+  **İstisna Tooltip:** Radix durumu `open` değil `instant-open` / `delayed-open`
+  yazar, `data-open:` orada tutmaz — iki durum da açıkça yazılır. Radix'in
+  `on`/`off` (Toggle) ve `indeterminate` (Checkbox) durumları için de kısayol
+  yoktur; onlarda `data-[state=…]` şart.
+- **Dikey `Tabs` / `ToggleGroup`'ta `orientation` prop'unu Root'a GEÇİR.**
+  Sınıflar `data-orientation`a bakar ama Radix ok tuşu gezinmesini kendi
+  `orientation` prop'undan okur; ikisi ayrışırsa görünüm dikey, klavye yatay
+  kalır (BAK-189).
+- Radix hattındaki bileşenlerde kompozisyon `asChild` ile yapılır — `render` ve
+  `nativeButton` **yok** (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
+- Accordion Radix API'sini kullanır: `type="single" collapsible` ya da `type="multiple"`
+  **zorunlu**, `AccordionItem` `value` **zorunlu**
+- Select `onValueChange` `(value: string)` alır. `<SelectItem value="">` Radix'te yasak;
+  `select.tsx` boş dizeyi bileşen sınırında nöbetçi bir değere çevirip geri döndürür,
+  yani çağrı yerlerinde "boş dize = seçim yok" sözleşmesi aynen geçerli. Boş seçimde
+  tetikleyicide metin görünmesi gerekiyorsa `<SelectValue placeholder="…" />` ver.
+- ToggleGroup `type="single"` grubunda öğeler `role="radio"` alır ve `aria-pressed`
+  **basılmaz** — seçili görünümü `data-[state=on]:` ile ver, `aria-pressed:` ile değil
+- Form: react-hook-form + zod + shadcn Form component (`Slot` `radix-ui` paketinden)
 - Toast: sonner (<Toaster /> in root layout)
 - Prisma ORM with PostgreSQL
 - Storage: mock (default) / S3-compatible (MinIO local / Cloudflare R2 production)
@@ -51,7 +106,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - `fixed inset-0` modals → `<Dialog>` or `<Sheet>`
   - toggle button groups → `<ToggleGroup>` + `<ToggleGroupItem>`
   - on/off switches → `<Switch>` (NOT checkbox for toggle)
-- **`<Link>` as button:** use `<Button nativeButton={false} render={<Link href={...} />}>` (NOT `<Link><Button>...</Button></Link>`)
+- **`<Link>` as button:** use `<Button asChild><Link href={...}>…</Link></Button>` — the link is the
+  child and carries the children (NOT `<Link><Button>…</Button></Link>`)
 - **Variants over custom CSS:** use `variant`, `size`, `color` props instead of custom className strings
 - **No hardcoded colors:** use theme tokens (`primary`, `destructive`, `muted`, `border`, `ring`) — avoid `blue-600`, `rose-50`, `green-50` etc.
 - **Semantic colors have three roles — pick the right token:**
@@ -60,7 +116,27 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - text / icon on a light surface (card, tinted box, plain bg) → **`text-success-strong`**, `text-warning-strong`, `text-destructive-strong`
   Bare `text-success` / `text-warning` / `text-destructive` fails WCAG AA on light
   surfaces (2.69–3.99:1) — `src/lib/theme-tokens.test.ts` fails the build on it,
-  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair.
+  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair, brand
+  colors (`navy`, `whatsapp`) included.
+- **`primary` has a `-strong` tone too, but the rule is narrower** (BAK-160): bare
+  `text-primary` is fine as a link colour on a plain card (5.20:1). It only fails on
+  a **tinted** background — `bg-primary/10 text-primary` measures 4.51:1 on a card,
+  4.27:1 on the page background and 4.05:1 on `bg-muted`. So: `bg-primary/10` and
+  `text-primary` on the same element → use **`text-primary-strong`**. The test scans
+  exactly that pairing; it does not touch `text-primary` elsewhere.
+- **`muted-foreground` has a `-strong` tone for the same reason** (BAK-189).
+  Secondary text is fine on flat surfaces (card 6.00:1) — it drops on a **tinted**
+  one, because the content area is `bg-muted`, not `bg-background`: a
+  `bg-destructive/10` KPI card measured **4.43:1** in the browser. Tinted card →
+  **`text-muted-foreground-strong`**. Put the tint class and the text class in the
+  **same string literal** (see `bucketColors` in `cashbox/aging/page.tsx`); the gate
+  in `theme-tokens.test.ts` only sees the pairing when they sit together, and a
+  parent-tint / child-text split is invisible to it.
+- **`opacity-*` on an element that styles text is a contrast bug** — the faded tone
+  is inherited, so it cannot be measured statically. Remove it, or state the colour
+  explicitly at the call site (`text-muted-foreground`, a `-strong` tone). Deliberate
+  cases go into `OPACITY_UTILITY_EXCEPTIONS` **with a reason**. Same rule as the
+  `text-<token>/<opacity>` gate; both live in `src/lib/theme-tokens.test.ts`.
 - **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
 - **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
 

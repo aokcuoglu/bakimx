@@ -28,7 +28,7 @@ type FilterValues = Record<string, string>
 
 /**
  * Mobil filtre yüzeyi: tek "Filtrele" tetikleyici (aktif filtre sayısı badge'i) +
- * bottom sheet içinde tam genişlik 44px alanlar.
+ * bottom sheet içinde tam genişlik alanlar.
  *
  * İki mod:
  * - **URL modu (varsayılan):** Uygula/Temizle `searchParams`'ı günceller → server-side
@@ -153,10 +153,9 @@ export function FilterSheet({
               {f.label}
             </label>
             <Select
-              items={f.options}
               value={draft[f.name] ?? ""}
               onValueChange={(v) =>
-                setDraft((s) => ({ ...s, [f.name]: v ?? "" }))
+                setDraft((s) => ({ ...s, [f.name]: v }))
               }
             >
               <SelectTrigger className="w-full">

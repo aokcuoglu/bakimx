@@ -254,10 +254,10 @@ export function VehiclePassport({ data }: { data: PassportData }) {
       </div>
 
       {/* Vehicle Header */}
-      <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
+            <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-navy-foreground shrink-0">
               <Car className="size-5" />
             </div>
             <div className="min-w-0">
@@ -276,13 +276,10 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/vehicles/${vehicle.id}`} />}
-            >
-              Araç Detayı
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/vehicles/${vehicle.id}`}>
+                Araç Detayı
+              </Link>
             </Button>
           </div>
         </div>
@@ -301,7 +298,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     <div className="size-2 rounded-full bg-primary mt-2 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-foreground">{e.description}</p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">{formatDateTime(e.createdAt)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(e.createdAt)}</p>
                     </div>
                   </div>
                 ))}
@@ -339,11 +336,11 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-foreground">
-                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                          {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                         </p>
                         <p className="text-[11px] text-muted-foreground">{formatDate(i.createdAt)}</p>
                       </div>
-                      <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                      <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                     </Link>
                   ) : null
                 )}
@@ -375,7 +372,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           </div>
                           {dm.note ? <p className="text-xs text-muted-foreground mt-0.5">{dm.note}</p> : null}
                         </div>
-                        <span className="text-[11px] text-muted-foreground/70 shrink-0">{formatDate(dm.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(dm.createdAt)}</span>
                       </div>
                     </div>
                   )
@@ -403,7 +400,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                       </div>
                       <div className="px-2 py-1.5">
                         <p className="text-[11px] font-medium text-foreground truncate">{pt?.label || p.label || p.type}</p>
-                        <p className="text-[10px] text-muted-foreground/70">{formatDate(p.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
                       </div>
                     </div>
                   )
@@ -435,7 +432,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                         ) : null}
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                    <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -463,7 +460,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                     <span className="inline-flex items-center gap-1"><Phone className="size-3" />{customer.phone}</span>
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 ml-auto" />
+                <ChevronRight className="size-4 text-muted-foreground shrink-0 ml-auto" />
               </Link>
             </CardContent>
           </Card>
@@ -503,37 +500,37 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           <p className="text-sm font-medium text-foreground truncate">
                             {t.label || "Pasaport Linki"}
                           </p>
-                          <p className="text-[11px] text-muted-foreground/70 font-mono truncate mt-0.5">
+                          <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
                             /p/{t.token.slice(0, 16)}...
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                           <Tooltip>
-                            <TooltipTrigger render={
+                            <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleToggle(t.id, t.isActive)}
                                 disabled={toggling === t.id}
-                              />
-                            }>
-                              {t.isActive ? (
-                                <ToggleRight className="size-5 text-success-strong" />
-                              ) : (
-                                <ToggleLeft className="size-5 text-muted-foreground/70" />
-                              )}
+                              >
+                                {t.isActive ? (
+                                  <ToggleRight className="size-5 text-success-strong" />
+                                ) : (
+                                  <ToggleLeft className="size-5 text-muted-foreground" />
+                                )}
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">{t.isActive ? "Deaktif et" : "Aktif et"}</TooltipContent>
                           </Tooltip>
                           <Tooltip>
-                            <TooltipTrigger render={
+                            <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setDeleteToken(t.id)}
-                              />
-                            }>
-                              <Trash2 className="size-4" />
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Sil</TooltipContent>
                           </Tooltip>
@@ -561,18 +558,16 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleCopy(t.token)}
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-xs font-medium transition-colors"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-xs font-medium transition-colors"
                             >
                               {copied === t.token ? <CheckCircle2 className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
                               {copied === t.token ? "Kopyalandı!" : "Linki Kopyala"}
                             </button>
-                            <Button
-                              nativeButton={false}
-                              variant="outline"
-                              render={<Link href={`/p/${t.token}`} target="_blank" />}
-                            >
-                              <ExternalLink className="size-3.5" />
-                              Önizle
+                            <Button variant="outline" asChild>
+                              <Link href={`/p/${t.token}`} target="_blank">
+                                <ExternalLink className="size-3.5" />
+                                Önizle
+                              </Link>
                             </Button>
                           </div>
                           <div className="flex justify-center mt-2">
@@ -743,7 +738,7 @@ function ReminderStatusBadge({ status }: { status: string }) {
 function ReminderTypeBadge({ type }: { type: string }) {
   const info = MAINTENANCE_REMINDER_TYPES[type as keyof typeof MAINTENANCE_REMINDER_TYPES]
   return (
-    <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+    <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-primary/10 text-primary-strong border border-primary/20">
       {info?.label || type}
     </span>
   )
@@ -760,7 +755,7 @@ function QuickStat({ label, value }: { label: string; value: string }) {
 
 function VisibilityBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center h-5 px-1.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+    <span className="inline-flex items-center h-5 px-1.5 rounded text-[10px] font-medium bg-primary/10 text-primary-strong border border-primary/20">
       {label}
     </span>
   )
@@ -772,7 +767,7 @@ function VisibilityToggle({ label, checked, onChange }: { label: string; checked
       <span className="text-sm text-foreground">{label}</span>
       <Checkbox
         checked={checked}
-        onCheckedChange={(c) => onChange(c)}
+        onCheckedChange={(c) => onChange(c === true)}
       />
     </label>
   )

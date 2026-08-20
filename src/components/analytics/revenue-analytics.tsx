@@ -11,7 +11,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
   accentBg: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <div className={`size-8 rounded-lg ${accentBg} flex items-center justify-center`}>
@@ -19,7 +19,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
         </div>
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   )
 }

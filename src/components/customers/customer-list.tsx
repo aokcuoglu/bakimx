@@ -89,26 +89,8 @@ const CUSTOMER_FILTER_FIELDS: FilterField[] = [
   },
 ]
 
-const TYPE_LABELS: Record<string, string> = {
-  individual: "Bireysel",
-  corporate: "Kurumsal",
-}
 
-const TAG_LABELS: Record<string, string> = {
-  standard: "Standart",
-  vip: "VIP",
-  risky: "Riskli",
-  fleet: "Filo",
-}
 
-const SOURCE_LABELS: Record<string, string> = {
-  referral: "Tavsiye",
-  google: "Google",
-  social_media: "Sosyal Medya",
-  walk_in: "Yoldan Geldi",
-  existing: "Mevcut Müşteri",
-  other: "Diğer",
-}
 
 function nameFor(row: CustomerRow) {
   if (row.type === "corporate") return row.companyName || "—"
@@ -194,7 +176,7 @@ export function CustomerList({
           <StatCard
             label="Yeni"
             value={kpis.newThisMonth}
-            accent="bg-primary/10 text-primary border-primary/20"
+            accent="bg-primary/10 text-primary-strong border-primary/20"
           />
           <StatCard
             label="Tekrar Eden"
@@ -216,7 +198,7 @@ export function CustomerList({
         className="flex items-center gap-2"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             name="q"
             value={q}
@@ -244,12 +226,10 @@ export function CustomerList({
         <div className="hidden lg:flex gap-2">
           <Select
             value={type}
-            onValueChange={(v) => setType((v ?? "") as Filters["type"])}
+            onValueChange={(v) => setType(v as Filters["type"])}
           >
             <SelectTrigger aria-label="Müşteri tipi filtresi">
-              <SelectValue placeholder="Tüm Tipler">
-                {(value: string | null) => (value ? TYPE_LABELS[value] ?? value : "Tüm Tipler")}
-              </SelectValue>
+              <SelectValue placeholder="Tüm Tipler" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Tipler</SelectItem>
@@ -259,12 +239,10 @@ export function CustomerList({
           </Select>
           <Select
             value={tag}
-            onValueChange={(v) => setTag(v ?? "")}
+            onValueChange={(v) => setTag(v)}
           >
             <SelectTrigger aria-label="Etiket filtresi">
-              <SelectValue placeholder="Tüm Etiketler">
-                {(value: string | null) => (value ? TAG_LABELS[value] ?? value : "Tüm Etiketler")}
-              </SelectValue>
+              <SelectValue placeholder="Tüm Etiketler" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Etiketler</SelectItem>
@@ -276,12 +254,10 @@ export function CustomerList({
           </Select>
           <Select
             value={source}
-            onValueChange={(v) => setSource(v ?? "")}
+            onValueChange={(v) => setSource(v)}
           >
             <SelectTrigger aria-label="Müşteri kaynağı filtresi">
-              <SelectValue placeholder="Tüm Kaynaklar">
-                {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : "Tüm Kaynaklar")}
-              </SelectValue>
+              <SelectValue placeholder="Tüm Kaynaklar" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Kaynaklar</SelectItem>
@@ -400,7 +376,7 @@ function DesktopTable({
                     href={`tel:${row.phone}`}
                     className="inline-flex items-center gap-1.5 hover:text-primary"
                   >
-                    <Phone className="size-3.5 text-muted-foreground/70" />
+                    <Phone className="size-3.5 text-muted-foreground" />
                     {row.phone}
                   </a>
                 </td>
@@ -413,7 +389,7 @@ function DesktopTable({
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.vehiclesCount}</td>
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.workOrdersCount}</td>
                 <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums">
-                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {formatDate(row.createdAt)}

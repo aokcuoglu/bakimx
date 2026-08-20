@@ -50,14 +50,14 @@ export function BrandRail({
           {mode === "public" ? (
             <>
               <h2 className="text-xl font-bold leading-snug">Birkaç adımda BakimX&apos;e geçin</h2>
-              <p className="mt-1.5 text-sm text-white/60">
+              <p className="mt-1.5 text-sm text-navy-foreground/60">
                 Oto servisiniz için dijital araç kabul ve müşteri onay platformu.
               </p>
             </>
           ) : (
             <>
               <h2 className="text-xl font-bold leading-snug">Paketini yükselt</h2>
-              <p className="mt-1.5 text-sm text-white/60">
+              <p className="mt-1.5 text-sm text-navy-foreground/60">
                 İhtiyacınıza uygun paketi seçin, istediğiniz zaman değiştirin.
               </p>
             </>
@@ -68,28 +68,28 @@ export function BrandRail({
         <div className="mt-6 rounded-xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm md:mt-8">
           {isSummary ? (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/50">Sipariş özeti</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-foreground/50">Sipariş özeti</p>
               <div className="mt-3 space-y-2 text-sm">
                 <Row label="Paket" value={pkg?.name ?? tier} />
                 <Row label="Dönem" value={cycle === "monthly" ? "Aylık" : "Yıllık (2 ay bedava)"} />
                 <Row label="Kullanıcı" value={`${pkg?.seats ?? "—"} kullanıcı`} />
               </div>
               <div className="mt-3 flex items-baseline justify-between border-t border-white/10 pt-3">
-                <span className="text-sm text-white/60">Toplam · KDV dahil</span>
+                <span className="text-sm text-navy-foreground/60">Toplam · KDV dahil</span>
                 <span className="text-2xl font-extrabold">{amount}</span>
               </div>
             </>
           ) : (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/50">Seçilen paket</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-navy-foreground/50">Seçilen paket</p>
               <div className="mt-1 flex items-baseline justify-between gap-3">
                 <span className="text-lg font-extrabold">{pkg?.name ?? tier}</span>
                 <span className="whitespace-nowrap text-lg font-extrabold">
                   {amount}
-                  <span className="text-[11px] font-medium text-white/50">{cycle === "monthly" ? "/ay" : "/yıl"}</span>
+                  <span className="text-[11px] font-medium text-navy-foreground/50">{cycle === "monthly" ? "/ay" : "/yıl"}</span>
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] text-white/50">{pkg?.seats ?? "—"} kullanıcı · KDV dahil</p>
+              <p className="mt-0.5 text-[11px] text-navy-foreground/50">{pkg?.seats ?? "—"} kullanıcı · KDV dahil</p>
             </>
           )}
         </div>
@@ -99,10 +99,10 @@ export function BrandRail({
           <ul className="mt-6 hidden space-y-3 text-sm md:block">
             {(pkg?.highlights ?? []).slice(0, 4).map((h) => (
               <li key={h} className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-success/25 text-navy-foreground">
                   <Check className="size-3" strokeWidth={3} />
                 </span>
-                <span className="text-white/85">{h}</span>
+                <span className="text-navy-foreground/85">{h}</span>
               </li>
             ))}
           </ul>
@@ -110,17 +110,17 @@ export function BrandRail({
 
         {/* güven rozetleri + yasal — alta sabit, yalnız md+ */}
         <div className="mt-auto hidden pt-8 md:block">
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-white/55">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-navy-foreground/55">
             <span>↩︎ İstediğin an iptal</span>
             <span>🔒 Verilerin güvende</span>
             <span>🇹🇷 Türkiye&apos;deki servisler için</span>
           </div>
           {mode === "public" && (
-            <div className="mt-4 flex gap-4 border-t border-white/10 pt-4 text-[11px] text-white/40">
-              <Link href="/privacy" target="_blank" className="transition-colors hover:text-white/70">
+            <div className="mt-4 flex gap-4 border-t border-navy-foreground/10 pt-4 text-[11px] text-navy-foreground/70">
+              <Link href="/privacy" target="_blank" className="transition-colors hover:underline">
                 Gizlilik Politikası
               </Link>
-              <Link href="/terms" target="_blank" className="transition-colors hover:text-white/70">
+              <Link href="/terms" target="_blank" className="transition-colors hover:underline">
                 Kullanım Koşulları
               </Link>
             </div>
@@ -134,8 +134,8 @@ export function BrandRail({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-3">
-      <span className="text-white/55">{label}</span>
-      <span className="font-semibold text-white">{value}</span>
+      <span className="text-navy-foreground/55">{label}</span>
+      <span className="font-semibold text-navy-foreground">{value}</span>
     </div>
   )
 }

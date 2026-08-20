@@ -94,8 +94,9 @@ export function FuelLevelPicker({
 
   return (
     <ToggleGroup
-      value={value != null ? [String(value)] : []}
-      onValueChange={(v) => onChange(v.length ? Number(v[0]) : null)}
+      type="single"
+      value={value != null ? String(value) : ""}
+      onValueChange={(v) => onChange(v ? Number(v) : null)}
       variant="outline"
       size="lg"
       // Bölmeler bitişik olsun ki beş ayrı buton değil tek bir çubuk okunsun.
@@ -111,13 +112,15 @@ export function FuelLevelPicker({
           value={String(level)}
           className={cn(
             "flex-1",
-            // `aria-pressed:` varyantları ŞART: outline varyantının kendi
-            // `aria-pressed:bg-muted` kuralı, düz `bg-*` sınıfını ezip seçili
+            // `data-[state=on]:` varyantları ŞART: outline varyantının kendi
+            // `data-[state=on]:bg-muted` kuralı, düz `bg-*` sınıfını ezip seçili
             // bölmeyi açık zemin + beyaz metin (yani görünmez) bırakıyor.
+            // (Radix `type="single"` grubunda öğeler `role="radio"` alır, yani
+            // `aria-pressed` HİÇ basılmaz — durum yalnız `data-state`'te.)
             isFuelSegmentFilled(level, value) &&
               (low
-                ? "bg-destructive text-destructive-foreground aria-pressed:border-destructive aria-pressed:bg-destructive aria-pressed:text-destructive-foreground"
-                : "bg-primary text-primary-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground")
+                ? "bg-destructive text-destructive-foreground data-[state=on]:border-destructive data-[state=on]:bg-destructive data-[state=on]:text-destructive-foreground"
+                : "bg-primary text-primary-foreground data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground")
           )}
         >
           {formatFuelLevel(level)}

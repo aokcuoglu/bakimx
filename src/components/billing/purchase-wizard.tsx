@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
@@ -28,6 +28,7 @@ import type { HavaleInfo } from "@/lib/billing/provider"
 import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
+import { trackMarketingEvent } from "@/lib/marketing-analytics"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
@@ -66,6 +67,7 @@ export function PurchaseWizard({
     amountMinor: number
     method: PayMethod
   } | null>(null)
+  const submitRef = useRef(false)
 
   const schema = isPublic ? checkoutPublicSchema : checkoutInAppSchema
   const form = useForm<CheckoutPublicValues | CheckoutInAppValues>({
@@ -105,6 +107,8 @@ export function PurchaseWizard({
   }
 
   async function submit() {
+    if (submitRef.current) return
+    submitRef.current = true
     setError("")
     setLoading(true)
     try {
@@ -119,9 +123,10 @@ export function PurchaseWizard({
           body: JSON.stringify(values),
         })
         const data = await res.json()
-        if (data.success)
+        if (data.success) {
+          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: method })
           setDone({ reference: data.reference, amountMinor: data.amountMinor, method })
-        else setError(data.error || "Satın alma başarısız")
+        } else setError(data.error || "Satın alma başarısız")
       } else {
         const res = await createBillingOrder({
           tier,
@@ -131,12 +136,16 @@ export function PurchaseWizard({
           taxNumber: String(values.taxNumber ?? ""),
           taxOffice: String(values.taxOffice ?? ""),
         })
-        if (res.ok) setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
+        if (res.ok) {
+          trackMarketingEvent("purchase_submitted", { plan_tier: tier, billing_cycle: cycle, payment_method: res.method })
+          setDone({ reference: res.reference, amountMinor: res.amountMinor, method: res.method })
+        }
         else setError(res.error)
       }
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
+      submitRef.current = false
       setLoading(false)
     }
   }
@@ -214,7 +223,7 @@ export function PurchaseWizard({
                             onClick={() => setCycle(c)}
                             variant={cycle === c ? "default" : "ghost"}
                             className={cn(
-                              "min-h-11 flex-1",
+                              "flex-1",
                               cycle === c
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground",
@@ -247,11 +256,11 @@ export function PurchaseWizard({
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold text-foreground">{pkg.name}</p>
                                   {isOwned ? (
-                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-strong">
                                       Mevcut paketiniz — Yenile
                                     </span>
                                   ) : pkg.popular ? (
-                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-strong">
                                       Popüler
                                     </span>
                                   ) : null}
@@ -397,7 +406,7 @@ export function PurchaseWizard({
                                 aria-pressed={selected}
                                 variant="outline"
                                 className={cn(
-                                  "h-auto min-h-11 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
+                                  "h-auto min-h-8 justify-start gap-2 rounded-xl p-3 text-left whitespace-normal",
                                   selected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary/40 text-foreground"
                                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",

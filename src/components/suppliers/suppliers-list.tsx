@@ -118,16 +118,18 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           <Truck className="size-5 text-primary" />
           Tedarikçiler
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/suppliers/new" />}>
-          <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
+        <Button size="sm" className="w-full sm:w-auto" asChild>
+          <Link href="/suppliers/new">
+            <Plus className="size-3.5 mr-1" /> Yeni Tedarikçi
+          </Link>
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiStat label="Toplam Tedarikçi" value={kpis.total} icon={Truck} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Toplam Tedarikçi" value={kpis.total} icon={Truck} accent="text-primary-strong" accentBg="bg-primary/10" />
         <KpiStat label="Aktif" value={kpis.active} icon={Users} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Pasif" value={kpis.passive} icon={Archive} accent="text-muted-foreground" accentBg="bg-muted" />
-        <KpiStat label="Parça Bağlı" value={kpis.withParts} icon={AlertCircle} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Parça Bağlı" value={kpis.withParts} icon={AlertCircle} accent="text-primary-strong" accentBg="bg-primary/10" />
       </div>
 
       {/* Arama + durum filtresi + Ara tek satırda (müşteri listesi konvansiyonu).
@@ -135,7 +137,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           "all" truthy olduğu için tetikleyici boş görünüyordu. */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -164,9 +166,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
             <SelectTrigger aria-label="Durum filtresi" className="w-full sm:w-40">
               {/* Base UI placeholder'ı yalnız değer null iken gösterir; "" (Tümü) seçiliyken
                   tetikleyici boş kalıyordu → etiketi render fonksiyonundan döndürüyoruz. */}
-              <SelectValue placeholder="Tüm Durumlar">
-                {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : "Tüm Durumlar")}
-              </SelectValue>
+              <SelectValue placeholder="Tüm Durumlar" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Durumlar</SelectItem>
@@ -174,11 +174,11 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
               <SelectItem value="passive">Pasif</SelectItem>
             </SelectContent>
           </Select>
-          <Button type="submit" variant="outline" className="h-11 md:h-8">
+          <Button type="submit" variant="outline">
             Ara
           </Button>
           {hasFilters && (
-            <Button type="button" variant="ghost" onClick={clearFilters} className="h-11 md:h-8">
+            <Button type="button" variant="ghost" onClick={clearFilters}>
               <X className="size-3.5" />
               Temizle
             </Button>
@@ -225,19 +225,19 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                       <span className="block text-[11px] text-muted-foreground">{s.categories.join(", ")}</span>
                     )}
                   </td>
-                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-foreground whitespace-nowrap">{s.contactPerson || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-foreground whitespace-nowrap">{s.contactPerson || <span className="text-muted-foreground">—</span>}</td>
                   <td className="px-4 py-3 text-sm whitespace-nowrap">
                     {s.phone ? (
-                      <a href={`tel:${s.phone}`} className="text-primary hover:text-primary/80">{s.phone}</a>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                      <a href={`tel:${s.phone}`} className="text-primary hover:underline">{s.phone}</a>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="hidden 2xl:table-cell px-4 py-3 text-sm">
                     {s.email ? (
-                      <a href={`mailto:${s.email}`} className="text-primary hover:text-primary/80 truncate block max-w-[180px]">{s.email}</a>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                      <a href={`mailto:${s.email}`} className="text-primary hover:underline truncate block max-w-[180px]">{s.email}</a>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
-                    {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground/50">—</span>}
+                    {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-semibold text-foreground">
@@ -250,26 +250,38 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}`} />} />}>
-                          <Eye className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/suppliers/${s.id}`}>
+                              <Eye className="size-3.5" />
+                            </Link>
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/suppliers/${s.id}/edit`} />} />}>
-                          <Edit3 className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/suppliers/${s.id}/edit`}>
+                              <Edit3 className="size-3.5" />
+                            </Link>
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => handleToggleActive(s.id, s.isActive)} />}>
-                          {s.isActive ? <Archive className="size-3.5" /> : <RotateCcw className="size-3.5" />}
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleToggleActive(s.id, s.isActive)}>
+                            {s.isActive ? <Archive className="size-3.5" /> : <RotateCcw className="size-3.5" />}
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">{s.isActive ? "Pasifleştir" : "Aktifleştir"}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} disabled={deleting === s.id} />}>
-                          <Trash2 className="size-3.5" />
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">Sil</TooltipContent>
                       </Tooltip>
@@ -330,7 +342,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
         )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground/70">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
+      <p className="text-[11px] text-muted-foreground">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
     </div>
   )
 }

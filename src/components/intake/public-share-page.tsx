@@ -131,7 +131,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
   return (
     <div className="min-h-screen bg-muted print:bg-white print:text-black">
       {/* Screen header */}
-      <header className="bg-navy text-white p-5 print:hidden">
+      <header className="bg-navy text-navy-foreground p-5 print:hidden">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -140,10 +140,10 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
               )}
               <div>
                 <h1 className="font-bold text-lg">{workshop.name}</h1>
-                <p className="text-sm text-white/70">Araç Kabul ve İşlem Özeti</p>
+                <p className="text-sm text-navy-foreground/70">Araç Kabul ve İşlem Özeti</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-brand/10 text-brand text-xs px-3 py-1 rounded-full">
+            <div className="flex items-center gap-1.5 bg-navy-foreground/10 text-navy-foreground text-xs px-3 py-1 rounded-full">
               <Shield className="size-3.5" />
               <span className="font-medium">Güvenli Bağlantı</span>
             </div>
@@ -228,7 +228,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   </div>
                 )}
                 {intakeForm.vehicle.vin && (
-                  <p className="text-muted-foreground/60 text-xs font-mono mt-0.5">VIN: {intakeForm.vehicle.vin}</p>
+                  <p className="text-muted-foreground text-xs font-mono mt-0.5">VIN: {intakeForm.vehicle.vin}</p>
                 )}
               </div>
             </div>
@@ -245,7 +245,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                 <span className="font-medium text-muted-foreground">Müşteri Şikayeti:</span>
                 <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{intakeForm.customerComplaint}</p>
               </div>
-              <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground/60 pt-2 border-t border-border">
+              <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground pt-2 border-t border-border">
                 <span className="flex items-center gap-1"><Calendar className="size-3" /> Kayıt: {new Date(intakeForm.createdAt).toLocaleDateString("tr-TR")}</span>
                 {intakeForm.approvedAt && (
                   <span className="flex items-center gap-1"><CheckCircle2 className="size-3" /> Onay: {new Date(intakeForm.approvedAt).toLocaleDateString("tr-TR")}</span>
@@ -273,7 +273,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                     {photo.fileUrl ? (
                       <span className="text-xs text-foreground print:text-muted-foreground">(Fotoğraf mevcut)</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground/60">(Kaydedildi)</span>
+                      <span className="text-xs text-muted-foreground">(Kaydedildi)</span>
                     )}
                   </div>
                 ))}
@@ -303,7 +303,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                       <span className="text-xs ml-1 px-1.5 py-0.5 bg-muted rounded-full print:border print:border-border">
                         {mark.severityLabel}
                       </span>
-                      {mark.note && <p className="text-muted-foreground/60 text-xs mt-0.5">{mark.note}</p>}
+                      {mark.note && <p className="text-muted-foreground text-xs mt-0.5">{mark.note}</p>}
                     </div>
                   </div>
                 ))}
@@ -331,7 +331,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                   </div>
                 )}
                 {intakeForm.approvals[0].approvedAt && (
-                  <div className="text-xs text-muted-foreground/60 flex items-center gap-1 mt-1">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                     <Calendar className="size-3" />
                     {new Date(intakeForm.approvals[0].approvedAt).toLocaleDateString("tr-TR")}
                   </div>
@@ -356,12 +356,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                         <div key={`part-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-border last:border-0">
                           <div>
                             <span className="font-medium">{item.name}</span>
-                            <span className="text-muted-foreground/60 ml-1.5">×{item.quantity}</span>
+                            <span className="text-muted-foreground ml-1.5">×{item.quantity}</span>
                             {item.unitPrice != null && item.unitPrice > 0 && (
-                              <span className="text-muted-foreground/60 text-xs ml-1">({formatTRY(item.unitPrice)}/adet)</span>
+                              <span className="text-muted-foreground text-xs ml-1">({formatTRY(item.unitPrice)}/adet)</span>
                             )}
                           </div>
-                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground/60 italic text-xs" : ""}`}>
+                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground italic text-xs" : ""}`}>
                             {formatLineTotal(item)}
                           </span>
                         </div>
@@ -378,12 +378,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                         <div key={`labor-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-border last:border-0">
                           <div>
                             <span className="font-medium">{item.name}</span>
-                            <span className="text-muted-foreground/60 ml-1.5">×{item.quantity}</span>
+                            <span className="text-muted-foreground ml-1.5">×{item.quantity}</span>
                             {item.unitPrice != null && item.unitPrice > 0 && (
-                              <span className="text-muted-foreground/60 text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
+                              <span className="text-muted-foreground text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
                             )}
                           </div>
-                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground/60 italic text-xs" : ""}`}>
+                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground italic text-xs" : ""}`}>
                             {formatLineTotal(item)}
                           </span>
                         </div>
@@ -400,12 +400,12 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
                         <div key={`external-labor-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-border last:border-0">
                           <div>
                             <span className="font-medium">{item.name}</span>
-                            <span className="text-muted-foreground/60 ml-1.5">×{item.quantity}</span>
+                            <span className="text-muted-foreground ml-1.5">×{item.quantity}</span>
                             {item.unitPrice != null && item.unitPrice > 0 && (
-                              <span className="text-muted-foreground/60 text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
+                              <span className="text-muted-foreground text-xs ml-1">({formatTRY(item.unitPrice)}/birim)</span>
                             )}
                           </div>
-                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground/60 italic text-xs" : ""}`}>
+                          <span className={`font-medium ${calculateLineTotal(item) == null ? "text-muted-foreground italic text-xs" : ""}`}>
                             {formatLineTotal(item)}
                           </span>
                         </div>
@@ -503,7 +503,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
 
         {/* Data safety notice */}
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 print:border print:border-primary/30 text-center">
-          <Shield className="size-4 text-primary/60 mx-auto mb-1.5 print:hidden" />
+          <Shield className="size-4 text-primary mx-auto mb-1.5 print:hidden" />
           <p className="text-xs text-foreground">
             Bu sayfa yalnızca yetkili kişilerle paylaşım içindir. İç notlar, OCR verileri ve iş yeri iç kimlik bilgileri bu sayfada gösterilmez.
           </p>
@@ -511,7 +511,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
 
         {/* Legal Disclaimer */}
         <div className="bg-muted border border-border rounded-lg p-4 print:border print:border-border text-center">
-          <FileText className="size-4 text-muted-foreground/60 mx-auto mb-1.5 print:hidden" />
+          <FileText className="size-4 text-muted-foreground mx-auto mb-1.5 print:hidden" />
           <p className="text-xs text-muted-foreground">
             Bu çıktı, servis kabul ve işlem özeti amacıyla oluşturulmuştur.
           </p>
@@ -523,11 +523,13 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button nativeButton={false} render={<Link href={`/s/${token}/pdf`} target="_blank" />} variant="default" size="xl" className="w-full">
-            <FileDown className="size-5" />
-            Yazdırılabilir Sayfa
+          <Button asChild variant="default" size="xl" className="w-full">
+            <Link href={`/s/${token}/pdf`} target="_blank">
+              <FileDown className="size-5" />
+              Yazdırılabilir Sayfa
+            </Link>
           </Button>
-          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
+          <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <MessageCircle className="size-5" />
             WhatsApp ile Paylaş
           </Button>
@@ -535,7 +537,7 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             {copied ? <CheckCircle2 className="size-5 text-success-strong" /> : <Share2 className="size-5" />}
             {copied ? "Kopyalandı!" : "Linki Kopyala"}
           </Button>
-          <p className="text-center text-xs text-muted-foreground/60 px-4">
+          <p className="text-center text-xs text-muted-foreground px-4">
             Bu sayfanın çıktısını alabilir, yazdırılabilir sayfayı açarak PDF olarak kaydedebilir veya WhatsApp ile paylaşabilirsiniz.
           </p>
         </div>
@@ -543,9 +545,9 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 py-4 border-t border-border print:border-border">
           <BrandLogo variant="icon-light" size="xs" alt="BakimX" />
-          <span className="text-xs text-muted-foreground/60 print:text-muted-foreground">ile oluşturuldu</span>
-          <span className="text-xs text-muted-foreground/40 print:text-muted-foreground/60">•</span>
-          <span className="text-xs text-muted-foreground/60 print:text-muted-foreground">
+          <span className="text-xs text-muted-foreground print:text-muted-foreground">ile oluşturuldu</span>
+          <span className="text-xs text-muted-foreground/40 print:text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground print:text-muted-foreground">
             <span className="print:hidden">{new Date(shareLink.createdAt).toLocaleDateString("tr-TR")}</span>
             <span className="hidden print:inline">{new Date(shareLink.createdAt).toLocaleDateString("tr-TR")}</span>
           </span>

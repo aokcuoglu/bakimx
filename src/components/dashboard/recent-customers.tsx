@@ -29,11 +29,11 @@ export function RecentCustomers({ customers }: { customers: RecentCustomer[] }) 
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                <p className="text-xs text-muted-foreground/70">{c.phone}</p>
+                <p className="text-xs text-muted-foreground">{c.phone}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-muted-foreground/70">{formatDate(c.createdAt)}</p>
-                <ChevronRight className="size-3.5 text-muted-foreground/50 ml-auto mt-0.5" />
+                <p className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</p>
+                <ChevronRight className="size-3.5 text-muted-foreground ml-auto mt-0.5" />
               </div>
             </Link>
           ))

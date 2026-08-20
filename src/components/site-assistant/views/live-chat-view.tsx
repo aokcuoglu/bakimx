@@ -64,7 +64,7 @@ function MessageBubble({ message }: { message: LiveChatMessageWire }) {
         )}
       >
         <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>
-        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-primary-foreground/70" : "text-muted-foreground")}>
+        <p className={cn("mt-1 text-[10px]", isVisitor ? "text-primary-foreground" : "text-muted-foreground")}>
           {isVisitor ? "Siz" : "Destek"} · {formatTime(message.createdAt)}
         </p>
       </div>
@@ -290,8 +290,7 @@ export function LiveChatView({ onBack }: LiveChatViewProps) {
       </form>
 
       <div className="border-t px-3 py-1.5">
-        {/* `md:h-7` olmadan size varyantındaki `md:h-9` md+ ekranda kazanır. */}
-        <Button type="button" variant="ghost" size="sm" className="h-7 text-xs md:h-7" onClick={reset}>
+        <Button type="button" variant="ghost" size="sm" className="text-xs" onClick={reset}>
           <RefreshCw className="mr-1 size-3" /> Yeni sohbet başlat
         </Button>
       </div>

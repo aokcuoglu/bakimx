@@ -44,7 +44,7 @@ export function CriticalStockWidget({ items }: { items: CriticalStockItem[] }) {
                 {item.stockQty}
               </span>
               {item.criticalStockQty > 0 && (
-                <p className="text-[10px] text-muted-foreground/70 mt-0.5">Kritik: {item.criticalStockQty}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Kritik: {item.criticalStockQty}</p>
               )}
             </div>
           </Link>

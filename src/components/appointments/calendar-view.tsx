@@ -213,7 +213,7 @@ export function CalendarView({
       </div>
 
       {view === "month" ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border bg-muted">
             {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((d) => (
               <div key={d} className="px-2 py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
@@ -250,7 +250,7 @@ export function CalendarView({
                         )
                       })}
                       {dayEvents.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground/70 pl-1">+{dayEvents.length - 3} daha</span>
+                        <span className="text-[10px] text-muted-foreground pl-1">+{dayEvents.length - 3} daha</span>
                       )}
                     </div>
                   </div>
@@ -261,13 +261,13 @@ export function CalendarView({
           </div>
         </div>
       ) : view === "week" ? (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="grid grid-cols-7 border-b border-border">
             {dates.map((date) => {
               const today = isToday(date)
               return (
                 <div key={formatDate(date)} className={cn("px-2 py-2 text-center border-r border-border last:border-r-0", today && "bg-primary/5")}>
-                  <div className="text-[10px] uppercase font-semibold text-muted-foreground/70">{formatDayHeader(date)}</div>
+                  <div className="text-[10px] uppercase font-semibold text-muted-foreground">{formatDayHeader(date)}</div>
                   <div className={cn("text-lg font-bold", today ? "text-primary" : "text-foreground")}>{date.getDate()}</div>
                 </div>
               )
@@ -280,7 +280,7 @@ export function CalendarView({
               return (
                 <div key={dateKey} className="border-r border-border last:border-r-0 p-1.5 space-y-1.5 min-h-48">
                   {dayEvents.length === 0 && (
-                    <div className="text-xs text-muted-foreground/50 text-center py-4">—</div>
+                    <div className="text-xs text-muted-foreground text-center py-4">—</div>
                   )}
                   {dayEvents.map((event) => {
                     const config = TYPE_CONFIG[event.type]
@@ -313,7 +313,7 @@ export function CalendarView({
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border bg-muted">
             <div className="text-sm font-semibold text-foreground">
               {baseDate.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -325,7 +325,7 @@ export function CalendarView({
               const dayEvents = eventsByDate[dateKey] || []
               if (dayEvents.length === 0) {
                 return (
-                  <div className="text-center py-12 text-muted-foreground/70">
+                  <div className="text-center py-12 text-muted-foreground">
                     <CalendarDays className="size-12 mx-auto mb-3 text-muted-foreground/50" />
                     <p className="text-sm font-medium">Bu tarihte etkinlik yok</p>
                   </div>

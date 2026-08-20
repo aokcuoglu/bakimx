@@ -34,11 +34,6 @@ import { partSchema, type PartFormValues } from "@/lib/validations/part"
 import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
 import { mergePartAttributeOptions } from "@/lib/parts/attributes"
 
-const CURRENCY_LABELS: Record<string, string> = {
-  TRY: "₺ TRY",
-  USD: "$ USD",
-  EUR: "€ EUR",
-}
 
 type PartData = {
   id: string
@@ -225,7 +220,7 @@ export function PartForm({
         )}
 
         <div className="flex items-center gap-3 mb-5">
-          <Link href={isEdit ? `/parts/${part?.id}` : "/parts"} className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href={isEdit ? `/parts/${part?.id}` : "/parts"} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Parça Düzenle" : "Yeni Parça"}</h2>
@@ -467,11 +462,9 @@ export function PartForm({
                     <FormItem>
                       <FormLabel>Para Birimi</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "TRY")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Para Birimi">
-                              {(value: string | null) => (value ? CURRENCY_LABELS[value] ?? value : null)}
-                            </SelectValue>
+                            <SelectValue placeholder="Para Birimi" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="TRY">₺ TRY</SelectItem>
@@ -521,7 +514,7 @@ export function PartForm({
                   )
                 }}
               />
-              <p className="text-[11px] text-muted-foreground/70 mt-3">
+              <p className="text-[11px] text-muted-foreground mt-3">
                 Alış fiyatı tedarikçi bazlı tutulur. Varsayılan tedarikçinin fiyatı parçanın alış fiyatı olarak kullanılır.
               </p>
             </CardContent>

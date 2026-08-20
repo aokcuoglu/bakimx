@@ -22,7 +22,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
           </div>
         </div>
         <p className="text-2xl sm:text-3xl font-bold text-success-strong">{formatTRY(data.monthlyRevenue)}</p>
-        <p className="text-[11px] text-muted-foreground/70 mt-0.5">Bu ay tahsil edilen toplam</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">Bu ay tahsil edilen toplam</p>
       </Link>
 
       <Link
@@ -36,7 +36,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
           </div>
         </div>
         <p className="text-2xl sm:text-3xl font-bold text-primary">{data.workOrdersThisMonth}</p>
-        <p className="text-[11px] text-muted-foreground/70 mt-0.5">Bu ay oluşturulan iş emri</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">Bu ay oluşturulan iş emri</p>
       </Link>
 
       <Link
@@ -50,7 +50,7 @@ export function DashboardReportWidgets({ data }: { data: DashboardReportWidgetDa
           </div>
         </div>
         <p className="text-2xl sm:text-3xl font-bold text-primary">{data.collectionsThisMonth}</p>
-        <p className="text-[11px] text-muted-foreground/70 mt-0.5">Bu ayki tahsilat sayısı</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">Bu ayki tahsilat sayısı</p>
       </Link>
     </div>
   )

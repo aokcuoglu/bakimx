@@ -53,7 +53,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Toplam Alım" value={kpis.count} accent="bg-primary/10 text-primary border-primary/20" />
+        <StatCard label="Toplam Alım" value={kpis.count} accent="bg-primary/10 text-primary-strong border-primary/20" />
         <StatCard label="Toplam Tutar" value={formatTRY(kpis.totalKurus)} accent="bg-success/10 text-success-strong border-success/20" />
         <StatCard label="Tedarikçi" value={kpis.supplierCount} accent="bg-muted text-muted-foreground border-border" />
         <StatCard label="Bu Ay" value={kpis.thisMonthCount} accent="bg-warning/10 text-warning-strong border-warning/20" />
@@ -92,7 +92,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                     </Link>
                   </td>
                   <td className="px-4 py-2">
-                    <Link href={`/vehicles/${r.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                    <Link href={`/vehicles/${r.vehicle.id}`}>
                       <PlateBadge plate={r.vehicle.plate} size="sm" />
                     </Link>
                   </td>
@@ -101,11 +101,11 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
                     {r.sku && <div className="text-[11px] text-muted-foreground">{r.sku}</div>}
                   </td>
                   <td className="px-4 py-2 text-foreground">
-                    {r.supplierName || <span className="text-muted-foreground/70">—</span>}
+                    {r.supplierName || <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-2 text-center tabular-nums text-foreground">{r.quantity}</td>
                   <td className="px-4 py-2 text-right font-semibold text-foreground tabular-nums">
-                    {r.purchasePriceKurus != null ? formatTRY(r.purchasePriceKurus) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                    {r.purchasePriceKurus != null ? formatTRY(r.purchasePriceKurus) : <span className="text-muted-foreground font-normal">—</span>}
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">{formatDate(r.purchasedAt)}</td>
                   <td className="px-4 py-2 sticky right-0 bg-card group-hover:bg-muted/60">
@@ -136,7 +136,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm font-bold text-foreground">{r.workOrderNo}</span>
-                  <PlateBadge plate={r.vehicle.plate} size="sm" className="opacity-60" />
+                  <PlateBadge plate={r.vehicle.plate} size="sm" />
                 </div>
                 <p className="mt-1.5 text-sm font-semibold text-foreground truncate">{r.name}</p>
                 <p className="text-xs text-muted-foreground truncate">

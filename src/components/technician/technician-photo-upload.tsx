@@ -178,18 +178,9 @@ export function TechnicianPhotoUpload({
 
           <div className="space-y-1.5">
             <Label htmlFor="technician-photo-type">Fotoğraf Türü *</Label>
-            <Select value={type} onValueChange={(v) => setType(v ?? "")}>
+            <Select value={type} onValueChange={(v) => setType(v)}>
               <SelectTrigger id="technician-photo-type" className="w-full">
-                <SelectValue placeholder="Seçiniz...">
-                  {(value: string | null) => {
-                    // Base UI boş string'i "değer var" sayar; placeholder devreye
-                    // girmediği için metni burada elle döndürüyoruz.
-                    if (!value) return "Seçiniz..."
-                    const info = PHOTO_TYPES[value as PhotoTypeKey]
-                    if (!info) return value
-                    return `${info.label} ${info.required ? "(Zorunlu)" : "(Opsiyonel)"}`
-                  }}
-                </SelectValue>
+                <SelectValue placeholder="Seçiniz..." />
               </SelectTrigger>
               <SelectContent>
                 {(Object.keys(PHOTO_TYPES) as PhotoTypeKey[]).map((key) => (
@@ -203,13 +194,9 @@ export function TechnicianPhotoUpload({
 
           <div className="space-y-1.5">
             <Label htmlFor="technician-photo-phase">Aşama</Label>
-            <Select value={phase} onValueChange={(v) => setPhase(v ?? defaultPhase)}>
+            <Select value={phase} onValueChange={(v) => setPhase(v)}>
               <SelectTrigger id="technician-photo-phase" className="w-full">
-                <SelectValue placeholder="Aşama seçin">
-                  {(value: string | null) =>
-                    value ? PHOTO_PHASES[value as PhotoPhaseKey]?.label ?? value : null
-                  }
-                </SelectValue>
+                <SelectValue placeholder="Aşama seçin" />
               </SelectTrigger>
               <SelectContent>
                 {(Object.keys(PHOTO_PHASES) as PhotoPhaseKey[]).map((key) => (

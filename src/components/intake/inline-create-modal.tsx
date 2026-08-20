@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import {
   VEHICLE_TYPES,
   VEHICLE_FUEL_TYPES,
-  vehicleTypeLabel,
-  fuelTypeLabel,
   ocrVehicleTypeToSlug,
   ocrFuelToSlug,
   tecdocFuelToFormValue,
@@ -293,19 +291,20 @@ export function InlineCreateModal({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next, details) => {
-        // Tarayıcı açıkken: body'ye portal'lı tam-ekran tarayıcıya dokunmak "dışarı"
-        // sayılır; dış-tıklama/Esc modalı kapatmasın (tarayıcı kendi X'iyle kapanır).
-        if (!next && scannerActive && (details.reason === "outside-press" || details.reason === "escape-key")) {
-          details.cancel()
-          return
-        }
-        onOpenChange(next)
-      }}
-    >
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Tarayıcı açıkken: body'ye portal'lı tam-ekran tarayıcıya dokunmak "dışarı"
+          sayılır; dış-tıklama/Esc modalı kapatmasın (tarayıcı kendi X'iyle kapanır).
+          Radix'te iptal `onOpenChange` detayıyla değil, olayın kendisini
+          `preventDefault()` ile durdurarak yapılır. */}
+      <DialogContent
+        className="sm:max-w-lg max-h-[85vh] overflow-y-auto"
+        onInteractOutside={(event) => {
+          if (scannerActive) event.preventDefault()
+        }}
+        onEscapeKeyDown={(event) => {
+          if (scannerActive) event.preventDefault()
+        }}
+      >
         <DialogHeader>
           {/* Sahibi dışarıdan sabitlenmediyse bu diyalog müşteriyi de oluşturur —
               başlık picker'daki "Yeni müşteri & araç ekle" düğmesiyle aynı şeyi söylesin. */}
@@ -398,11 +397,9 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label className="flex items-center gap-1">Tipi {lowConf("vehicleType") && <AlertTriangle className="size-3 text-warning-strong" />}</Label>
-                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v ?? "")}>
+                <Select value={fields.vehicleType} onValueChange={(v) => setField("vehicleType", v)}>
                   <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
-                    <SelectValue placeholder="Seçiniz">
-                      {(value) => vehicleTypeLabel(value) || "Seçiniz"}
-                    </SelectValue>
+                    <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
@@ -413,11 +410,9 @@ export function InlineCreateModal({
               </div>
               <div className="space-y-1">
                 <Label>Yakıt Cinsi</Label>
-                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v ?? "")}>
+                <Select value={fields.fuelType} onValueChange={(v) => setField("fuelType", v)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seçiniz">
-                      {(value) => fuelTypeLabel(value) || "Seçiniz"}
-                    </SelectValue>
+                    <SelectValue placeholder="Seçiniz" />
                   </SelectTrigger>
                   <SelectContent>
                     {VEHICLE_FUEL_TYPES.map((ft) => (

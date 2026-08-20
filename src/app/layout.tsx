@@ -4,6 +4,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteAssistant } from "@/components/site-assistant/site-assistant"
+import { SITE_URL } from "@/lib/seo"
+import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -16,6 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   applicationName: "BakimX",
   title: {
     default: "BakimX | Oto Servis Yönetim Platformu",
@@ -49,6 +52,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     siteName: "BakimX",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BakimX — Oto Servis Yönetim Platformu" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BakimX | Oto Servis Yönetim Platformu",
+    description:
+      "Oto tamirciler için mobil araç kabul, hasar kaydı, müşteri onayı ve WhatsApp işlem çıktısı platformu.",
+    images: ["/twitter-image"],
   },
   appleWebApp: {
     title: "BakimX",
@@ -77,6 +88,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-background text-foreground">
         <TooltipProvider>
           {children}
+          <MarketingAnalytics />
           <Toaster />
           <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />
         </TooltipProvider>

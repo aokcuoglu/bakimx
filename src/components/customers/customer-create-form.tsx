@@ -42,14 +42,6 @@ import { formatPhoneTR, toTrUpper } from "@/lib/format"
 import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
 import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
 
-const SOURCE_LABELS: Record<string, string> = {
-  referral: "Tavsiye",
-  google: "Google",
-  social_media: "Sosyal Medya",
-  walk_in: "Yoldan Geldi",
-  existing: "Mevcut Müşteri",
-  other: "Diğer",
-}
 
 export type CustomerFormInitial = {
   id?: string
@@ -189,7 +181,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Temel Bilgiler</h3>
@@ -206,9 +198,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         variant={field.value === "individual" ? "default" : "ghost"}
                         size="sm"
                         className={cn(
-                          "min-h-11 gap-1.5",
+                          "gap-1.5",
                           field.value === "individual"
-                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -221,9 +213,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         variant={field.value === "corporate" ? "default" : "ghost"}
                         size="sm"
                         className={cn(
-                          "min-h-11 gap-1.5",
+                          "gap-1.5",
                           field.value === "corporate"
-                            ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                            ? "bg-card text-foreground shadow-sm ring-1 ring-border"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -420,7 +412,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               )}
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header>
                 <h3 className="text-sm font-semibold text-foreground">Vergi / Kimlik Bilgileri</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Fatura ve resmi kayıtlar için</p>
@@ -441,7 +433,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               />
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-3">
               <header className="flex items-center gap-2">
                 <FileText className="size-4 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">Müşteri Notu</h3>
@@ -462,7 +454,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           </div>
 
           <aside className="space-y-5">
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
               <header>
                 <h3 className="text-sm font-semibold text-foreground">Müşteri Profili</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Etiket, kaynak, fiyat grubu</p>
@@ -489,10 +481,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               variant={field.value === opt.key ? "default" : "outline"}
                               size="sm"
                               className={cn(
-                                "min-h-11",
                                 field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                                  ? "border-primary bg-primary/10 text-primary-strong"
+                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
@@ -500,7 +491,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           ))}
                         </div>
                       </FormControl>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                      <p className="text-[11px] text-muted-foreground mt-1.5">
                         Önizleme: <CustomerTagBadge tag={tag} />
                       </p>
                       <FormMessage />
@@ -514,11 +505,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                     <FormItem>
                       <FormLabel>Müşteri Kaynağı</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçilmedi">
-                              {(value: string | null) => (value ? SOURCE_LABELS[value] ?? value : null)}
-                            </SelectValue>
+                            <SelectValue placeholder="Seçilmedi" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Seçilmedi</SelectItem>
@@ -555,10 +544,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               variant={field.value === opt.key ? "default" : "outline"}
                               size="sm"
                               className={cn(
-                                "min-h-11",
                                 field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border bg-white text-muted-foreground hover:bg-muted"
+                                  ? "border-primary bg-primary/10 text-primary-strong"
+                                  : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >
                               {opt.label}
@@ -567,7 +555,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         </div>
                       </FormControl>
                       {priceGroup ? (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
                           Önizleme: <PriceGroupBadge group={priceGroup} />
                         </p>
                       ) : null}
@@ -593,7 +581,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                           className="max-w-[10rem]"
                         />
                       </FormControl>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">0–100 arası. İş emri kalemlerine uygulanır.</p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -614,7 +602,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
               </div>
             </section>
 
-            <section className="rounded-lg border border-border bg-white p-4 sm:p-5 space-y-3">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-3">
               <header className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">İletişim İzinleri</h3>
@@ -692,9 +680,9 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                         <Input {...field} type="date" className="mt-1.5" />
                       </FormControl>
                       {kvkkApprovedAt ? (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Onay: {formatDate(kvkkApprovedAt)}</p>
                       ) : (
-                        <p className="text-[11px] text-muted-foreground/70 mt-1">Henüz kaydedilmedi</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Henüz kaydedilmedi</p>
                       )}
                       <FormMessage />
                     </FormItem>
@@ -715,7 +703,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground/70">
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <Phone className="size-3" />
           <span>Telefon numaraları otomatik olarak +90 formatına normalleştirilir.</span>
         </div>

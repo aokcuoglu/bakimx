@@ -6,7 +6,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
             <TrendingUp className="size-4 text-success-strong" />
             <h3 className="text-base font-semibold text-foreground">En Hızlı Teknisyenler</h3>
@@ -43,7 +43,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-white overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
             <Users className="size-4 text-primary" />
             <h3 className="text-base font-semibold text-foreground">En Yoğun Teknisyenler</h3>
@@ -59,7 +59,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
                 return (
                   <div key={tech.id} className="flex items-center justify-between px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                      <span className="size-7 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center text-xs font-bold">
                         {i + 1}
                       </span>
                       <div>
@@ -79,7 +79,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
           <HardHat className="size-4 text-muted-foreground" />
           <h3 className="text-base font-semibold text-foreground">Teknisyen Performans Özeti</h3>
@@ -106,7 +106,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
                       <td className="px-4 py-2.5 font-medium text-foreground">{tech.fullName}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{roleInfo?.label || tech.role}</td>
                       <td className="px-4 py-2.5 text-center">
-                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary-strong text-xs font-medium">
                           {tech.activeJobs}
                         </span>
                       </td>

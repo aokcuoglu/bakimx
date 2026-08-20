@@ -4,8 +4,13 @@ import { Footer } from "@/components/sections/Footer"
 import { prisma } from "@/lib/db"
 import { cn } from "@/lib/utils"
 import { deriveOverallStatus, OVERALL_STATUS_LABELS, SEVERITY_LABELS } from "@/lib/status-page"
+import { publicPageMetadata } from "@/lib/seo"
 
-export const metadata = { title: "Sistem Durumu" }
+export const metadata = publicPageMetadata({
+  path: "/status",
+  title: "Sistem Durumu",
+  description: "BakımX servislerinin güncel çalışma durumunu ve geçmiş olayları inceleyin.",
+})
 
 export const dynamic = "force-dynamic"
 
@@ -98,7 +103,7 @@ export default async function StatusPage() {
                 {incident.resolutionNote && (
                   <p className="text-sm text-muted-foreground">{incident.resolutionNote}</p>
                 )}
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground">
                   {incident.createdAt.toLocaleString("tr-TR")}
                   {incident.resolvedAt && ` · Çözüldü: ${incident.resolvedAt.toLocaleString("tr-TR")}`}
                 </p>

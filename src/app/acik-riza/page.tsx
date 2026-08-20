@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
+  path: "/acik-riza",
   title: "Açık Rıza Metni",
-  description:
-    "BakımX kişisel verilerin işlenmesi ve aktarımına ilişkin KVKK açık rıza metni.",
-};
+  description: "BakımX kişisel verilerin işlenmesi ve aktarımına ilişkin KVKK açık rıza metni.",
+});
 
 export default function AcikRizaPage() {
   return (

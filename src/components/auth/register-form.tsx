@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() cannot be memoized by React Compiler; usage is safe */
 
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react"
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
@@ -49,6 +49,7 @@ import { formatPhoneTR } from "@/lib/format"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
 import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
+import { trackMarketingEvent } from "@/lib/marketing-analytics"
 
 const STEPS = [
   { label: "Paket Seçimi" },
@@ -132,6 +133,8 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const startedRef = useRef(false)
+  const submitRef = useRef(false)
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   const form = useForm<WizardFormValues, unknown, WizardFormValues>({
@@ -162,6 +165,7 @@ export function RegisterForm() {
   })
 
   const billingPeriod = form.watch("billingPeriod")
+  const selectedPlan = form.watch("selectedPlan")
   const workshopName = form.watch("workshopName")
   const city = form.watch("city")
 
@@ -188,6 +192,8 @@ export function RegisterForm() {
   }
 
   async function handleSubmit(values: WizardFormValues) {
+    if (submitRef.current) return
+    submitRef.current = true
     setError("")
     setLoading(true)
     try {
@@ -218,6 +224,7 @@ export function RegisterForm() {
       })
       const data = await res.json()
       if (data.ok) {
+        trackMarketingEvent("register_submitted", { plan_tier: values.selectedPlan, billing_cycle: values.billingPeriod })
         setSubmitted(values.email.trim())
       } else {
         setError(data.error || "Kayıt başarısız")
@@ -225,6 +232,7 @@ export function RegisterForm() {
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
+      submitRef.current = false
       setLoading(false)
     }
   }
@@ -264,7 +272,16 @@ export function RegisterForm() {
       <StepIndicator currentStep={currentStep} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} method="post" className="mt-8">
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          onChange={() => {
+            if (startedRef.current) return
+            startedRef.current = true
+            trackMarketingEvent("register_started", { entry_step: "plan", plan_tier: selectedPlan, billing_cycle: billingPeriod })
+          }}
+          method="post"
+          className="mt-8"
+        >
           {error && (
             <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
               {error}
@@ -354,8 +371,8 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               className={cn(
                 "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
                 i < currentStep && "border-primary bg-primary text-primary-foreground",
-                i === currentStep && "border-primary bg-primary/10 text-primary",
-                i > currentStep && "border-muted-foreground/30 text-muted-foreground/50",
+                i === currentStep && "border-primary bg-primary/10 text-primary-strong",
+                i > currentStep && "border-muted-foreground/30 text-muted-foreground",
               )}
               aria-current={i === currentStep ? "step" : undefined}
             >
@@ -364,7 +381,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <span
               className={cn(
                 "text-[11px] font-medium hidden sm:block whitespace-nowrap",
-                i <= currentStep ? "text-foreground" : "text-muted-foreground/60",
+                i <= currentStep ? "text-foreground" : "text-muted-foreground",
               )}
             >
               {step.label}
@@ -496,7 +513,7 @@ function PlanCard({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground">{pkg.name}</span>
           {pkg.popular && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
               Popüler
             </span>
           )}
@@ -536,7 +553,7 @@ function StepBusinessInfo({
             <FormLabel>İş yeri adı</FormLabel>
             <FormControl>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} placeholder="Örnek Oto Servis" className="pl-9" />
               </div>
             </FormControl>
@@ -558,7 +575,7 @@ function StepBusinessInfo({
             <FormLabel>Telefon</FormLabel>
             <FormControl>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   {...field}
                   type="tel"
@@ -637,7 +654,7 @@ function StepBusinessInfo({
             </FormLabel>
             <FormControl>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} type="email" placeholder="servis@isyeri.com" className="pl-9" />
               </div>
             </FormControl>
@@ -734,7 +751,7 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors",
                   active
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-primary bg-primary/10 text-primary-strong"
                     : "border-border text-muted-foreground hover:border-primary/40",
                 )}
               >
@@ -845,7 +862,7 @@ function StepTeam({ form }: { form: WizardForm }) {
                   name={`teamMembers.${index}.role`}
                   render={({ field: f }) => (
                     <FormItem className="w-40">
-                      <Select value={f.value} onValueChange={(v) => f.onChange(v ?? "usta")}>
+                      <Select value={f.value} onValueChange={(v) => f.onChange(v)}>
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Rol" />
@@ -922,7 +939,7 @@ function StepAccountInfo({
               <FormLabel>Ad</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                   <Input {...field} placeholder="Adınız" className="pl-9" />
                 </div>
               </FormControl>
@@ -953,7 +970,7 @@ function StepAccountInfo({
             <FormLabel>E-posta</FormLabel>
             <FormControl>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input {...field} type="email" autoComplete="email" placeholder="ornek@email.com" className="pl-9" />
               </div>
             </FormControl>
@@ -970,7 +987,7 @@ function StepAccountInfo({
             <FormLabel>Şifre</FormLabel>
             <FormControl>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
                   {...field}
                   type={showPassword ? "text" : "password"}

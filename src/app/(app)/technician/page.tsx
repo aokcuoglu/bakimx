@@ -28,7 +28,8 @@ export default async function TechnicianPage({
 
   // Yönetici hesapları da birleşik personel yapısında bir teknisyen kaydına
   // bağlıdır; bu bağ ekip içinden başka birini seçmelerini engellemez. Saha
-  // rolleri ise BAK-39 gereği yalnız kendi atamalarını görür.
+  // rollerinde seçim yoktur; KPI'lar kendi atamalarını, liste ise atölyenin
+  // tüm iş emirlerini gösterir (BAK-157).
   const canSelectTechnician = canSelectAnyTechnician(user.role)
   const selectedTechnicianId = resolveSelectedTechnicianId(
     canSelectTechnician
@@ -50,7 +51,11 @@ export default async function TechnicianPage({
               <p className="text-base font-medium">Henüz teknisyen kaydı yok</p>
               <p className="text-sm mt-1">Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</p>
             </div>
-            <Button render={<Link href="/settings?tab=team" />}>Ekip Sayfasına Git</Button>
+            <Button asChild>
+              <Link href="/settings?tab=team">
+                Ekip Sayfasına Git
+              </Link>
+            </Button>
           </div>
         </div>
       </AppShell>
@@ -59,7 +64,10 @@ export default async function TechnicianPage({
 
   const [stats, orders] = await Promise.all([
     getTechnicianDashboardStats(user.workshopId, selectedTechnicianId),
-    getTechnicianOrders(user.workshopId, selectedTechnicianId),
+    getTechnicianOrders(
+      user.workshopId,
+      canSelectTechnician ? selectedTechnicianId : undefined
+    ),
   ])
 
   return (

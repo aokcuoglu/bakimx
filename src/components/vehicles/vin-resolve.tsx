@@ -216,7 +216,7 @@ export function VinCandidateList({
             type="button"
             onClick={() => onSelect(c)}
             className={cn(
-              "w-full min-h-11 flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+              "w-full min-h-8 flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
               selected
                 ? "border-primary bg-primary/5 text-foreground"
                 : "border-transparent bg-background hover:border-border"
@@ -227,7 +227,7 @@ export function VinCandidateList({
             </span>
             <span className="flex-1">{c.label}</span>
             {i === 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium px-2 py-0.5 shrink-0">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary-strong text-[11px] font-medium px-2 py-0.5 shrink-0">
                 <BadgeCheck className="size-3" />
                 En uygun
               </span>

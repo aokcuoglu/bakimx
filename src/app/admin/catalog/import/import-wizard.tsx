@@ -177,8 +177,10 @@ export function CatalogImportWizard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Button nativeButton={false} size="sm" variant="ghost" render={<Link href="/admin/catalog" />}>
-              <ArrowLeft className="size-3.5" />
+            <Button size="sm" variant="ghost" asChild>
+              <Link href="/admin/catalog">
+                <ArrowLeft className="size-3.5" />
+              </Link>
             </Button>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Ürün İçe Aktarma</h1>
           </div>
@@ -186,13 +188,10 @@ export function CatalogImportWizard({
             Marka seçip CSV yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
           </p>
         </div>
-        <Button
-          nativeButton={false}
-          size="sm"
-          variant="outline"
-          render={<a href="/admin/catalog/import/template" download />}
-        >
-          <Download className="size-3.5 mr-1" /> Şablon indir
+        <Button size="sm" variant="outline" asChild>
+          <a href="/admin/catalog/import/template" download>
+            <Download className="size-3.5 mr-1" /> Şablon indir
+          </a>
         </Button>
       </div>
 
@@ -208,14 +207,12 @@ export function CatalogImportWizard({
               <Select
                 value={brandId}
                 onValueChange={(v) => {
-                  setBrandId(v ?? "")
+                  setBrandId(v)
                   resetPreview()
                 }}
               >
                 <SelectTrigger id="import-brand" className="w-full">
-                  <SelectValue placeholder="Marka seçin">
-                    {(value: string | null) => (value ? brands.find((b) => b.id === value)?.name ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Marka seçin" />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map((brand) => (
@@ -235,16 +232,12 @@ export function CatalogImportWizard({
               <Select
                 value={mode}
                 onValueChange={(v) => {
-                  setMode((v ?? "upsert") as CatalogImportMode)
+                  setMode(v as CatalogImportMode)
                   resetPreview()
                 }}
               >
                 <SelectTrigger id="import-mode" className="w-full">
-                  <SelectValue placeholder="Mod seçin">
-                    {(value: string | null) =>
-                      value ? CATALOG_IMPORT_MODE_LABELS[value as CatalogImportMode] ?? value : null
-                    }
-                  </SelectValue>
+                  <SelectValue placeholder="Mod seçin" />
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(CATALOG_IMPORT_MODE_LABELS) as CatalogImportMode[]).map((value) => (

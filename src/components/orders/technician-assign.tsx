@@ -173,21 +173,18 @@ export function TechnicianAssign({
           <p className="mt-1 text-xs text-muted-foreground">
             Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
           </p>
-          <Button
-            nativeButton={false}
-            size="lg"
-            className="mt-4"
-            render={<Link href="/settings?tab=team" />}
-          >
-            <UserPlus className="size-4" />
-            Usta Ekle
+          <Button size="lg" className="mt-4" asChild>
+            <Link href="/settings?tab=team">
+              <UserPlus className="size-4" />
+              Usta Ekle
+            </Link>
           </Button>
         </div>
       ) : (
         <div className="space-y-2 pb-2">
           {technicians.length >= SEARCH_THRESHOLD && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

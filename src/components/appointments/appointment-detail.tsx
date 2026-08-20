@@ -182,16 +182,10 @@ export function AppointmentDetail({
                 <input type="hidden" name="status" value={selectedStatus} />
                 <Select
                   value={selectedStatus}
-                  onValueChange={(v) => setSelectedStatus(v ?? "")}
+                  onValueChange={(v) => setSelectedStatus(v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Durum seçin">
-                      {(value: string | null) => {
-                        if (!value) return null
-                        const info = APPOINTMENT_STATUS[value as AppointmentStatusKey]
-                        return info?.label || value
-                      }}
-                    </SelectValue>
+                    <SelectValue placeholder="Durum seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {transitions.map((key) => {
@@ -236,7 +230,7 @@ export function AppointmentDetail({
                 </div>
                 <Link
                   href={`/customers/${appointment.customer.id}`}
-                    className="text-sm text-primary hover:text-primary/80 font-medium"
+                    className="text-sm text-primary hover:underline font-medium"
                 >
                   Müşteri Detayı →
                 </Link>
@@ -262,7 +256,7 @@ export function AppointmentDetail({
                   </div>
                   <Link
                     href={`/vehicles/${appointment.vehicle.id}`}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
+                  className="text-sm text-primary hover:underline font-medium"
                   >
                     Araç Detayı →
                   </Link>
@@ -333,7 +327,7 @@ export function AppointmentDetail({
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap h-6 px-2.5 text-xs",
-                    reminderInfo?.color || "bg-muted text-muted-foreground/70 border-border"
+                    reminderInfo?.color || "bg-muted text-muted-foreground border-border"
                   )}
                 >
                   {reminderInfo?.label || appointment.reminderStatus}
@@ -370,18 +364,14 @@ export function AppointmentDetail({
               )}
 
               {isConverted && appointment.convertedServiceOrder && (
-                <Button
-                  nativeButton={false}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  render={<Link href={`/orders/${appointment.convertedServiceOrder.id}`} />}
-                >
-                  <Wrench className="size-4" />
-                  İş Emrine Git
-                  {appointment.convertedServiceOrder.workOrderNo && (
-                    <span className="font-mono text-xs">({appointment.convertedServiceOrder.workOrderNo})</span>
-                  )}
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link href={`/orders/${appointment.convertedServiceOrder.id}`}>
+                    <Wrench className="size-4" />
+                    İş Emrine Git
+                    {appointment.convertedServiceOrder.workOrderNo && (
+                      <span className="font-mono text-xs">({appointment.convertedServiceOrder.workOrderNo})</span>
+                    )}
+                  </Link>
                 </Button>
               )}
 
@@ -399,8 +389,10 @@ export function AppointmentDetail({
                 </form>
               )}
 
-              <button
+              <Button
                 type="button"
+                size="lg"
+                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
                 onClick={() => {
                   const text = `Merhaba ${customerDisplayName(appointment.customer)}, randevu bilgileriniz: ${appointment.appointmentNo} - ${formatDateTime(appointment.appointmentAt)}`
                   window.open(
@@ -408,11 +400,10 @@ export function AppointmentDetail({
                     "_blank"
                   )
                 }}
-                className="inline-flex items-center justify-center gap-2 w-full h-9 px-3 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
               >
                 <Share2 className="size-4" />
                 WhatsApp ile Paylaş
-              </button>
+              </Button>
             </CardContent>
           </Card>
         </div>

@@ -54,7 +54,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
             <p className="text-sm">Yaklaşan veya geciken bakım hatırlatması yok.</p>
             <Link
               href="/reminders/new"
-              className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:text-primary/80 font-medium"
+              className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary hover:underline font-medium"
             >
               <Plus className="size-3.5" />
               Yeni hatırlatma oluştur
@@ -77,7 +77,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {customerName(r.customer)} — {r.title}
                   </p>
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground/70 mt-0.5">
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5">
                     {r.dueDate ? (
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="size-3" />
@@ -100,7 +100,7 @@ export function ReminderWidget({ dueSoon, overdue }: Props) {
           <div className="mt-2 pt-2 border-t border-border text-center">
             <Link
               href="/reminders"
-              className="text-xs text-primary hover:text-primary/80 font-medium"
+              className="text-xs text-primary hover:underline font-medium"
             >
               Tüm hatırlatmaları görüntüle
             </Link>

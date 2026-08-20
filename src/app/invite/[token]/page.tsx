@@ -6,10 +6,12 @@ import { SetPasswordForm } from "@/components/auth/set-password-form"
 import { prisma } from "@/lib/db"
 import { hashInviteToken, isInviteExpired } from "@/lib/invite"
 import { ROLE_LABELS } from "@/lib/rbac"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata: Metadata = {
   title: "Ekip Daveti",
   description: "BakimX ekip davetinizi kabul edin.",
+  robots: PRIVATE_ROBOTS,
 }
 
 function InviteShell({ children }: { children: React.ReactNode }) {

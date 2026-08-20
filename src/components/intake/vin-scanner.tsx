@@ -42,11 +42,11 @@ export function VinScanner({ onDetected, onClose }: Props) {
       onClose={onClose}
       renderConfirm={(vin) => (
         <div className="w-full space-y-2 text-left">
-          <p className="text-xs font-medium uppercase tracking-wide text-white/60">Okunan şase numarası</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-white">Okunan şase numarası</p>
           <p className="break-all rounded-lg bg-white/10 px-3 py-3 text-center font-mono text-lg font-semibold tracking-[0.15em] text-white">
             {vin}
           </p>
-          <p className="text-xs text-white/70">Camdaki numarayla karşılaştırın; farklıysa tekrar çekin.</p>
+          <p className="text-xs text-white">Camdaki numarayla karşılaştırın; farklıysa tekrar çekin.</p>
           {!meta.confident && (
             <p className="flex items-start gap-1.5 text-xs text-warning-strong">
               <AlertTriangle className="mt-px size-3.5 shrink-0" />

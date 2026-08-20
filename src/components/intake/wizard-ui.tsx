@@ -53,7 +53,7 @@ export function WizardStepper({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto min-h-11 w-full flex-col items-stretch gap-1 px-1 py-1 md:min-h-9"
+                  className="h-auto min-h-8 w-full flex-col items-stretch gap-1 px-1 py-1"
                   onClick={() => onStepClick(s.id)}
                 >
                   {bar}
@@ -98,7 +98,7 @@ export function WizardStepper({
                   isCurrent
                     ? "border-primary bg-primary text-primary-foreground"
                     : isDone
-                      ? "border-primary/40 bg-primary/10 text-primary"
+                      ? "border-primary/40 bg-primary/10 text-primary-strong"
                       : "border-border bg-card text-muted-foreground"
                 }`}
               >
@@ -186,7 +186,7 @@ export function WizardChoiceCard({
       </span>
       <span
         className={`flex size-10 items-center justify-center rounded-lg ${
-          selected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+          selected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary-strong"
         }`}
       >
         {icon}

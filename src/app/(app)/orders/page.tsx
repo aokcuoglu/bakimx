@@ -16,6 +16,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
 import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
+import { ACTIVE_ORDER_FILTER, ACTIVE_ORDER_STATUSES, resolveOrderStatusFilter } from "@/lib/orders/status-filter"
 
 export default async function OrdersPage({
   searchParams,
@@ -30,7 +31,8 @@ export default async function OrdersPage({
 }) {
   const params = await searchParams
   const q = (params.q || "").trim()
-  const status = (params.status || "").trim()
+  const statusFilter = resolveOrderStatusFilter(params.status)
+  const status = statusFilter.value
   const payment = (params.payment || "").trim()
   // Fatura filtresi statüden bağımsız, saf veri filtresi: "?invoice=with|without".
   const invoiceFilter = resolveInvoiceFilter(params.invoice)
@@ -50,7 +52,7 @@ export default async function OrdersPage({
     prisma.serviceOrder.findMany({
       where: {
         workshopId: user.workshopId,
-        ...(status ? { status: status as import("@prisma/client").OrderStatus } : {}),
+        ...statusFilter.where,
         ...(payment ? { paymentStatus: payment as import("@prisma/client").PaymentStatus } : {}),
         ...technicianFilter.where,
         ...invoiceFilter.where,
@@ -83,9 +85,8 @@ export default async function OrdersPage({
   const hasAnyFilter = Boolean(q || status || payment || technicianFilter.value || invoiceFilter.value)
 
   const statusCountMap = new Map(statusGroups.map((g) => [g.status, g._count._all]))
-  const activeStatuses = ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"]
   const kpis = {
-    active: activeStatuses.reduce((s, st) => s + (statusCountMap.get(st as import("@prisma/client").OrderStatus) ?? 0), 0),
+    active: ACTIVE_ORDER_STATUSES.reduce((sum, itemStatus) => sum + (statusCountMap.get(itemStatus) ?? 0), 0),
     completed: statusCountMap.get("ready_for_delivery" as import("@prisma/client").OrderStatus) ?? 0,
     delivered: statusCountMap.get("delivered" as import("@prisma/client").OrderStatus) ?? 0,
     cancelled: statusCountMap.get("cancelled" as import("@prisma/client").OrderStatus) ?? 0,
@@ -135,8 +136,10 @@ export default async function OrdersPage({
       workshopName={workshop?.name}
       pageTitle="İş Emirleri"
       pageActions={
-        <Button nativeButton={false} size="icon" render={<Link href="/orders/new" />} aria-label="Yeni iş emri">
-          <Plus className="size-5" />
+        <Button size="icon" asChild aria-label="Yeni iş emri">
+          <Link href="/orders/new">
+            <Plus className="size-5" />
+          </Link>
         </Button>
       }
     >
@@ -152,15 +155,17 @@ export default async function OrdersPage({
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">İş Emirleri</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Servis operasyonlarını yönetin</p>
           </div>
-          <Button nativeButton={false} size="default" className="hidden sm:inline-flex" render={<Link href="/orders/new" />}>
-            <Plus className="size-4" />
-            Yeni İş Emri
+          <Button size="default" className="hidden sm:inline-flex" asChild>
+            <Link href="/orders/new">
+              <Plus className="size-4" />
+              Yeni İş Emri
+            </Link>
           </Button>
         </div>
 
         <form action="/orders" method="get" className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q}
@@ -179,6 +184,7 @@ export default async function OrdersPage({
               placeholder="Tüm Durumlar"
               options={[
                 { value: "", label: "Tüm Durumlar" },
+                { value: ACTIVE_ORDER_FILTER, label: "Aktif" },
                 { value: "draft", label: "Taslak" },
                 { value: "waiting_approval", label: "Onay Bekliyor" },
                 { value: "approved", label: "Onaylandı" },
@@ -264,9 +270,11 @@ export default async function OrdersPage({
                 ? "Farklı bir filtre deneyin"
                 : "Yeni bir iş emri oluşturarak başlayabilirsiniz"}
             </p>
-            <Button nativeButton={false} variant="link" size="sm" className="mt-4" render={<Link href="/orders/new" />}>
-              <Plus className="size-4" />
-              Yeni İş Emri
+            <Button variant="link" size="sm" className="mt-4" asChild>
+              <Link href="/orders/new">
+                <Plus className="size-4" />
+                Yeni İş Emri
+              </Link>
             </Button>
           </div>
         )}

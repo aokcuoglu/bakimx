@@ -30,7 +30,7 @@ Modül ve mimari diyagramları: [docs/architecture](./docs/architecture/).
 
 - **Framework:** Next.js 16 (App Router) · React 19
 - **Dil:** TypeScript (strict)
-- **UI:** Tailwind CSS v4 · shadcn/ui (base-nova, @base-ui/react) · Framer Motion · lucide-react
+- **UI:** Tailwind CSS v4 · shadcn/ui (radix-nova, `radix-ui`; `@base-ui/react` yalnız Combobox/Autocomplete/Sidebar'da) · Framer Motion · lucide-react
 - **ORM / DB:** Prisma 7 · PostgreSQL (pg adapter)
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4
@@ -100,7 +100,7 @@ scripts            Veritabanı ve operasyon yardımcı scriptleri
 aynı adları kullanır, böylece bir özelliğin UI'ı ve mantığı yan yana bulunur:
 
 ```
-ui/            shadcn/Base UI primitifleri — domain mantığı İÇERMEZ
+ui/            shadcn/ui (radix-nova) primitifleri — domain mantığı İÇERMEZ
 layout/        uygulama kabuğu (app-shell, global arama, impersonation banner)
 shared/        3+ domainde kullanılan jenerik parçalar (status-badge, actions-menu, forms/)
 

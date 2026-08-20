@@ -344,15 +344,11 @@ export function TechnicianOrderDetail({
         {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
             kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
             gidip aynı işi listede yeniden aramak gerekiyordu. */}
-        <Button
-          nativeButton={false}
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          render={<Link href={workOrderPath(order.id)} />}
-        >
-          <FileText />
-          İş Emri
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href={workOrderPath(order.id)}>
+            <FileText />
+            İş Emri
+          </Link>
         </Button>
       </div>
 
@@ -383,7 +379,7 @@ export function TechnicianOrderDetail({
       )}
 
       {activeLabor && (
-        <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
+        <div className="flex min-h-8 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
           <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
           <span className="text-sm font-medium text-foreground">İşçilik sürüyor</span>
           <span className="text-xs text-muted-foreground">
@@ -396,7 +392,7 @@ export function TechnicianOrderDetail({
       {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
           önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
           kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
-      <Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>
+      <Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>
         <div className="max-w-full overflow-x-auto pb-1">
           <TabsList className="w-max">
             {steps.map((step, i) => (
@@ -588,7 +584,7 @@ function DamageMarks({ marks }: { marks: OrderData["damageMarks"] }) {
       <h3 className="mb-3 text-sm font-semibold text-foreground">Mevcut Hasarlar</h3>
       <div className="space-y-1.5">
         {marks.map((mark) => (
-          <div key={mark.id} className="flex min-h-11 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
+          <div key={mark.id} className="flex min-h-8 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
             <span className="font-medium text-foreground">{mark.zone}</span>
             <span className="text-muted-foreground">·</span>
             <span className="text-foreground">{mark.damageType}</span>
@@ -613,7 +609,7 @@ function OrderTotals({ order }: { order: OrderData }) {
 
 function ReviewRow({ label, detail, complete }: { label: string; detail: string; complete: boolean }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
+    <div className="flex min-h-8 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
       <span className="font-medium text-foreground">{complete ? "✓" : "!"} {label}</span>
       <span className="text-right text-xs text-muted-foreground">{detail}</span>
     </div>
@@ -743,7 +739,7 @@ function PhotoSection({
                   onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
                 />
               ) : (
-                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
                   <Camera className="size-5" />
                 </div>
               )}
@@ -794,7 +790,7 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
       className="relative w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted touch-manipulation"
     >
       {state !== "ready" && (
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground/70">
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground">
           {state === "loading" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
@@ -890,7 +886,7 @@ function PurchasedItemsSection({
   deleteDecision: PurchaseDeleteDecision
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground/70">Henüz dışarıdan alınan parça yok.</p>
+    return <p className="text-sm text-muted-foreground">Henüz dışarıdan alınan parça yok.</p>
   }
   return (
     <div className="space-y-2">
@@ -948,7 +944,7 @@ function PurchasedItemsSection({
         )
       })}
       {!deleteDecision.allowed && (
-        <p className="text-xs text-muted-foreground/70">{deleteDecision.reason}</p>
+        <p className="text-xs text-muted-foreground">{deleteDecision.reason}</p>
       )}
     </div>
   )
@@ -1054,7 +1050,7 @@ function InternalNotesSection({
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong/60 hover:text-destructive-strong transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong hover:text-destructive-strong transition-opacity"
             >
               <Trash2 className="size-3.5" />
             </button>

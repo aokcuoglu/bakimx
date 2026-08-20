@@ -8,7 +8,7 @@ export function WeeklyChart({ data }: { data: WeeklyOperation[] }) {
     return (
       <div className="rounded-lg border border-border bg-card p-6">
         <h3 className="text-sm font-semibold text-foreground mb-4">Son 7 Gün Operasyon</h3>
-        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground/70">
+        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
           Son 7 günde iş emri bulunmuyor.
         </div>
       </div>
@@ -28,7 +28,7 @@ export function WeeklyChart({ data }: { data: WeeklyOperation[] }) {
                 className="w-full rounded-t-md bg-primary transition-all"
                 style={{ height: `${Math.max(4, pct)}%` }}
               />
-              <span className="text-[11px] text-muted-foreground/70 font-medium">{d.label}</span>
+              <span className="text-[11px] text-muted-foreground font-medium">{d.label}</span>
             </div>
           )
         })}

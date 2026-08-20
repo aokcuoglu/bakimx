@@ -25,7 +25,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
   const [error, setError] = useState("")
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
+    <div className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <HardHat className="size-5 text-muted-foreground" />
@@ -73,7 +73,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                 key={t.id}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-lg border",
-                  t.isActive ? "border-border bg-white" : "border-border bg-muted opacity-60"
+                  t.isActive ? "border-border bg-card" : "border-border bg-muted"
                 )}
               >
                 <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
@@ -88,7 +88,7 @@ export function TechnicianManagement({ technicians }: { technicians: TechnicianR
                       {roleInfo?.label || t.role}
                     </span>
                     {!t.isActive && (
-                      <span className="text-[10px] font-medium text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         Pasif
                       </span>
                     )}

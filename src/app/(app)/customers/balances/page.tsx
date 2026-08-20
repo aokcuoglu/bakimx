@@ -151,20 +151,16 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href="/cashbox" />}
-            >
-              <Wallet className="size-4" />
-              Kasa
+            <Button variant="outline" asChild>
+              <Link href="/cashbox">
+                <Wallet className="size-4" />
+                Kasa
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href="/customers" />}
-            >
-              Müşteri Listesi
+            <Button variant="outline" asChild>
+              <Link href="/customers">
+                Müşteri Listesi
+              </Link>
             </Button>
           </div>
         </div>
@@ -178,7 +174,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-muted text-foreground" />
-          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary" />
+          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary-strong" />
           <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-success/10 text-success-strong" />
           <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-destructive/10 text-destructive-strong" />
           <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-warning/10 text-warning-strong" />
@@ -187,7 +183,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
 
         <form action="/customers/balances" method="get" className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               name="q"
               defaultValue={q}
@@ -289,10 +285,10 @@ function DesktopBalanceTable({ rows }: { rows: Array<{ id: string; type: string;
                 </td>
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.ordersCount}</td>
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">
-                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground/70">—</span>}
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground">—</span>}
                 </td>
                 <td className="px-4 py-3 text-right text-success-strong tabular-nums">
-                  {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-muted-foreground/70">—</span>}
+                  {row.paidAmount > 0 ? formatTRY(row.paidAmount) : <span className="text-muted-foreground">—</span>}
                 </td>
                 <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", row.remainingAmount > 0 ? "text-destructive-strong" : "text-muted-foreground")}>
                   {row.remainingAmount > 0 ? formatTRY(row.remainingAmount) : formatTRY(0)}
@@ -332,7 +328,7 @@ function MobileBalanceCards({ rows }: { rows: Array<{ id: string; type: string; 
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">{row.phone}</p>
             </div>
-            <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 mt-1" />
+            <ChevronRight className="size-4 text-muted-foreground shrink-0 mt-1" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
             <MiniStat label="İş Emri" value={row.ordersCount.toString()} />

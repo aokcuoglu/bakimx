@@ -110,19 +110,18 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
             <p className="text-sm text-muted-foreground mt-0.5">{total} kayıt bulundu</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              className="print:hidden"
-              render={<a href={`/api/cashbox/export?type=collections&${exportParams.toString()}`} download />}
-            >
-              <Download className="size-4" />
-              CSV
+            <Button variant="outline" className="print:hidden" asChild>
+              <a href={`/api/cashbox/export?type=collections&${exportParams.toString()}`} download>
+                <Download className="size-4" />
+                CSV
+              </a>
             </Button>
             <PrintButton className="print:hidden" />
-            <Button nativeButton={false} size="default" render={<Link href="/cashbox/payments/new" />}>
-              <Plus className="size-4" />
-              Yeni Tahsilat
+            <Button size="default" asChild>
+              <Link href="/cashbox/payments/new">
+                <Plus className="size-4" />
+                Yeni Tahsilat
+              </Link>
             </Button>
           </div>
         </div>
@@ -130,7 +129,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
         <form action="/cashbox/payments" method="get" className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 name="q"
                 defaultValue={q}
@@ -228,11 +227,11 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                           </td>
                           <td className="px-4 py-3">
                             {c.serviceOrder ? (
-                              <Link href={`/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-primary hover:text-primary/80">
+                              <Link href={`/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-primary hover:underline">
                                 {c.serviceOrder.workOrderNo || "—"}
                               </Link>
                             ) : (
-                              <span className="text-muted-foreground/70 text-xs">—</span>
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-foreground">{formatTRY(c.amount)}</td>
@@ -240,9 +239,11 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                           <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{c.referenceNo || "—"}</td>
                           <td className="px-4 py-3"><CollectionStatusBadge status={c.status} /></td>
                           <td className="px-4 py-3 text-right">
-                            <Button nativeButton={false} variant="link" size="sm" render={<Link href={`/cashbox/payments/${c.id}`} />}>
-                              <Eye className="size-3.5" />
-                              Görüntüle
+                            <Button variant="link" size="sm" asChild>
+                              <Link href={`/cashbox/payments/${c.id}`}>
+                                <Eye className="size-3.5" />
+                                Görüntüle
+                              </Link>
                             </Button>
                           </td>
                         </tr>

@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { formatTRY } from "@/lib/format"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 
 type OrderRow = {
   id: string
@@ -87,11 +88,13 @@ function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing
       </span>
     )
   }
-  if (!missing) return <span className="text-muted-foreground/70">—</span>
+  if (!missing) return <span className="text-muted-foreground">—</span>
   return (
     <Tooltip>
-      <TooltipTrigger render={<span />} className="inline-flex">
-        <InvoiceMissingBadge />
+      <TooltipTrigger asChild>
+        <span className="inline-flex">
+          <InvoiceMissingBadge />
+        </span>
       </TooltipTrigger>
       <TooltipContent side="top">Fatura numarası girilmemiş</TooltipContent>
     </Tooltip>
@@ -116,9 +119,9 @@ export function OrderList({
   technicians?: AssignableTechnician[]
 }) {
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-primary/10 text-primary border-primary/20" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, accent: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning-strong border-warning/20" },
-    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary border-primary/20" },
+    { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success-strong border-success/20" },
     { key: "cancelled", label: "İptal", count: kpis.cancelled, filterValue: "cancelled", accent: "bg-destructive/10 text-destructive-strong border-destructive/20" },
   ]
@@ -185,11 +188,11 @@ export function OrderList({
                         altında kırpılan marka/model. */}
                     <div className="max-w-[11rem]">
                       {order.vehicle.id ? (
-                        <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                        <Link href={`/vehicles/${order.vehicle.id}`}>
                           <PlateBadge plate={order.vehicle.plate} size="sm" />
                         </Link>
                       ) : (
-                        <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
+                        <PlateBadge plate={order.vehicle.plate} size="sm" />
                       )}
                       <div
                         className="mt-1 text-[11px] leading-tight text-muted-foreground truncate"
@@ -243,16 +246,16 @@ export function OrderList({
                     <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
                   </td>
                   <td className="px-3 py-2 align-top text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
-                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                   </td>
                   <td className="px-3 py-2 align-top text-xs whitespace-nowrap">
                     {/* Giriş üstte (her zaman dolu), tahmini teslim altta. */}
                     <div className="text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground/70">Giriş</span> {formatDate(order.createdAt)}
+                      <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
                     </div>
                     <div className="mt-0.5 text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground/70">Teslim</span>{" "}
-                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground/70">—</span>}
+                      <span className="text-muted-foreground">Teslim</span>{" "}
+                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
                     </div>
                   </td>
                   {/* Sticky kolonun zemini opak kalmalı: yarı saydam hover rengiyle
@@ -293,11 +296,11 @@ export function OrderList({
                     {order.workOrderNo}
                   </Link>
                   {order.vehicle.id ? (
-                    <Link href={`/vehicles/${order.vehicle.id}`} className="opacity-60 hover:opacity-100 transition-opacity">
+                    <Link href={`/vehicles/${order.vehicle.id}`}>
                       <PlateBadge plate={order.vehicle.plate} size="sm" />
                     </Link>
                   ) : (
-                    <PlateBadge plate={order.vehicle.plate} size="sm" className="opacity-60" />
+                    <PlateBadge plate={order.vehicle.plate} size="sm" />
                   )}
                 </div>
                 <Link
@@ -343,7 +346,7 @@ export function OrderList({
                 )}
               </div>
               <div className="font-semibold text-foreground">
-                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
               </div>
             </div>
           </div>

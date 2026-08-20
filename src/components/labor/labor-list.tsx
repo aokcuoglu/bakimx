@@ -23,8 +23,6 @@ import { formatPrice } from "@/lib/parts/format"
 import type { LaborCatalogRow, LaborKPIs } from "@/lib/labor/types"
 import { Plus, Search, Wrench, Archive, Edit3, Trash2, Sparkles, CheckCircle2, Loader2 } from "lucide-react"
 
-const STATUS_LABELS: Record<string, string> = { all: "Tümü", active: "Aktif", inactive: "Pasif" }
-
 export function LaborList({
   items, kpis, categories, currentFilters,
 }: {
@@ -106,7 +104,7 @@ export function LaborList({
       <PartsTabsNav active="labor" />
 
       <div className="grid grid-cols-3 gap-3">
-        <KpiStat label="Toplam İşçilik" value={kpis.total} icon={Wrench} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Toplam İşçilik" value={kpis.total} icon={Wrench} accent="text-primary-strong" accentBg="bg-primary/10" />
         <KpiStat label="Aktif" value={kpis.active} icon={CheckCircle2} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Pasif" value={kpis.inactive} icon={Archive} accent="text-muted-foreground" accentBg="bg-muted" />
       </div>
@@ -140,11 +138,9 @@ export function LaborList({
                   className="pl-9"
                 />
               </div>
-              <Select value={status} onValueChange={(v) => setStatus(v ?? "all")}>
+              <Select value={status} onValueChange={(v) => setStatus(v)}>
                 <SelectTrigger className="sm:w-40">
-                  <SelectValue placeholder="Durum">
-                    {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tümü</SelectItem>
@@ -175,7 +171,7 @@ export function LaborList({
                   {visible.map((item) => (
                     <tr key={item.id} className="hover:bg-muted transition-colors">
                       <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                        {item.code || <span className="text-muted-foreground/50">—</span>}
+                        {item.code || <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-medium text-foreground">{item.name}</span>
@@ -186,7 +182,7 @@ export function LaborList({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground">
-                        {item.category || <span className="text-muted-foreground/50">—</span>}
+                        {item.category || <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-foreground tabular-nums">
                         {formatPrice(item.defaultPriceKurus)}
@@ -199,22 +195,28 @@ export function LaborList({
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Tooltip>
-                            <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => openEdit(item)} />}>
-                              <Edit3 className="size-3.5" />
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
+                                <Edit3 className="size-3.5" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Düzenle</TooltipContent>
                           </Tooltip>
                           {item.isActive && (
                             <Tooltip>
-                              <TooltipTrigger render={<Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => handleDeactivate(item.id)} />}>
-                                <Archive className="size-3.5" />
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => handleDeactivate(item.id)}>
+                                  <Archive className="size-3.5" />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent side="top">Pasifleştir</TooltipContent>
                             </Tooltip>
                           )}
                           <Tooltip>
-                            <TooltipTrigger render={<Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => setPendingDelete(item)} />}>
-                              <Trash2 className="size-3.5" />
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => setPendingDelete(item)}>
+                                <Trash2 className="size-3.5" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Sil</TooltipContent>
                           </Tooltip>

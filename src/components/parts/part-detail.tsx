@@ -181,9 +181,9 @@ export function PartDetail({ part }: { part: PartType }) {
                         {m.reason && <span className="text-xs text-muted-foreground truncate">— {m.reason}</span>}
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-[11px] text-muted-foreground/70">{formatDateTime(m.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground">{formatDateTime(m.createdAt)}</span>
                         {m.previousQty != null && m.newQty != null && (
-                          <div className="text-[10px] text-muted-foreground/70">
+                          <div className="text-[10px] text-muted-foreground">
                             {m.previousQty} → {m.newQty}
                           </div>
                         )}
@@ -248,12 +248,12 @@ export function PartDetail({ part }: { part: PartType }) {
                 <>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Tedarikçi</span>
-                    <Link href={`/suppliers/${part.supplier.id}`} className="font-medium text-primary hover:text-primary/80">
+                    <Link href={`/suppliers/${part.supplier.id}`} className="font-medium text-primary hover:underline">
                       {part.supplier.name}
                     </Link>
                   </div>
                   {part.supplier.phone && (
-                    <a href={`tel:${part.supplier.phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
+                    <a href={`tel:${part.supplier.phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
                       {part.supplier.phone}
                     </a>
                   )}
@@ -263,7 +263,7 @@ export function PartDetail({ part }: { part: PartType }) {
                   <>
                     <PriceRow label="Tedarikçi Adı" value={part.supplierName || "—"} />
                     {part.supplierPhone && (
-                      <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80">
+                      <a href={`tel:${part.supplierPhone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
                         {part.supplierPhone}
                       </a>
                     )}
@@ -312,7 +312,7 @@ function SummaryItem({ label, value, unit }: { label: string; value: React.React
     <div>
       <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
       <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
-      {unit && <p className="text-[10px] text-muted-foreground/70">{unit}</p>}
+      {unit && <p className="text-[10px] text-muted-foreground">{unit}</p>}
     </div>
   )
 }

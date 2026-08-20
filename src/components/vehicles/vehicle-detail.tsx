@@ -195,28 +195,23 @@ export function VehicleDetail({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              render={<Link href={`/orders/new?vehicleId=${v.id}`} />}
-            >
-              <Wrench className="size-4" />
-              <span className="hidden sm:inline">Yeni İş Emri</span>
+            <Button asChild>
+              <Link href={`/orders/new?vehicleId=${v.id}`}>
+                <Wrench className="size-4" />
+                <span className="hidden sm:inline">Yeni İş Emri</span>
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href={`/vehicles/${v.id}/edit`} />}
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Düzenle</span>
+            <Button variant="outline" asChild>
+              <Link href={`/vehicles/${v.id}/edit`}>
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Düzenle</span>
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="navy"
-              render={<Link href={`/vehicles/${v.id}/passport`} />}
-            >
-              <ScrollText className="size-4" />
-              <span className="hidden sm:inline">Pasaport</span>
+            <Button variant="navy" asChild>
+              <Link href={`/vehicles/${v.id}/passport`}>
+                <ScrollText className="size-4" />
+                <span className="hidden sm:inline">Pasaport</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -308,7 +303,7 @@ export function VehicleDetail({
                     ) : null}
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground/70 shrink-0 ml-auto" />
+                <ChevronRight className="size-4 text-muted-foreground shrink-0 ml-auto" />
               </Link>
             </div>
           </SectionCard>
@@ -362,7 +357,7 @@ export function VehicleDetail({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-foreground">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </p>
                           {i.order.estimatedDeliveryAt ? (
                             <p className="text-[11px] text-muted-foreground">
@@ -388,7 +383,7 @@ export function VehicleDetail({
                       <div className="text-right shrink-0">
                         <p className="text-[11px] text-muted-foreground">{formatDate(o.servicedAt)}</p>
                         {/* Başka servisin tutarı hiçbir koşulda gösterilmez. */}
-                        <p className="text-[11px] text-muted-foreground/70">Tutar gizli</p>
+                        <p className="text-[11px] text-muted-foreground">Tutar gizli</p>
                       </div>
                     </div>
                   )
@@ -447,7 +442,7 @@ export function VehicleDetail({
                         ) : null}
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-muted-foreground/70 shrink-0" />
+                    <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -491,7 +486,7 @@ export function VehicleDetail({
                             <p className="text-xs text-muted-foreground mt-0.5">{dm.note}</p>
                           ) : null}
                         </div>
-                        <span className="text-[11px] text-muted-foreground/70 shrink-0">{formatDate(dm.createdAt)}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(dm.createdAt)}</span>
                       </div>
                       <div className="mt-1">
                         <Link
@@ -542,7 +537,7 @@ export function VehicleDetail({
                         <p className="text-[11px] font-medium text-foreground truncate">
                           {pt?.label || p.label || p.type}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/70">{formatDate(p.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
                       </div>
                     </Link>
                   )

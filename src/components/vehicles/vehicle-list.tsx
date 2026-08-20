@@ -120,7 +120,7 @@ export function VehicleList({
           <StatCard
             label="Aktif"
             value={kpis.active}
-            accent="bg-primary/10 text-primary border-primary/20"
+            accent="bg-primary/10 text-primary-strong border-primary/20"
           />
           {/* TODO: Enable when documents/muayene tracking is implemented */}
           {kpis.documentsExpiring > 0 && (
@@ -146,7 +146,7 @@ export function VehicleList({
         className="flex items-center gap-2"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             name="q"
             value={q}
@@ -172,7 +172,7 @@ export function VehicleList({
         <div className="hidden lg:flex gap-2 flex-wrap">
           <Select
             value={vehicleType}
-            onValueChange={(v) => setVehicleType(v ?? "")}
+            onValueChange={(v) => setVehicleType(v)}
           >
             <SelectTrigger aria-label="Araç tipi filtresi">
               <SelectValue placeholder="Araç Tipi" />
@@ -186,7 +186,7 @@ export function VehicleList({
           {brands.length > 0 && (
             <Select
               value={brand}
-              onValueChange={(v) => setBrand(v ?? "")}
+              onValueChange={(v) => setBrand(v)}
             >
               <SelectTrigger aria-label="Marka filtresi">
                 <SelectValue placeholder="Tüm Markalar" />
@@ -301,26 +301,26 @@ function DesktopTable({
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">
                   {row.mileage ? (
                     <span className="inline-flex items-center gap-1">
-                      <Gauge className="size-3.5 text-muted-foreground/70" />
+                      <Gauge className="size-3.5 text-muted-foreground" />
                       {row.mileage.toLocaleString("tr-TR")} km
                     </span>
                   ) : (
-                    <span className="text-muted-foreground/70">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">
-                  <span className={row.workOrdersCount > 0 ? "text-foreground font-medium" : "text-muted-foreground/70"}>
+                  <span className={row.workOrdersCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
                     {row.workOrdersCount}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {row.lastServiceDate ? (
                     <span className="inline-flex items-center gap-1">
-                      <Calendar className="size-3 text-muted-foreground/70" />
+                      <Calendar className="size-3 text-muted-foreground" />
                       {formatDate(row.lastServiceDate)}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground/70">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">

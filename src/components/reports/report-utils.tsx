@@ -71,12 +71,12 @@ export function StatCard({
   isCurrency?: boolean
 }) {
   const colors = {
-    blue: "bg-primary/10 text-primary",
+    blue: "bg-primary/10 text-primary-strong",
     green: "bg-success/10 text-success-strong",
     amber: "bg-warning/10 text-warning-strong",
     red: "bg-destructive/10 text-destructive-strong",
-    purple: "bg-primary/10 text-primary",
-    indigo: "bg-primary/10 text-primary",
+    purple: "bg-primary/10 text-primary-strong",
+    indigo: "bg-primary/10 text-primary-strong",
   }
 
   const displayValue = isCurrency && typeof value === "number" ? formatTRY(value) : value
@@ -87,7 +87,7 @@ export function StatCard({
       <p className={`text-2xl font-bold ${colors[accent]?.split(" ")[1] || "text-foreground"}`}>
         {displayValue}
       </p>
-      {subValue && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subValue}</p>}
+      {subValue && <p className="text-[11px] text-muted-foreground mt-0.5">{subValue}</p>}
     </div>
   )
 }
@@ -101,7 +101,7 @@ export function BarChart({ data, label, valueKey = "count" }: { data: { label: s
     return (
       <div className="rounded-lg border border-border bg-card p-6">
         <h4 className="text-sm font-semibold text-foreground mb-4">{label}</h4>
-        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground/70">Veri bulunmuyor.</div>
+        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">Veri bulunmuyor.</div>
       </div>
     )
   }
@@ -122,7 +122,7 @@ export function BarChart({ data, label, valueKey = "count" }: { data: { label: s
                 className="w-full rounded-t-md bg-primary transition-all min-h-[4px]"
                 style={{ height: `${Math.max(2, pct)}%` }}
               />
-              <span className="text-[10px] sm:text-[11px] text-muted-foreground/70 font-medium truncate max-w-full">{d.label}</span>
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium truncate max-w-full">{d.label}</span>
             </div>
           )
         })}
@@ -143,7 +143,7 @@ export function ReportTable<T extends Record<string, unknown>>({
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-6">
-        <p className="text-sm text-muted-foreground/70 text-center">Veri bulunmuyor.</p>
+        <p className="text-sm text-muted-foreground text-center">Veri bulunmuyor.</p>
       </div>
     )
   }
@@ -161,7 +161,7 @@ export function ReportTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-border">
             {rows.map((row, idx) => renderRow(row, idx))}
           </tbody>
         </table>

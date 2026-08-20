@@ -106,7 +106,7 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<{
     rejected: "bg-destructive/10 text-destructive-strong",
   }
   const SUB_BADGE: Record<string, string> = {
-    trialing: "bg-primary/10 text-primary",
+    trialing: "bg-primary/10 text-primary-strong",
     active: "bg-success/10 text-success-strong",
     past_due: "bg-warning/10 text-warning-strong",
     canceled: "bg-muted text-muted-foreground",

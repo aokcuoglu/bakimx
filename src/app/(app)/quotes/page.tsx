@@ -37,29 +37,27 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
             <p className="text-sm text-muted-foreground mt-0.5">{quotes.length} teklif</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              nativeButton={false}
-              size="default"
-              className="hidden sm:inline-flex"
-              render={<Link href="/quotes/new" />}
-            >
-              <Plus className="size-4" />
-              Yeni Teklif
+            <Button size="default" className="hidden sm:inline-flex" asChild>
+              <Link href="/quotes/new">
+                <Plus className="size-4" />
+                Yeni Teklif
+              </Link>
             </Button>
             <Button
-              nativeButton={false}
               size="icon"
               className="sm:hidden"
-              render={<Link href="/quotes/new" />}
+              asChild
               aria-label="Yeni teklif"
             >
-              <Plus className="size-5" />
+              <Link href="/quotes/new">
+                <Plus className="size-5" />
+              </Link>
             </Button>
           </div>
         </div>
 
         <form method="GET" action="/quotes" className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             type="search"
             name="q"
@@ -73,17 +71,15 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
         {quotes.length === 0 && !q ? (
           <div className="text-center py-16">
             <div className="size-16 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center">
-              <Plus className="size-8 text-muted-foreground/70" />
+              <Plus className="size-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Henüz teklif yok</h3>
             <p className="text-sm text-muted-foreground mb-4">İlk teklifinizi oluşturmaya başlayın.</p>
-            <Button
-              nativeButton={false}
-              size="default"
-              render={<Link href="/quotes/new" />}
-            >
-              <Plus className="size-4" />
-              Yeni Teklif Oluştur
+            <Button size="default" asChild>
+              <Link href="/quotes/new">
+                <Plus className="size-4" />
+                Yeni Teklif Oluştur
+              </Link>
             </Button>
           </div>
         ) : quotes.length === 0 && q ? (

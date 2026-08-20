@@ -26,6 +26,7 @@ import { VinLinkPrompt } from "./vin-link-prompt"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch, fetchBakimxProductsByTecdocCategory } from "@/lib/parts/bakimx-client"
+import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
 import { buildBakimxCategoryBranch, isBakimxNode } from "@/lib/parts/bakimx-tree"
 import type { ArticleSummary, CategoryMatch, CategoryNode } from "@/lib/tecdoc/types"
 import { CATEGORY_MATCH_LIMIT, searchCategoryTree } from "@/lib/tecdoc/tree"
@@ -156,6 +157,17 @@ export function TecdocPartPicker({
     q: trimmedQuery,
     limit: SEARCH_LIMIT,
     vehicleTypeId,
+  })
+
+  // Global aramanın GetirBakım ayağı (BAK-183). Yalnız GLOBAL aramada çalışır:
+  // kategori drill-down'ı GetirBakım taksonomisini tanımıyor ve her dal
+  // açılışında dış servise sorgu göndermek boşa maliyet olurdu. `getirbakimCatalog`
+  // kapısı kapalı atölyede uç 403 döner → liste hep boş → satırlar hiç render
+  // edilmez, aramanın geri kalanı etkilenmez.
+  const { products: getirbakimResults, searching: getirbakimSearching } = useGetirbakimSearch({
+    enabled: open && globalSearch,
+    q: trimmedQuery,
+    limit: SEARCH_LIMIT,
   })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {
@@ -520,7 +532,7 @@ export function TecdocPartPicker({
                 bilmeyen kullanıcı ağaçta dolaşmak zorunda kalmasın. */}
             <div className="mt-3 space-y-2">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -584,6 +596,8 @@ export function TecdocPartPicker({
                 bakimxProducts={bakimxSearchResults}
                 bakimxSearching={bakimxSearching}
                 onBakimxSelect={onSelectBakimx ? selectBakimx : undefined}
+                getirbakimProducts={getirbakimResults}
+                getirbakimSearching={getirbakimSearching}
                 vehicleTypeId={vehicleTypeId}
                 brandFilter={searchBrand}
                 onBrandFilterChange={setSearchBrand}
@@ -612,7 +626,7 @@ export function TecdocPartPicker({
                     key={node.id}
                     type="button"
                     onClick={() => (node.children.length > 0 ? setStack((s) => [...s, node]) : void openLeaf(node))}
-                    className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left text-sm border-b border-border/60 hover:bg-muted"
+                    className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left text-sm border-b border-border/60 hover:bg-muted"
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       {isBakimxNode(node) && <Store className="size-3.5 shrink-0 text-primary" />}
@@ -621,7 +635,7 @@ export function TecdocPartPicker({
                         <span className="shrink-0 text-xs text-muted-foreground">{node.productCount}</span>
                       )}
                     </span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   </button>
                 ))}
                 {currentNodes.length === 0 && (
@@ -657,11 +671,7 @@ export function TecdocPartPicker({
                   <div className="sticky top-0 z-10 bg-popover px-3 py-2 border-b">
                     <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v && v !== "all" ? v : "")}>
                       <SelectTrigger className="h-9">
-                        {/* Base UI Select.Value HAM değeri basar → "all" seçiliyken
-                            tetikleyicide "all" yazıyordu; etiketi render-fn ile veriyoruz. */}
-                        <SelectValue>
-                          {(v: string | null) => (v && v !== "all" ? v : "Tüm markalar")}
-                        </SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tüm markalar</SelectItem>

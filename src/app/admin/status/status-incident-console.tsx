@@ -132,7 +132,7 @@ export function StatusIncidentConsole({
                       Çözüm notu: {incident.resolutionNote}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground/70 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {new Date(incident.createdAt).toLocaleString("tr-TR")} · {incident.createdByEmail}
                   </p>
                 </div>
@@ -236,13 +236,9 @@ function CreateIncidentDialog({
                 <FormItem>
                   <FormLabel>Ciddiyet *</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "degraded")}>
+                    <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seçin">
-                          {(value: string | null) =>
-                            value ? SEVERITY_LABELS[value as CreateStatusIncidentInput["severity"]] : null
-                          }
-                        </SelectValue>
+                        <SelectValue placeholder="Seçin" />
                       </SelectTrigger>
                       <SelectContent>
                         {STATUS_INCIDENT_SEVERITIES.map((s) => (
