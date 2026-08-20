@@ -116,8 +116,10 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
           <Package className="size-5 text-primary" />
           Stok / Parçalar
         </h2>
-        <Button nativeButton={false} size="sm" className="w-full sm:w-auto" render={<Link href="/parts/new" />}>
-          <Plus className="size-3.5 mr-1" /> Yeni Parça
+        <Button size="sm" className="w-full sm:w-auto" asChild>
+          <Link href="/parts/new">
+            <Plus className="size-3.5 mr-1" /> Yeni Parça
+          </Link>
         </Button>
       </div>
 
@@ -277,14 +279,18 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}`} />} />}>
-                          <Eye className="size-3.5" />
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" asChild />}>
+                          <Link href={`/parts/${part.id}`}>
+                            <Eye className="size-3.5" />
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent side="top">Görüntüle</TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger render={<Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/parts/${part.id}/edit`} />} />}>
-                          <Edit3 className="size-3.5" />
+                        <TooltipTrigger render={<Button variant="ghost" size="icon" asChild />}>
+                          <Link href={`/parts/${part.id}/edit`}>
+                            <Edit3 className="size-3.5" />
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent side="top">Düzenle</TooltipContent>
                       </Tooltip>

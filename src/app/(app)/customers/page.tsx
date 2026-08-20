@@ -117,21 +117,17 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href="/customers/balances" />}
-            >
-              <Wallet className="size-4" />
-              Bakiye Özeti
+            <Button variant="outline" asChild>
+              <Link href="/customers/balances">
+                <Wallet className="size-4" />
+                Bakiye Özeti
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              size="default"
-              render={<Link href="/customers/new" />}
-            >
-              <Plus className="size-4" />
-              Yeni Müşteri
+            <Button size="default" asChild>
+              <Link href="/customers/new">
+                <Plus className="size-4" />
+                Yeni Müşteri
+              </Link>
             </Button>
           </div>
         </div>

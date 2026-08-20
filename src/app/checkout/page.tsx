@@ -80,8 +80,10 @@ export default async function CheckoutPage({
             </div>
           </div>
           {isCard && (
-            <Button nativeButton={false} render={<Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`} />} size="lg" className="mt-5 w-full">
-              Ödemeye devam et
+            <Button asChild size="lg" className="mt-5 w-full">
+              <Link href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}>
+                Ödemeye devam et
+              </Link>
             </Button>
           )}
         </div>

@@ -61,8 +61,10 @@ export default async function AdminLeadsPage({
               Filtrele
             </Button>
             {workshopId && (
-              <Button nativeButton={false} variant="ghost" render={<Link href="/admin/leads" />}>
-                Temizle
+              <Button variant="ghost" asChild>
+                <Link href="/admin/leads">
+                  Temizle
+                </Link>
               </Button>
             )}
           </div>

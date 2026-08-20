@@ -95,13 +95,12 @@ export function MenuView({ onNavigate }: MenuViewProps) {
               key={action.key}
               variant="outline"
               className={ROW_CLASS}
-              nativeButton={false}
-              render={
-                <a href={action.href}>
-                  <ActionInner action={action} />
-                </a>
-              }
-            />
+              asChild
+            >
+              <a href={action.href}>
+                <ActionInner action={action} />
+              </a>
+            </Button>
           ) : (
             <Button
               key={action.key}

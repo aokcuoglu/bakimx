@@ -39,8 +39,10 @@ export function PublicLinkState({ problem }: { problem: PublicLinkProblem }) {
         <h1 id="public-link-title" className="text-xl font-bold text-foreground">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         {problem === "error" && (
-          <Button nativeButton={false} render={<Link href="" />} size="lg" className="mt-6 w-full">
-            Tekrar dene
+          <Button asChild size="lg" className="mt-6 w-full">
+            <Link href="">
+              Tekrar dene
+            </Link>
           </Button>
         )}
         <div className="mt-6 flex items-center justify-center gap-2 border-t pt-4 text-xs text-muted-foreground">

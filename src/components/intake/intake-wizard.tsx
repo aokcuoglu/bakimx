@@ -509,8 +509,10 @@ export function IntakeWizard({
                   <Button type="button" variant="outline" size="lg" className="gap-2" onClick={handleSaveAndNew}>
                     <Plus className="size-4" /> Kaydet & Yeni
                   </Button>
-                  <Button nativeButton={false} size="lg" className="gap-2" render={<Link href={orderId ? `/orders/${orderId}` : "/orders"} />}>
-                    İş Emrine Git
+                  <Button size="lg" className="gap-2" asChild>
+                    <Link href={orderId ? `/orders/${orderId}` : "/orders"}>
+                      İş Emrine Git
+                    </Link>
                   </Button>
                 </div>
               </div>

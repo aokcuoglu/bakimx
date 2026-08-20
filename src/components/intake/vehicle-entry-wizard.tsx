@@ -817,13 +817,14 @@ export function VehicleEntryWizard({
                   <UserCog className="mr-1 size-4" /> Sahip değiştir
                 </Button>
                 <Button
-                  nativeButton={false}
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground"
-                  render={<Link href={`/vehicles/${confirmed.vehicleId}`} />}
+                  asChild
                 >
-                  <Info className="mr-1 size-4" /> Araç detayı
+                  <Link href={`/vehicles/${confirmed.vehicleId}`}>
+                    <Info className="mr-1 size-4" /> Araç detayı
+                  </Link>
                 </Button>
               </div>
             )}

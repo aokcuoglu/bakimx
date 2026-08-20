@@ -30,7 +30,7 @@ Modül ve mimari diyagramları: [docs/architecture](./docs/architecture/).
 
 - **Framework:** Next.js 16 (App Router) · React 19
 - **Dil:** TypeScript (strict)
-- **UI:** Tailwind CSS v4 · shadcn/ui (base-nova, @base-ui/react) · Framer Motion · lucide-react
+- **UI:** Tailwind CSS v4 · shadcn/ui (radix-nova; `radix-ui` + `@base-ui/react` geçiş halinde) · Framer Motion · lucide-react
 - **ORM / DB:** Prisma 7 · PostgreSQL (pg adapter)
 - **Auth:** iron-session + bcryptjs
 - **Validasyon:** Zod v4

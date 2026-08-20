@@ -136,7 +136,9 @@ function AlertDialogAction({
 function AlertDialogCancel({
   className,
   ...props
-}: AlertDialogPrimitive.Close.Props) {
+}: Omit<AlertDialogPrimitive.Close.Props, "className"> & {
+  className?: string
+}) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"

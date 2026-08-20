@@ -195,28 +195,23 @@ export function VehicleDetail({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              render={<Link href={`/orders/new?vehicleId=${v.id}`} />}
-            >
-              <Wrench className="size-4" />
-              <span className="hidden sm:inline">Yeni İş Emri</span>
+            <Button asChild>
+              <Link href={`/orders/new?vehicleId=${v.id}`}>
+                <Wrench className="size-4" />
+                <span className="hidden sm:inline">Yeni İş Emri</span>
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href={`/vehicles/${v.id}/edit`} />}
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Düzenle</span>
+            <Button variant="outline" asChild>
+              <Link href={`/vehicles/${v.id}/edit`}>
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Düzenle</span>
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="navy"
-              render={<Link href={`/vehicles/${v.id}/passport`} />}
-            >
-              <ScrollText className="size-4" />
-              <span className="hidden sm:inline">Pasaport</span>
+            <Button variant="navy" asChild>
+              <Link href={`/vehicles/${v.id}/passport`}>
+                <ScrollText className="size-4" />
+                <span className="hidden sm:inline">Pasaport</span>
+              </Link>
             </Button>
           </div>
         </div>

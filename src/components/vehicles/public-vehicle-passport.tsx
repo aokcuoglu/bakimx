@@ -481,9 +481,11 @@ export function PublicVehiclePassportPage({
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button nativeButton={false} render={<Link href={`/p/${passportToken.token}/pdf`} target="_blank" />} className="w-full" size="xl">
-            <FileDown className="size-5" />
-            Yazdırılabilir sayfayı aç
+          <Button asChild className="w-full" size="xl">
+            <Link href={`/p/${passportToken.token}/pdf`} target="_blank">
+              <FileDown className="size-5" />
+              Yazdırılabilir sayfayı aç
+            </Link>
           </Button>
           <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <Share2 className="size-5" />

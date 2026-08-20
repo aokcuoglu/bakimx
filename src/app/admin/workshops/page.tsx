@@ -66,21 +66,17 @@ async function WorkshopList({ query, canManage }: { query: WorkshopListQuery; ca
           </span>
           <div className="flex gap-2">
             {query.page > 1 && (
-              <Button
-                nativeButton={false}
-                variant="outline"
-                render={<Link href={buildWorkshopListHref(query, query.page - 1)} />}
-              >
-                Önceki
+              <Button variant="outline" asChild>
+                <Link href={buildWorkshopListHref(query, query.page - 1)}>
+                  Önceki
+                </Link>
               </Button>
             )}
             {query.page < totalPages && (
-              <Button
-                nativeButton={false}
-                variant="outline"
-                render={<Link href={buildWorkshopListHref(query, query.page + 1)} />}
-              >
-                Sonraki
+              <Button variant="outline" asChild>
+                <Link href={buildWorkshopListHref(query, query.page + 1)}>
+                  Sonraki
+                </Link>
               </Button>
             )}
           </div>
@@ -147,8 +143,10 @@ export default async function AdminWorkshopsPage({
         <div className="flex gap-2">
           <Button type="submit">Filtrele</Button>
           {filtered && (
-            <Button nativeButton={false} variant="ghost" render={<Link href="/admin/workshops" />}>
-              Temizle
+            <Button variant="ghost" asChild>
+              <Link href="/admin/workshops">
+                Temizle
+              </Link>
             </Button>
           )}
         </div>

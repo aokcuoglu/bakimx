@@ -1537,14 +1537,11 @@ export function WorkOrderDetail({
               dışında, sekmenin başında durur (BAK-23). */}
           {canOpenTechnicianView(order.assignedTechnicianId) && (
             <div className="flex justify-end">
-              <Button
-                nativeButton={false}
-                variant="outline"
-                size="sm"
-                render={<Link href={technicianOrderPath(order.id)} />}
-              >
-                <HardHat />
-                Teknisyen Panelinde Aç
+              <Button variant="outline" size="sm" asChild>
+                <Link href={technicianOrderPath(order.id)}>
+                  <HardHat />
+                  Teknisyen Panelinde Aç
+                </Link>
               </Button>
             </div>
           )}

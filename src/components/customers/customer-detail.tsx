@@ -204,14 +204,11 @@ export function CustomerDetail({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-             <Button
-               nativeButton={false}
-               variant="outline"
-               size="sm"
-               render={<Link href={`/orders/new?customerId=${customer.id}`} />}
-             >
-               <Wrench className="size-4" />
-               Yeni İş Emri
+             <Button variant="outline" size="sm" asChild>
+               <Link href={`/orders/new?customerId=${customer.id}`}>
+                 <Wrench className="size-4" />
+                 Yeni İş Emri
+               </Link>
              </Button>
             <Button
               type="button"

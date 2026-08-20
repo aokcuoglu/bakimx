@@ -151,20 +151,16 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href="/cashbox" />}
-            >
-              <Wallet className="size-4" />
-              Kasa
+            <Button variant="outline" asChild>
+              <Link href="/cashbox">
+                <Wallet className="size-4" />
+                Kasa
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              variant="outline"
-              render={<Link href="/customers" />}
-            >
-              Müşteri Listesi
+            <Button variant="outline" asChild>
+              <Link href="/customers">
+                Müşteri Listesi
+              </Link>
             </Button>
           </div>
         </div>

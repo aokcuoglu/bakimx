@@ -490,8 +490,10 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-3 border-t border-border pt-4">
-          <Button nativeButton={false} variant="outline" render={<Link href="/reminders" />}>
-            İptal
+          <Button variant="outline" asChild>
+            <Link href="/reminders">
+              İptal
+            </Link>
           </Button>
           <Button type="submit" disabled={loading} className="gap-1.5">
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}
