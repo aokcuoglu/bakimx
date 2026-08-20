@@ -53,7 +53,7 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Toplam Alım" value={kpis.count} accent="bg-primary/10 text-primary border-primary/20" />
+        <StatCard label="Toplam Alım" value={kpis.count} accent="bg-primary/10 text-primary-strong border-primary/20" />
         <StatCard label="Toplam Tutar" value={formatTRY(kpis.totalKurus)} accent="bg-success/10 text-success-strong border-success/20" />
         <StatCard label="Tedarikçi" value={kpis.supplierCount} accent="bg-muted text-muted-foreground border-border" />
         <StatCard label="Bu Ay" value={kpis.thisMonthCount} accent="bg-warning/10 text-warning-strong border-warning/20" />

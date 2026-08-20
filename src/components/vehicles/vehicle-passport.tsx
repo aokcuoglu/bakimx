@@ -738,7 +738,7 @@ function ReminderStatusBadge({ status }: { status: string }) {
 function ReminderTypeBadge({ type }: { type: string }) {
   const info = MAINTENANCE_REMINDER_TYPES[type as keyof typeof MAINTENANCE_REMINDER_TYPES]
   return (
-    <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+    <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium bg-primary/10 text-primary-strong border border-primary/20">
       {info?.label || type}
     </span>
   )
@@ -755,7 +755,7 @@ function QuickStat({ label, value }: { label: string; value: string }) {
 
 function VisibilityBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center h-5 px-1.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+    <span className="inline-flex items-center h-5 px-1.5 rounded text-[10px] font-medium bg-primary/10 text-primary-strong border border-primary/20">
       {label}
     </span>
   )

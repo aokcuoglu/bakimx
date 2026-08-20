@@ -179,7 +179,7 @@ export function RuhsatDemoSection() {
             <div className="p-5 sm:p-6">
               {phase === "idle" ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
                     <ScanLine className="size-6" />
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -298,7 +298,7 @@ function RuhsatDoc({
           </p>
           <p className="text-[10px] text-muted-foreground">Ruhsat (örnek / temsili)</p>
         </div>
-        <div className="rounded bg-primary/10 px-2 py-1 text-[10px] font-mono font-semibold text-primary">
+        <div className="rounded bg-primary/10 px-2 py-1 text-[10px] font-mono font-semibold text-primary-strong">
           34 ABC 123
         </div>
       </div>

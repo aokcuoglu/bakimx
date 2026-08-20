@@ -847,16 +847,17 @@ export function WorkOrderDetail({
           {deliverySentCode && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Demo kodu (SMS kapalı): <span className="font-mono font-bold">{deliverySentCode}</span></p>
-              <button
+              <Button
                 type="button"
+                size="lg"
+                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
                 onClick={() => {
                   const text = `BakimX teslim onay kodunuz: ${deliverySentCode}. Aracınızın teslimini onaylamak için bu kodu servise iletin.`
                   window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#25D366] text-white rounded-lg text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
               >
                 WhatsApp ile Gönder
-              </button>
+              </Button>
             </div>
           )}
           <Input
@@ -1171,17 +1172,18 @@ export function WorkOrderDetail({
                   <Link href={`/s/${shareToken}/pdf`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full p-2.5 rounded-lg border border-border hover:bg-muted text-sm text-foreground touch-manipulation">
                     <Printer className="size-4 text-muted-foreground" /> Yazdır / PDF
                   </Link>
-                  <button
+                  <Button
                     type="button"
+                    size="lg"
+                    className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
                     onClick={() => {
                       if (!shareLinkFull) return
                       const text = generateWhatsAppShareText({ publicLink: shareLinkFull, totalAmount: order.totals.hasAnyPrice ? order.totals.grandTotal : null })
                       window.open(getWhatsAppSendUrl(order.customer.phone, text), "_blank")
                     }}
-                    className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
                   >
                     <Share2 className="size-4" /> WhatsApp ile Paylaş
-                  </button>
+                  </Button>
                   <div className="flex gap-2">
                     <button
                       type="button"

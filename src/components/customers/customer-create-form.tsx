@@ -482,7 +482,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               size="sm"
                               className={cn(
                                 field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary"
+                                  ? "border-primary bg-primary/10 text-primary-strong"
                                   : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >
@@ -545,7 +545,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
                               size="sm"
                               className={cn(
                                 field.value === opt.key
-                                  ? "border-primary bg-primary/10 text-primary"
+                                  ? "border-primary bg-primary/10 text-primary-strong"
                                   : "border-border bg-card text-muted-foreground hover:bg-muted"
                               )}
                             >

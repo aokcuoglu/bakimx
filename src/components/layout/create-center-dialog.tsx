@@ -63,7 +63,7 @@ export function CreateCenterDialog() {
                   className="h-auto min-h-16 w-full justify-start gap-3 whitespace-normal p-3 text-left md:min-h-16"
                 >
                   <Link href={option.href} onClick={() => setOpen(false)}>
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                       <Icon className="size-5" aria-hidden />
                     </span>
                     <span className="min-w-0">

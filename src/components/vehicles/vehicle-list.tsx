@@ -120,7 +120,7 @@ export function VehicleList({
           <StatCard
             label="Aktif"
             value={kpis.active}
-            accent="bg-primary/10 text-primary border-primary/20"
+            accent="bg-primary/10 text-primary-strong border-primary/20"
           />
           {/* TODO: Enable when documents/muayene tracking is implemented */}
           {kpis.documentsExpiring > 0 && (

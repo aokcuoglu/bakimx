@@ -405,11 +405,11 @@ export function ReminderList({ initialReminders, stats }: Props) {
 
 function KpiCards({ stats }: { stats: Record<string, number> }) {
   const items = [
-    { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "upcoming", label: "Yaklaşan", color: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "due_soon", label: "Yaklaşıyor", color: "bg-warning/10 text-warning-strong border-warning/20" },
     { key: "overdue", label: "Geciken", color: "bg-destructive/10 text-destructive-strong border-destructive/20" },
     { key: "completed", label: "Tamamlanan", color: "bg-success/10 text-success-strong border-success/20" },
-    { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "postponed", label: "Ertelenen", color: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "cancelled", label: "İptal", color: "bg-muted text-muted-foreground border-border" },
   ]
   return (
@@ -420,7 +420,7 @@ function KpiCards({ stats }: { stats: Record<string, number> }) {
           className={cn("rounded-lg border px-3 py-2.5 text-center", item.color)}
         >
           <p className="text-lg sm:text-xl font-bold">{stats[item.key] || 0}</p>
-          <p className="text-[10px] sm:text-xs font-medium opacity-80">{item.label}</p>
+          <p className="text-[10px] sm:text-xs font-medium">{item.label}</p>
         </div>
       ))}
     </div>

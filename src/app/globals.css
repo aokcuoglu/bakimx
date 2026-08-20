@@ -37,6 +37,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -51,12 +52,14 @@
   --color-navy-foreground: #FFFFFF;
   --color-navy-light: #031432;
   --color-brand: #2F84FF;
-  --color-whatsapp: #128C7E;
-  /* WhatsApp marka yeşili üzerindeki metin/ikon. Token mevcut görüntüyü birebir
-     korur; tek işi paylaş butonlarındaki sabit `text-white`i kaldırmak.
-     UYARI: beyaz bu zeminde 4.14:1 veriyor, yani text-sm için AA altında. Zemin
-     MARKA rengi olduğundan koyulaştırmak ürün kararıdır — BAK-156 bunu bulgu
-     olarak raporladı, kapsamı dışında bırakıldı. */
+  /* WhatsApp paylaş yüzeyi. Değer WhatsApp'ın kurumsal buton yeşili; sahibin
+     kararı (alpkaan, 2026-08-20, BAK-160): marka tanınırlığı erişilebilirlik
+     eşiğinin önünde. Önceki değer #128C7E idi (beyaz metinle 4.14:1).
+     ÖLÇÜM — beyaz metin bu zeminde 1.98:1, yani WCAG AA'nın (4.5:1) belirgin
+     biçimde altında. Bilinçli ve belgeli bir istisna; `theme-tokens.test.ts`
+     içindeki `BRAND_PAIR_EXCEPTIONS` bunu gerekçesiyle taşır. Buradan
+     kopyalayarak yeni bir marka rengi tanımlama — istisna WhatsApp'a özgü. */
+  --color-whatsapp: #25D366;
   --color-whatsapp-foreground: #FFFFFF;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -282,6 +285,13 @@
   --popover-foreground: oklch(0.20 0.04 260);
   --primary: oklch(0.543 0.213 260);
   --primary-foreground: oklch(0.98 0.002 250);
+  /* AÇIK YÜZEY ÜZERİNDEKİ METİN/İKON tonu — success/warning/destructive ile
+     aynı desen ve aynı L ölçeği (0.47). Temel --primary dolgu olarak canlı
+     kalmak zorunda, ama METİN olarak `bg-primary/10` tonlu zeminde AA'nın
+     altına düşüyordu: kartta 4.51:1 (kılpayı), sayfa zemininde 4.27:1,
+     bg-muted panelde 4.05:1. Yani aynı sınıf çifti yerine göre geçip yerine
+     göre kalıyordu (BAK-160). -strong bu dört yüzeyin dördünde de ≥5.5:1. */
+  --primary-strong: oklch(0.47 0.213 260);
   --secondary: oklch(0.96 0.01 250);
   --secondary-foreground: oklch(0.20 0.04 260);
   --muted: oklch(0.96 0.01 250);
@@ -341,6 +351,10 @@
   --popover-foreground: oklch(0.96 0.01 250);
   --primary: oklch(0.63 0.20 258);
   --primary-foreground: oklch(0.15 0.05 260);
+  /* Diğer -strong tonlarının aksine koyu temada temel renkle AYNI BIRAKILAMAZ:
+     --primary (L 0.63) tonlu `bg-muted` zeminde 3.71:1'de kalıyor. L 0.70 dört
+     yüzeyin dördünde de AA geçiyor (en düşük tint/muted 4.67:1). */
+  --primary-strong: oklch(0.70 0.20 258);
   --secondary: oklch(0.27 0.04 260);
   --secondary-foreground: oklch(0.96 0.01 250);
   --muted: oklch(0.27 0.04 260);

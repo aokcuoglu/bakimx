@@ -89,7 +89,7 @@ export type AccountMissingPersonnel = {
 // Sabit renk YOK — tema token'ları (bkz. proje UI kuralları). Rozet tonu
 // yetkinin ağırlığını yansıtır: yönetici > müdür > usta > çırak > eski kayıt.
 const ROLE_BADGE: Record<UserRole, string> = {
-  owner: "bg-primary/10 text-primary border-primary/20",
+  owner: "bg-primary/10 text-primary-strong border-primary/20",
   manager: "bg-primary/5 text-foreground border-primary/20",
   usta: "bg-success/10 text-success-strong border-success/20",
   cirak: "bg-warning/10 text-warning-strong border-warning/20",

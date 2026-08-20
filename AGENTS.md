@@ -78,7 +78,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - text / icon on a light surface (card, tinted box, plain bg) → **`text-success-strong`**, `text-warning-strong`, `text-destructive-strong`
   Bare `text-success` / `text-warning` / `text-destructive` fails WCAG AA on light
   surfaces (2.69–3.99:1) — `src/lib/theme-tokens.test.ts` fails the build on it,
-  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair.
+  and also enforces 4.5:1 for every `<color>`/`<color>-foreground` pair, brand
+  colors (`navy`, `whatsapp`) included.
+- **`primary` has a `-strong` tone too, but the rule is narrower** (BAK-160): bare
+  `text-primary` is fine as a link colour on a plain card (5.20:1). It only fails on
+  a **tinted** background — `bg-primary/10 text-primary` measures 4.51:1 on a card,
+  4.27:1 on the page background and 4.05:1 on `bg-muted`. So: `bg-primary/10` and
+  `text-primary` on the same element → use **`text-primary-strong`**. The test scans
+  exactly that pairing; it does not touch `text-primary` elsewhere.
+- **`opacity-*` on an element that styles text is a contrast bug** — the faded tone
+  is inherited, so it cannot be measured statically. Remove it, or state the colour
+  explicitly at the call site (`text-muted-foreground`, a `-strong` tone). Deliberate
+  cases go into `OPACITY_UTILITY_EXCEPTIONS` **with a reason**. Same rule as the
+  `text-<token>/<opacity>` gate; both live in `src/lib/theme-tokens.test.ts`.
 - **Toast:** ephemeral success/error → `toast.success()` / `toast.error()` (sonner). Persistent alerts → `<Alert>` component
 - **Tooltip:** wrap with `<TooltipProvider>` (in root layout), use `<Tooltip>` for hover hints (not native `title=` attribute)
 

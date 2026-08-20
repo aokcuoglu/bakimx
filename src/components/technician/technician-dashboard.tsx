@@ -89,11 +89,11 @@ export function TechnicianDashboard({
   const completedOrders = orders.filter((o) => ["ready_for_delivery", "delivered"].includes(o.status))
 
   const kpiCards = [
-    { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary" },
+    { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary-strong" },
     { label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
     { label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
     { label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
-    { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary" },
+    { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary-strong" },
   ]
 
   return (

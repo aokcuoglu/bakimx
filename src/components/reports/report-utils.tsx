@@ -71,12 +71,12 @@ export function StatCard({
   isCurrency?: boolean
 }) {
   const colors = {
-    blue: "bg-primary/10 text-primary",
+    blue: "bg-primary/10 text-primary-strong",
     green: "bg-success/10 text-success-strong",
     amber: "bg-warning/10 text-warning-strong",
     red: "bg-destructive/10 text-destructive-strong",
-    purple: "bg-primary/10 text-primary",
-    indigo: "bg-primary/10 text-primary",
+    purple: "bg-primary/10 text-primary-strong",
+    indigo: "bg-primary/10 text-primary-strong",
   }
 
   const displayValue = isCurrency && typeof value === "number" ? formatTRY(value) : value

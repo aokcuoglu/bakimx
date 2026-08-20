@@ -144,6 +144,64 @@ test("tema renk/foreground çiftleri WCAG AA (4.5:1) geçer", () => {
   expect(failures).toEqual([])
 })
 
+/**
+ * Yukarıdaki test yalnız `:root` / `.dark` bloklarını gezer; `@theme` içinde
+ * DOĞRUDAN sabit değerle duran marka renkleri (navy, whatsapp) o taramanın
+ * dışında kalıyordu — `--color-whatsapp` / `--color-whatsapp-foreground` çifti
+ * bu yüzden yıllarca sessizce AA altında durabildi (BAK-160). Bu test o boşluğu
+ * kapatır: marka çiftleri de ölçülür, istisna ancak GEREKÇESİYLE yazılır.
+ */
+type BrandPairException = {
+  /** `<x>` — `--color-<x>` / `--color-<x>-foreground` çiftinin adı. */
+  token: string
+  /** Ölçülen oran; kayıt düşülür ki "farkında değildik" denemesin. */
+  measured: string
+  /** Neden bilinçli — kanıtsız istisna yazma. */
+  reason: string
+}
+
+const BRAND_PAIR_EXCEPTIONS: BrandPairException[] = [
+  {
+    token: "whatsapp",
+    measured: "1.98:1",
+    reason:
+      "WhatsApp'ın kurumsal buton yeşili (#25D366) üzerinde beyaz metin. " +
+      "Sahip kararı (alpkaan, 2026-08-20, BAK-160): paylaş butonu WhatsApp'ın " +
+      "kendi görünümünü taşısın; marka tanınırlığı AA eşiğinin önünde. " +
+      "Yalnız WhatsApp paylaş yüzeyinde kullanılır, uygulama içi metin taşımaz.",
+  },
+]
+
+test("marka renk/foreground çiftleri WCAG AA (4.5:1) geçer", () => {
+  const brand = literalThemeColors()
+  const failures: string[] = []
+  const usedExceptions = new Set<string>()
+
+  for (const [name, bg] of Object.entries(brand)) {
+    if (name.endsWith("-foreground")) continue
+    const fg = brand[`${name}-foreground`]
+    if (!fg) continue
+    const exception = BRAND_PAIR_EXCEPTIONS.find((e) => e.token === name)
+    if (exception) {
+      usedExceptions.add(name)
+      continue
+    }
+    const ratio = contrast(bg, fg)
+    if (ratio < 4.5) {
+      failures.push(
+        `${name}: ${ratio.toFixed(2)}:1 (bg ${bg}, fg ${fg})` +
+          ` — tonu koyulaştır ya da gerekçesiyle BRAND_PAIR_EXCEPTIONS'a ekle`
+      )
+    }
+  }
+
+  expect(failures).toEqual([])
+
+  // Ölü istisna, allowlist'in gerçeği yansıtmadığı anlamına gelir.
+  const stale = BRAND_PAIR_EXCEPTIONS.filter((e) => !usedExceptions.has(e.token)).map((e) => e.token)
+  expect(stale).toEqual([])
+})
+
 test("kullanılan her -foreground sınıfının temada karşılığı var", () => {
   const defined = definedColorTokens()
   const offenders: string[] = []
@@ -176,7 +234,7 @@ test("-strong tonları açık yüzeyde ve tonlu zeminde AA geçer", () => {
   for (const which of ["root", "dark"] as const) {
     const vars = themeBlock(which)
     const card = vars.card
-    for (const name of ["success", "warning", "destructive"]) {
+    for (const name of ["success", "warning", "destructive", "primary"]) {
       const strong = vars[`${name}-strong`]
       const fill = vars[name]
       if (!strong || !fill || !card) {
@@ -211,6 +269,30 @@ test("metin için çıplak text-<renk> yerine -strong kullanılır", () => {
     const rel = file.slice(SRC.length + 1)
     readFileSync(file, "utf8").split("\n").forEach((line, i) => {
       if (bare.test(line)) offenders.push(`${rel}:${i + 1} → ${line.trim().slice(0, 90)}`)
+    })
+  }
+
+  expect(offenders).toEqual([])
+})
+
+/**
+ * `text-primary` diğer üçünden farklı: dolgu tonu (`--primary`) AÇIK YÜZEYDE
+ * metin olarak AA'yı geçiyor (kartta 5.20:1), yani link rengi olarak meşru.
+ * Düştüğü tek yer TONLU ZEMİN: `bg-primary/10` üstünde kartta 4.51:1 ile
+ * kılpayı geçip sayfa zemininde 4.27:1'e, `bg-muted` panelde 4.05:1'e iniyor
+ * (BAK-160). Bu yüzden tarama çıplak `text-primary`nin tamamını değil, yalnız
+ * `bg-primary/10` ile aynı satırda duranını yakalar — orada `-strong` şart.
+ */
+test("tonlu primary zemininde metin -strong tonunu kullanır", () => {
+  const bare = /\btext-primary(?![-/\w])/
+  const offenders: string[] = []
+
+  for (const file of walk(SRC)) {
+    const rel = file.slice(SRC.length + 1)
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (line.includes("bg-primary/10") && bare.test(line)) {
+        offenders.push(`${rel}:${i + 1} → ${line.trim().slice(0, 90)}`)
+      }
     })
   }
 
@@ -391,6 +473,93 @@ test("opaklık modifier'lı metin sınıfları AA (4.5:1) geçer", () => {
 
   // Ölü istisna, allowlist'in gerçeği yansıtmadığı anlamına gelir.
   const stale = OPACITY_EXCEPTIONS.filter((e) => !usedExceptions.has(`${e.file}|${e.className}`))
+    .map((e) => `${e.file} → ${e.className}`)
+  expect(stale).toEqual([])
+})
+
+/* ------------------------------------------------------------------------- *
+ * Tek başına `opacity-*` utility'si (BAK-160)
+ *
+ * BAK-156'nın kapısı `text-<token>/<opaklık>` yazımını tarıyor. Aynı işi yapan
+ * ikinci bir yazım var ve o kapıya görünmüyordu: elemana `opacity-80` vermek
+ * metni de aynı oranda soldurur. İki etikette (müşteri detayı, hatırlatma
+ * KPI'ları) tam olarak bu vardı.
+ *
+ * Bu tarama ölçüm YAPAMAZ — `opacity-80` bir renk adı taşımıyor, soldurulan
+ * ton çağrı yerinden miras alınıyor. Yani "hangi renk ne kadar düştü" statik
+ * olarak bilinemez; kural bu yüzden ölçüm değil, gerekçe ister: kaldır ya da
+ * neden güvenli olduğunu yaz.
+ *
+ * Sınırlar — bilinçli ve dar tutuldu, "her şey kapsandı" sanılmasın:
+ *   - Yalnız ÖN EKSİZ `opacity-*` sayılır. `hover:` / `disabled:` / `md:` gibi
+ *     bir varyantın arkasındakiler durum stilidir, durağan metni soldurmaz.
+ *   - `opacity-0` ve `opacity-100` atlanır: biri öğeyi tamamen gizler (kontrast
+ *     sorusu değil), diğeri zaten tam opak.
+ *   - Yalnız aynı satırda bir `text-*` utility'si varsa bakılır, yani öğenin
+ *     metin biçimlendirdiği kesinse. YAKALAMADIĞI şey: metin taşıyan bir
+ *     KAPSAYICIYA (`bg-muted opacity-60` gibi) konan opaklık — içindeki yazı
+ *     yine solar. Onun statik ayrımı yok; sıradaki iş olarak duruyor.
+ * ------------------------------------------------------------------------- */
+
+type OpacityUtilityException = {
+  /** `src` köküne göre dosya yolu. */
+  file: string
+  /** Tam sınıf adı, ör. `opacity-80`. */
+  className: string
+  /** Neden bilinçli — kanıtsız istisna yazma. */
+  reason: string
+}
+
+const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
+  {
+    file: "components/ui/calendar.tsx",
+    className: "opacity-50",
+    reason:
+      "Takvimde DEVRE DIŞI gün hücresi. WCAG 1.4.3 etkisiz (disabled) bileşenleri " +
+      "kontrast şartından açıkça muaf tutar; depodaki `disabled:opacity-50` deseniyle aynı.",
+  },
+  {
+    file: "components/parts/part-detail-dialog.tsx",
+    className: "opacity-80",
+    reason:
+      "Dolu `bg-foreground/70` zemininde duran büyüteç ikonu; hover'da tam opaklığa " +
+      "çıkıyor ve anlamı görselin kendisi taşıyor — metin değil.",
+  },
+]
+
+test("tek başına opacity-* metin öğesinde kullanılmaz", () => {
+  const OPACITY_UTILITY_RE = /(?<![\w:.-])opacity-(\d{1,3})\b/g
+  // Öğenin metin biçimlendirdiğinin kanıtı: ön eksiz bir `text-*` utility'si.
+  // Kapanış `\b` DEĞİL: `text-[10px]` köşeli parantezle bitiyor ve `]` sonrası
+  // kelime sınırı oluşmadığı için o yazımı sessizce kaçırıyordu.
+  const TEXT_UTILITY_RE = /(?<![\w:.-])text-(?:\[[^\]]*\]|xs|sm|base|lg|xl|[2-9]xl|[a-z][a-z0-9-]*)(?![\w-])/
+  const failures: string[] = []
+  const usedExceptions = new Set<string>()
+
+  for (const file of walk(SRC)) {
+    const rel = file.slice(SRC.length + 1)
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (!TEXT_UTILITY_RE.test(line)) return
+      for (const m of line.matchAll(OPACITY_UTILITY_RE)) {
+        const value = Number(m[1])
+        if (value === 0 || value >= 100) continue
+        const exception = OPACITY_UTILITY_EXCEPTIONS.find((e) => e.file === rel && e.className === m[0])
+        if (exception) {
+          usedExceptions.add(`${exception.file}|${exception.className}`)
+          continue
+        }
+        failures.push(
+          `${rel}:${i + 1} → ${m[0]} metin taşıyan öğede` +
+            ` (kaldır ya da gerekçesiyle OPACITY_UTILITY_EXCEPTIONS'a ekle)`
+        )
+      }
+    })
+  }
+
+  expect(failures).toEqual([])
+
+  // Ölü istisna, allowlist'in gerçeği yansıtmadığı anlamına gelir.
+  const stale = OPACITY_UTILITY_EXCEPTIONS.filter((e) => !usedExceptions.has(`${e.file}|${e.className}`))
     .map((e) => `${e.file} → ${e.className}`)
   expect(stale).toEqual([])
 })

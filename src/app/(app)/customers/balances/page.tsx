@@ -174,7 +174,7 @@ export default async function CustomerBalancesPage({ searchParams }: { searchPar
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <KpiCard label="Müşteri Sayısı" value={totals.customers.toString()} accent="bg-muted text-foreground" />
-          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary" />
+          <KpiCard label="Toplam İşlem" value={formatTRY(totals.grandTotal)} accent="bg-primary/10 text-primary-strong" />
           <KpiCard label="Tahsil Edilen" value={formatTRY(totals.paidAmount)} accent="bg-success/10 text-success-strong" />
           <KpiCard label="Kalan Bakiye" value={formatTRY(totals.remainingAmount)} accent="bg-destructive/10 text-destructive-strong" />
           <KpiCard label="Açık Bakiye" value={totals.withBalance.toString()} accent="bg-warning/10 text-warning-strong" />
