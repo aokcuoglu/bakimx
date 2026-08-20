@@ -5,7 +5,7 @@ export const IS_EMRI_PROGRAMI_TITLE = "İş Emri Programı: İş, Parça, İşç
 export const IS_EMRI_PROGRAMI_H1 = "İş emri programı ile her aracın işi tek kayıtta ilerlesin"
 
 export const IS_EMRI_PROGRAMI_DESCRIPTION =
-  "İş emri programı ile yapılacak işleri, parça ve işçilik kalemlerini, fotoğraf kanıtını, teklif onayını ve işlem geçmişini tek iş emrinde yönetin. BakımX'i 7 gün ücretsiz deneyin."
+  "Oto servis için iş emri programı ile yapılacak işleri, parça ve işçilik kalemlerini, fotoğraf kanıtını, teklif onayını ve işlem geçmişini tek iş emrinde yönetin. BakımX'i 7 gün ücretsiz deneyin."
 
 export const IS_EMRI_PROGRAMI_INTRO =
   "İş emri programı; bir araca yapılacak işleri, kullanılan parça ve işçilik kalemlerini, fotoğraf kanıtını, müşteri teklif onayını ve tüm işlem geçmişini tek kayıtta toplayan yazılımdır. BakımX'te her iş emri; yapılacak işler, parça/işçilik kalemleri, kabul ve kanıt fotoğrafları, teklif-onay durumu ile kim-ne-zaman yaptı bilgisini aynı ekranda tutar; ekip ayrı defter veya mesaj geçmişine bakmaz."
