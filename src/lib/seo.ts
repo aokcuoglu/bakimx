@@ -4,6 +4,7 @@ export const SITE_URL = "https://bakimx.com"
 
 export const INDEXABLE_ROUTES = [
   "/",
+  "/oto-servis-programi",
   "/fiyatlar",
   "/demo",
   "/status",
