@@ -38,6 +38,7 @@ const socialLinks = [
 const footerLinks = {
   product: [
     { label: "Oto Servis Programı", href: "/oto-servis-programi" },
+    { label: "Dijital Araç Kabul", href: "/dijital-arac-kabul" },
     { label: "Canlı Demo", href: "/#ruhsat-demo" },
     { label: "Özellikler", href: "/#ozellikler" },
     { label: "Neden BakimX", href: "/#neden" },
