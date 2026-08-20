@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { formatTRY } from "@/lib/format"
 import { isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus } from "@prisma/client"
+import { ACTIVE_ORDER_FILTER } from "@/lib/orders/status-filter"
 
 type OrderRow = {
   id: string
@@ -116,7 +117,7 @@ export function OrderList({
   technicians?: AssignableTechnician[]
 }) {
   const kpiConfigs: KpiConfig[] = [
-    { key: "active", label: "Aktif", count: kpis.active, filterValue: "draft", accent: "bg-primary/10 text-primary border-primary/20" },
+    { key: "active", label: "Aktif", count: kpis.active, filterValue: ACTIVE_ORDER_FILTER, accent: "bg-primary/10 text-primary border-primary/20" },
     { key: "waitingApproval", label: "Onay Bekliyor", count: kpis.waitingApproval, filterValue: "waiting_approval", accent: "bg-warning/10 text-warning-strong border-warning/20" },
     { key: "completed", label: "Tamamlandı", count: kpis.completed, filterValue: "ready_for_delivery", accent: "bg-primary/10 text-primary border-primary/20" },
     { key: "delivered", label: "Teslim Edildi", count: kpis.delivered, filterValue: "delivered", accent: "bg-success/10 text-success-strong border-success/20" },
