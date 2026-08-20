@@ -7,6 +7,7 @@ export const INDEXABLE_ROUTES = [
   "/oto-servis-programi",
   "/dijital-arac-kabul",
   "/is-emri-programi",
+  "/rehber/arac-kabul-formu",
   "/fiyatlar",
   "/demo",
   "/status",

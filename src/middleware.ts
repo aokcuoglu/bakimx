@@ -28,7 +28,7 @@ const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password",
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
 // /destek/<token>: canlı destek "sohbete dön" bağlantısı (BAK-99) — e-postadaki
 // bağlantı oturumsuz bir tarayıcıda açılır, auth kapısına takılırsa asla açılmaz.
-const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/"]
+const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/", "/rehber/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
