@@ -117,7 +117,7 @@ export function TecdocSearchResults({
               key={`${c.node.id}-${c.path}`}
               type="button"
               onClick={() => onCategorySelect(c)}
-              className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-2.5 text-left border-b border-border/60 hover:bg-muted"
+              className="w-full min-h-8 flex items-center justify-between gap-2 px-4 py-2 text-left border-b border-border/60 hover:bg-muted"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm truncate">{c.node.name}</span>

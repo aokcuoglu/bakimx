@@ -107,8 +107,10 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Ödeme referansı eksik. Lütfen satın alma adımlarını yeniden başlatın.
           </p>
-          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
-            Satın alma sayfasına git
+          <Button asChild variant="link" size="lg" className="mt-6">
+            <Link href="/satin-al">
+              Satın alma sayfasına git
+            </Link>
           </Button>
         </div>
       </Shell>
@@ -125,8 +127,10 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Bu referansa ait bir sipariş bulunamadı. Bağlantıyı kontrol edin veya yeniden deneyin.
           </p>
-          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
-            Satın alma sayfasına git
+          <Button asChild variant="link" size="lg" className="mt-6">
+            <Link href="/satin-al">
+              Satın alma sayfasına git
+            </Link>
           </Button>
         </div>
       </Shell>
@@ -167,8 +171,10 @@ export default async function PaymentResultPage({
               </span>
             </p>
           )}
-          <Button nativeButton={false} render={<Link href="/login" />} size="lg" className="mt-6 w-full">
-            Uygulamaya Git
+          <Button asChild size="lg" className="mt-6 w-full">
+            <Link href="/login">
+              Uygulamaya Git
+            </Link>
           </Button>
         </div>
       </Shell>
@@ -185,8 +191,10 @@ export default async function PaymentResultPage({
           <p className="mt-2 text-sm text-muted-foreground">
             Bu sipariş iptal edilmiş. Dilerseniz yeni bir satın alma başlatabilirsiniz.
           </p>
-          <Button nativeButton={false} render={<Link href="/satin-al" />} variant="link" size="lg" className="mt-6">
-            Yeni satın alma başlat
+          <Button asChild variant="link" size="lg" className="mt-6">
+            <Link href="/satin-al">
+              Yeni satın alma başlat
+            </Link>
           </Button>
         </div>
       </Shell>

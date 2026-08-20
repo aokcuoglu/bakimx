@@ -96,8 +96,10 @@ export default async function VehiclesPage({
       workshopName={workshop?.name}
       pageTitle="Araçlar"
       pageActions={
-        <Button nativeButton={false} size="icon" render={<Link href="/vehicles/new" />} aria-label="Yeni araç">
-          <Plus className="size-5" />
+        <Button size="icon" asChild aria-label="Yeni araç">
+          <Link href="/vehicles/new">
+            <Plus className="size-5" />
+          </Link>
         </Button>
       }
     >
@@ -123,9 +125,16 @@ export default async function VehiclesPage({
               </TooltipTrigger>
               <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
             </Tooltip>
-            <Button nativeButton={false} variant="default" size="default" className="hidden sm:inline-flex" render={<Link href="/vehicles/new" />}>
-              <Plus className="size-4" />
-              Yeni Araç
+            <Button
+              variant="default"
+              size="default"
+              className="hidden sm:inline-flex"
+              asChild
+            >
+              <Link href="/vehicles/new">
+                <Plus className="size-4" />
+                Yeni Araç
+              </Link>
             </Button>
           </div>
         </div>

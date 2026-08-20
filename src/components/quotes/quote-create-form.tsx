@@ -318,7 +318,7 @@ export function QuoteCreateForm({ laborCatalog }: { laborCatalog: LaborCatalogRo
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="min-h-11 text-primary"
+                      className="text-primary"
                       onClick={() => setVehicleModalOpen(true)}
                     >
                       <Plus className="size-4" />

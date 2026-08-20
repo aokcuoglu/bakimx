@@ -370,18 +370,14 @@ export function AppointmentDetail({
               )}
 
               {isConverted && appointment.convertedServiceOrder && (
-                <Button
-                  nativeButton={false}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  render={<Link href={`/orders/${appointment.convertedServiceOrder.id}`} />}
-                >
-                  <Wrench className="size-4" />
-                  İş Emrine Git
-                  {appointment.convertedServiceOrder.workOrderNo && (
-                    <span className="font-mono text-xs">({appointment.convertedServiceOrder.workOrderNo})</span>
-                  )}
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link href={`/orders/${appointment.convertedServiceOrder.id}`}>
+                    <Wrench className="size-4" />
+                    İş Emrine Git
+                    {appointment.convertedServiceOrder.workOrderNo && (
+                      <span className="font-mono text-xs">({appointment.convertedServiceOrder.workOrderNo})</span>
+                    )}
+                  </Link>
                 </Button>
               )}
 

@@ -71,7 +71,7 @@ export function PartsRequestSection({
   const pendingCount = requests.filter((r) => r.status !== "delivered" && r.status !== "cancelled").length
 
   return (
-    <div className="rounded-lg border border-border bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           <Package className="size-4 text-muted-foreground" />
@@ -587,12 +587,12 @@ function QuantityStepper({
   disabled: boolean
 }) {
   return (
-    <div className="inline-flex h-11 items-center rounded-lg border border-input bg-background">
+    <div className="inline-flex h-8 items-center rounded-lg border border-input bg-background">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="h-11 w-11 rounded-r-none touch-manipulation"
+        className="rounded-r-none touch-manipulation"
         aria-label="Azalt"
         disabled={disabled || value <= 1}
         onClick={() => onChange(value - 1)}
@@ -604,7 +604,7 @@ function QuantityStepper({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-11 w-11 rounded-l-none touch-manipulation"
+        className="rounded-l-none touch-manipulation"
         aria-label="Arttır"
         disabled={disabled}
         onClick={() => onChange(value + 1)}

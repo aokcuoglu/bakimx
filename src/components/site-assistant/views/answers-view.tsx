@@ -174,10 +174,8 @@ export function AnswersView({ query, aiEnabled, onBack, onNavigate }: AnswersVie
   );
 }
 
-// `md:h-auto` şart: Button size varyantındaki `md:h-9` twMerge'de `h-auto` ile
-// aynı gruba düşmediği için md+ ekranda satırı 36px'e sabitler ve `p-3` ölü kalır.
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left md:h-auto " +
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left " +
   "hover:border-primary/40 hover:bg-primary/5";
 
 function FallbackAction({

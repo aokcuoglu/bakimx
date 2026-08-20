@@ -173,14 +173,11 @@ export function TechnicianAssign({
           <p className="mt-1 text-xs text-muted-foreground">
             Atama yapabilmek için önce Ayarlar → Ekip sayfasından usta ekleyin.
           </p>
-          <Button
-            nativeButton={false}
-            size="lg"
-            className="mt-4"
-            render={<Link href="/settings?tab=team" />}
-          >
-            <UserPlus className="size-4" />
-            Usta Ekle
+          <Button size="lg" className="mt-4" asChild>
+            <Link href="/settings?tab=team">
+              <UserPlus className="size-4" />
+              Usta Ekle
+            </Link>
           </Button>
         </div>
       ) : (

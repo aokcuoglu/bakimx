@@ -177,7 +177,7 @@ export function TechnicianPushToggle() {
         variant="ghost"
         onClick={() => void (state === "on" ? disable() : enable())}
         disabled={busy}
-        className="min-h-11 w-full justify-start gap-2 md:min-h-9"
+        className="w-full justify-start gap-2"
       >
         {busy ? (
           <Loader2 className="size-4 animate-spin" />

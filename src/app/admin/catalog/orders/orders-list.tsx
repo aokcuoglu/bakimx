@@ -122,8 +122,10 @@ export function OrdersList({
             işaretlendiğinde düşer.
           </p>
         </div>
-        <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog" />}>
-          <ArrowLeft className="size-3.5 mr-1" /> Katalog
+        <Button size="sm" variant="outline" asChild>
+          <Link href="/admin/catalog">
+            <ArrowLeft className="size-3.5 mr-1" /> Katalog
+          </Link>
         </Button>
       </div>
 

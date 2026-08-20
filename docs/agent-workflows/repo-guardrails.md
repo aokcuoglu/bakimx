@@ -216,7 +216,7 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 |---|---|
 | `src/lib/ui-contract.test.ts` | Yönetim yüzeylerinde (`admin`, `analytics`, `reports`, `settings`) ham `<button>/<input>/<select>/<textarea>` ve sabit `text-red-500` tipi renkler |
 | `src/lib/theme-tokens.test.ts` | `@theme` içinde tanımı olmayan renk token'ı (Tailwind sessizce hiç kural üretmez — PR #241) ve WCAG AA altındaki kontrast |
-| `src/components/ui/control-sizing.test.ts` | Mobil 44px / `md+` 36px kontrol matrisinin bozulması — bkz. [ui-control-sizing.md](../ui-control-sizing.md) |
+| `src/components/ui/control-sizing.test.ts` | Upstream shadcn `nova` kontrol ölçeğinin (tek ölçek, breakpoint yok) ve `--radius`'un bozulması — bkz. [ui-control-sizing.md](../ui-control-sizing.md) |
 | `src/components/ui/tabs-overflow.test.ts` | Kaydırılabilir sekme şeridinde düz `justify-center` (taşan şeritte ilk sekme erişilemez oluyor — #277) |
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
 | `src/lib/intake/photo-visibility.test.ts` | Fotoğraf okuyan sorguda `VISIBLE_PHOTO` filtresinin unutulması — soft-delete edilmiş kare galeride/PDF'te geri görünür |

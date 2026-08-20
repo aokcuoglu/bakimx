@@ -523,9 +523,11 @@ export function PublicSharePage({ shareLink }: { shareLink: ShareLink }) {
             <Printer className="size-5" />
             Yazdır / PDF Olarak Kaydet
           </Button>
-          <Button nativeButton={false} render={<Link href={`/s/${token}/pdf`} target="_blank" />} variant="default" size="xl" className="w-full">
-            <FileDown className="size-5" />
-            Yazdırılabilir Sayfa
+          <Button asChild variant="default" size="xl" className="w-full">
+            <Link href={`/s/${token}/pdf`} target="_blank">
+              <FileDown className="size-5" />
+              Yazdırılabilir Sayfa
+            </Link>
           </Button>
           <Button onClick={handleWhatsAppShare} className="w-full bg-whatsapp text-white hover:bg-whatsapp/90" size="xl" aria-label="WhatsApp ile paylaş">
             <MessageCircle className="size-5" />

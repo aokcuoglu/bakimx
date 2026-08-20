@@ -19,8 +19,10 @@ export default async function NewCatalogProductPage() {
         <p className="text-sm text-muted-foreground">
           Ürün eklemeden önce en az bir marka tanımlamalısınız.
         </p>
-        <Button nativeButton={false} render={<Link href="/admin/catalog/brands" />}>
-          Marka ekle
+        <Button asChild>
+          <Link href="/admin/catalog/brands">
+            Marka ekle
+          </Link>
         </Button>
       </div>
     )

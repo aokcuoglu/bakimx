@@ -9,7 +9,7 @@ function TopList({ title, icon: Icon, items, renderRight }: {
   renderRight?: (item: { name: string; count: number; extra?: string }) => React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-border bg-white overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center gap-2">
         <Icon className="size-4 text-primary" />
         <h3 className="text-base font-semibold text-foreground">{title}</h3>

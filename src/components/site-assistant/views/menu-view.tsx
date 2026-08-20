@@ -52,11 +52,8 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
   );
 }
 
-// `md:h-auto` şart: Button size varyantındaki `md:h-9` twMerge'de `h-auto` ile
-// aynı gruba düşmediği için md+ ekranda satırı 36px'e sabitliyor, `py-3` ölü
-// kalıyor ve ikon karesi satır kenarına yapışıp "emanet" duruyordu.
 const ROW_CLASS =
-  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left md:h-auto " +
+  "h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left " +
   "hover:border-primary/40 hover:bg-primary/5";
 
 export function MenuView({ onNavigate }: MenuViewProps) {
@@ -98,13 +95,12 @@ export function MenuView({ onNavigate }: MenuViewProps) {
               key={action.key}
               variant="outline"
               className={ROW_CLASS}
-              nativeButton={false}
-              render={
-                <a href={action.href}>
-                  <ActionInner action={action} />
-                </a>
-              }
-            />
+              asChild
+            >
+              <a href={action.href}>
+                <ActionInner action={action} />
+              </a>
+            </Button>
           ) : (
             <Button
               key={action.key}

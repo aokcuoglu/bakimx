@@ -50,23 +50,17 @@ export default async function CashboxPage() {
             <p className="text-sm text-muted-foreground mt-0.5">Tahsilat ve alacak takibi</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="lg"
-              render={<Link href="/cashbox/aging" />}
-            >
-              <BarChart3 className="size-4" />
-              Yaşlandırma
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/cashbox/aging">
+                <BarChart3 className="size-4" />
+                Yaşlandırma
+              </Link>
             </Button>
-            <Button
-              nativeButton={false}
-              size="lg"
-              className="touch-manipulation"
-              render={<Link href="/cashbox/payments/new" />}
-            >
-              <Plus className="size-4" />
-              Yeni Tahsilat
+            <Button size="lg" className="touch-manipulation" asChild>
+              <Link href="/cashbox/payments/new">
+                <Plus className="size-4" />
+                Yeni Tahsilat
+              </Link>
             </Button>
           </div>
         </div>
@@ -390,15 +384,11 @@ function DailyChartSection({ dailyCollections }: { dailyCollections: Array<{ dat
 
 function ExportButton({ type, label }: { type: "collections" | "receivables" | "aging"; label: string }) {
   return (
-    <Button
-      nativeButton={false}
-      variant="outline"
-      size="sm"
-      className="print:hidden"
-      render={<a href={`/api/cashbox/export?type=${type}`} download />}
-    >
-      <Download className="size-3.5" />
-      {label}
+    <Button variant="outline" size="sm" className="print:hidden" asChild>
+      <a href={`/api/cashbox/export?type=${type}`} download>
+        <Download className="size-3.5" />
+        {label}
+      </a>
     </Button>
   )
 }

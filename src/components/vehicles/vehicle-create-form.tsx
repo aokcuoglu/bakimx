@@ -249,7 +249,7 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="min-h-11 text-primary"
+                    className="text-primary"
                     onClick={() => setCustomerModalOpen(true)}
                   >
                     <Plus className="size-4" />

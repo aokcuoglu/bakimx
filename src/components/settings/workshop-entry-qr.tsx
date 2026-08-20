@@ -75,7 +75,7 @@ export function WorkshopEntryQR({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-5">
+    <div className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-center gap-2 mb-4">
         <QrCode className="size-5 text-muted-foreground" />
         <h3 className="text-base font-semibold text-foreground">Giriş Bağlantısı</h3>

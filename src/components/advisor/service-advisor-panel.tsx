@@ -351,7 +351,7 @@ export function ServiceAdvisorPanel({
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <FileText className="size-3" /> Müşteri Açıklaması
                 </p>
-                <p className="text-sm text-foreground bg-white p-2.5 rounded-lg border border-border">
+                <p className="text-sm text-foreground bg-card p-2.5 rounded-lg border border-border">
                   {result.customerDescription}
                 </p>
               </div>

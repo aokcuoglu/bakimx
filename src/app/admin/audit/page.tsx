@@ -118,8 +118,10 @@ export default async function AdminAuditPage({
           Filtrele
         </Button>
         {(sp.workshopId || sp.action) && (
-          <Button nativeButton={false} variant="ghost" render={<Link href="/admin/audit" />}>
-            Temizle
+          <Button variant="ghost" asChild>
+            <Link href="/admin/audit">
+              Temizle
+            </Link>
           </Button>
         )}
       </form>
@@ -170,13 +172,17 @@ export default async function AdminAuditPage({
           </span>
           <div className="flex gap-2">
             {page > 1 && (
-              <Button nativeButton={false} variant="outline" render={<Link href={buildHref({ page: String(page - 1) })} />}>
-                Önceki
+              <Button variant="outline" asChild>
+                <Link href={buildHref({ page: String(page - 1) })}>
+                  Önceki
+                </Link>
               </Button>
             )}
             {page < totalPages && (
-              <Button nativeButton={false} variant="outline" render={<Link href={buildHref({ page: String(page + 1) })} />}>
-                Sonraki
+              <Button variant="outline" asChild>
+                <Link href={buildHref({ page: String(page + 1) })}>
+                  Sonraki
+                </Link>
               </Button>
             )}
           </div>

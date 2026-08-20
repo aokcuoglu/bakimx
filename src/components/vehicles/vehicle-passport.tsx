@@ -254,7 +254,7 @@ export function VehiclePassport({ data }: { data: PassportData }) {
       </div>
 
       {/* Vehicle Header */}
-      <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
@@ -276,13 +276,10 @@ export function VehiclePassport({ data }: { data: PassportData }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/vehicles/${vehicle.id}`} />}
-            >
-              Araç Detayı
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/vehicles/${vehicle.id}`}>
+                Araç Detayı
+              </Link>
             </Button>
           </div>
         </div>
@@ -561,18 +558,16 @@ export function VehiclePassport({ data }: { data: PassportData }) {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleCopy(t.token)}
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-xs font-medium transition-colors"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-xs font-medium transition-colors"
                             >
                               {copied === t.token ? <CheckCircle2 className="size-3.5 text-success-strong" /> : <Copy className="size-3.5" />}
                               {copied === t.token ? "Kopyalandı!" : "Linki Kopyala"}
                             </button>
-                            <Button
-                              nativeButton={false}
-                              variant="outline"
-                              render={<Link href={`/p/${t.token}`} target="_blank" />}
-                            >
-                              <ExternalLink className="size-3.5" />
-                              Önizle
+                            <Button variant="outline" asChild>
+                              <Link href={`/p/${t.token}`} target="_blank">
+                                <ExternalLink className="size-3.5" />
+                                Önizle
+                              </Link>
                             </Button>
                           </div>
                           <div className="flex justify-center mt-2">

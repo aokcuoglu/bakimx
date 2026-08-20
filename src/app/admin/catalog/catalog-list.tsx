@@ -107,17 +107,25 @@ export function CatalogList({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog/orders" />}>
-            <ClipboardList className="size-3.5 mr-1" /> Sipariş Talepleri
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/admin/catalog/orders">
+              <ClipboardList className="size-3.5 mr-1" /> Sipariş Talepleri
+            </Link>
           </Button>
-          <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog/brands" />}>
-            <Package className="size-3.5 mr-1" /> Markalar
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/admin/catalog/brands">
+              <Package className="size-3.5 mr-1" /> Markalar
+            </Link>
           </Button>
-          <Button nativeButton={false} size="sm" variant="outline" render={<Link href="/admin/catalog/import" />}>
-            <Upload className="size-3.5 mr-1" /> İçe Aktar
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/admin/catalog/import">
+              <Upload className="size-3.5 mr-1" /> İçe Aktar
+            </Link>
           </Button>
-          <Button nativeButton={false} size="sm" render={<Link href="/admin/catalog/new" />}>
-            <Plus className="size-3.5 mr-1" /> Yeni Ürün
+          <Button size="sm" asChild>
+            <Link href="/admin/catalog/new">
+              <Plus className="size-3.5 mr-1" /> Yeni Ürün
+            </Link>
           </Button>
         </div>
       </div>

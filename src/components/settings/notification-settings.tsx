@@ -141,7 +141,7 @@ export function NotificationSettings({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-border p-5">
+      <div className="bg-card rounded-lg border border-border p-5">
         <h3 className="text-sm font-semibold text-foreground mb-3">Aktif Sağlayıcılar</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {(["sms", "whatsapp", "email"] as const).map((ch) => {
@@ -199,7 +199,7 @@ export function NotificationSettings({
 
       <div className="space-y-3">
         {templates.map((template) => (
-          <div key={template.key} className="bg-white rounded-lg border border-border overflow-hidden">
+          <div key={template.key} className="bg-card rounded-lg border border-border overflow-hidden">
             <Button
               type="button"
               onClick={() => setExpandedKey(expandedKey === template.key ? null : template.key)}

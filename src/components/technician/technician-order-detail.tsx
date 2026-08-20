@@ -344,15 +344,11 @@ export function TechnicianOrderDetail({
         {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
             kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
             gidip aynı işi listede yeniden aramak gerekiyordu. */}
-        <Button
-          nativeButton={false}
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          render={<Link href={workOrderPath(order.id)} />}
-        >
-          <FileText />
-          İş Emri
+        <Button variant="outline" size="sm" className="shrink-0" asChild>
+          <Link href={workOrderPath(order.id)}>
+            <FileText />
+            İş Emri
+          </Link>
         </Button>
       </div>
 
@@ -383,7 +379,7 @@ export function TechnicianOrderDetail({
       )}
 
       {activeLabor && (
-        <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
+        <div className="flex min-h-8 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
           <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
           <span className="text-sm font-medium text-foreground">İşçilik sürüyor</span>
           <span className="text-xs text-muted-foreground">
@@ -588,7 +584,7 @@ function DamageMarks({ marks }: { marks: OrderData["damageMarks"] }) {
       <h3 className="mb-3 text-sm font-semibold text-foreground">Mevcut Hasarlar</h3>
       <div className="space-y-1.5">
         {marks.map((mark) => (
-          <div key={mark.id} className="flex min-h-11 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
+          <div key={mark.id} className="flex min-h-8 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
             <span className="font-medium text-foreground">{mark.zone}</span>
             <span className="text-muted-foreground">·</span>
             <span className="text-foreground">{mark.damageType}</span>
@@ -613,7 +609,7 @@ function OrderTotals({ order }: { order: OrderData }) {
 
 function ReviewRow({ label, detail, complete }: { label: string; detail: string; complete: boolean }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
+    <div className="flex min-h-8 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
       <span className="font-medium text-foreground">{complete ? "✓" : "!"} {label}</span>
       <span className="text-right text-xs text-muted-foreground">{detail}</span>
     </div>

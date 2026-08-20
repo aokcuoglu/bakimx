@@ -53,7 +53,7 @@ export function WizardStepper({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto min-h-11 w-full flex-col items-stretch gap-1 px-1 py-1 md:min-h-9"
+                  className="h-auto min-h-8 w-full flex-col items-stretch gap-1 px-1 py-1"
                   onClick={() => onStepClick(s.id)}
                 >
                   {bar}

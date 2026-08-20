@@ -161,7 +161,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive-strong px-4 py-3 text-sm">{actionError}</div>
       ) : null}
 
-      <header className="rounded-lg border border-border bg-white p-4 sm:p-5">
+      <header className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="size-12 rounded-lg bg-navy flex items-center justify-center text-white shrink-0">
@@ -202,7 +202,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 </button>
                 <button
                   onClick={() => setShowPostpone(!showPostpone)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-white text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-card text-foreground hover:bg-muted text-sm font-medium transition-colors touch-manipulation"
                 >
                   <Clock className="size-4" />
                   <span className="hidden sm:inline">Ertele</span>
@@ -219,14 +219,11 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
                 <span className="hidden sm:inline">İptal</span>
               </button>
             ) : null}
-            <Button
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-              render={<Link href={`/reminders/${reminder.id}/edit`} />}
-            >
-              <Pencil className="size-4" />
-              <span className="hidden sm:inline">Düzenle</span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/reminders/${reminder.id}/edit`}>
+                <Pencil className="size-4" />
+                <span className="hidden sm:inline">Düzenle</span>
+              </Link>
             </Button>
           </div>
         </div>

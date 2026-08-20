@@ -153,7 +153,7 @@ export function TechnicianNotificationsBell() {
             type="button"
             variant="ghost"
             size="icon"
-            className="relative size-11 md:size-8"
+            className="relative"
             aria-label={unreadCount > 0 ? `Bildirimler (${unreadCount} okunmamış)` : "Bildirimler"}
           />
         }
@@ -189,7 +189,7 @@ export function TechnicianNotificationsBell() {
                   type="button"
                   variant="ghost"
                   onClick={() => goToOrder(notification.orderId)}
-                  className="h-auto min-h-11 w-full flex-col items-start justify-start gap-0.5 whitespace-normal rounded-md p-2 text-left md:min-h-9"
+                  className="h-auto min-h-8 w-full flex-col items-start justify-start gap-0.5 whitespace-normal rounded-md p-2 text-left"
                 >
                   <span className="text-sm font-medium">{notification.title}</span>
                   {notification.description && (
