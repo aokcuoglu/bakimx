@@ -346,15 +346,13 @@ function AppSidebar({
       <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              render={<Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" />}
-              tooltip="BakimX"
-            >
-              <div className="flex items-center justify-center size-8">
-                <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
-              </div>
-              <span className="sr-only">BakimX</span>
+            <SidebarMenuButton size="lg" asChild tooltip="BakimX">
+              <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX">
+                <div className="flex items-center justify-center size-8">
+                  <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+                </div>
+                <span className="sr-only">BakimX</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -388,17 +386,16 @@ function AppSidebar({
         )}
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/account" />} tooltip="Hesabım">
-              <UserCircle className="size-4" />
-              <span>Hesabım</span>
+            <SidebarMenuButton asChild tooltip="Hesabım">
+              <Link href="/account">
+                <UserCircle className="size-4" />
+                <span>Hesabım</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <form action="/api/auth/logout" method="POST" className="w-full">
-              <SidebarMenuButton
-                render={<Button type="submit" variant="ghost" size="sm" />}
-                tooltip="Çıkış Yap"
-              >
+              <SidebarMenuButton type="submit" tooltip="Çıkış Yap">
                 <LogOut className="size-4" />
                 <span>Çıkış Yap</span>
               </SidebarMenuButton>
@@ -431,13 +428,15 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          render={<Link href={item.href} />}
+          asChild
           isActive={isActive}
           tooltip={item.label}
           className={cn(isSoon && !isActive && "opacity-60")}
         >
-          <Icon className="size-4" />
-          <span>{item.label}</span>
+          <Link href={item.href}>
+            <Icon className="size-4" />
+            <span>{item.label}</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     )
@@ -458,12 +457,11 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
       {expanded && (
         <SidebarMenuSub>
           <SidebarMenuSubItem>
-            <SidebarMenuSubButton
-              render={<Link href={item.href} />}
-              isActive={pathname === item.href}
-            >
-              <Icon className="size-3.5" />
-              <span>{item.label} Özeti</span>
+            <SidebarMenuSubButton asChild isActive={pathname === item.href}>
+              <Link href={item.href}>
+                <Icon className="size-3.5" />
+                <span>{item.label} Özeti</span>
+              </Link>
             </SidebarMenuSubButton>
           </SidebarMenuSubItem>
           {item.children!.map((child) => {
@@ -471,12 +469,11 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
             const isChildActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
             return (
               <SidebarMenuSubItem key={child.href}>
-                <SidebarMenuSubButton
-                  render={<Link href={child.href} />}
-                  isActive={isChildActive}
-                >
-                  <ChildIcon className="size-3.5" />
-                  <span>{child.label}</span>
+                <SidebarMenuSubButton asChild isActive={isChildActive}>
+                  <Link href={child.href}>
+                    <ChildIcon className="size-3.5" />
+                    <span>{child.label}</span>
+                  </Link>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             )

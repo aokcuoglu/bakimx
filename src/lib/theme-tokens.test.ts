@@ -299,6 +299,79 @@ test("tonlu primary zemininde metin -strong tonunu kullanır", () => {
   expect(offenders).toEqual([])
 })
 
+/**
+ * `muted-foreground` ikincil metin rolüdür ve DÜZ yüzeylerde AA'yı rahat geçer
+ * (kart 6.00:1, sayfa 5.66:1, `bg-muted` panel 5.34:1). Düştüğü yer TONLU
+ * zemin — ve düşme sebebi uygulamanın kendi kabuğu: içerik alanı
+ * (`SidebarInset`) `bg-background` değil `bg-muted`. `bg-destructive/10` bir de
+ * onun üstüne binince efektif zemin yeterince koyulaşıyor ve ikincil metin
+ * 4.49:1'e iniyor — /cashbox/aging'in 11px KPI etiketi tarayıcıda 4.43:1
+ * ölçüldü (BAK-189). Diğer rollerdeki desenin aynısı: metin için ayrı bir
+ * `-strong` tonu.
+ */
+test("muted-foreground-strong tonlu zeminde de AA geçer", () => {
+  const failures: string[] = []
+
+  for (const which of ["root", "dark"] as const) {
+    const vars = themeBlock(which)
+    const strong = vars["muted-foreground-strong"]
+    const tema = which === "root" ? "açık" : "koyu"
+    if (!strong) {
+      failures.push(`${tema}: --muted-foreground-strong tanımlı değil`)
+      continue
+    }
+    for (const surfaceName of ["card", "background", "muted"]) {
+      const surface = toRgb(vars[surfaceName])
+      const grounds: [string, [number, number, number]][] = [[surfaceName, surface]]
+      for (const fill of ["success", "warning", "destructive", "primary"]) {
+        grounds.push([`${fill}/10 · ${surfaceName}`, mixSrgb(surface, toRgb(vars[fill]), 0.1)])
+      }
+      for (const [name, ground] of grounds) {
+        const ratio = contrastRgb(ground, toRgb(strong))
+        if (ratio < 4.5) failures.push(`${tema}/muted-foreground-strong ${name} üzerinde ${ratio.toFixed(2)}:1`)
+      }
+    }
+  }
+
+  expect(failures).toEqual([])
+})
+
+/**
+ * Kullanım tarafı. Yukarıdaki `text-primary` taramasından iki farkı var:
+ *
+ * 1. Tonlu zemin ile metin AYNI STRING LİTERALİNDE aranır. Bu ekranlarda tint
+ *    çoğunlukla bir üçlü operatörün bir dalında, `text-muted-foreground` ise
+ *    ÖTEKİ dalındadır (`vehicle-detail.tsx:568` ve altı) — ikisi hiçbir zaman
+ *    aynı anda uygulanmaz, satır bazlı tarama yedi yanlış pozitif üretirdi.
+ * 2. Tint'in ÖNÜNDE varyant olmamalı: `hover:bg-destructive/10` ya da
+ *    `data-[state=on]:bg-primary/10` durağan zemin değildir; durağan renk zaten
+ *    `text-muted-foreground` ve o düz yüzeyde geçiyor.
+ *
+ * Ebeveyn/çocuk hâlini (tint kapsayıcıda, metin içeride) bu tarama GÖREMEZ —
+ * /cashbox/aging'de tam olarak öyleydi. Orada çözüm tonu satıra taşımaktı:
+ * `bucketColors` tablosunda `label` alanı `bg` ile yan yana durur, böylece
+ * eşleşme bu taramaya görünür hale gelir. Yeni bir tonlu kart yazarken aynısını
+ * yap; kapı ancak o zaman işe yarar.
+ */
+test("tonlu zeminde ikincil metin muted-foreground-strong kullanır", () => {
+  const bareMuted = /\btext-muted-foreground(?![-/\w])/
+  const unprefixedTint = /(?<![\w:-])bg-(?:success|warning|destructive|primary)\/10\b/
+  const offenders: string[] = []
+
+  for (const file of walk(SRC)) {
+    const rel = file.slice(SRC.length + 1)
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      for (const literal of line.match(/"[^"]*"/g) ?? []) {
+        if (unprefixedTint.test(literal) && bareMuted.test(literal)) {
+          offenders.push(`${rel}:${i + 1} → ${literal.slice(0, 90)}`)
+        }
+      }
+    })
+  }
+
+  expect(offenders).toEqual([])
+})
+
 /* ------------------------------------------------------------------------- *
  * Opaklık modifier'lı METİN sınıfları (BAK-156)
  *
