@@ -199,22 +199,28 @@ export function LaborList({
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Tooltip>
-                            <TooltipTrigger render={<Button variant="ghost" size="icon" onClick={() => openEdit(item)} />}>
-                              <Edit3 className="size-3.5" />
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
+                                <Edit3 className="size-3.5" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Düzenle</TooltipContent>
                           </Tooltip>
                           {item.isActive && (
                             <Tooltip>
-                              <TooltipTrigger render={<Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => handleDeactivate(item.id)} />}>
-                                <Archive className="size-3.5" />
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => handleDeactivate(item.id)}>
+                                  <Archive className="size-3.5" />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent side="top">Pasifleştir</TooltipContent>
                             </Tooltip>
                           )}
                           <Tooltip>
-                            <TooltipTrigger render={<Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => setPendingDelete(item)} />}>
-                              <Trash2 className="size-3.5" />
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={busyId === item.id} onClick={() => setPendingDelete(item)}>
+                                <Trash2 className="size-3.5" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Sil</TooltipContent>
                           </Tooltip>

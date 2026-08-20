@@ -50,15 +50,32 @@ test("yönetim yüzeylerinde sabit durum rengi yok", () => {
 })
 
 /**
- * Button ve Badge Radix hattına geçti (BAK-152): kompozisyon `asChild` ile
- * yapılır. Base UI'ye özgü `render` / `nativeButton` prop'ları artık tip
- * hatası vermez — `React.ComponentProps<"button">` bilinmeyen prop'u sessizce
- * yutar ve DOM'a düşer. Bu yüzden kapı testte duruyor.
+ * Button/Badge (BAK-152) ve overlay ailesi (BAK-153) Radix hattına geçti:
+ * kompozisyon `asChild` ile yapılır. Base UI'ye özgü `render` / `nativeButton`
+ * prop'ları artık tip hatası vermez — Radix'in prop tipleri bilinmeyen prop'u
+ * sessizce yutar ve DOM'a düşer (React da `render` için uyarı basmaz). Kapı
+ * bu yüzden testte duruyor.
  *
- * Kapsam bilerek dar: `render` diğer ailelerde (Tooltip, Sidebar, Select…)
- * hâlâ geçerli, `FormField` ise react-hook-form'un kendi render prop'u.
+ * Kapsam bilerek dar: `render` henüz göç etmemiş ailelerde (Select, Combobox,
+ * Autocomplete, InputGroup, SidebarMenuButton — BAK-154/155) hâlâ geçerli,
+ * `FormField` ise react-hook-form'un kendi render prop'u.
  */
-const RADIX_TAGS = ["Button", "Badge"]
+const RADIX_TAGS = [
+  "Button",
+  "Badge",
+  // overlay ailesi — tetikleyici/kapatıcı yüzeyleri (BAK-153)
+  "DialogTrigger",
+  "DialogClose",
+  "AlertDialogTrigger",
+  "AlertDialogAction",
+  "AlertDialogCancel",
+  "SheetTrigger",
+  "SheetClose",
+  "PopoverTrigger",
+  "TooltipTrigger",
+  "DropdownMenuTrigger",
+  "DropdownMenuSubTrigger",
+]
 
 /** Bir JSX açılış etiketinin gövdesini süslü parantez/dize farkındalığıyla çıkarır. */
 function openingTags(source: string, tag: string): string[] {
@@ -87,7 +104,7 @@ function openingTags(source: string, tag: string): string[] {
   return out
 }
 
-test("Button ve Badge çağrılarında Base UI render/nativeButton kalmadı", () => {
+test("Radix hattındaki bileşen çağrılarında Base UI render/nativeButton kalmadı", () => {
   const offenders: string[] = []
   for (const file of tsxFiles(SRC)) {
     const source = readFileSync(file, "utf8")

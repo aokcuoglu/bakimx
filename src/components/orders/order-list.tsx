@@ -90,8 +90,10 @@ function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing
   if (!missing) return <span className="text-muted-foreground/70">—</span>
   return (
     <Tooltip>
-      <TooltipTrigger render={<span />} className="inline-flex">
-        <InvoiceMissingBadge />
+      <TooltipTrigger asChild>
+        <span className="inline-flex">
+          <InvoiceMissingBadge />
+        </span>
       </TooltipTrigger>
       <TooltipContent side="top">Fatura numarası girilmemiş</TooltipContent>
     </Tooltip>

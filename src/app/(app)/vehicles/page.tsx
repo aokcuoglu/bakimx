@@ -119,9 +119,11 @@ export default async function VehiclesPage({
           </div>
           <div className="flex items-center gap-2">
             <Tooltip>
-              <TooltipTrigger render={<Button variant="outline" size="default" disabled />}>
-                <ScanLine className="size-4" />
-                <span className="hidden sm:inline">Plaka Tara</span>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="default" disabled>
+                  <ScanLine className="size-4" />
+                  <span className="hidden sm:inline">Plaka Tara</span>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Plaka tanıma entegrasyonu yakında</TooltipContent>
             </Tooltip>

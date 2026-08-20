@@ -254,8 +254,10 @@ function AppHeader({
             <TechnicianNotificationsBell />
           ) : (
             <Tooltip>
-              <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8" aria-label="Bildirimler" />}>
-                <Bell className="size-5" />
+              <TooltipTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" className="size-8" aria-label="Bildirimler">
+                  <Bell className="size-5" />
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Bildirimler (yakında)</TooltipContent>
             </Tooltip>

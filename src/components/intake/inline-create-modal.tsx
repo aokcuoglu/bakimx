@@ -293,19 +293,20 @@ export function InlineCreateModal({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next, details) => {
-        // Tarayıcı açıkken: body'ye portal'lı tam-ekran tarayıcıya dokunmak "dışarı"
-        // sayılır; dış-tıklama/Esc modalı kapatmasın (tarayıcı kendi X'iyle kapanır).
-        if (!next && scannerActive && (details.reason === "outside-press" || details.reason === "escape-key")) {
-          details.cancel()
-          return
-        }
-        onOpenChange(next)
-      }}
-    >
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Tarayıcı açıkken: body'ye portal'lı tam-ekran tarayıcıya dokunmak "dışarı"
+          sayılır; dış-tıklama/Esc modalı kapatmasın (tarayıcı kendi X'iyle kapanır).
+          Radix'te iptal `onOpenChange` detayıyla değil, olayın kendisini
+          `preventDefault()` ile durdurarak yapılır. */}
+      <DialogContent
+        className="sm:max-w-lg max-h-[85vh] overflow-y-auto"
+        onInteractOutside={(event) => {
+          if (scannerActive) event.preventDefault()
+        }}
+        onEscapeKeyDown={(event) => {
+          if (scannerActive) event.preventDefault()
+        }}
+      >
         <DialogHeader>
           {/* Sahibi dışarıdan sabitlenmediyse bu diyalog müşteriyi de oluşturur —
               başlık picker'daki "Yeni müşteri & araç ekle" düğmesiyle aynı şeyi söylesin. */}

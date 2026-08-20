@@ -68,27 +68,25 @@ export function DateTimePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <Button
-            id={id}
-            type="button"
-            variant="outline"
-            disabled={disabled}
-            aria-describedby={ariaDescribedBy}
-            aria-invalid={ariaInvalid}
-            className={cn(
-              "w-full justify-start gap-2 font-normal",
-              !selected && "text-muted-foreground",
-              className
-            )}
-          />
-        }
-      >
-        <CalendarIcon className="size-4 opacity-60" />
-        <span className="truncate">
-          {selected ? format(selected, "dd.MM.yyyy HH:mm", { locale: tr }) : placeholder}
-        </span>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
+          className={cn(
+            "w-full justify-start gap-2 font-normal",
+            !selected && "text-muted-foreground",
+            className
+          )}
+        >
+          <CalendarIcon className="size-4 opacity-60" />
+          <span className="truncate">
+            {selected ? format(selected, "dd.MM.yyyy HH:mm", { locale: tr }) : placeholder}
+          </span>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] p-0" align="start">
         <Calendar
