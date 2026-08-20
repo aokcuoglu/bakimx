@@ -1,8 +1,9 @@
 import { PurchaseWizard } from "@/components/billing/purchase-wizard"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import type { PlanTier } from "@/lib/plan"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
-export const metadata = { title: "Satın Al" }
+export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
 
 const HAVALE = getHavaleInstructions()
 

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
+  path: "/privacy",
   title: "Gizlilik ve Çerez Politikası",
-  description:
-    "BakımX gizlilik ve çerez (cookie) politikası; hangi verilerin nasıl toplandığı ve kullanıldığı.",
-};
+  description: "BakımX gizlilik ve çerez (cookie) politikası; hangi verilerin nasıl toplandığı ve kullanıldığı.",
+});
 
 export default function PrivacyPage() {
   return (

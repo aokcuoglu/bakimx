@@ -9,8 +9,9 @@ import { prisma } from "@/lib/db"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
-export const metadata = { title: "Satın Al" }
+export const metadata = { title: "Satın Al", robots: PRIVATE_ROBOTS }
 
 const HAVALE = getHavaleInstructions()
 

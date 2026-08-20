@@ -78,6 +78,14 @@ export function FeatureShowcaseSection() {
   return (
     <section id="ozellikler" className="scroll-mt-24 bg-background py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-7xl space-y-20 px-4 sm:px-6 sm:space-y-28 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Oto servis işlerinizi tek yerden yönetin
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            Araç kabulünden müşteri onayına kadar günlük servis akışını telefonunuzdan takip edin.
+          </p>
+        </div>
         {features.map((feature, i) => {
           const reversed = i % 2 === 1;
           return (

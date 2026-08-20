@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY, LegalPage, LegalSection } from "@/components/legal/legal-page";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicPageMetadata({
+  path: "/kvkk",
   title: "KVKK Aydınlatma Metni",
-  description:
-    "BakımX kişisel verilerin korunması ve işlenmesine ilişkin aydınlatma metni (6698 sayılı KVKK).",
-};
+  description: "BakımX kişisel verilerin korunması ve işlenmesine ilişkin aydınlatma metni (6698 sayılı KVKK).",
+});
 
 export default function KvkkPage() {
   return (

@@ -13,10 +13,12 @@ import { AppShellChrome } from "@/components/layout/app-shell"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { VersionUpdateNotice } from "@/components/layout/version-update-notice"
 import { getBuildSignature } from "@/lib/build-signature"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata: Metadata = {
   title: "İş Yeri Paneli",
   description: "Araç kabul, hasar kaydı ve müşteri onayı yönetimi",
+  robots: PRIVATE_ROBOTS,
 }
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

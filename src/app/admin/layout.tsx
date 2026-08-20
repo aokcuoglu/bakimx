@@ -5,8 +5,9 @@ import { logoutAction } from "@/app/(auth)/login/actions"
 import { AdminNav } from "@/app/admin/admin-nav"
 import { getUnansweredCount } from "@/app/admin/live-chat/data"
 import { Button } from "@/components/ui/button"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
-export const metadata = { title: "BakimX Yönetim" }
+export const metadata = { title: "BakimX Yönetim", robots: PRIVATE_ROBOTS }
 
 // Always render fresh — this is an operational console.
 export const dynamic = "force-dynamic"
