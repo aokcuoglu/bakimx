@@ -155,6 +155,7 @@ export function HeroLeadForm() {
             <Input
               id="hero-phone"
               type="tel"
+              inputMode="tel"
               placeholder="0532 123 4567"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}

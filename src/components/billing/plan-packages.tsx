@@ -5,6 +5,7 @@ import { Check, CircleCheck, MessageCircle, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import type { PlanTier } from "@/lib/plan"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
@@ -41,17 +42,20 @@ export function PlanPackages({
   return (
     <div className="space-y-5">
       <div className="flex justify-center">
-        <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
+        <ToggleGroup
+          type="single"
+          spacing={1}
+          className="rounded-lg border bg-card p-1"
+          value={billing}
+          onValueChange={(v) => {
+            if (v) setBilling(v as BillingCycle)
+          }}
+        >
           {(["monthly", "yearly"] as const).map((cycle) => (
-            <button
+            <ToggleGroupItem
               key={cycle}
-              onClick={() => setBilling(cycle)}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
-                billing === cycle
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              value={cycle}
+              className="rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm hover:text-foreground"
             >
               {cycle === "monthly" ? "Aylık" : "Yıllık"}
               {cycle === "yearly" && billing === "yearly" && (
@@ -59,9 +63,9 @@ export function PlanPackages({
                   2 ay bedava
                 </span>
               )}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

@@ -259,6 +259,8 @@ export function DemoRequestSection() {
                       </Label>
                       <Input
                         id="phone"
+                        type="tel"
+                        inputMode="tel"
                         placeholder="0532 123 4567"
                         value={formData.phone}
                         onChange={(e) =>

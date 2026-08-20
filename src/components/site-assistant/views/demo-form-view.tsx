@@ -123,7 +123,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="da-phone">Telefon *</Label>
-        <Input id="da-phone" inputMode="tel" placeholder="0532 123 4567" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
+        <Input id="da-phone" type="tel" inputMode="tel" placeholder="0532 123 4567" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
         {errors.phone && <p className="text-xs text-destructive-strong">{errors.phone}</p>}
       </div>
 
