@@ -296,7 +296,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<typeof Button
       onClick={toggleSidebar}
       title="Menüyü aç/kapat"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        // `size-7` (icon-sm) Button varsayılanı hem genişlik hem yükseklik sabitler;
+        // `h-auto` yükseklik kısmını iptal etmezse `inset-y-0` kenar boyunca
+        // gerilemiyor, tıklanabilir alan sidebar'ın üst 28px'ine sıkışıyordu.
+        "absolute inset-y-0 z-20 hidden h-auto w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -314,7 +317,11 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-background lg:peer-data-[variant=inset]:m-2 lg:peer-data-[variant=inset]:ml-0 lg:peer-data-[variant=inset]:rounded-xl lg:peer-data-[variant=inset]:shadow-sm lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        // `min-w-0` şart: flex item'ın varsayılan `min-width: auto`u, içindeki
+        // geniş/`nowrap` içerik (ör. tablo hücreleri) yüzünden bu öğenin ayrılan
+        // alana küçülmesini engelliyordu — sonuç, sidebar'ın genişliği kadar
+        // sayfa geneli yatay taşma ve fixed sidebar'ın üzerine biniyordu (BAK-180).
+        "relative flex w-full min-w-0 flex-1 flex-col bg-background lg:peer-data-[variant=inset]:m-2 lg:peer-data-[variant=inset]:ml-0 lg:peer-data-[variant=inset]:rounded-xl lg:peer-data-[variant=inset]:shadow-sm lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className
       )}
       {...props}
