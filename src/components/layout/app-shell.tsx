@@ -36,6 +36,8 @@ import {
   Receipt,
   PackageSearch,
   UserCircle,
+  Search,
+  X,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
@@ -222,13 +224,19 @@ function AppHeader({
 }) {
   const { pageTitle, pageActions, showGlobalSearch = true } = pageHeader
   const isTechRole = isTechnicianRestrictedRole(userIdentity?.role)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
-      <div className="relative flex flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
-        <SidebarTrigger className="-ml-2 lg:hidden" />
+      <div className="relative flex flex-nowrap items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
+        <SidebarTrigger className={cn("-ml-2 lg:hidden", mobileSearchOpen && "hidden sm:inline-flex")} />
 
-        <div className="absolute left-1/2 -translate-x-1/2 lg:hidden">
+        <div
+          className={cn(
+            "absolute left-1/2 -translate-x-1/2 lg:hidden",
+            mobileSearchOpen && "hidden sm:block",
+          )}
+        >
           <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
             <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
           </Link>
@@ -241,14 +249,54 @@ function AppHeader({
         )}
 
         {showGlobalSearch && (
-          <div className="order-last w-full min-w-0 shrink-0 basis-full sm:order-none sm:min-w-48 sm:flex-1 sm:shrink sm:basis-auto sm:max-w-xl">
-            <GlobalSearch className="w-full min-w-0" />
+          <div
+            className={cn(
+              "min-w-0 sm:min-w-48 sm:flex-1 sm:shrink sm:basis-auto sm:max-w-xl",
+              mobileSearchOpen ? "flex-1 basis-auto" : "shrink-0 basis-9 sm:basis-auto",
+            )}
+          >
+            {mobileSearchOpen ? (
+              <div className="flex items-center gap-1">
+                <GlobalSearch className="w-full min-w-0" autoFocus />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 sm:hidden"
+                  onClick={() => setMobileSearchOpen(false)}
+                  aria-label="Aramayı kapat"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 sm:hidden"
+                  onClick={() => setMobileSearchOpen(true)}
+                  aria-label="Ara"
+                >
+                  <Search className="size-4" />
+                </Button>
+                <div className="hidden sm:block">
+                  <GlobalSearch className="w-full min-w-0" />
+                </div>
+              </>
+            )}
           </div>
         )}
 
         {!showGlobalSearch && <div className="flex-1" />}
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+        <div
+          className={cn(
+            "ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5",
+            mobileSearchOpen && "hidden sm:flex",
+          )}
+        >
           {!isTechRole && <CreateCenterDialog />}
           {isTechRole ? (
             <TechnicianNotificationsBell />
@@ -265,7 +313,7 @@ function AppHeader({
           <UserMenu userIdentity={userIdentity} />
         </div>
       </div>
-      {(pageTitle || pageActions) && (
+      {(pageTitle || pageActions) && !mobileSearchOpen && (
         <div className="sm:hidden flex items-center justify-between gap-2 px-4 pb-3 -mt-1">
           {pageTitle && <h1 className="text-base font-semibold text-foreground truncate">{pageTitle}</h1>}
           {pageActions}
