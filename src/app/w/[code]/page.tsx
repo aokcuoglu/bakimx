@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db"
 import { WorkshopLoginForm } from "@/components/auth/workshop-login-form"
+import { PRIVATE_ROBOTS } from "@/lib/seo"
 
 export const metadata = {
   title: "İş Yeri Girişi",
   description: "İş yerinize özel giriş ekranı",
+  robots: PRIVATE_ROBOTS,
 }
 
 export default async function WorkshopLoginPage({
