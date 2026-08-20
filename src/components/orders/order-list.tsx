@@ -88,7 +88,7 @@ function InvoiceCell({ invoiceNo, missing }: { invoiceNo: string | null; missing
       </span>
     )
   }
-  if (!missing) return <span className="text-muted-foreground/70">—</span>
+  if (!missing) return <span className="text-muted-foreground">—</span>
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -246,16 +246,16 @@ export function OrderList({
                     <InvoiceCell invoiceNo={order.invoiceNo} missing={order.invoiceMissing} />
                   </td>
                   <td className="px-3 py-2 align-top text-right font-semibold text-foreground tabular-nums whitespace-nowrap">
-                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                    {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                   </td>
                   <td className="px-3 py-2 align-top text-xs whitespace-nowrap">
                     {/* Giriş üstte (her zaman dolu), tahmini teslim altta. */}
                     <div className="text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground/70">Giriş</span> {formatDate(order.createdAt)}
+                      <span className="text-muted-foreground">Giriş</span> {formatDate(order.createdAt)}
                     </div>
                     <div className="mt-0.5 text-muted-foreground tabular-nums">
-                      <span className="text-muted-foreground/70">Teslim</span>{" "}
-                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground/70">—</span>}
+                      <span className="text-muted-foreground">Teslim</span>{" "}
+                      {order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : <span className="text-muted-foreground">—</span>}
                     </div>
                   </td>
                   {/* Sticky kolonun zemini opak kalmalı: yarı saydam hover rengiyle
@@ -346,7 +346,7 @@ export function OrderList({
                 )}
               </div>
               <div className="font-semibold text-foreground">
-                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                {order.hasPrice ? formatTRY(order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
               </div>
             </div>
           </div>

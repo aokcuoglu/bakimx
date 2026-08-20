@@ -131,7 +131,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
         <CardContent className="p-4 space-y-3">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -235,14 +235,14 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                     {part.sku && <div>{part.sku}</div>}
                     {part.oemNo && <div className="text-[10px]">{part.oemNo}</div>}
-                    {!part.sku && !part.oemNo && <span className="text-muted-foreground/50">—</span>}
+                    {!part.sku && !part.oemNo && <span className="text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">{part.brand || <span className="text-muted-foreground/50">—</span>}</td>
-                  <td className="px-4 py-3 text-sm text-foreground">{part.category || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{part.brand || <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{part.category || <span className="text-muted-foreground">—</span>}</td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-semibold text-sm",
-                       part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
+                       part.stockQty <= 0 ? "text-muted-foreground" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                      )}>
                        {formatStockQty(part.stockQty)}
                      </span>
@@ -256,10 +256,10 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                   <td className="px-4 py-3 text-sm text-muted-foreground">{part.shelfLocation || "—"}</td>
                   <td className="px-4 py-3 text-sm">
                     {part.supplier ? (
-                       <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                       <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:underline">{part.supplier.name}</Link>
                     ) : part.supplierName ? (
                       <span className="text-foreground">{part.supplierName}</span>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <StockStatusBadge
@@ -333,7 +333,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                     <p className="text-sm font-semibold text-foreground truncate">{part.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {part.sku && <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{part.sku}</span>}
-                      {part.oemNo && <span className="text-[10px] font-mono text-muted-foreground/70">{part.oemNo}</span>}
+                      {part.oemNo && <span className="text-[10px] font-mono text-muted-foreground">{part.oemNo}</span>}
                     </div>
                   </div>
                   <StockStatusBadge stockQty={part.stockQty} criticalStockQty={part.criticalStockQty} isActive={part.isActive} />
@@ -348,18 +348,18 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
                 <div className="flex items-center justify-between text-xs">
                   <span className={cn(
                     "font-semibold",
-                    part.stockQty <= 0 ? "text-muted-foreground/70" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
+                    part.stockQty <= 0 ? "text-muted-foreground" : part.stockQty <= part.criticalStockQty ? "text-destructive-strong" : "text-foreground"
                    )}>
                      Stok: {formatStockQty(part.stockQty)} {part.unit}
                    </span>
                   {(part.supplier || part.supplierName) && (
-                    <span className="text-muted-foreground/70 truncate max-w-[120px]">
+                    <span className="text-muted-foreground truncate max-w-[120px]">
                       {part.supplier ? (
-                         <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:text-primary/80">{part.supplier.name}</Link>
+                         <Link href={`/suppliers/${part.supplier.id}`} className="text-primary hover:underline">{part.supplier.name}</Link>
                       ) : part.supplierName}
                     </span>
                   )}
-                  {part.shelfLocation && !part.supplier && !part.supplierName && <span className="text-muted-foreground/70">Raf: {part.shelfLocation}</span>}
+                  {part.shelfLocation && !part.supplier && !part.supplierName && <span className="text-muted-foreground">Raf: {part.shelfLocation}</span>}
                 </div>
               </CardContent>
             </Card>

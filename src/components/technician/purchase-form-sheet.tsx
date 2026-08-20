@@ -80,7 +80,7 @@ export function AddPurchaseButton(props: {
         variant="ghost"
         size="sm"
         onClick={() => setOpen(true)}
-        className="mt-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:text-primary/80"
+        className="mt-2 px-0 text-sm font-medium text-primary hover:bg-transparent hover:underline"
       >
         <Plus className="size-4" />
         Parça Aldım

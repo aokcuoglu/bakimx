@@ -36,6 +36,20 @@ function themeBlock(which: "root" | "dark"): Record<string, string> {
   return vars
 }
 
+/**
+ * `@theme` bloğunda DOĞRUDAN sabit değerle tanımlı renkler (`--color-navy`,
+ * `--color-brand`, `--color-whatsapp`). Bunlar `:root`/`.dark` içinde yok —
+ * temadan bağımsız marka renkleri. `var(--x)` yönlendirmeleri atlanır.
+ */
+function literalThemeColors(): Record<string, string> {
+  const css = readFileSync(join(SRC, "app", "globals.css"), "utf8")
+  const vars: Record<string, string> = {}
+  for (const m of css.matchAll(/--color-([a-z0-9-]+):\s*(oklch\([^)]*\)|#[0-9a-fA-F]{3,8})\s*;/g)) {
+    vars[m[1]] = m[2]
+  }
+  return vars
+}
+
 /** oklch() / hex → sRGB [0-1]. */
 function toRgb(value: string): [number, number, number] {
   if (value.startsWith("#")) {
@@ -201,4 +215,182 @@ test("metin için çıplak text-<renk> yerine -strong kullanılır", () => {
   }
 
   expect(offenders).toEqual([])
+})
+
+/* ------------------------------------------------------------------------- *
+ * Opaklık modifier'lı METİN sınıfları (BAK-156)
+ *
+ * Palet dondurulmuş ve token'lar doğru; borç KULLANIM tarafındaydı. Bir
+ * `text-<token>` sınıfına `/70` eklendiğinde renk zemine doğru soluyor ve
+ * kontrast sessizce düşüyor — Tailwind geçerli bir sınıf ürettiği için ne
+ * TypeScript ne lint görüyor, yukarıdaki testler de opaklığı yalnız tonlu
+ * ZEMİN (`bg-<renk>/10`) için hesaplıyordu. Bu yüzden 425 kullanım birikti;
+ * `text-muted-foreground/70` tek başına 224 yerdeydi ve açık temada 3.02:1
+ * ile AA'nın (4.5:1) epey altındaydı.
+ *
+ * Bu tarama her `text-<token>/<opaklık>` kullanımını bulur, rengi zemine alfa
+ * ile kompoze eder ve ölçülen kontrastı eşiğe vurur. Yüzey tahmini:
+ *   - `<x>-foreground` ve `<x>` bir dolgu token'ıysa → yüzey `<x>`
+ *     (`navy-foreground` → navy, `sidebar-foreground` → sidebar).
+ *   - `foreground` / `muted-foreground` ve dolgu token'ları → uygulamanın tüm
+ *     genel yüzeyleri; hepsinde geçmek zorunda.
+ * Bilinçli istisnalar aşağıdaki allowlist'te GEREKÇESİYLE durur.
+ * ------------------------------------------------------------------------- */
+
+/** Bir sınıfın nerede kullanılabileceği bilinmiyorsa varsayılan yüzey kümesi. */
+const APP_SURFACES = ["background", "card", "popover", "muted", "secondary", "accent"]
+
+const AA_TEXT = 4.5
+
+type OpacityException = {
+  /** `src` köküne göre dosya yolu. */
+  file: string
+  /** Tam sınıf adı, ör. `text-muted-foreground/50`. */
+  className: string
+  /** Neden bilinçli — kanıtsız istisna yazma. */
+  reason: string
+  /** Ölçüm bu yüzeye karşı yapılsın (bileşen zemini sabitse). */
+  surface?: string
+  /**
+   * Salt dekoratif: anlamı komşu metin taşıyor, işaret kaldırılsa bilgi
+   * kaybolmuyor. Ölçüm atlanır (WCAG 1.4.3 dekoratif istisnası).
+   */
+  decorative?: true
+}
+
+/**
+ * Boş-durum illüstrasyonu: her zaman hemen altındaki açıklama metniyle
+ * birlikte görünür, tek başına bilgi taşımaz. Kaldırılsa ekran anlamını
+ * korur — bu yüzden soluk ton bilinçli (WCAG 1.4.3 dekoratif istisnası).
+ */
+const EMPTY_STATE_ICON = "Boş-durum illüstrasyon ikonu; anlamı yanındaki metin taşıyor."
+/** `bg-muted` küçük karenin içindeki görsel yer tutucusu — gerçek görsel yoksa. */
+const IMAGE_PLACEHOLDER = "Görsel yer tutucu ikonu; ürünün adı/metni yanında tam kontrastta."
+/** Metin parçalarını ayıran nokta. Ekran okuyucuya bir şey söylemiyor. */
+const SEPARATOR_DOT = "Ayraç noktası; kaldırılsa bilgi kaybı yok."
+
+const OPACITY_EXCEPTIONS: OpacityException[] = [
+  // --- Alert: zemini sabit `bg-card`, açıklama metni başlıktan bir ton açık.
+  { file: "components/ui/alert.tsx", className: "text-destructive-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
+  { file: "components/ui/alert.tsx", className: "text-success-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
+  { file: "components/ui/alert.tsx", className: "text-warning-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
+
+  // --- Dekoratif grafikler
+  { file: "components/damage/vehicle-damage-map.tsx", className: "text-border/40", decorative: true, reason: "Araç şemasının panel çizgileri; hasar işaretleri tam kontrastta ayrı katmanda." },
+  { file: "components/shared/brand-spinner.tsx", className: "text-brand/70", decorative: true, reason: "aria-hidden çark grafiği; durumu sr-only 'Yükleniyor' metni bildiriyor." },
+
+  // --- Ayraçlar
+  { file: "components/intake/public-share-page.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
+  { file: "components/vehicles/public-vehicle-passport.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
+  { file: "components/orders/detail-header.tsx", className: "text-muted-foreground/40", decorative: true, reason: SEPARATOR_DOT },
+  { file: "components/orders/parts-labor-grid.tsx", className: "text-muted-foreground/40", decorative: true, reason: `${SEPARATOR_DOT} Ayrıca boş-durum ikonları.` },
+
+  // --- Görsel yer tutucuları
+  { file: "components/parts/part-number-match-alert.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
+  { file: "components/parts/part-search-input.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
+  { file: "components/parts/tecdoc-article-row.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
+  { file: "components/technician/parts-request-section.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
+  { file: "components/vehicles/vehicle-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: `${IMAGE_PLACEHOLDER} Ayrıca boş-durum ikonları.` },
+  { file: "components/vehicles/vehicle-passport.tsx", className: "text-muted-foreground/50", decorative: true, reason: `${IMAGE_PLACEHOLDER} Ayrıca boş-durum ikonları.` },
+  { file: "components/intake/grouped-photo-gallery.tsx", className: "text-muted-foreground/30", decorative: true, reason: IMAGE_PLACEHOLDER },
+  { file: "components/intake/photo-gallery-grid.tsx", className: "text-muted-foreground/30", decorative: true, reason: IMAGE_PLACEHOLDER },
+
+  // --- Boş-durum illüstrasyonları
+  { file: "app/(app)/appointments/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/bakimx-orders/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/cashbox/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/cashbox/payments/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/customers/balances/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/orders/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/purchases/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "app/(app)/quotes/page.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/appointments/calendar-view.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/auth/register-form.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/cashbox/collection-create-form.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/customers/customer-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/dashboard/reminder-widget.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/labor/labor-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/orders/order-management-panel.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/orders/technician-assign.tsx", className: "text-muted-foreground/40", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/orders/parts-labor-grid.tsx", className: "text-muted-foreground/40", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/parts/part-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/parts/part-detail-dialog.tsx", className: "text-muted-foreground/40", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/parts/part-supplier-prices-field.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/parts/parts-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/parts/tecdoc-search-results.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/reminders/reminder-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/settings/technician-management.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/shared/empty-state.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/suppliers/supplier-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+  { file: "components/suppliers/suppliers-list.tsx", className: "text-muted-foreground/50", decorative: true, reason: EMPTY_STATE_ICON },
+]
+
+/** `<x>-foreground` → dolgu token'ı `<x>`; genel metin renkleri için null. */
+function pairedSurface(token: string, vars: Record<string, string>): string | null {
+  if (token === "foreground" || token === "muted-foreground") return null
+  const base = token.replace(/-foreground$/, "")
+  if (base === token) return null
+  return vars[base] ? base : null
+}
+
+test("opaklık modifier'lı metin sınıfları AA (4.5:1) geçer", () => {
+  const OPACITY_CLASS_RE = /\btext-([a-z][a-z0-9-]*)\/([0-9]{1,3})\b/g
+  const failures: string[] = []
+  const usedExceptions = new Set<string>()
+
+  // Tema bloğu (`:root` / `.dark`) her zaman kazanır; `@theme inline` sabitleri
+  // (navy, brand, whatsapp) yalnız temada karşılığı olmayanları doldurur.
+  const themes = {
+    root: { ...literalThemeColors(), ...themeBlock("root") },
+    dark: { ...literalThemeColors(), ...themeBlock("dark") },
+  }
+
+  for (const file of walk(SRC)) {
+    const rel = file.slice(SRC.length + 1)
+    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+      if (line.trimStart().startsWith("--color-")) return
+      for (const m of line.matchAll(OPACITY_CLASS_RE)) {
+        const [full, token, alphaStr] = m
+        const alpha = Number(alphaStr) / 100
+        const exception = OPACITY_EXCEPTIONS.find((e) => e.file === rel && e.className === full)
+        if (exception) {
+          usedExceptions.add(`${exception.file}|${exception.className}`)
+          if (exception.decorative) continue
+        }
+
+        for (const which of ["root", "dark"] as const) {
+          const vars = themes[which]
+          const fgRaw = vars[token]
+          if (!fgRaw) {
+            failures.push(`${rel}:${i + 1} → ${full} (--${token} tanımsız)`)
+            break
+          }
+          const surfaces = exception?.surface
+            ? [exception.surface]
+            : (pairedSurface(token, vars) ? [pairedSurface(token, vars)!] : APP_SURFACES)
+          const fg = toRgb(fgRaw)
+          for (const surface of surfaces) {
+            const bgRaw = vars[surface]
+            if (!bgRaw) continue
+            const bg = toRgb(bgRaw)
+            const ratio = contrastRgb(bg, mixSrgb(bg, fg, alpha))
+            if (ratio < AA_TEXT) {
+              const tema = which === "root" ? "açık" : "koyu"
+              failures.push(
+                `${rel}:${i + 1} → ${full} ${tema} temada ${surface} zemininde ${ratio.toFixed(2)}:1` +
+                  ` (opaklığı kaldır ya da gerekçesiyle OPACITY_EXCEPTIONS'a ekle)`
+              )
+            }
+          }
+        }
+      }
+    })
+  }
+
+  expect(failures).toEqual([])
+
+  // Ölü istisna, allowlist'in gerçeği yansıtmadığı anlamına gelir.
+  const stale = OPACITY_EXCEPTIONS.filter((e) => !usedExceptions.has(`${e.file}|${e.className}`))
+    .map((e) => `${e.file} → ${e.className}`)
+  expect(stale).toEqual([])
 })

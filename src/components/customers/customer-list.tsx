@@ -198,7 +198,7 @@ export function CustomerList({
         className="flex items-center gap-2"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             name="q"
             value={q}
@@ -376,7 +376,7 @@ function DesktopTable({
                     href={`tel:${row.phone}`}
                     className="inline-flex items-center gap-1.5 hover:text-primary"
                   >
-                    <Phone className="size-3.5 text-muted-foreground/70" />
+                    <Phone className="size-3.5 text-muted-foreground" />
                     {row.phone}
                   </a>
                 </td>
@@ -389,7 +389,7 @@ function DesktopTable({
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.vehiclesCount}</td>
                 <td className="px-4 py-3 text-right text-foreground tabular-nums">{row.workOrdersCount}</td>
                 <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums">
-                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground/70 font-normal">—</span>}
+                  {row.grandTotal > 0 ? formatTRY(row.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                   {formatDate(row.createdAt)}

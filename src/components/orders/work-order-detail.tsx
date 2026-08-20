@@ -201,7 +201,7 @@ function HandoverPerson({
         <>
           <p className="text-sm text-foreground break-words">{name}</p>
           {phone && (
-            <a href={`tel:${phone}`} className="text-xs text-primary hover:text-primary/80 break-all">
+            <a href={`tel:${phone}`} className="text-xs text-primary hover:underline break-all">
               {phone}
             </a>
           )}
@@ -1605,12 +1605,12 @@ function MobileTotalsBar({
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calculator className="size-4" />
           Genel Toplam
-          <span className="text-xs text-muted-foreground/70">· {itemCount} kalem</span>
+          <span className="text-xs text-muted-foreground">· {itemCount} kalem</span>
         </span>
         {/* Kalem toplamı ile genel toplam farklıysa farkın nedeni burada yazar
             (BAK-55) — mobilde fiyatlandırma kartı ekranın çok altında kalıyor. */}
         {(totals.discountAmount > 0 || totals.taxAmount > 0) && (
-          <span className="truncate text-[11px] text-muted-foreground/70">
+          <span className="truncate text-[11px] text-muted-foreground">
             {[
               `Ara toplam ${formatTRY(totals.subtotal)}`,
               totals.discountAmount > 0 ? `indirim −${formatTRY(totals.discountAmount)}` : null,

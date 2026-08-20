@@ -71,7 +71,7 @@ export function PartCard({
 
       {hasFooter && (
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[10px] text-muted-foreground/70">{meta}</span>
+          <span className="text-[10px] text-muted-foreground">{meta}</span>
           {actions && <div className="flex items-center gap-1">{actions}</div>}
         </div>
       )}

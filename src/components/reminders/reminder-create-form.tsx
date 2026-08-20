@@ -166,7 +166,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/customers/new" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                         <Plus className="size-3" />
                         Yeni müşteri ekle
                       </Link>
@@ -199,7 +199,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <Link href="/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80">
+                      <Link href="/vehicles/new" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                         <Plus className="size-3" />
                         Yeni araç ekle
                       </Link>
@@ -296,7 +296,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                     )}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground/70">Planlanan tarih veya KM&apos;den en az biri zorunludur.</p>
+                <p className="text-xs text-muted-foreground">Planlanan tarih veya KM&apos;den en az biri zorunludur.</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
@@ -426,7 +426,7 @@ export function ReminderCreateForm({ customers, vehicles, initial, mode = "creat
                         </Select>
                       </FormControl>
                       <FormMessage />
-                      <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Info className="size-3" />
                         Bu sürümde gerçek SMS/WhatsApp gönderimi yapılmaz. Hatırlatma kaydı ve takip altyapısı hazırlanır.
                       </p>

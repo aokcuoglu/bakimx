@@ -171,7 +171,7 @@ export function LaborList({
                   {visible.map((item) => (
                     <tr key={item.id} className="hover:bg-muted transition-colors">
                       <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                        {item.code || <span className="text-muted-foreground/50">—</span>}
+                        {item.code || <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-medium text-foreground">{item.name}</span>
@@ -182,7 +182,7 @@ export function LaborList({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground">
-                        {item.category || <span className="text-muted-foreground/50">—</span>}
+                        {item.category || <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-foreground tabular-nums">
                         {formatPrice(item.defaultPriceKurus)}

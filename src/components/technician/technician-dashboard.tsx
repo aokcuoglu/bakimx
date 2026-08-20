@@ -227,7 +227,7 @@ function OrderCard({ order }: { order: OrderRow }) {
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{order.customerComplaint}</p>
           )}
         </div>
-        <ChevronRight className="size-5 text-muted-foreground/70 shrink-0 mt-1" />
+        <ChevronRight className="size-5 text-muted-foreground shrink-0 mt-1" />
       </div>
 
       {order.checklistProgress.total > 0 && (

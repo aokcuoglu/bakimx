@@ -19,7 +19,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent, accentBg }: {
         </div>
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
-      {subtitle && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
     </div>
   )
 }

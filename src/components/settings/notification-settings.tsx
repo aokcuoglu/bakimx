@@ -186,7 +186,7 @@ export function NotificationSettings({
             )
           })}
         </div>
-        <p className="text-xs text-muted-foreground/70 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           Sağlayıcılar ortam değişkenleri ile yapılandırılır. Sağlayıcı tanımlı değilse gönderim kapalıdır. Test butonu, ayarlı sağlayıcı üzerinden örnek mesaj gönderir.
         </p>
       </div>
@@ -222,7 +222,7 @@ export function NotificationSettings({
                     </span>
                   ))}
                 </div>
-                <svg className={`size-4 text-muted-foreground/70 transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                <svg className={`size-4 text-muted-foreground transition-transform ${expandedKey === template.key ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
             </Button>
 
@@ -290,7 +290,7 @@ export function NotificationSettings({
                               İptal
                             </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground/70">
+                          <p className="text-xs text-muted-foreground">
                             Kullanılabilir değişkenler: {"{customerName}"}, {"{workshopName}"}, {"{vehiclePlate}"}, {"{appointmentDate}"}, {"{approvalLink}"}, {"{portalLink}"}, {"{quoteNo}"}, {"{workOrderNo}"}, {"{totalAmount}"}, {"{maintenanceType}"}, {"{dueDate}"}, {"{customMessage}"}
                           </p>
                         </div>

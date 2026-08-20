@@ -94,7 +94,7 @@ function MatchRow({ match, onApply }: { match: PurchaseMatch; onApply: () => voi
           <span className="font-mono">{partNo}</span>
           {brand && <> · {brand}</>}
         </p>
-        <p className="text-[11px] text-muted-foreground/80">{purchaseMatchNote(match)}</p>
+        <p className="text-[11px] text-muted-foreground">{purchaseMatchNote(match)}</p>
       </div>
       <Button type="button" variant="outline" size="sm" onClick={onApply} className="shrink-0 touch-manipulation">
         Eşleştir

@@ -25,10 +25,10 @@ export function WaitingApprovals({ approvals }: { approvals: WaitingApprovalItem
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <PlateBadge plate={a.plate} />
-                    <span className="text-xs font-mono text-muted-foreground/70">{a.workOrderNo}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{a.workOrderNo}</span>
                   </div>
                   <p className="text-sm text-foreground truncate">{a.customerName}</p>
-                  <p className="text-xs text-muted-foreground/70 mt-0.5">{formatDate(a.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(a.createdAt)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-2">

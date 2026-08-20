@@ -191,7 +191,7 @@ export function SupplierDetail({
                             </Badge>
                           )}
                           {p.sku && <span className="text-[10px] font-mono text-muted-foreground bg-border px-1.5 py-0.5 rounded shrink-0">{p.sku}</span>}
-                          {p.oemNo && <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">{p.oemNo}</span>}
+                          {p.oemNo && <span className="text-[10px] font-mono text-muted-foreground shrink-0">{p.oemNo}</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <StockStatusBadge stockQty={p.stockQty} criticalStockQty={p.criticalStockQty} isActive={p.isActive} />
@@ -297,14 +297,14 @@ export function SupplierDetail({
               <Button variant="outline" className="w-full justify-start" disabled>
                 <DollarSign className="size-3.5 mr-2" />
                 Teklif İste
-                <span className="ml-auto text-[10px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Yakında</span>
+                <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Yakında</span>
               </Button>
               <Button variant="outline" className="w-full justify-start" disabled>
                 <ShoppingCart className="size-3.5 mr-2" />
                 Satın Alma Talebi Oluştur
-                <span className="ml-auto text-[10px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">Yakında</span>
+                <span className="ml-auto text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Yakında</span>
               </Button>
-              <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <HelpCircle className="size-3" />
                 Satın alma ve teklif modülleri ilerleyen sürümlerde eklenecektir.
               </p>

@@ -98,7 +98,7 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
                   {o.hasPrice ? (
                     <span className="text-sm font-semibold text-foreground">{formatTRY(o.total)}</span>
                   ) : (
-                    <span className="text-xs text-muted-foreground/70">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-3 px-4">
@@ -107,10 +107,10 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
                       <>
                         <span>{formatDate(o.estimatedDeliveryAt)}</span>
                         <br />
-                        <span className="text-[11px] text-muted-foreground/70">{formatTime(o.estimatedDeliveryAt)}</span>
+                        <span className="text-[11px] text-muted-foreground">{formatTime(o.estimatedDeliveryAt)}</span>
                       </>
                     ) : (
-                      <span className="text-xs text-muted-foreground/70">Belirtilmemiş</span>
+                      <span className="text-xs text-muted-foreground">Belirtilmemiş</span>
                     )}
                   </div>
                 </td>
@@ -155,7 +155,7 @@ export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] })
                   <PlateBadge plate={o.plate} />
                 </div>
               </div>
-              <ChevronRight className="size-4 text-muted-foreground/50 mt-1 shrink-0" />
+              <ChevronRight className="size-4 text-muted-foreground mt-1 shrink-0" />
             </div>
             <p className="text-sm text-foreground mb-2">{o.customerName}</p>
             <div className="flex items-center flex-wrap gap-1.5 mb-2">
@@ -192,7 +192,7 @@ export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }
         <h3 className="text-base font-semibold text-foreground">Aktif İş Emirleri</h3>
         <Link
           href="/orders"
-          className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+          className="text-sm text-primary hover:underline font-medium transition-colors"
         >
           Tümünü Gör →
         </Link>

@@ -30,14 +30,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Tech Stack
 - Next.js 16 App Router + TypeScript + Tailwind CSS v4 + shadcn/ui (radix-nova style)
 - **Dynamic route `params` and `searchParams` are Promises** — type them as `Promise<...>` and `await` them. Reading `params.code` directly yields `undefined` and throws at runtime while typecheck and lint stay green; that shipped the `/w/[code]` login page broken to production (PR #336, fixed pattern in `src/app/w/[code]/page.tsx:9-17`)
-- **Primitive hattı geçiş halinde** (`components.json` → `"style": "radix-nova"`, BAK-152).
-  Radix'e taşınanlar (`radix-ui` paketi, `asChild`): çekirdek (Button, Badge, Label,
-  Separator — BAK-152), overlay (Dialog, AlertDialog, Sheet, Popover, Tooltip,
-  DropdownMenu — BAK-153), form (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs,
-  Accordion, Form, InputGroup — BAK-154).
-  Hâlâ `@base-ui/react` + `render` prop'unu kullanan **yalnız üçü kaldı**: Combobox,
-  Autocomplete ve `sidebar.tsx`/`item.tsx` içindeki `useRender`/`mergeProps` (BAK-155).
-  Bir bileşeni düzenlemeden önce import satırına bak.
+- **Primitive hattı Radix'tir; geçiş KAPANDI** (`components.json` → `"style":
+  "radix-nova"`, BAK-152…BAK-156). Radix'e taşınanlar (`radix-ui` paketi,
+  `asChild`): çekirdek (Button, Badge, Label, Separator — BAK-152), overlay
+  (Dialog, AlertDialog, Sheet, Popover, Tooltip, DropdownMenu — BAK-153), form
+  (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs, Accordion, Form,
+  InputGroup — BAK-154), Item ailesi (BAK-155).
+  `@base-ui/react` **bilinçli olarak** üç yüzeyde kalır — Radix'te dengi yok:
+  `ui/combobox.tsx`, `ui/autocomplete.tsx` ve `ui/sidebar.tsx` içindeki
+  `useRender`/`mergeProps`. Paket bu yüzden `package.json`'da durur; bu beklenen
+  durumdur, sökülecek bir artık değil. Bir bileşeni düzenlemeden önce import
+  satırına bak.
 - Radix hattındaki bileşenlerde kompozisyon `asChild` ile yapılır — `render` ve
   `nativeButton` **yok** (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
 - Accordion Radix API'sini kullanır: `type="single" collapsible` ya da `type="multiple"`

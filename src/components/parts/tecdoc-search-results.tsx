@@ -125,7 +125,7 @@ export function TecdocSearchResults({
                   <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
                 )}
               </span>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </button>
           ))}
           {categoryOverflow > 0 && (
@@ -196,7 +196,7 @@ export function TecdocSearchResults({
           {/* Kapsam notu yalnız TecDoc araması GERÇEKTEN çalıştıysa doğrudur;
               araç kataloğa bağlı değilken (`articles` null) yanıltıcı olurdu. */}
           {visibleArticles != null && (
-            <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
               Parça araması, kataloğa daha önce çekilmiş parçalarda yapılır; OEM numarası ise
               detayı bir kez açılmış parçalarda aranır. Aradığınız parçayı kategorilerden
               ilerleyerek getirebilirsiniz.
@@ -242,7 +242,7 @@ function BrandChip({
       className={cn(
         "inline-flex min-h-8 max-w-[12rem] items-center gap-1 truncate rounded-full border px-2.5 text-xs font-medium transition-colors touch-manipulation",
         active
-          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground/70"
+          ? "border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground"
           : "border-border bg-background text-foreground hover:bg-muted",
       )}
     >

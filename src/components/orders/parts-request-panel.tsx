@@ -116,7 +116,7 @@ export function PartsRequestPanel({
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Package className="size-4" />
           Parça &amp; İşçilik Talepleri
-          <span className="text-xs font-normal text-muted-foreground/70">({requests.length})</span>
+          <span className="text-xs font-normal text-muted-foreground">({requests.length})</span>
         </h3>
         {undecidedCount > 0 && (
           <span className="inline-flex items-center rounded-full border border-warning/20 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-foreground">
@@ -217,7 +217,7 @@ function PartsRequestCard({
             </p>
           )}
           {request.note && <p className="mt-0.5 text-xs text-muted-foreground break-words">{request.note}</p>}
-          <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
             {request.requestedByName ? `${request.requestedByName} · ` : ""}
             {new Date(request.createdAt).toLocaleDateString("tr-TR")}
             {request.tecdocArticleId != null && " · Katalog parçası"}

@@ -221,7 +221,7 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
                 <p
                   className={cn(
                     "mt-1 text-[10px]",
-                    isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
+                    isAgent ? "text-primary-foreground" : "text-muted-foreground",
                   )}
                 >
                   {isAgent ? message.agentEmail || "Destek" : thread.visitorName} · {formatTime(message.createdAt)}

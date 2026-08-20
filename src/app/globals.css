@@ -52,6 +52,12 @@
   --color-navy-light: #031432;
   --color-brand: #2F84FF;
   --color-whatsapp: #128C7E;
+  /* WhatsApp marka yeşili üzerindeki metin/ikon. Token mevcut görüntüyü birebir
+     korur; tek işi paylaş butonlarındaki sabit `text-white`i kaldırmak.
+     UYARI: beyaz bu zeminde 4.14:1 veriyor, yani text-sm için AA altında. Zemin
+     MARKA rengi olduğundan koyulaştırmak ürün kararıdır — BAK-156 bunu bulgu
+     olarak raporladı, kapsamı dışında bırakıldı. */
+  --color-whatsapp-foreground: #FFFFFF;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

@@ -249,7 +249,7 @@ export function ServiceAdvisorPanel({
                           />
                         ) : (
                           <span
-                            className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground/70 line-through")}
+                            className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground line-through")}
                           >
                             {item.label}
                           </span>
@@ -295,7 +295,7 @@ export function ServiceAdvisorPanel({
                             autoFocus
                           />
                         ) : (
-                          <span className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground/70 line-through", item.edited && "italic text-primary")}>
+                          <span className={cn("flex-1 truncate", item.selected ? "text-foreground" : "text-muted-foreground line-through", item.edited && "italic text-primary")}>
                             {item.label}
                           </span>
                         )}

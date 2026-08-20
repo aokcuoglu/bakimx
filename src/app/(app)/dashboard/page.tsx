@@ -82,7 +82,7 @@ export default async function DashboardPage() {
   return (
     <AppShell workshopName={workshop?.name} pageTitle="Genel Bakış">
       <div className="space-y-5 sm:space-y-6 max-w-full">
-        <div className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-white p-5 sm:p-6 shadow-sm overflow-hidden">
+        <div className="relative rounded-lg bg-gradient-to-br from-navy via-navy to-navy-light text-navy-foreground p-5 sm:p-6 shadow-sm overflow-hidden">
           {/* Dekoratif brand blue accent */}
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand/15 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-brand/10 blur-2xl pointer-events-none" />
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
               <h2 className="text-xl sm:text-2xl font-bold">
                 Hoş Geldiniz, {user.firstName || user.email || user.username || "Kullanıcı"}
               </h2>
-              <p className="text-sm text-white/70 mt-1">
+              <p className="text-sm text-navy-foreground/70 mt-1">
                 {workshop?.name} &bull;{" "}
                 {new Date().toLocaleDateString("tr-TR", {
                   weekday: "long",

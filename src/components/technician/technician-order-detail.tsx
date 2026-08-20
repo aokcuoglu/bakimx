@@ -739,7 +739,7 @@ function PhotoSection({
                   onOpen={() => setLightboxIndex(viewable.findIndex((v) => v.id === p.id))}
                 />
               ) : (
-                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground/70">
+                <div className="w-full aspect-square rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
                   <Camera className="size-5" />
                 </div>
               )}
@@ -790,7 +790,7 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
       className="relative w-full aspect-square overflow-hidden rounded-lg border border-border bg-muted touch-manipulation"
     >
       {state !== "ready" && (
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground/70">
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-muted-foreground">
           {state === "loading" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
@@ -886,7 +886,7 @@ function PurchasedItemsSection({
   deleteDecision: PurchaseDeleteDecision
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground/70">Henüz dışarıdan alınan parça yok.</p>
+    return <p className="text-sm text-muted-foreground">Henüz dışarıdan alınan parça yok.</p>
   }
   return (
     <div className="space-y-2">
@@ -944,7 +944,7 @@ function PurchasedItemsSection({
         )
       })}
       {!deleteDecision.allowed && (
-        <p className="text-xs text-muted-foreground/70">{deleteDecision.reason}</p>
+        <p className="text-xs text-muted-foreground">{deleteDecision.reason}</p>
       )}
     </div>
   )
@@ -1050,7 +1050,7 @@ function InternalNotesSection({
                   await deleteInternalNoteAction(note.id)
                 })
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong/60 hover:text-destructive-strong transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-1 text-warning-strong hover:text-destructive-strong transition-opacity"
             >
               <Trash2 className="size-3.5" />
             </button>

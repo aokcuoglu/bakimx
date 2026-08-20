@@ -118,7 +118,7 @@ export function SupplierForm({ supplier }: { supplier?: SupplierData }) {
         )}
 
         <div className="flex items-center gap-3 mb-5">
-          <Link href={isEdit ? `/suppliers/${supplier?.id}` : "/suppliers"} className="text-muted-foreground/70 hover:text-muted-foreground">
+          <Link href={isEdit ? `/suppliers/${supplier?.id}` : "/suppliers"} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
           </Link>
           <h2 className="text-lg font-bold text-foreground">{isEdit ? "Tedarikçi Düzenle" : "Yeni Tedarikçi"}</h2>

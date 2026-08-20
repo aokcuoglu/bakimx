@@ -82,7 +82,7 @@ export function WorkshopLoginForm({ workshopCode, redirect }: Props) {
           Kullanıcı adı
         </Label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             id="username"
             name="username"
@@ -100,7 +100,7 @@ export function WorkshopLoginForm({ workshopCode, redirect }: Props) {
           Şifre
         </Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70 pointer-events-none" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             id="password"
             name="password"
@@ -113,7 +113,7 @@ export function WorkshopLoginForm({ workshopCode, redirect }: Props) {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             tabIndex={-1}
             aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
           >

@@ -129,7 +129,7 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
         <form action="/cashbox/payments" method="get" className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 name="q"
                 defaultValue={q}
@@ -227,11 +227,11 @@ export default async function PaymentsListPage({ searchParams }: { searchParams:
                           </td>
                           <td className="px-4 py-3">
                             {c.serviceOrder ? (
-                              <Link href={`/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-primary hover:text-primary/80">
+                              <Link href={`/orders/${c.serviceOrder.id}`} className="text-xs font-mono text-primary hover:underline">
                                 {c.serviceOrder.workOrderNo || "—"}
                               </Link>
                             ) : (
-                              <span className="text-muted-foreground/70 text-xs">—</span>
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-foreground">{formatTRY(c.amount)}</td>

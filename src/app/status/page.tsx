@@ -98,7 +98,7 @@ export default async function StatusPage() {
                 {incident.resolutionNote && (
                   <p className="text-sm text-muted-foreground">{incident.resolutionNote}</p>
                 )}
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground">
                   {incident.createdAt.toLocaleString("tr-TR")}
                   {incident.resolvedAt && ` · Çözüldü: ${incident.resolvedAt.toLocaleString("tr-TR")}`}
                 </p>

@@ -137,7 +137,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
           "all" truthy olduğu için tetikleyici boş görünüyordu. */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/70" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -225,19 +225,19 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
                       <span className="block text-[11px] text-muted-foreground">{s.categories.join(", ")}</span>
                     )}
                   </td>
-                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-foreground whitespace-nowrap">{s.contactPerson || <span className="text-muted-foreground/50">—</span>}</td>
+                  <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-foreground whitespace-nowrap">{s.contactPerson || <span className="text-muted-foreground">—</span>}</td>
                   <td className="px-4 py-3 text-sm whitespace-nowrap">
                     {s.phone ? (
-                      <a href={`tel:${s.phone}`} className="text-primary hover:text-primary/80">{s.phone}</a>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                      <a href={`tel:${s.phone}`} className="text-primary hover:underline">{s.phone}</a>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="hidden 2xl:table-cell px-4 py-3 text-sm">
                     {s.email ? (
-                      <a href={`mailto:${s.email}`} className="text-primary hover:text-primary/80 truncate block max-w-[180px]">{s.email}</a>
-                    ) : <span className="text-muted-foreground/50">—</span>}
+                      <a href={`mailto:${s.email}`} className="text-primary hover:underline truncate block max-w-[180px]">{s.email}</a>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
-                    {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground/50">—</span>}
+                    {[s.city, s.district].filter(Boolean).join(" / ") || <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center justify-center size-6 rounded-full bg-muted text-xs font-semibold text-foreground">
@@ -342,7 +342,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
         )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground/70">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
+      <p className="text-[11px] text-muted-foreground">Tedarikçi teklif/satın alma entegrasyonu ilerleyen sürümlerde eklenecektir.</p>
     </div>
   )
 }

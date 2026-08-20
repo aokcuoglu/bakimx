@@ -83,7 +83,7 @@ export function GlobalSearch({ className }: { className?: string }) {
             }
           />
           <InputGroupAddon align="inline-start">
-            <Search aria-hidden className="size-4 text-muted-foreground/70" />
+            <Search aria-hidden className="size-4 text-muted-foreground" />
           </InputGroupAddon>
         </InputGroup>
       </div>

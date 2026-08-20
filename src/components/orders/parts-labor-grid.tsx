@@ -1423,7 +1423,7 @@ function PriceField({ row, ed, wide }: { row: Row; ed: RowEditor; wide?: boolean
   const tone = MARGIN_TONE[ed.marginState]
   if (!ed.editable) {
     return (
-      <span data-slot="price-field" className={cn("text-sm tabular-nums", tone, row.unitPrice == null && "text-muted-foreground/70")}>
+      <span data-slot="price-field" className={cn("text-sm tabular-nums", tone, row.unitPrice == null && "text-muted-foreground")}>
         {row.unitPrice != null ? formatTRY(row.unitPrice) : "—"}
       </span>
     )
@@ -1528,7 +1528,7 @@ function TotalField({ lineTotal, strong, vatIncluded }: {
       <span className={cn(
         "tabular-nums",
         strong ? "text-[15px] font-bold tracking-tight" : "text-sm font-semibold",
-        lineTotal == null ? "text-xs font-normal text-muted-foreground/70" : "text-foreground",
+        lineTotal == null ? "text-xs font-normal text-muted-foreground" : "text-foreground",
       )}>
         {lineTotal != null ? formatTRY(lineTotal) : "—"}
       </span>
@@ -1873,7 +1873,7 @@ function RowTecdocPicker({ row, ed, vehicle, onCell, onShowDetail }: {
 // düzenlenebilir alanların gri çip/hayalet kutusu YERİNE düz metin → kullanıcı
 // tıklanacak bir kutu aramaz. oneLine: masaüstü satırında kısalt, mobilde sar.
 function AttrReadOnly({ value, oneLine, title }: { value: string | null; oneLine?: boolean; title?: string }) {
-  if (!value) return <span className="text-[11px] text-muted-foreground/40">—</span>
+  if (!value) return <span className="text-[11px] text-muted-foreground">—</span>
   return (
     <span
       className={cn(

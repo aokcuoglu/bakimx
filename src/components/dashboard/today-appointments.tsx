@@ -16,7 +16,7 @@ export function TodayAppointments({ appointments }: { appointments: TodayAppoint
       </div>
       <div className="divide-y divide-border">
         {appointments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/70">
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Calendar className="size-8 mb-2" />
             <p className="text-sm">Bugün için planlanmış randevu bulunmuyor</p>
           </div>
@@ -34,7 +34,7 @@ export function TodayAppointments({ appointments }: { appointments: TodayAppoint
                 <p className="text-sm font-medium text-foreground truncate">{a.customerName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   {a.plate && <PlateBadge plate={a.plate} />}
-                  <span className="text-[11px] font-mono text-muted-foreground/70">{a.appointmentNo}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground">{a.appointmentNo}</span>
                 </div>
               </div>
               <AppointmentStatusBadge status={a.status} />
@@ -43,7 +43,7 @@ export function TodayAppointments({ appointments }: { appointments: TodayAppoint
         )}
       </div>
       <div className="px-4 py-2.5 border-t border-border">
-        <Link href="/appointments" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+        <Link href="/appointments" className="text-xs font-medium text-primary hover:underline transition-colors">
           Tüm Randevular &rarr;
         </Link>
       </div>

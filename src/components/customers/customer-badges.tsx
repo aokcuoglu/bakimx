@@ -27,7 +27,7 @@ export function CustomerTypeBadge({ type, className }: { type: string; className
 export function CustomerTagBadge({ tag, className }: { tag: string | null | undefined; className?: string }) {
   if (!tag) {
     return (
-      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground/70 border-border text-[11px] font-medium", className)}>
+      <span className={cn("inline-flex items-center h-5 px-2 rounded-full border bg-muted text-muted-foreground border-border text-[11px] font-medium", className)}>
         —
       </span>
     )

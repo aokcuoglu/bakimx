@@ -132,7 +132,7 @@ export function StatusIncidentConsole({
                       Çözüm notu: {incident.resolutionNote}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground/70 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {new Date(incident.createdAt).toLocaleString("tr-TR")} · {incident.createdByEmail}
                   </p>
                 </div>
