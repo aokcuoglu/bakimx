@@ -30,8 +30,8 @@ export function PlateScanner({ onDetected, onClose }: Props) {
       frameClassName="aspect-[4.6/1] w-[86%] max-w-md"
       frameOverlay={
         // TR mavi şeridi — Türkiye plakası göstergesi
-        <div className="absolute inset-y-0 left-0 flex w-[13%] min-w-7 items-center justify-center bg-[#0b4ea2]">
-          <span className="text-[0.7rem] font-bold leading-none tracking-wider text-white">TR</span>
+        <div className="absolute inset-y-0 left-0 flex w-[13%] min-w-7 items-center justify-center bg-primary">
+          <span className="text-[0.7rem] font-bold leading-none tracking-wider text-primary-foreground">TR</span>
         </div>
       }
       scanningLabel="Plaka okunuyor…"

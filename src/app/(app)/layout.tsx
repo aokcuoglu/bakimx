@@ -141,7 +141,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && !plan.isTrialing && plan.subscriptionDaysLeft != null && plan.subscriptionDaysLeft <= 7 && (
-        <div className="bg-amber-100 text-amber-800 text-xs sm:text-sm px-4 py-2 text-center">
+        <div className="bg-warning/10 text-warning-strong text-xs sm:text-sm px-4 py-2 text-center">
           Aboneliğinizin bitmesine{" "}
           <span className="font-semibold">{plan.subscriptionDaysLeft} gün</span> kaldı.{" "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">Yenile</Link>

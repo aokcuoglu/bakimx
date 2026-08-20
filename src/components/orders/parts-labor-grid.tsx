@@ -1544,8 +1544,8 @@ function TotalField({ lineTotal, strong, vatIncluded }: {
 function TypeChip({ type }: { type: ItemType }) {
   const cfg: Record<ItemType, { Icon: typeof Wrench; cls: string }> = {
     part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary-strong" },
-    labor: { Icon: Wrench, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-    external_labor: { Icon: ExternalLink, cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    labor: { Icon: Wrench, cls: "bg-item-labor/10 text-item-labor-strong" },
+    external_labor: { Icon: ExternalLink, cls: "bg-item-external/10 text-item-external-strong" },
   }
   const { Icon, cls } = cfg[type]
   return (
@@ -1958,8 +1958,8 @@ function AttrCell({ kind, row, ed, vehicle, onCell, bare, oneLine }: {
 // border-collapse'tan bağımsız her zaman görünür).
 const ROW_ACCENT: Record<ItemType, string> = {
   part: "bg-primary",
-  labor: "bg-amber-500",
-  external_labor: "bg-violet-500",
+  labor: "bg-item-labor",
+  external_labor: "bg-item-external",
 }
 
 // ── Hayalet-satır: liste hücrelerindeki form kontrolleri düz metin gibi okunur;
