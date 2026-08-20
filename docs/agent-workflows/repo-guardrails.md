@@ -216,6 +216,7 @@ kod yazmadan önce hangisinin kapsamına girdiğine bak:
 |---|---|
 | `src/lib/ui-contract.test.ts` | Yönetim yüzeylerinde (`admin`, `analytics`, `reports`, `settings`) ham `<button>/<input>/<select>/<textarea>` ve sabit `text-red-500` tipi renkler |
 | `src/lib/theme-tokens.test.ts` | `@theme` içinde tanımı olmayan renk token'ı (Tailwind sessizce hiç kural üretmez — PR #241) ve WCAG AA altındaki kontrast |
+| `src/lib/ui-contract.test.ts` (BAK-189) | `shadcn/tailwind.css`teki `@custom-variant data-open/data-checked/…` köprüsünün kaybolması — kaybolursa kısayolu kullanan her sınıf tek seferde ve sessizce ölür; ayrıca `data-open:`in Tooltip'te tutmaması |
 | `src/components/ui/control-sizing.test.ts` | Upstream shadcn `nova` kontrol ölçeğinin (tek ölçek, breakpoint yok) ve `--radius`'un bozulması — bkz. [ui-control-sizing.md](../ui-control-sizing.md) |
 | `src/components/ui/tabs-overflow.test.ts` | Kaydırılabilir sekme şeridinde düz `justify-center` (taşan şeritte ilk sekme erişilemez oluyor — #277) |
 | `src/lib/rbac-coverage.test.ts` | Yetki kapısını hiç çağırmayan yeni mutasyon action'ı (#183) |
