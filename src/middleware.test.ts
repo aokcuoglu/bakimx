@@ -24,6 +24,13 @@ describe("public landing routes", () => {
     expect(response.headers.get("location")).toBeNull()
   })
 
+  test("allows anonymous local requests to /llms.txt", async () => {
+    const response = await middleware(new NextRequest("http://localhost/llms.txt"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
   test("allows anonymous local requests to /rehber/arac-kabul-formu", async () => {
     const response = await middleware(new NextRequest("http://localhost/rehber/arac-kabul-formu"))
 
