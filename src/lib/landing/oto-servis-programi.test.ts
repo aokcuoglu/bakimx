@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
   OTO_SERVIS_PROGRAMI_DESCRIPTION,
+  OTO_SERVIS_PROGRAMI_FAQS,
   OTO_SERVIS_PROGRAMI_H1,
   OTO_SERVIS_PROGRAMI_INTRO,
   OTO_SERVIS_PROGRAMI_PATH,
@@ -21,5 +22,20 @@ describe("oto servis programı arama niyeti sözleşmesi", () => {
 
   test("kategori sayfası kendine özgü canonical kullanır", () => {
     expect(OTO_SERVIS_PROGRAMI_PATH).toBe("/oto-servis-programi")
+  })
+
+  test("kasa ve tahsilat takibi hakkında FAQ vardır", () => {
+    const kasaTahsilatFaq = OTO_SERVIS_PROGRAMI_FAQS.find(
+      (faq) =>
+        faq.question.includes("kasa") &&
+        faq.question.includes("tahsilat")
+    )
+
+    expect(kasaTahsilatFaq).toBeDefined()
+    expect(kasaTahsilatFaq?.answer).toContain("Profesyonel pakette")
+    expect(kasaTahsilatFaq?.answer).toContain("kasa")
+    expect(kasaTahsilatFaq?.answer).toContain("tahsilat")
+    expect(kasaTahsilatFaq?.answer).toContain("e-Fatura/e-Arşiv")
+    expect(kasaTahsilatFaq?.answer).toContain("aktif değildir")
   })
 })
