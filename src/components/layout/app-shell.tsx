@@ -229,7 +229,10 @@ function AppHeader({
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
       <div className="relative flex flex-nowrap items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
-        <SidebarTrigger className={cn("-ml-2 lg:hidden", mobileSearchOpen && "hidden sm:inline-flex")} />
+        {/* Masaüstünde de görünür: SidebarRail ince bir kenar şeridi, tek başına
+            keşfedilebilir bir kontrol değil — BAK-180 öncesi masaüstünde
+            daraltma/genişletme kontrolü fiilen kayıptı. */}
+        <SidebarTrigger className={cn("-ml-2", mobileSearchOpen && "hidden sm:inline-flex")} />
 
         <div
           className={cn(
