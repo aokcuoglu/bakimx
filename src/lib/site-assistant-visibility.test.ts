@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { isPublicAssistantPath } from "./site-assistant-visibility";
 
 test("public path'lerde true döner", () => {
-  for (const p of ["/", "/fiyatlar", "/oto-servis-programi", "/demo", "/satin-al", "/terms", "/privacy"]) {
+  for (const p of ["/", "/fiyatlar", "/oto-servis-programi", "/is-emri-programi", "/demo", "/satin-al", "/terms", "/privacy"]) {
     expect(isPublicAssistantPath(p)).toBe(true);
   }
 });

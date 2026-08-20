@@ -16,4 +16,11 @@ describe("public landing routes", () => {
     expect(response.status).toBe(200)
     expect(response.headers.get("location")).toBeNull()
   })
+
+  test("allows anonymous local requests to /is-emri-programi", async () => {
+    const response = await middleware(new NextRequest("http://localhost/is-emri-programi"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
 })
