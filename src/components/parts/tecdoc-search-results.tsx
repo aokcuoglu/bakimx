@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { TecdocArticleRow } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
+import { GetirbakimProductRow } from "./getirbakim-product-row"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
 import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
 
@@ -23,6 +25,11 @@ import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
  * doğrulanmış, önce onlar görünmeli (aynı gerekçe suggestions.ts'te). `bakimxCatalog`
  * kapısı kapalı atölyede liste hep boş gelir → bölüm hiç render edilmez, geri kalan
  * arama hiç etkilenmez.
+ *
+ * GETİRBAKIM (BAK-183) AYNI BÖLÜMÜN İÇİNDE listelenir, dördüncü bir liste
+ * açılmaz (BAK-182 kararı) — satırları kaynak rozetiyle ayrılır. Kendi özellik
+ * kapısı (`getirbakimCatalog`) BakımX kataloğununkinden ayrı: kapalıyken bu
+ * satırlar hiç gelmez, BakımX ürünleri etkilenmez.
  */
 export function TecdocSearchResults({
   query,
@@ -33,6 +40,8 @@ export function TecdocSearchResults({
   bakimxProducts,
   bakimxSearching,
   onBakimxSelect,
+  getirbakimProducts,
+  getirbakimSearching,
   vehicleTypeId,
   brandFilter,
   onBrandFilterChange,
@@ -51,6 +60,9 @@ export function TecdocSearchResults({
   bakimxProducts?: BakimxProductSummary[]
   bakimxSearching?: boolean
   onBakimxSelect?: (p: BakimxProductSummary) => void
+  /** GetirBakım eşleşmeleri — okuma amaçlı, satırlar tıklanamaz (BAK-183). */
+  getirbakimProducts?: GetirbakimProduct[]
+  getirbakimSearching?: boolean
   /** Rozet eşleşmesi araca bağlı ürünleri de kapsasın diye (BAK-46). */
   vehicleTypeId?: number | null
   brandFilter: string
@@ -98,13 +110,15 @@ export function TecdocSearchResults({
   }, [articles, brandFilter])
 
   const visibleBakimx = onBakimxSelect ? (bakimxProducts ?? []) : []
-  // "Sonuç yok" ancak ÜÇ bölüm de boşken doğrudur. TecDoc araması hiç çalışmamış
-  // olabilir (araç kataloğa bağlı değil → `articles` null kalır); o durumda karar
-  // yalnız BakımX tarafına bakar.
-  const anyPending = searching || !!bakimxSearching
+  const visibleGetirbakim = getirbakimProducts ?? []
+  // "Sonuç yok" ancak BÜTÜN bölümler boşken doğrudur. TecDoc araması hiç
+  // çalışmamış olabilir (araç kataloğa bağlı değil → `articles` null kalır); o
+  // durumda karar yalnız katalog taraflarına bakar.
+  const anyPending = searching || !!bakimxSearching || !!getirbakimSearching
   const nothingFound =
     categories.length === 0 &&
     visibleBakimx.length === 0 &&
+    visibleGetirbakim.length === 0 &&
     (visibleArticles == null ? !!onBakimxSelect : visibleArticles.length === 0)
 
   return (
@@ -178,11 +192,19 @@ export function TecdocSearchResults({
         </section>
       )}
 
-      {visibleBakimx.length > 0 && (
+      {(visibleBakimx.length > 0 || visibleGetirbakim.length > 0) && (
         <section>
-          <SectionHeading>BakımX Ürünleri ({visibleBakimx.length}{bakimxSearching ? "…" : ""})</SectionHeading>
+          {/* Tek bölüm, iki kaynak: sayaç ikisini birden sayar, GetirBakım
+              satırları kendi rozetiyle ayrılır (BAK-183). */}
+          <SectionHeading>
+            BakımX Ürünleri ({visibleBakimx.length + visibleGetirbakim.length}
+            {bakimxSearching || getirbakimSearching ? "…" : ""})
+          </SectionHeading>
           {visibleBakimx.map((p) => (
             <BakimxProductRow key={p.id} product={p} onSelect={() => onBakimxSelect?.(p)} />
+          ))}
+          {visibleGetirbakim.map((p) => (
+            <GetirbakimProductRow key={`gb-${p.id}`} product={p} />
           ))}
         </section>
       )}

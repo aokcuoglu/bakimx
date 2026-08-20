@@ -133,6 +133,7 @@ export type GatedFeature =
   | "vinLookup"
   | "partsCatalog"
   | "bakimxCatalog"
+  | "getirbakimCatalog"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
@@ -145,6 +146,12 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   // taban katman `starter`. Kapı yalnız atölye bazında kapatma düğmesi olarak
   // durur (bkz. /admin/flags, resolveFeature).
   bakimxCatalog: "starter",
+  // GetirBakım kataloğu (BAK-183): `bakimxCatalog`tan AYRI bir kapı. Sorgu
+  // DIŞARI, GetirBakım partner API'sine gidiyor — tek kapıya bağlansaydı, yalnız
+  // kendi kataloğunu isteyen bir atölye farkında olmadan dış trafik de üretirdi.
+  // Aynı gerekçeyle `partsCatalog` (TecDoc) kapısının da arkasında değil; bkz.
+  // src/lib/parts/bakimx-catalog-guard.ts'teki aynı ayrım.
+  getirbakimCatalog: "starter",
 }
 
 type WorkshopPlanFields = Pick<
