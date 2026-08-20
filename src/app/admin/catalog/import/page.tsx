@@ -22,8 +22,10 @@ export default async function CatalogImportPage() {
         <p className="text-sm text-muted-foreground">
           İçe aktarma marka bazlıdır. Dosya yüklemeden önce en az bir marka tanımlamalısınız.
         </p>
-        <Button nativeButton={false} render={<Link href="/admin/catalog/brands" />}>
-          Marka ekle
+        <Button asChild>
+          <Link href="/admin/catalog/brands">
+            Marka ekle
+          </Link>
         </Button>
       </div>
     )

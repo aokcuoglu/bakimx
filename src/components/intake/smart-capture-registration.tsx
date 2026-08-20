@@ -298,14 +298,11 @@ export function SmartCaptureRegistration() {
                   </p>
                 </div>
               </div>
-              <Button
-                nativeButton={false}
-                size="lg"
-                render={<Link href={saveResult.intakeUrl} />}
-                className="shrink-0 gap-2"
-              >
-                İş Emrine Devam Et
-                <ArrowRight className="size-4" />
+              <Button size="lg" asChild className="shrink-0 gap-2">
+                <Link href={saveResult.intakeUrl}>
+                  İş Emrine Devam Et
+                  <ArrowRight className="size-4" />
+                </Link>
               </Button>
             </div>
           </CardContent>

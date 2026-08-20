@@ -69,8 +69,10 @@ export default async function LiveChatResumePage({
                   Sorunuz devam ediyorsa yeni bir görüşme başlatabilirsiniz — sağ alttaki destek
                   panelinden bize yazın.
                 </p>
-                <Button nativeButton={false} render={<Link href="/" />}>
-                  Ana sayfaya dön
+                <Button asChild>
+                  <Link href="/">
+                    Ana sayfaya dön
+                  </Link>
                 </Button>
               </CardContent>
             </>

@@ -50,7 +50,11 @@ export default async function TechnicianPage({
               <p className="text-base font-medium">Henüz teknisyen kaydı yok</p>
               <p className="text-sm mt-1">Ayarlar &gt; Ekip sayfasından bir teknisyen ekleyin</p>
             </div>
-            <Button render={<Link href="/settings?tab=team" />}>Ekip Sayfasına Git</Button>
+            <Button asChild>
+              <Link href="/settings?tab=team">
+                Ekip Sayfasına Git
+              </Link>
+            </Button>
           </div>
         </div>
       </AppShell>

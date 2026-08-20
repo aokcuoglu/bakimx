@@ -61,21 +61,22 @@ export function CreateCenterDialog() {
             return (
               <div key={option.id} role="listitem">
                 <Button
-                  nativeButton={false}
-                  render={<Link href={option.href} onClick={() => setOpen(false)} />}
+                  asChild
                   variant="outline"
                   size="lg"
                   className="h-auto min-h-16 w-full justify-start gap-3 whitespace-normal p-3 text-left md:min-h-16"
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Icon className="size-5" aria-hidden />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-foreground">{option.title}</span>
-                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                      {option.description}
+                  <Link href={option.href} onClick={() => setOpen(false)}>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="size-5" aria-hidden />
                     </span>
-                  </span>
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-foreground">{option.title}</span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                        {option.description}
+                      </span>
+                    </span>
+                  </Link>
                 </Button>
               </div>
             )
