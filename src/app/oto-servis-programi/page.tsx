@@ -209,6 +209,7 @@ export default function OtoServisProgramiPage() {
                 { href: "/dijital-arac-kabul", title: "Dijital araç kabul", text: "Ruhsat, kabul fotoğrafları ve hasar kaydı akışını inceleyin." },
                 { href: "/is-emri-programi", title: "İş emri programı", text: "İş, parça, işçilik ve onay takibinin ayrıntılarını görün." },
                 { href: "/fiyatlar", title: "Paketler ve fiyatlar", text: "Güncel paket kapsamlarını ve KDV dahil fiyatları karşılaştırın." },
+                { href: "/karsilastir/defter-excel-oto-servis-programi", title: "Defter, Excel ve program karşılaştırması", text: "Kayıt yöntemlerini dengeli ölçütlerle karşılaştırın." },
                 { href: "/demo", title: "Canlı demo talep edin", text: "BakımX'i servisinizin çalışma şekline göre birlikte inceleyin." },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="group rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
