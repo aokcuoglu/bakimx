@@ -23,4 +23,11 @@ describe("public landing routes", () => {
     expect(response.status).toBe(200)
     expect(response.headers.get("location")).toBeNull()
   })
+
+  test("allows anonymous local requests to /rehber/arac-kabul-formu", async () => {
+    const response = await middleware(new NextRequest("http://localhost/rehber/arac-kabul-formu"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
 })
