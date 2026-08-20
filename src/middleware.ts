@@ -22,7 +22,7 @@ const LANDING_ORIGIN = "https://bakimx.com"
 // /admin-login: platform personelinin Google SSO kapısı (BAK-94). Oturum
 // AÇMADAN erişilebilmesi gerekir, yani public; konsolun kendisi (`/admin`)
 // yönetici olmayana 404 vermeye devam eder.
-const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar", "/oto-servis-programi", "/is-emri-programi", "/status", "/robots.txt", "/sitemap.xml", "/opengraph-image", "/twitter-image"])
+const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password", "/register", "/privacy", "/terms", "/kvkk", "/acik-riza", "/fiyatlar", "/oto-servis-programi", "/dijital-arac-kabul", "/is-emri-programi", "/status", "/robots.txt", "/sitemap.xml", "/opengraph-image", "/twitter-image"])
 // /payment/result: TAMI 3DS/callback tarayıcıyı oturumsuz (public checkout) da
 // buraya 303'ler; sonuç DB'den okunur, tenant sızıntısı yok (bkz. result/page.tsx).
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
