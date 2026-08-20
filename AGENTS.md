@@ -36,11 +36,22 @@ This version has breaking changes — APIs, conventions, and file structure may 
   (Dialog, AlertDialog, Sheet, Popover, Tooltip, DropdownMenu — BAK-153), form
   (Select, Checkbox, Switch, Toggle, ToggleGroup, Tabs, Accordion, Form,
   InputGroup — BAK-154), Item ailesi (BAK-155).
-  `@base-ui/react` **bilinçli olarak** üç yüzeyde kalır — Radix'te dengi yok:
-  `ui/combobox.tsx`, `ui/autocomplete.tsx` ve `ui/sidebar.tsx` içindeki
-  `useRender`/`mergeProps`. Paket bu yüzden `package.json`'da durur; bu beklenen
-  durumdur, sökülecek bir artık değil. Bir bileşeni düzenlemeden önce import
-  satırına bak.
+  `@base-ui/react` **bilinçli olarak** İKİ yüzeyde kalır — Radix'te dengi yok
+  (`radix-ui@1.6.7` içinde combobox/autocomplete girdisi yoktur, upstream
+  shadcn da bunları Base UI üstünde verir): `ui/combobox.tsx` ve
+  `ui/autocomplete.tsx`. Paket bu yüzden `package.json`'da durur; bu beklenen
+  durumdur, sökülecek bir artık değil. `ui/sidebar.tsx` BAK-189'da Radix
+  `Slot`'a geçti — artık `render` değil `asChild` alır. Bir bileşeni
+  düzenlemeden önce import satırına bak.
+- **Durum sınıfları Radix yazımıyla yazılır: `data-[state=...]`.** Base UI
+  `data-open` / `data-closed` / `data-checked` / `data-unchecked` /
+  `data-active` / `data-pressed` yazar, Radix ise hepsini tek bir `data-state`
+  içine koyar. Tailwind v4 `data-checked:` kısayolunu `[data-checked]` VARLIK
+  seçicisine derler, yani yanlış yazım geçerli bir sınıf üretir ama HİÇBİR
+  ZAMAN eşleşmez — tip denetimi de lint de göremez. BAK-189'da 11 dosyada
+  ~100 sınıf bu yüzden ölüydü (anahtarın zemin rengi yoktu, checkbox
+  işaretliyken dolmuyordu, aktif sekme vurgulanmıyordu, overlay animasyonları
+  çalışmıyordu). `src/lib/ui-contract.test.ts` geri gelmesini engeller.
 - Radix hattındaki bileşenlerde kompozisyon `asChild` ile yapılır — `render` ve
   `nativeButton` **yok** (`src/lib/ui-contract.test.ts` geri gelmesini engeller)
 - Accordion Radix API'sini kullanır: `type="single" collapsible` ya da `type="multiple"`
@@ -86,6 +97,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
   4.27:1 on the page background and 4.05:1 on `bg-muted`. So: `bg-primary/10` and
   `text-primary` on the same element → use **`text-primary-strong`**. The test scans
   exactly that pairing; it does not touch `text-primary` elsewhere.
+- **`muted-foreground` has a `-strong` tone for the same reason** (BAK-189).
+  Secondary text is fine on flat surfaces (card 6.00:1) — it drops on a **tinted**
+  one, because the content area is `bg-muted`, not `bg-background`: a
+  `bg-destructive/10` KPI card measured **4.43:1** in the browser. Tinted card →
+  **`text-muted-foreground-strong`**. Put the tint class and the text class in the
+  **same string literal** (see `bucketColors` in `cashbox/aging/page.tsx`); the gate
+  in `theme-tokens.test.ts` only sees the pairing when they sit together, and a
+  parent-tint / child-text split is invisible to it.
 - **`opacity-*` on an element that styles text is a contrast bug** — the faded tone
   is inherited, so it cannot be measured statically. Remove it, or state the colour
   explicitly at the call site (`text-muted-foreground`, a `-strong` tone). Deliberate

@@ -168,8 +168,9 @@ test("src içinde köşeli parantezli sabit renk yok", () => {
  * için uyarı basmaz). Kapı bu yüzden testte duruyor.
  *
  * Kapsam bilerek dar: `render` henüz göç etmemiş ailelerde (Combobox,
- * Autocomplete, SidebarMenuButton — BAK-155) hâlâ geçerli, `FormField` ise
- * react-hook-form'un kendi render prop'u ve LİSTEYE GİRMEZ.
+ * Autocomplete) hâlâ geçerli, `FormField` ise react-hook-form'un kendi render
+ * prop'u ve LİSTEYE GİRMEZ. Sidebar ailesi BAK-189'da Radix `Slot`'a geçti ve
+ * listeye eklendi.
  */
 const RADIX_TAGS = [
   "Button",
@@ -199,6 +200,12 @@ const RADIX_TAGS = [
   "Switch",
   "FormControl",
   "InputGroupButton",
+  // sidebar ailesi (BAK-189)
+  "SidebarGroupLabel",
+  "SidebarGroupAction",
+  "SidebarMenuButton",
+  "SidebarMenuAction",
+  "SidebarMenuSubButton",
 ]
 
 /** Bir JSX açılış etiketinin gövdesini süslü parantez/dize farkındalığıyla çıkarır. */
@@ -241,5 +248,54 @@ test("Radix hattındaki bileşen çağrılarında Base UI render/nativeButton ka
       }
     }
   }
+  expect(offenders).toEqual([])
+})
+
+/**
+ * Base UI ve Radix AYNI durumu FARKLI yazar ve bu fark sessizdir (BAK-189).
+ *
+ * Base UI: `data-open` / `data-closed` / `data-checked` / `data-unchecked` /
+ * `data-active` / `data-pressed` — her biri ayrı bir attribute.
+ * Radix: hepsi tek bir `data-state="open|closed|checked|unchecked|active|on"`.
+ *
+ * BAK-152…BAK-155'te bileşenler Radix'e geçti ama sınıflar Base UI yazımında
+ * kaldı. Tailwind v4 `data-checked:` kısayolunu `[data-checked]` VARLIK
+ * seçicisine derler (ölçüldü), yani sınıf geçerli üretilir ama hiçbir zaman
+ * eşleşmez — ne TypeScript ne lint ne de kontrast taraması görür. Sonucu
+ * kozmetik değildi: `switch.tsx`'te hem `data-checked:bg-primary` hem
+ * `data-unchecked:bg-input` ölüydü, yani anahtarın HİÇ zemin rengi yoktu ve
+ * başparmak açıkken kaymıyordu; `checkbox.tsx` işaretliyken dolmuyordu;
+ * `tabs.tsx`'te aktif sekmenin vurgusu yoktu; altı overlay ailesinde giriş/
+ * çıkış animasyonu çalışmıyordu.
+ *
+ * Kural: bu varyantları yalnız iki durumda kullanabilirsin —
+ *   1. dosya gerçekten Base UI primitive'i kullanıyorsa (`@base-ui/react`
+ *      import'u var: `combobox.tsx`, `autocomplete.tsx`), ya da
+ *   2. attribute'u dosyanın KENDİSİ yazıyorsa (`sidebar.tsx` `data-active`'i
+ *      elle basar; orada `data-active:` doğru seçicidir).
+ * Radix bir bileşende doğru yazım `data-[state=...]`'tir.
+ */
+const BASE_UI_STATE_VARIANTS = ["open", "closed", "checked", "unchecked", "active", "pressed"]
+
+test("Radix bileşenlerinde Base UI data-attribute yazımı kalmadı", () => {
+  const offenders: string[] = []
+
+  for (const file of tsxFiles(SRC)) {
+    const source = readFileSync(file, "utf8")
+    const usesBaseUi = source.includes("@base-ui/react")
+    if (usesBaseUi) continue
+    source.split("\n").forEach((line, index) => {
+      for (const state of BASE_UI_STATE_VARIANTS) {
+        // `data-<state>:` bir Tailwind varyantı; `data-<state>=` ise attribute
+        // yazımıdır ve aranan şey değildir.
+        if (!new RegExp(`(?<![\\w-])data-${state}:`).test(line)) continue
+        if (source.includes(`data-${state}=`)) continue
+        offenders.push(
+          `${relative(SRC, file)}:${index + 1} → data-${state}: (Radix \`data-[state=${state}]\` yazar)`
+        )
+      }
+    })
+  }
+
   expect(offenders).toEqual([])
 })

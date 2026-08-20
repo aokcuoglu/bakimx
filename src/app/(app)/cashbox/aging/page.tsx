@@ -6,11 +6,15 @@ import { formatTRY } from "@/lib/format"
 import { Clock, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+// `label` bilerek burada, `bg`'nin yanında duruyor: içerik alanı `bg-muted`
+// olduğu için tonlu KPI kartında ikincil metin `text-muted-foreground` ile
+// 4.43:1'e düşüyordu (BAK-189). İkisinin aynı satırda olması hem doğru tonu
+// zorunlu kılar hem de `theme-tokens.test.ts`'teki taramaya görünür yapar.
 const bucketColors = [
-  { bg: "bg-success/10", border: "border-success/20", text: "text-success-strong", accentBg: "bg-success/20", icon: Clock },
-  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning-strong", accentBg: "bg-warning/20", icon: Clock },
-  { bg: "bg-warning/10", border: "border-warning/20", text: "text-warning-strong", accentBg: "bg-warning/20", icon: AlertTriangle },
-  { bg: "bg-destructive/10", border: "border-destructive/20", text: "text-destructive-strong", accentBg: "bg-destructive/20", icon: AlertTriangle },
+  { bg: "bg-success/10", border: "border-success/20", label: "text-muted-foreground-strong", text: "text-success-strong", accentBg: "bg-success/20", icon: Clock },
+  { bg: "bg-warning/10", border: "border-warning/20", label: "text-muted-foreground-strong", text: "text-warning-strong", accentBg: "bg-warning/20", icon: Clock },
+  { bg: "bg-warning/10", border: "border-warning/20", label: "text-muted-foreground-strong", text: "text-warning-strong", accentBg: "bg-warning/20", icon: AlertTriangle },
+  { bg: "bg-destructive/10", border: "border-destructive/20", label: "text-muted-foreground-strong", text: "text-destructive-strong", accentBg: "bg-destructive/20", icon: AlertTriangle },
 ]
 
 export default async function AgingReportPage() {
@@ -42,7 +46,7 @@ export default async function AgingReportPage() {
           </div>
           {aging.map((bucket, i) => (
             <div key={bucket.key} className={cn("rounded-lg border p-3.5", bucketColors[i].bg, bucketColors[i].border)}>
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{bucket.label}</p>
+              <p className={cn("text-[11px] font-medium uppercase tracking-wider", bucketColors[i].label)}>{bucket.label}</p>
               <p className={cn("text-lg font-bold mt-1", bucketColors[i].text)}>{formatTRY(bucket.totalAmount)}</p>
             </div>
           ))}

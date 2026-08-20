@@ -40,6 +40,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
+  --color-muted-foreground-strong: var(--muted-foreground-strong);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
@@ -313,6 +314,15 @@
   --secondary-foreground: oklch(0.20 0.04 260);
   --muted: oklch(0.96 0.01 250);
   --muted-foreground: oklch(0.50 0.02 260);
+  /* İKİNCİL METİN, TONLU ZEMİNDE. Diğer -strong tonlarıyla aynı desen ama
+     sebebi farklı: --muted-foreground düz yüzeylerde AA'yı rahat geçiyor
+     (kart 6.00:1, sayfa 5.66:1) — düştüğü yer uygulamanın içerik alanı, çünkü
+     orası `bg-background` değil `bg-muted`. `bg-destructive/10` bir de onun
+     üstüne binince efektif zemin yeterince koyulaşıyor ve 11px KPI etiketi
+     4.43:1'e iniyor (BAK-189, /cashbox/aging'de canlı ölçüm; statik model
+     4.49:1 veriyor). -strong tonu üç düz yüzeyin ve onların dört `/10` tonlu
+     hâlinin hepsinde >=5.8:1. */
+  --muted-foreground-strong: oklch(0.44 0.02 260);
   --accent: oklch(0.96 0.02 250);
   --accent-foreground: oklch(0.20 0.04 260);
   --destructive: oklch(0.577 0.245 27.325);
@@ -383,6 +393,9 @@
   --secondary-foreground: oklch(0.96 0.01 250);
   --muted: oklch(0.27 0.04 260);
   --muted-foreground: oklch(0.70 0.02 260);
+  /* Koyu temada yön ters: -strong AÇILIR, koyulaşmaz. Temel ton burada
+     zaten geçiyor (en kötü 4.78:1), -strong onu 6.37:1'e taşır. */
+  --muted-foreground-strong: oklch(0.78 0.02 260);
   --accent: oklch(0.27 0.04 250);
   --accent-foreground: oklch(0.96 0.01 250);
   --destructive: oklch(0.704 0.191 22.216);

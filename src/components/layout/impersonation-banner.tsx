@@ -1,5 +1,6 @@
 import { Eye } from "lucide-react"
 import { stopImpersonation } from "@/app/admin/impersonation-actions"
+import { Button } from "@/components/ui/button"
 
 /** Persistent, unmissable banner shown while a founder is impersonating a
  *  workshop. Rendered at the very top of the app shell. */
@@ -11,12 +12,16 @@ export function ImpersonationBanner({ workshopName }: { workshopName: string }) 
         Yönetici taklit modu — <strong>{workshopName}</strong> olarak görüntülüyorsunuz (salt-okunur).
       </span>
       <form action={stopImpersonation}>
-        <button
+        {/* `ghost` varyantı nötr bir yüzey varsayar; bant `bg-warning` olduğu için
+            tint ve metin rengi warning-foreground üzerinden verilir. */}
+        <Button
           type="submit"
-          className="rounded-md bg-warning-foreground/10 px-2.5 py-1 font-semibold underline-offset-2 hover:bg-warning-foreground/20"
+          variant="ghost"
+          size="xs"
+          className="bg-warning-foreground/10 font-semibold text-warning-foreground underline-offset-2 hover:bg-warning-foreground/20 hover:text-warning-foreground"
         >
           Çık
-        </button>
+        </Button>
       </form>
     </div>
   )

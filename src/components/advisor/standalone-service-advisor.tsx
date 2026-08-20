@@ -214,7 +214,7 @@ export function StandaloneServiceAdvisor() {
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
                   <StickyNote className="size-3" /> Servis İç Notu
                 </p>
-                <p className="text-sm text-muted-foreground bg-warning/10 p-2.5 rounded-lg border border-warning/20">{result.internalNote}</p>
+                <p className="text-sm text-muted-foreground-strong bg-warning/10 p-2.5 rounded-lg border border-warning/20">{result.internalNote}</p>
                 <p className="text-[11px] text-muted-foreground italic mt-1">Bu not müşteri çıktısında gösterilmez</p>
               </div>
             )}
