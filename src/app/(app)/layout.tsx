@@ -130,7 +130,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       )}
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
-        <div className="bg-primary/10 text-primary text-xs sm:text-sm px-4 py-2 text-center">
+        <div className="bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center">
           Deneme sürenizin bitmesine{" "}
           <span className="font-semibold">{plan.trialDaysLeft} gün</span> kaldı.{" "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">

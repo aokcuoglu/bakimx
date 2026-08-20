@@ -618,7 +618,7 @@ function BalanceCard({ balance, totalPaid, customerId }: { balance: ReturnType<t
 function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
     <div className={cn("rounded-lg px-3 py-2.5 border border-border/60", accent)}>
-      <p className="text-[11px] font-medium opacity-80 uppercase tracking-wider">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wider">{label}</p>
       <p className="text-base font-bold mt-0.5 truncate">{value}</p>
     </div>
   )

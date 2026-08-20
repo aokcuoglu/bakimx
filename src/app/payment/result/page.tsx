@@ -44,7 +44,7 @@ function IconBadge({
 }) {
   const cls =
     tone === "success"
-      ? "bg-primary/10 text-primary"
+      ? "bg-primary/10 text-primary-strong"
       : tone === "error"
         ? "bg-destructive/10 text-destructive-strong"
         : "bg-muted text-muted-foreground"

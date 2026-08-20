@@ -31,11 +31,11 @@ function formatDate(iso: string) {
 export function QuoteList({ quotes, counts, activeStatus, search }: { quotes: QuoteRow[]; counts: StatusCounts; activeStatus: string; search: string }) {
   const statusConfig = [
     { key: "draft", label: "Taslak", color: "bg-muted text-muted-foreground border-border" },
-    { key: "sent", label: "Gönderildi", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "sent", label: "Gönderildi", color: "bg-primary/10 text-primary-strong border-primary/20" },
     { key: "accepted", label: "Kabul Edildi", color: "bg-success/10 text-success-strong border-success/20" },
     { key: "rejected", label: "Reddedildi", color: "bg-destructive/10 text-destructive-strong border-destructive/20" },
     { key: "expired", label: "Süresi Doldu", color: "bg-warning/10 text-warning-strong border-warning/20" },
-    { key: "converted", label: "İş Emrine Çevrilen", color: "bg-primary/10 text-primary border-primary/20" },
+    { key: "converted", label: "İş Emrine Çevrilen", color: "bg-primary/10 text-primary-strong border-primary/20" },
   ]
 
   return (

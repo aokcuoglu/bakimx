@@ -277,7 +277,7 @@ export function OrderChecklist({
               aria-hidden
               className={cn(
                 "grid size-9 shrink-0 place-items-center rounded-lg",
-                allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary"
+                allDone ? "bg-success/15 text-success-strong" : "bg-primary/10 text-primary-strong"
               )}
             >
               {allDone ? <CheckCircle2 className="size-5" /> : <ListChecks className="size-5" />}
@@ -616,7 +616,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary-strong"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}

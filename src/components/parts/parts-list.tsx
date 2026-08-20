@@ -120,7 +120,7 @@ export function PartsList({ parts, kpis, brands, categories, currentFilters }: P
       <PartsTabsNav active="parts" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Toplam Parça" value={kpis.total} icon={Boxes} accent="text-primary-strong" accentBg="bg-primary/10" />
         <KpiStat label="Stokta Olan" value={kpis.inStock} icon={Package} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Kritik Stokta" value={kpis.critical} icon={AlertTriangle} accent="text-destructive-strong" accentBg="bg-destructive/10" />
         <KpiStat label="Stokta Yok" value={kpis.outOfStock} icon={AlertTriangle} accent="text-muted-foreground" accentBg="bg-muted" />

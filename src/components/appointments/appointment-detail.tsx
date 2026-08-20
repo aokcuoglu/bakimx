@@ -389,8 +389,10 @@ export function AppointmentDetail({
                 </form>
               )}
 
-              <button
+              <Button
                 type="button"
+                size="lg"
+                className="w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
                 onClick={() => {
                   const text = `Merhaba ${customerDisplayName(appointment.customer)}, randevu bilgileriniz: ${appointment.appointmentNo} - ${formatDateTime(appointment.appointmentAt)}`
                   window.open(
@@ -398,11 +400,10 @@ export function AppointmentDetail({
                     "_blank"
                   )
                 }}
-                className="inline-flex items-center justify-center gap-2 w-full h-9 px-3 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#25D366]/90 transition-colors"
               >
                 <Share2 className="size-4" />
                 WhatsApp ile Paylaş
-              </button>
+              </Button>
             </CardContent>
           </Card>
         </div>

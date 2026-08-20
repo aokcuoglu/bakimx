@@ -553,7 +553,7 @@ function UserMenu({ userIdentity }: { userIdentity?: UserIdentity }) {
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <span className="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+        <span className="flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary-strong text-[11px] font-semibold">
           {initials}
         </span>
       </Button>

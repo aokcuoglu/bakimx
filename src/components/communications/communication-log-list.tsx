@@ -46,7 +46,7 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   sms: "bg-success/10 text-success-strong",
   whatsapp: "bg-success/10 text-success-strong",
-  email: "bg-primary/10 text-primary",
+  email: "bg-primary/10 text-primary-strong",
 }
 
 const STATUS_COLORS: Record<string, string> = {

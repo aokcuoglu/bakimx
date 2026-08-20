@@ -176,7 +176,7 @@ export function CustomerList({
           <StatCard
             label="Yeni"
             value={kpis.newThisMonth}
-            accent="bg-primary/10 text-primary border-primary/20"
+            accent="bg-primary/10 text-primary-strong border-primary/20"
           />
           <StatCard
             label="Tekrar Eden"

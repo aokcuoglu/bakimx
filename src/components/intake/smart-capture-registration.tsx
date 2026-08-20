@@ -239,7 +239,7 @@ export function SmartCaptureRegistration() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                 <User className="size-5" />
               </div>
               <div className="min-w-0">
@@ -257,7 +257,7 @@ export function SmartCaptureRegistration() {
 
           <Card>
             <CardContent className="flex items-start gap-3 py-5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                 <Car className="size-5" />
               </div>
               <div className="min-w-0">
@@ -271,7 +271,7 @@ export function SmartCaptureRegistration() {
                       : "Mevcut araç bilgileri güncellendi."}
                 </p>
                 {saveResult.catalogLinked && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary-strong">
                     <CheckCircle2 className="size-3 shrink-0" />
                     VIN eşleşti — araca uygun parçalar iş emrinde hazır
                   </p>
@@ -288,7 +288,7 @@ export function SmartCaptureRegistration() {
           <CardContent className="py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
                   <ClipboardList className="size-5" />
                 </div>
                 <div>
@@ -337,7 +337,7 @@ export function SmartCaptureRegistration() {
       <Card>
         <CardContent className="py-16">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center animate-pulse">
+            <div className="size-16 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center animate-pulse">
               <ScanLine className="size-8" />
             </div>
             <div>
@@ -517,7 +517,7 @@ export function SmartCaptureRegistration() {
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <div className="size-14 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center">
                   <Upload className="size-7" />
                 </div>
                 <div>

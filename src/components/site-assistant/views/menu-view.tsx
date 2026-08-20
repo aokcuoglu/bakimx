@@ -39,7 +39,7 @@ function ActionInner({ action, trailing }: { action: MenuAction; trailing?: Reac
   const Icon = action.icon;
   return (
     <>
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover/button:bg-primary/15">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-strong transition-colors group-hover/button:bg-primary/15">
         <Icon className="size-5" />
       </span>
       <span className="min-w-0 flex-1 space-y-0.5">

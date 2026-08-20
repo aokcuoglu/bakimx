@@ -17,7 +17,7 @@ export function AdvisorPremiumLock() {
         <CardTitle className="text-base flex items-center gap-2">
           <Sparkles className="size-4 text-primary" />
           AI Servis Danışmanı
-          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-strong">
             <Lock className="size-2.5" />
             Premium
           </span>

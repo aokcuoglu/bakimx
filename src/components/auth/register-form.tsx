@@ -354,7 +354,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               className={cn(
                 "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors",
                 i < currentStep && "border-primary bg-primary text-primary-foreground",
-                i === currentStep && "border-primary bg-primary/10 text-primary",
+                i === currentStep && "border-primary bg-primary/10 text-primary-strong",
                 i > currentStep && "border-muted-foreground/30 text-muted-foreground",
               )}
               aria-current={i === currentStep ? "step" : undefined}
@@ -496,7 +496,7 @@ function PlanCard({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-foreground">{pkg.name}</span>
           {pkg.popular && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
               Popüler
             </span>
           )}
@@ -734,7 +734,7 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors",
                   active
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-primary bg-primary/10 text-primary-strong"
                     : "border-border text-muted-foreground hover:border-primary/40",
                 )}
               >

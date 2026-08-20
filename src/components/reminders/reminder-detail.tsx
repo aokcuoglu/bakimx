@@ -234,7 +234,7 @@ export function ReminderDetail({ reminder }: { reminder: SafeReminder }) {
               <button
                 onClick={() => handleAction("create-appointment")}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary-strong hover:bg-primary/20 text-xs font-medium transition-colors disabled:opacity-50 touch-manipulation"
               >
                 <CalendarClock className="size-3.5" />
                 Randevu Oluştur

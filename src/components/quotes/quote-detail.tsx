@@ -430,14 +430,15 @@ export function QuoteDetail({ quote }: { quote: QuoteDetailData }) {
               <Printer className="size-4" />
               Yazdır / PDF
             </button>
-            <button
+            <Button
               type="button"
+              size="lg"
+              className="w-full justify-start bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90 touch-manipulation"
               onClick={handleWhatsApp}
-              className="flex items-center gap-2 w-full p-2.5 rounded-lg bg-[#25D366] hover:bg-[#25D366]/90 text-white text-sm font-medium transition-colors touch-manipulation"
             >
               <Share2 className="size-4" />
               WhatsApp ile Paylaş
-            </button>
+            </Button>
           </div>
         </aside>
       </div>

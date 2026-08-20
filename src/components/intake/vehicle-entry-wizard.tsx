@@ -535,7 +535,7 @@ export function VehicleEntryWizard({
           />
           <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-6 text-center sm:p-10">
             <div className="flex flex-col items-center gap-4">
-              <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary-strong">
                 <Barcode className="size-8" />
               </span>
               <Button type="button" className="gap-2" onClick={() => setScanner("vin")}>

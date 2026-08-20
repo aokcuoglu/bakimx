@@ -126,10 +126,10 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiStat label="Toplam Tedarikçi" value={kpis.total} icon={Truck} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Toplam Tedarikçi" value={kpis.total} icon={Truck} accent="text-primary-strong" accentBg="bg-primary/10" />
         <KpiStat label="Aktif" value={kpis.active} icon={Users} accent="text-success-strong" accentBg="bg-success/10" />
         <KpiStat label="Pasif" value={kpis.passive} icon={Archive} accent="text-muted-foreground" accentBg="bg-muted" />
-        <KpiStat label="Parça Bağlı" value={kpis.withParts} icon={AlertCircle} accent="text-primary" accentBg="bg-primary/10" />
+        <KpiStat label="Parça Bağlı" value={kpis.withParts} icon={AlertCircle} accent="text-primary-strong" accentBg="bg-primary/10" />
       </div>
 
       {/* Arama + durum filtresi + Ara tek satırda (müşteri listesi konvansiyonu).

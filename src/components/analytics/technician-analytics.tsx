@@ -59,7 +59,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
                 return (
                   <div key={tech.id} className="flex items-center justify-between px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                      <span className="size-7 rounded-full bg-primary/10 text-primary-strong flex items-center justify-center text-xs font-bold">
                         {i + 1}
                       </span>
                       <div>
@@ -106,7 +106,7 @@ export function TechnicianAnalyticsSection({ ranking }: { ranking: TechnicianRan
                       <td className="px-4 py-2.5 font-medium text-foreground">{tech.fullName}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{roleInfo?.label || tech.role}</td>
                       <td className="px-4 py-2.5 text-center">
-                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary-strong text-xs font-medium">
                           {tech.activeJobs}
                         </span>
                       </td>

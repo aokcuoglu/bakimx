@@ -169,7 +169,7 @@ export default async function AppointmentsPage({
                 className={cn(
                   "h-8 px-3 inline-flex items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors touch-manipulation",
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/10 text-primary-strong"
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >

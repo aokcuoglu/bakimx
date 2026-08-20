@@ -1543,7 +1543,7 @@ function TotalField({ lineTotal, strong, vatIncluded }: {
 // başlığı). Parça=lacivert, İşçilik=amber, Dış İşçilik=mor.
 function TypeChip({ type }: { type: ItemType }) {
   const cfg: Record<ItemType, { Icon: typeof Wrench; cls: string }> = {
-    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary" },
+    part: { Icon: PackagePlus, cls: "bg-primary/10 text-primary-strong" },
     labor: { Icon: Wrench, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
     external_labor: { Icon: ExternalLink, cls: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
   }
