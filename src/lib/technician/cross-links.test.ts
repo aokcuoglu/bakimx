@@ -9,11 +9,10 @@ test("teknisyen görünümü linki id ile kurulur", () => {
   expect(technicianOrderPath("abc123")).toBe("/technician/orders/abc123")
 })
 
-test("teknisyen atanmamış iş emrinde ters link gösterilmez", () => {
-  // Rota `assignedTechnicianId: { not: null }` arıyor; atama yokken link 404'e götürür.
-  expect(canOpenTechnicianView(null)).toBe(false)
-  expect(canOpenTechnicianView(undefined)).toBe(false)
-  expect(canOpenTechnicianView("")).toBe(false)
+test("teknisyen atanmamış iş emrinde de teknisyen görünümü açılır", () => {
+  expect(canOpenTechnicianView(null)).toBe(true)
+  expect(canOpenTechnicianView(undefined)).toBe(true)
+  expect(canOpenTechnicianView("")).toBe(true)
 })
 
 test("teknisyen atanmışsa ters link gösterilir", () => {

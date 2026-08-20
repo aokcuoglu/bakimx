@@ -101,7 +101,11 @@ export function TechnicianDashboard({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teknisyen Paneli</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">İş atamalarınızı ve görevlerinizi yönetin</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {canSelectTechnician
+              ? "Seçili teknisyenin iş atamalarını yönetin"
+              : "Atölyedeki iş emirlerini görüntüleyin, kendi görevlerinizi yönetin"}
+          </p>
         </div>
         {canSelectTechnician && (
           <Select
