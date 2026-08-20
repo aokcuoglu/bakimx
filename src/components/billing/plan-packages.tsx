@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import type { PlanTier } from "@/lib/plan"
+import { trackMarketingEvent } from "@/lib/marketing-analytics"
 
 type BillingCycle = "monthly" | "yearly"
 
@@ -33,6 +34,7 @@ export function PlanPackages({
   const router = useRouter()
 
   function handleSelect(tier: PlanTier) {
+    trackMarketingEvent("purchase_started", { plan_tier: tier, billing_cycle: billing, cta_location: "pricing_card" })
     router.push(`${checkoutBasePath}?tier=${tier}&cycle=${billing}`)
   }
 

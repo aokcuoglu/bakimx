@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { CheckCircle2, Loader2, Phone, Building2, User, MapPin, Hash, MessageSquare } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TR_CITIES } from "@/lib/tr-cities";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 interface FormData {
   name: string;
@@ -56,6 +57,7 @@ export function DemoRequestSection() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const submitRef = useRef(false);
 
   function validate(): FormErrors {
     const errs: FormErrors = {};
@@ -77,11 +79,13 @@ export function DemoRequestSection() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitRef.current) return;
     const validationErrors = validate();
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) return;
 
+    submitRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -92,6 +96,7 @@ export function DemoRequestSection() {
       });
 
       if (res.ok) {
+        trackMarketingEvent("demo_submitted", { form_location: "demo_page" });
         setIsSuccess(true);
       } else {
         try {
@@ -118,6 +123,7 @@ export function DemoRequestSection() {
     } catch {
       setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." });
     } finally {
+      submitRef.current = false;
       setIsSubmitting(false);
     }
   }

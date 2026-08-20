@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/incompatible-library -- react-hook-form watch() cannot be memoized by React Compiler; usage is safe */
 
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react"
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form"
@@ -49,6 +49,7 @@ import { formatPhoneTR } from "@/lib/format"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
 import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
+import { trackMarketingEvent } from "@/lib/marketing-analytics"
 
 const STEPS = [
   { label: "Paket Seçimi" },
@@ -132,6 +133,8 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const startedRef = useRef(false)
+  const submitRef = useRef(false)
   const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   const form = useForm<WizardFormValues, unknown, WizardFormValues>({
@@ -162,6 +165,7 @@ export function RegisterForm() {
   })
 
   const billingPeriod = form.watch("billingPeriod")
+  const selectedPlan = form.watch("selectedPlan")
   const workshopName = form.watch("workshopName")
   const city = form.watch("city")
 
@@ -188,6 +192,8 @@ export function RegisterForm() {
   }
 
   async function handleSubmit(values: WizardFormValues) {
+    if (submitRef.current) return
+    submitRef.current = true
     setError("")
     setLoading(true)
     try {
@@ -218,6 +224,7 @@ export function RegisterForm() {
       })
       const data = await res.json()
       if (data.ok) {
+        trackMarketingEvent("register_submitted", { plan_tier: values.selectedPlan, billing_cycle: values.billingPeriod })
         setSubmitted(values.email.trim())
       } else {
         setError(data.error || "Kayıt başarısız")
@@ -225,6 +232,7 @@ export function RegisterForm() {
     } catch {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
+      submitRef.current = false
       setLoading(false)
     }
   }
@@ -264,7 +272,16 @@ export function RegisterForm() {
       <StepIndicator currentStep={currentStep} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} method="post" className="mt-8">
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          onChange={() => {
+            if (startedRef.current) return
+            startedRef.current = true
+            trackMarketingEvent("register_started", { entry_step: "plan", plan_tier: selectedPlan, billing_cycle: billingPeriod })
+          }}
+          method="post"
+          className="mt-8"
+        >
           {error && (
             <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive-strong text-sm">
               {error}

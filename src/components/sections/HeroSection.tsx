@@ -7,6 +7,7 @@ import { ShieldCheck, Zap, CalendarCheck, ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { ObjectionCards } from "@/components/sections/ObjectionCards";
 import { HeroAskBar } from "@/components/sections/HeroAskBar";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
@@ -74,6 +75,7 @@ export function HeroSection() {
             >
               <Link
                 href="/register"
+                onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "hero_primary" })}
                 className={buttonVariants({
                   size: "lg",
                   className: "gap-2 px-7 text-base shadow-lg shadow-primary/25",
@@ -84,6 +86,7 @@ export function HeroSection() {
               </Link>
               <a
                 href="#demo-form"
+                onClick={() => trackMarketingEvent("demo_cta_click", { cta_location: "hero_secondary", destination: "form" })}
                 className={buttonVariants({
                   variant: "outline",
                   size: "lg",
