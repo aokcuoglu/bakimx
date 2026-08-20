@@ -9,6 +9,7 @@ export const INDEXABLE_ROUTES = [
   "/is-emri-programi",
   "/rehber/arac-kabul-formu",
   "/rehber/oto-servis-is-emri-nasil-hazirlanir",
+  "/karsilastir/defter-excel-oto-servis-programi",
   "/fiyatlar",
   "/demo",
   "/status",

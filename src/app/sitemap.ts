@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             ? 0.8
             : path === "/dijital-arac-kabul"
               ? 0.7
-              : path.startsWith("/rehber/")
+              : path.startsWith("/rehber/") || path.startsWith("/karsilastir/")
                 ? 0.5
                 : 0.4,
   }))
