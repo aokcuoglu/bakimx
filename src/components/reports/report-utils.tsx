@@ -161,7 +161,7 @@ export function ReportTable<T extends Record<string, unknown>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-border">
             {rows.map((row, idx) => renderRow(row, idx))}
           </tbody>
         </table>
