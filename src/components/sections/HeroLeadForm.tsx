@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle2, Loader2, ShieldCheck, Zap, CalendarCheck, ArrowRight } from "lucide-react";
 import { TR_CITIES } from "@/lib/tr-cities";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 interface FormData {
   name: string;
@@ -45,6 +46,7 @@ export function HeroLeadForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const submitRef = useRef(false);
 
   function validate(): FormErrors {
     const errs: FormErrors = {};
@@ -62,10 +64,12 @@ export function HeroLeadForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitRef.current) return;
     const validationErrors = validate();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
+    submitRef.current = true;
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/demo-request", {
@@ -74,6 +78,7 @@ export function HeroLeadForm() {
         body: JSON.stringify(formData),
       });
       if (res.ok) {
+        trackMarketingEvent("demo_submitted", { form_location: "home" });
         setIsSuccess(true);
       } else {
         try {
@@ -88,6 +93,7 @@ export function HeroLeadForm() {
     } catch {
       setErrors({ _general: "Bağlantı hatası oluştu. Lütfen tekrar deneyin." });
     } finally {
+      submitRef.current = false;
       setIsSubmitting(false);
     }
   }

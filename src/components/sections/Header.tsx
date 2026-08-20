@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 const navItems = [
   { label: "Canlı Demo", href: "/#ruhsat-demo" },
@@ -68,6 +69,7 @@ export function Header() {
           </Link>
           <Link
             href="/register"
+            onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "header_desktop" })}
             className={buttonVariants({ size: "default", className: "bg-primary text-primary-foreground hover:bg-primary/90" })}
           >
             Ücretsiz Dene
@@ -108,7 +110,7 @@ export function Header() {
               </Link>
               <Link
                 href="/register"
-                onClick={() => setMobileOpen(false)}
+                onClick={() => { setMobileOpen(false); trackMarketingEvent("trial_cta_click", { cta_location: "header_mobile" }) }}
                 className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 w-full text-center" })}
               >
                 Ücretsiz Dene
