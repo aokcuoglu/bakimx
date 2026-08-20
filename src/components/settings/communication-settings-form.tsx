@@ -126,11 +126,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                   <FormItem>
                     <FormLabel>SMS Sağlayıcı</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue>
-                            {(value: string | null) => (value ? SMS_PROVIDER_LABELS[value] ?? value : null)}
-                          </SelectValue>
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">{SMS_PROVIDER_LABELS.mock}</SelectItem>
@@ -196,11 +194,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                   <FormItem>
                     <FormLabel>WhatsApp Sağlayıcı</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue>
-                            {(value: string | null) => (value ? WHATSAPP_PROVIDER_LABELS[value] ?? value : null)}
-                          </SelectValue>
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">{WHATSAPP_PROVIDER_LABELS.mock}</SelectItem>
@@ -266,11 +262,9 @@ export function CommunicationSettingsForm({ settings }: { settings: SettingsData
                   <FormItem>
                     <FormLabel>E-posta Sağlayıcı</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "mock")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          <SelectValue>
-                            {(value: string | null) => (value ? EMAIL_PROVIDER_LABELS[value] ?? value : null)}
-                          </SelectValue>
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mock">{EMAIL_PROVIDER_LABELS.mock}</SelectItem>

@@ -52,7 +52,9 @@ describe("teknisyen iş emri adım kabuğu", () => {
     // yalnız düzenlemeyi durdurur, sekme değiştirmeyi değil.
     expect(source).not.toMatch(/currentStep: StepId = locked\s*\n\s*\? "finish"/)
     expect(source).toContain('const currentStep: StepId = validRequestedStep ?? rememberedStep ?? derivedStep')
-    expect(source).toContain('<Tabs value={currentStep} onValueChange={(value) => isStepId(String(value)) && goToStep(value as StepId)}>')
+    // BAK-154: Radix `onValueChange` doğrudan `string` verir — Base UI'nin
+    // `String(value)` / `value as StepId` sarmalayıcıları kalktı, kural aynı.
+    expect(source).toContain('<Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>')
   })
 
   test("beklemeye al/devam et hızlı aksiyonları adım içeriğinden bağımsız, üstte durur (BAK-148)", () => {

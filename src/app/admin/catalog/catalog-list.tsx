@@ -154,11 +154,9 @@ export function CatalogList({
           </form>
 
           <div className="flex flex-wrap gap-2">
-            <Select value={filters.status} onValueChange={(v) => pushFilters({ status: (v ?? "all") as CatalogFilters["status"] })}>
+            <Select value={filters.status} onValueChange={(v) => pushFilters({ status: v as CatalogFilters["status"] })}>
               <SelectTrigger>
-                <SelectValue placeholder="Tüm durumlar">
-                  {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : null)}
-                </SelectValue>
+                <SelectValue placeholder="Tüm durumlar" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -169,13 +167,9 @@ export function CatalogList({
               </SelectContent>
             </Select>
 
-            <Select value={filters.brandId} onValueChange={(v) => pushFilters({ brandId: v ?? "" })}>
+            <Select value={filters.brandId} onValueChange={(v) => pushFilters({ brandId: v })}>
               <SelectTrigger>
-                <SelectValue placeholder="Tüm markalar">
-                  {(value: string | null) =>
-                    value ? brands.find((b) => b.id === value)?.name ?? value : null
-                  }
-                </SelectValue>
+                <SelectValue placeholder="Tüm markalar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tüm markalar</SelectItem>
@@ -188,13 +182,9 @@ export function CatalogList({
               </SelectContent>
             </Select>
 
-            <Select value={filters.categoryKey} onValueChange={(v) => pushFilters({ categoryKey: v ?? "" })}>
+            <Select value={filters.categoryKey} onValueChange={(v) => pushFilters({ categoryKey: v })}>
               <SelectTrigger>
-                <SelectValue placeholder="Tüm kategoriler">
-                  {(value: string | null) =>
-                    value ? BAKIMX_CATEGORIES.find((c) => c.key === value)?.label ?? value : null
-                  }
-                </SelectValue>
+                <SelectValue placeholder="Tüm kategoriler" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tüm kategoriler</SelectItem>
@@ -438,13 +428,9 @@ function BulkStockDialog({
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Seçilen {count} ürünün stok adedi güncellenir.</p>
-          <Select value={mode} onValueChange={(v) => setMode((v ?? "set") as "set" | "increase" | "decrease")}>
+          <Select value={mode} onValueChange={(v) => setMode(v as "set" | "increase" | "decrease")}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="İşlem">
-                {(v: string | null) =>
-                  v === "increase" ? "Artır" : v === "decrease" ? "Azalt" : "Şu değere ayarla"
-                }
-              </SelectValue>
+              <SelectValue placeholder="İşlem" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="set">Şu değere ayarla</SelectItem>

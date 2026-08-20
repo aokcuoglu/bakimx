@@ -30,7 +30,6 @@ import { isValidVin, type VinCandidate } from "@/lib/vin/types"
 import { DatePicker } from "@/components/ui/date-picker"
 import { CustomerSearchOrCreate } from "@/components/customers/customer-search-or-create"
 import {
-  findCustomerOptionLabel,
   toCustomerOptions,
   withCustomerOption,
   type CustomerLike,
@@ -219,17 +218,12 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                       <FormLabel>Müşteri *</FormLabel>
                       <Select
                         value={field.value}
-                        onValueChange={(v) => field.onChange(v ?? "")}
+                        onValueChange={(v) => field.onChange(v)}
                         disabled={customerOptions.length === 0}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Müşteri seçin">
-                              {(value) =>
-                                findCustomerOptionLabel(customerOptions, value) ??
-                                (customerOptions.length === 0 ? "Henüz müşteri yok" : "Müşteri seçin")
-                              }
-                            </SelectValue>
+                            <SelectValue placeholder="Müşteri seçin" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -320,14 +314,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Araç Tipi</FormLabel>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Araç tipi seçin">
-                                {(value) =>
-                                  VEHICLE_TYPES.find((t) => t.value === value)?.label ?? "Araç tipi seçin"
-                                }
-                              </SelectValue>
+                              <SelectValue placeholder="Araç tipi seçin" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -473,14 +463,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Yakıt Tipi</FormLabel>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Seçiniz">
-                                {(value) =>
-                                  VEHICLE_FUEL_TYPES.find((ft) => ft.value === value)?.label ?? "Seçiniz"
-                                }
-                              </SelectValue>
+                              <SelectValue placeholder="Seçiniz" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -502,14 +488,10 @@ export function VehicleCreateForm({ customers, initial, mode = "create", prefill
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Şanzıman</FormLabel>
-                      <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seçiniz">
-                              {(value) =>
-                                VEHICLE_TRANSMISSIONS.find((t) => t.value === value)?.label ?? "Seçiniz"
-                              }
-                            </SelectValue>
+                            <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

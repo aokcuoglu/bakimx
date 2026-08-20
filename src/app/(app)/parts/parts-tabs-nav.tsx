@@ -12,8 +12,8 @@ import { Boxes, Wrench } from "lucide-react"
 export function PartsTabsNav({ active }: { active: "parts" | "labor" }) {
   const router = useRouter()
 
-  function handleChange(key: string | null) {
-    if (!key || key === active) return
+  function handleChange(key: string) {
+    if (key === active) return
     router.replace(key === "labor" ? "/parts?tab=labor" : "/parts", { scroll: false })
   }
 

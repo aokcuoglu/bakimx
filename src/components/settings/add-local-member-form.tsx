@@ -248,7 +248,6 @@ export function AddLocalMemberForm({
             Rol *
           </Label>
           <Select
-            items={ROLE_LABELS}
             value={role}
             onValueChange={(v) => v && setRole(v as UserRole)}
           >
@@ -257,11 +256,8 @@ export function AddLocalMemberForm({
             </SelectTrigger>
             <SelectContent>
               {assignableRoles.map((r) => (
-                <SelectItem key={r} value={r}>
-                  <span className="flex flex-col items-start">
-                    <span>{ROLE_LABELS[r]}</span>
-                    <span className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
-                  </span>
+                <SelectItem key={r} value={r} description={ROLE_DESCRIPTIONS[r]}>
+                  {ROLE_LABELS[r]}
                 </SelectItem>
               ))}
             </SelectContent>

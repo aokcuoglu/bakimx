@@ -97,7 +97,6 @@ export function AddPlatformAdminForm() {
               <FormItem className="sm:w-56">
                 <FormLabel>Rol</FormLabel>
                 <Select
-                  items={ADMIN_ROLE_LABELS}
                   value={field.value}
                   onValueChange={(v) => v && field.onChange(v)}
                   disabled={isPending}

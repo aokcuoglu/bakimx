@@ -236,13 +236,9 @@ function CreateIncidentDialog({
                 <FormItem>
                   <FormLabel>Ciddiyet *</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "degraded")}>
+                    <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seçin">
-                          {(value: string | null) =>
-                            value ? SEVERITY_LABELS[value as CreateStatusIncidentInput["severity"]] : null
-                          }
-                        </SelectValue>
+                        <SelectValue placeholder="Seçin" />
                       </SelectTrigger>
                       <SelectContent>
                         {STATUS_INCIDENT_SEVERITIES.map((s) => (

@@ -281,15 +281,11 @@ export function OrderInfoCard({
                   terminal aksiyon "İptal". */}
               <Select
                 value={order.status}
-                onValueChange={(v) => handleStatusSelect(v ?? "")}
+                onValueChange={(v) => handleStatusSelect(v)}
                 disabled={changingStatus || statusOptions.length <= 1}
               >
                 <SelectTrigger className="w-[170px]">
-                  <SelectValue>
-                    {(value: string | null) =>
-                      value ? (ORDER_STATUS[value as OrderStatusKey]?.label ?? value) : null
-                    }
-                  </SelectValue>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((s) => (
@@ -314,17 +310,14 @@ export function OrderInfoCard({
               ) : (
                 <Select
                   value={order.arrivalReason ?? ""}
-                  onValueChange={(v) => handleReasonSelect(v ?? "")}
+                  onValueChange={(v) => handleReasonSelect(v)}
                   disabled={changingReason}
                 >
                   <SelectTrigger className="w-[170px]">
-                    {/* Base UI'da `children` verilince `placeholder` HİÇ render
-                        edilmez ve render fonksiyonundan null dönerse tetikleyici
-                        bomboş kalır (kırık kontrol gibi görünür). arrivalReasonLabel
-                        boş/null değerde zaten "—" döndüğü için koşulsuz çağırıyoruz. */}
-                    <SelectValue>
-                      {(value: string | null) => arrivalReasonLabel(value)}
-                    </SelectValue>
+                    {/* `placeholder` ŞART: geliş nedeni boşken (`value=""`) Radix
+                        seçili kalem metni basmaz, tetikleyici bomboş kalır ve
+                        kırık kontrol gibi görünür. */}
+                    <SelectValue placeholder="Belirtilmedi" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Belirtilmedi</SelectItem>

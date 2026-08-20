@@ -491,11 +491,9 @@ function PurchaseFormSheet({
         {!editing && technicians.length > 0 && (
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
-            <Select value={technicianId} onValueChange={(v) => setTechnicianId(v ?? "")}>
+            <Select value={technicianId} onValueChange={(v) => setTechnicianId(v)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seçiniz">
-                  {(value) => technicians.find((t) => t.id === value)?.fullName || "Seçiniz"}
-                </SelectValue>
+                <SelectValue placeholder="Seçiniz" />
               </SelectTrigger>
               <SelectContent>
                 {technicians.map((t) => (

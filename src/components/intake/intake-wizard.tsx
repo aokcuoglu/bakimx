@@ -27,7 +27,7 @@ import { FuelLevelPicker } from "@/components/intake/fuel-gauge"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { DamageCapture } from "@/components/intake/damage-capture"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS, arrivalReasonLabel } from "@/lib/constants"
+import { ARRIVAL_REASON_ORDER, ARRIVAL_REASONS } from "@/lib/constants"
 
 type Customer = {
   id: string
@@ -356,14 +356,9 @@ export function IntakeWizard({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Servise Geliş Nedeni</FormLabel>
-                      <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v ?? "")}>
+                      <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v)}>
                         <SelectTrigger className="w-full">
-                          {/* Base UI'da `children` verilince `placeholder` HİÇ render
-                              edilmez (bkz. order-info-card.tsx) — boş durumu render
-                              fonksiyonu içinde kendimiz metinleştiriyoruz. */}
-                          <SelectValue>
-                            {(value: string | null) => (value ? arrivalReasonLabel(value) : "Seçiniz (opsiyonel)")}
-                          </SelectValue>
+                          <SelectValue placeholder="Seçiniz (opsiyonel)" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">Belirtilmedi</SelectItem>

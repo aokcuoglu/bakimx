@@ -23,8 +23,6 @@ import { formatPrice } from "@/lib/parts/format"
 import type { LaborCatalogRow, LaborKPIs } from "@/lib/labor/types"
 import { Plus, Search, Wrench, Archive, Edit3, Trash2, Sparkles, CheckCircle2, Loader2 } from "lucide-react"
 
-const STATUS_LABELS: Record<string, string> = { all: "Tümü", active: "Aktif", inactive: "Pasif" }
-
 export function LaborList({
   items, kpis, categories, currentFilters,
 }: {
@@ -140,11 +138,9 @@ export function LaborList({
                   className="pl-9"
                 />
               </div>
-              <Select value={status} onValueChange={(v) => setStatus(v ?? "all")}>
+              <Select value={status} onValueChange={(v) => setStatus(v)}>
                 <SelectTrigger className="sm:w-40">
-                  <SelectValue placeholder="Durum">
-                    {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : null)}
-                  </SelectValue>
+                  <SelectValue placeholder="Durum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tümü</SelectItem>

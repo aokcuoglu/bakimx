@@ -123,7 +123,7 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="da-city">Şehir *</Label>
-        <Select value={data.city} onValueChange={(value) => setData({ ...data, city: value ?? "" })}>
+        <Select value={data.city} onValueChange={(value) => setData({ ...data, city: value })}>
           <SelectTrigger id="da-city" className="w-full">
             <SelectValue placeholder="Şehir seçin" />
           </SelectTrigger>
@@ -140,15 +140,9 @@ export function DemoFormView({ onBack, onSuccess }: DemoFormViewProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="da-vehicles">Aylık ortalama araç adedi *</Label>
-        <Select value={data.monthlyVehicles} onValueChange={(value) => setData({ ...data, monthlyVehicles: value ?? "" })}>
+        <Select value={data.monthlyVehicles} onValueChange={(value) => setData({ ...data, monthlyVehicles: value })}>
           <SelectTrigger id="da-vehicles" className="w-full">
-            <SelectValue placeholder="Seçin">
-              {(value: string | null) => {
-                if (!value) return null;
-                const option = MONTHLY_VEHICLE_OPTIONS.find((opt) => opt.value === value);
-                return option ? option.label : value;
-              }}
-            </SelectValue>
+            <SelectValue placeholder="Seçin" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

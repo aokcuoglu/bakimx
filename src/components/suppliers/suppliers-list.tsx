@@ -166,9 +166,7 @@ export function SuppliersList({ suppliers, kpis, currentFilters }: SuppliersList
             <SelectTrigger aria-label="Durum filtresi" className="w-full sm:w-40">
               {/* Base UI placeholder'ı yalnız değer null iken gösterir; "" (Tümü) seçiliyken
                   tetikleyici boş kalıyordu → etiketi render fonksiyonundan döndürüyoruz. */}
-              <SelectValue placeholder="Tüm Durumlar">
-                {(value: string | null) => (value ? STATUS_LABELS[value] ?? value : "Tüm Durumlar")}
-              </SelectValue>
+              <SelectValue placeholder="Tüm Durumlar" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Tüm Durumlar</SelectItem>

@@ -289,15 +289,15 @@ export function PartDetailDialog({
                 )}
 
                 {/* --- Muadiller (tembel) --- */}
-                {/* defaultValue=[] ŞART: Base UI akordeonu varsayılanda ilk öğeyi
-                    AÇIK render ediyor — muadil çağrısı kullanıcı istemeden
-                    tetikleniyor ve boşuna faturalanıyordu (QA'de yakalandı).
+                {/* Radix akordeonu varsayılanda kapalı açılır; muadil çağrısı
+                    yalnız kullanıcı paneli AÇTIĞINDA tetiklenmeli (Base UI ilk
+                    öğeyi açık render ediyordu ve istek boşuna faturalanıyordu).
                     onValueChange kapanışta da tetiklendiği için açık-mı diye bakılır. */}
                 <Accordion
+                  type="multiple"
                   className="border-t"
-                  defaultValue={[]}
                   onValueChange={(value) => {
-                    if (Array.isArray(value) ? value.length > 0 : value != null) void loadCrossRefs()
+                    if (value.length > 0) void loadCrossRefs()
                   }}
                 >
                   <AccordionItem value="cross-refs" className="border-b-0">

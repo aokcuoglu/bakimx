@@ -212,20 +212,11 @@ export function AppointmentCreateForm() {
                   <FormControl>
                     <Select
                       value={field.value}
-                      onValueChange={(v) => field.onChange(v ?? "")}
+                      onValueChange={(v) => field.onChange(v)}
                       disabled={!customerId || vehiclesLoading || vehicles.length === 0}
                     >
                       <SelectTrigger className="w-full">
-                        {/* Base UI'da children render-fn `placeholder` prop'unu
-                            devralır; boş seçimde metni burada döndürmezsek
-                            tetikleyici bomboş görünür. */}
-                        <SelectValue>
-                          {(value: string | null) => {
-                            const v = value ? vehicles.find((x) => x.id === value) : null
-                            if (v) return vehicleChoiceLabel(v)
-                            return <span className="text-muted-foreground">{vehiclePlaceholder}</span>
-                          }}
-                        </SelectValue>
+                        <SelectValue placeholder={vehiclePlaceholder} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Araç Seçin (Opsiyonel)</SelectItem>
@@ -310,15 +301,9 @@ export function AppointmentCreateForm() {
                 <FormItem>
                   <FormLabel>Tahmini Süre</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "")}>
+                    <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seçiniz">
-                          {(value: string | null) => {
-                            if (!value) return null
-                            const map: Record<string, string> = { "15": "15 dk", "30": "30 dk", "45": "45 dk", "60": "1 saat", "90": "1.5 saat", "120": "2 saat" }
-                            return map[value] ?? value
-                          }}
-                        </SelectValue>
+                        <SelectValue placeholder="Seçiniz" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Seçiniz</SelectItem>

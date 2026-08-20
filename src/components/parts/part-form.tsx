@@ -34,11 +34,6 @@ import { partSchema, type PartFormValues } from "@/lib/validations/part"
 import { PartSupplierPricesField, type SupplierPriceFormRow } from "@/components/parts/part-supplier-prices-field"
 import { mergePartAttributeOptions } from "@/lib/parts/attributes"
 
-const CURRENCY_LABELS: Record<string, string> = {
-  TRY: "₺ TRY",
-  USD: "$ USD",
-  EUR: "€ EUR",
-}
 
 type PartData = {
   id: string
@@ -467,11 +462,9 @@ export function PartForm({
                     <FormItem>
                       <FormLabel>Para Birimi</FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={(v) => field.onChange(v ?? "TRY")}>
+                        <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Para Birimi">
-                              {(value: string | null) => (value ? CURRENCY_LABELS[value] ?? value : null)}
-                            </SelectValue>
+                            <SelectValue placeholder="Para Birimi" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="TRY">₺ TRY</SelectItem>

@@ -271,7 +271,7 @@ export function DemoRequestSection() {
                       <Select
                         value={formData.city}
                         onValueChange={(value) =>
-                          setFormData({ ...formData, city: value ?? "" })
+                          setFormData({ ...formData, city: value })
                         }
                       >
                         <SelectTrigger id="city" className="w-full">
@@ -301,7 +301,7 @@ export function DemoRequestSection() {
                     <Select
                       value={formData.monthlyVehicles}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, monthlyVehicles: value ?? "" })
+                        setFormData({ ...formData, monthlyVehicles: value })
                       }
                     >
                       <SelectTrigger id="monthlyVehicles" className="w-full">

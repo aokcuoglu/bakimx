@@ -270,7 +270,7 @@ export function OrderChecklist({
             : "border-border bg-card"
       )}
     >
-      <Accordion value={open} onValueChange={(v) => onOpenChange(v as string[])}>
+      <Accordion type="multiple" value={open} onValueChange={onOpenChange}>
         <AccordionItem value="checklist" className="border-0">
           <AccordionTrigger className="items-center gap-3 py-3 hover:no-underline">
             <span
@@ -606,8 +606,9 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
       <div className="space-y-1.5">
         <span className="block text-xs text-muted-foreground">Hangi aşamada?</span>
         <ToggleGroup
-          value={[category]}
-          onValueChange={(v) => { if (v.length) setCategory(v[0] as ChecklistCategoryKey) }}
+          type="single"
+          value={category}
+          onValueChange={(v) => { if (v) setCategory(v as ChecklistCategoryKey) }}
           className="grid w-full grid-cols-3"
         >
           {CATEGORY_ORDER.map((cat) => (
@@ -615,7 +616,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
               key={cat}
               value={cat}
               variant="outline"
-              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold aria-pressed:text-primary"
+              className="w-full gap-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:font-semibold data-[state=on]:text-primary"
             >
               {category === cat && <Check className="size-3.5" />}
               {CHECKLIST_CATEGORIES[cat].label}

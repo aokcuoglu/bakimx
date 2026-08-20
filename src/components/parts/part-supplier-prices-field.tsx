@@ -94,22 +94,16 @@ export function PartSupplierPricesField({
                   <Label className="text-xs">Tedarikçi *</Label>
                   <Select
                     value={row.supplierId}
-                    onValueChange={(v: string | null) => {
+                    onValueChange={(v: string) => {
                       if (v === "__new__") {
                         openModal(index)
                         return
                       }
-                      patchRow(index, { supplierId: v ?? "" })
+                      patchRow(index, { supplierId: v })
                     }}
                   >
                     <SelectTrigger className="w-full" aria-invalid={!!rowError}>
-                      <SelectValue placeholder="Tedarikçi seçin">
-                        {(v: string | null) => {
-                          if (!v) return null
-                          const s = options.find((o) => o.id === v)
-                          return s ? s.name : v
-                        }}
-                      </SelectValue>
+                      <SelectValue placeholder="Tedarikçi seçin" />
                     </SelectTrigger>
                     <SelectContent>
                       {options

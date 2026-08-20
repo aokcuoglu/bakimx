@@ -17,7 +17,7 @@ export function FaqView({ onBack }: FaqViewProps) {
   return (
     <div className="space-y-3 p-4">
       <ViewHeader title="Sık Sorulanlar" onBack={onBack} />
-      <Accordion className="w-full">
+      <Accordion type="multiple" className="w-full">
         {FAQ_ITEMS.map((item, i) => (
           <AccordionItem key={i} value={`q-${i}`}>
             <AccordionTrigger className="py-3 text-left text-sm font-medium">

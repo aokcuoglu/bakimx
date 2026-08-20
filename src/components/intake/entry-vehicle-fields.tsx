@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { AlertTriangle, ChevronDown, Loader2, ScanLine } from "lucide-react"
-import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES, vehicleTypeLabel, fuelTypeLabel } from "@/lib/constants"
+import { VEHICLE_TYPES, VEHICLE_FUEL_TYPES } from "@/lib/constants"
 import { VehicleBrandModelPicker } from "@/components/vehicles/vehicle-brand-model-picker"
 import { VinResolveButton, VinCandidateList, VinLockedNotice, VinResolveNotice, type useVinResolve } from "@/components/vehicles/vin-resolve"
 import { VinScanner } from "@/components/intake/vin-scanner"
@@ -143,11 +143,9 @@ export function EntryVehicleFields({
           </div>
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1">Tipi {warn("vehicleType")}</Label>
-            <Select value={fields.vehicleType} onValueChange={(v) => onFieldChange("vehicleType", v ?? "")}>
+            <Select value={fields.vehicleType} onValueChange={(v) => onFieldChange("vehicleType", v)}>
               <SelectTrigger className={`w-full ${fieldClass("vehicleType")}`}>
-                <SelectValue placeholder="Seçiniz">
-                  {(value) => vehicleTypeLabel(value) || "Seçiniz"}
-                </SelectValue>
+                <SelectValue placeholder="Seçiniz" />
               </SelectTrigger>
               <SelectContent>
                 {VEHICLE_TYPES.filter((t) => t.value).map((t) => (
@@ -158,11 +156,9 @@ export function EntryVehicleFields({
           </div>
           <div className="space-y-1.5">
             <Label>Yakıt cinsi</Label>
-            <Select value={fields.fuelType} onValueChange={(v) => onFieldChange("fuelType", v ?? "")}>
+            <Select value={fields.fuelType} onValueChange={(v) => onFieldChange("fuelType", v)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seçiniz">
-                  {(value) => fuelTypeLabel(value) || "Seçiniz"}
-                </SelectValue>
+                <SelectValue placeholder="Seçiniz" />
               </SelectTrigger>
               <SelectContent>
                 {VEHICLE_FUEL_TYPES.map((ft) => (

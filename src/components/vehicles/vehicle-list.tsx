@@ -172,7 +172,7 @@ export function VehicleList({
         <div className="hidden lg:flex gap-2 flex-wrap">
           <Select
             value={vehicleType}
-            onValueChange={(v) => setVehicleType(v ?? "")}
+            onValueChange={(v) => setVehicleType(v)}
           >
             <SelectTrigger aria-label="Araç tipi filtresi">
               <SelectValue placeholder="Araç Tipi" />
@@ -186,7 +186,7 @@ export function VehicleList({
           {brands.length > 0 && (
             <Select
               value={brand}
-              onValueChange={(v) => setBrand(v ?? "")}
+              onValueChange={(v) => setBrand(v)}
             >
               <SelectTrigger aria-label="Marka filtresi">
                 <SelectValue placeholder="Tüm Markalar" />

@@ -169,8 +169,7 @@ export function SettingsTabs({
     }
   }, [])
 
-  function handleTabChange(key: string | null) {
-    if (!key) return
+  function handleTabChange(key: string) {
     const params = new URLSearchParams()
     params.set("tab", key)
     router.replace(`/settings?${params.toString()}`, { scroll: false })

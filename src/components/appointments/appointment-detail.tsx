@@ -182,16 +182,10 @@ export function AppointmentDetail({
                 <input type="hidden" name="status" value={selectedStatus} />
                 <Select
                   value={selectedStatus}
-                  onValueChange={(v) => setSelectedStatus(v ?? "")}
+                  onValueChange={(v) => setSelectedStatus(v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Durum seçin">
-                      {(value: string | null) => {
-                        if (!value) return null
-                        const info = APPOINTMENT_STATUS[value as AppointmentStatusKey]
-                        return info?.label || value
-                      }}
-                    </SelectValue>
+                    <SelectValue placeholder="Durum seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {transitions.map((key) => {
