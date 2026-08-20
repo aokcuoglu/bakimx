@@ -1,8 +1,11 @@
+"use client"
+
 import Link from "next/link"
 import { StatusBadge, PlateBadge } from "@/components/shared/status-badge"
 import { formatTRY } from "@/lib/format"
 import type { ActiveWorkOrderRow } from "@/lib/dashboard/queries"
 import { Eye, MessageCircle, ChevronRight, Camera, XCircle } from "lucide-react"
+import { useDashboardPage, DashboardPagination } from "@/components/dashboard/dashboard-pagination"
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—"
@@ -46,7 +49,7 @@ function photoBadge(completion: { present: number; required: number }) {
 
 export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card">
+    <div className="max-h-96 overflow-y-auto overflow-x-auto rounded-lg border border-border bg-card">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/80">
@@ -136,7 +139,7 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
 
 export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] }) {
   return (
-    <div className="space-y-2 sm:hidden">
+    <div className="max-h-96 space-y-2 overflow-y-auto sm:hidden">
       {orders.length === 0 ? (
         <div className="text-center py-10 bg-card border border-dashed border-border rounded-lg">
           <p className="text-sm font-medium text-muted-foreground">Aktif iş emri bulunmuyor.</p>
@@ -186,6 +189,8 @@ export function ActiveOrdersMobile({ orders }: { orders: ActiveWorkOrderRow[] })
 }
 
 export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(orders)
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -198,9 +203,14 @@ export function ActiveOrdersSection({ orders }: { orders: ActiveWorkOrderRow[] }
         </Link>
       </div>
       <div className="hidden sm:block">
-        <ActiveOrdersDesktop orders={orders} />
+        <ActiveOrdersDesktop orders={pageItems} />
       </div>
-      <ActiveOrdersMobile orders={orders} />
+      <ActiveOrdersMobile orders={pageItems} />
+      {pageCount > 1 && (
+        <div className="mt-2 rounded-lg border border-border bg-card">
+          <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
+        </div>
+      )}
     </div>
   )
 }
