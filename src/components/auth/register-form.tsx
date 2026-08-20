@@ -26,6 +26,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
@@ -422,33 +423,29 @@ function StepPlanSelection({
         name="billingPeriod"
         render={({ field }) => (
           <FormItem>
-            <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
-              <button
-                type="button"
-                className={cn(
-                  "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  field.value === "monthly"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                onClick={() => field.onChange("monthly")}
+            <ToggleGroup
+              type="single"
+              spacing={1}
+              className="w-full items-stretch gap-2 rounded-lg bg-muted p-1"
+              value={field.value}
+              onValueChange={(v) => {
+                if (v) field.onChange(v)
+              }}
+            >
+              <ToggleGroupItem
+                value="monthly"
+                className="flex-1 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground"
               >
                 Aylık
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  field.value === "yearly"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                onClick={() => field.onChange("yearly")}
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="yearly"
+                className="flex-1 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:text-foreground"
               >
                 Yıllık
                 <span className="ml-1 text-xs text-success-strong font-semibold">2 ay bedava</span>
-              </button>
-            </div>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </FormItem>
         )}
       />
@@ -670,16 +667,6 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
   const workingDays = form.watch("workingDays")
   const selectedDays = workingDays ? workingDays.split(",").filter(Boolean) : []
 
-  function toggleDay(day: string) {
-    const current = new Set(selectedDays)
-    if (current.has(day)) {
-      current.delete(day)
-    } else {
-      current.add(day)
-    }
-    form.setValue("workingDays", Array.from(current).join(","), { shouldDirty: true })
-  }
-
   return (
     <div className="space-y-5">
       <div>
@@ -740,26 +727,26 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
           <Clock className="size-4 text-muted-foreground" />
           <span className="text-sm font-medium text-foreground">Çalışma Günleri</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {DAY_LABELS.map((day) => {
-            const active = selectedDays.includes(day.value)
-            return (
-              <button
-                key={day.value}
-                type="button"
-                onClick={() => toggleDay(day.value)}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors",
-                  active
-                    ? "border-primary bg-primary/10 text-primary-strong"
-                    : "border-border text-muted-foreground hover:border-primary/40",
-                )}
-              >
-                {day.short}
-              </button>
-            )
-          })}
-        </div>
+        <ToggleGroup
+          type="multiple"
+          spacing={2}
+          className="flex-wrap"
+          value={selectedDays}
+          onValueChange={(vals) => {
+            form.setValue("workingDays", vals.join(","), { shouldDirty: true })
+          }}
+        >
+          {DAY_LABELS.map((day) => (
+            <ToggleGroupItem
+              key={day.value}
+              value={day.value}
+              variant="outline"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
+            >
+              {day.short}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground shrink-0">Saat:</span>
