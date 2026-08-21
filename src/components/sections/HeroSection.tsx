@@ -44,8 +44,7 @@ export function HeroSection() {
             </span>
 
             <h1
-              style={{ "--enter-from": "1.25rem", "--enter-delay": "50ms" } as CSSProperties}
-              className="enter-up text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
+              className="text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
             >
               Ruhsatı okutun, servis{" "}
               <span className="text-primary">kendi kendine</span> yazılsın

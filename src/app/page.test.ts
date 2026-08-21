@@ -5,6 +5,7 @@ import { join } from "node:path";
 const appDir = import.meta.dir;
 const sectionsDir = join(appDir, "..", "components", "sections");
 const pageSource = readFileSync(join(appDir, "page.tsx"), "utf8");
+const heroSource = readFileSync(join(sectionsDir, "HeroSection.tsx"), "utf8");
 
 const landingOrder = [
   "AnnouncementBar",
@@ -38,5 +39,14 @@ describe("landing page composition", () => {
     expect(pageSource).not.toContain("MetricsBand");
     expect(existsSync(join(sectionsDir, "PillarsSection.tsx"))).toBe(false);
     expect(existsSync(join(sectionsDir, "MetricsBand.tsx"))).toBe(false);
+  });
+
+  test("keeps the LCP heading visible on the initial server paint", () => {
+    const heading = heroSource.match(/<h1([\s\S]*?)<\/h1>/)?.[0];
+
+    expect(heading).toBeDefined();
+    expect(heading).not.toContain("initial=");
+    expect(heading).not.toContain("animate=");
+    expect(heading).not.toContain("enter-up");
   });
 });
