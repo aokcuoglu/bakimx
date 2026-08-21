@@ -11,12 +11,21 @@
 export type GetirbakimAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNAVAILABLE"
 
 export interface GetirbakimProduct {
+  contractVersion: "1.1" | null
+  sourceProductId: string
   id: string
   partNo: string
+  manufacturerPartNumber: { value: string; normalized: string } | null
   name: string
   brandName: string
   categoryName: string | null
   oemNumbers: string[]
+  references: { type: "OEM"; value: string; normalized: string; brand: string | null }[]
+  exactFitment: {
+    requestedVehicleTypeId: number | null
+    status: "CONFIRMED" | "NOT_CONFIRMED" | "NOT_REQUESTED"
+    matchedVehicleTypeIds: number[]
+  }
   imageUrl: string | null
   /** GetirBakım vitrin fiyatı — KDV hariç, kuruş. Fiyatsız üründe null. */
   listPriceKurus: number | null
@@ -45,6 +54,8 @@ export interface GetirbakimSearchInput {
   /** OEM/parça kodu — verildiğinde tam eşleşme aranır, `q` yok sayılır. */
   oem?: string | null
   limit?: number | null
+  /** Exact catalog vehicle id; OEM/reference matches never substitute for this. */
+  vehicleTypeId?: number | null
 }
 
 export type GetirbakimOfferAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNKNOWN"
@@ -97,6 +108,14 @@ export const GETIRBAKIM_MAX_LIMIT = 25
 
 /** Satır içi aramayla aynı eşik: 2 karakterden kısa sorgu dışarı çıkmaz. */
 export const GETIRBAKIM_MIN_SEARCH_LEN = 2
+export const GETIRBAKIM_MAX_VEHICLE_TYPE_ID = 2_147_483_647
+
+export function parseGetirbakimVehicleTypeId(raw: string | null): number | null | undefined {
+  if (raw == null) return null
+  if (!/^[1-9]\d*$/.test(raw)) return undefined
+  const value = Number(raw)
+  return Number.isSafeInteger(value) && value <= GETIRBAKIM_MAX_VEHICLE_TYPE_ID ? value : undefined
+}
 
 export function clampGetirbakimLimit(limit: number | null | undefined): number {
   if (limit == null || !Number.isFinite(limit) || limit <= 0) return GETIRBAKIM_DEFAULT_LIMIT
@@ -178,13 +197,50 @@ export function parseGetirbakimProduct(raw: unknown): GetirbakimProduct | null {
     ? row.oemNumbers.filter((code): code is string => typeof code === "string")
     : []
 
+  const sourceProductId = asString(row.sourceProductId) ?? id
+  const identity = row.manufacturerPartNumber && typeof row.manufacturerPartNumber === "object"
+    ? row.manufacturerPartNumber as Record<string, unknown>
+    : null
+  const manufacturerPartNumber = identity && asString(identity.value) && asString(identity.normalized)
+    ? { value: asString(identity.value)!, normalized: asString(identity.normalized)! }
+    : null
+  const references = Array.isArray(row.references)
+    ? row.references.flatMap((value) => {
+        if (!value || typeof value !== "object") return []
+        const reference = value as Record<string, unknown>
+        const rawValue = asString(reference.value)
+        const normalized = asString(reference.normalized)
+        return reference.type === "OEM" && rawValue && normalized
+          ? [{ type: "OEM" as const, value: rawValue, normalized, brand: asString(reference.brand) }]
+          : []
+      })
+    : []
+  const rawFitment = row.exactFitment && typeof row.exactFitment === "object"
+    ? row.exactFitment as Record<string, unknown>
+    : null
+  const requestedVehicleTypeId = rawFitment ? asInt(rawFitment.requestedVehicleTypeId) : null
+  const matchedVehicleTypeIds = rawFitment && Array.isArray(rawFitment.matchedVehicleTypeIds)
+    ? rawFitment.matchedVehicleTypeIds.map(asInt).filter((id): id is number => id != null && id > 0)
+    : []
+  const status = rawFitment?.status === "CONFIRMED" && requestedVehicleTypeId != null &&
+      matchedVehicleTypeIds.includes(requestedVehicleTypeId)
+    ? "CONFIRMED"
+    : rawFitment?.status === "NOT_CONFIRMED" && requestedVehicleTypeId != null
+      ? "NOT_CONFIRMED"
+      : "NOT_REQUESTED"
+
   return {
+    contractVersion: row.contractVersion === "1.1" ? "1.1" : null,
+    sourceProductId,
     id,
     partNo: asString(row.partNo) ?? "",
+    manufacturerPartNumber,
     name,
     brandName: asString(row.brandName) ?? "",
     categoryName: asString(row.categoryName),
     oemNumbers,
+    references,
+    exactFitment: { requestedVehicleTypeId, status, matchedVehicleTypeIds },
     imageUrl: asString(row.imageUrl),
     listPriceKurus: asInt(row.listPriceKurus),
     b2bPriceKurus: asInt(row.b2bPriceKurus),

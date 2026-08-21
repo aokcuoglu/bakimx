@@ -37,6 +37,7 @@ export class HttpGetirbakimProvider implements GetirbakimProvider {
     const oem = input.oem?.trim()
     if (oem) params.set("oem", oem)
     else if (input.q?.trim()) params.set("q", input.q.trim())
+    if (input.vehicleTypeId != null) params.set("vehicleTypeId", String(input.vehicleTypeId))
     params.set("limit", String(clampGetirbakimLimit(input.limit)))
     return `${this.baseUrl.replace(/\/+$/, "")}/api/partner/v1/products?${params.toString()}`
   }

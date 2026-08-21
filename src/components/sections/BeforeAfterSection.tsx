@@ -1,7 +1,5 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Reveal } from "@/components/shared/reveal";
 
 const beforeItems = [
   "Kağıt formlar ve dağınık notlar",
@@ -18,8 +16,6 @@ const afterItems = [
 ];
 
 export function BeforeAfterSection() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="bg-muted/30 py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -30,11 +26,8 @@ export function BeforeAfterSection() {
           Servislerin her gün yaşadığı dağınıklığın BakimX&apos;teki karşılığı:
         </p>
         <div className="mt-10 grid gap-5 md:grid-cols-2">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, x: -16 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.45 }}
+          <Reveal
+            from="left"
             className="rounded-xl border bg-card p-6 sm:p-8"
           >
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -48,12 +41,10 @@ export function BeforeAfterSection() {
                 </li>
               ))}
             </ul>
-          </motion.div>
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, x: 16 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.45, delay: 0.1 }}
+          </Reveal>
+          <Reveal
+            from="right"
+            delay={100}
             className="rounded-xl border-2 border-primary/30 bg-card p-6 sm:p-8 shadow-lg shadow-primary/5"
           >
             <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
@@ -67,7 +58,7 @@ export function BeforeAfterSection() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

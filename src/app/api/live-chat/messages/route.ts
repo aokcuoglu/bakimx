@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { availabilityOf, getLiveChatConfig } from "@/lib/live-chat/settings"
-import { clientIpOf, findConversationByToken, rateLimit, toMessageWire, toThreadWire } from "@/lib/live-chat/server"
+import { clientIpOf, findConversationByToken, toMessageWire, toThreadWire } from "@/lib/live-chat/server"
+import { rateLimit, rateLimitLocal } from "@/lib/rate-limit"
 import { notifyAdminsOfVisitorMessage, startsNewBurst } from "@/lib/live-chat/notify"
 import { sendMessageSchema } from "@/lib/validations/live-chat"
 
@@ -17,7 +18,19 @@ export const dynamic = "force-dynamic"
  * çalışır; panel açıkken 4 sn, arka planda daha seyrek yoklanır.
  */
 
-/** Sohbet trafiği form gönderimi değil; sınır cömert ama sonsuz değil. */
+/**
+ * Sohbet trafiği form gönderimi değil; sınır cömert ama sonsuz değil.
+ *
+ * İki sınır BİLEREK farklı limiter kullanır (BAK-196):
+ *   - `send` kimliksiz bir YAZMA yüzeyi → paylaşımlı sayaç, eşik görev sayısıyla
+ *     çarpılmaz.
+ *   - `poll` salt okuma ve açık panelde 4 saniyede bir çalışıyor (`POLL_MS`,
+ *     `src/components/site-assistant/use-live-chat.ts:9`) → ziyaretçi başına
+ *     ~15 istek/dk. Paylaşımlı sayaç her istekte bir satır yazardı; okunan işten
+ *     pahalı bir yazma yükü için değeri yok. Süreç-içi kalıyor: eşik görev
+ *     sayısıyla çarpılıyor ama yoklama yeni kayıt açmıyor, yalnız kendi
+ *     görüşmesini okuyor ve `token` bilmeyene 404 veriyor.
+ */
 const MAX_SENDS_PER_MINUTE = 20
 const MAX_POLLS_PER_MINUTE = 120
 const WINDOW_MS = 60_000
@@ -28,7 +41,7 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("token")
   const after = url.searchParams.get("after")
 
-  if (rateLimit(`poll:${clientIpOf(request)}`, MAX_POLLS_PER_MINUTE, WINDOW_MS)) {
+  if (!rateLimitLocal(`live-chat:poll:${clientIpOf(request)}`, MAX_POLLS_PER_MINUTE, WINDOW_MS).allowed) {
     return NextResponse.json({ success: false, errors: { _general: "Çok fazla istek." } }, { status: 429 })
   }
 
@@ -65,7 +78,7 @@ export async function GET(request: Request) {
 
 /** POST /api/live-chat/messages — ziyaretçi mesaj gönderir. */
 export async function POST(request: Request) {
-  if (rateLimit(`send:${clientIpOf(request)}`, MAX_SENDS_PER_MINUTE, WINDOW_MS)) {
+  if (!(await rateLimit(`live-chat:send:${clientIpOf(request)}`, MAX_SENDS_PER_MINUTE, WINDOW_MS)).allowed) {
     return NextResponse.json(
       { success: false, errors: { _general: "Çok hızlı yazıyorsunuz. Lütfen biraz bekleyin." } },
       { status: 429 },

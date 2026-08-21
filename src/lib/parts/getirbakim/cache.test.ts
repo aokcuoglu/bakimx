@@ -31,6 +31,12 @@ describe("getirbakimCacheKey", () => {
       getirbakimCacheKey({ q: "ABC", limit: 10 }),
     )
   })
+
+  test("aynı sorguda farklı araçlar ayrı anahtar üretir", () => {
+    expect(getirbakimCacheKey({ q: "balata", limit: 10, vehicleTypeId: 1 })).not.toBe(
+      getirbakimCacheKey({ q: "balata", limit: 10, vehicleTypeId: 2 }),
+    )
+  })
 })
 
 describe("cache okuma/yazma", () => {

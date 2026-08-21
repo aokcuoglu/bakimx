@@ -168,6 +168,7 @@ export function TecdocPartPicker({
     enabled: open && globalSearch,
     q: trimmedQuery,
     limit: SEARCH_LIMIT,
+    vehicleTypeId,
   })
 
   const loadCategories = useCallback(async (supplierId?: number | null) => {

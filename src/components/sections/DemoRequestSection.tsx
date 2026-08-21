@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/shared/reveal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,7 +45,6 @@ const benefitItems = [
 ];
 
 export function DemoRequestSection() {
-  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     businessName: "",
@@ -132,11 +131,9 @@ export function DemoRequestSection() {
     return (
       <section id="demo-talep" className="py-16 sm:py-24 bg-background">
         <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="rounded-lg border bg-card p-8 sm:p-12"
+          <div
+            style={{ "--enter-duration": "0.4s" } as CSSProperties}
+            className="enter-pop rounded-lg border bg-card p-8 sm:p-12"
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 mx-auto mb-4">
               <CheckCircle2 className="h-7 w-7 text-success-strong" />
@@ -165,7 +162,7 @@ export function DemoRequestSection() {
             >
               Yeni talep oluştur
             </Button>
-          </motion.div>
+          </div>
         </div>
       </section>
     );
@@ -174,12 +171,7 @@ export function DemoRequestSection() {
   return (
     <section id="demo-talep" className="py-16 sm:py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5 }}
-        >
+        <Reveal>
           <SectionHeading
             badge="İletişim"
             title="Demo"
@@ -187,14 +179,12 @@ export function DemoRequestSection() {
             subtitle="BakimX'i işletmenizde deneyin. Demo talebinizi oluşturun, sizinle iletişime geçelim."
             className="mb-10"
           />
-        </motion.div>
+        </Reveal>
 
         <div className="grid gap-8 lg:grid-cols-5">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+          <Reveal
+            amount={0.15}
+            delay={100}
             className="lg:col-span-3"
           >
             <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
@@ -365,13 +355,11 @@ export function DemoRequestSection() {
                 </form>
               </div>
             </div>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+          <Reveal
+            amount={0.15}
+            delay={200}
             className="lg:col-span-2"
           >
             <div className="rounded-lg bg-navy text-navy-foreground p-6 sm:p-8 h-full flex flex-col justify-between">
@@ -425,7 +413,7 @@ export function DemoRequestSection() {
                 </ul>
               </div>
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

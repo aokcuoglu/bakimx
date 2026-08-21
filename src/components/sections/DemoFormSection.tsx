@@ -1,9 +1,7 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
 import { PhoneCall, Clock, ShieldCheck } from "lucide-react";
 import { HeroLeadForm } from "@/components/sections/HeroLeadForm";
 import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { Reveal } from "@/components/shared/reveal";
 
 const points = [
   { icon: PhoneCall, title: "Sizi biz arayalım", description: "Servisinize göre kısa bir tanıtım yapalım, sorularınızı yanıtlayalım." },
@@ -12,19 +10,11 @@ const points = [
 ];
 
 export function DemoFormSection() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="scroll-mt-24 bg-background py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-xl"
-          >
+          <Reveal className="max-w-xl">
             <BrandEyebrow>Demo</BrandEyebrow>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
               Servisiniz için birlikte bakalım
@@ -48,17 +38,14 @@ export function DemoFormSection() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+          <Reveal
+            delay={150}
             className="w-full lg:max-w-md lg:justify-self-end"
           >
             <HeroLeadForm />
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

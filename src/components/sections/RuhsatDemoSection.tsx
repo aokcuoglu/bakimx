@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import {
@@ -58,7 +58,7 @@ const COMPATIBLE_PARTS: Part[] = [
 type Phase = "idle" | "scanning" | "done";
 
 export function RuhsatDemoSection() {
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [phase, setPhase] = useState<Phase>("idle");
   const [revealed, setRevealed] = useState(0); // görünen alan sayısı
   const [showParts, setShowParts] = useState(false);
@@ -190,46 +190,39 @@ export function RuhsatDemoSection() {
                         key={field.key}
                         field={field}
                         shown={i < revealed}
-                        prefersReducedMotion={!!prefersReducedMotion}
                       />
                     ))}
                   </dl>
 
-                  <AnimatePresence>
-                    {showParts && (
-                      <motion.div
-                        initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="mt-5 border-t pt-5"
-                      >
+                  {showParts && (
+                    <div
+                      style={{ "--enter-from": "0.75rem", "--enter-duration": "0.4s" } as CSSProperties}
+                      className="enter-up mt-5 border-t pt-5"
+                    >
                         <div className="flex items-center gap-2">
                           <Sparkles className="size-4 text-primary" />
                           <p className="text-sm font-semibold">VIN eşleşti — araca uygun parçalar</p>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {COMPATIBLE_PARTS.map((part, i) => (
-                            <motion.div
+                            <div
                               key={part.ref}
-                              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ duration: 0.25, delay: prefersReducedMotion ? 0 : i * 0.06 }}
-                              className="rounded-lg border bg-muted/40 px-3 py-2"
+                              style={{ "--enter-delay": `${i * 60}ms` } as CSSProperties}
+                              className="enter-pop rounded-lg border bg-muted/40 px-3 py-2"
                             >
                               <p className="text-xs font-medium">{part.name}</p>
                               <p className="text-[11px] text-muted-foreground">
                                 {part.brand} · {part.ref}
                               </p>
-                            </motion.div>
+                            </div>
                           ))}
                         </div>
                         <p className="mt-4 text-xs italic text-muted-foreground">
                           VIN&apos;iyle eşleşen, araca uygun katalog parçaları. Fiyatları kendi
                           kataloğunuzdan siz belirlersiniz.
                         </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -237,14 +230,11 @@ export function RuhsatDemoSection() {
         </div>
 
         {/* CTA */}
-        <AnimatePresence>
-          {phase === "done" && (
-            <motion.div
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="mt-10 flex flex-col items-center gap-3 text-center"
-            >
+        {phase === "done" && (
+          <div
+            style={{ "--enter-duration": "0.4s", "--enter-delay": "100ms" } as CSSProperties}
+            className="enter-up mt-10 flex flex-col items-center gap-3 text-center"
+          >
               <p className="text-base font-medium">
                 Kendi aracınızla deneyin — ruhsatı okutun, işi araç bilgileriyle başlatın.
               </p>
@@ -267,9 +257,8 @@ export function RuhsatDemoSection() {
                   Demo İste
                 </Link>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -316,17 +305,9 @@ function RuhsatDoc({
       </div>
 
       {/* Tarama çizgisi */}
-      <AnimatePresence>
-        {phase === "scanning" && !prefersReducedMotion && (
-          <motion.div
-            initial={{ top: "0%", opacity: 0 }}
-            animate={{ top: ["0%", "100%", "0%"], opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }}
-            className="pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-primary/25 to-transparent"
-          />
-        )}
-      </AnimatePresence>
+      {phase === "scanning" && !prefersReducedMotion && (
+        <div className="ruhsat-scan-line pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
+      )}
 
       {phase !== "idle" && (
         <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-medium text-primary">
@@ -342,18 +323,14 @@ function RuhsatDoc({
 function FieldCell({
   field,
   shown,
-  prefersReducedMotion,
 }: {
   field: Field;
   shown: boolean;
-  prefersReducedMotion: boolean;
 }) {
   return (
-    <motion.div
-      initial={false}
-      animate={{ opacity: shown ? 1 : 0.35 }}
-      transition={{ duration: 0.25 }}
-      className={`rounded-lg border px-3 py-2 ${
+    <div
+      style={{ opacity: shown ? 1 : 0.35 }}
+      className={`rounded-lg border px-3 py-2 transition-opacity duration-[250ms] ${
         shown && field.lowConf
           ? "border-warning/50 bg-warning/10"
           : "border-border bg-muted/40"
@@ -364,14 +341,12 @@ function FieldCell({
       </p>
       <div className="mt-0.5 flex items-center gap-1.5">
         {shown ? (
-          <motion.span
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="truncate font-mono text-sm font-medium"
+          <span
+            style={{ "--enter-from": "0.25rem", "--enter-duration": "0.2s" } as CSSProperties}
+            className="enter-up truncate font-mono text-sm font-medium"
           >
             {field.value}
-          </motion.span>
+          </span>
         ) : (
           <span className="h-4 w-16 animate-pulse rounded bg-muted-foreground/20" />
         )}
@@ -385,6 +360,6 @@ function FieldCell({
           </span>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

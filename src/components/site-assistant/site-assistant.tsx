@@ -3,8 +3,23 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { isPublicAssistantPath } from "@/lib/site-assistant-visibility";
+import dynamic from "next/dynamic";
 import { AssistantLauncher } from "./assistant-launcher";
-import { AssistantPanel } from "./assistant-panel";
+
+/**
+ * Panel ve altındaki tüm görünümler ayrı bir parçaya alınır (BAK-165).
+ *
+ * Panel zaten yalnız `open` iken render ediliyordu, ama statik `import` onu
+ * yine de her sayfanın ilk yüküne sokuyordu; canlı sohbet doğrulaması
+ * üzerinden `zod` de (288 kB ham / 51.4 kB br) bu yolla landing paketine
+ * giriyordu. Ziyaretçilerin çoğu paneli hiç açmıyor. `ssr: false` doğru:
+ * panelin açılışı `localStorage`a bakar, yani sunucuda anlamlı bir çıktısı
+ * yok.
+ */
+const AssistantPanel = dynamic(
+  () => import("./assistant-panel").then((m) => m.AssistantPanel),
+  { ssr: false },
+);
 import {
   getAssistantBridge,
   getServerAssistantBridge,
