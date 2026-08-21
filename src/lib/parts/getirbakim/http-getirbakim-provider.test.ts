@@ -64,11 +64,12 @@ describe("HttpGetirbakimProvider", () => {
       return jsonResponse({ products: [] })
     }) as typeof fetch
 
-    await provider().search({ q: "balata", oem: "77362261", limit: 5 })
+    await provider().search({ q: "balata", oem: "77362261", limit: 5, vehicleTypeId: 16573 })
     expect(seenAuth).toBe("Bearer sk_test_key_0123456789")
     expect(seenUrl).toContain("/api/partner/v1/products?")
     expect(seenUrl).toContain("oem=77362261")
     expect(seenUrl).not.toContain("q=balata")
+    expect(seenUrl).toContain("vehicleTypeId=16573")
     // Taban URL'deki sondaki eğik çizgi çift eğik çizgiye dönmemeli.
     expect(seenUrl).not.toContain("example//api")
   })

@@ -29,10 +29,11 @@ export function getirbakimCacheKey(input: {
   q?: string | null
   oem?: string | null
   limit: number
+  vehicleTypeId?: number | null
 }): string {
   const oem = input.oem?.trim().toUpperCase() ?? ""
   const q = input.q?.trim().toLocaleLowerCase("tr") ?? ""
-  return `${oem}|${q}|${input.limit}`
+  return `${oem}|${q}|${input.limit}|${input.vehicleTypeId ?? ""}`
 }
 
 export function readGetirbakimCache(

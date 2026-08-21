@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { apiErrorResponse } from "@/lib/api-errors"
 import { getirbakimRouteGuard } from "@/lib/parts/getirbakim/guard"
 import { searchGetirbakimProducts } from "@/lib/parts/getirbakim/search"
+import { parseGetirbakimVehicleTypeId } from "@/lib/parts/getirbakim/types"
 
 /**
  * GetirBakım stok/fiyat araması — `GET /api/catalog/getirbakim/search` (BAK-183).
@@ -22,12 +23,17 @@ export async function GET(request: Request) {
 
   const params = new URL(request.url).searchParams
   const requestedLimit = Number(params.get("limit"))
+  const vehicleTypeId = parseGetirbakimVehicleTypeId(params.get("vehicleTypeId"))
+  if (vehicleTypeId === undefined) {
+    return NextResponse.json({ error: "Geçersiz vehicleTypeId." }, { status: 400 })
+  }
 
   try {
     const products = await searchGetirbakimProducts({
       q: params.get("q"),
       oem: params.get("oem"),
       limit: Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : null,
+      vehicleTypeId,
     })
     return NextResponse.json({ products })
   } catch (err) {
