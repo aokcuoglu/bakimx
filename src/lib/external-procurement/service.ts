@@ -3,7 +3,8 @@ import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { requireWritableWorkshop } from "@/lib/auth"
 import {
-  PROCUREMENT_STATUSES, ProcurementProviderError, type ProcurementOrder, type ProcurementProviderClient,
+  PROCUREMENT_STATUSES, ProcurementProviderError, requiresProcurementReconfirmation,
+  type ProcurementOrder, type ProcurementProviderClient,
 } from "./types"
 
 const TERMINAL_STATUSES = new Set<string>(["REJECTED", "RESERVATION_EXPIRED", "CANCELLED", "COMPLETED"])
@@ -21,6 +22,7 @@ export interface StartProcurementInput {
   externalOfferId: string
   quantity: number
   expectedUnitNetKurus: number
+  confirmationToken: string
   productPresentation: { name: string; brand?: string; partNumber?: string; imageUrl?: string }
   informationalSnapshot?: { unitPriceKurus?: number; currency?: string; availability?: string; capturedAt: string }
 }
@@ -42,6 +44,7 @@ export function procurementRequestHash(input: StartProcurementInput): string {
     serviceOrderId: input.serviceOrderId, serviceOrderItemId: input.serviceOrderItemId,
     externalProductId: input.externalProductId, externalOfferId: input.externalOfferId,
     quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
+    confirmationToken: input.confirmationToken,
   })).digest("hex")
 }
 
@@ -148,6 +151,7 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       result = await client.createOrder({
         idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
         quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
+        confirmationToken: input.confirmationToken,
       })
     } catch (error) {
       if (!(error instanceof ProcurementProviderError) || !error.retryable) throw error
@@ -155,6 +159,7 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       result = await client.createOrder({
         idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
         quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
+        confirmationToken: input.confirmationToken,
       })
     }
     return await prisma.$transaction(async (tx) => {
@@ -162,7 +167,7 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       return tx.externalProcurementOrder.findUniqueOrThrow({ where: { id: local.id }, include: { items: true } })
     })
   } catch (error) {
-    if (error instanceof ProcurementProviderError && error.code === "PRICE_CHANGED") {
+    if (error instanceof ProcurementProviderError && requiresProcurementReconfirmation(error.code)) {
       await prisma.externalProcurementOrder.delete({ where: { id: local.id } })
       throw error
     }

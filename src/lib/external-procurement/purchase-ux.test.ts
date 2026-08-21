@@ -16,10 +16,10 @@ describe("GetirBakım explicit purchase UX", () => {
     expect(dialog).toContain("Bu fiyatla satın almayı onayla")
   })
 
-  test("price changes discard the prior approval and require reconfirmation", () => {
-    expect(dialog).toContain('data.code === "PRICE_CHANGED"')
+  test("all PR #86 quote conflicts discard the prior approval and require reconfirmation", () => {
+    expect(dialog).toContain('["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"]')
     expect(dialog).toContain("Önceki onayınız kullanılmadı")
-    expect(service).toContain('error.code === "PRICE_CHANGED"')
+    expect(service).toContain("requiresProcurementReconfirmation(error.code)")
   })
 
   test("server identity, feature gate, tenant scope and no-stock invariant remain authoritative", () => {

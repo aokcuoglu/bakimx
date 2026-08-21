@@ -26,6 +26,7 @@ const quoteSchema = z.object({ quote: z.object({
   bindingNetKurus: z.number().int().nonnegative(), bindingVatKurus: z.number().int().nonnegative(),
   bindingGrossKurus: z.number().int().nonnegative(), unitNetKurus: z.number().int().nonnegative(),
   currency: z.string().length(3), policyVersion: z.string(), expiresAt: z.string().datetime(),
+  confirmationToken: z.string().min(1),
 }).strict() }).strict()
 
 export class GetirBakimClient implements ProcurementProviderClient {
@@ -44,6 +45,7 @@ export class GetirBakimClient implements ProcurementProviderClient {
       body: JSON.stringify({
         selectedOfferId: input.selectedOfferId, quantity: input.quantity,
         expectedUnitNetKurus: input.expectedUnitNetKurus,
+        confirmationToken: input.confirmationToken,
       }),
     })
   }

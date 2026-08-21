@@ -9,7 +9,7 @@ export class MockProcurementClient implements ProcurementProviderClient {
     return { selectedOfferId, quantity, bindingNetKurus: unitNetKurus * quantity,
       bindingVatKurus: 200 * quantity, bindingGrossKurus: 1200 * quantity,
       unitNetKurus, currency: "TRY", policyVersion: "mock-v1",
-      expiresAt: new Date(Date.now() + 300_000).toISOString() }
+      expiresAt: new Date(Date.now() + 300_000).toISOString(), confirmationToken: "mock-confirmation-token" }
   }
   readonly idempotency = new Map<string, string>()
 

@@ -16,7 +16,9 @@ type OfferResponse =
   | { status: "matched" | "no_offers"; normalizedPartNo: string; products: GetirbakimExactProduct[] }
   | { status: "no_match" | "upstream_error"; normalizedPartNo: string }
 type SelectedOffer = { product: GetirbakimExactProduct; offer: GetirbakimOffer }
-type Quote = { bindingNetKurus: number; bindingVatKurus: number; bindingGrossKurus: number; unitNetKurus: number; currency: string; expiresAt: string }
+type Quote = { bindingNetKurus: number; bindingVatKurus: number; bindingGrossKurus: number; unitNetKurus: number; currency: string; policyVersion: string; expiresAt: string; confirmationToken: string }
+
+const RECONFIRMATION_REQUIRED_CODES = new Set(["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"])
 
 export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderItemId, quantity }: {
   open: boolean
@@ -31,7 +33,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
   const [selected, setSelected] = useState<SelectedOffer | null>(null)
   const [quote, setQuote] = useState<Quote | null>(null)
   const [pending, setPending] = useState(false)
-  const [priceChanged, setPriceChanged] = useState(false)
+  const [confirmationChanged, setConfirmationChanged] = useState(false)
   const partNo = part.sku?.trim() ?? ""
   const purchaseQuantity = quantity ?? 1
 
@@ -54,7 +56,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
   }, [open, partNo])
 
   async function chooseOffer(product: GetirbakimExactProduct, offer: GetirbakimOffer) {
-    setSelected({ product, offer }); setQuote(null); setPriceChanged(false); setPending(true)
+    setSelected({ product, offer }); setQuote(null); setConfirmationChanged(false); setPending(true)
     try {
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "quote", selectedOfferId: offer.selectedOfferId, quantity: purchaseQuantity }) })
       const data = await response.json()
@@ -72,15 +74,16 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         action: "purchase", orderId, orderItemId, idempotencyKey: crypto.randomUUID(),
         externalProductId: selected.product.sourceProductId, selectedOfferId: selected.offer.selectedOfferId,
         quantity: purchaseQuantity, expectedUnitNetKurus: quote.unitNetKurus,
+        confirmationToken: quote.confirmationToken,
         productPresentation: { name: part.name, brand: selected.product.brandName, partNumber: selected.product.manufacturerPartNumber.value },
         informationalSnapshot: { unitPriceKurus: selected.offer.informationalPriceKurus ?? undefined, currency: selected.offer.currency, availability: selected.offer.availability, capturedAt: new Date().toISOString() },
       }) })
       const data = await response.json()
       if (!response.ok) {
-        if (data.code === "PRICE_CHANGED") {
-          setPriceChanged(true); setQuote(null)
+        if (RECONFIRMATION_REQUIRED_CODES.has(data.code)) {
+          setQuote(null)
           await chooseOffer(selected.product, selected.offer)
-          setPriceChanged(true)
+          setConfirmationChanged(true)
           return
         }
         throw new Error(data.error || "Satın alma talebi oluşturulamadı.")
@@ -129,9 +132,9 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
             </section>
           ))}
         </div>
-        {priceChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Fiyat değişti</AlertTitle><AlertDescription>Yeni bağlayıcı fiyatı kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
+        {confirmationChanged ? <Alert className="mx-3 mb-3" variant="destructive"><AlertTitle>Bağlayıcı teklif yenilendi</AlertTitle><AlertDescription>Fiyat, politika veya teklif geçerliliği değişti. Yeni bağlayıcı özeti kontrol edip yeniden açıkça onaylayın. Önceki onayınız kullanılmadı.</AlertDescription></Alert> : null}
         {selected && quote ? <div className="space-y-3 border-t p-4" aria-live="polite">
-          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV dahil · süreli teklif</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.bindingGrossKurus)}</p></div>
+          <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium">Bağlayıcı toplam</p><p className="text-xs text-muted-foreground">KDV dahil · {new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(quote.expiresAt))} tarihine kadar · Politika {quote.policyVersion}</p></div><p className="text-lg font-semibold tabular-nums">{formatTRY(quote.bindingGrossKurus)}</p></div>
           {orderId && orderItemId ? <Button className="w-full" disabled={pending} onClick={() => void confirmPurchase()}>{pending ? "İşleniyor…" : "Bu fiyatla satın almayı onayla"}</Button> : <p className="text-xs text-muted-foreground">Satın alma yalnız iş emri kaleminden başlatılabilir.</p>}
         </div> : null}
         <div className="border-t bg-muted/40 px-4 py-2.5">

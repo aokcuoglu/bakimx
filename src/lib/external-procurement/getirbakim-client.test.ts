@@ -16,10 +16,19 @@ describe("GetirBakimClient", () => {
       request = new Request(input, init)
       return Response.json({ data: { order, replayed: false } }, { status: 201 })
     })
-    await client.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000 })
+    await client.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, confirmationToken: "opaque-confirmation-token" })
     expect(request!.headers.get("authorization")).toBe("Bearer secret")
     expect(request!.headers.get("idempotency-key")).toBe("key")
-    expect(await request!.json()).toEqual({ selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000 })
+    expect(await request!.json()).toEqual({ selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, confirmationToken: "opaque-confirmation-token" })
+  })
+
+  test("accepts the PR #86 quote shape and preserves its opaque confirmation token", async () => {
+    const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ data: { quote: {
+      selectedOfferId: "offer_1", quantity: 1, bindingNetKurus: 1000, bindingVatKurus: 200,
+      bindingGrossKurus: 1200, unitNetKurus: 1000, currency: "TRY", policyVersion: "opaque-v1",
+      expiresAt: "2026-08-21T21:00:00.000Z", confirmationToken: "opaque-confirmation-token",
+    } } }))
+    await expect(client.quoteOrder("offer_1", 1)).resolves.toMatchObject({ confirmationToken: "opaque-confirmation-token" })
   })
 
   test("fails closed on confidential or malformed provider responses", async () => {
