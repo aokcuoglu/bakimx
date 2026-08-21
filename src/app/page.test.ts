@@ -42,10 +42,11 @@ describe("landing page composition", () => {
   });
 
   test("keeps the LCP heading visible on the initial server paint", () => {
-    const heading = heroSource.match(/<motion\.h1([\s\S]*?)<\/motion\.h1>/)?.[0];
+    const heading = heroSource.match(/<h1([\s\S]*?)<\/h1>/)?.[0];
 
     expect(heading).toBeDefined();
     expect(heading).not.toContain("initial=");
     expect(heading).not.toContain("animate=");
+    expect(heading).not.toContain("enter-up");
   });
 });

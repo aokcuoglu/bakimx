@@ -12,9 +12,7 @@ import { SupportFormView } from "./views/support-form-view";
 import { FaqView } from "./views/faq-view";
 import { AnswersView } from "./views/answers-view";
 import { SuccessView } from "./views/success-view";
-
-/** `HeroAskBar`ın `aria-controls` ile işaret ettiği düğüm. */
-export const ASSISTANT_PANEL_ID = "site-assistant-panel";
+import { ASSISTANT_PANEL_ID } from "./assistant-bridge";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';

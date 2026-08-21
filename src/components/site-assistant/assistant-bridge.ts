@@ -13,6 +13,18 @@
  *   asistan → ask bar : `setAssistantPanelOpen(...)` (`aria-expanded` için)
  */
 
+/**
+ * Panel düğümünün `id`si — `HeroAskBar` buna `aria-controls` ile işaret eder.
+ *
+ * Neden panelin kendi dosyasında değil: tek bir dizi sabiti için `HeroAskBar`,
+ * `assistant-panel.tsx`i statik olarak import ediyordu ve o modül tüm görünümleri
+ * (canlı sohbet doğrulaması üzerinden `zod` dahil) landing'in ilk yüküne
+ * sokuyordu. Panelin `next/dynamic` ile ayrılması bu YÜZDEN yetmiyordu —
+ * ask bar ikinci bir statik yol açık bırakıyordu (BAK-165). Köprü ikisinin de
+ * bağımlılıksız ortak zemini.
+ */
+export const ASSISTANT_PANEL_ID = "site-assistant-panel";
+
 export type AssistantRequest = {
   query: string;
   /**

@@ -118,6 +118,114 @@
   100% { opacity: 0; transform: translateX(0.75rem); }
 }
 
+/* ── Landing giriş ve kaydırma animasyonları (BAK-165) ────────────────────
+
+   Bu iki yardımcı, landing section'larındaki `framer-motion` kullanımının
+   yerini alır. Gerekçe üslup değil ÖLÇÜM: `motion` bileşenleri `initial`
+   değerlerini sunucu HTML'ine satır içi `opacity:0` olarak basıyordu. `/`
+   yanıtında böyle 70 eleman vardı ve LCP adayı `<h1>` de bunlardan biriydi —
+   yani en büyük içerik ögesinin boyanması framer-motion (132 kB ham /
+   37.8 kB br) inip hidrasyon bitene kadar bekliyordu.
+
+   Ölçüm, landing'in TÜM framer-motion kullanımının iki desende toplandığını
+   gösterdi: girişte bir kez oynayan `animate` ve görünüm alanına girince
+   oynayan `whileInView`. İkisi de CSS ile karşılanır. İlke `objection-strip`
+   ile aynı: DOM değişmez, davranış CSS'te durur, hidrasyondan önce doğrudur. */
+
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-from, 1rem));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Giriş animasyonu — JS YOK. `both` dolgusu gecikme boyunca da başlangıç
+   karesini geçerli kılar, böylece öge ilk boyamada doğru görünür ve
+   framer-motion'ın satır içi `opacity:0`ına gerek kalmaz. */
+.enter-up {
+  animation: enter-up var(--enter-duration, 0.5s) ease-out var(--enter-delay, 0s)
+    both;
+}
+
+@keyframes enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* `enter-up` ile aynı sözleşme, farklı başlangıç: ölçek. */
+.enter-pop {
+  animation: enter-pop var(--enter-duration, 0.25s) ease-out
+    var(--enter-delay, 0s) both;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--reveal-x, 0), var(--reveal-y, 1rem));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Kaydırmayla beliriş: `components/shared/reveal.tsx` `data-reveal`i
+   `pending` → `shown` yapar.
+
+   Kurallar yalnız hareket tercihi serbestken uygulanır; `reduce` tercihinde
+   HİÇBİR kural eşleşmez, dolayısıyla içerik her zaman görünür kalır — bu,
+   sökülen `useReducedMotion() ? initial={false}` davranışının birebir
+   karşılığıdır. JS kapalıyken de gizli kalmasın diye `layout.tsx` bir
+   `<noscript>` geri alma kuralı basar. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal="pending"] {
+    opacity: 0;
+  }
+
+  [data-reveal="shown"] {
+    animation: reveal-in var(--reveal-duration, 0.45s) ease-out var(--reveal-delay, 0s) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-up,
+  .enter-pop {
+    animation: none;
+  }
+}
+
+/* `RuhsatDemoSection`taki tarama çizgisi (BAK-165). Eskiden framer-motion'ın
+   anahtar kare dizisiyle (`top: ["0%","100%","0%"]`, `repeat: Infinity`)
+   sürülüyordu; landing'de framer-motion'a duyulan TEK gerçek ihtiyaç buydu.
+   CSS karşılığı birebir aynı: aşağı in, yukarı dön, sonsuz tekrarla.
+   Hareket azaltma tercihinde çizgi zaten hiç render edilmiyor — bileşen o
+   durumda taramayı atlayıp doğrudan sonucu gösteriyor. */
+@keyframes ruhsat-scan {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.ruhsat-scan-line {
+  animation: ruhsat-scan 1.6s ease-in-out infinite;
+}
+
 /* Hero'daki soru→cevap kart şeridi (BAK-80).
 
    Neden Tailwind sınıfı değil de burada: kurgu üç kırılımda ÜÇ AYRI düzen

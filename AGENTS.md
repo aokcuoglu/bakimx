@@ -89,6 +89,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
   tetikleyicide metin görünmesi gerekiyorsa `<SelectValue placeholder="…" />` ver.
 - ToggleGroup `type="single"` grubunda öğeler `role="radio"` alır ve `aria-pressed`
   **basılmaz** — seçili görünümü `data-[state=on]:` ile ver, `aria-pressed:` ile değil
+- **Landing/public section'larında `framer-motion` KULLANMA** (BAK-165). Paket
+  duruyor (auth formları, `photo-lightbox`, `purchase-wizard`) ama landing'den
+  bilinçli olarak söküldü: `motion` bileşenleri `initial` değerini sunucu
+  HTML'ine satır içi `opacity:0` olarak basıyordu ve `/` yanıtındaki 70 gizli
+  elemandan biri **LCP adayı `<h1>`**di — en büyük içerik ögesinin boyanması
+  hidrasyona bağlıydı. Karşılıkları: girişte `.enter-up` / `.enter-pop` (saf
+  CSS), kaydırmayla belirişte `components/shared/reveal.tsx`. Ölçüm, gerekçe ve
+  ölçüm script'i: [docs/landing-performance.md](./docs/landing-performance.md).
 - Form: react-hook-form + zod + shadcn Form component (`Slot` `radix-ui` paketinden)
 - Toast: sonner (<Toaster /> in root layout)
 - Prisma ORM with PostgreSQL

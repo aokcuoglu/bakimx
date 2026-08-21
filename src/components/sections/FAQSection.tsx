@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Reveal } from "@/components/shared/reveal";
 import { FAQ_ITEMS } from "@/lib/faq-data";
 import {
   LANDING_OBJECTIONS,
@@ -52,7 +52,6 @@ function isObjectionAnchor(anchor: string) {
 }
 
 export function FAQSection() {
-  const prefersReducedMotion = useReducedMotion();
   const entries = useMemo(() => [...OBJECTION_ENTRIES, ...FAQ_ENTRIES], []);
   const hash = useSyncExternalStore(subscribeToHash, readHash, readServerHash);
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -71,18 +70,13 @@ export function FAQSection() {
     <section id="sss" className="scroll-mt-24 bg-background py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-3 lg:gap-16">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
-          >
+          <Reveal amount={0.3}>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">SSS</h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               BakimX hakkında en çok sorulanlar. Aradığınızı bulamadıysanız
               demo talebinde sorunuzu iletebilirsiniz.
             </p>
-          </motion.div>
+          </Reveal>
           <div className="lg:col-span-2">
             <Accordion
               type="multiple"
@@ -91,12 +85,11 @@ export function FAQSection() {
               onValueChange={setOpenItems}
             >
               {entries.map((entry, index) => (
-                <motion.div
+                <Reveal
                   key={entry.value}
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.35, delay: index * 0.04 }}
+                  amount={0.1}
+                  delay={index * 40}
+                  style={{ "--reveal-y": "0.625rem", "--reveal-duration": "0.35s" } as CSSProperties}
                 >
                   <AccordionItem
                     id={entry.anchor}
@@ -110,7 +103,7 @@ export function FAQSection() {
                       {entry.answer}
                     </AccordionContent>
                   </AccordionItem>
-                </motion.div>
+                </Reveal>
               ))}
             </Accordion>
           </div>

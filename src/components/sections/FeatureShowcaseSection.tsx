@@ -1,10 +1,9 @@
-"use client";
-
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { BrowserFrame, PhoneFrame } from "@/components/sections/DeviceFrame";
+import { Reveal } from "@/components/shared/reveal";
 
 interface Feature {
   kicker: string;
@@ -73,7 +72,6 @@ const features: Feature[] = [
 ];
 
 export function FeatureShowcaseSection() {
-  const prefersReducedMotion = useReducedMotion();
 
   return (
     <section id="ozellikler" className="scroll-mt-24 bg-background py-16 sm:py-24 overflow-x-clip">
@@ -95,11 +93,9 @@ export function FeatureShowcaseSection() {
                 reversed ? "lg:[&>*:first-child]:order-2" : ""
               }`}
             >
-              <motion.div
-                initial={prefersReducedMotion ? false : { opacity: 0, x: reversed ? 24 : -24 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5 }}
+              <Reveal
+                from={reversed ? "right" : "left"}
+                style={{ "--reveal-x": reversed ? "1.5rem" : "-1.5rem" } as CSSProperties}
               >
                 {feature.frame === "browser" ? (
                   <BrowserFrame>
@@ -124,14 +120,8 @@ export function FeatureShowcaseSection() {
                     />
                   </PhoneFrame>
                 )}
-              </motion.div>
-              <motion.div
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="max-w-xl"
-              >
+              </Reveal>
+              <Reveal delay={150} className="max-w-xl">
                 <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-primary">
                   {feature.kicker}
                 </p>
@@ -156,7 +146,7 @@ export function FeatureShowcaseSection() {
                   Demo iste
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-              </motion.div>
+              </Reveal>
             </div>
           );
         })}
