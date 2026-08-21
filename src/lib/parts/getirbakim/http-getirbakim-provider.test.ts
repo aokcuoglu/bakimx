@@ -25,6 +25,38 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe("HttpGetirbakimProvider", () => {
+  test("exact offer sorgusunu partNo ile yapar ve sunum contractını döndürür", async () => {
+    let seenUrl = ""
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      seenUrl = String(input)
+      return jsonResponse({ products: [
+        {
+          sourceProductId: "168993", brandName: "Marka A",
+          manufacturerPartNumber: { value: "103803", normalized: "103803" },
+          offers: [{ supplierDisplayName: "Dinamik", informationalPriceKurus: 99530, currency: "TRY", vatRateBps: 2000, availability: "UNKNOWN", stockQty: null, lastSyncedAt: null }],
+        },
+        {
+          sourceProductId: "168994", brandName: "Marka B",
+          manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers: [],
+        },
+      ] })
+    }) as typeof fetch
+    const result = await provider().findOffersByPartNo("103803")
+    expect(seenUrl).toContain("partNo=103803")
+    expect(seenUrl).not.toContain("limit=")
+    expect(result.status).toBe("matched")
+    if (result.status === "matched") {
+      expect(result.products.map((product) => product.sourceProductId)).toEqual(["168993", "168994"])
+      expect(result.products.map((product) => product.brandName)).toEqual(["Marka A", "Marka B"])
+    }
+  })
+
+  test("exact offer sorgusunda upstream hata fırlatılır; arama düşüşü değişmez", async () => {
+    globalThis.fetch = (async () => jsonResponse({}, 502)) as typeof fetch
+    expect(provider().findOffersByPartNo("103803")).rejects.toThrow("HTTP 502")
+    expect(await provider().search({ q: "103803" })).toEqual([])
+  })
+
   test("başarılı yanıtı DTO'ya çevirir", async () => {
     globalThis.fetch = (async () =>
       jsonResponse({

@@ -1,5 +1,58 @@
 import { describe, expect, test } from "bun:test"
-import { clampGetirbakimLimit, parseGetirbakimProduct, GETIRBAKIM_MAX_LIMIT, GETIRBAKIM_DEFAULT_LIMIT } from "./types"
+import { classifyExactProducts, clampGetirbakimLimit, normalizePartNo, parseGetirbakimExactProduct, parseGetirbakimProduct, GETIRBAKIM_MAX_LIMIT, GETIRBAKIM_DEFAULT_LIMIT, type GetirbakimExactProduct } from "./types"
+
+describe("exact offer contract", () => {
+  test("parça numarasını GetirBakım anahtarıyla aynı biçimde normalize eder", () => {
+    expect(normalizePartNo(" 10-38.03 ")).toBe("103803")
+  })
+
+  test("yalnız sunum alanlarını parse eder ve güvenilmeyen offer satırını atar", () => {
+    const product = parseGetirbakimExactProduct({
+      sourceProductId: "168993",
+      brandName: "TRW",
+      manufacturerPartNumber: { value: "103803", normalized: "103803" },
+      offers: [
+        {
+          supplierDisplayName: "Dinamik Otomotiv",
+          informationalPriceKurus: 99530,
+          currency: "TRY",
+          vatRateBps: 2000,
+          availability: "IN_STOCK",
+          stockQty: 4,
+          lastSyncedAt: "2026-07-25T17:30:33.914Z",
+          costTry: 1,
+          supplierId: "secret",
+        },
+        { informationalPriceKurus: 100 },
+      ],
+    })
+    expect(product?.offers).toEqual([{
+      supplierDisplayName: "Dinamik Otomotiv",
+      informationalPriceKurus: 99530,
+      currency: "TRY",
+      vatRateBps: 2000,
+      availability: "IN_STOCK",
+      stockQty: 4,
+      lastSyncedAt: "2026-07-25T17:30:33.914Z",
+    }])
+    expect(product).not.toHaveProperty("offers.0.costTry")
+    expect(product).not.toHaveProperty("offers.0.supplierId")
+    expect(product?.brandName).toBe("TRW")
+  })
+
+  test("0..N ürünün route durumunu tüm offerlar üzerinden sınıflandırır", () => {
+    const product = (offers: GetirbakimExactProduct["offers"]): GetirbakimExactProduct => ({
+      sourceProductId: "1", brandName: "TRW",
+      manufacturerPartNumber: { value: "103803", normalized: "103803" }, offers,
+    })
+    expect(classifyExactProducts([])).toBe("no_match")
+    expect(classifyExactProducts([product([]), { ...product([]), sourceProductId: "2" }])).toBe("no_offers")
+    expect(classifyExactProducts([product([]), product([{
+      supplierDisplayName: "Dinamik", informationalPriceKurus: 1, currency: "TRY",
+      vatRateBps: 2000, availability: "UNKNOWN", stockQty: null, lastSyncedAt: null,
+    }])])).toBe("matched")
+  })
+})
 
 describe("clampGetirbakimLimit", () => {
   test("geçersiz/eksik değer varsayılana düşer", () => {

@@ -3,6 +3,7 @@ import {
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
+  type GetirbakimExactOfferResult,
 } from "./types"
 
 /**
@@ -107,6 +108,11 @@ class MockGetirbakimProvider implements GetirbakimProvider {
     if (!q) return []
 
     return MOCK_PRODUCTS.filter((p) => matches(p, q)).slice(0, limit)
+  }
+
+  async findOffersByPartNo(_partNo: string): Promise<GetirbakimExactOfferResult> {
+    // Supplier modalında demo teklif gerçekmiş gibi gösterilmez.
+    return { status: "no_match" }
   }
 }
 
