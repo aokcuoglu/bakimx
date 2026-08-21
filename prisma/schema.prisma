@@ -1002,6 +1002,10 @@ model ExternalProcurementOrder {
   cancellationRequestedAt DateTime?
   failedAt                DateTime?
   lastReconciledAt        DateTime?
+  nextReconcileAt         DateTime?
+  reconcileFailureCount   Int                            @default(0)
+  lastReconcileError      String?
+  manualReconcileRequiredAt DateTime?
   createdAt               DateTime                       @default(now())
   updatedAt               DateTime                       @updatedAt
   items                   ExternalProcurementOrderItem[]
@@ -1010,6 +1014,27 @@ model ExternalProcurementOrder {
   @@unique([provider, externalOrderId])
   @@index([workshopId, serviceOrderId])
   @@index([provider, partnerStatus, updatedAt])
+  @@index([provider, nextReconcileAt])
+}
+
+/// Durable inbox for authenticated provider events. Raw payloads and secrets are
+/// intentionally excluded; the row is only a dedupe and operations record.
+model ExternalProcurementEvent {
+  id                String    @id @default(cuid())
+  provider          String
+  eventId           String
+  contractVersion   String
+  eventType         String
+  externalOrderId   String
+  partnerVersion    Int
+  status            String    @default("received")
+  failureCode       String?
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+
+  @@unique([provider, eventId])
+  @@index([provider, externalOrderId, partnerVersion])
+  @@index([status, receivedAt])
 }
 
 model ExternalProcurementOrderItem {
