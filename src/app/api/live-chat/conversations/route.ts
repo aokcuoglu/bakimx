@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { availabilityOf, getLiveChatConfig } from "@/lib/live-chat/settings"
-import { clientIpOf, newConversationToken, rateLimit, toThreadWire } from "@/lib/live-chat/server"
+import { clientIpOf, newConversationToken, toThreadWire } from "@/lib/live-chat/server"
+import { rateLimit } from "@/lib/rate-limit"
 import { notifyAdminsOfVisitorMessage } from "@/lib/live-chat/notify"
 import { startConversationSchema } from "@/lib/validations/live-chat"
 
 export const dynamic = "force-dynamic"
 
-/** Yeni görüşme başlatma. Aynı IP'den dakikada 3 görüşme yeter. */
+/**
+ * Yeni görüşme başlatma. Aynı IP'den dakikada 3 görüşme yeter.
+ *
+ * Sayaç paylaşımlıdır (`@/lib/rate-limit`): kimliksiz bir YAZMA yüzeyi olduğu
+ * için eşik ECS görev sayısıyla çarpılmamalı (BAK-196).
+ */
 const MAX_PER_MINUTE = 3
 const WINDOW_MS = 60_000
 
 export async function POST(request: Request) {
   const ip = clientIpOf(request)
-  if (rateLimit(`start:${ip}`, MAX_PER_MINUTE, WINDOW_MS)) {
+  if (!(await rateLimit(`live-chat:start:${ip}`, MAX_PER_MINUTE, WINDOW_MS)).allowed) {
     return NextResponse.json(
       { success: false, errors: { _general: "Çok fazla istek. Lütfen biraz bekleyin." } },
       { status: 429 },

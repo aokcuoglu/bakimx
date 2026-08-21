@@ -169,11 +169,23 @@ MFA ve offboarding dışında, kodda doğrulanan üç nokta:
    `impersonation_ended` yazılıyor (`impersonation-actions.ts:69,94`) ama denetim
    sayfasının etiket/filtre tablosunda yok (`audit/page.tsx:13`) — en hassas olay
    ne filtrelenebiliyor ne okunabilir etiketle görünüyor.
-3. ~~**Rate limit process başına.**~~ **BAK-116 ile kapandı.** Sayaç artık
-   Postgres'te (`RateLimitCounter`) tutuluyor ve tek deyimlik atomik artırımla
-   güncelleniyor, yani eşik ECS task sayısıyla çarpılmıyor. Süreç-içi Map
-   birinci kademe olarak duruyor: paylaşımlı depo erişilemezse istek
+3. ~~**Rate limit process başına.**~~ **BAK-116 + BAK-195 + BAK-196 ile kapandı.** Sayaç
+   artık Postgres'te (`RateLimitCounter`) tutuluyor ve tek deyimlik atomik
+   artırımla güncelleniyor, yani eşik ECS task sayısıyla çarpılmıyor. Süreç-içi
+   Map birinci kademe olarak duruyor: paylaşımlı depo erişilemezse istek
    reddedilmez (fail-open) ama bugünkü koruma taban olarak ayakta kalır.
+
+   Dürüst kayıt: BAK-116 kütüphane katmanını ve çağıran uçların çoğunu taşıdı,
+   ama iki public form ucu ile ziyaretçiye açık live-chat uçları kendi süreç-içi
+   limiter'larıyla dışarıda kalmıştı; yani bu satır 20-08'e kadar onlar için
+   doğru değildi. **BAK-195**, `/api/demo-request` ve `/api/support-request`
+   uçlarını kanonik `rateLimit()`e taşıdı (`demo-request:<ip>` /
+   `support-request:<ip>`, eşik aynen 3/dk/IP) ve regresyon testlerini ekledi.
+   **BAK-196**, görüşme başlatma ve mesaj gönderme uçlarını kanonik sayaca taşıdı.
+   Yoklama ucu (`GET /api/live-chat/messages`) bilerek süreç-içi kaldı
+   (`rateLimitLocal`): panel açıkken 4 saniyede bir çalışıyor, yeni kayıt açmıyor
+   ve yalnız kendi görüşmesini okuyor — paylaşımlı sayaç orada okunan işten
+   pahalı bir yazma yükü üretirdi.
 
 Ayrıca: repoda `robots.ts`/`robots.txt` yok. `/admin` anonim kullanıcıya 404
 döndüğü için bu bir güvenlik açığı değil, ama `www.bakimx.com` için SEO tarafında
@@ -265,7 +277,7 @@ Bugünkü kanallar ve boşlukları:
 | **P1** | Aktif impersonation ekranı + iptal (`revokedAt`) | Şemada var, kodda yok |
 | **P1** | Impersonation olaylarını denetim filtresine/etiketlerine ekle | En hassas olay bugün görünmüyor |
 | **P1** | Konsoldan şifre sıfırlama bağlantısı gönderme | Destek bugün konsolda bitmiyor |
-| ~~P2~~ | ~~Rate limit'i paylaşımlı sayaca taşı~~ | **BAK-116 ile geldi** — §3.3 |
+| ~~P2~~ | ~~Rate limit'i paylaşımlı sayaca taşı~~ | **BAK-116** (kütüphane + uçların çoğu) + **BAK-195** (demo/destek form uçları) + **BAK-196** (live-chat yazma uçları) ile geldi — §3.3 |
 | **P2** | `SupportRequest`: `workshopId` + atama + iç not | Şikayet ↔ kiracı bağı |
 | **P2** | Etiket/rozet temizliği (§4 / 2-3-4) | Tutarlılık; yeni personelin öğrenme yükü |
 | **P3** | Çeyreklik erişim gözden geçirmesi, statü sayfası | Portföy büyüdükçe |

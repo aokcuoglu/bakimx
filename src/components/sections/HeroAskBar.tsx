@@ -12,8 +12,8 @@ import {
   requestAssistantAnswers,
   setAskBarVisible,
   subscribeAssistantBridge,
+  ASSISTANT_PANEL_ID,
 } from "@/components/site-assistant/assistant-bridge";
-import { ASSISTANT_PANEL_ID } from "@/components/site-assistant/assistant-panel";
 
 /**
  * Çipler Faz 2'deki kartların ilk dört sorusudur; metin `objections.ts`ten

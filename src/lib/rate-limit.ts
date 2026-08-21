@@ -23,6 +23,7 @@ const localBuckets = new Map<string, { count: number; resetTime: number }>()
 
 let breakerOpenUntil = 0
 let lastSweepAt = 0
+let lastLocalSweepAt = 0
 let lastErrorLogAt = 0
 
 /**
@@ -115,6 +116,13 @@ async function sharedRateLimit(
   }
 }
 
+/** Süresi dolmuş süreç-içi kovaları atar; her iki limiter yolu da kullanır. */
+function sweepLocalBuckets(now: number): void {
+  for (const [key, entry] of localBuckets) {
+    if (now > entry.resetTime) localBuckets.delete(key)
+  }
+}
+
 /**
  * Süresi dolmuş satırların temizliği. Ayrı bir cron'a bağlamak yerine istek
  * yolundan seyrek (süreç başına 5 dakikada bir) ve bekletmeden tetiklenir;
@@ -125,18 +133,23 @@ function sweepExpired(): void {
   if (now - lastSweepAt < SWEEP_INTERVAL_MS) return
   lastSweepAt = now
 
-  for (const [key, entry] of localBuckets) {
-    if (now > entry.resetTime) localBuckets.delete(key)
-  }
+  sweepLocalBuckets(now)
 
   if (!sharedStoreEnabled() || now < breakerOpenUntil) return
-  void prisma
-    .$executeRawUnsafe(
-      `DELETE FROM "RateLimitCounter" WHERE "resetAt" < now() - interval '${SWEEP_GRACE}'`
-    )
-    .catch(() => {
-      // Süpürme en iyi çabadır; başarısızlığı rate limit kararını etkilemez.
-    })
+
+  // Süpürme en iyi çabadır ve başarısızlığı rate limit kararını ASLA etkilemez.
+  // `try` şart: `.catch()` yalnız reddedilen promise'i yakalar, çağrının kendisi
+  // senkron fırlatırsa (istemci hazır değil, alan yok) hata `rateLimit`ten dışarı
+  // sızar ve isteği düşürürdü.
+  try {
+    void prisma
+      .$executeRawUnsafe(
+        `DELETE FROM "RateLimitCounter" WHERE "resetAt" < now() - interval '${SWEEP_GRACE}'`
+      )
+      .catch(() => {})
+  } catch {
+    /* yut */
+  }
 }
 
 /**
@@ -168,10 +181,41 @@ export async function rateLimit(
   return shared ?? local
 }
 
+/**
+ * Yalnız süreç-içi sabit-pencere limiti — paylaşımlı sayaca HİÇ gitmez.
+ *
+ * `rateLimit`'in yerine geçmez; kasıtlı bir istisnadır. Yalnız şu üç koşulun
+ * hepsini sağlayan yollar için: (a) uç bir yazma/kötüye kullanım yüzeyi değil,
+ * (b) normal kullanımda yüksek frekanslı (yoklama gibi), (c) sınırın görev
+ * sayısıyla çarpılması kabul edilebilir. Paylaşımlı sayaç her çağrıda bir
+ * `INSERT ... ON CONFLICT` yazar; 4 saniyede bir yoklanan bir okuma ucunda bu,
+ * korunan işin kendisinden pahalı bir yazma yükü demektir.
+ *
+ * Kova deposu `rateLimit` ile ORTAKTIR; anahtar alanları bu yüzden ayrıdır
+ * (ör. `live-chat:poll:<ip>` ↔ `live-chat:send:<ip>`).
+ *
+ * Yazma yüzeyi olan her uç `rateLimit` kullanır (BAK-116, BAK-196).
+ */
+export function rateLimitLocal(
+  key: string,
+  max: number = MAX_REQUESTS,
+  windowMs: number = WINDOW_MS
+): RateLimitResult {
+  const now = Date.now()
+  // Süresi dolmuş kovaları at: bu yol paylaşımlı süpürmeyi tetiklemediği için
+  // kendi seyrek temizliğini yapar, yoksa her yeni IP süreç ömrü boyunca kalır.
+  if (now - lastLocalSweepAt >= SWEEP_INTERVAL_MS) {
+    lastLocalSweepAt = now
+    sweepLocalBuckets(now)
+  }
+  return localRateLimit(key, max, windowMs)
+}
+
 /** Yalnız testler için: süreç-içi kademeyi ve devre kesiciyi sıfırlar. */
 export function resetRateLimitStateForTests(): void {
   localBuckets.clear()
   breakerOpenUntil = 0
   lastSweepAt = 0
+  lastLocalSweepAt = 0
   lastErrorLogAt = 0
 }

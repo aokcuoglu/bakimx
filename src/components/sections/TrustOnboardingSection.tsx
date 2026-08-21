@@ -1,10 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import { Zap, MessageCircle, LifeBuoy, ArrowRight } from "lucide-react";
 import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { Reveal } from "@/components/shared/reveal";
 
 /**
  * "Kurulumsuz başlangıç + destek" — Shopmonkey world-class-support kaldıracının
@@ -26,8 +24,6 @@ const reassurances = [
 ];
 
 export function TrustOnboardingSection() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="bg-brand/10 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -44,12 +40,9 @@ export function TrustOnboardingSection() {
 
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {steps.map((step, i) => (
-            <motion.div
+            <Reveal
               key={step.title}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: i * 0.1 }}
+              delay={i * 100}
               className="rounded-xl bg-background/70 p-6"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
@@ -59,7 +52,7 @@ export function TrustOnboardingSection() {
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {step.description}
               </p>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
 

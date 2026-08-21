@@ -1620,12 +1620,11 @@ function RowFlash({ kind, iconOnly }: { kind?: FlashKind | null; iconOnly?: bool
  * kullanır: aynı satırda tedarikçi fiyat karşılaştırma da 🏷 idi, iki farklı
  * aksiyon ayırt edilemiyordu.
  */
-function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail }: {
+function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
   row: Row
   ed: RowEditor
   orderId?: string
   vehicle?: PickerVehicle
-  onCell: OnCell
   onRemove: (row: Row) => void
   onShowDetail: OnShowDetail
 }) {
@@ -1773,15 +1772,13 @@ function RowActions({ row, ed, orderId, vehicle, onCell, onRemove, onShowDetail 
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Yalnız aksiyonu VARSA mount edilir: dialog kapalıyken de mock teklif
-          listesini hesaplıyor (useMemo), her işçilik satırı için boşa çalışmasın. */}
+      {/* Yalnız aksiyonu VARSA mount edilir; işçilik satırları için teklif
+          dialogu ve istemci durumu gereksiz yere kurulmasın. */}
       {byKey.has("price") && (
         <SupplierPriceDialog
           open={priceOpen}
           onOpenChange={setPriceOpen}
           part={{ name: row.name, sku: row.sku, brand: row.brand }}
-          editable={ed.editable}
-          onApply={(priceKurus) => onCell(row, { unitPrice: priceKurus })}
         />
       )}
 
@@ -2123,7 +2120,6 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
           ed={ed}
           orderId={orderId}
           vehicle={vehicle}
-          onCell={onCell}
           onRemove={onRemove}
           onShowDetail={onShowDetail}
         />
@@ -2167,7 +2163,6 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           ed={ed}
           orderId={orderId}
           vehicle={vehicle}
-          onCell={onCell}
           onRemove={onRemove}
           onShowDetail={onShowDetail}
         />

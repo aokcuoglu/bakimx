@@ -1,7 +1,6 @@
-"use client";
-
+import type { CSSProperties } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { Reveal } from "@/components/shared/reveal";
 
 // Renkli PNG logolar: varsayılan monochrome (grayscale + düşük opaklık), üstüne
 // gelince tam renk. Koyu temada logoların koyu kısımları zeminde kaybolduğu için
@@ -29,28 +28,24 @@ const partners = [
 ];
 
 export function PartnersStrip() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="border-b bg-background py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.p
-          initial={prefersReducedMotion ? false : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.5 }}
+        <Reveal
+          as="p"
+          from="fade"
+          amount={0.3}
           className="text-center font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
         >
           Güçlü iş ortakları ve altyapıyla çalışıyoruz
-        </motion.p>
+        </Reveal>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-x-14 gap-y-6">
           {partners.map((partner, i) => (
-            <motion.div
+            <Reveal
               key={partner.name}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
+              delay={i * 80}
+              amount={0.3}
+              style={{ "--reveal-y": "0.5rem" } as CSSProperties}
               className={partner.wrapClass}
             >
               <Image
@@ -60,7 +55,7 @@ export function PartnersStrip() {
                 height={partner.height}
                 className={partner.imgClass}
               />
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>
