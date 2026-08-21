@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 
-const submissionCounts = new Map<string, { count: number; resetAt: number }>()
+/**
+ * Eşik ve pencere BAK-195 öncesiyle birebir aynı; değişen yalnız sayacın nerede
+ * tutulduğu: süreç-içi `Map` yerine kanonik paylaşımlı sayaç (BAK-116). ECS'te
+ * birden çok task koştuğu için süreç başına sayılan eşik task sayısıyla
+ * çarpılıyordu — kimlik doğrulaması olmayan bu yazma ucunda 3/dk fiilen 6/dk idi.
+ */
 const RATE_LIMIT_WINDOW = 60_000
 const RATE_LIMIT_MAX = 3
 
@@ -9,18 +15,6 @@ function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for")
   if (forwarded) return forwarded.split(",")[0].trim()
   return request.headers.get("x-real-ip") || "unknown"
-}
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const entry = submissionCounts.get(ip)
-  if (!entry || now > entry.resetAt) {
-    submissionCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
-    return false
-  }
-  entry.count++
-  if (entry.count > RATE_LIMIT_MAX) return true
-  return false
 }
 
 interface DemoRequestBody {
@@ -60,7 +54,7 @@ function validateBody(body: DemoRequestBody): Record<string, string> {
 
 export async function POST(request: Request) {
   const ip = getClientIp(request)
-  if (isRateLimited(ip)) {
+  if (!(await rateLimit(`demo-request:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW)).allowed) {
     return NextResponse.json(
       { success: false, errors: { _general: "Çok fazla istek. Lütfen biraz bekleyin." } },
       { status: 429 }
