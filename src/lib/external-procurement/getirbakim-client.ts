@@ -4,7 +4,7 @@ import {
   type CreateProcurementOrder, type ProcurementProviderClient,
 } from "./types"
 
-const orderSchema = z.object({
+export const procurementOrderSchema = z.object({
   contractVersion: z.literal("1.0"), id: z.string().min(1),
   status: z.enum(PROCUREMENT_STATUSES), version: z.number().int().nonnegative(),
   bindingPrice: z.object({
@@ -20,7 +20,7 @@ const orderSchema = z.object({
   cancellationRequested: z.boolean(), createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
 }).strict()
 
-const createSchema = z.object({ order: orderSchema, replayed: z.boolean() }).strict()
+const createSchema = z.object({ order: procurementOrderSchema, replayed: z.boolean() }).strict()
 const quoteSchema = z.object({ quote: z.object({
   selectedOfferId: z.string(), quantity: z.number().int().positive(),
   bindingNetKurus: z.number().int().nonnegative(), bindingVatKurus: z.number().int().nonnegative(),
@@ -55,9 +55,9 @@ export class GetirBakimClient implements ProcurementProviderClient {
     return result.quote
   }
 
-  getOrder(id: string) { return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, orderSchema) }
+  getOrder(id: string) { return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, procurementOrderSchema) }
   cancelOrder(id: string) {
-    return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, orderSchema, { method: "DELETE" })
+    return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, procurementOrderSchema, { method: "DELETE" })
   }
 
   private async request<T extends z.ZodType>(path: string, schema: T, init: RequestInit = {}): Promise<z.infer<T>> {

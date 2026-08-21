@@ -109,6 +109,9 @@ export const TENANT_TABLES = [
   // Harici tedarik kaydı iş emri/kalemine bağlı kiracı verisidir.
   "ExternalProcurementOrder",
   "ExternalProcurementOrderItem",
+  // Sağlayıcı webhook inbox'ı sipariş kimliği üzerinden kiracı operasyon
+  // geçmişidir; kiracı siparişleri silinirken yetim dedupe kayıtları kalmamalı.
+  "ExternalProcurementEvent",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */
