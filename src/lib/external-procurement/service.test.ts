@@ -8,6 +8,7 @@ import {
   reconcileBackoffMs,
 } from "./service"
 import type { ProcurementOrder } from "./types"
+import { requiresProcurementReconfirmation } from "./types"
 
 const root = join(import.meta.dir, "../../..")
 const schema = readFileSync(join(root, "prisma/schema.prisma"), "utf8")
@@ -18,7 +19,7 @@ const input = {
   workshopId: "ws-a", serviceOrderId: "order-a", serviceOrderItemId: "item-a",
   requestedByUserId: "user-a", idempotencyKey: "key-a", externalProductId: "p1",
   externalOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000,
-  expectedPolicyVersion: "v1", expectedExpiresAt: "2026-08-21T21:00:00.000Z",
+  confirmationToken: "opaque-confirmation-token-a",
   productPresentation: { name: "Filtre" },
 }
 
@@ -33,8 +34,14 @@ describe("external procurement guardrails", () => {
   test("idempotency identity includes payload but excludes presentation-only fields", () => {
     expect(procurementRequestHash(input)).toBe(procurementRequestHash({ ...input, productPresentation: { name: "Yeni ad" } }))
     expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, quantity: 2 }))
-    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, expectedPolicyVersion: "v2" }))
-    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, expectedExpiresAt: "2026-08-21T21:01:00.000Z" }))
+    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, confirmationToken: "opaque-confirmation-token-b" }))
+  })
+
+  test("maps the PR #86 conflict contract to the reconfirmation path", () => {
+    for (const code of ["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"]) {
+      expect(requiresProcurementReconfirmation(code)).toBe(true)
+    }
+    expect(requiresProcurementReconfirmation("PROVIDER_UNAVAILABLE")).toBe(false)
   })
 
   test("schema is additive, provider-neutral, and does not alter OrderItemSource", () => {

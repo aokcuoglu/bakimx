@@ -16,9 +16,9 @@ type OfferResponse =
   | { status: "matched" | "no_offers"; normalizedPartNo: string; products: GetirbakimExactProduct[] }
   | { status: "no_match" | "upstream_error"; normalizedPartNo: string }
 type SelectedOffer = { product: GetirbakimExactProduct; offer: GetirbakimOffer }
-type Quote = { bindingNetKurus: number; bindingVatKurus: number; bindingGrossKurus: number; unitNetKurus: number; currency: string; policyVersion: string; expiresAt: string }
+type Quote = { bindingNetKurus: number; bindingVatKurus: number; bindingGrossKurus: number; unitNetKurus: number; currency: string; policyVersion: string; expiresAt: string; confirmationToken: string }
 
-const RECONFIRMATION_REQUIRED_CODES = new Set(["PRICE_CHANGED", "POLICY_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED", "CONFIRMATION_REQUIRED", "CONFIRMATION_MISMATCH"])
+const RECONFIRMATION_REQUIRED_CODES = new Set(["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"])
 
 export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderItemId, quantity }: {
   open: boolean
@@ -74,7 +74,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         action: "purchase", orderId, orderItemId, idempotencyKey: crypto.randomUUID(),
         externalProductId: selected.product.sourceProductId, selectedOfferId: selected.offer.selectedOfferId,
         quantity: purchaseQuantity, expectedUnitNetKurus: quote.unitNetKurus,
-        expectedPolicyVersion: quote.policyVersion, expectedExpiresAt: quote.expiresAt,
+        confirmationToken: quote.confirmationToken,
         productPresentation: { name: part.name, brand: selected.product.brandName, partNumber: selected.product.manufacturerPartNumber.value },
         informationalSnapshot: { unitPriceKurus: selected.offer.informationalPriceKurus ?? undefined, currency: selected.offer.currency, availability: selected.offer.availability, capturedAt: new Date().toISOString() },
       }) })

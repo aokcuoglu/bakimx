@@ -28,8 +28,9 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
   })
 
   test("sunucu onay kimliğini yollar ve her bağlayıcı değişiklikte eski onayı temizler", () => {
-    expect(source).toContain("expectedPolicyVersion: quote.policyVersion")
-    expect(source).toContain("expectedExpiresAt: quote.expiresAt")
+    expect(source).toContain("confirmationToken: quote.confirmationToken")
+    expect(source).not.toContain("expectedPolicyVersion: quote.policyVersion")
+    expect(source).not.toContain("expectedExpiresAt: quote.expiresAt")
     expect(source).toContain("RECONFIRMATION_REQUIRED_CODES.has(data.code)")
     expect(source).toContain("setQuote(null)")
     expect(source).toContain("Politika {quote.policyVersion}")

@@ -22,8 +22,7 @@ export interface StartProcurementInput {
   externalOfferId: string
   quantity: number
   expectedUnitNetKurus: number
-  expectedPolicyVersion: string
-  expectedExpiresAt: string
+  confirmationToken: string
   productPresentation: { name: string; brand?: string; partNumber?: string; imageUrl?: string }
   informationalSnapshot?: { unitPriceKurus?: number; currency?: string; availability?: string; capturedAt: string }
 }
@@ -45,7 +44,7 @@ export function procurementRequestHash(input: StartProcurementInput): string {
     serviceOrderId: input.serviceOrderId, serviceOrderItemId: input.serviceOrderItemId,
     externalProductId: input.externalProductId, externalOfferId: input.externalOfferId,
     quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
-    expectedPolicyVersion: input.expectedPolicyVersion, expectedExpiresAt: input.expectedExpiresAt,
+    confirmationToken: input.confirmationToken,
   })).digest("hex")
 }
 
@@ -152,7 +151,7 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       result = await client.createOrder({
         idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
         quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
-        expectedPolicyVersion: input.expectedPolicyVersion, expectedExpiresAt: input.expectedExpiresAt,
+        confirmationToken: input.confirmationToken,
       })
     } catch (error) {
       if (!(error instanceof ProcurementProviderError) || !error.retryable) throw error
@@ -160,7 +159,7 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       result = await client.createOrder({
         idempotencyKey: input.idempotencyKey, selectedOfferId: input.externalOfferId,
         quantity: input.quantity, expectedUnitNetKurus: input.expectedUnitNetKurus,
-        expectedPolicyVersion: input.expectedPolicyVersion, expectedExpiresAt: input.expectedExpiresAt,
+        confirmationToken: input.confirmationToken,
       })
     }
     return await prisma.$transaction(async (tx) => {
