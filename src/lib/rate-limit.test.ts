@@ -34,7 +34,7 @@ mock.module("@/lib/db", () => ({
 // Paylaşımlı depo yalnız bir veritabanı yapılandırıldığında devreye girer.
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test"
 
-const { rateLimit, resetRateLimitStateForTests } = await import("./rate-limit")
+const { rateLimit, rateLimitLocal, resetRateLimitStateForTests } = await import("./rate-limit")
 
 beforeEach(() => {
   // Her test taze bir "süreç" gibi başlasın: bellek kademesi ve devre kesici
@@ -138,4 +138,37 @@ test("depo erişilemezken süreç-içi koruma taban olarak ayakta kalır", async
   } finally {
     console.error = originalError
   }
+})
+
+/**
+ * BAK-196: yüksek frekanslı OKUMA yollarının bilerek süreç-içi kalan kademesi.
+ * Paylaşımlı sayaç her çağrıda bir satır yazar; 4 saniyede bir yoklanan bir uçta
+ * bu, korunan işten pahalı bir yazma yükü demektir.
+ */
+test("rateLimitLocal paylaşımlı depoya hiç gitmez, eşiği süreç belleğinde uygular", async () => {
+  for (let i = 0; i < 5; i++) {
+    expect(rateLimitLocal("live-chat:poll:203.0.113.30", 5, 60_000).allowed).toBe(true)
+  }
+
+  const blocked = rateLimitLocal("live-chat:poll:203.0.113.30", 5, 60_000)
+  expect(blocked.allowed).toBe(false)
+  expect(blocked.retryAfterMs).toBeGreaterThan(0)
+  // DATABASE_URL tanımlı olmasına rağmen tek bir sayaç satırı bile yazılmadı.
+  expect(sharedRows.size).toBe(0)
+})
+
+test("rateLimitLocal kovası paylaşımlı yolla aynı depoyu kullanır ama anahtarlar ayrıdır", async () => {
+  for (let i = 0; i < 5; i++) rateLimitLocal("live-chat:poll:203.0.113.31", 5, 60_000)
+  expect(rateLimitLocal("live-chat:poll:203.0.113.31", 5, 60_000).allowed).toBe(false)
+
+  // Aynı IP'nin YAZMA kotası ayrı anahtarda: yoklama kotası onu tüketmez.
+  expect((await rateLimit("live-chat:send:203.0.113.31", 5, 60_000)).allowed).toBe(true)
+})
+
+test("rateLimitLocal süresi dolan kovayı sıfırlar", () => {
+  for (let i = 0; i < 3; i++) rateLimitLocal("kisa:pencere", 3, 5)
+  expect(rateLimitLocal("kisa:pencere", 3, 5).allowed).toBe(false)
+
+  Bun.sleepSync(10)
+  expect(rateLimitLocal("kisa:pencere", 3, 5).allowed).toBe(true)
 })
