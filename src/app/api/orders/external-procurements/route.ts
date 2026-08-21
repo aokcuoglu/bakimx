@@ -16,6 +16,7 @@ const purchaseSchema = z.object({
   idempotencyKey: z.string().min(8).max(128), externalProductId: z.string().min(1),
   selectedOfferId: z.string().min(1), quantity: z.number().int().positive().max(100),
   expectedUnitNetKurus: z.number().int().positive(),
+  expectedPolicyVersion: z.string().min(1), expectedExpiresAt: z.string().datetime(),
   productPresentation: z.object({ name: z.string().min(1), brand: z.string().optional(), partNumber: z.string().optional() }).strict(),
   informationalSnapshot: z.object({ unitPriceKurus: z.number().int().nonnegative().optional(), currency: z.string().optional(), availability: z.string().optional(), capturedAt: z.string().datetime() }).strict().optional(),
 }).strict()
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       serviceOrderItemId: data.orderItemId, idempotencyKey: data.idempotencyKey,
       externalProductId: data.externalProductId, externalOfferId: data.selectedOfferId,
       quantity: data.quantity, expectedUnitNetKurus: data.expectedUnitNetKurus,
+      expectedPolicyVersion: data.expectedPolicyVersion, expectedExpiresAt: data.expectedExpiresAt,
       productPresentation: data.productPresentation, informationalSnapshot: data.informationalSnapshot,
     })
     return NextResponse.json({ procurement: result }, { status: 201 })

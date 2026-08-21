@@ -16,10 +16,10 @@ describe("GetirBakimClient", () => {
       request = new Request(input, init)
       return Response.json({ data: { order, replayed: false } }, { status: 201 })
     })
-    await client.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000 })
+    await client.createOrder({ idempotencyKey: "key", selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, expectedPolicyVersion: "opaque-v1", expectedExpiresAt: "2026-08-21T21:00:00.000Z" })
     expect(request!.headers.get("authorization")).toBe("Bearer secret")
     expect(request!.headers.get("idempotency-key")).toBe("key")
-    expect(await request!.json()).toEqual({ selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000 })
+    expect(await request!.json()).toEqual({ selectedOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000, expectedPolicyVersion: "opaque-v1", expectedExpiresAt: "2026-08-21T21:00:00.000Z" })
   })
 
   test("fails closed on confidential or malformed provider responses", async () => {

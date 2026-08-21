@@ -26,4 +26,13 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain("product.brandName")
     expect(source).toContain("product.manufacturerPartNumber.value")
   })
+
+  test("sunucu onay kimliğini yollar ve her bağlayıcı değişiklikte eski onayı temizler", () => {
+    expect(source).toContain("expectedPolicyVersion: quote.policyVersion")
+    expect(source).toContain("expectedExpiresAt: quote.expiresAt")
+    expect(source).toContain("RECONFIRMATION_REQUIRED_CODES.has(data.code)")
+    expect(source).toContain("setQuote(null)")
+    expect(source).toContain("Politika {quote.policyVersion}")
+    expect(source).toContain("yeniden açıkça onaylayın")
+  })
 })

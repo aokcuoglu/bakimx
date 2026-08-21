@@ -35,6 +35,17 @@ export interface CreateProcurementOrder {
   selectedOfferId: string
   quantity: number
   expectedUnitNetKurus: number
+  expectedPolicyVersion: string
+  expectedExpiresAt: string
+}
+
+export const RECONFIRMATION_REQUIRED_CODES = new Set([
+  "PRICE_CHANGED", "POLICY_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED",
+  "CONFIRMATION_REQUIRED", "CONFIRMATION_MISMATCH",
+])
+
+export function requiresProcurementReconfirmation(code: string): boolean {
+  return RECONFIRMATION_REQUIRED_CODES.has(code)
 }
 
 export interface ProcurementQuote {

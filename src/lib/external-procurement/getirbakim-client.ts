@@ -44,6 +44,8 @@ export class GetirBakimClient implements ProcurementProviderClient {
       body: JSON.stringify({
         selectedOfferId: input.selectedOfferId, quantity: input.quantity,
         expectedUnitNetKurus: input.expectedUnitNetKurus,
+        expectedPolicyVersion: input.expectedPolicyVersion,
+        expectedExpiresAt: input.expectedExpiresAt,
       }),
     })
   }

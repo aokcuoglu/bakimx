@@ -18,6 +18,7 @@ const input = {
   workshopId: "ws-a", serviceOrderId: "order-a", serviceOrderItemId: "item-a",
   requestedByUserId: "user-a", idempotencyKey: "key-a", externalProductId: "p1",
   externalOfferId: "offer_1", quantity: 1, expectedUnitNetKurus: 1000,
+  expectedPolicyVersion: "v1", expectedExpiresAt: "2026-08-21T21:00:00.000Z",
   productPresentation: { name: "Filtre" },
 }
 
@@ -32,6 +33,8 @@ describe("external procurement guardrails", () => {
   test("idempotency identity includes payload but excludes presentation-only fields", () => {
     expect(procurementRequestHash(input)).toBe(procurementRequestHash({ ...input, productPresentation: { name: "Yeni ad" } }))
     expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, quantity: 2 }))
+    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, expectedPolicyVersion: "v2" }))
+    expect(procurementRequestHash(input)).not.toBe(procurementRequestHash({ ...input, expectedExpiresAt: "2026-08-21T21:01:00.000Z" }))
   })
 
   test("schema is additive, provider-neutral, and does not alter OrderItemSource", () => {
