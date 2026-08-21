@@ -25,16 +25,17 @@ export async function searchGetirbakimProducts(
   const limit = clampGetirbakimLimit(input.limit)
   const oem = input.oem?.trim() || null
   const q = input.q?.trim() || null
+  const vehicleTypeId = input.vehicleTypeId ?? null
 
   // Eşik altı serbest metin dışarı ÇIKMAZ. OEM sorgusu eşiğe tabi değil: kısa
   // ama geçerli parça kodları var ("OC90"), onları kesmek aramayı bozardı.
   if (!oem && (!q || q.length < GETIRBAKIM_MIN_SEARCH_LEN)) return []
 
-  const key = getirbakimCacheKey({ q, oem, limit })
+  const key = getirbakimCacheKey({ q, oem, limit, vehicleTypeId })
   const cached = readGetirbakimCache(key)
   if (cached) return cached
 
-  const products = await getGetirbakimProvider().search({ q, oem, limit })
+  const products = await getGetirbakimProvider().search({ q, oem, limit, vehicleTypeId })
 
   // Boş sonuç da yazılır: "bu terim GetirBakım'da yok" bilgisi de tekrar tekrar
   // dış çağrı yapılmasını engellemeye değer.

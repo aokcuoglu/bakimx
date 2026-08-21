@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test"
-import { clampGetirbakimLimit, parseGetirbakimProduct, GETIRBAKIM_MAX_LIMIT, GETIRBAKIM_DEFAULT_LIMIT } from "./types"
+import { clampGetirbakimLimit, parseGetirbakimProduct, parseGetirbakimVehicleTypeId, GETIRBAKIM_MAX_LIMIT, GETIRBAKIM_DEFAULT_LIMIT } from "./types"
+
+test("vehicleTypeId yalnız pozitif Int32 ondalık kimlik kabul eder", () => {
+  expect(parseGetirbakimVehicleTypeId(null)).toBeNull()
+  expect(parseGetirbakimVehicleTypeId("2147483647")).toBe(2147483647)
+  for (const value of ["", "0", "-1", "1.5", "1e3", " 1", "2147483648"]) {
+    expect(parseGetirbakimVehicleTypeId(value)).toBeUndefined()
+  }
+})
 
 describe("clampGetirbakimLimit", () => {
   test("geçersiz/eksik değer varsayılana düşer", () => {
@@ -56,6 +64,21 @@ describe("parseGetirbakimProduct — fiyat kuruş olarak taşınır", () => {
 })
 
 describe("parseGetirbakimProduct — dayanıklılık", () => {
+  test("yalnız doğrulanmış aynı araç kimliği uyumlu kalır", () => {
+    const confirmed = parseGetirbakimProduct({
+      id: "42", name: "X", sourceProductId: "42", contractVersion: "1.1",
+      exactFitment: { requestedVehicleTypeId: 16573, status: "CONFIRMED", matchedVehicleTypeIds: [16573] },
+    })
+    expect(confirmed?.exactFitment.status).toBe("CONFIRMED")
+
+    const dishonest = parseGetirbakimProduct({
+      id: "42", name: "X",
+      exactFitment: { requestedVehicleTypeId: 16573, status: "CONFIRMED", matchedVehicleTypeIds: [99999] },
+    })
+    expect(dishonest?.exactFitment.status).toBe("NOT_REQUESTED")
+    expect(parseGetirbakimProduct({ id: "42", name: "X" })?.exactFitment.status).toBe("NOT_REQUESTED")
+  })
+
   test("zorunlu alanı eksik satır null döner", () => {
     expect(parseGetirbakimProduct({ name: "id yok" })).toBeNull()
     expect(parseGetirbakimProduct({ id: "1" })).toBeNull()

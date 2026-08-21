@@ -55,6 +55,11 @@ export function GetirbakimProductRow({ product }: { product: GetirbakimProduct }
           <span className="shrink-0 rounded-sm border border-border bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">
             {GETIRBAKIM_SOURCE_LABEL}
           </span>
+          {product.exactFitment.status === "CONFIRMED" && (
+            <span className="shrink-0 rounded-sm bg-success/10 px-1.5 py-px text-[10px] font-medium text-success-strong">
+              Araca tam uyumlu
+            </span>
+          )}
         </span>
         <span className="block truncate text-xs text-muted-foreground">
           <span className="font-mono">{product.partNo}</span>

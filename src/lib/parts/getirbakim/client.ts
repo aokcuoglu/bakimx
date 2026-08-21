@@ -42,6 +42,7 @@ export function getirbakimSearchUrl(query: GetirbakimSearchInput): string {
   if (query.oem) qs.set("oem", query.oem)
   else if (query.q) qs.set("q", query.q)
   if (query.limit != null) qs.set("limit", String(query.limit))
+  if (query.vehicleTypeId != null) qs.set("vehicleTypeId", String(query.vehicleTypeId))
   return `/api/catalog/getirbakim/search?${qs.toString()}`
 }
 
@@ -76,8 +77,9 @@ export function useGetirbakimSearch(input: {
   enabled: boolean
   q?: string | null
   limit?: number | null
+  vehicleTypeId?: number | null
 }): { products: GetirbakimProduct[]; locked: boolean; searching: boolean } {
-  const { enabled, limit = null } = input
+  const { enabled, limit = null, vehicleTypeId = null } = input
   const q = (input.q ?? "").trim()
   const [products, setProducts] = useState<GetirbakimProduct[]>([])
   const [locked, setLocked] = useState(false)
@@ -88,7 +90,7 @@ export function useGetirbakimSearch(input: {
   const lastQueryRef = useRef<string | null>(null)
 
   const requestKey = enabled && q.length >= GETIRBAKIM_MIN_SEARCH_LEN
-    ? `${q}|${limit ?? ""}`
+    ? `${q}|${limit ?? ""}|${vehicleTypeId ?? ""}`
     : null
 
   useEffect(() => {
@@ -105,7 +107,7 @@ export function useGetirbakimSearch(input: {
     const timer = setTimeout(() => {
       // Spinner debounce'tan SONRA açılır: her tuş vuruşunda yanıp sönmesin.
       setSearching(true)
-      void fetchGetirbakimProducts({ q, limit }).then((result) => {
+      void fetchGetirbakimProducts({ q, limit, vehicleTypeId }).then((result) => {
         if (!active) return
         setProducts(result.status === "ok" ? result.data : [])
         setLocked(result.status !== "ok")
@@ -120,5 +122,11 @@ export function useGetirbakimSearch(input: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey])
 
-  return { products, locked, searching }
+  const safeProducts = products.map((product) =>
+    product.exactFitment.status === "CONFIRMED" &&
+    product.exactFitment.requestedVehicleTypeId !== vehicleTypeId
+      ? { ...product, exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED" as const, matchedVehicleTypeIds: [] } }
+      : product,
+  )
+  return { products: safeProducts, locked, searching }
 }
