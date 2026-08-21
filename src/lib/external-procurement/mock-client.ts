@@ -3,6 +3,14 @@ import type { CreateProcurementOrder, ProcurementOrder, ProcurementProviderClien
 export class MockProcurementClient implements ProcurementProviderClient {
   readonly provider = "mock"
   readonly orders = new Map<string, ProcurementOrder>()
+
+  async quoteOrder(selectedOfferId: string, quantity: number) {
+    const unitNetKurus = 1000
+    return { selectedOfferId, quantity, bindingNetKurus: unitNetKurus * quantity,
+      bindingVatKurus: 200 * quantity, bindingGrossKurus: 1200 * quantity,
+      unitNetKurus, currency: "TRY", policyVersion: "mock-v1",
+      expiresAt: new Date(Date.now() + 300_000).toISOString() }
+  }
   readonly idempotency = new Map<string, string>()
 
   async createOrder(input: CreateProcurementOrder) {

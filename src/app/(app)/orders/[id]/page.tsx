@@ -68,6 +68,7 @@ export default async function OrderDetailPage({
           // Dış alım (source=purchase) kalemine bağlı parça-kutusu fotoğrafı + alan teknisyen.
           photos: { where: VISIBLE_PHOTO, select: { id: true } },
           purchasedBy: { select: { fullName: true } },
+          externalProcurementItem: { include: { externalProcurementOrder: { select: { id: true, partnerStatus: true, cancellationRequestedAt: true } } } },
         },
       },
       assignedTechnician: { select: { id: true, fullName: true, role: true } },
@@ -169,6 +170,11 @@ export default async function OrderDetailPage({
       purchasedByName: i.purchasedBy?.fullName ?? null,
       purchasePhotoId: i.photos[0]?.id ?? null,
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,
+      externalProcurement: i.externalProcurementItem ? {
+        id: i.externalProcurementItem.externalProcurementOrder.id,
+        status: i.externalProcurementItem.externalProcurementOrder.partnerStatus,
+        cancellationRequestedAt: i.externalProcurementItem.externalProcurementOrder.cancellationRequestedAt?.toISOString() ?? null,
+      } : null,
     })),
     partsRequests: order.partsRequests.map((p) => ({
       id: p.id,
