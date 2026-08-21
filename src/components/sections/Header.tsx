@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
@@ -19,7 +18,6 @@ const navItems = [
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
   const pathname = usePathname();
 
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -32,11 +30,9 @@ export function Header() {
   }
 
   return (
-    <motion.header
-      initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
+    <header
+      style={{ "--enter-from": "-0.75rem", "--enter-duration": "0.35s" } as CSSProperties}
+      className="enter-up sticky top-0 z-50 w-full border-b border-brand/10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8 lg:justify-between relative">
         <Link
@@ -119,6 +115,6 @@ export function Header() {
           </div>
         </div>
       )}
-    </motion.header>
+    </header>
   );
 }

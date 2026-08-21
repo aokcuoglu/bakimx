@@ -1,8 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { Reveal } from "@/components/shared/reveal";
 
 // lucide-react no longer ships brand/social glyphs, so we inline the official marks.
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -62,17 +60,13 @@ const footerLinks = {
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const prefersReducedMotion = useReducedMotion();
 
   return (
     <footer className="border-t bg-navy text-navy-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-9 lg:py-10">
         <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.5 }}
+          <Reveal
+            amount={0.15}
             className="sm:col-span-2 lg:col-span-1"
           >
             <Link
@@ -102,19 +96,17 @@ export function Footer() {
                 </a>
               ))}
             </div>
-          </motion.div>
+          </Reveal>
 
           {[
             { title: "Ürün", links: footerLinks.product },
             { title: "Şirket", links: footerLinks.company },
             { title: "Yasal", links: footerLinks.legal },
           ].map((group, i) => (
-            <motion.div
+            <Reveal
               key={group.title}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.5, delay: (i + 1) * 0.08 }}
+              amount={0.15}
+              delay={(i + 1) * 80}
             >
               <h3 className="font-semibold mb-2.5 text-xs sm:text-sm uppercase tracking-wider text-navy-foreground/90">{group.title}</h3>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:block sm:space-y-2">
@@ -126,7 +118,7 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
 

@@ -10,6 +10,7 @@ Başlangıç için kök [`README.md`](../README.md)'ye bakın.
 | Veritabanı, migration & yedekleme | [database.md](./database.md) |
 | Dallanma, deploy & sürüm çıkarma | [releasing.md](./releasing.md) |
 | UI kontrol boyutları | [ui-control-sizing.md](./ui-control-sizing.md) |
+| Landing & public rota performansı | [landing-performance.md](./landing-performance.md) |
 
 ## Operasyon
 

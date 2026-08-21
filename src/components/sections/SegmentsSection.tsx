@@ -1,8 +1,6 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
 import { Wrench, Gauge, Disc3, SprayCan, Zap, Truck } from "lucide-react";
 import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { Reveal } from "@/components/shared/reveal";
 
 /**
  * "Kimler için" — Shopmonkey "pick your lane"in dürüst hali.
@@ -21,8 +19,6 @@ const segments = [
 ];
 
 export function SegmentsSection() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="bg-background py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -38,12 +34,9 @@ export function SegmentsSection() {
         </div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {segments.map(({ icon: Icon, title, description }, i) => (
-            <motion.div
+            <Reveal
               key={title}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
+              delay={(i % 3) * 80}
               className="flex items-start gap-4 rounded-xl border bg-card p-5 sm:p-6"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand/10">
@@ -55,7 +48,7 @@ export function SegmentsSection() {
                   {description}
                 </p>
               </div>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>
