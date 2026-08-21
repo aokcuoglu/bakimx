@@ -3,6 +3,7 @@ import {
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
+  type GetirbakimExactOfferResult,
 } from "./types"
 
 /**
@@ -131,6 +132,11 @@ class MockGetirbakimProvider implements GetirbakimProvider {
         ? { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] }
         : { requestedVehicleTypeId: vehicleTypeId, status: "NOT_CONFIRMED", matchedVehicleTypeIds: [] },
     }))
+  }
+
+  async findOffersByPartNo(_partNo: string): Promise<GetirbakimExactOfferResult> {
+    // Supplier modalında demo teklif gerçekmiş gibi gösterilmez.
+    return { status: "no_match" }
   }
 }
 

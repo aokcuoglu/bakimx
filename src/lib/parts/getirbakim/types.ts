@@ -58,6 +58,36 @@ export interface GetirbakimSearchInput {
   vehicleTypeId?: number | null
 }
 
+export type GetirbakimOfferAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNKNOWN"
+
+export interface GetirbakimOffer {
+  supplierDisplayName: string
+  informationalPriceKurus: number | null
+  currency: string
+  vatRateBps: number
+  availability: GetirbakimOfferAvailability
+  stockQty: number | null
+  lastSyncedAt: string | null
+}
+
+export interface GetirbakimExactProduct {
+  sourceProductId: string
+  brandName: string
+  manufacturerPartNumber: { value: string; normalized: string }
+  offers: GetirbakimOffer[]
+}
+
+export type GetirbakimExactOfferResult =
+  | { status: "matched"; products: GetirbakimExactProduct[] }
+  | { status: "no_match" }
+
+export type GetirbakimOfferLookupStatus = "matched" | "no_offers" | "no_match"
+
+export function classifyExactProducts(products: GetirbakimExactProduct[]): GetirbakimOfferLookupStatus {
+  if (products.length === 0) return "no_match"
+  return products.some((product) => product.offers.length > 0) ? "matched" : "no_offers"
+}
+
 export type GetirbakimProviderName = "mock" | "http"
 
 export interface GetirbakimProvider {
@@ -68,6 +98,8 @@ export interface GetirbakimProvider {
    * atölyenin parça arama akışı da düşmemeli — bkz. http sağlayıcısındaki düşüş.
    */
   search(input: GetirbakimSearchInput): Promise<GetirbakimProduct[]>
+  /** Exact parça numarası sorgusu. Upstream hatasında fırlatır; route bunu ayırır. */
+  findOffersByPartNo(partNo: string): Promise<GetirbakimExactOfferResult>
 }
 
 /** Sunucuda kırpılan sonuç sayısı — istemci daha büyüğünü isteyemez. */
@@ -96,6 +128,49 @@ function asString(value: unknown): string | null {
 
 function asInt(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : null
+}
+
+export function normalizePartNo(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+}
+
+export function parseGetirbakimOffer(raw: unknown): GetirbakimOffer | null {
+  if (!raw || typeof raw !== "object") return null
+  const row = raw as Record<string, unknown>
+  const supplierDisplayName = asString(row.supplierDisplayName)
+  if (!supplierDisplayName) return null
+  const availability = row.availability
+  return {
+    supplierDisplayName,
+    informationalPriceKurus: asInt(row.informationalPriceKurus),
+    currency: asString(row.currency) ?? "TRY",
+    vatRateBps: asInt(row.vatRateBps) ?? 2000,
+    availability:
+      availability === "IN_STOCK" || availability === "SUPPLYABLE" ? availability : "UNKNOWN",
+    stockQty: row.stockQty == null ? null : Math.max(asInt(row.stockQty) ?? 0, 0),
+    lastSyncedAt: asString(row.lastSyncedAt),
+  }
+}
+
+export function parseGetirbakimExactProduct(raw: unknown): GetirbakimExactProduct | null {
+  if (!raw || typeof raw !== "object") return null
+  const row = raw as Record<string, unknown>
+  const sourceProductId = asString(row.sourceProductId)
+  const number = row.manufacturerPartNumber
+  if (!sourceProductId || !number || typeof number !== "object") return null
+  const numberRow = number as Record<string, unknown>
+  const value = asString(numberRow.value)
+  const normalized = asString(numberRow.normalized)
+  if (!value || !normalized) return null
+  const offers = Array.isArray(row.offers)
+    ? row.offers.map(parseGetirbakimOffer).filter((offer): offer is GetirbakimOffer => offer !== null)
+    : []
+  return {
+    sourceProductId,
+    brandName: asString(row.brandName) ?? "",
+    manufacturerPartNumber: { value, normalized },
+    offers,
+  }
 }
 
 function asAvailability(value: unknown): GetirbakimAvailability {

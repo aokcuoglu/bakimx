@@ -1,9 +1,11 @@
 import {
   clampGetirbakimLimit,
   parseGetirbakimProduct,
+  parseGetirbakimExactProduct,
   type GetirbakimProduct,
   type GetirbakimProvider,
   type GetirbakimSearchInput,
+  type GetirbakimExactOfferResult,
 } from "./types"
 
 /**
@@ -77,5 +79,24 @@ export class HttpGetirbakimProvider implements GetirbakimProvider {
       )
       return []
     }
+  }
+
+  async findOffersByPartNo(partNo: string): Promise<GetirbakimExactOfferResult> {
+    const normalized = partNo.trim()
+    if (!normalized) return { status: "no_match" }
+    const params = new URLSearchParams({ partNo: normalized })
+    const url = `${this.baseUrl.replace(/\/+$/, "")}/api/partner/v1/products?${params.toString()}`
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.apiKey}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(this.timeoutMs),
+      cache: "no-store",
+    })
+    if (!res.ok) throw new Error(`GetirBakım exact lookup HTTP ${res.status}`)
+    const body = (await res.json()) as Record<string, unknown>
+    if (!Array.isArray(body.products)) throw new Error("GetirBakım exact lookup yanıtı geçersiz")
+    const products = body.products
+      .map(parseGetirbakimExactProduct)
+      .filter((product): product is NonNullable<typeof product> => product !== null)
+    return products.length > 0 ? { status: "matched", products } : { status: "no_match" }
   }
 }
