@@ -106,6 +106,9 @@ export const TENANT_TABLES = [
   // aynı TRUNCATE listesinde olduğu için FK sırası sorun değil.
   "bakimx_orders",
   "bakimx_order_items",
+  // Harici tedarik kaydı iş emri/kalemine bağlı kiracı verisidir.
+  "ExternalProcurementOrder",
+  "ExternalProcurementOrderItem",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */
