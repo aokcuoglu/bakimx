@@ -48,9 +48,6 @@ export function HeroSection() {
             </motion.span>
 
             <motion.h1
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
               className="text-3xl font-bold leading-[1.12] tracking-tight text-navy sm:text-4xl lg:text-[3rem] lg:leading-[1.08] dark:text-foreground"
             >
               Ruhsatı okutun, servis{" "}
