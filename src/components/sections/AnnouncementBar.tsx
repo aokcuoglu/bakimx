@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,6 @@ import {
  * Header `sticky top-0` olduğu için konumu barın varlığına bağlı değildir.
  */
 export function AnnouncementBar() {
-  const prefersReducedMotion = useReducedMotion();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -51,12 +49,10 @@ export function AnnouncementBar() {
         dangerouslySetInnerHTML={{ __html: announcementDismissScript() }}
       />
       {!dismissed && (
-        <motion.div
+        <div
           data-slot={ANNOUNCEMENT_BAR_SLOT}
-          initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="bg-primary text-primary-foreground"
+          style={{ "--enter-from": "-0.5rem", "--enter-duration": "0.4s" } as CSSProperties}
+          className="enter-up bg-primary text-primary-foreground"
         >
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex min-h-9 flex-wrap items-center justify-center gap-x-2 gap-y-1 py-1.5 pr-10 text-center text-xs sm:text-sm">
@@ -83,7 +79,7 @@ export function AnnouncementBar() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-        </motion.div>
+        </div>
       )}
     </>
   );

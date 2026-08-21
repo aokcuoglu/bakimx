@@ -85,6 +85,18 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
+      <head>
+        {/*
+          JS kapalıyken kaydırma animasyonlarını tamamen devre dışı bırakır
+          (BAK-165). `Reveal` gizliliği sunucuda basar — titremeyi önlemek
+          için — ve normalde IntersectionObserver geri alır. Gözlemci hiç
+          çalışmayacaksa içerik gizli kalmamalı; tarayıcı `<noscript>` içindeki
+          kuralı yalnız JS devre dışıyken uygular.
+        */}
+        <noscript>
+          <style dangerouslySetInnerHTML={{ __html: '[data-reveal="pending"]{opacity:1}' }} />
+        </noscript>
+      </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground">
         <TooltipProvider>
           {children}
