@@ -175,6 +175,15 @@ MFA ve offboarding dışında, kodda doğrulanan üç nokta:
    birinci kademe olarak duruyor: paylaşımlı depo erişilemezse istek
    reddedilmez (fail-open) ama bugünkü koruma taban olarak ayakta kalır.
 
+   BAK-116 kütüphane katmanını ve çağıran uçların çoğunu taşıdı; ziyaretçiye
+   açık live-chat uçları kendi kopya (ve ters polariteli) süreç-içi limiter'ıyla
+   dışarıda kalmıştı — yani bu satır onlar için 20-08'e kadar doğru değildi.
+   **BAK-196** görüşme başlatma ve mesaj gönderme uçlarını kanonik sayaca taşıdı.
+   Yoklama ucu (`GET /api/live-chat/messages`) bilerek süreç-içi kaldı
+   (`rateLimitLocal`): panel açıkken 4 saniyede bir çalışıyor, yeni kayıt açmıyor
+   ve yalnız kendi görüşmesini okuyor — paylaşımlı sayaç orada okunan işten
+   pahalı bir yazma yükü üretirdi.
+
 Ayrıca: repoda `robots.ts`/`robots.txt` yok. `/admin` anonim kullanıcıya 404
 döndüğü için bu bir güvenlik açığı değil, ama `www.bakimx.com` için SEO tarafında
 eksik.
@@ -265,7 +274,7 @@ Bugünkü kanallar ve boşlukları:
 | **P1** | Aktif impersonation ekranı + iptal (`revokedAt`) | Şemada var, kodda yok |
 | **P1** | Impersonation olaylarını denetim filtresine/etiketlerine ekle | En hassas olay bugün görünmüyor |
 | **P1** | Konsoldan şifre sıfırlama bağlantısı gönderme | Destek bugün konsolda bitmiyor |
-| ~~P2~~ | ~~Rate limit'i paylaşımlı sayaca taşı~~ | **BAK-116 ile geldi** — §3.3 |
+| ~~P2~~ | ~~Rate limit'i paylaşımlı sayaca taşı~~ | **BAK-116** (kütüphane + uçların çoğu) + **BAK-196** (live-chat yazma uçları) ile geldi — §3.3 |
 | **P2** | `SupportRequest`: `workshopId` + atama + iç not | Şikayet ↔ kiracı bağı |
 | **P2** | Etiket/rozet temizliği (§4 / 2-3-4) | Tutarlılık; yeni personelin öğrenme yükü |
 | **P3** | Çeyreklik erişim gözden geçirmesi, statü sayfası | Portföy büyüdükçe |
