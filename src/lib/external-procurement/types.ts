@@ -37,9 +37,22 @@ export interface CreateProcurementOrder {
   expectedUnitNetKurus: number
 }
 
+export interface ProcurementQuote {
+  selectedOfferId: string
+  quantity: number
+  bindingNetKurus: number
+  bindingVatKurus: number
+  bindingGrossKurus: number
+  unitNetKurus: number
+  currency: string
+  policyVersion: string
+  expiresAt: string
+}
+
 export interface ProcurementProviderClient {
   readonly provider: string
   createOrder(input: CreateProcurementOrder): Promise<{ order: ProcurementOrder; replayed: boolean }>
+  quoteOrder(selectedOfferId: string, quantity: number): Promise<ProcurementQuote>
   getOrder(id: string): Promise<ProcurementOrder>
   cancelOrder(id: string): Promise<ProcurementOrder>
 }
@@ -50,5 +63,6 @@ export class ProcurementProviderError extends Error {
     message: string,
     public readonly retryable: boolean,
     public readonly status?: number,
+    public readonly details?: Record<string, unknown>,
   ) { super(message) }
 }

@@ -73,6 +73,11 @@ export type OrderItem = {
   purchasePhotoId?: string | null
   // Dolu ⇒ kalem sahada teknisyen tarafından "yapıldı" işaretlenmiş.
   completedAt?: string | null
+  externalProcurement?: {
+    id: string
+    status: string
+    cancellationRequestedAt: string | null
+  } | null
 }
 
 export type Totals = {

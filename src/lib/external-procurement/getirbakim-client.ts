@@ -21,6 +21,12 @@ const orderSchema = z.object({
 }).strict()
 
 const createSchema = z.object({ order: orderSchema, replayed: z.boolean() }).strict()
+const quoteSchema = z.object({ quote: z.object({
+  selectedOfferId: z.string(), quantity: z.number().int().positive(),
+  bindingNetKurus: z.number().int().nonnegative(), bindingVatKurus: z.number().int().nonnegative(),
+  bindingGrossKurus: z.number().int().nonnegative(), unitNetKurus: z.number().int().nonnegative(),
+  currency: z.string().length(3), policyVersion: z.string(), expiresAt: z.string().datetime(),
+}).strict() }).strict()
 
 export class GetirBakimClient implements ProcurementProviderClient {
   readonly provider = "getirbakim"
@@ -42,6 +48,13 @@ export class GetirBakimClient implements ProcurementProviderClient {
     })
   }
 
+  async quoteOrder(selectedOfferId: string, quantity: number) {
+    const result = await this.request("/api/partner/v1/order-quotes", quoteSchema, {
+      method: "POST", body: JSON.stringify({ selectedOfferId, quantity }),
+    })
+    return result.quote
+  }
+
   getOrder(id: string) { return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, orderSchema) }
   cancelOrder(id: string) {
     return this.request(`/api/partner/v1/orders/${encodeURIComponent(id)}`, orderSchema, { method: "DELETE" })
@@ -59,11 +72,12 @@ export class GetirBakimClient implements ProcurementProviderClient {
     }
     const body: unknown = await response.json().catch(() => null)
     if (!response.ok) {
-      const error = z.object({ error: z.object({ code: z.string(), message: z.string() }) }).safeParse(body)
+      const error = z.object({ error: z.object({ code: z.string(), message: z.string(), details: z.record(z.string(), z.unknown()).optional() }) }).safeParse(body)
       throw new ProcurementProviderError(
         error.success ? error.data.error.code : "PROVIDER_ERROR",
         error.success ? error.data.error.message : "Procurement provider rejected the request.",
         response.status === 429 || response.status >= 500, response.status,
+        error.success ? error.data.error.details : undefined,
       )
     }
     const envelope = z.object({ data: z.unknown() }).safeParse(body)

@@ -11,7 +11,7 @@
 export type GetirbakimAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNAVAILABLE"
 
 export interface GetirbakimProduct {
-  contractVersion: "1.1" | null
+  contractVersion: "1.1" | "1.2" | null
   sourceProductId: string
   id: string
   partNo: string
@@ -61,6 +61,7 @@ export interface GetirbakimSearchInput {
 export type GetirbakimOfferAvailability = "IN_STOCK" | "SUPPLYABLE" | "UNKNOWN"
 
 export interface GetirbakimOffer {
+  selectedOfferId: string
   supplierDisplayName: string
   informationalPriceKurus: number | null
   currency: string
@@ -138,9 +139,11 @@ export function parseGetirbakimOffer(raw: unknown): GetirbakimOffer | null {
   if (!raw || typeof raw !== "object") return null
   const row = raw as Record<string, unknown>
   const supplierDisplayName = asString(row.supplierDisplayName)
-  if (!supplierDisplayName) return null
+  const selectedOfferId = asString(row.selectedOfferId)
+  if (!supplierDisplayName || !selectedOfferId) return null
   const availability = row.availability
   return {
+    selectedOfferId,
     supplierDisplayName,
     informationalPriceKurus: asInt(row.informationalPriceKurus),
     currency: asString(row.currency) ?? "TRY",
@@ -230,7 +233,7 @@ export function parseGetirbakimProduct(raw: unknown): GetirbakimProduct | null {
       : "NOT_REQUESTED"
 
   return {
-    contractVersion: row.contractVersion === "1.1" ? "1.1" : null,
+    contractVersion: row.contractVersion === "1.1" || row.contractVersion === "1.2" ? row.contractVersion : null,
     sourceProductId,
     id,
     partNo: asString(row.partNo) ?? "",

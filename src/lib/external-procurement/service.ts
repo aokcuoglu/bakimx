@@ -47,6 +47,7 @@ function projection(order: ProcurementOrder) {
     bindingGrossKurus: order.bindingPrice.grossKurus, currency: order.bindingPrice.currency,
     pricingPolicyVersion: order.bindingPrice.policyVersion,
     reservationExpiresAt: new Date(order.bindingPrice.expiresAt), failureCode: null,
+    cancellationRequestedAt: order.cancellationRequested ? new Date() : null,
     failedAt: null, lastReconciledAt: new Date(),
   } satisfies Prisma.ExternalProcurementOrderUpdateManyMutationInput
 }
@@ -127,6 +128,10 @@ export async function startExternalProcurement(client: ProcurementProviderClient
       return tx.externalProcurementOrder.findUniqueOrThrow({ where: { id: local.id }, include: { items: true } })
     })
   } catch (error) {
+    if (error instanceof ProcurementProviderError && error.code === "PRICE_CHANGED") {
+      await prisma.externalProcurementOrder.delete({ where: { id: local.id } })
+      throw error
+    }
     const code = error instanceof ProcurementProviderError ? error.code : "PROVIDER_UNAVAILABLE"
     await prisma.externalProcurementOrder.update({
       where: { id: local.id }, data: { partnerStatus: "FAILED", failureCode: code, failedAt: new Date() },
@@ -148,4 +153,18 @@ export async function reconcileExternalProcurement(
     data: projection(remote),
   })
   return { applied: result.count === 1, order: remote }
+}
+
+export async function cancelExternalProcurement(
+  client: ProcurementProviderClient, workshopId: string, localId: string,
+) {
+  const local = await prisma.externalProcurementOrder.findFirst({
+    where: { id: localId, workshopId, provider: client.provider },
+  })
+  if (!local?.externalOrderId) throw new Error("Procurement order not found")
+  const remote = await client.cancelOrder(local.externalOrderId)
+  await prisma.externalProcurementOrder.updateMany({
+    where: { id: local.id, workshopId }, data: projection(remote),
+  })
+  return remote
 }

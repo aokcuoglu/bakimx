@@ -21,6 +21,7 @@ describe("exact offer contract", () => {
       manufacturerPartNumber: { value: "103803", normalized: "103803" },
       offers: [
         {
+          selectedOfferId: "offer_1",
           supplierDisplayName: "Dinamik Otomotiv",
           informationalPriceKurus: 99530,
           currency: "TRY",
@@ -35,6 +36,7 @@ describe("exact offer contract", () => {
       ],
     })
     expect(product?.offers).toEqual([{
+      selectedOfferId: "offer_1",
       supplierDisplayName: "Dinamik Otomotiv",
       informationalPriceKurus: 99530,
       currency: "TRY",
