@@ -9,7 +9,11 @@ import {
   SESSION_LOOP_REASON,
   shouldClearSessionOnLogin,
 } from "@/lib/session-recovery"
-import { isTechnicianRestrictedRole, isRouteAllowedForTechnician } from "@/lib/technician-route-access"
+import {
+  getAppHomeRoute,
+  isTechnicianRestrictedRole,
+  isRouteAllowedForTechnician,
+} from "@/lib/technician-route-access"
 import type { NextRequest } from "next/server"
 
 // Two subdomains, one container (nginx preserves Host):
@@ -129,11 +133,17 @@ export async function middleware(request: NextRequest) {
   // ---- SINGLE-HOST (local dev + app-dev): path-based auth, clean URLs, no host split ----
   if (isSingleHost) {
     if (isPublicPage(pathname)) {
+      if (pathname === "/") {
+        const session = await getSession()
+        if (session?.userId) {
+          return NextResponse.redirect(new URL(getAppHomeRoute(session.role), request.url))
+        }
+      }
       if (pathname === "/login") {
         const session = await getSession()
         if (session?.userId) {
           if (isForcedLogout(request)) return clearSession(NextResponse.next())
-          const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+          const loginTarget = getAppHomeRoute(session.role)
           return guardBounce(request, new URL(loginTarget, request.url))
         }
       }
@@ -168,7 +178,7 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/") {
       const session = await getSession()
       if (session?.userId) {
-        const homeTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        const homeTarget = getAppHomeRoute(session.role)
         return NextResponse.redirect(`${APP_ORIGIN}${homeTarget}`)
       }
       return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
@@ -196,7 +206,7 @@ export async function middleware(request: NextRequest) {
       const session = await getSession()
       if (session?.userId) {
         if (isForcedLogout(request)) return clearSession(NextResponse.next())
-        const loginTarget = isTechnicianRestrictedRole(session.role) ? "/technician" : "/dashboard"
+        const loginTarget = getAppHomeRoute(session.role)
         return guardBounce(request, `${APP_ORIGIN}${loginTarget}`)
       }
     }
