@@ -13,6 +13,7 @@ import { roleCan } from "@/lib/roles"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
+import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       intakeForm: {
         include: {
           customer: true,
-          vehicle: true,
+          vehicle: { include: { customer: true } },
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
             where: VISIBLE_PHOTO,
@@ -68,6 +69,8 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   })
 
   if (!order) notFound()
+
+  const currentCustomer = currentWorkOrderCustomer(order.intakeForm)
 
   // Şablon maddeleri atama anında oluşur. Özellikten önce atanmış (veya şablona
   // sonradan madde eklenmiş) iş emirlerinde liste eksik kalırdı; burada gerçekten
@@ -179,15 +182,15 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,
     })),
     customer: {
-      id: order.intakeForm.customer.id,
-      firstName: order.intakeForm.customer.firstName,
-      lastName: order.intakeForm.customer.lastName,
-      fullName: order.intakeForm.customer.fullName,
-      companyName: order.intakeForm.customer.companyName,
-      contactName: order.intakeForm.customer.contactName,
-      type: order.intakeForm.customer.type,
-      phone: order.intakeForm.customer.phone,
-      email: order.intakeForm.customer.email,
+      id: currentCustomer.id,
+      firstName: currentCustomer.firstName,
+      lastName: currentCustomer.lastName,
+      fullName: currentCustomer.fullName,
+      companyName: currentCustomer.companyName,
+      contactName: currentCustomer.contactName,
+      type: currentCustomer.type,
+      phone: currentCustomer.phone,
+      email: currentCustomer.email,
     },
     vehicle: {
       id: order.intakeForm.vehicle.id,
