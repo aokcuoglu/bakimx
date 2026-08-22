@@ -1,6 +1,8 @@
+import type { ZodType } from "zod"
+
 const INVALID_JSON_RESPONSE_MESSAGE = "Sunucudan geçersiz yanıt alındı. Lütfen tekrar denemeden önce destek ekibine bildirin."
 
-export async function readJsonObject<T extends Record<string, unknown> = Record<string, unknown>>(response: Response): Promise<T> {
+export async function readJsonObject<T>(response: Response, schema: ZodType<T>): Promise<T> {
   const contentType = response.headers.get("content-type")?.toLowerCase() ?? ""
   if (!contentType.includes("application/json")) throw new Error(INVALID_JSON_RESPONSE_MESSAGE)
 
@@ -11,8 +13,7 @@ export async function readJsonObject<T extends Record<string, unknown> = Record<
     throw new Error(INVALID_JSON_RESPONSE_MESSAGE)
   }
 
-  if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    throw new Error(INVALID_JSON_RESPONSE_MESSAGE)
-  }
-  return body as T
+  const parsed = schema.safeParse(body)
+  if (!parsed.success) throw new Error(INVALID_JSON_RESPONSE_MESSAGE)
+  return parsed.data
 }
