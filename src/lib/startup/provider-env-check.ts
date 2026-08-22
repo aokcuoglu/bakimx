@@ -17,6 +17,7 @@ const PROVIDER_VARS = [
   { env: "TECDOC_PROVIDER", label: "TecDoc parça kataloğu", realValue: "rapidapi", keyEnv: "RAPIDAPI_KEY" },
   { env: "OCR_PROVIDER", label: "Ruhsat okuma (OCR)", realValue: "anthropic", keyEnv: "ANTHROPIC_API_KEY" },
   { env: "AI_PROVIDER", label: "Servis danışmanı (AI)", realValue: "anthropic", keyEnv: "ANTHROPIC_API_KEY" },
+  { env: "MARKET_RESEARCH_PROVIDER", label: "Piyasa araştırması", realValue: "anthropic", keyEnv: "ANTHROPIC_API_KEY" },
 ] as const
 
 export interface ProviderEnvIssue {
