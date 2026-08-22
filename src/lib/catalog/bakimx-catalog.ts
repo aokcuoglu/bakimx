@@ -154,6 +154,7 @@ export interface BakimxProductWriteInput {
   description: string | null
   imageUrl: string | null
   oemNumbers: string[]
+  crossReferences?: string[]
   workshopPriceKurus: number
   vatRateBps: number
   costPriceKurus: number | null
@@ -183,6 +184,7 @@ export function bakimxProductWriteData(input: BakimxProductWriteInput, brandName
     description: input.description,
     imageUrl: input.imageUrl,
     oemNumbers: input.oemNumbers,
+    crossReferences: input.crossReferences ?? [],
     workshopPriceKurus: input.workshopPriceKurus,
     vatRateBps: input.vatRateBps,
     costPriceKurus: input.costPriceKurus,
@@ -196,6 +198,7 @@ export function bakimxProductWriteData(input: BakimxProductWriteInput, brandName
       brandName,
       sku: input.sku,
       oemNumbers: input.oemNumbers,
+      crossReferences: input.crossReferences ?? [],
     }),
   }
 }
@@ -223,6 +226,7 @@ export const AUDITED_PRODUCT_FIELDS = [
   "description",
   "imageUrl",
   "oemNumbers",
+  "crossReferences",
   "workshopPriceKurus",
   "vatRateBps",
   "costPriceKurus",
@@ -299,6 +303,7 @@ const AUDIT_FIELD_LABELS: Record<string, string> = {
   description: "Açıklama",
   imageUrl: "Görsel",
   oemNumbers: "OEM numaraları",
+  crossReferences: "Cross-reference kodları",
   workshopPriceKurus: "Fiyat (KDV hariç)",
   vatRateBps: "KDV oranı",
   costPriceKurus: "İç maliyet",

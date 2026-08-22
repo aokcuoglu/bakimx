@@ -61,6 +61,7 @@ export type ImportField =
   | "brandName"
   | "categoryKey"
   | "oemNumbers"
+  | "crossReferences"
   | "barcode"
   | "unit"
   | "workshopPrice"
@@ -115,7 +116,7 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
   {
     field: "categoryKey",
     label: "Kategori",
-    synonyms: ["kategori", "category", "grup", "ürün grubu", "urun grubu"],
+    synonyms: ["kategori", "category", "grup", "ürün grubu", "urun grubu", "cinsi"],
     example: "aku",
     hint: "İç taksonomi anahtarı ya da etiketi. Tanınmayan değer boş bırakılır.",
   },
@@ -125,6 +126,13 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
     synonyms: ["oem no", "oem", "oem numarası", "oem numaraları", "oe no", "muadil no", "cross reference"],
     example: "1234567, 7654321",
     hint: "Virgülle çoklu girilebilir.",
+  },
+  {
+    field: "crossReferences",
+    label: "Cross Reference",
+    synonyms: ["cross reference", "cross-reference", "cross references", "muadil kod", "muadil kodları", "hengst_no", "mann", "mahle"],
+    example: "E3950LC-2, CUK23005-2, LAK1156/S",
+    hint: "Virgülle çoklu girilebilir; OEM numaralarından ayrı saklanır.",
   },
   {
     field: "barcode",
@@ -295,6 +303,10 @@ export interface ImportHeaderMapping {
   duplicateHeaders: string[]
   /** Fiyat başlığı açıkça "KDV dahil" diyorsa true. */
   priceHeaderIncludesVat: boolean
+  /** Birden çok üretici kolonu (örn. hengst_no/mann/mahle) birlikte okunur. */
+  crossReferenceIndexes: number[]
+  /** Wunder dışa aktarımında ad ve stok kaynak SKU/varsayılandan türetilir. */
+  sourceKind: "generic" | "wunder"
 }
 
 export function mapImportHeaders(header: readonly string[]): ImportHeaderMapping {
@@ -302,6 +314,10 @@ export function mapImportHeaders(header: readonly string[]): ImportHeaderMapping
   const unknownHeaders: string[] = []
   const duplicateHeaders: string[] = []
   let priceHeaderIncludesVat = false
+  const crossReferenceIndexes: number[] = []
+  const sourceKind = header.some((raw) => normalizePartSearchTerm(raw) === normalizePartSearchTerm("wunder_no"))
+    ? "wunder"
+    : "generic"
 
   header.forEach((raw, index) => {
     const folded = normalizePartSearchTerm(raw)
@@ -309,6 +325,11 @@ export function mapImportHeaders(header: readonly string[]): ImportHeaderMapping
     const field = FIELD_BY_FOLDED_HEADER.get(folded)
     if (!field) {
       unknownHeaders.push(raw.trim())
+      return
+    }
+    if (field === "crossReferences") {
+      crossReferenceIndexes.push(index)
+      if (byField.crossReferences === undefined) byField.crossReferences = index
       return
     }
     if (byField[field] !== undefined) {
@@ -319,7 +340,10 @@ export function mapImportHeaders(header: readonly string[]): ImportHeaderMapping
     if (field === "workshopPrice" && VAT_INCLUDED_PRICE_HEADERS.has(folded)) priceHeaderIncludesVat = true
   })
 
-  return { byField, unknownHeaders, duplicateHeaders, priceHeaderIncludesVat }
+  // Wunder'ın `marka` alanı ürün üreticisi değil araç markasıdır; bilerek yok sayılır.
+  if (sourceKind === "wunder") delete byField.brandName
+
+  return { byField, unknownHeaders, duplicateHeaders, priceHeaderIncludesVat, crossReferenceIndexes, sourceKind }
 }
 
 /** Moda göre başlıkta BULUNMASI ZORUNLU kolonlar. */
@@ -338,7 +362,10 @@ export function validateImportHeader(
 ): string[] {
   const errors: string[] = []
 
-  const missing = requiredImportFields(options.mode).filter((field) => mapping.byField[field] === undefined)
+  const required = requiredImportFields(options.mode).filter(
+    (field) => mapping.sourceKind !== "wunder" || (field !== "name" && field !== "stockQty"),
+  )
+  const missing = required.filter((field) => mapping.byField[field] === undefined)
   if (missing.length > 0) {
     errors.push(`Dosyada zorunlu kolon eksik: ${missing.map(importColumnLabel).join(", ")}.`)
   }
@@ -429,6 +456,15 @@ for (const category of BAKIMX_CATEGORIES) {
   CATEGORY_BY_FOLDED.set(normalizePartSearchTerm(category.key), category.key)
   CATEGORY_BY_FOLDED.set(normalizePartSearchTerm(category.label), category.key)
 }
+for (const [source, key] of Object.entries({
+  KABIN: "polen-filtresi",
+  MAZOT: "yakit-filtresi",
+  BENZIN: "yakit-filtresi",
+  HAVA: "hava-filtresi",
+  YAG: "yag-filtresi",
+})) {
+  CATEGORY_BY_FOLDED.set(normalizePartSearchTerm(source), key)
+}
 
 export function parseCategoryCell(raw: string): string | null | undefined {
   const folded = normalizePartSearchTerm(raw)
@@ -489,6 +525,8 @@ export function parseImportRow(
   if (name) {
     if (name.length > 200) errors.push("Ürün adı 200 karakteri aşıyor.")
     else patch.name = name
+  } else if (options.mode === "upsert" && mapping.sourceKind === "wunder" && sku) {
+    patch.name = sku
   } else if (options.mode === "upsert" && byField.name !== undefined) {
     errors.push("Ürün adı boş.")
   }
@@ -510,6 +548,14 @@ export function parseImportRow(
     const oems = parseOemNumbers(cellAt(row, byField.oemNumbers))
     if (oems.length > 50) errors.push("En fazla 50 OEM numarası girilebilir.")
     else if (oems.length > 0) patch.oemNumbers = oems
+  }
+
+  if (mapping.crossReferenceIndexes.length > 0) {
+    const references = parseOemNumbers(
+      mapping.crossReferenceIndexes.map((index) => cellAt(row, index)).filter(Boolean).join(","),
+    )
+    if (references.length > 100) errors.push("En fazla 100 cross-reference kodu girilebilir.")
+    else if (references.length > 0) patch.crossReferences = references
   }
 
   const barcode = cellAt(row, byField.barcode)
@@ -549,6 +595,8 @@ export function parseImportRow(
       if (options.mode === "upsert") errors.push("Stok boş.")
     } else if (stock < 0) errors.push("Stok negatif olamaz.")
     else patch.stockQty = stock
+  } else if (options.mode === "upsert" && mapping.sourceKind === "wunder") {
+    patch.stockQty = 0
   }
 
   if (byField.lowStockQty !== undefined) {
@@ -618,6 +666,7 @@ function defaultWriteInput(sku: string, brandId: string): BakimxProductWriteInpu
     description: null,
     imageUrl: null,
     oemNumbers: [],
+    crossReferences: [],
     workshopPriceKurus: 0,
     vatRateBps: DEFAULT_VAT_RATE_BPS,
     costPriceKurus: null,

@@ -238,6 +238,7 @@ const HIDDEN_COLUMNS: Record<string, string> = {
   lastImportId: "içe aktarım izi (iç süreç)",
   updatedByUserId: "BakımX personelinin kimliği",
   specsJson: "kart detayı; özet DTO'da taşınmaz",
+  crossReferences: "arama anahtarını besleyen iç eşleştirme verisi; özet DTO'da henüz kullanılmıyor",
   searchKey: "arama altyapısı, gösterilecek veri değil",
   tecdocCategoryId: "Faz 2 köprüsü; atölye tarafında karşılığı yok",
   fitmentScope: "sorgunun süzgeci, ürünün özelliği değil",

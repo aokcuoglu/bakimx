@@ -26,17 +26,20 @@ Ekli `wunderfilter_urunler.json` 1.641 satır içerir. Alan eşlemeleri:
 | --- | --- |
 | `wunder_no` | Ürün Kodu |
 | `oem_no` | OEM No |
+| `hengst_no`, `mann`, `mahle` | Cross Reference (ayrı `crossReferences[]` alanı) |
 | `aciklama` | Açıklama |
 | `fiyat_tl` | Fiyat |
 | `image_url` | Görsel URL |
 
-Dosya doğrudan uygulanmaya hazır değildir: Ürün Adı ve Stok kolonları yoktur,
+Wunder içe aktarımında Ürün Adı `wunder_no` değerinden, Stok ise ilk aşamada
+`0` olarak türetilir. Dosya yine de doğrudan uygulanmaya hazır değildir:
 1.640 satırda fiyat boştur ve 126 ürün kodu yinelenir. `marka` ürün üreticisi
 değil araç markası, `cinsi` ise iç kategoriye çevrilmesi gereken kaynak değeridir
 (`KABIN→polen-filtresi`, `MAZOT/BENZIN→yakit-filtresi`, `HAVA→hava-filtresi`,
 `YAG→yag-filtresi`). Bu kararlar kaynak sahibiyle netleşmeden fiyatı/stoku sıfır
 varsayarak ürün açılmamalıdır.
 
-Hazırlanan dosyada tam ürün modu için en az `Ürün Kodu`, `Ürün Adı`, `Fiyat
-(KDV hariç)` ve `Stok` bulunmalıdır. Kaynak `marka` alanı ürün markası kolonuna
+Genel dosyalarda tam ürün modu için en az `Ürün Kodu`, `Ürün Adı`, `Fiyat
+(KDV hariç)` ve `Stok` bulunmalıdır. Wunder kaynağında ad/stok yukarıdaki kuralla
+türetilir. Kaynak `marka` alanı ürün markası kolonuna
 konmamalı; gerekiyorsa açıklamaya veya ileride ayrı uyumluluk modeline taşınmalıdır.
