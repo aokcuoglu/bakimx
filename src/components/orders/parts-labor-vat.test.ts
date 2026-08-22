@@ -75,7 +75,7 @@ test("parça miktarı birime göre ondalık girilir ve stok satırında bölüne
 
 test("mobil kartta miktar, birim ve birim fiyat aynı kurumsal grid satırındadır", () => {
   const mobile = GRID.slice(GRID.indexOf("function MobilePartRow("))
-  expect(mobile).toContain('grid-cols-[4.5rem_6.25rem_minmax(0,1fr)]')
+  expect(mobile).toContain('grid-cols-[4.5rem_minmax(0,1fr)_7rem]')
   expect(mobile).toContain('>Miktar</span>')
   expect(mobile).toContain('>Birim</span>')
   expect(mobile).toContain('>Birim fiyat</span>')

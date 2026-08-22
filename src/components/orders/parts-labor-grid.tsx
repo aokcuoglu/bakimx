@@ -2300,7 +2300,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
           sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
       <div className="mt-3 border-t border-border pt-3">
-        <div className="grid grid-cols-[4.5rem_6.25rem_minmax(0,1fr)] items-start gap-2">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_7rem] items-start gap-2">
           <div className="min-w-0 space-y-1 [&_input]:!w-full">
             <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Miktar</span>
             {ed.isPart
