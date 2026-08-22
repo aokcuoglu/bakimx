@@ -94,7 +94,7 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
   {
     field: "sku",
     label: "Ürün Kodu",
-    synonyms: ["ürün kodu", "urun kodu", "stok kodu", "malzeme kodu", "parça kodu", "sku", "kod", "code", "product code"],
+    synonyms: ["ürün kodu", "urun kodu", "stok kodu", "malzeme kodu", "parça kodu", "sku", "kod", "code", "product code", "wunder_no"],
     example: "MTL-60AH",
     hint: "Zorunlu — idempotensi anahtarı. Aynı kod ikinci kez yüklenirse ürün güncellenir.",
   },
@@ -152,6 +152,7 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
       "alış fiyatı",
       "price",
       "unit price",
+      "fiyat_tl",
     ],
     example: "1.234,56",
     hint: "Zorunlu. Ondalık ayracı virgül de nokta da olabilir.",
@@ -191,7 +192,7 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
   {
     field: "imageUrl",
     label: "Görsel URL",
-    synonyms: ["görsel url", "gorsel url", "görsel", "resim", "resim url", "image", "image url", "foto"],
+    synonyms: ["görsel url", "gorsel url", "görsel", "resim", "resim url", "image", "image url", "foto", "image_url"],
     example: "https://ornek.com/aku.jpg",
   },
   {

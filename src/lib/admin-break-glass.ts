@@ -17,6 +17,11 @@ export function isAdminAuthenticationAllowed(input: {
   isDevelopment?: boolean
 }): boolean {
   if (input.authMethod === "google_sso") return true
+  // Yerel seed hesabı parola ile açılır. Üretimde parola yolunu genişletmeden,
+  // localhost geliştirme oturumunun aşağıdaki PlatformAdmin üyelik kapısına
+  // ulaşmasına izin ver. Bu fonksiyon tek başına yetki vermez; resolveAdmin()
+  // hemen ardından etkin PlatformAdmin kaydını yine zorunlu tutar.
+  if (input.authMethod === "password" && input.isDevelopment === true) return true
   if (input.authMethod === "password" && input.email) {
     return isBreakGlassAdminEmail(input.email)
   }

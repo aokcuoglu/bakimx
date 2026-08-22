@@ -73,6 +73,17 @@ async function main() {
     console.log(`ℹ️  User exists: ${user.id}`)
   }
 
+  // Yerel demo kimliği aynı zamanda `/admin` QA hesabıdır. Admin kapısı tenant
+  // rolüne değil PlatformAdmin üyeliğine baktığı için yalnız User seed etmek
+  // parola doğru olsa bile `/admin`'de 404 üretirdi. Production seed zaten
+  // yukarıdaki fail-closed korumaya tabidir.
+  await prisma.platformAdmin.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, role: "founder", createdByUserId: user.id },
+    update: { disabledAt: null },
+  })
+  console.log("✅ Platform admin ready: admin@bakimx.com")
+
   // BAK-40 — e-postasız usta hesabı. Kullanıcı adı yolunu demo veride
   // denenebilir kılar: iş yeri kodu + `usta` + admin123456.
   const ustaUsername = "usta"

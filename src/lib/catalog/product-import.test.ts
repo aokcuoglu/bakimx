@@ -96,6 +96,11 @@ test("mapImportHeaders folds Turkish headers and accepts synonyms", () => {
   expect(mapping.duplicateHeaders).toEqual([])
 })
 
+test("mapImportHeaders accepts the attached Wunder JSON field names without conflating description and name", () => {
+  const mapping = mapImportHeaders(["wunder_no", "aciklama", "fiyat_tl", "image_url"])
+  expect(mapping.byField).toEqual({ sku: 0, description: 1, workshopPrice: 2, imageUrl: 3 })
+})
+
 test("mapImportHeaders keeps the first column when a field repeats", () => {
   const mapping = mapImportHeaders(["Ürün Kodu", "SKU", "Ürün Adı"])
   expect(mapping.byField.sku).toBe(0)

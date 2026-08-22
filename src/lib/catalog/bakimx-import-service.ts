@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { getImpersonationOverlay } from "@/lib/session"
 import { getStorageProvider } from "@/lib/storage"
 import { parseCsv } from "@/lib/catalog/csv-parse"
+import { parseJsonImport } from "@/lib/catalog/json-parse"
 import {
   applyImportPlan,
   loadExistingProductsBySku,
@@ -180,7 +181,12 @@ async function buildPlanFromBytes(request: ImportRequest): Promise<ParsedImport 
   const decoded = decodeImportFile(request.bytes)
   if ("error" in decoded) return { ok: false, error: decoded.error }
 
-  const doc = parseCsv(decoded.text, { maxRows: IMPORT_MAX_ROWS })
+  const isJson = request.file.name.toLowerCase().endsWith(".json")
+  const parsedDocument = isJson
+    ? parseJsonImport(decoded.text, IMPORT_MAX_ROWS)
+    : parseCsv(decoded.text, { maxRows: IMPORT_MAX_ROWS })
+  if ("error" in parsedDocument) return { ok: false, error: parsedDocument.error }
+  const doc = parsedDocument
   if (doc.header.length === 0) return { ok: false, error: "Dosyada başlık satırı bulunamadı." }
   if (doc.rows.length === 0) return { ok: false, error: "Dosyada veri satırı yok (yalnız başlık var)." }
 
