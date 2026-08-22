@@ -1428,7 +1428,7 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
     <OrderItemUnitCombobox
       value={unit}
       ariaLabel={`${row.name || "Parça"} birimi`}
-      className="h-9 w-28"
+      className="h-9 w-24"
       isOptionDisabled={(candidate) =>
         (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
       onValueChange={(next) => {
