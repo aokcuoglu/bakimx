@@ -11,7 +11,8 @@
  *    ürünler sessizce aranamaz olurdu.
  * 2. **Boş hücre "sil" demek değildir.** Dosyada olmayan kolon ve boş bırakılan
  *    hücre, mevcut üründe o alana DOKUNMAZ; yeni üründe varsayılana düşer.
- *    Zorunlu alanın boş kalması satır hatasıdır.
+ *    Ürün kodu/adı dışındaki eksik değerler güvenli varsayılanlarla sonradan
+ *    tamamlanabilir.
  * 3. **Sessiz uygulama yok.** Her satır ya `create`/`update` ya `skip` ya da
  *    `error`'dur; hatalı satır partiyi düşürmez, satır numarasıyla raporlanır.
  */
@@ -164,7 +165,7 @@ export const CATALOG_IMPORT_COLUMNS: readonly ImportColumn[] = [
       "fiyat_tl",
     ],
     example: "1.234,56",
-    hint: "Zorunlu. Ondalık ayracı virgül de nokta da olabilir.",
+    hint: "İsteğe bağlı. Boşsa yeni üründe 0 TL, mevcut üründe kayıtlı fiyat korunur.",
   },
   {
     field: "vatRate",
@@ -349,7 +350,7 @@ export function mapImportHeaders(header: readonly string[]): ImportHeaderMapping
 
 /** Moda göre başlıkta BULUNMASI ZORUNLU kolonlar. */
 export function requiredImportFields(mode: CatalogImportMode): ImportField[] {
-  return mode === "upsert" ? ["sku", "name", "workshopPrice", "stockQty"] : ["sku"]
+  return mode === "upsert" ? ["sku", "name", "stockQty"] : ["sku"]
 }
 
 /**
@@ -579,7 +580,8 @@ export function parseImportRow(
     const price = parseMoneyCell(rawPrice)
     if (price === undefined) errors.push(`Fiyat okunamadı: ${rawPrice}`)
     else if (price === null) {
-      if (options.mode === "upsert") errors.push("Fiyat boş.")
+      // Boş fiyat mevcut ürünü değiştirmez; yeni ürün defaultWriteInput'taki 0 TL
+      // ile oluşturulur ve fiyat daha sonra revize edilebilir.
     } else if (options.pricesIncludeVat) grossPriceKurus = price
     else patch.workshopPriceKurus = price
   }

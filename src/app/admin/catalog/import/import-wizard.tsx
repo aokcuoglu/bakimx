@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { AlertTriangle, ArrowLeft, CheckCircle2, Download, Loader2, Upload } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileJson2, Loader2, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -197,21 +197,6 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
 
       <Card>
         <CardContent className="p-4 space-y-4">
-          <div className="grid gap-2 sm:grid-cols-3">
-            {[
-              ["1", "Dosyayı seçin"],
-              ["2", "Sonuçları inceleyin"],
-              ["3", "Değişiklikleri uygulayın"],
-            ].map(([step, label]) => (
-              <div key={step} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {step}
-                </span>
-                <span className="font-medium text-foreground">{label}</span>
-              </div>
-            ))}
-          </div>
-
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground" htmlFor="import-brand">
@@ -281,21 +266,65 @@ export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandO
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="import-file">
-              Dosya (.csv veya .json)
-            </label>
-            <Input
-              id="import-file"
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.json,text/csv,text/plain,application/json"
-              className="py-2"
-              disabled={pending}
-              onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-            />
+            <p className="text-xs font-medium text-muted-foreground">Ürün dosyası</p>
+            <div
+              className="rounded-xl border border-dashed border-border bg-muted/20 p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault()
+                if (!pending) onPickFile(event.dataTransfer.files?.[0] ?? null)
+              }}
+            >
+              <Input
+                id="import-file"
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json,text/csv,text/plain,application/json"
+                className="sr-only"
+                disabled={pending}
+                onChange={(event) => onPickFile(event.target.files?.[0] ?? null)}
+              />
+              {file ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+                    <FileJson2 className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} KB</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    disabled={pending}
+                    aria-label="Seçilen dosyayı kaldır"
+                    onClick={() => {
+                      onPickFile(null)
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-2 text-center">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
+                    <Upload className="size-5" />
+                  </div>
+                  <div>
+                    <Button type="button" variant="link" className="h-auto p-0" disabled={pending} onClick={() => fileInputRef.current?.click()}>
+                      Dosya seçin
+                    </Button>
+                    <span className="text-sm text-muted-foreground"> veya buraya sürükleyin</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">CSV veya JSON · En fazla {IMPORT_MAX_ROWS.toLocaleString("tr-TR")} satır</p>
+                </div>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Zorunlu kolonlar: {requiredLabels}. En fazla {IMPORT_MAX_ROWS.toLocaleString("tr-TR")} satır. Excel’de{" "}
-              <em>Farklı Kaydet → CSV UTF-8</em> ile kaydedin.
+              Zorunlu alanlar: {requiredLabels}. Fiyat boş bırakılabilir; yeni ürünlerde 0 TL olarak başlar ve daha sonra güncellenebilir.
             </p>
           </div>
 
@@ -427,35 +456,7 @@ function PreviewPanel({
             <PreviewRows rows={preview.skips} total={counts.skipped} emptyLabel="Atlanan satır yok." showNote />
           </TabsContent>
           <TabsContent value="errors">
-            {preview.issues.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">Hatalı satır yok.</p>
-            ) : (
-              <div className="rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-20">Satır</TableHead>
-                      <TableHead className="w-40">Ürün Kodu</TableHead>
-                      <TableHead>Hata</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {preview.issues.map((issue, index) => (
-                      <TableRow key={`${issue.line}-${index}`}>
-                        <TableCell className="tabular-nums">{issue.line}</TableCell>
-                        <TableCell className="font-mono text-xs">{issue.sku || "—"}</TableCell>
-                        <TableCell className="text-sm text-destructive-strong">{issue.message}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {preview.issuesTruncated && (
-                  <p className="p-3 text-xs text-muted-foreground">
-                    İlk {preview.issues.length} hata gösteriliyor. Dosyayı düzeltip tekrar yükleyin.
-                  </p>
-                )}
-              </div>
-            )}
+            <PreviewIssues issues={preview.issues} total={counts.error} truncated={preview.issuesTruncated} />
           </TabsContent>
         </Tabs>
 
@@ -476,6 +477,43 @@ function PreviewPanel({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function PreviewIssues({ issues, total, truncated }: { issues: ImportPreviewResult["issues"]; total: number; truncated: boolean }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(issues, PREVIEW_PAGE_SIZE)
+
+  if (issues.length === 0) return <p className="p-4 text-sm text-muted-foreground">Hatalı satır yok.</p>
+
+  return (
+    <div className="rounded-lg border">
+      <div className="overflow-x-auto">
+        <Table className="min-w-[560px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Satır</TableHead>
+              <TableHead className="w-40">Ürün Kodu</TableHead>
+              <TableHead>Hata</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageItems.map((issue, index) => (
+              <TableRow key={`${issue.line}-${page * PREVIEW_PAGE_SIZE + index}`}>
+                <TableCell className="tabular-nums">{issue.line}</TableCell>
+                <TableCell className="font-mono text-xs">{issue.sku || "—"}</TableCell>
+                <TableCell className="text-sm text-destructive-strong">{issue.message}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {truncated && (
+        <p className="p-3 text-xs text-muted-foreground">
+          {total.toLocaleString("tr-TR")} hatadan ilk {issues.length.toLocaleString("tr-TR")} tanesi gösteriliyor.
+        </p>
+      )}
+      <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
+    </div>
   )
 }
 
