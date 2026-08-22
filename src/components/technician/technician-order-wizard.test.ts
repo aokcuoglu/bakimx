@@ -40,11 +40,17 @@ describe("teknisyen iş emri adım kabuğu", () => {
   })
 
   test("beş adım baştan tamamı görünür TabsTrigger olarak render edilir (BAK-137)", () => {
-    expect(source).toContain('<TabsTrigger key={step.id} value={step.id}>')
-    expect(source).toContain('{steps.map((step, i) => (')
+    expect(source).toContain('<TabsTrigger key={step.id} value={step.id}')
+    expect(source).toContain('{steps.map((step) => {')
     // Üst seviye adım gezinmesi artık WizardStepper (yalnız geçmiş adımlara
     // dönüşe izin veren bileşik rayı) değil, hepsi baştan tıklanabilir Tabs.
     expect(source).not.toContain("WizardStepper")
+  })
+
+  test("ofis iş emriyle aynı ikonlu çizgi sekme ve ortak durum rozeti desenini kullanır", () => {
+    expect(source).toContain('<TabsList variant="line"')
+    expect(source).toContain('<Icon className="size-4" />')
+    expect(source).toContain('<StatusBadge status={order.status} />')
   })
 
   test("kilitli iş emrinde bile adımlar arasında serbestçe gezinilebilir (BAK-137)", () => {
