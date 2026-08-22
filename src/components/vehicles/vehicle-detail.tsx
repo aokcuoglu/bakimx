@@ -23,6 +23,8 @@ import {
   BellRing,
   Calendar,
   Gauge,
+  Cog,
+  PackageCheck,
   ScrollText,
 } from "lucide-react"
 import { VehicleIdentity } from "@/components/vehicles/vehicle-identity"
@@ -30,6 +32,7 @@ import { StatusBadge, PaymentBadge } from "@/components/shared/status-badge"
 import { ReminderStatusBadge, ReminderTypeBadge } from "@/components/reminders/reminder-status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -41,12 +44,12 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
 import { formatTRY } from "@/lib/format"
-import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
 import {
   DAMAGE_TYPES,
   DAMAGE_SEVERITY,
   PHOTO_TYPES,
+  arrivalReasonLabel,
   vehicleTypeLabel,
   fuelTypeLabel,
   transmissionLabel,
@@ -105,6 +108,7 @@ type VehicleData = {
       estimatedDeliveryAt: string | null
       createdAt: string
       grandTotal: number
+      changedPartLabels: string[]
     } | null
     damageMarks: Array<{
       id: string
@@ -128,6 +132,9 @@ function customerDisplayName(c: VehicleData["customer"]) {
   if (c.type === "corporate") return c.companyName || "Kurumsal Müşteri"
   return c.fullName || [c.firstName, c.lastName].filter(Boolean).join(" ") || "Müşteri"
 }
+
+type VehicleIntake = VehicleData["intakes"][number]
+type OwnWorkOrderIntake = VehicleIntake & { order: NonNullable<VehicleIntake["order"]> }
 
 export function VehicleDetail({
   vehicle: v,
@@ -159,20 +166,8 @@ export function VehicleDetail({
     router.refresh()
   }
 
-  const workOrders = v.intakes.filter((i) => i.order)
+  const workOrders = v.intakes.filter((i): i is OwnWorkOrderIntake => i.order !== null)
 
-  // İş emri geçmişi artık ATÖLYE SINIRINI AŞAR (BAK-77): kendi kayıtlarınla
-  // aracın diğer servislerdeki kayıtları tek bir zaman çizgisinde birleşir ve
-  // her satır hangi serviste yapıldığını künye çipiyle söyler. Yabancı satırlar
-  // tıklanabilir DEĞİLDİR (başka kiracının iş emri) ve tutar taşımaz.
-  const orderHistory = [
-    ...workOrders.map((i) => ({
-      kind: "own" as const,
-      at: i.order?.createdAt ?? i.createdAt,
-      intake: i,
-    })),
-    ...crossWorkshop.orders.map((o) => ({ kind: "foreign" as const, at: o.servicedAt, order: o })),
-  ].sort((a, b) => b.at.localeCompare(a.at))
   const allDamageMarks = v.intakes.flatMap((i) =>
     i.damageMarks.map((dm) => ({ ...dm, orderId: i.order?.id ?? null, intakeDate: i.createdAt }))
   )
@@ -196,19 +191,19 @@ export function VehicleDetail({
           <VehicleIdentity plate={v.plate} brand={v.brand} model={v.model} />
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild>
-              <Link href={`/orders/new?vehicleId=${v.id}`}>
+              <Link href={`/orders/new?vehicleId=${v.id}`} aria-label="Yeni iş emri oluştur">
                 <Wrench className="size-4" />
                 <span className="hidden sm:inline">Yeni İş Emri</span>
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href={`/vehicles/${v.id}/edit`}>
+              <Link href={`/vehicles/${v.id}/edit`} aria-label="Aracı düzenle">
                 <Pencil className="size-4" />
                 <span className="hidden sm:inline">Düzenle</span>
               </Link>
             </Button>
             <Button variant="navy" asChild>
-              <Link href={`/vehicles/${v.id}/passport`}>
+              <Link href={`/vehicles/${v.id}/passport`} aria-label="Araç pasaportunu aç">
                 <ScrollText className="size-4" />
                 <span className="hidden sm:inline">Pasaport</span>
               </Link>
@@ -227,53 +222,29 @@ export function VehicleDetail({
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                <SummaryItem label="Plaka" value={v.plate} />
-                <SummaryItem label="Marka" value={v.brand} />
-                <SummaryItem label="Model" value={v.model} />
-                <SummaryItem label="Araç Tipi" value={vehicleTypeLabel(v.vehicleType) || "—"} />
-                <SummaryItem label="Model Yılı" value={v.modelYear ? v.modelYear.toString() : "—"} />
-                <SummaryItem
-                  label="Kilometre"
-                  value={v.mileage ? `${v.mileage.toLocaleString("tr-TR")} km` : "—"}
-                />
-                <SummaryItem label="Renk" value={v.color || "—"} />
-                <SummaryItem label="Yakıt" value={fuelTypeLabel(v.fuelType) || "—"} />
-                <SummaryItem label="Şanzıman" value={transmissionLabel(v.transmission) || "—"} />
-                <SummaryItem
-                  label="Şase No"
-                  value={
-                    <span className="font-mono text-xs">{v.vin || "—"}</span>
-                  }
-                />
-                <SummaryItem
-                  label="Şase Teyit"
-                  value={
-                    v.vinConfirmed ? (
-                      <span className="inline-flex items-center gap-1 text-success-strong">
-                        <ShieldCheck className="size-3" />
-                        Teyit Edildi
-                      </span>
-                    ) : v.vin ? (
-                      <span className="inline-flex items-center gap-2 flex-wrap">
-                        <span className="text-warning-strong">Teyit Bekliyor</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setConfirmVinOpen(true)}
-                        >
-                          <ShieldCheck className="size-3" />
-                          Teyit Et
-                        </Button>
-                      </span>
-                    ) : (
-                      "—"
-                    )
-                  }
-                />
-                <SummaryItem label="Motor No" value={v.engineNo || "—"} />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <VehicleMetric icon={Car} label="Araç" value={[v.brand, v.model].filter(Boolean).join(" ") || "—"} />
+                <VehicleMetric icon={Gauge} label="Kilometre" value={v.mileage ? `${v.mileage.toLocaleString("tr-TR")} km` : "—"} />
+                <VehicleMetric icon={Calendar} label="Model yılı" value={v.modelYear ? String(v.modelYear) : "—"} />
+              </div>
+              <dl className="mt-4 grid gap-x-6 gap-y-3 border-t border-border pt-4 text-sm sm:grid-cols-2">
+                <CompactDetail label="Tip" value={vehicleTypeLabel(v.vehicleType) || "—"} />
+                <CompactDetail label="Renk" value={v.color || "—"} />
+                <CompactDetail label="Yakıt" value={fuelTypeLabel(v.fuelType) || "—"} />
+                <CompactDetail label="Şanzıman" value={transmissionLabel(v.transmission) || "—"} />
+                <CompactDetail label="Şase No" value={v.vin || "—"} mono />
+                <CompactDetail label="Motor No" value={v.engineNo || "—"} mono />
               </dl>
-              <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 text-xs text-muted-foreground">
+              {v.vin ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+                  <span className={v.vinConfirmed ? "inline-flex items-center gap-1.5 text-success-strong" : "inline-flex items-center gap-1.5 text-warning-strong"}>
+                    <ShieldCheck className="size-4" />
+                    {v.vinConfirmed ? "Şase numarası teyit edildi" : "Şase numarası teyit bekliyor"}
+                  </span>
+                  {!v.vinConfirmed ? <Button variant="outline" size="sm" onClick={() => setConfirmVinOpen(true)}>Teyit Et</Button> : null}
+                </div>
+              ) : null}
+              <div className="mt-3 grid grid-cols-1 gap-1 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-2">
                 <span>Kayıt: {formatDate(v.createdAt)}</span>
                 <span>Güncelleme: {formatDateTime(v.updatedAt)}</span>
               </div>
@@ -311,7 +282,7 @@ export function VehicleDetail({
           <SectionCard
             title="İş Emri Geçmişi"
             icon={Wrench}
-            count={orderHistory.length}
+            count={workOrders.length + crossWorkshop.orders.length}
             action={
               <Link
                 href={`/orders/new?vehicleId=${v.id}`}
@@ -322,74 +293,28 @@ export function VehicleDetail({
               </Link>
             }
           >
-            {orderHistory.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Wrench className="size-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">Bu araç için iş emri bulunmuyor</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border -mx-4 sm:-mx-5">
-                {orderHistory.map((row) => {
-                  if (row.kind === "own") {
-                    const i = row.intake
-                    if (!i.order) return null
-                    return (
-                      <Link
-                        key={i.order.id}
-                        href={`/orders/${i.order.id}`}
-                        className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-muted transition-colors"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-xs font-semibold text-muted-foreground">
-                              {i.order.workOrderNo || "—"}
-                            </span>
-                            <StatusBadge status={i.order.status} />
-                            <PaymentBadge status={i.order.paymentStatus} />
-                            <WorkshopChip name={workshopName} />
-                          </div>
-                          <div className="mt-1 flex items-center gap-2">
-                            {i.fuelLevelAtIntake != null && (
-                              <FuelGauge value={i.fuelLevelAtIntake} size="sm" showLabel={false} className="shrink-0" />
-                            )}
-                            <p className="text-xs text-muted-foreground truncate">{i.customerComplaint}</p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {i.order.grandTotal > 0 ? formatTRY(i.order.grandTotal) : <span className="text-muted-foreground font-normal">—</span>}
-                          </p>
-                          {i.order.estimatedDeliveryAt ? (
-                            <p className="text-[11px] text-muted-foreground">
-                              Tahmini: {formatDate(i.order.estimatedDeliveryAt)}
-                            </p>
-                          ) : null}
-                        </div>
-                      </Link>
-                    )
-                  }
-                  const o = row.order
-                  return (
-                    <div key={o.key} className="flex items-center gap-3 px-4 sm:px-5 py-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <StatusBadge status={o.status} />
-                          <WorkshopChip name={o.workshopName} city={o.workshopCity} />
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground truncate">
-                          {o.complaint || "—"}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[11px] text-muted-foreground">{formatDate(o.servicedAt)}</p>
-                        {/* Başka servisin tutarı hiçbir koşulda gösterilmez. */}
-                        <p className="text-[11px] text-muted-foreground">Tutar gizli</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            <Tabs defaultValue="own">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="own">Kendi ({workOrders.length})</TabsTrigger>
+                <TabsTrigger value="other">Başkası ({crossWorkshop.orders.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="own" className="pt-3">
+                {workOrders.length === 0 ? <OrderHistoryEmpty message="Bu araç için kendi iş emriniz bulunmuyor" /> : (
+                  <div className="grid gap-3">
+                    {workOrders.map((intake) => (
+                      <OwnWorkOrderCard key={intake.order.id} intake={intake} workshopName={workshopName} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="other" className="pt-3">
+                {crossWorkshop.orders.length === 0 ? <OrderHistoryEmpty message="Teslim edilmiş başka servis kaydı bulunmuyor" /> : (
+                  <div className="grid gap-3">
+                    {crossWorkshop.orders.map((order) => <OtherWorkOrderCard key={order.key} order={order} />)}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </SectionCard>
 
           <CrossWorkshopHistoryCard history={crossWorkshop} showOrders={false} />
@@ -637,13 +562,93 @@ export function VehicleDetail({
   )
 }
 
-function SummaryItem({ label, value }: { label: string; value: React.ReactNode }) {
+function OwnWorkOrderCard({ intake, workshopName }: { intake: OwnWorkOrderIntake; workshopName: string }) {
+  const { order } = intake
   return (
-    <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
-      <dt className="text-[11px] text-muted-foreground font-medium">{label}</dt>
-      <dd className="text-sm font-semibold text-foreground mt-0.5">{value}</dd>
+    <Link
+      href={`/orders/${order.id}`}
+      className="group rounded-lg border border-border p-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-foreground">{order.workOrderNo || "—"}</span>
+            <StatusBadge status={order.status} />
+            <PaymentBadge status={order.paymentStatus} />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <WorkshopChip name={workshopName} />
+            <span>{formatDate(order.createdAt)}</span>
+            {intake.mileageAtIntake ? <span>{intake.mileageAtIntake.toLocaleString("tr-TR")} km</span> : null}
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
+          <span className="text-xs text-muted-foreground sm:hidden">Toplam</span>
+          <p className="text-sm font-semibold text-foreground">{order.grandTotal > 0 ? formatTRY(order.grandTotal) : "—"}</p>
+          {order.estimatedDeliveryAt ? <p className="text-[11px] text-muted-foreground">Tahmini: {formatDate(order.estimatedDeliveryAt)}</p> : null}
+        </div>
+      </div>
+      {intake.customerComplaint ? <p className="mt-3 text-sm text-muted-foreground">{intake.customerComplaint}</p> : null}
+      <ChangedParts labels={order.changedPartLabels} />
+    </Link>
+  )
+}
+
+function OtherWorkOrderCard({ order }: { order: CrossWorkshopHistory["orders"][number] }) {
+  return (
+    <article className="rounded-lg border border-border p-3 sm:p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={order.status} />
+          <WorkshopChip name={order.workshopName} city={order.workshopCity} />
+        </div>
+        <span className="text-xs text-muted-foreground">{formatDate(order.servicedAt)}</span>
+      </div>
+      <div className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+        <p>{order.complaint || "Şikâyet bilgisi yok"}</p>
+        <p className="sm:text-right">
+          {[order.arrivalReason ? arrivalReasonLabel(order.arrivalReason) : null, order.mileage ? `${order.mileage.toLocaleString("tr-TR")} km` : null]
+            .filter(Boolean)
+            .join(" · ") || "—"}
+        </p>
+      </div>
+      <ChangedParts labels={order.itemLabels} />
+      <p className="mt-3 text-[11px] text-muted-foreground">Diğer servisin fiyat bilgisi paylaşılmaz.</p>
+    </article>
+  )
+}
+
+function ChangedParts({ labels }: { labels: string[] }) {
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+        <PackageCheck className="size-3.5 text-muted-foreground" />
+        Değişen parçalar
+      </p>
+      {labels.length > 0 ? (
+        <ul className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+          {labels.map((label, index) => <li key={`${label}-${index}`} className="flex min-w-0 items-start gap-2"><Cog className="mt-0.5 size-3 shrink-0" /><span>{label}</span></li>)}
+        </ul>
+      ) : <p className="mt-1 text-xs text-muted-foreground">Değişen parça kaydı yok.</p>}
     </div>
   )
+}
+
+function OrderHistoryEmpty({ message }: { message: string }) {
+  return <div className="rounded-lg border border-dashed border-border py-7 text-center text-muted-foreground"><Wrench className="mx-auto mb-2 size-7" /><p className="text-sm">{message}</p></div>
+}
+
+function VehicleMetric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground"><Icon className="size-4" /></span>
+      <div className="min-w-0"><p className="text-[11px] font-medium text-muted-foreground">{label}</p><p className="truncate text-sm font-semibold text-foreground">{value}</p></div>
+    </div>
+  )
+}
+
+function CompactDetail({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return <div className="flex min-w-0 items-baseline justify-between gap-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className={cn("truncate text-right font-medium text-foreground", mono && "font-mono text-xs")}>{value}</dd></div>
 }
 
 function StatusIndicator({ label, value, color }: { label: string; value: string; color: string }) {

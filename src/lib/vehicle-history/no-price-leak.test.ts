@@ -95,7 +95,7 @@ const FULL_ROW: ForeignVehicleRow = {
         status: "delivered",
         arrivalReason: "maintenance",
         createdAt: new Date("2026-03-01T09:10:00Z"),
-        itemNames: ["Akü 70Ah"],
+        partNames: ["Akü 70Ah"],
       },
     },
   ],
@@ -135,4 +135,9 @@ test("queries.ts para kolonu seçmez ve include ile geniş okuma yapmaz", () => 
   expect(selectedMoney).toEqual([])
   // `include:` alan listesini gizler; bu dosyada yalnız `select:` kullanılır.
   expect(code).not.toContain("include:")
+})
+
+test("queries.ts yabancı geçmişte yalnız parça adlarını seçer", () => {
+  const source = readFileSync(join(import.meta.dir, "queries.ts"), "utf8")
+  expect(source).toContain('items: { where: { type: "part" }, select: { name: true } }')
 })

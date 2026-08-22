@@ -59,6 +59,9 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             estimatedDeliveryAt: i.order.estimatedDeliveryAt ? i.order.estimatedDeliveryAt.toISOString() : null,
             createdAt: i.order.createdAt.toISOString(),
             updatedAt: i.order.updatedAt.toISOString(),
+            changedPartLabels: i.order.items
+              .filter((item) => item.type === "part")
+              .map((item) => item.name),
             grandTotal: calculateOrderTotals(i.order.items, {
               discountAmount: i.order.discountAmount,
               taxRate: i.order.taxRate,

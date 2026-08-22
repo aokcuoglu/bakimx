@@ -45,7 +45,7 @@ function row(overrides: Partial<ForeignVehicleRow> = {}): ForeignVehicleRow {
           status: "delivered",
           arrivalReason: "maintenance",
           createdAt: new Date("2026-03-01T09:10:00Z"),
-          itemNames: ["Akü 70Ah", "Akü değişim işçiliği"],
+          partNames: ["Akü 70Ah"],
         },
       },
     ],
@@ -92,7 +92,7 @@ test("ruhsat okutulduysa maske kalkar ve servis künyesi görünür", () => {
   expect(h.orders[0].workshopName).toBe("Yılmaz Oto Servis")
   expect(h.orders[0].workshopCity).toBe("İstanbul")
   expect(h.orders[0].complaint).toBe("Akü değişecek")
-  expect(h.orders[0].itemLabels).toEqual(["Akü 70Ah", "Akü değişim işçiliği"])
+  expect(h.orders[0].itemLabels).toEqual(["Akü 70Ah"])
 })
 
 test("atölyenin kendi kaydı varsa da maske kalkar", () => {
@@ -174,7 +174,7 @@ test("iş emirleri en yeniden eskiye sıralanır", () => {
         mileageAtIntake: null,
         customerComplaint: null,
         damageMarks: [],
-        order: { status: "delivered", arrivalReason: null, createdAt: new Date("2025-01-01T00:00:00Z"), itemNames: [] },
+        order: { status: "delivered", arrivalReason: null, createdAt: new Date("2025-01-01T00:00:00Z"), partNames: [] },
       },
     ],
   })
@@ -200,7 +200,7 @@ test("yabancı iş emirlerinden yalnız teslim edilenler istemciye açılır", (
             status,
             arrivalReason: status,
             createdAt: new Date(`2026-03-0${index + 1}T09:10:00Z`),
-            itemNames: [`${status} kalemi`],
+            partNames: [`${status} parçası`],
           },
         })),
       }),
@@ -214,7 +214,7 @@ test("yabancı iş emirlerinden yalnız teslim edilenler istemciye açılır", (
     status: "delivered",
     arrivalReason: "delivered",
     complaint: "delivered şikayeti",
-    itemLabels: ["delivered kalemi"],
+    itemLabels: ["delivered parçası"],
   })
 })
 
@@ -233,7 +233,7 @@ test("teslim edilmemiş yabancı emirlerin ayrıntıları maskesiz yanıtta bile
               status: "draft",
               arrivalReason: "GİZLİ TASLAK NEDENİ",
               createdAt: new Date("2026-03-01T09:10:00Z"),
-              itemNames: ["GİZLİ TASLAK KALEMİ"],
+              partNames: ["GİZLİ TASLAK PARÇASI"],
             },
           },
         ],

@@ -59,7 +59,8 @@ export type ForeignVehicleRow = {
       status: string
       arrivalReason: string | null
       createdAt: Date
-      itemNames: string[]
+      /** Sorgu sınırında `type=part` ile daraltılmış değişen parça adları. */
+      partNames: string[]
     } | null
     damageMarks: Array<{
       zone: string
@@ -125,7 +126,7 @@ export function buildCrossWorkshopHistory({
             : intake.customerComplaint?.trim() || null,
           // Kalem başlıkları maskeliyken hiç taşınmaz; "ne yapıldığı" da
           // korunması gereken bir bilgidir.
-          itemLabels: locked ? [] : intake.order.itemNames.filter((n) => n.trim().length > 0),
+          itemLabels: locked ? [] : intake.order.partNames.filter((n) => n.trim().length > 0),
         })
       }
       for (const dm of intake.damageMarks) {
