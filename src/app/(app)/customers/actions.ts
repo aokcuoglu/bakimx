@@ -7,6 +7,10 @@ import { customerCreateSchema } from "@/lib/validations/customer"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePhone } from "@/lib/format"
+import {
+  isDuplicatePhoneConfirmed,
+  resolveDuplicatePhone,
+} from "@/lib/customers/duplicate-phone"
 import type { CustomerTag, CustomerType, CustomerPriceGroup, CustomerSource, Prisma } from "@prisma/client"
 
 function parseKvkkDate(value: string | null | undefined): Date | null {
@@ -32,27 +36,28 @@ function buildCustomerName(data: {
 }
 
 /**
- * A phone number belongs to a single customer within a workshop. Given a
- * normalized phone, return the existing owner (id + display label) if one is
- * already using it, else null. `excludeId` skips the customer being edited so
- * saving their own record doesn't collide with itself.
+ * Customers that already use this phone in the workshop. More than one is
+ * allowed; the caller warns and only proceeds after explicit confirmation.
+ * `excludeId` skips the customer being edited so saving their own record
+ * doesn't collide with itself.
  */
-async function findCustomerByPhone(
+async function findCustomersByPhone(
   workshopId: string,
   phone: string,
   excludeId?: string,
 ) {
-  if (!phone) return null
-  const match = await prisma.customer.findFirst({
+  if (!phone) return []
+  const matches = await prisma.customer.findMany({
     where: {
       workshopId,
       phone,
       ...(excludeId ? { NOT: { id: excludeId } } : {}),
     },
     select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true },
+    orderBy: { createdAt: "asc" },
+    take: 20,
   })
-  if (!match) return null
-  return { id: match.id, label: buildCustomerName(match) || match.id }
+  return matches.map((match) => ({ id: match.id, label: buildCustomerName(match) || match.id }))
 }
 
 export async function createCustomerAction(formData: FormData) {
@@ -94,11 +99,13 @@ export async function createCustomerAction(formData: FormData) {
 
   const data = parsed.data
 
-  const duplicate = await findCustomerByPhone(user.workshopId, data.phone)
-  if (duplicate) {
+  const phoneOwners = await findCustomersByPhone(user.workshopId, data.phone)
+  const duplicate = resolveDuplicatePhone(phoneOwners, isDuplicatePhoneConfirmed(formData))
+  if (!duplicate.ok) {
     return {
-      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
-      existingCustomer: duplicate,
+      error: duplicate.error,
+      existingCustomer: duplicate.existingCustomer,
+      existingCustomers: duplicate.existingCustomers,
     }
   }
 
@@ -198,11 +205,13 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
 
   const data = parsed.data
 
-  const duplicate = await findCustomerByPhone(user.workshopId, data.phone, customerId)
-  if (duplicate) {
+  const phoneOwners = await findCustomersByPhone(user.workshopId, data.phone, customerId)
+  const duplicate = resolveDuplicatePhone(phoneOwners, isDuplicatePhoneConfirmed(formData))
+  if (!duplicate.ok) {
     return {
-      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
-      existingCustomer: duplicate,
+      error: duplicate.error,
+      existingCustomer: duplicate.existingCustomer,
+      existingCustomers: duplicate.existingCustomers,
     }
   }
 

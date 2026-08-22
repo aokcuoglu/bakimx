@@ -18,8 +18,8 @@ Tek seferlik ve operasyonel yardımcı script'ler. Çoğu `package.json` üzerin
 | `dev-with-tunnel.sh` | `bun run dev:tunnel` | Tünel + `next dev` birlikte |
 | `migrate-vehicle-catalog.ts` | `bun run db:seed-catalog` | Araç marka/model kataloğunu seed'ler (deploy'da da çalışır) |
 | `backfill-tecdoc-articles.ts` | `bun run db:backfill-articles` | Eksik TecDoc parça kayıtlarını doldurur (kotasız) |
-| `find-duplicate-phones.ts` | `bun run db:find-dupe-phones` | Çakışan müşteri telefonlarını listeler |
-| `merge-duplicate-customers.ts` | `bun run db:merge-customers` | Yinelenen müşterileri birleştirir |
+| `find-duplicate-phones.ts` | `bun run db:find-dupe-phones` | Aynı telefonu paylaşan müşterileri listeler (bilgi; mükerrer artık serbest) |
+| `merge-duplicate-customers.ts` | `bun run db:merge-customers` | İstenirse yinelenen müşterileri birleştirir |
 | `local-reset.sh` | — | Yerel DB'yi sıfırlar (yalnız geliştirme) |
 | `prod-reset.ts` | `bun run db:prod-reset` | Kiracı verisini siler, katalog/cache tablolarını korur (varsayılan rapor modu; `--confirm` ile uygular) |
 
