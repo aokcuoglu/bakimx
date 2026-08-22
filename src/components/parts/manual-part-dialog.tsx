@@ -17,6 +17,7 @@ import { Plus, Loader2 } from "lucide-react"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { validateQuickPartDraft } from "@/lib/parts/quick-part-draft"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
+import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
 
 export type ManualPartDraft = {
   name: string
@@ -26,7 +27,7 @@ export type ManualPartDraft = {
   category: string | null
   categoryId: number | null
   quantity: number
-  unit: "adet" | "litre"
+  unit: OrderItemUnit
   unitPrice: number | null // kuruş
   /** true → kalemin yanında kalıcı bir stok kartı (PartStockItem) da açılır. */
   createStockItem: boolean
@@ -76,7 +77,7 @@ export function ManualPartDialog({
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [categorySelLabel, setCategorySelLabel] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [unit, setUnit] = useState<"adet" | "litre">("adet")
+  const [unit, setUnit] = useState<OrderItemUnit>("adet")
   const [priceDraft, setPriceDraft] = useState("")
 
   // Her açılışta formu ön-dolu ad ile temiz başlat.
@@ -106,9 +107,9 @@ export function ManualPartDialog({
     setError(null)
     const validQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 999
       && Math.round(quantity * 1000) === quantity * 1000
-      && (unit === "litre" || Number.isInteger(quantity))
+      && (isDivisibleOrderItemUnit(unit) || Number.isInteger(quantity))
     if (!validQuantity) {
-      setError(unit === "litre" ? "Miktar en fazla 3 ondalık basamaklı olmalıdır" : "Adet miktarı tam sayı olmalıdır")
+      setError(isDivisibleOrderItemUnit(unit) ? "Miktar en fazla 3 ondalık basamaklı olmalıdır" : "Bu birimde miktar tam sayı olmalıdır")
       return
     }
     // Yazılan tutar KDV HARİÇ (net) kabul edilir ve olduğu gibi saklanır
@@ -210,14 +211,16 @@ export function ManualPartDialog({
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Miktar</span>
               <Input type="number" inputMode="decimal" min="0.001" max="999"
-                step={unit === "litre" ? "0.001" : "1"} value={quantity}
+                step={isDivisibleOrderItemUnit(unit) ? "0.001" : "1"} value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))} aria-label="Miktar" />
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
-              <Select value={unit} onValueChange={(value) => { const next = value as "adet" | "litre"; setUnit(next); if (next === "adet") setQuantity((q) => Math.max(1, Math.round(q))); else setCreateStockItem(false) }}>
+              <Select value={unit} onValueChange={(value) => { const next = value as OrderItemUnit; setUnit(next); if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q))); else setCreateStockItem(false) }}>
                 <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="adet">Adet</SelectItem><SelectItem value="litre">Litre</SelectItem></SelectContent>
+                <SelectContent>
+                  {ORDER_ITEM_UNITS.map((candidate) => <SelectItem key={candidate} value={candidate}>{ORDER_ITEM_UNIT_LABELS[candidate]}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
@@ -241,8 +244,8 @@ export function ManualPartDialog({
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">Stok kartı olarak kaydet</p>
               <p className="text-xs text-muted-foreground">
-                {unit === "litre"
-                  ? "Litre miktarı stok kartına bağlanamaz; kalem yalnız bu iş emrine eklenir."
+                {isDivisibleOrderItemUnit(unit)
+                  ? "Ondalıklı ölçü birimleri stok kartına bağlanamaz; kalem yalnız bu iş emrine eklenir."
                   : "Parça, kodu ile Stok / Parçalar listesine eklenir. Stok miktarı 0 başlar, bu kalem stoktan düşmez."}
               </p>
             </div>
@@ -250,7 +253,7 @@ export function ManualPartDialog({
               checked={createStockItem}
               onCheckedChange={(v) => { setCreateStockItem(v); setError(null) }}
               aria-label="Stok kartı olarak kaydet"
-              disabled={unit === "litre"}
+              disabled={isDivisibleOrderItemUnit(unit)}
             />
           </div>
         </div>

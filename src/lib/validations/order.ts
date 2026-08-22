@@ -1,4 +1,5 @@
 import { z } from "zod/v4"
+import { ORDER_ITEM_UNITS } from "@/lib/orders/quantity"
 
 export const serviceOrderItemSchema = z.object({
   type: z.enum(["part", "labor", "external_labor"], {
@@ -39,7 +40,7 @@ export const serviceOrderItemSchema = z.object({
 export const serviceOrderItemUpdateSchema = z.object({
   name: z.string().min(1, "Kalem adı boş olamaz").optional(),
   sku: z.string().optional(),
-  unit: z.enum(["adet", "litre"], { error: "Birim adet veya litre olmalıdır" }).optional(),
+  unit: z.enum(ORDER_ITEM_UNITS, { error: "Geçerli bir birim seçiniz" }).optional(),
   quantity: z.coerce.number().positive("Miktar 0'dan büyük olmalıdır").max(999, "Miktar en fazla 999 olabilir")
     .multipleOf(0.001, "Miktar en çok 3 ondalık basamaklı olabilir").optional(),
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
