@@ -55,6 +55,7 @@ import {
   transmissionLabel,
 } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import type { ReminderRow } from "@/lib/reminders/queries"
 import {
   CrossWorkshopHistoryCard,
@@ -438,16 +439,15 @@ export function VehicleDetail({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {allPhotos.map((p) => {
                   const pt = PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]
-                  return (
-                    <Link
-                      key={p.id}
-                      href={`/orders/${p.orderId}`}
-                      className="block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
-                    >
+                  const src = resolvePhotoSrc(p)
+                  const cardClassName =
+                    "block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
+                  const card = (
+                    <>
                       <div className="aspect-[4/3] bg-muted flex items-center justify-center">
-                        {p.fileUrl ? (
+                        {src ? (
                           <Image
-                            src={p.fileUrl}
+                            src={src}
                             alt={p.label || pt?.label || "Fotoğraf"}
                             width={160}
                             height={120}
@@ -464,7 +464,19 @@ export function VehicleDetail({
                         </p>
                         <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
                       </div>
-                    </Link>
+                    </>
+                  )
+                  if (p.orderId) {
+                    return (
+                      <Link key={p.id} href={`/orders/${p.orderId}`} className={cardClassName}>
+                        {card}
+                      </Link>
+                    )
+                  }
+                  return (
+                    <div key={p.id} className={cardClassName}>
+                      {card}
+                    </div>
                   )
                 })}
               </div>
