@@ -166,6 +166,7 @@ export default async function OrderDetailPage({
       tecdocArticleId: i.tecdocArticleId,
       // BakımX kaleminde dolu → satır kimliği katalogdan gelir, düzenlenemez.
       bakimxProductId: i.bakimxProductId,
+      getirbakimProductId: i.getirbakimProductId,
       source: i.source,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,

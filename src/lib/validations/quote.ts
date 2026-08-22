@@ -19,6 +19,7 @@ export const quoteItemSchema = z.object({
   // BakımX katalog ürünü (BAK-35). `partId` ile birlikte GELMEZ: BakımX stoğu
   // atölyenin stoğu değil, çevrimde de stok hareketi yaratmaz.
   bakimxProductId: z.string().optional().default(""),
+  getirbakimProductId: z.string().optional().default(""),
 })
 
 export type QuoteItemFormValues = z.infer<typeof quoteItemSchema>
@@ -55,6 +56,7 @@ export const quoteItemActionSchema = z.object({
   partId: z.string().optional(),
   // BakımX katalog ürünü (BAK-35) — kalemin kaynağını çevrimden sonra da taşır.
   bakimxProductId: z.string().optional(),
+  getirbakimProductId: z.string().optional(),
 })
 
 export const quoteCreateSchema = z.object({

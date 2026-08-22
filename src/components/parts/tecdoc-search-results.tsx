@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronRight, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
-import { TecdocArticleRow } from "./tecdoc-article-row"
+import { TecdocArticleRow, TECDOC_SOURCE_LABEL } from "./tecdoc-article-row"
 import { BakimxProductRow } from "./bakimx-product-row"
 import { GetirbakimProductRow } from "./getirbakim-product-row"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
@@ -12,24 +12,18 @@ import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import type { ArticleSummary, CategoryMatch } from "@/lib/tecdoc/types"
 import { fetchBakimxMatches } from "@/lib/parts/bakimx-client"
+import { nestGetirbakimUnderArticles } from "@/lib/parts/getirbakim/match"
+import { GETIRBAKIM_SOURCE_LABEL } from "@/lib/parts/getirbakim/labels"
+
+const EMPTY_GETIRBAKIM: GetirbakimProduct[] = []
 
 /**
  * Parça seçicinin global arama sonuçları: KATEGORİLER (ağaçtan, client-side) +
- * PARÇALAR (DB araması) + BAKIMX ÜRÜNLERİ (kendi kataloğumuz, BAK-35) + parça
- * sonuç kümesinden türetilen marka çipleri.
+ * PARÇALAR (TecDoc / RapidAPI) + BAKIMX ÜRÜNLERİ + GETİRBAKIM.
  *
- * Marka çipleri istemci tarafında süzer; API çağrısı markaya göre daraltılmaz —
- * daraltılsaydı çip listesi kendi kendini yok ederdi (yalnız seçili marka kalırdı).
- *
- * BakımX bölümü PARÇALAR'ın ARDINDAN gelir: TecDoc satırlarının araca uygunluğu
- * doğrulanmış, önce onlar görünmeli (aynı gerekçe suggestions.ts'te). `bakimxCatalog`
- * kapısı kapalı atölyede liste hep boş gelir → bölüm hiç render edilmez, geri kalan
- * arama hiç etkilenmez.
- *
- * GETİRBAKIM (BAK-183) AYNI BÖLÜMÜN İÇİNDE listelenir, dördüncü bir liste
- * açılmaz (BAK-182 kararı) — satırları kaynak rozetiyle ayrılır. Kendi özellik
- * kapısı (`getirbakimCatalog`) BakımX kataloğununkinden ayrı: kapalıyken bu
- * satırlar hiç gelmez, BakımX ürünleri etkilenmez.
+ * TecDoc ve GetirBakım AYRI bölümlerde durur; parça no/OEM örtüşen GetirBakım
+ * satırı TecDoc makalesinin altına yuvalanır. BakımX ile karıştırılmaz —
+ * atölye stoğu bizim depomuz sanmasın.
  */
 export function TecdocSearchResults({
   query,
@@ -42,6 +36,7 @@ export function TecdocSearchResults({
   onBakimxSelect,
   getirbakimProducts,
   getirbakimSearching,
+  onGetirbakimSelect,
   vehicleTypeId,
   brandFilter,
   onBrandFilterChange,
@@ -60,9 +55,9 @@ export function TecdocSearchResults({
   bakimxProducts?: BakimxProductSummary[]
   bakimxSearching?: boolean
   onBakimxSelect?: (p: BakimxProductSummary) => void
-  /** GetirBakım eşleşmeleri — okuma amaçlı, satırlar tıklanamaz (BAK-183). */
   getirbakimProducts?: GetirbakimProduct[]
   getirbakimSearching?: boolean
+  onGetirbakimSelect?: (p: GetirbakimProduct) => void
   /** Rozet eşleşmesi araca bağlı ürünleri de kapsasın diye (BAK-46). */
   vehicleTypeId?: number | null
   brandFilter: string
@@ -110,7 +105,11 @@ export function TecdocSearchResults({
   }, [articles, brandFilter])
 
   const visibleBakimx = onBakimxSelect ? (bakimxProducts ?? []) : []
-  const visibleGetirbakim = getirbakimProducts ?? []
+  const visibleGetirbakim = getirbakimProducts ?? EMPTY_GETIRBAKIM
+  const getirbakimLayout = useMemo(
+    () => nestGetirbakimUnderArticles(visibleArticles ?? [], visibleGetirbakim),
+    [visibleArticles, visibleGetirbakim],
+  )
   // "Sonuç yok" ancak BÜTÜN bölümler boşken doğrudur. TecDoc araması hiç
   // çalışmamış olabilir (araç kataloğa bağlı değil → `articles` null kalır); o
   // durumda karar yalnız katalog taraflarına bakar.
@@ -159,7 +158,7 @@ export function TecdocSearchResults({
       {visibleArticles != null && visibleArticles.length > 0 && (
         <section>
           <SectionHeading>
-            Parçalar ({visibleArticles.length}
+            {TECDOC_SOURCE_LABEL} ({visibleArticles.length}
             {searching ? "…" : ""})
           </SectionHeading>
           {brands.length > 1 && (
@@ -185,26 +184,39 @@ export function TecdocSearchResults({
               context={a.categoryName || null}
               matchedOems={a.matchedOems}
               bakimxMatch={bakimxMatches[a.articleNo] || null}
+              getirbakimMatches={getirbakimLayout.nested[a.tecdocArticleId]}
               onSelect={() => onArticleSelect(a)}
+              onGetirbakimSelect={onGetirbakimSelect}
               onShowDetail={onShowDetail}
             />
           ))}
         </section>
       )}
 
-      {(visibleBakimx.length > 0 || visibleGetirbakim.length > 0) && (
+      {visibleBakimx.length > 0 && (
         <section>
-          {/* Tek bölüm, iki kaynak: sayaç ikisini birden sayar, GetirBakım
-              satırları kendi rozetiyle ayrılır (BAK-183). */}
           <SectionHeading>
-            BakımX Ürünleri ({visibleBakimx.length + visibleGetirbakim.length}
-            {bakimxSearching || getirbakimSearching ? "…" : ""})
+            BakımX Ürünleri ({visibleBakimx.length}
+            {bakimxSearching ? "…" : ""})
           </SectionHeading>
           {visibleBakimx.map((p) => (
             <BakimxProductRow key={p.id} product={p} onSelect={() => onBakimxSelect?.(p)} />
           ))}
-          {visibleGetirbakim.map((p) => (
-            <GetirbakimProductRow key={`gb-${p.id}`} product={p} />
+        </section>
+      )}
+
+      {getirbakimLayout.standalone.length > 0 && (
+        <section>
+          <SectionHeading>
+            {GETIRBAKIM_SOURCE_LABEL} ({getirbakimLayout.standalone.length}
+            {getirbakimSearching ? "…" : ""})
+          </SectionHeading>
+          {getirbakimLayout.standalone.map((p) => (
+            <GetirbakimProductRow
+              key={`gb-${p.id}`}
+              product={p}
+              onSelect={onGetirbakimSelect ? () => onGetirbakimSelect(p) : undefined}
+            />
           ))}
         </section>
       )}

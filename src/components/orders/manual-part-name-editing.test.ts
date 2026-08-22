@@ -23,5 +23,5 @@ test("katalog parçaları salt okunur kimlik görünümünü korur", () => {
   const partField = GRID.slice(GRID.indexOf("function PartField("), GRID.indexOf("function QtyStepper("))
 
   expect(partField).toContain("<PartIdentity row={row} oneLine={oneLine} />")
-  expect(GRID).toContain("row.tecdocArticleId != null || row.bakimxProductId != null")
+  expect(GRID).toContain("row.tecdocArticleId != null || row.bakimxProductId != null || row.getirbakimProductId != null")
 })

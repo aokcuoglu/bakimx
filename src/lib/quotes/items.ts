@@ -31,6 +31,7 @@ export type QuoteEditorRow = {
    * çevrilirken kaleme taşınır, böylece kaynağı çevrimden sonra da bellidir.
    */
   bakimxProductId: string | null
+  getirbakimProductId: string | null
 }
 
 /** Düzenleyici yalnız part|labor üretmelidir; beklenmedik tip parçaya düşer. */
@@ -51,6 +52,7 @@ export function rowToQuoteItem(row: QuoteEditorRow): QuoteItemFormValues {
     note: row.note ?? "",
     partId: row.partId ?? "",
     bakimxProductId: row.bakimxProductId ?? "",
+    getirbakimProductId: row.getirbakimProductId ?? "",
   }
 }
 
@@ -68,6 +70,7 @@ export function quoteItemToRow(item: QuoteItemFormValues, id: string): QuoteEdit
     note: item.note || null,
     partId: item.partId || null,
     bakimxProductId: item.bakimxProductId || null,
+    getirbakimProductId: item.getirbakimProductId || null,
   }
 }
 

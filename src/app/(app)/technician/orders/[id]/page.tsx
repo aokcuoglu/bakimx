@@ -174,6 +174,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       source: i.source,
       tecdocArticleId: i.tecdocArticleId,
       bakimxProductId: i.bakimxProductId,
+      getirbakimProductId: i.getirbakimProductId,
       purchasePriceKurus: i.purchasePriceKurus,
       supplierName: i.supplierName,
       supplierId: i.supplierId,

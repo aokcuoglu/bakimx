@@ -922,6 +922,10 @@ model ServiceOrderItem {
   // fiyat kalemde donmuş bir anlık görüntüdür, ürün kartı sonradan silinse
   // veya pasifleşse bile geçmiş iş emri satırı olduğu gibi kalmalı.
   bakimxProductId         String?
+  // Kalem bir GetirBakım ürününden geldiyse o ürünün `sourceProductId`'si.
+  // FK YOK: GetirBakım kataloğu kopyalanmaz (BAK-182); fiyat kalemde donmuş
+  // anlık görüntüdür. Kaynak `source=getirbakim` + bu id ile bellidir.
+  getirbakimProductId     String?
   // Kalemin nasıl eklendiği: katalog akışı mı serbest/manuel mi, yoksa
   // teknisyenin dışarıdan satın aldığı (purchase) parça mı. Yalnız açıklayıcı
   // (rozet + raporlama); eski satırlarda null → rozetsiz.
@@ -929,12 +933,15 @@ model ServiceOrderItem {
   // --- Alış fiyatı + dış alım (source=purchase) alanları ---
   // Alış maliyeti (kuruş, KDV HARİÇ). Satış unitPrice'ından bağımsızdır;
   // oluşturmada unitPrice buradan otomatik doldurulur, sonrasında ayrı
-  // düzenlenebilir. İki kaynakta dolar:
-  //   • source=purchase → teknisyenin firmadan aldığı parçanın fatura tutarı,
+  // düzenlenebilir. Üç kaynakta dolar:
+  //   • source=purchase    → teknisyenin firmadan aldığı parçanın fatura tutarı,
   //     aşağıdaki tedarikçi/tarih/fotoğraf alanlarıyla birlikte.
-  //   • source=bakimx   → atölyenin BakımX'ten alış fiyatı (bakimx_products
+  //   • source=bakimx      → atölyenin BakımX'ten alış fiyatı (bakimx_products
   //     .workshop_price_kurus'un anlık görüntüsü). Tedarikçi alanları BOŞ kalır;
   //     kaynak bakimx_product_id ile bellidir (bkz. src/lib/parts/bakimx-item.ts).
+  //   • source=getirbakim  → atölyenin GetirBakım'dan alış fiyatı (`b2bPriceKurus`).
+  //     Tedarikçi alanları BOŞ kalır; kaynak getirbakim_product_id ile bellidir
+  //     (bkz. src/lib/parts/getirbakim-item.ts).
   purchasePriceKurus      Int?
   // Tedarikçi adı serbest metin olarak DAİMA yazılır (supplierId seçilse bile)
   // ki liste ekranı join olmadan render edebilsin.
@@ -1070,6 +1077,7 @@ enum OrderItemSource {
   manual
   purchase
   bakimx
+  getirbakim
 }
 
 model Quote {
@@ -1132,6 +1140,9 @@ model QuoteItem {
   // ServiceOrderItem.bakimxProductId ile aynı sözleşme: FK yok, teklif satırı
   // ürün kartından bağımsız yaşar.
   bakimxProductId String?
+  // ServiceOrderItem.getirbakimProductId ile aynı sözleşme: FK yok, teklif
+  // satırı GetirBakım kartından bağımsız yaşar (katalog kopyalanmaz).
+  getirbakimProductId String?
   note            String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -1140,6 +1151,7 @@ model QuoteItem {
   @@index([quoteId])
   @@index([partId])
   @@index([bakimxProductId])
+  @@index([getirbakimProductId])
 }
 
 enum QuoteItemType {

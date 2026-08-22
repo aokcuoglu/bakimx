@@ -151,10 +151,10 @@ test("addOrderItemAction BakımX kaleminde partId bağlamaz ve stok düşmez", (
   expect(start, "addOrderItemAction bulunamadı").toBeGreaterThan(-1)
   const body = source.slice(start).split("\nexport ")[0]
 
-  // Kalem satırında partId, BakımX alanları çözüldüyse null'a düşer.
-  expect(body).toContain("partId: bakimxFields ? null : partId")
+  // Kalem satırında partId, BakımX/GetirBakım alanları çözüldüyse null'a düşer.
+  expect(body).toContain("partId: bakimxFields || getirbakimFields ? null : partId")
   // Stok rezervasyonu BakımX kaleminde hiç çağrılmaz.
-  expect(body).toContain("if (!bakimxFields && partId && parsed.data.type === \"part\")")
+  expect(body).toContain("if (!bakimxFields && !getirbakimFields && partId && parsed.data.type === \"part\")")
   // Fiyat ve kimlik istemciden değil, DB'den okunan üründen türetilir.
   expect(body).toContain("getVisibleBakimxProduct(")
   expect(body).toContain("bakimxLineItemFields(product)")
