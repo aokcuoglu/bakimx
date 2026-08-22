@@ -56,6 +56,7 @@ import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
+import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
 import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
 import {
   needsMarkup,
@@ -1386,7 +1387,7 @@ function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; on
 }
 
 function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
-  const unit = row.unit === "litre" ? "litre" : "adet"
+  const unit = ORDER_ITEM_UNITS.find((candidate) => candidate === row.unit) ?? "adet"
   const [draft, setDraft] = useState(String(row.quantity))
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sunucudan doğrulanan miktarı alan taslağına taşır
@@ -1397,7 +1398,7 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
     const quantity = Number(draft.replace(",", "."))
     const valid = Number.isFinite(quantity) && quantity > 0 && quantity <= 999
       && Math.round(quantity * 1000) === quantity * 1000
-      && (unit === "litre" || Number.isInteger(quantity))
+      && (isDivisibleOrderItemUnit(unit) || Number.isInteger(quantity))
     if (!valid) {
       setDraft(String(row.quantity))
       return
@@ -1420,17 +1421,17 @@ function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean;
 }
 
 function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
-  const unit = row.unit === "litre" ? "litre" : "adet"
+  const unit = ORDER_ITEM_UNITS.find((candidate) => candidate === row.unit) ?? "adet"
   if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
-  if (!editable) return <span className="text-sm">{unit === "litre" ? "Litre" : "Adet"}</span>
+  if (!editable) return <span className="text-sm">{ORDER_ITEM_UNIT_LABELS[unit]}</span>
   return (
     <Select
       value={unit}
       onValueChange={(value) => {
-        const next = value as "adet" | "litre"
+        const next = value as OrderItemUnit
         onCell(row, {
           unit: next,
-          ...(next === "adet" && !Number.isInteger(row.quantity) ? { quantity: Math.max(1, Math.round(row.quantity)) } : {}),
+          ...(!isDivisibleOrderItemUnit(next) && !Number.isInteger(row.quantity) ? { quantity: Math.max(1, Math.round(row.quantity)) } : {}),
         })
       }}
     >
@@ -1438,8 +1439,15 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="adet">Adet</SelectItem>
-        <SelectItem value="litre" disabled={row.hasStockLink || !!row.__partId}>Litre</SelectItem>
+        {ORDER_ITEM_UNITS.map((candidate) => (
+          <SelectItem
+            key={candidate}
+            value={candidate}
+            disabled={(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
+          >
+            {ORDER_ITEM_UNIT_LABELS[candidate]}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   )

@@ -26,7 +26,7 @@ import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
-import { quantityToNumber, validateQuantityForUnit } from "@/lib/orders/quantity"
+import { ORDER_ITEM_UNITS, quantityToNumber, validateQuantityForUnit } from "@/lib/orders/quantity"
 import { isOrderStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -71,7 +71,7 @@ const ORDER_CANCELLED_REQUEST_REASON = "İş emri iptal edildi"
 
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
-  unit: z.enum(["adet", "litre"], { error: "Birim adet veya litre olmalıdır" }).optional(),
+  unit: z.enum(ORDER_ITEM_UNITS, { error: "Geçerli bir birim seçiniz" }).optional(),
   // Kalemin kaynağı: katalog akışı mı, manuel mi, BakımX kataloğu mu. Rozet +
   // raporlama içindir; `bakimx` gönderilse bile ürün doğrulanamazsa yazılmaz.
   source: z.enum(["catalog", "manual", "bakimx"]).optional(),

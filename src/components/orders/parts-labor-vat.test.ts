@@ -63,14 +63,14 @@ test("Birim Fiyat alanı sayı girdisi değil, virgüllü girişi okuyan metin a
   expect(priceField).not.toContain('type="number"')
 })
 
-test("parça miktarı birime göre ondalık girilir ve stok satırında litre kapalıdır", () => {
+test("parça miktarı birime göre ondalık girilir ve stok satırında bölünebilir birimler kapalıdır", () => {
   const quantityField = GRID.slice(GRID.indexOf("function QuantityField("), GRID.indexOf("function UnitField("))
   const unitField = GRID.slice(GRID.indexOf("function UnitField("), GRID.indexOf("/** Düzenlemeye açılan taslak"))
   expect(quantityField).toContain('Math.round(quantity * 1000) === quantity * 1000')
-  expect(quantityField).toContain('(unit === "litre" || Number.isInteger(quantity))')
+  expect(quantityField).toContain('(isDivisibleOrderItemUnit(unit) || Number.isInteger(quantity))')
   expect(quantityField).toContain('inputMode="decimal"')
-  expect(unitField).toContain('<SelectItem value="adet">Adet</SelectItem>')
-  expect(unitField).toContain('<SelectItem value="litre" disabled={row.hasStockLink || !!row.__partId}>Litre</SelectItem>')
+  expect(unitField).toContain('ORDER_ITEM_UNITS.map')
+  expect(unitField).toContain('disabled={(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}')
 })
 
 test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
