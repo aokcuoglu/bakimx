@@ -205,7 +205,7 @@ function ItemGroup({
           const price = item.totalPrice != null
             ? formatTRY(item.totalPrice)
             : item.unitPrice != null
-              ? formatTRY(item.unitPrice * item.quantity)
+              ? formatTRY(Math.round(item.unitPrice * item.quantity))
               : "—"
 
           return (

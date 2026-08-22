@@ -2,6 +2,7 @@ import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { notFound } from "next/navigation"
 import { CustomerDetail } from "@/components/customers/customer-detail"
 import { getCustomerReminders } from "@/lib/reminders/queries"
@@ -114,7 +115,7 @@ export default async function CustomerDetailPage({
                 grandTotal: i.order.items.reduce(
                   (sum, item) => {
                     if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-                    if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+                    if (item.unitPrice != null && item.unitPrice > 0) return sum + Math.round(item.unitPrice * quantityToNumber(item.quantity))
                     return sum
                   },
                   0

@@ -903,7 +903,7 @@ model ServiceOrderItem {
   name                    String
   sku                     String?
   unit                    String?
-  quantity                Int                           @default(1)
+  quantity                Decimal                       @default(1) @db.Decimal(12, 3)
   unitPrice               Int? // kuruş
   totalPrice              Int? // kuruş
   partId                  String?

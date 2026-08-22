@@ -1,6 +1,7 @@
 import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import Link from "next/link"
 import { Search, Filter, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -70,7 +71,7 @@ export default async function PurchasesPage({
     workOrderNo: formatWorkOrderNo(i.serviceOrder),
     name: i.name,
     sku: i.sku,
-    quantity: i.quantity,
+    quantity: quantityToNumber(i.quantity),
     purchasePriceKurus: i.purchasePriceKurus,
     supplierName: i.supplierName || i.supplier?.name || null,
     purchasedByName: i.purchasedBy?.fullName ?? null,
@@ -90,7 +91,7 @@ export default async function PurchasesPage({
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
   const kpis = {
     count: rows.length,
-    totalKurus: rows.reduce((s, r) => s + (r.purchasePriceKurus ?? 0) * r.quantity, 0),
+    totalKurus: rows.reduce((s, r) => s + Math.round((r.purchasePriceKurus ?? 0) * r.quantity), 0),
     supplierCount: new Set(rows.map((r) => (r.supplierName || "").toLowerCase()).filter(Boolean)).size,
     thisMonthCount: rows.filter((r) => r.purchasedAt && new Date(r.purchasedAt).getTime() >= monthStart).length,
   }

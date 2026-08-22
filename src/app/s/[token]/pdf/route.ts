@@ -5,6 +5,7 @@ import { renderIntakePrintoutHtml } from "@/lib/pdf/intake-printout"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { quantityToNumber } from "@/lib/orders/quantity"
 
 export const dynamic = "force-dynamic"
 
@@ -63,7 +64,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     showPaymentStatus: shareLink.showPaymentStatus,
   }
 
-  const safeIntakeForm = escapeIntakeForHtml(sanitizeIntakeForPublic(intakeForm, visibility))
+  const normalizedIntakeForm = {
+    ...intakeForm,
+    order: intakeForm.order ? {
+      ...intakeForm.order,
+      items: intakeForm.order.items.map((item) => ({ ...item, quantity: quantityToNumber(item.quantity) })),
+    } : null,
+  }
+  const safeIntakeForm = escapeIntakeForHtml(sanitizeIntakeForPublic(normalizedIntakeForm, visibility))
 
   const photoTypes = intakeForm.photos.map((p) => p.type)
   const { calculatePhotoCompletion } = await import("@/lib/intake/completeness")

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { sanitizePassportForPublic, escapePassportForHtml } from "@/lib/passport/data-safety"
 import { formatTRY, formatMileage } from "@/lib/format"
 import { fuelGaugeSvgMarkup, formatFuelLevel } from "@/lib/fuel-level"
@@ -55,7 +56,7 @@ async function generatePassportPdfHtml(data: {
       <h3 style="font-size:10px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">İş Emirleri (${passportData.workOrders.length})</h3>`
     for (const wo of passportData.workOrders) {
       const itemsHtml = wo.items.map((item) => {
-        const total = item.totalPrice ?? (item.unitPrice ? item.unitPrice * item.quantity : null)
+        const total = item.totalPrice ?? (item.unitPrice ? Math.round(item.unitPrice * quantityToNumber(item.quantity)) : null)
         return `<div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;">
           <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${item.type === "part" ? "#2563EB" : "#7C3AED"};margin-right:4px;vertical-align:middle;"></span>${item.name} ×${item.quantity}</span>
           <span>${total ? formatTRY(total) : "—"}</span>
@@ -344,7 +345,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
               items: i.order.items.map((item) => ({
                 type: item.type,
                 name: item.name,
-                quantity: item.quantity,
+                quantity: quantityToNumber(item.quantity),
                 unitPrice: item.unitPrice,
                 totalPrice: item.totalPrice,
               })),

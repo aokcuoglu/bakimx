@@ -225,7 +225,7 @@ export function sanitizePassportForPublic(
 
           const grandTotal = order.items.reduce((sum, item) => {
             if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-            if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+            if (item.unitPrice != null && item.unitPrice > 0) return sum + Math.round(item.unitPrice * item.quantity)
             return sum
           }, 0)
 

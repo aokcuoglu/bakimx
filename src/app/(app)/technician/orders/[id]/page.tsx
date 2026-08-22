@@ -2,6 +2,7 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { TechnicianOrderDetail } from "@/components/technician/technician-order-detail"
 import { userDisplayName } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
@@ -163,7 +164,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       category: i.category,
       categoryId: i.categoryId,
       unit: i.unit,
-      quantity: i.quantity,
+      quantity: quantityToNumber(i.quantity),
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       // BAK-53 — satır KDV'ye tabi mi. Taşınmazsa sunucu değeri yazar ama

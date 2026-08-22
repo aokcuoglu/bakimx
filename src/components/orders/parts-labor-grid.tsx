@@ -1231,7 +1231,7 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
 
   const lineTotal = row.totalPrice != null && row.totalPrice > 0
     ? row.totalPrice
-    : (row.unitPrice != null && row.unitPrice > 0 ? row.unitPrice * row.quantity : null)
+    : (row.unitPrice != null && row.unitPrice > 0 ? Math.round(row.unitPrice * row.quantity) : null)
 
   // BAK-75 — YAZILAN VE GÖSTERİLEN TUTAR HER ZAMAN NET. #311'in net↔brüt çevrimi
   // kaldırıldı: ₺100 yazan kullanıcı satırda ₺100 okur, ₺83,33 değil.
