@@ -7,6 +7,11 @@ import { customerCreateSchema } from "@/lib/validations/customer"
 import { revalidatePath } from "next/cache"
 import { AuditLogAction } from "@/lib/audit"
 import { normalizePhone } from "@/lib/format"
+import {
+  isDuplicatePhoneConfirmed,
+  resolveDuplicatePhone,
+} from "@/lib/customers/duplicate-phone"
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import type { CustomerTag, CustomerType, CustomerPriceGroup, CustomerSource, Prisma } from "@prisma/client"
 
 function parseKvkkDate(value: string | null | undefined): Date | null {
@@ -32,27 +37,28 @@ function buildCustomerName(data: {
 }
 
 /**
- * A phone number belongs to a single customer within a workshop. Given a
- * normalized phone, return the existing owner (id + display label) if one is
- * already using it, else null. `excludeId` skips the customer being edited so
- * saving their own record doesn't collide with itself.
+ * Customers that already use this phone in the workshop. More than one is
+ * allowed; the caller warns and only proceeds after explicit confirmation.
+ * `excludeId` skips the customer being edited so saving their own record
+ * doesn't collide with itself.
  */
-async function findCustomerByPhone(
+async function findCustomersByPhone(
   workshopId: string,
   phone: string,
   excludeId?: string,
 ) {
-  if (!phone) return null
-  const match = await prisma.customer.findFirst({
+  if (!phone) return []
+  const matches = await prisma.customer.findMany({
     where: {
       workshopId,
       phone,
       ...(excludeId ? { NOT: { id: excludeId } } : {}),
     },
     select: { id: true, type: true, firstName: true, lastName: true, fullName: true, companyName: true },
+    orderBy: { createdAt: "asc" },
+    take: 20,
   })
-  if (!match) return null
-  return { id: match.id, label: buildCustomerName(match) || match.id }
+  return matches.map((match) => ({ id: match.id, label: buildCustomerName(match) || match.id }))
 }
 
 export async function createCustomerAction(formData: FormData) {
@@ -94,11 +100,13 @@ export async function createCustomerAction(formData: FormData) {
 
   const data = parsed.data
 
-  const duplicate = await findCustomerByPhone(user.workshopId, data.phone)
-  if (duplicate) {
+  const phoneOwners = await findCustomersByPhone(user.workshopId, data.phone)
+  const duplicate = resolveDuplicatePhone(phoneOwners, isDuplicatePhoneConfirmed(formData))
+  if (!duplicate.ok) {
     return {
-      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
-      existingCustomer: duplicate,
+      error: duplicate.error,
+      existingCustomer: duplicate.existingCustomer,
+      existingCustomers: duplicate.existingCustomers,
     }
   }
 
@@ -114,36 +122,44 @@ export async function createCustomerAction(formData: FormData) {
   })
   const companyName = customerType === "corporate" ? (data.companyName || "").trim() || null : null
 
-  const customer = await prisma.customer.create({
-    data: {
-      workshopId: user.workshopId,
-      type: customerType,
-      firstName,
-      lastName,
-      fullName: fullName || null,
-      companyName,
-      contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
-      phone: data.phone,
-      phone2: (data.phone2 || "").trim() || null,
-      email: data.email || null,
-      city: (data.city || "").trim() || null,
-      district: (data.district || "").trim() || null,
-      address: (data.address || "").trim() || null,
-      identityNumber: (data.identityNumber || "").trim() || null,
-      taxNumber: (data.taxNumber || "").trim() || null,
-      taxOffice: (data.taxOffice || "").trim() || null,
-      notes: (data.notes || "").trim() || null,
-      tag: (data.tag || "standard") as CustomerTag,
-      source: (data.source || null) as CustomerSource | null,
-      priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
-      discountRate: data.discountRate ?? 0,
-      riskNote: (data.riskNote || "").trim() || null,
-      whatsappConsent: !!data.whatsappConsent,
-      smsConsent: !!data.smsConsent,
-      emailConsent: !!data.emailConsent,
-      kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
-    },
-  })
+  let customer
+  try {
+    customer = await prisma.customer.create({
+      data: {
+        workshopId: user.workshopId,
+        type: customerType,
+        firstName,
+        lastName,
+        fullName: fullName || null,
+        companyName,
+        contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
+        phone: data.phone,
+        phone2: (data.phone2 || "").trim() || null,
+        email: data.email || null,
+        city: (data.city || "").trim() || null,
+        district: (data.district || "").trim() || null,
+        address: (data.address || "").trim() || null,
+        identityNumber: (data.identityNumber || "").trim() || null,
+        taxNumber: (data.taxNumber || "").trim() || null,
+        taxOffice: (data.taxOffice || "").trim() || null,
+        notes: (data.notes || "").trim() || null,
+        tag: (data.tag || "standard") as CustomerTag,
+        source: (data.source || null) as CustomerSource | null,
+        priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
+        discountRate: data.discountRate ?? 0,
+        riskNote: (data.riskNote || "").trim() || null,
+        whatsappConsent: !!data.whatsappConsent,
+        smsConsent: !!data.smsConsent,
+        emailConsent: !!data.emailConsent,
+        kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
+      },
+    })
+  } catch (err) {
+    if (isUniqueConstraintError(err, "phone")) {
+      return { error: "Bu telefon numarası henüz ikinci müşteriye açılamadı. Sayfayı yenileyip tekrar deneyin." }
+    }
+    throw err
+  }
 
   await AuditLogAction(user.workshopId, user.id, "Customer", customer.id, "customer_created")
 
@@ -198,11 +214,13 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
 
   const data = parsed.data
 
-  const duplicate = await findCustomerByPhone(user.workshopId, data.phone, customerId)
-  if (duplicate) {
+  const phoneOwners = await findCustomersByPhone(user.workshopId, data.phone, customerId)
+  const duplicate = resolveDuplicatePhone(phoneOwners, isDuplicatePhoneConfirmed(formData))
+  if (!duplicate.ok) {
     return {
-      error: `Bu telefon numarası zaten ${duplicate.label} adlı müşteriye ait.`,
-      existingCustomer: duplicate,
+      error: duplicate.error,
+      existingCustomer: duplicate.existingCustomer,
+      existingCustomers: duplicate.existingCustomers,
     }
   }
 
@@ -218,36 +236,43 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
   })
   const companyName = customerType === "corporate" ? (data.companyName || "").trim() || null : null
 
-  await prisma.customer.update({
-    where: { id: customerId, workshopId: user.workshopId },
-    data: {
-      type: customerType,
-      firstName,
-      lastName,
-      fullName: fullName || null,
-      companyName,
-      contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
-      phone: data.phone,
-      phone2: (data.phone2 || "").trim() || null,
-      email: data.email || null,
-      city: (data.city || "").trim() || null,
-      district: (data.district || "").trim() || null,
-      address: (data.address || "").trim() || null,
-      identityNumber: (data.identityNumber || "").trim() || null,
-      taxNumber: (data.taxNumber || "").trim() || null,
-      taxOffice: (data.taxOffice || "").trim() || null,
-      notes: (data.notes || "").trim() || null,
-      tag: (data.tag || "standard") as CustomerTag,
-      source: (data.source || null) as CustomerSource | null,
-      priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
-      discountRate: data.discountRate ?? 0,
-      riskNote: (data.riskNote || "").trim() || null,
-      whatsappConsent: !!data.whatsappConsent,
-      smsConsent: !!data.smsConsent,
-      emailConsent: !!data.emailConsent,
-      kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
-    },
-  })
+  try {
+    await prisma.customer.update({
+      where: { id: customerId, workshopId: user.workshopId },
+      data: {
+        type: customerType,
+        firstName,
+        lastName,
+        fullName: fullName || null,
+        companyName,
+        contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
+        phone: data.phone,
+        phone2: (data.phone2 || "").trim() || null,
+        email: data.email || null,
+        city: (data.city || "").trim() || null,
+        district: (data.district || "").trim() || null,
+        address: (data.address || "").trim() || null,
+        identityNumber: (data.identityNumber || "").trim() || null,
+        taxNumber: (data.taxNumber || "").trim() || null,
+        taxOffice: (data.taxOffice || "").trim() || null,
+        notes: (data.notes || "").trim() || null,
+        tag: (data.tag || "standard") as CustomerTag,
+        source: (data.source || null) as CustomerSource | null,
+        priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
+        discountRate: data.discountRate ?? 0,
+        riskNote: (data.riskNote || "").trim() || null,
+        whatsappConsent: !!data.whatsappConsent,
+        smsConsent: !!data.smsConsent,
+        emailConsent: !!data.emailConsent,
+        kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
+      },
+    })
+  } catch (err) {
+    if (isUniqueConstraintError(err, "phone")) {
+      return { error: "Bu telefon numarası henüz ikinci müşteriye açılamadı. Sayfayı yenileyip tekrar deneyin." }
+    }
+    throw err
+  }
 
   await AuditLogAction(user.workshopId, user.id, "Customer", customerId, "customer_updated")
 
