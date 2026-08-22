@@ -9,12 +9,8 @@ import type { GetirbakimProvider, GetirbakimProviderName } from "./types"
  * GetirBakım sağlayıcı seçimi (BAK-183) — OCR/AI sağlayıcı deseninin kardeşi
  * (`src/lib/ocr/provider.ts`, `src/lib/advisor/provider.ts`).
  *
- * BİR YERDE BİLEREK AYRILIR: OCR/danışman, sağlayıcı `mock` DEĞİLKEN anahtar
- * eksikse HATA FIRLATIR — orada anahtarsız kalmak "ruhsat okuma çalışmıyor"
- * demek, sessiz kalmak yanıltıcı olur. Burada eksik anahtar SESSİZCE mock'a
- * düşer: GetirBakım ek bir parça kaynağıdır, ortam değişkeni eksik diye
- * atölyenin parça arama ekranını 500 ile düşürmek orantısız olur. Düşüş bir kez
- * loglanır, böylece "neden demo veri görüyorum" sorusunun cevabı kayıtta olur.
+ * Mock sağlayıcı yalnız development/test içindir. Production'da eksik veya
+ * hatalı yapılandırma demo fiyat göstermemeli; fail-closed davranır.
  */
 
 let _provider: GetirbakimProvider | null = null
@@ -43,6 +39,10 @@ export function getGetirbakimProvider(): GetirbakimProvider {
 
   const providerName = parseGetirbakimProviderName(process.env.GETIRBAKIM_PROVIDER)
 
+  if (process.env.NODE_ENV === "production" && providerName === "mock") {
+    throw new Error("GETIRBAKIM_PROVIDER production ortamında http olmalıdır.")
+  }
+
   if (providerName === "http") {
     const apiKey = process.env.GETIRBAKIM_API_KEY?.trim()
     const baseUrl = process.env.GETIRBAKIM_API_URL?.trim()
@@ -54,6 +54,12 @@ export function getGetirbakimProvider(): GetirbakimProvider {
         parseTimeoutMs(process.env.GETIRBAKIM_TIMEOUT_MS),
       )
       return _provider
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        `GetirBakım production yapılandırması eksik: ${!apiKey ? "GETIRBAKIM_API_KEY" : "GETIRBAKIM_API_URL"}.`,
+      )
     }
 
     if (!_missingKeyWarned) {
