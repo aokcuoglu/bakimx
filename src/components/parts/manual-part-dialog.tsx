@@ -11,13 +11,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Loader2 } from "lucide-react"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { validateQuickPartDraft } from "@/lib/parts/quick-part-draft"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
-import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
+import { isDivisibleOrderItemUnit, type OrderItemUnit } from "@/lib/orders/quantity"
+import { OrderItemUnitCombobox } from "@/components/orders/order-item-unit-combobox"
 
 export type ManualPartDraft = {
   name: string
@@ -216,12 +216,15 @@ export function ManualPartDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim</span>
-              <Select value={unit} onValueChange={(value) => { const next = value as OrderItemUnit; setUnit(next); if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q))); else setCreateStockItem(false) }}>
-                <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ORDER_ITEM_UNITS.map((candidate) => <SelectItem key={candidate} value={candidate}>{ORDER_ITEM_UNIT_LABELS[candidate]}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <OrderItemUnitCombobox
+                value={unit}
+                className="h-9 w-full"
+                onValueChange={(next) => {
+                  setUnit(next)
+                  if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q)))
+                  else setCreateStockItem(false)
+                }}
+              />
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>

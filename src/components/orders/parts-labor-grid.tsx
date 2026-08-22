@@ -51,12 +51,11 @@ import {
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
-import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
+import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS } from "@/lib/orders/quantity"
 import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
 import {
   needsMarkup,
@@ -77,6 +76,7 @@ import { VinLinkPrompt } from "@/components/parts/vin-link-prompt"
 import { PartAttrOptionsProvider } from "@/components/parts/part-attr-options"
 import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
+import { OrderItemUnitCombobox } from "@/components/orders/order-item-unit-combobox"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
@@ -1425,31 +1425,19 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
   if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
   if (!editable) return <span className="text-sm">{ORDER_ITEM_UNIT_LABELS[unit]}</span>
   return (
-    <Select
+    <OrderItemUnitCombobox
       value={unit}
-      onValueChange={(value) => {
-        const next = value as OrderItemUnit
+      ariaLabel={`${row.name || "Parça"} birimi`}
+      className="h-9 w-24"
+      isOptionDisabled={(candidate) =>
+        (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
+      onValueChange={(next) => {
         onCell(row, {
           unit: next,
           ...(!isDivisibleOrderItemUnit(next) && !Number.isInteger(row.quantity) ? { quantity: Math.max(1, Math.round(row.quantity)) } : {}),
         })
       }}
-    >
-      <SelectTrigger size="compact" className="h-9 w-24" aria-label={`${row.name || "Parça"} birimi`}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {ORDER_ITEM_UNITS.map((candidate) => (
-          <SelectItem
-            key={candidate}
-            value={candidate}
-            disabled={(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
-          >
-            {ORDER_ITEM_UNIT_LABELS[candidate]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    />
   )
 }
 
@@ -2308,46 +2296,44 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         </div>
       )}
 
-      {/* Fiş bloğu: Miktar/KDV bir satır, ardından ETİKETLİ tutar satırları.
-          BAK-104 — eski düzen "Miktar · KDV · ₺Birim = ₺Toplam"ı tek satıra
-          sığdırmaya çalışıyordu; 360px'lik ekranda (kart içi 296px) grup
-          sarınca sağa yaslı iki çıplak rakam kalıyor, hangisinin birim hangisinin
-          toplam olduğu okunmuyordu ("fiyat net gözükmüyor"). Artık her tutar
-          kendi satırında, solda etiketi, sağda rakamı: kart genişliğine bakmadan
-          daima tam görünür, yatay kaydırma gerekmez.
-          Birim fiyat NET, Toplam KDV DAHİL. */}
-      <div className="mt-3 space-y-2 border-t border-border pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+      {/* Mobil finans bloğu: üç ana giriş aynı hizada ve görünür. Her alanın
+          etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
+          sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
+      <div className="mt-3 border-t border-border pt-3">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_7rem] items-start gap-2">
+          <div className="min-w-0 space-y-1 [&_input]:!w-full">
+            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Miktar</span>
             {ed.isPart
               ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
               : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
+          </div>
+          <div className="min-w-0 space-y-1 [&_[role=combobox]]:!w-full">
+            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Birim</span>
             <UnitField row={row} editable={ed.editable} onCell={onCell} />
           </div>
-          {vatPerLine && (
-            <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
-              <VatCell row={row} ed={ed} onCell={onCell} />
-              KDV ekle
-            </label>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <span className="shrink-0 text-xs text-muted-foreground">Birim fiyat</span>
-          <div className="flex min-w-0 flex-col items-end gap-0.5">
+          <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
+            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Birim fiyat</span>
             <PriceField row={row} ed={ed} />
             <PurchaseCostHint row={row} ed={ed} />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
-          <span className="shrink-0 text-xs font-medium text-foreground">Toplam</span>
-          <div className="flex min-w-0 flex-col items-end gap-0.5">
+        <div className="mt-3 flex min-h-10 items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+          {vatPerLine ? (
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <VatCell row={row} ed={ed} onCell={onCell} />
+              KDV ekle
+            </label>
+          ) : <span />}
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="shrink-0 text-xs font-medium text-muted-foreground">Toplam</span>
+            <div className="flex min-w-0 flex-col items-end gap-0.5">
             {/* `vatIncluded` VERİLMEZ: hemen altındaki VatHint zaten tutarıyla
                 birlikte "₺X KDV dahil" yazıyor, ikisi birden "KDV dahil"i
                 üst üste iki kez tekrar ediyordu. */}
-            <TotalField lineTotal={ed.grossLineTotal} strong />
-            {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
+              <TotalField lineTotal={ed.grossLineTotal} strong />
+              {ed.vatKurus != null && ed.vatKurus > 0 && <VatHint vatKurus={ed.vatKurus} included />}
+            </div>
           </div>
         </div>
       </div>
