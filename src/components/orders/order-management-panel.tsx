@@ -60,9 +60,10 @@ export type OrderItem = {
   // BakımX ürün kataloğu bağlantısı (BAK-35) — doluysa satırın kimliği katalogdan
   // gelir ve düzenlenemez. FK değildir: fiyat kalemde donmuş anlık görüntüdür.
   bakimxProductId?: string | null
-  // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX kataloğu); eski
+  getirbakimProductId?: string | null
+  // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX/GetirBakım); eski
   // satırlarda null.
-  source: "catalog" | "manual" | "purchase" | "bakimx" | null
+  source: "catalog" | "manual" | "purchase" | "bakimx" | "getirbakim" | null
   // Alış fiyatı (kuruş, KDV hariç). İki kaynakta dolar: dış alım (source=purchase)
   // ve BakımX kalemi (source=bakimx). unitPrice bundan ön-doldurulur, sonra ayrı
   // düzenlenir.

@@ -25,6 +25,7 @@ import { TecdocSearchResults } from "./tecdoc-search-results"
 import { VinLinkPrompt } from "./vin-link-prompt"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import { fetchBakimxProducts, useBakimxCategories, useBakimxProductSearch, fetchBakimxProductsByTecdocCategory } from "@/lib/parts/bakimx-client"
 import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
 import { buildBakimxCategoryBranch, isBakimxNode } from "@/lib/parts/bakimx-tree"
@@ -87,6 +88,7 @@ export function TecdocPartPicker({
   vehicle,
   onSelect,
   onSelectBakimx,
+  onSelectGetirbakim,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   hideTrigger,
@@ -104,6 +106,8 @@ export function TecdocPartPicker({
    * mevcut satırın parçasını değiştiren satır-içi seçici) ürünü göstermemeli.
    */
   onSelectBakimx?: (product: BakimxProductSummary) => void
+  /** GetirBakım ürünü seçildi. Verilmezse satırlar salt okunur kalır. */
+  onSelectGetirbakim?: (product: GetirbakimProduct) => void
   open?: boolean
   onOpenChange?: (v: boolean) => void
   hideTrigger?: boolean
@@ -400,6 +404,11 @@ export function TecdocPartPicker({
     handleOpenChange(false)
   }
 
+  function selectGetirbakim(product: GetirbakimProduct) {
+    onSelectGetirbakim?.(product)
+    handleOpenChange(false)
+  }
+
   function handleOpenChange(next: boolean) {
     setOpen(next)
     // Yükleme artık open'ı izleyen useEffect'te (controlled + uncontrolled ortak yol).
@@ -599,6 +608,7 @@ export function TecdocPartPicker({
                 onBakimxSelect={onSelectBakimx ? selectBakimx : undefined}
                 getirbakimProducts={getirbakimResults}
                 getirbakimSearching={getirbakimSearching}
+                onGetirbakimSelect={onSelectGetirbakim ? selectGetirbakim : undefined}
                 vehicleTypeId={vehicleTypeId}
                 brandFilter={searchBrand}
                 onBrandFilterChange={setSearchBrand}

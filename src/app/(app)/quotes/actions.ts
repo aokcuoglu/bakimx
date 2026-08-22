@@ -41,7 +41,7 @@ export async function createQuoteAction(formData: FormData) {
 
   // Parse + validate the line items first; the server is the single authority
   // over totals, so we never trust a client-sent grandTotal.
-  const lineItems: Array<{ type: "part" | "labor"; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null; bakimxProductId: string | null }> = []
+  const lineItems: Array<{ type: "part" | "labor"; name: string; sku: string | null; unit: string | null; quantity: number; unitPrice: number | null; totalPrice: number | null; note: string | null; partId: string | null; bakimxProductId: string | null; getirbakimProductId: string | null }> = []
   const itemsJson = formData.get("items")
   if (itemsJson && typeof itemsJson === "string") {
     let items: Array<Record<string, unknown>>
@@ -66,6 +66,7 @@ export async function createQuoteAction(formData: FormData) {
           // BAK-35 — BakımX kalemi stok bağı KURMAZ; kaynak bilgisi teklif
           // satırında durur ve çevrimde iş emri kalemine taşınır.
           bakimxProductId: parsedItem.data.bakimxProductId || null,
+          getirbakimProductId: parsedItem.data.getirbakimProductId || null,
         })
       }
     }
@@ -114,6 +115,7 @@ export async function createQuoteAction(formData: FormData) {
         note: item.note,
         partId: item.partId,
         bakimxProductId: item.bakimxProductId,
+        getirbakimProductId: item.getirbakimProductId,
       },
     })
   }
@@ -264,7 +266,8 @@ export async function convertQuoteToWorkOrderAction(formData: FormData) {
           // QuoteItem'da tutulmadığı için taşınamaz: teklif satırında yalnız
           // teklif edilen SATIŞ fiyatı vardır.
           bakimxProductId: item.bakimxProductId,
-          source: item.bakimxProductId ? "bakimx" : undefined,
+          getirbakimProductId: item.getirbakimProductId,
+          source: item.bakimxProductId ? "bakimx" : item.getirbakimProductId ? "getirbakim" : undefined,
         },
       })
       // Teklif stok düşMEMİŞTİ — çevrim sırasında iş emrine düş. BakımX kaleminin

@@ -7,6 +7,7 @@ import {
 import { getGetirbakimProvider } from "./provider"
 import {
   clampGetirbakimLimit,
+  GETIRBAKIM_MAX_LIMIT,
   GETIRBAKIM_MIN_SEARCH_LEN,
   type GetirbakimProduct,
   type GetirbakimSearchInput,
@@ -41,4 +42,36 @@ export async function searchGetirbakimProducts(
   // dış çağrı yapılmasını engellemeye değer.
   writeGetirbakimCache(key, products)
   return products
+}
+
+function matchesResolvedId(product: GetirbakimProduct, id: string): boolean {
+  return product.id === id || product.sourceProductId === id
+}
+
+/**
+ * Kalem yazımında GetirBakım ürününü yeniden çözer — fiyat istemciden gelmez.
+ *
+ * Önce `sku` (parça no) ile OEM araması, sonra serbest metin. İkisinde de
+ * `id` / `sourceProductId` eşleşmesi şart: aynı kodla başka bir GetirBakım
+ * kartı yazılmasın.
+ */
+export async function resolveGetirbakimProduct(
+  id: string,
+  sku?: string | null,
+): Promise<GetirbakimProduct | null> {
+  const needle = id.trim()
+  if (!needle) return null
+  const skuTrim = sku?.trim() || null
+
+  if (skuTrim) {
+    const byOem = await searchGetirbakimProducts({ oem: skuTrim, limit: GETIRBAKIM_MAX_LIMIT })
+    const hit = byOem.find((product) => matchesResolvedId(product, needle))
+    if (hit) return hit
+  }
+
+  const byQuery = await searchGetirbakimProducts({
+    q: skuTrim || needle,
+    limit: GETIRBAKIM_MAX_LIMIT,
+  })
+  return byQuery.find((product) => matchesResolvedId(product, needle)) ?? null
 }

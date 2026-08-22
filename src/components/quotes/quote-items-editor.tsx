@@ -144,8 +144,9 @@ function toEditorRow(row: QuoteEditorRow): PartsLaborRow {
     category: null,
     categoryId: null,
     // BakımX kalemi rozetini ve kimlik kilidini çevrimden önce de korur (BAK-35).
-    source: row.bakimxProductId ? "bakimx" : null,
+    source: row.bakimxProductId ? "bakimx" : row.getirbakimProductId ? "getirbakim" : null,
     bakimxProductId: row.bakimxProductId,
+    getirbakimProductId: row.getirbakimProductId,
     __partId: row.partId,
   }
 }
@@ -164,5 +165,6 @@ function fromEditorRow(row: PartsLaborRow): QuoteEditorRow {
     note: row.note,
     partId: row.__partId ?? null,
     bakimxProductId: row.bakimxProductId ?? null,
+    getirbakimProductId: row.getirbakimProductId ?? null,
   }
 }

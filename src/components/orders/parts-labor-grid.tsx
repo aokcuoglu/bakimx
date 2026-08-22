@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store, AlertTriangle, MoreHorizontal, ReceiptText } from "lucide-react"
+import { Plus, Minus, Trash2, Loader2, PackagePlus, PencilLine, Tags, PackageCheck, Wrench, ShoppingCart, ExternalLink, CheckCircle2, PackageSearch, Info, Check, Store, AlertTriangle, MoreHorizontal, ReceiptText, Truck } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +81,8 @@ import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { bakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { getirbakimLineItemFields } from "@/lib/parts/getirbakim-item"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import { createQuickPartAction, ensureVehiclePartsPrefetched } from "@/app/(app)/parts/actions"
 
 type ItemType = "part" | "labor" | "external_labor"
@@ -164,11 +166,11 @@ function toDetailTarget(
 function toRow(i: OrderItem): Row { return { ...i } }
 
 /** Composer'ın yazabildiği kaynaklar (dış alım kendi akışından gelir). */
-type DraftSource = "catalog" | "manual" | "bakimx"
+type DraftSource = "catalog" | "manual" | "bakimx" | "getirbakim"
 
 // Composer'ın boş taslağı (tek satırlık ekleme formu için — listede birikmez).
 // source: kalemin kaynağı (katalog composer → "catalog", manuel → "manual",
-// BakımX kataloğu → "bakimx").
+// BakımX kataloğu → "bakimx", GetirBakım → "getirbakim").
 // includeVat AÇIKÇA yazılır (BAK-75): iyimser satır sunucu yanıtı gelmeden de
 // listede doğru okunsun, "az önce KDV'siz eklenen kalem bir an KDV'li göründü"
 // titremesi olmasın.
@@ -523,6 +525,7 @@ export function PartsLaborGrid({
     // ad/parça no/marka/kategori/alış fiyatı alanlarını oradan yazar — buradan
     // gönderilen değerler yalnız iyimser satır içindir (bkz. addOrderItemAction).
     if (draft.bakimxProductId) fd.set("bakimxProductId", draft.bakimxProductId)
+    if (draft.getirbakimProductId) fd.set("getirbakimProductId", draft.getirbakimProductId)
     // BAK-53 — satır KDV bayrağı. Sunucu varsayılanı da `true`, ama taslakta
     // kullanıcı işareti kaldırdıysa o karar kaybolmamalı.
     if (draft.includeVat !== undefined) fd.set("includeVat", String(draft.includeVat !== false))
@@ -957,6 +960,22 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
     }
   }
 
+  function getirbakimDraft(p: GetirbakimProduct): Partial<Row> & { source: "getirbakim" } {
+    const fields = getirbakimLineItemFields(p)
+    return {
+      source: fields.source,
+      name: fields.name,
+      sku: fields.sku,
+      brand: fields.brand,
+      category: fields.category,
+      categoryId: fields.categoryId,
+      unit: fields.unit,
+      getirbakimProductId: fields.getirbakimProductId,
+      purchasePriceKurus: fields.purchasePriceKurus,
+      unitPrice: fields.unitPrice,
+    }
+  }
+
   // Tek ekleme yolu: emptyDraft üzerine partial'ı bindir → addItem. Başarıda kutuyu sıfırla.
   async function add(partial: Partial<Row> & { source: DraftSource }): Promise<boolean> {
     if (submittingRef.current || !partial.name?.trim()) return false
@@ -1056,6 +1075,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         onSelectArticle={(a) => void add(catalogDraft(a))}
         onSelectStockPart={(p) => setStockConfirm(p)}
         onSelectBakimxProduct={(p) => void add(bakimxDraft(p))}
+        onSelectGetirbakimProduct={(p) => void add(getirbakimDraft(p))}
         onShowDetail={(a) =>
           onShowDetail({ target: toDetailTarget(a, vehicle), onSelect: () => void add(catalogDraft(a)) })
         }
@@ -1126,6 +1146,10 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
           onOpenChange={setTecdocOpen}
           onSelectBakimx={(p) => {
             void add(bakimxDraft(p))
+            setTecdocOpen(false)
+          }}
+          onSelectGetirbakim={(p) => {
+            void add(getirbakimDraft(p))
             setTecdocOpen(false)
           }}
           onSelect={(sel) => {
@@ -1228,7 +1252,9 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   // Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
   // (updateOrderItemAction). `tecdocArticleId` YALNIZ TecDoc seçiminde,
   // `bakimxProductId` YALNIZ BakımX seçiminde dolar; ikisi de katalog kimliği.
-  const identityLocked = isPart && (row.tecdocArticleId != null || row.bakimxProductId != null)
+  const identityLocked = isPart && (
+    row.tecdocArticleId != null || row.bakimxProductId != null || row.getirbakimProductId != null
+  )
   const linked = vehicle?.catalogVehicleTypeId != null
   const [editingPrice, setEditingPrice] = useState(false)
   const [priceDraft, setPriceDraft] = useState("")
@@ -1303,8 +1329,10 @@ type RowEditor = ReturnType<typeof useRowEditor>
 function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
   const lockNote = row.bakimxProductId != null
     ? "BakımX kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
+    : row.getirbakimProductId != null
+      ? "GetirBakım'dan eklendi — ad, parça no ve marka değiştirilemez"
     : row.tecdocArticleId != null
-      ? "Katalogdan eklendi — ad, parça no ve marka değiştirilemez"
+      ? "TecDoc kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
       : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
   // Kırpılan adda `title` ÖNCE tam adı vermeli: kullanıcı hover'da okumak
   // istediği şey kilit gerekçesi değil, görünmeyen ad.
@@ -1648,10 +1676,11 @@ function TypeChip({ type }: { type: ItemType }) {
 function SourceBadge({ source }: { source: OrderItem["source"] }) {
   if (!source) return null
   const map = {
-    catalog: { Icon: PackageCheck, label: "Katalogdan eklendi", cls: "text-primary" },
+    catalog: { Icon: PackageCheck, label: "TecDoc kataloğundan eklendi", cls: "text-primary" },
     manual: { Icon: PencilLine, label: "Manuel eklendi", cls: "text-muted-foreground" },
     purchase: { Icon: ShoppingCart, label: "Dışarıdan alındı", cls: "text-primary" },
     bakimx: { Icon: Store, label: "BakımX kataloğundan eklendi", cls: "text-primary" },
+    getirbakim: { Icon: Truck, label: "GetirBakım'dan eklendi", cls: "text-primary" },
   } as const
   const { Icon, label, cls } = map[source]
   return (

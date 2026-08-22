@@ -23,6 +23,8 @@ import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
 import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
 import { GetirbakimProductRow } from "@/components/parts/getirbakim-product-row"
+import { isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
 import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import {
@@ -70,6 +72,7 @@ export function PartSearchInput({
   onShowDetail,
   onSelectStockPart,
   onSelectBakimxProduct,
+  onSelectGetirbakimProduct,
 }: {
   value: string
   /** Seçili parçanın numarası — input içinde öndeki mono çip olarak gösterilir. */
@@ -94,6 +97,8 @@ export function PartSearchInput({
    * kalemi yazamayan çağıran (ör. parça talebi) ürün de göstermemeli.
    */
   onSelectBakimxProduct?: (p: BakimxProductSummary) => void
+  /** GetirBakım ürünü seçildi. Verilmezse satırlar tıklanamaz. */
+  onSelectGetirbakimProduct?: (p: GetirbakimProduct) => void
   /** Serbest-metin adı kalıcılaştır (yalnız katalogsuz modda blur'da; katalogda seçim kalıcılaştırır). */
   onCommit?: () => void
   /** Parça seçimini (ad/SKU/marka/kategori) temizler; showClear ile gösterilir. */
@@ -290,7 +295,7 @@ export function PartSearchInput({
   // GetirBakım modal aramasıyla aynı mevcut sözleşme. Satır salt-okunurdur:
   // kaleme bağlamak kaynak/migration kararı gerektirir (GetirbakimProductRow).
   const { products: getirbakimResults } = useGetirbakimSearch({
-    enabled: !!onSelectBakimxProduct,
+    enabled: !!onSelectBakimxProduct || !!onSelectGetirbakimProduct,
     q: query,
     limit: BAKIMX_SUGGESTION_LIMIT,
     vehicleTypeId,
@@ -305,7 +310,7 @@ export function PartSearchInput({
   // kendi stok kartlarının (#181) ve araçtan bağımsız BakımX ürünlerinin en çok
   // işe yaradığı durum. Bu erken dönüş yüzünden stok sonuçları hiç
   // görünmüyordu.
-  if (vehicleTypeId == null && !onSelectStockPart && !onSelectBakimxProduct) {
+  if (vehicleTypeId == null && !onSelectStockPart && !onSelectBakimxProduct && !onSelectGetirbakimProduct) {
     const inputGroup = (
       <InputGroup>
         {skuChip}
@@ -396,8 +401,11 @@ export function PartSearchInput({
               <AutocompleteItem
                 key={suggestionKey(s)}
                 value={s}
-                disabled
-                className="pointer-events-none block p-0 opacity-100 data-disabled:opacity-100"
+                disabled={!onSelectGetirbakimProduct || !isGetirbakimSelectable(s.product)}
+                onClick={() => {
+                  if (isGetirbakimSelectable(s.product)) onSelectGetirbakimProduct?.(s.product)
+                }}
+                className="block p-0 data-disabled:opacity-70"
               >
                 <GetirbakimProductRow product={s.product} />
               </AutocompleteItem>

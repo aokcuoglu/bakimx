@@ -19,6 +19,8 @@ import { recalcOrderPayment } from "@/lib/cashbox/recalc"
 import { reserveStockInTx, returnStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 import { getVisibleBakimxProduct } from "@/lib/parts/bakimx-catalog"
 import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bakimx-item"
+import { getirbakimLineItemFields, type GetirbakimLineItemFields, isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
+import { resolveGetirbakimProduct } from "@/lib/parts/getirbakim/search"
 import { validateBakimxProductFitment } from "@/lib/parts/bakimx-fitment"
 import { resolveFeature } from "@/lib/features"
 import type { PlanTier } from "@/lib/plan"
@@ -74,7 +76,7 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
   unit: z.enum(ORDER_ITEM_UNITS, { error: "Geçerli bir birim seçiniz" }).optional(),
   // Kalemin kaynağı: katalog akışı mı, manuel mi, BakımX kataloğu mu. Rozet +
   // raporlama içindir; `bakimx` gönderilse bile ürün doğrulanamazsa yazılmaz.
-  source: z.enum(["catalog", "manual", "bakimx"]).optional(),
+  source: z.enum(["catalog", "manual", "bakimx", "getirbakim"]).optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
@@ -98,6 +100,7 @@ export async function addOrderItemAction(formData: FormData) {
     categoryId: formData.get("categoryId") as string,
     source: formData.get("source") as string,
     bakimxProductId: formData.get("bakimxProductId") as string,
+    getirbakimProductId: formData.get("getirbakimProductId") as string,
     includeVat: formData.get("includeVat") as string,
   }
 
@@ -117,6 +120,7 @@ export async function addOrderItemAction(formData: FormData) {
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
     source: raw.source || undefined,
     bakimxProductId: raw.bakimxProductId || undefined,
+    getirbakimProductId: raw.getirbakimProductId || undefined,
     includeVat: raw.includeVat || undefined,
   })
   if (!parsed.success) {
@@ -166,6 +170,27 @@ export async function addOrderItemAction(formData: FormData) {
     bakimxFields = bakimxLineItemFields(product)
   }
 
+  let getirbakimFields: GetirbakimLineItemFields | null = null
+  if (parsed.data.getirbakimProductId) {
+    if (parsed.data.type !== "part") return { error: "GetirBakım ürünü yalnız parça kalemine eklenebilir" }
+    if (bakimxFields) return { error: "Bir kalem hem BakımX hem GetirBakım kaynağı olamaz" }
+    const gateOpen = await resolveFeature(
+      workshop.id,
+      workshop.planTier as PlanTier,
+      "getirbakimCatalog",
+    )
+    if (!gateOpen) return { error: "GetirBakım kataloğu bu çalışma alanında kapalı." }
+    const product = await resolveGetirbakimProduct(
+      parsed.data.getirbakimProductId,
+      parsed.data.sku,
+    )
+    if (!product) return { error: "GetirBakım ürünü bulunamadı veya şu anda doğrulanamadı" }
+    if (!isGetirbakimSelectable(product)) return { error: "Bu GetirBakım ürünü şu anda tedarik edilemiyor" }
+    getirbakimFields = getirbakimLineItemFields(product)
+  }
+
+  const catalogFields = bakimxFields ?? getirbakimFields
+
   // Araç uyumluluğu kontrolü (BAK-46): vehicle_linked ürünler sadece uyumlu araçlara
   // eklenebilir. Sunucu otoritesi: araç tipi kalem yazımından değil, siparişten okunur.
   if (bakimxFields) {
@@ -188,24 +213,25 @@ export async function addOrderItemAction(formData: FormData) {
           type: parsed.data.type,
           // BakımX kaleminde kimlik/fiyat alanları ürün kaydından gelir; kalan
           // her şey (miktar, not, satış fiyatı) kullanıcınındır.
-          name: bakimxFields?.name ?? parsed.data.name,
-          sku: bakimxFields?.sku ?? parsed.data.sku ?? null,
-          unit: bakimxFields?.unit ?? parsed.data.unit ?? null,
+          name: catalogFields?.name ?? parsed.data.name,
+          sku: catalogFields?.sku ?? parsed.data.sku ?? null,
+          unit: catalogFields?.unit ?? parsed.data.unit ?? null,
           quantity: parsed.data.quantity,
-          unitPrice: parsed.data.unitPrice ?? bakimxFields?.unitPrice ?? null,
+          unitPrice: parsed.data.unitPrice ?? catalogFields?.unitPrice ?? null,
           totalPrice: parsed.data.totalPrice ?? null,
           note: parsed.data.note || null,
-          tecdocArticleId: bakimxFields ? null : parsed.data.tecdocArticleId ?? null,
-          // BakımX stoğu atölyenin stoğu DEĞİL → bağ kurulmaz, stok düşmez.
-          partId: bakimxFields ? null : partId,
-          brand: bakimxFields ? bakimxFields.brand : parsed.data.brand || null,
-          category: bakimxFields ? bakimxFields.category : parsed.data.category || null,
-          // BakımX'te null: o kolon TecDoc düğüm id'si, iç taksonomi anahtarı oraya yazılmaz.
-          categoryId: bakimxFields ? null : parsed.data.categoryId ?? null,
+          tecdocArticleId: catalogFields ? null : parsed.data.tecdocArticleId ?? null,
+          // BakımX/GetirBakım stoğu atölyenin stoğu DEĞİL → bağ kurulmaz, stok düşmez.
+          partId: bakimxFields || getirbakimFields ? null : partId,
+          brand: catalogFields ? catalogFields.brand : parsed.data.brand || null,
+          category: catalogFields ? catalogFields.category : parsed.data.category || null,
+          // BakımX/GetirBakım'da null: o kolon TecDoc düğüm id'si.
+          categoryId: catalogFields ? null : parsed.data.categoryId ?? null,
           bakimxProductId: bakimxFields?.bakimxProductId ?? null,
+          getirbakimProductId: getirbakimFields?.getirbakimProductId ?? null,
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
-          purchasePriceKurus: bakimxFields?.purchasePriceKurus ?? null,
-          source: bakimxFields ? bakimxFields.source : parsed.data.source ?? null,
+          purchasePriceKurus: catalogFields?.purchasePriceKurus ?? null,
+          source: catalogFields ? catalogFields.source : parsed.data.source ?? null,
           // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
           // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
           // girer, KDV yalnız satırın tick'i açılınca üstüne biner.
@@ -213,7 +239,7 @@ export async function addOrderItemAction(formData: FormData) {
         },
       })
       // Stok düş (sadece part'ı olan parça kalemleri için).
-      if (!bakimxFields && partId && parsed.data.type === "part") {
+      if (!bakimxFields && !getirbakimFields && partId && parsed.data.type === "part") {
         await reserveStockInTx(
           tx,
           user.workshopId,
