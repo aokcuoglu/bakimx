@@ -35,4 +35,14 @@ describe("GetirBakimClient", () => {
     const client = new GetirBakimClient("https://partner.test", "secret", async () => Response.json({ data: { ...order, supplierCost: 1 } }))
     await expect(client.getOrder("remote-1")).rejects.toBeInstanceOf(ProcurementProviderError)
   })
+
+  test.each([
+    new Response("<html>gateway failure</html>", { status: 502, headers: { "content-type": "text/html" } }),
+    new Response("not-json", { status: 200, headers: { "content-type": "application/json" } }),
+  ])("fails closed with a controlled provider error for a non-JSON response", async (response) => {
+    const client = new GetirBakimClient("https://partner.test", "secret", async () => response.clone())
+    const error = await client.quoteOrder("offer_1", 1).catch((caught) => caught)
+    expect(error).toBeInstanceOf(ProcurementProviderError)
+    expect(error).not.toBeInstanceOf(SyntaxError)
+  })
 })

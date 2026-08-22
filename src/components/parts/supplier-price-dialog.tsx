@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatTRY } from "@/lib/format"
+import { readJsonObject } from "@/lib/http/json-response"
 import type { GetirbakimExactProduct, GetirbakimOffer } from "@/lib/parts/getirbakim/types"
 import { transactionalAvailability } from "./supplier-offer-availability"
 
@@ -43,7 +44,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
     const controller = new AbortController()
     void fetch(`/api/catalog/getirbakim/offers?partNo=${encodeURIComponent(partNo)}`, { signal: controller.signal })
       .then(async (response) => {
-        const data = (await response.json()) as OfferResponse
+        const data = await readJsonObject<OfferResponse & Record<string, unknown>>(response)
         setRequest({
           partNo,
           result: response.ok ? data : { status: "upstream_error", normalizedPartNo: partNo },
@@ -60,7 +61,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
     setSelected({ product, offer }); setQuote(null); setConfirmationChanged(false); setPending(true)
     try {
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "quote", selectedOfferId: offer.selectedOfferId, quantity: purchaseQuantity }) })
-      const data = await response.json()
+      const data = await readJsonObject<{ error?: string; code?: string; quote: Quote }>(response)
       if (!response.ok) throw new Error(data.error || "Bağlayıcı fiyat alınamadı.")
       setQuote(data.quote)
     } catch (error) { toast.error(error instanceof Error ? error.message : "Bağlayıcı fiyat alınamadı.") }
@@ -79,9 +80,9 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         productPresentation: { name: part.name, brand: selected.product.brandName, partNumber: selected.product.manufacturerPartNumber.value },
         informationalSnapshot: { unitPriceKurus: selected.offer.informationalPriceKurus ?? undefined, currency: selected.offer.currency, availability: selected.offer.availability, capturedAt: new Date().toISOString() },
       }) })
-      const data = await response.json()
+      const data = await readJsonObject<{ error?: string; code?: string; procurement?: unknown }>(response)
       if (!response.ok) {
-        if (RECONFIRMATION_REQUIRED_CODES.has(data.code)) {
+        if (data.code && RECONFIRMATION_REQUIRED_CODES.has(data.code)) {
           setQuote(null)
           await chooseOffer(selected.product, selected.offer)
           setConfirmationChanged(true)
