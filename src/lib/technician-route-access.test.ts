@@ -4,6 +4,7 @@ import path from "node:path"
 import {
   TECHNICIAN_ALLOWED_PREFIXES,
   TECHNICIAN_RESTRICTED_ROLES,
+  getAppHomeRoute,
   isTechnicianRestrictedRole,
   isRouteAllowedForTechnician,
 } from "./technician-route-access"
@@ -103,6 +104,15 @@ describe("technician-route-access", () => {
     expect(isRouteAllowedForTechnician("/customers")).toBe(false)
     expect(isRouteAllowedForTechnician("/parts")).toBe(false)
     expect(isRouteAllowedForTechnician("/")).toBe(false)
+  })
+
+  test("getAppHomeRoute selects the landing page for each role", () => {
+    expect(getAppHomeRoute("usta")).toBe("/technician")
+    expect(getAppHomeRoute("cirak")).toBe("/technician")
+    expect(getAppHomeRoute("staff")).toBe("/technician")
+    expect(getAppHomeRoute("owner")).toBe("/dashboard")
+    expect(getAppHomeRoute("manager")).toBe("/dashboard")
+    expect(getAppHomeRoute(undefined)).toBe("/dashboard")
   })
 
   test("TECHNICIAN_RESTRICTED_ROLES matches expected roles", () => {
