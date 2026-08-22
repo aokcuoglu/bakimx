@@ -11,11 +11,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Minus, Loader2 } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { PartAttributeField } from "@/components/parts/part-attribute-field"
 import { validateQuickPartDraft } from "@/lib/parts/quick-part-draft"
-import { liraToKurus } from "@/lib/money"
+import { evaluateMoneyExpression } from "@/lib/money-expression"
+import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
 
 export type ManualPartDraft = {
   name: string
@@ -25,6 +27,7 @@ export type ManualPartDraft = {
   category: string | null
   categoryId: number | null
   quantity: number
+  unit: OrderItemUnit
   unitPrice: number | null // kuruş
   /** true → kalemin yanında kalıcı bir stok kartı (PartStockItem) da açılır. */
   createStockItem: boolean
@@ -74,6 +77,7 @@ export function ManualPartDialog({
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [categorySelLabel, setCategorySelLabel] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [unit, setUnit] = useState<OrderItemUnit>("adet")
   const [priceDraft, setPriceDraft] = useState("")
 
   // Her açılışta formu ön-dolu ad ile temiz başlat.
@@ -89,6 +93,7 @@ export function ManualPartDialog({
     setCategoryId(null)
     setCategorySelLabel(null)
     setQuantity(1)
+    setUnit("adet")
     setPriceDraft("")
   }, [open, initialName])
 
@@ -100,11 +105,20 @@ export function ManualPartDialog({
       return
     }
     setError(null)
-    const lira = Number(priceDraft)
+    const validQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 999
+      && Math.round(quantity * 1000) === quantity * 1000
+      && (isDivisibleOrderItemUnit(unit) || Number.isInteger(quantity))
+    if (!validQuantity) {
+      setError(isDivisibleOrderItemUnit(unit) ? "Miktar en fazla 3 ondalık basamaklı olmalıdır" : "Bu birimde miktar tam sayı olmalıdır")
+      return
+    }
     // Yazılan tutar KDV HARİÇ (net) kabul edilir ve olduğu gibi saklanır
     // (BAK-75). KDV, satırın KDV tick'i açılırsa listede eklenir.
-    const unitPrice =
-      priceDraft && !Number.isNaN(lira) && lira >= 0 ? liraToKurus(lira) : null
+    const unitPrice = priceDraft ? evaluateMoneyExpression(priceDraft) : null
+    if (priceDraft && unitPrice == null) {
+      setError("Birim fiyat işlemi geçersiz")
+      return
+    }
     const brand = brandText.trim() || null
     const category = categoryText.trim() || null
     // categoryId yalnız metin, seçilen katalog etiketiyle hâlâ birebir eşleşiyorsa geçerli.
@@ -116,6 +130,7 @@ export function ManualPartDialog({
       category,
       categoryId: finalCategoryId,
       quantity,
+      unit,
       unitPrice,
       createStockItem,
     })
@@ -192,35 +207,34 @@ export function ManualPartDialog({
             </div>
           </div>
 
-          <div className="flex items-end gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_7rem_8rem]">
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Miktar</span>
-              <div className="inline-flex h-9 items-center rounded-lg border border-input bg-background">
-                <Button type="button" variant="ghost" size="icon-xs" className="rounded-r-none"
-                  aria-label="Azalt" disabled={quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
-                  <Minus />
-                </Button>
-                <span className="min-w-6 px-1 text-center text-xs font-medium tabular-nums">{quantity}</span>
-                <Button type="button" variant="ghost" size="icon-xs" className="rounded-l-none"
-                  aria-label="Arttır" onClick={() => setQuantity((q) => q + 1)}>
-                  <Plus />
-                </Button>
-              </div>
+              <Input type="number" inputMode="decimal" min="0.001" max="999"
+                step={isDivisibleOrderItemUnit(unit) ? "0.001" : "1"} value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))} aria-label="Miktar" />
+            </div>
+            <div className="space-y-1">
+              <span className="block text-xs font-medium text-muted-foreground">Birim</span>
+              <Select value={unit} onValueChange={(value) => { const next = value as OrderItemUnit; setUnit(next); if (!isDivisibleOrderItemUnit(next)) setQuantity((q) => Math.max(1, Math.round(q))); else setCreateStockItem(false) }}>
+                <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ORDER_ITEM_UNITS.map((candidate) => <SelectItem key={candidate} value={candidate}>{ORDER_ITEM_UNIT_LABELS[candidate]}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Birim Fiyat</span>
               <InputGroup className="h-9 w-32">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="Fiyat"
+                  type="text"
+                  inputMode="text"
+                  placeholder="100 veya 2×100"
                   className="text-sm tabular-nums"
                   value={priceDraft}
                   onChange={(e) => setPriceDraft(e.target.value)}
+                  onBlur={() => { const value = evaluateMoneyExpression(priceDraft); if (value != null) setPriceDraft(String(value / 100).replace(".", ",")) }}
                 />
               </InputGroup>
             </div>
@@ -230,13 +244,16 @@ export function ManualPartDialog({
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">Stok kartı olarak kaydet</p>
               <p className="text-xs text-muted-foreground">
-                Parça, kodu ile Stok / Parçalar listesine eklenir. Stok miktarı 0 başlar, bu kalem stoktan düşmez.
+                {isDivisibleOrderItemUnit(unit)
+                  ? "Ondalıklı ölçü birimleri stok kartına bağlanamaz; kalem yalnız bu iş emrine eklenir."
+                  : "Parça, kodu ile Stok / Parçalar listesine eklenir. Stok miktarı 0 başlar, bu kalem stoktan düşmez."}
               </p>
             </div>
             <Switch
               checked={createStockItem}
               onCheckedChange={(v) => { setCreateStockItem(v); setError(null) }}
               aria-label="Stok kartı olarak kaydet"
+              disabled={isDivisibleOrderItemUnit(unit)}
             />
           </div>
         </div>

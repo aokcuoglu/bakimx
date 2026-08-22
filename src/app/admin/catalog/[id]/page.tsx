@@ -35,6 +35,7 @@ export default async function EditCatalogProductPage(props: { params: Promise<{ 
         description: true,
         imageUrl: true,
         oemNumbers: true,
+        crossReferences: true,
         workshopPriceKurus: true,
         vatRateBps: true,
         costPriceKurus: true,

@@ -13,6 +13,7 @@ import { StandaloneServiceAdvisor } from "@/components/advisor/standalone-servic
 import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { calculateOrderTotals } from "@/lib/totals"
+import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { getAssignableTechnicians } from "@/lib/technician/queries"
 import { resolveTechnicianFilter, UNASSIGNED_TECHNICIAN } from "@/lib/orders/technician-filter"
 import { INVOICE_WITH, INVOICE_WITHOUT, isInvoiceMissing, resolveInvoiceFilter } from "@/lib/orders/invoice-filter"
@@ -61,15 +62,15 @@ export default async function OrdersPage({
               OR: [
                 { workOrderNo: { contains: q, mode: "insensitive" as const } },
                 { intakeForm: { vehicle: { plate: { contains: q, mode: "insensitive" as const } } } },
-                { intakeForm: { customer: { firstName: { contains: q, mode: "insensitive" as const } } } },
-                { intakeForm: { customer: { lastName: { contains: q, mode: "insensitive" as const } } } },
-                { intakeForm: { customer: { phone: { contains: q } } } },
+                { intakeForm: { vehicle: { customer: { firstName: { contains: q, mode: "insensitive" as const } } } } },
+                { intakeForm: { vehicle: { customer: { lastName: { contains: q, mode: "insensitive" as const } } } } },
+                { intakeForm: { vehicle: { customer: { phone: { contains: q } } } } },
               ],
             }
           : {}),
       },
       include: {
-        intakeForm: { include: { customer: true, vehicle: true } },
+        intakeForm: { include: { customer: true, vehicle: { include: { customer: true } } } },
         items: true,
         assignedTechnician: { select: { id: true, fullName: true, role: true } },
       },
@@ -94,6 +95,7 @@ export default async function OrdersPage({
   }
 
   const serializedOrders = orders.map((o) => {
+    const currentCustomer = currentWorkOrderCustomer(o.intakeForm)
     const totals = calculateOrderTotals(o.items, {
       discountAmount: o.discountAmount,
       taxRate: o.taxRate,
@@ -120,13 +122,13 @@ export default async function OrdersPage({
         model: o.intakeForm.vehicle.model,
       },
       customer: {
-        id: o.intakeForm.customer.id,
-        firstName: o.intakeForm.customer.firstName,
-        lastName: o.intakeForm.customer.lastName,
-        fullName: o.intakeForm.customer.fullName,
-        companyName: o.intakeForm.customer.companyName,
-        type: o.intakeForm.customer.type,
-        phone: o.intakeForm.customer.phone,
+        id: currentCustomer.id,
+        firstName: currentCustomer.firstName,
+        lastName: currentCustomer.lastName,
+        fullName: currentCustomer.fullName,
+        companyName: currentCustomer.companyName,
+        type: currentCustomer.type,
+        phone: currentCustomer.phone,
       },
     }
   })

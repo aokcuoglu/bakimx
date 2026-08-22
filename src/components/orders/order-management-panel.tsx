@@ -41,6 +41,7 @@ export type OrderItem = {
   name: string
   sku: string | null
   unit: string | null
+  hasStockLink?: boolean
   quantity: number
   unitPrice: number | null
   totalPrice: number | null

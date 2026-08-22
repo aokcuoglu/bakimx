@@ -26,6 +26,7 @@ import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
 import { computeStockDelta } from "@/lib/parts/stock-delta"
+import { ORDER_ITEM_UNITS, quantityToNumber, validateQuantityForUnit } from "@/lib/orders/quantity"
 import { isOrderStatus, canTransitionOrder, isIntakeStatus, canTransitionIntake, isOrderLocked } from "@/lib/status-transitions"
 import type { OrderStatus, IntakeStatus } from "@prisma/client"
 import { notifyWorkOrderCompleted, notifyPaymentReminder } from "@/lib/communications/triggers"
@@ -70,7 +71,7 @@ const ORDER_CANCELLED_REQUEST_REASON = "İş emri iptal edildi"
 
 const orderItemCreateSchema = serviceOrderItemSchema.extend({
   sku: z.string().optional(),
-  unit: z.string().optional(),
+  unit: z.enum(ORDER_ITEM_UNITS, { error: "Geçerli bir birim seçiniz" }).optional(),
   // Kalemin kaynağı: katalog akışı mı, manuel mi, BakımX kataloğu mu. Rozet +
   // raporlama içindir; `bakimx` gönderilse bile ürün doğrulanamazsa yazılmaz.
   source: z.enum(["catalog", "manual", "bakimx"]).optional(),
@@ -121,6 +122,8 @@ export async function addOrderItemAction(formData: FormData) {
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
+  const quantityError = validateQuantityForUnit(parsed.data.quantity, parsed.data.unit, !!parsed.data.partId)
+  if (quantityError) return { error: quantityError }
 
   const order = await prisma.serviceOrder.findFirst({
     where: { id: raw.serviceOrderId, workshopId: user.workshopId },
@@ -605,7 +608,7 @@ export async function updatePurchaseItemAction(itemId: string, orderId: string, 
  */
 async function deleteOrderItemRecord(
   user: { id: string; workshopId: string },
-  item: { id: string; name: string; type: string; quantity: number; source: string | null; partId: string | null },
+  item: { id: string; name: string; type: string; quantity: number | { toNumber(): number }; source: string | null; partId: string | null },
   orderId: string,
   auditAction: string,
 ) {
@@ -634,12 +637,13 @@ async function deleteOrderItemRecord(
     })
     if (result.count > 0) {
       // partId set olan parça kalemi ise stok iade et.
-      if (item.partId && item.type === "part" && item.quantity > 0) {
+      const itemQuantity = quantityToNumber(item.quantity)
+      if (item.partId && item.type === "part" && itemQuantity > 0) {
         await returnStockInTx(
           tx,
           user.workshopId,
           item.partId,
-          item.quantity,
+          itemQuantity,
           "work_order",
           itemId,
           user.id,
@@ -680,7 +684,7 @@ async function deleteOrderItemRecord(
     "ServiceOrderItem",
     itemId,
     auditAction,
-    JSON.stringify({ name: item.name, type: item.type, quantity: item.quantity, source: item.source }),
+    JSON.stringify({ name: item.name, type: item.type, quantity: quantityToNumber(item.quantity), source: item.source }),
     orderId,
   )
 
@@ -783,6 +787,11 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
+  const currentQuantity = quantityToNumber(item.quantity)
+  const effectiveQuantity = parsed.data.quantity ?? currentQuantity
+  const effectiveUnit = parsed.data.unit ?? item.unit
+  const quantityError = validateQuantityForUnit(effectiveQuantity, effectiveUnit, item.partId != null)
+  if (quantityError) return { error: quantityError }
 
   // Katalogdan (TecDoc) eklenen parçanın kimliği — ad, parça no, marka, kategori —
   // katalog verisidir ve değiştirilemez; aksi halde satır ⓘ detayda/fiyat
@@ -850,7 +859,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   // Miktar değiştiyse ve satır kendi stoğumuza bağlıysa (partId + type=part) stok farkını mutabık kıl.
   const newQty = parsed.data.quantity
   const stockNeedsSync =
-    newQty !== undefined && newQty !== item.quantity && item.partId != null && item.type === "part"
+    newQty !== undefined && newQty !== currentQuantity && item.partId != null && item.type === "part"
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -867,7 +876,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
       }
 
       if (stockNeedsSync && item.partId) {
-        const delta = computeStockDelta(item.quantity, newQty!)
+        const delta = computeStockDelta(currentQuantity, newQty!)
         if (delta.direction === "reserve") {
           await reserveStockInTx(
             tx, user.workshopId, item.partId, delta.amount, "work_order", itemId, user.id,
@@ -893,7 +902,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     "ServiceOrderItem",
     itemId,
     "order_item_updated",
-    JSON.stringify({ name: item.name, changes: data }),
+    JSON.stringify({ name: item.name, changes: data, previousQuantity: currentQuantity }),
     orderId,
   )
 

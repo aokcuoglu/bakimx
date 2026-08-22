@@ -23,10 +23,17 @@ export type BakimxSearchKeyInput = {
   brandName: string
   sku: string
   oemNumbers?: readonly string[] | null
+  crossReferences?: readonly string[] | null
 }
 
 export function buildBakimxProductSearchKey(input: BakimxSearchKeyInput): string {
-  const parts = [input.name, input.brandName, input.sku, ...(input.oemNumbers ?? [])]
+  const parts = [
+    input.name,
+    input.brandName,
+    input.sku,
+    ...(input.oemNumbers ?? []),
+    ...(input.crossReferences ?? []),
+  ]
   const seen = new Set<string>()
   for (const part of parts) {
     const normalized = normalizePartSearchTerm(part ?? "")

@@ -96,6 +96,32 @@ test("mapImportHeaders folds Turkish headers and accepts synonyms", () => {
   expect(mapping.duplicateHeaders).toEqual([])
 })
 
+test("mapImportHeaders accepts the attached Wunder JSON field names without conflating description and name", () => {
+  const mapping = mapImportHeaders(["wunder_no", "aciklama", "fiyat_tl", "image_url", "marka"])
+  expect(mapping.byField).toEqual({ sku: 0, description: 1, workshopPrice: 2, imageUrl: 3 })
+  expect(mapping.sourceKind).toBe("wunder")
+})
+
+test("Wunder rows derive name and zero stock while keeping OEM and cross references separate", () => {
+  const jsonHeader = ["wunder_no", "oem_no", "hengst_no", "mann", "mahle", "cinsi", "aciklama", "fiyat_tl", "marka"]
+  const mapping = mapImportHeaders(jsonHeader)
+  expect(validateImportHeader(mapping, { mode: "upsert", pricesIncludeVat: false })).toEqual([])
+
+  const values = parseImportRow(
+    { line: 2, cells: ["WP226", "64116823726", "E3950LC-2", "CUK23005-2", "LAK1156/S", "KABIN", "BMW X1", "100", "BMW"] },
+    mapping,
+    { mode: "upsert", brandName: "Wunderfilter", pricesIncludeVat: false },
+  )
+  expect(values.errors).toEqual([])
+  expect(values.patch).toMatchObject({
+    name: "Wunderfilter Polen Filtresi WP226",
+    stockQty: 0,
+    categoryKey: "polen-filtresi",
+    oemNumbers: ["64116823726"],
+    crossReferences: ["E3950LC-2", "CUK23005-2", "LAK1156/S"],
+  })
+})
+
 test("mapImportHeaders keeps the first column when a field repeats", () => {
   const mapping = mapImportHeaders(["Ürün Kodu", "SKU", "Ürün Adı"])
   expect(mapping.byField.sku).toBe(0)
@@ -105,13 +131,30 @@ test("mapImportHeaders keeps the first column when a field repeats", () => {
 test("validateImportHeader reports missing required columns per mode", () => {
   const onlySku = mapImportHeaders(["Ürün Kodu"])
   expect(validateImportHeader(onlySku, { mode: "upsert", pricesIncludeVat: false })).toEqual([
-    "Dosyada zorunlu kolon eksik: Ürün Adı, Fiyat (KDV hariç), Stok.",
+    "Dosyada zorunlu kolon eksik: Ürün Adı, Stok.",
   ])
   // Yalnız fiyat/stok modunda ürün adı istenmez ama güncellenecek bir kolon şart.
   expect(validateImportHeader(onlySku, { mode: "price_stock_only", pricesIncludeVat: false })).toHaveLength(1)
   expect(
     validateImportHeader(mapImportHeaders(["Ürün Kodu", "Stok"]), { mode: "price_stock_only", pricesIncludeVat: false }),
   ).toEqual([])
+})
+
+test("upsert accepts a blank price and defaults a new product to zero", () => {
+  const csv = "Ürün Kodu;Ürün Adı;Fiyat (KDV hariç);Stok\nA1;Akü;;5\n"
+  const plan = planFrom(csv)
+
+  expect(plan.counts).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, error: 0 })
+  expect(plan.entries[0].input?.workshopPriceKurus).toBe(0)
+})
+
+test("upsert accepts a missing price column and preserves an existing price", () => {
+  const seed = planFrom(TR_EXCEL_CSV).entries[0].input!
+  const csv = "Ürün Kodu;Ürün Adı;Stok\nMTL-60AH;Mutlu Akü 60Ah 540A;30\n"
+  const plan = planFrom(csv, { existing: [asExisting(seed, "prod_1")] })
+
+  expect(plan.counts.error).toBe(0)
+  expect(plan.entries[0].input?.workshopPriceKurus).toBe(seed.workshopPriceKurus)
 })
 
 test("validateImportHeader refuses a KDV-dahil price column when the flag is off", () => {
@@ -194,6 +237,7 @@ test("a realistic TR Excel export maps to two new products", () => {
     description: "12V 60Ah, 540A",
     imageUrl: "https://ornek.com/aku.jpg",
     oemNumbers: ["1234567", "7654321"],
+    crossReferences: [],
     workshopPriceKurus: 123456,
     vatRateBps: 2000,
     costPriceKurus: null,

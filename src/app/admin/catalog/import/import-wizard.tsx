@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { AlertTriangle, ArrowLeft, CheckCircle2, Download, Loader2, Upload } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileJson2, Loader2, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
 import { formatKurus } from "@/lib/money"
 import {
   CATALOG_IMPORT_COLUMNS,
@@ -25,12 +26,7 @@ import {
 import type { CatalogBrandOption } from "@/app/admin/catalog/data"
 import type { CatalogImportHistoryRow } from "@/app/admin/catalog/import/data"
 import { cancelBakimxCatalogImportAction } from "@/app/admin/catalog/import/actions"
-import type {
-  ImportActionError,
-  ImportApplyResult,
-  ImportPreviewResult,
-  ImportPreviewRow,
-} from "@/lib/catalog/bakimx-import-service"
+import type { ImportActionError, ImportApplyResult, ImportPreviewResult, ImportPreviewRow } from "@/lib/catalog/bakimx-import-service"
 
 /**
  * İçe aktarma sihirbazı: **dosya seç → ön izle → uygula.**
@@ -46,18 +42,21 @@ import type {
  * bakimx-import-service.ts). 404 yetki reddidir: admin konsolunun varlığı ele
  * verilmesin diye sunucu `notFound()` fırlatıyor.
  */
-async function postImport<T extends { ok: true }>(
-  endpoint: "preview" | "apply",
-  body: FormData,
-): Promise<T | ImportActionError> {
+async function postImport<T extends { ok: true }>(endpoint: "preview" | "apply", body: FormData): Promise<T | ImportActionError> {
   try {
-    const response = await fetch(`/api/admin/catalog/import/${endpoint}`, { method: "POST", body })
+    const response = await fetch(`/api/admin/catalog/import/${endpoint}`, {
+      method: "POST",
+      body,
+    })
     if (response.status === 404) return { ok: false, error: "Bu işlem için yetkiniz yok." }
     const payload = (await response.json()) as T | ImportActionError
     if (!response.ok && !("error" in payload)) return { ok: false, error: "İşlem tamamlanamadı." }
     return payload
   } catch {
-    return { ok: false, error: "Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin." }
+    return {
+      ok: false,
+      error: "Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    }
   }
 }
 
@@ -77,13 +76,9 @@ const STATUS_VARIANTS: Record<CatalogImportHistoryRow["status"], "default" | "se
   cancelled: "outline",
 }
 
-export function CatalogImportWizard({
-  brands,
-  history,
-}: {
-  brands: CatalogBrandOption[]
-  history: CatalogImportHistoryRow[]
-}) {
+const PREVIEW_PAGE_SIZE = 25
+
+export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandOption[]; history: CatalogImportHistoryRow[] }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -93,7 +88,10 @@ export function CatalogImportWizard({
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<ImportPreviewResult | null>(null)
   const [applied, setApplied] = useState<ImportPreviewResult | null>(null)
-  const [error, setError] = useState<{ message: string; details: string[] } | null>(null)
+  const [error, setError] = useState<{
+    message: string
+    details: string[]
+  } | null>(null)
   const [pending, startTransition] = useTransition()
 
   const brandName = brands.find((b) => b.id === brandId)?.name ?? ""
@@ -185,7 +183,7 @@ export function CatalogImportWizard({
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Ürün İçe Aktarma</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Marka seçip CSV yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
+            Marka seçip CSV veya JSON yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
           </p>
         </div>
         <Button size="sm" variant="outline" asChild>
@@ -268,21 +266,65 @@ export function CatalogImportWizard({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="import-file">
-              Dosya (.csv)
-            </label>
-            <Input
-              id="import-file"
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,text/csv,text/plain"
-              className="py-2"
-              disabled={pending}
-              onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-            />
+            <p className="text-xs font-medium text-muted-foreground">Ürün dosyası</p>
+            <div
+              className="rounded-xl border border-dashed border-border bg-muted/20 p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault()
+                if (!pending) onPickFile(event.dataTransfer.files?.[0] ?? null)
+              }}
+            >
+              <Input
+                id="import-file"
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json,text/csv,text/plain,application/json"
+                className="sr-only"
+                disabled={pending}
+                onChange={(event) => onPickFile(event.target.files?.[0] ?? null)}
+              />
+              {file ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+                    <FileJson2 className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} KB</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    disabled={pending}
+                    aria-label="Seçilen dosyayı kaldır"
+                    onClick={() => {
+                      onPickFile(null)
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-2 text-center">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary-strong">
+                    <Upload className="size-5" />
+                  </div>
+                  <div>
+                    <Button type="button" variant="link" className="h-auto p-0" disabled={pending} onClick={() => fileInputRef.current?.click()}>
+                      Dosya seçin
+                    </Button>
+                    <span className="text-sm text-muted-foreground"> veya buraya sürükleyin</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">CSV veya JSON · En fazla {IMPORT_MAX_ROWS.toLocaleString("tr-TR")} satır</p>
+                </div>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Zorunlu kolonlar: {requiredLabels}. En fazla {IMPORT_MAX_ROWS.toLocaleString("tr-TR")} satır. Excel’de{" "}
-              <em>Farklı Kaydet → CSV UTF-8</em> ile kaydedin.
+              Zorunlu alanlar: {requiredLabels}. Fiyat boş bırakılabilir; yeni ürünlerde 0 TL olarak başlar ve daha sonra güncellenebilir.
             </p>
           </div>
 
@@ -311,15 +353,7 @@ export function CatalogImportWizard({
         </Alert>
       )}
 
-      {preview && (
-        <PreviewPanel
-          preview={preview}
-          brandName={brandName}
-          pending={pending}
-          onApply={runApply}
-          onCancel={runCancel}
-        />
-      )}
+      {preview && <PreviewPanel preview={preview} brandName={brandName} pending={pending} onApply={runApply} onCancel={runCancel} />}
 
       <ImportHistory rows={history} />
     </div>
@@ -332,8 +366,8 @@ function AppliedSummary({ result }: { result: ImportPreviewResult }) {
       <CheckCircle2 />
       <AlertTitle>İçe aktarma tamamlandı — {result.fileName}</AlertTitle>
       <AlertDescription>
-        {result.counts.created} yeni ürün, {result.counts.updated} güncelleme, {result.counts.skipped} atlanan,{" "}
-        {result.counts.error} hatalı satır.{" "}
+        {result.counts.created} yeni ürün, {result.counts.updated} güncelleme, {result.counts.skipped} atlanan, {result.counts.error} hatalı
+        satır.{" "}
         <Link href="/admin/catalog" className="underline underline-offset-2">
           Katalogu aç
         </Link>
@@ -405,7 +439,7 @@ function PreviewPanel({
         )}
 
         <Tabs defaultValue={counts.error > 0 ? "errors" : "creates"}>
-          <TabsList>
+          <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="creates">Yeni ({counts.created})</TabsTrigger>
             <TabsTrigger value="updates">Güncellenecek ({counts.updated})</TabsTrigger>
             <TabsTrigger value="skips">Atlanan ({counts.skipped})</TabsTrigger>
@@ -422,42 +456,13 @@ function PreviewPanel({
             <PreviewRows rows={preview.skips} total={counts.skipped} emptyLabel="Atlanan satır yok." showNote />
           </TabsContent>
           <TabsContent value="errors">
-            {preview.issues.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">Hatalı satır yok.</p>
-            ) : (
-              <div className="rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-20">Satır</TableHead>
-                      <TableHead className="w-40">Ürün Kodu</TableHead>
-                      <TableHead>Hata</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {preview.issues.map((issue, index) => (
-                      <TableRow key={`${issue.line}-${index}`}>
-                        <TableCell className="tabular-nums">{issue.line}</TableCell>
-                        <TableCell className="font-mono text-xs">{issue.sku || "—"}</TableCell>
-                        <TableCell className="text-sm text-destructive-strong">{issue.message}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {preview.issuesTruncated && (
-                  <p className="p-3 text-xs text-muted-foreground">
-                    İlk {preview.issues.length} hata gösteriliyor. Dosyayı düzeltip tekrar yükleyin.
-                  </p>
-                )}
-              </div>
-            )}
+            <PreviewIssues issues={preview.issues} total={counts.error} truncated={preview.issuesTruncated} />
           </TabsContent>
         </Tabs>
 
         <Alert>
           <AlertDescription>
-            Hatalı satırlar yazılmaz, geri kalan satırlar uygulanır. Uygulamadan sonra parti geçmişte kalıcı olarak
-            görünür.
+            Hatalı satırlar yazılmaz, geri kalan satırlar uygulanır. Uygulamadan sonra parti geçmişte kalıcı olarak görünür.
           </AlertDescription>
         </Alert>
 
@@ -475,6 +480,43 @@ function PreviewPanel({
   )
 }
 
+function PreviewIssues({ issues, total, truncated }: { issues: ImportPreviewResult["issues"]; total: number; truncated: boolean }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(issues, PREVIEW_PAGE_SIZE)
+
+  if (issues.length === 0) return <p className="p-4 text-sm text-muted-foreground">Hatalı satır yok.</p>
+
+  return (
+    <div className="rounded-lg border">
+      <div className="overflow-x-auto">
+        <Table className="min-w-[560px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Satır</TableHead>
+              <TableHead className="w-40">Ürün Kodu</TableHead>
+              <TableHead>Hata</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageItems.map((issue, index) => (
+              <TableRow key={`${issue.line}-${page * PREVIEW_PAGE_SIZE + index}`}>
+                <TableCell className="tabular-nums">{issue.line}</TableCell>
+                <TableCell className="font-mono text-xs">{issue.sku || "—"}</TableCell>
+                <TableCell className="text-sm text-destructive-strong">{issue.message}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {truncated && (
+        <p className="p-3 text-xs text-muted-foreground">
+          {total.toLocaleString("tr-TR")} hatadan ilk {issues.length.toLocaleString("tr-TR")} tanesi gösteriliyor.
+        </p>
+      )}
+      <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
+    </div>
+  )
+}
+
 function PreviewRows({
   rows,
   total,
@@ -488,47 +530,56 @@ function PreviewRows({
 }) {
   if (rows.length === 0) return <p className="p-4 text-sm text-muted-foreground">{emptyLabel}</p>
 
+  return <PaginatedPreviewRows rows={rows} total={total} showNote={showNote} />
+}
+
+function PaginatedPreviewRows({ rows, total, showNote }: { rows: ImportPreviewRow[]; total: number; showNote: boolean }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(rows, PREVIEW_PAGE_SIZE)
+
   return (
     <div className="rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-20">Satır</TableHead>
-            <TableHead className="w-40">Ürün Kodu</TableHead>
-            <TableHead>Ürün</TableHead>
-            {showNote ? (
-              <TableHead>Gerekçe</TableHead>
-            ) : (
-              <>
-                <TableHead className="text-right">Fiyat (KDV hariç)</TableHead>
-                <TableHead className="text-right">Stok</TableHead>
-              </>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={`${row.line}-${row.sku}`}>
-              <TableCell className="tabular-nums">{row.line}</TableCell>
-              <TableCell className="font-mono text-xs">{row.sku}</TableCell>
-              <TableCell className="text-sm">{row.name || "—"}</TableCell>
+      <div className="overflow-x-auto">
+        <Table className="min-w-[720px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Satır</TableHead>
+              <TableHead className="w-40">Ürün Kodu</TableHead>
+              <TableHead>Ürün</TableHead>
               {showNote ? (
-                <TableCell className="text-sm text-muted-foreground">{row.note}</TableCell>
+                <TableHead>Gerekçe</TableHead>
               ) : (
                 <>
-                  <TableCell className="text-right tabular-nums">{formatKurus(row.workshopPriceKurus)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.stockQty}</TableCell>
+                  <TableHead className="text-right">Fiyat (KDV hariç)</TableHead>
+                  <TableHead className="text-right">Stok</TableHead>
                 </>
               )}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {pageItems.map((row) => (
+              <TableRow key={`${row.line}-${row.sku}`}>
+                <TableCell className="tabular-nums">{row.line}</TableCell>
+                <TableCell className="font-mono text-xs">{row.sku}</TableCell>
+                <TableCell className="text-sm">{row.name || "—"}</TableCell>
+                {showNote ? (
+                  <TableCell className="text-sm text-muted-foreground">{row.note}</TableCell>
+                ) : (
+                  <>
+                    <TableCell className="text-right tabular-nums">{formatKurus(row.workshopPriceKurus)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.stockQty}</TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
       {total > rows.length && (
         <p className="p-3 text-xs text-muted-foreground">
           {total.toLocaleString("tr-TR")} satırdan ilk {rows.length} tanesi gösteriliyor.
         </p>
       )}
+      <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   )
 }

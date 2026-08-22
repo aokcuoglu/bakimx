@@ -45,7 +45,7 @@ function row(overrides: Partial<ForeignVehicleRow> = {}): ForeignVehicleRow {
           status: "delivered",
           arrivalReason: "maintenance",
           createdAt: new Date("2026-03-01T09:10:00Z"),
-          itemNames: ["Akü 70Ah", "Akü değişim işçiliği"],
+          partNames: ["Akü 70Ah"],
         },
       },
     ],
@@ -92,7 +92,7 @@ test("ruhsat okutulduysa maske kalkar ve servis künyesi görünür", () => {
   expect(h.orders[0].workshopName).toBe("Yılmaz Oto Servis")
   expect(h.orders[0].workshopCity).toBe("İstanbul")
   expect(h.orders[0].complaint).toBe("Akü değişecek")
-  expect(h.orders[0].itemLabels).toEqual(["Akü 70Ah", "Akü değişim işçiliği"])
+  expect(h.orders[0].itemLabels).toEqual(["Akü 70Ah"])
 })
 
 test("atölyenin kendi kaydı varsa da maske kalkar", () => {
@@ -174,7 +174,7 @@ test("iş emirleri en yeniden eskiye sıralanır", () => {
         mileageAtIntake: null,
         customerComplaint: null,
         damageMarks: [],
-        order: { status: "delivered", arrivalReason: null, createdAt: new Date("2025-01-01T00:00:00Z"), itemNames: [] },
+        order: { status: "delivered", arrivalReason: null, createdAt: new Date("2025-01-01T00:00:00Z"), partNames: [] },
       },
     ],
   })
@@ -183,6 +183,67 @@ test("iş emirleri en yeniden eskiye sıralanır", () => {
     "2026-03-01T09:10:00.000Z",
     "2025-01-01T00:00:00.000Z",
   ])
+})
+
+test("yabancı iş emirlerinden yalnız teslim edilenler istemciye açılır", () => {
+  const statuses = ["draft", "waiting_approval", "cancelled", "delivered"]
+  const h = buildCrossWorkshopHistory({
+    plate: "34ABC123",
+    rows: [
+      row({
+        intakes: statuses.map((status, index) => ({
+          createdAt: new Date(`2026-03-0${index + 1}T09:00:00Z`),
+          mileageAtIntake: 84000 + index,
+          customerComplaint: `${status} şikayeti`,
+          damageMarks: [],
+          order: {
+            status,
+            arrivalReason: status,
+            createdAt: new Date(`2026-03-0${index + 1}T09:10:00Z`),
+            partNames: [`${status} parçası`],
+          },
+        })),
+      }),
+    ],
+    accessReason: "own_record",
+  })
+
+  expect(h.orderCount).toBe(1)
+  expect(h.orders).toHaveLength(1)
+  expect(h.orders[0]).toMatchObject({
+    status: "delivered",
+    arrivalReason: "delivered",
+    complaint: "delivered şikayeti",
+    itemLabels: ["delivered parçası"],
+  })
+})
+
+test("teslim edilmemiş yabancı emirlerin ayrıntıları maskesiz yanıtta bile sızmaz", () => {
+  const h = buildCrossWorkshopHistory({
+    plate: "34ABC123",
+    rows: [
+      row({
+        intakes: [
+          {
+            createdAt: new Date("2026-03-01T09:00:00Z"),
+            mileageAtIntake: 84000,
+            customerComplaint: "GİZLİ TASLAK ŞİKAYETİ",
+            damageMarks: [],
+            order: {
+              status: "draft",
+              arrivalReason: "GİZLİ TASLAK NEDENİ",
+              createdAt: new Date("2026-03-01T09:10:00Z"),
+              partNames: ["GİZLİ TASLAK PARÇASI"],
+            },
+          },
+        ],
+      }),
+    ],
+    accessReason: "registration_scan",
+  })
+
+  expect(JSON.stringify(h)).not.toContain("GİZLİ TASLAK")
+  expect(h.orders).toEqual([])
 })
 
 test("yabancı kayıt yoksa boş sonuç kilitli görünmez", () => {

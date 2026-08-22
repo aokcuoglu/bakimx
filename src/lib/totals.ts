@@ -1,4 +1,5 @@
 import { sumKurus, applyDiscountKurus, applyTaxBps, addKurus, formatKurus, mulDivRound } from "@/lib/money"
+import { quantityToNumber, type QuantityLike } from "@/lib/orders/quantity"
 
 /**
  * Order/quote totals. All money values are integer KURUŞ; `taxRate` is integer
@@ -23,7 +24,7 @@ import { sumKurus, applyDiscountKurus, applyTaxBps, addKurus, formatKurus, mulDi
 export type OrderLineItem = {
   type: string
   name: string
-  quantity: number
+  quantity: QuantityLike
   unitPrice: number | null // kuruş
   totalPrice: number | null // kuruş
   /** Satır belgenin KDV'sine tabi mi? Yok/null → tabi (geriye dönük uyum). */
@@ -38,7 +39,7 @@ export type OrderTotalsOptions = {
 export type MinimalLineItem = {
   totalPrice: number | null // kuruş
   unitPrice: number | null // kuruş
-  quantity: number
+  quantity: QuantityLike
   /** Satır belgenin KDV'sine tabi mi? Yok/null → tabi (geriye dönük uyum). */
   includeVat?: boolean | null
 }
@@ -87,7 +88,7 @@ function taxableBaseKurus(subtotal: number, taxableSubtotal: number, discount: n
 /** Line total in kuruş: explicit totalPrice wins, else unitPrice * quantity. */
 function lineTotalKurus(item: MinimalLineItem): number {
   if (item.totalPrice != null && item.totalPrice > 0) return Math.trunc(item.totalPrice)
-  if (item.unitPrice != null && item.unitPrice > 0) return Math.trunc(item.unitPrice) * item.quantity
+  if (item.unitPrice != null && item.unitPrice > 0) return Math.round(Math.trunc(item.unitPrice) * quantityToNumber(item.quantity))
   return 0
 }
 
@@ -120,7 +121,7 @@ export function calculateOrderTotalsFromMinimal(
 
 export function calculateLineTotal(item: OrderLineItem): number | null {
   if (item.totalPrice != null && item.totalPrice > 0) return Math.trunc(item.totalPrice)
-  if (item.unitPrice != null && item.unitPrice > 0) return Math.trunc(item.unitPrice) * item.quantity
+  if (item.unitPrice != null && item.unitPrice > 0) return Math.round(Math.trunc(item.unitPrice) * quantityToNumber(item.quantity))
   return null
 }
 

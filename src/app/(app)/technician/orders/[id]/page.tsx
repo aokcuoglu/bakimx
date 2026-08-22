@@ -2,6 +2,7 @@ import { getAppData } from "@/app/(app)/data"
 import { AppShell } from "@/components/layout/app-shell"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { TechnicianOrderDetail } from "@/components/technician/technician-order-detail"
 import { userDisplayName } from "@/lib/format"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
@@ -13,6 +14,7 @@ import { roleCan } from "@/lib/roles"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { ORDER_ITEM_PERMISSION } from "@/lib/technician/item-editing"
 import { technicianOrderDetailWhere } from "@/lib/technician/order-visibility"
+import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +28,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       intakeForm: {
         include: {
           customer: true,
-          vehicle: true,
+          vehicle: { include: { customer: true } },
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
             where: VISIBLE_PHOTO,
@@ -68,6 +70,8 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
   })
 
   if (!order) notFound()
+
+  const currentCustomer = currentWorkOrderCustomer(order.intakeForm)
 
   // Şablon maddeleri atama anında oluşur. Özellikten önce atanmış (veya şablona
   // sonradan madde eklenmiş) iş emirlerinde liste eksik kalırdı; burada gerçekten
@@ -160,7 +164,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       category: i.category,
       categoryId: i.categoryId,
       unit: i.unit,
-      quantity: i.quantity,
+      quantity: quantityToNumber(i.quantity),
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       // BAK-53 — satır KDV'ye tabi mi. Taşınmazsa sunucu değeri yazar ama
@@ -179,15 +183,15 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,
     })),
     customer: {
-      id: order.intakeForm.customer.id,
-      firstName: order.intakeForm.customer.firstName,
-      lastName: order.intakeForm.customer.lastName,
-      fullName: order.intakeForm.customer.fullName,
-      companyName: order.intakeForm.customer.companyName,
-      contactName: order.intakeForm.customer.contactName,
-      type: order.intakeForm.customer.type,
-      phone: order.intakeForm.customer.phone,
-      email: order.intakeForm.customer.email,
+      id: currentCustomer.id,
+      firstName: currentCustomer.firstName,
+      lastName: currentCustomer.lastName,
+      fullName: currentCustomer.fullName,
+      companyName: currentCustomer.companyName,
+      contactName: currentCustomer.contactName,
+      type: currentCustomer.type,
+      phone: currentCustomer.phone,
+      email: currentCustomer.email,
     },
     vehicle: {
       id: order.intakeForm.vehicle.id,

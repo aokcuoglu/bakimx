@@ -35,6 +35,19 @@ describe("admin authentication method gate", () => {
     })).toBe(false)
   })
 
+  test("allows a password session to reach the membership gate only in development", () => {
+    expect(isAdminAuthenticationAllowed({
+      email: "admin@bakimx.com",
+      authMethod: "password",
+      isDevelopment: true,
+    })).toBe(true)
+    expect(isAdminAuthenticationAllowed({
+      email: "admin@bakimx.com",
+      authMethod: "password",
+      isDevelopment: false,
+    })).toBe(false)
+  })
+
   test("fails closed for legacy sessions without an authentication method", () => {
     expect(isAdminAuthenticationAllowed({
       email: BREAK_GLASS_ADMIN_EMAIL,

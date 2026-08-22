@@ -1,6 +1,13 @@
 import { describe, expect, it, test } from "bun:test"
 import { calculateOrderTotals, calculateOrderTotalsFromMinimal, formatOrderSummary, formatTaxRate } from "@/lib/totals"
 
+test("decimal quantities round each line to integer kuruş", () => {
+  const totals = calculateOrderTotals([
+    { type: "part", name: "Motor yağı", quantity: 1.2, unitPrice: 333, totalPrice: null },
+  ])
+  expect(totals.subtotal).toBe(400)
+})
+
 // Money is integer kuruş; taxRate is bps (2000 = %20).
 
 test("grandTotal computes tax exactly from kuruş line items", () => {

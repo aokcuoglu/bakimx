@@ -15,6 +15,8 @@ import { getOrderActivity } from "@/lib/orders/activity"
 import { getLaborCatalog } from "@/lib/labor/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
+import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
+import { quantityToNumber } from "@/lib/orders/quantity"
 
 export default async function OrderDetailPage({
   params,
@@ -37,7 +39,7 @@ export default async function OrderDetailPage({
       intakeForm: {
         include: {
           customer: true,
-          vehicle: true,
+          vehicle: { include: { customer: true } },
           damageMarks: { orderBy: { createdAt: "asc" } },
           photos: {
             // Dış alım fotoğrafları buradaki genel foto galerisine girmez; parça
@@ -108,6 +110,7 @@ export default async function OrderDetailPage({
   const remainingAmount = computeRemainingAmount(totals.grandTotal, paidAmount)
 
   const intakeForm = order.intakeForm
+  const currentCustomer = currentWorkOrderCustomer(intakeForm)
 
   // "Sipariş" sekmesindeki iş emri yönetim kartlarının beklediği düz veri.
   const safeOrder = {
@@ -147,7 +150,8 @@ export default async function OrderDetailPage({
       name: i.name,
       sku: i.sku,
       unit: i.unit,
-      quantity: i.quantity,
+      hasStockLink: i.partId != null,
+      quantity: quantityToNumber(i.quantity),
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       // BAK-53 — satır KDV'ye tabi mi. DTO'da TAŞINMAK ZORUNDA: düzenleyici bu
@@ -219,15 +223,15 @@ export default async function OrderDetailPage({
       createdAt: n.createdAt.toISOString(),
     })),
     customer: {
-      id: intakeForm.customer.id,
-      firstName: intakeForm.customer.firstName,
-      lastName: intakeForm.customer.lastName,
-      fullName: intakeForm.customer.fullName,
-      companyName: intakeForm.customer.companyName,
-      contactName: intakeForm.customer.contactName,
-      type: intakeForm.customer.type,
-      phone: intakeForm.customer.phone,
-      email: intakeForm.customer.email,
+      id: currentCustomer.id,
+      firstName: currentCustomer.firstName,
+      lastName: currentCustomer.lastName,
+      fullName: currentCustomer.fullName,
+      companyName: currentCustomer.companyName,
+      contactName: currentCustomer.contactName,
+      type: currentCustomer.type,
+      phone: currentCustomer.phone,
+      email: currentCustomer.email,
     },
     vehicle: {
       id: intakeForm.vehicle.id,
@@ -286,15 +290,15 @@ export default async function OrderDetailPage({
     approvedAt: intakeForm.approvedAt,
     createdAt: intakeForm.createdAt,
     customer: {
-      id: intakeForm.customer.id,
-      firstName: intakeForm.customer.firstName,
-      lastName: intakeForm.customer.lastName,
-      fullName: intakeForm.customer.fullName,
-      companyName: intakeForm.customer.companyName,
-      contactName: intakeForm.customer.contactName,
-      type: intakeForm.customer.type,
-      phone: intakeForm.customer.phone,
-      email: intakeForm.customer.email,
+      id: currentCustomer.id,
+      firstName: currentCustomer.firstName,
+      lastName: currentCustomer.lastName,
+      fullName: currentCustomer.fullName,
+      companyName: currentCustomer.companyName,
+      contactName: currentCustomer.contactName,
+      type: currentCustomer.type,
+      phone: currentCustomer.phone,
+      email: currentCustomer.email,
     },
     vehicle: {
       id: intakeForm.vehicle.id,
@@ -328,7 +332,7 @@ export default async function OrderDetailPage({
         id: i.id,
         type: i.type,
         name: i.name,
-        quantity: i.quantity,
+        quantity: quantityToNumber(i.quantity),
         unitPrice: i.unitPrice,
         totalPrice: i.totalPrice,
         note: i.note,

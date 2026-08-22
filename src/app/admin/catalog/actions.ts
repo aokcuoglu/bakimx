@@ -57,6 +57,7 @@ const PRODUCT_AUDIT_SELECT = {
   description: true,
   imageUrl: true,
   oemNumbers: true,
+  crossReferences: true,
   workshopPriceKurus: true,
   vatRateBps: true,
   costPriceKurus: true,
@@ -88,6 +89,7 @@ function toWriteInput(input: {
   description: string
   imageUrl: string
   oemNumbers: string[]
+  crossReferences: string[]
   workshopPriceKurus: number
   vatRateBps: number
   costPriceKurus: number | null
@@ -110,6 +112,7 @@ function toWriteInput(input: {
     description: input.description || null,
     imageUrl: input.imageUrl || null,
     oemNumbers: input.oemNumbers,
+    crossReferences: input.crossReferences,
     workshopPriceKurus: input.workshopPriceKurus,
     vatRateBps: input.vatRateBps,
     costPriceKurus: input.costPriceKurus,

@@ -329,7 +329,7 @@ export function PublicVehiclePassportPage({
                           {item.totalPrice != null && item.totalPrice > 0 ? (
                             <span className="font-medium">{formatTRY(item.totalPrice)}</span>
                           ) : item.unitPrice != null && item.unitPrice > 0 ? (
-                            <span className="font-medium">{formatTRY(item.unitPrice * item.quantity)}</span>
+                            <span className="font-medium">{formatTRY(Math.round(item.unitPrice * item.quantity))}</span>
                           ) : null}
                         </div>
                       ))}

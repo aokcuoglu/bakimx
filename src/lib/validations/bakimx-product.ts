@@ -54,6 +54,7 @@ export const bakimxProductFormSchema = z.object({
   imageUrl: optionalUrl,
   /** Serbest metin: virgül / satır sonu ile ayrılır, `parseOemNumbers` ile diziye iner. */
   oemNumbers: z.string().max(2000, "OEM listesi en fazla 2000 karakter olabilir").optional().default(""),
+  crossReferences: z.string().max(4000, "Cross-reference listesi en fazla 4000 karakter olabilir").optional().default(""),
   /** LİRA, KDV HARİÇ — atölyenin BakımX'ten alış fiyatı. */
   workshopPrice: z.coerce.number().min(0, "Fiyat negatif olamaz").max(10_000_000, "Fiyat çok yüksek"),
   /** Yüzde (20 = %20); kuruş tarafında bps'e çevrilir. */
@@ -85,6 +86,7 @@ export const bakimxProductInputSchema = z.object({
   description: z.string().trim().max(2000).optional().default(""),
   imageUrl: optionalUrl,
   oemNumbers: z.array(z.string().trim().min(1)).max(50, "En fazla 50 OEM numarası girilebilir").default([]),
+  crossReferences: z.array(z.string().trim().min(1)).max(100, "En fazla 100 cross-reference kodu girilebilir").default([]),
   /** KURUŞ, KDV HARİÇ. */
   workshopPriceKurus: z.coerce
     .number()

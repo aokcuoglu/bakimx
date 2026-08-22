@@ -903,7 +903,7 @@ model ServiceOrderItem {
   name                    String
   sku                     String?
   unit                    String?
-  quantity                Int                           @default(1)
+  quantity                Decimal                       @default(1) @db.Decimal(12, 3)
   unitPrice               Int? // kuruş
   totalPrice              Int? // kuruş
   partId                  String?
@@ -2266,13 +2266,16 @@ model BakimxProduct {
   tecdocCategoryId Int?               @map("tecdoc_category_id")
   /// Muadil eşleştirme için OEM numaraları (Faz 2). Faz 1'de yalnız `searchKey`'i besler.
   oemNumbers       String[]           @default([]) @map("oem_numbers")
+  /// Üretici kataloglarındaki muadil/cross-reference kodları. OEM numarası
+  /// değildir; ileride marka-kod eşleştirmesi için ayrı tutulur.
+  crossReferences  String[]           @default([]) @map("cross_references")
   barcode          String?
   unit             String             @default("adet")
   description      String?
   imageUrl         String?            @map("image_url")
   specsJson        Json?              @map("specs_json")
   /// `normalizePartSearchTerm` ile üretilmiş ayraç/harf duyarsız arama anahtarı:
-  /// name + brandName + sku + oemNumbers. Sorgu tarafı da aynı anahtarı üretir
+  /// name + brandName + sku + oemNumbers + crossReferences. Sorgu tarafı da aynı anahtarı üretir
   /// (bkz. src/lib/parts/bakimx-search-key.ts ve src/lib/tr-search.ts).
   /// Ürün araca göre ön-filtrelenemediği için (global katalog) arama bu tek
   /// kolon üzerinden yürür.

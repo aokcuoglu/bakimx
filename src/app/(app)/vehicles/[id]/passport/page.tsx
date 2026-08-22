@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { calculateOrderTotals } from "@/lib/totals"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VehiclePassport } from "@/components/vehicles/vehicle-passport"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
@@ -106,7 +107,7 @@ export default async function VehiclePassportPage({ params }: { params: Promise<
             items: i.order.items.map((item) => ({
               type: item.type,
               name: item.name,
-              quantity: item.quantity,
+              quantity: quantityToNumber(item.quantity),
               unitPrice: item.unitPrice,
               totalPrice: item.totalPrice,
             })),

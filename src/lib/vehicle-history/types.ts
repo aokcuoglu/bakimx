@@ -32,7 +32,7 @@ export type CrossWorkshopOrder = {
   arrivalReason: string | null
   mileage: number | null
   complaint: string | null
-  /** Yapılan işin kalem başlıkları (parça/işçilik adı). Adet ve fiyat YOK. */
+  /** Değiştirilen parça adları. İşçilik, adet ve fiyat YOK. */
   itemLabels: string[]
 }
 

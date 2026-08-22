@@ -6,6 +6,7 @@ import { groupPhotosByPhase } from "@/lib/intake/completeness"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { WORKSHOP_PUBLIC_CONTACT_SELECT, pickWorkshopPublicContact } from "@/lib/workshop-contact"
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { quantityToNumber } from "@/lib/orders/quantity"
 
 export const dynamic = "force-dynamic"
 
@@ -59,7 +60,14 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     showPaymentStatus: shareLink.showPaymentStatus,
   }
 
-  const safeIntakeForm = sanitizeIntakeForPublic(intakeForm, visibility)
+  const normalizedIntakeForm = {
+    ...intakeForm,
+    order: intakeForm.order ? {
+      ...intakeForm.order,
+      items: intakeForm.order.items.map((item) => ({ ...item, quantity: quantityToNumber(item.quantity) })),
+    } : null,
+  }
+  const safeIntakeForm = sanitizeIntakeForPublic(normalizedIntakeForm, visibility)
 
   const photoGroups = groupPhotosByPhase(
     intakeForm.photos.map((p) => ({

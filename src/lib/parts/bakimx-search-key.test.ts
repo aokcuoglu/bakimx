@@ -11,11 +11,12 @@ const mutluAku = {
   brandName: "Mutlu",
   sku: "C 27 125",
   oemNumbers: ["0 986 4B7 035"],
+  crossReferences: ["CUK23005-2"],
 }
 
 describe("buildBakimxProductSearchKey", () => {
   it("ad + marka + sku + OEM'i katlanmış hâlde tek anahtarda toplar", () => {
-    expect(buildBakimxProductSearchKey(mutluAku)).toBe("aku60ah540a mutlu c27125 09864b7035")
+    expect(buildBakimxProductSearchKey(mutluAku)).toBe("aku60ah540a mutlu c27125 09864b7035 cuk230052")
   })
 
   it("aynı katlamayı kullanır (normalizePartSearchTerm ile birebir)", () => {
@@ -71,6 +72,10 @@ describe("bakimxProductSearchKeyMatches", () => {
 
   it("OEM numarasıyla da bulunur", () => {
     expect(bakimxProductSearchKeyMatches(key, "0986 4B7 035")).toBe(true)
+  })
+
+  it("cross-reference koduyla da bulunur", () => {
+    expect(bakimxProductSearchKeyMatches(key, "CUK 23005-2")).toBe(true)
   })
 
   it("çok terimli sorguda sıra önemsizdir (VE mantığı)", () => {

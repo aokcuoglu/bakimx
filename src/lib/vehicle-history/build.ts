@@ -59,7 +59,8 @@ export type ForeignVehicleRow = {
       status: string
       arrivalReason: string | null
       createdAt: Date
-      itemNames: string[]
+      /** Sorgu sınırında `type=part` ile daraltılmış değişen parça adları. */
+      partNames: string[]
     } | null
     damageMarks: Array<{
       zone: string
@@ -108,7 +109,10 @@ export function buildCrossWorkshopHistory({
     const workshopCity = show(row.workshopCity, null)
 
     for (const intake of row.intakes) {
-      if (intake.order) {
+      // Sorgu da yalnız `delivered` emirleri seçer; bu ikinci kontrol DTO
+      // sınırını bağımsız olarak güvenli tutar ve yanlışlıkla daha geniş bir
+      // satır kümesi geçirilse bile yabancı taslak/iptal emirlerini dışarı vermez.
+      if (intake.order?.status === "delivered") {
         orders.push({
           key: `${row.workshopId}:o${orders.length}`,
           workshopName,
@@ -122,7 +126,7 @@ export function buildCrossWorkshopHistory({
             : intake.customerComplaint?.trim() || null,
           // Kalem başlıkları maskeliyken hiç taşınmaz; "ne yapıldığı" da
           // korunması gereken bir bilgidir.
-          itemLabels: locked ? [] : intake.order.itemNames.filter((n) => n.trim().length > 0),
+          itemLabels: locked ? [] : intake.order.partNames.filter((n) => n.trim().length > 0),
         })
       }
       for (const dm of intake.damageMarks) {

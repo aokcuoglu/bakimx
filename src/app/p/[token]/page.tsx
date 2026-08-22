@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { PublicVehiclePassportPage } from "@/components/vehicles/public-vehicle-passport"
 import { PublicLinkState } from "@/components/shared/public-link-state"
 import { sanitizePassportForPublic } from "@/lib/passport/data-safety"
@@ -88,7 +89,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           items: i.order.items.map((item) => ({
             type: item.type,
             name: item.name,
-            quantity: item.quantity,
+            quantity: quantityToNumber(item.quantity),
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
           })),

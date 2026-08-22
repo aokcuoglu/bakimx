@@ -1,5 +1,6 @@
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 
 /**
  * Parça arama açılır listesinin satırları.
@@ -31,6 +32,7 @@ export interface StockPartLite {
 export type PartSuggestion =
   | { kind: "catalog"; article: ArticleSearchResult }
   | { kind: "bakimx"; product: BakimxProductSummary }
+  | { kind: "getirbakim"; product: GetirbakimProduct }
   | { kind: "stock"; part: StockPartLite }
 
 /** Satırın bu araca uygun olduğu doğrulanmış mı? */
@@ -38,10 +40,10 @@ export function suggestionFitsVehicle(s: PartSuggestion): boolean {
   return s.kind === "catalog"
 }
 
-/** Base UI Autocomplete'in metin karşılığı — üç kaynak için tek yer. */
+/** Base UI Autocomplete'in metin karşılığı — dört kaynak için tek yer. */
 export function suggestionLabel(s: PartSuggestion): string {
   if (s.kind === "catalog") return s.article.productName
-  if (s.kind === "bakimx") return s.product.name
+  if (s.kind === "bakimx" || s.kind === "getirbakim") return s.product.name
   return s.part.name
 }
 
@@ -49,11 +51,12 @@ export function suggestionLabel(s: PartSuggestion): string {
 export function suggestionKey(s: PartSuggestion): string {
   if (s.kind === "catalog") return `c-${s.article.tecdocArticleId}`
   if (s.kind === "bakimx") return `b-${s.product.id}`
+  if (s.kind === "getirbakim") return `g-${s.product.id}`
   return `s-${s.part.id}`
 }
 
 /**
- * Sıra: TecDoc → BakımX → atölye stoğu.
+ * Sıra: TecDoc → BakımX → GetirBakım → atölye stoğu.
  *
  * Katalog sonuçları ÖNCE gelir: araca uygunluğu doğrulanmış olan onlar, kullanıcı
  * önce onları görmeli. BakımX ürünleri hemen arkasında gelir — araca uygunluğu
@@ -73,7 +76,8 @@ export function suggestionKey(s: PartSuggestion): string {
 export function buildPartSuggestions(
   articles: ArticleSearchResult[],
   bakimxProducts: BakimxProductSummary[],
-  stockParts: StockPartLite[]
+  stockParts: StockPartLite[],
+  getirbakimProducts: GetirbakimProduct[] = [],
 ): PartSuggestion[] {
   const cataloged = new Set(
     [
@@ -90,6 +94,7 @@ export function buildPartSuggestions(
   return [
     ...articles.map((article): PartSuggestion => ({ kind: "catalog", article })),
     ...bakimxProducts.map((product): PartSuggestion => ({ kind: "bakimx", product })),
+    ...getirbakimProducts.map((product): PartSuggestion => ({ kind: "getirbakim", product })),
     ...stock.map((part): PartSuggestion => ({ kind: "stock", part })),
   ]
 }

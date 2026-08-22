@@ -24,6 +24,10 @@ export function isTechnicianRestrictedRole(role: string | undefined | null): boo
   return (TECHNICIAN_RESTRICTED_ROLES as readonly string[]).includes(role)
 }
 
+export function getAppHomeRoute(role: string | undefined | null): "/technician" | "/dashboard" {
+  return isTechnicianRestrictedRole(role) ? "/technician" : "/dashboard"
+}
+
 export function isRouteAllowedForTechnician(pathname: string): boolean {
   return TECHNICIAN_ALLOWED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
