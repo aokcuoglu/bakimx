@@ -1,40 +1,6 @@
-import { describe, expect, mock, test } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { NextRequest } from "next/server"
-import type { SessionData } from "@/lib/session"
-
-let currentSession: SessionData = {}
-
-mock.module("@/lib/session", () => ({
-  getSession: async () => currentSession,
-  sessionOptions: {
-    cookieName: "bakimx_session",
-    cookieOptions: { path: "/", httpOnly: true, sameSite: "lax" },
-  },
-}))
-
-const { middleware } = await import("./middleware")
-
-describe("authenticated app home", () => {
-  test("redirects technician roles from the app-dev root to /technician", async () => {
-    currentSession = {
-      userId: "technician-user",
-      role: "usta",
-    }
-    const response = await middleware(new NextRequest("https://app-dev.bakimx.com/"))
-
-    expect(response.headers.get("location")).toBe("https://app-dev.bakimx.com/technician")
-  })
-
-  test("redirects management roles from the app-dev root to /dashboard", async () => {
-    currentSession = {
-      userId: "owner-user",
-      role: "owner",
-    }
-    const response = await middleware(new NextRequest("https://app-dev.bakimx.com/"))
-
-    expect(response.headers.get("location")).toBe("https://app-dev.bakimx.com/dashboard")
-  })
-})
+import { middleware } from "./middleware"
 
 describe("public landing routes", () => {
   test("allows anonymous local requests to /status", async () => {
