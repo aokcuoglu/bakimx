@@ -11,6 +11,7 @@ import {
   isDuplicatePhoneConfirmed,
   resolveDuplicatePhone,
 } from "@/lib/customers/duplicate-phone"
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import type { CustomerTag, CustomerType, CustomerPriceGroup, CustomerSource, Prisma } from "@prisma/client"
 
 function parseKvkkDate(value: string | null | undefined): Date | null {
@@ -121,36 +122,44 @@ export async function createCustomerAction(formData: FormData) {
   })
   const companyName = customerType === "corporate" ? (data.companyName || "").trim() || null : null
 
-  const customer = await prisma.customer.create({
-    data: {
-      workshopId: user.workshopId,
-      type: customerType,
-      firstName,
-      lastName,
-      fullName: fullName || null,
-      companyName,
-      contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
-      phone: data.phone,
-      phone2: (data.phone2 || "").trim() || null,
-      email: data.email || null,
-      city: (data.city || "").trim() || null,
-      district: (data.district || "").trim() || null,
-      address: (data.address || "").trim() || null,
-      identityNumber: (data.identityNumber || "").trim() || null,
-      taxNumber: (data.taxNumber || "").trim() || null,
-      taxOffice: (data.taxOffice || "").trim() || null,
-      notes: (data.notes || "").trim() || null,
-      tag: (data.tag || "standard") as CustomerTag,
-      source: (data.source || null) as CustomerSource | null,
-      priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
-      discountRate: data.discountRate ?? 0,
-      riskNote: (data.riskNote || "").trim() || null,
-      whatsappConsent: !!data.whatsappConsent,
-      smsConsent: !!data.smsConsent,
-      emailConsent: !!data.emailConsent,
-      kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
-    },
-  })
+  let customer
+  try {
+    customer = await prisma.customer.create({
+      data: {
+        workshopId: user.workshopId,
+        type: customerType,
+        firstName,
+        lastName,
+        fullName: fullName || null,
+        companyName,
+        contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
+        phone: data.phone,
+        phone2: (data.phone2 || "").trim() || null,
+        email: data.email || null,
+        city: (data.city || "").trim() || null,
+        district: (data.district || "").trim() || null,
+        address: (data.address || "").trim() || null,
+        identityNumber: (data.identityNumber || "").trim() || null,
+        taxNumber: (data.taxNumber || "").trim() || null,
+        taxOffice: (data.taxOffice || "").trim() || null,
+        notes: (data.notes || "").trim() || null,
+        tag: (data.tag || "standard") as CustomerTag,
+        source: (data.source || null) as CustomerSource | null,
+        priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
+        discountRate: data.discountRate ?? 0,
+        riskNote: (data.riskNote || "").trim() || null,
+        whatsappConsent: !!data.whatsappConsent,
+        smsConsent: !!data.smsConsent,
+        emailConsent: !!data.emailConsent,
+        kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
+      },
+    })
+  } catch (err) {
+    if (isUniqueConstraintError(err, "phone")) {
+      return { error: "Bu telefon numarası henüz ikinci müşteriye açılamadı. Sayfayı yenileyip tekrar deneyin." }
+    }
+    throw err
+  }
 
   await AuditLogAction(user.workshopId, user.id, "Customer", customer.id, "customer_created")
 
@@ -227,36 +236,43 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
   })
   const companyName = customerType === "corporate" ? (data.companyName || "").trim() || null : null
 
-  await prisma.customer.update({
-    where: { id: customerId, workshopId: user.workshopId },
-    data: {
-      type: customerType,
-      firstName,
-      lastName,
-      fullName: fullName || null,
-      companyName,
-      contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
-      phone: data.phone,
-      phone2: (data.phone2 || "").trim() || null,
-      email: data.email || null,
-      city: (data.city || "").trim() || null,
-      district: (data.district || "").trim() || null,
-      address: (data.address || "").trim() || null,
-      identityNumber: (data.identityNumber || "").trim() || null,
-      taxNumber: (data.taxNumber || "").trim() || null,
-      taxOffice: (data.taxOffice || "").trim() || null,
-      notes: (data.notes || "").trim() || null,
-      tag: (data.tag || "standard") as CustomerTag,
-      source: (data.source || null) as CustomerSource | null,
-      priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
-      discountRate: data.discountRate ?? 0,
-      riskNote: (data.riskNote || "").trim() || null,
-      whatsappConsent: !!data.whatsappConsent,
-      smsConsent: !!data.smsConsent,
-      emailConsent: !!data.emailConsent,
-      kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
-    },
-  })
+  try {
+    await prisma.customer.update({
+      where: { id: customerId, workshopId: user.workshopId },
+      data: {
+        type: customerType,
+        firstName,
+        lastName,
+        fullName: fullName || null,
+        companyName,
+        contactName: customerType === "corporate" ? (data.contactName || "").trim() || null : null,
+        phone: data.phone,
+        phone2: (data.phone2 || "").trim() || null,
+        email: data.email || null,
+        city: (data.city || "").trim() || null,
+        district: (data.district || "").trim() || null,
+        address: (data.address || "").trim() || null,
+        identityNumber: (data.identityNumber || "").trim() || null,
+        taxNumber: (data.taxNumber || "").trim() || null,
+        taxOffice: (data.taxOffice || "").trim() || null,
+        notes: (data.notes || "").trim() || null,
+        tag: (data.tag || "standard") as CustomerTag,
+        source: (data.source || null) as CustomerSource | null,
+        priceGroup: (data.priceGroup || "standard") as CustomerPriceGroup,
+        discountRate: data.discountRate ?? 0,
+        riskNote: (data.riskNote || "").trim() || null,
+        whatsappConsent: !!data.whatsappConsent,
+        smsConsent: !!data.smsConsent,
+        emailConsent: !!data.emailConsent,
+        kvkkApprovedAt: parseKvkkDate(data.kvkkApprovedAt),
+      },
+    })
+  } catch (err) {
+    if (isUniqueConstraintError(err, "phone")) {
+      return { error: "Bu telefon numarası henüz ikinci müşteriye açılamadı. Sayfayı yenileyip tekrar deneyin." }
+    }
+    throw err
+  }
 
   await AuditLogAction(user.workshopId, user.id, "Customer", customerId, "customer_updated")
 
