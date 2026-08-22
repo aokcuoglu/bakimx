@@ -73,6 +73,15 @@ test("parça miktarı birime göre ondalık girilir ve stok satırında bölüne
   expect(unitField).toContain('(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)')
 })
 
+test("mobil kartta miktar, birim ve birim fiyat aynı kurumsal grid satırındadır", () => {
+  const mobile = GRID.slice(GRID.indexOf("function MobilePartRow("))
+  expect(mobile).toContain('grid-cols-[4.5rem_6.25rem_minmax(0,1fr)]')
+  expect(mobile).toContain('>Miktar</span>')
+  expect(mobile).toContain('>Birim</span>')
+  expect(mobile).toContain('>Birim fiyat</span>')
+  expect(mobile).toContain('[&_[data-slot=price-field]]:!w-full')
+})
+
 test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {
   // Gösterim çevrimi olmadığı için alan doğrudan saklanan değeri basar.
   expect(GRID).toContain("row.unitPrice != null ? formatTRY(row.unitPrice)")
