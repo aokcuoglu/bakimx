@@ -1,5 +1,6 @@
 import { ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { prisma } from "@/lib/db"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
@@ -132,7 +133,7 @@ export async function getDashboardStats(workshopId: string): Promise<DashboardSt
   for (const order of activeReceivableOrders) {
     const t = order.items.reduce((sum, item) => {
       if (item.totalPrice != null && item.totalPrice > 0) return sum + item.totalPrice
-      if (item.unitPrice != null && item.unitPrice > 0) return sum + item.unitPrice * item.quantity
+      if (item.unitPrice != null && item.unitPrice > 0) return sum + Math.round(item.unitPrice * quantityToNumber(item.quantity))
       return sum
     }, 0)
     const discount = order.discountAmount ?? 0
@@ -220,7 +221,7 @@ export async function getActiveWorkOrders(
           item.totalPrice != null && item.totalPrice > 0
             ? item.totalPrice
             : item.unitPrice != null && item.unitPrice > 0
-              ? item.unitPrice * item.quantity
+              ? Math.round(item.unitPrice * quantityToNumber(item.quantity))
               : 0
         return acc + lineTotal
       },

@@ -1,12 +1,13 @@
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { sumKurus } from "@/lib/money"
+import { quantityToNumber, type QuantityLike } from "@/lib/orders/quantity"
 
 // All money values are integer kuruş.
 
 export type CustomerOrderLike = {
   status: OrderStatus | string
   paymentStatus: PaymentStatus | string
-  items: Array<{ totalPrice: number | null; unitPrice: number | null; quantity: number }>
+  items: Array<{ totalPrice: number | null; unitPrice: number | null; quantity: QuantityLike }>
 }
 
 const ACTIVE_STATUSES: OrderStatus[] = ["draft", "waiting_approval", "approved", "in_progress", "waiting_parts"]
@@ -39,9 +40,9 @@ const empty: CustomerBalanceRow = {
   hasOverdue: false,
 }
 
-export function calculateLineTotal(item: { totalPrice: number | null; unitPrice: number | null; quantity: number }): number {
+export function calculateLineTotal(item: { totalPrice: number | null; unitPrice: number | null; quantity: QuantityLike }): number {
   if (item.totalPrice != null && item.totalPrice > 0) return Math.trunc(item.totalPrice)
-  if (item.unitPrice != null && item.unitPrice > 0) return Math.trunc(item.unitPrice) * item.quantity
+  if (item.unitPrice != null && item.unitPrice > 0) return Math.round(Math.trunc(item.unitPrice) * quantityToNumber(item.quantity))
   return 0
 }
 

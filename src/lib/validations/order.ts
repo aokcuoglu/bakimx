@@ -5,7 +5,8 @@ export const serviceOrderItemSchema = z.object({
     error: "Geçerli bir kalem tipi seçiniz (parça/işçilik/dış işçilik)",
   }),
   name: z.string().min(1, "Kalem adı zorunludur"),
-  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").default(1),
+  quantity: z.coerce.number().positive("Miktar 0'dan büyük olmalıdır").max(999, "Miktar en fazla 999 olabilir")
+    .multipleOf(0.001, "Miktar en çok 3 ondalık basamaklı olabilir").default(1),
   // Money is integer kuruş (client converts TRY -> kuruş before submit).
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   totalPrice: z.coerce.number().int("Toplam fiyat kuruş (tam sayı) olmalıdır").min(0, "Toplam fiyat negatif olamaz").optional(),
@@ -38,8 +39,9 @@ export const serviceOrderItemSchema = z.object({
 export const serviceOrderItemUpdateSchema = z.object({
   name: z.string().min(1, "Kalem adı boş olamaz").optional(),
   sku: z.string().optional(),
-  unit: z.string().optional(),
-  quantity: z.coerce.number().int("Miktar tam sayı olmalıdır").min(1, "Miktar en az 1 olmalıdır").optional(),
+  unit: z.enum(["adet", "litre"], { error: "Birim adet veya litre olmalıdır" }).optional(),
+  quantity: z.coerce.number().positive("Miktar 0'dan büyük olmalıdır").max(999, "Miktar en fazla 999 olabilir")
+    .multipleOf(0.001, "Miktar en çok 3 ondalık basamaklı olabilir").optional(),
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   note: z.string().optional(),
   brand: z.string().optional(),

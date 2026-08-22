@@ -16,6 +16,7 @@ import { getLaborCatalog } from "@/lib/labor/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
+import { quantityToNumber } from "@/lib/orders/quantity"
 
 export default async function OrderDetailPage({
   params,
@@ -149,7 +150,7 @@ export default async function OrderDetailPage({
       name: i.name,
       sku: i.sku,
       unit: i.unit,
-      quantity: i.quantity,
+      quantity: quantityToNumber(i.quantity),
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
       // BAK-53 — satır KDV'ye tabi mi. DTO'da TAŞINMAK ZORUNDA: düzenleyici bu
@@ -330,7 +331,7 @@ export default async function OrderDetailPage({
         id: i.id,
         type: i.type,
         name: i.name,
-        quantity: i.quantity,
+        quantity: quantityToNumber(i.quantity),
         unitPrice: i.unitPrice,
         totalPrice: i.totalPrice,
         note: i.note,

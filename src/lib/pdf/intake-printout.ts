@@ -44,7 +44,7 @@ const fmtDate = (d: Date | string) => new Date(d).toLocaleDateString("tr-TR")
 
 const lineTotalOf = (item: { quantity: number; unitPrice: number | null; totalPrice: number | null }) => {
   if (item.totalPrice != null && item.totalPrice > 0) return item.totalPrice
-  if (item.unitPrice != null && item.unitPrice > 0) return item.unitPrice * item.quantity
+  if (item.unitPrice != null && item.unitPrice > 0) return Math.round(item.unitPrice * item.quantity)
   return null
 }
 

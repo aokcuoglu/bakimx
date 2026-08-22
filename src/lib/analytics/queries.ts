@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { calculateMinimalTotal, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
+import { quantityToNumber } from "@/lib/orders/quantity"
 import { applyTaxBps, addKurus } from "@/lib/money"
 import { customerDisplayName } from "@/lib/format"
 
@@ -651,13 +652,14 @@ export async function getServiceAnalytics(workshopId: string): Promise<ServiceAn
 
   const repairMap = new Map<string, { count: number; type: string }>()
   for (const item of orderItems) {
+    const quantity = quantityToNumber(item.quantity)
     const key = item.name.trim().toLowerCase()
     if (!key) continue
     const existing = repairMap.get(key)
     if (existing) {
-      existing.count += item.quantity
+      existing.count += quantity
     } else {
-      repairMap.set(key, { count: item.quantity, type: item.type })
+      repairMap.set(key, { count: quantity, type: item.type })
     }
   }
 
@@ -672,21 +674,22 @@ export async function getServiceAnalytics(workshopId: string): Promise<ServiceAn
 
   const laborMap = new Map<string, { count: number; totalRevenue: number }>()
   for (const item of orderItems) {
+    const quantity = quantityToNumber(item.quantity)
     if (item.type !== "labor") continue
     const key = item.name.trim().toLowerCase()
     if (!key) continue
     const lineTotal = (item.totalPrice != null && item.totalPrice > 0)
       ? item.totalPrice
       : (item.unitPrice != null && item.unitPrice > 0)
-        ? item.unitPrice * item.quantity
+        ? Math.round(item.unitPrice * quantity)
         : 0
 
     const existing = laborMap.get(key)
     if (existing) {
-      existing.count += item.quantity
+      existing.count += quantity
       existing.totalRevenue += lineTotal
     } else {
-      laborMap.set(key, { count: item.quantity, totalRevenue: lineTotal })
+      laborMap.set(key, { count: quantity, totalRevenue: lineTotal })
     }
   }
 
