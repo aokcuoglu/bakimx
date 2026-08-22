@@ -69,8 +69,8 @@ test("parça miktarı birime göre ondalık girilir ve stok satırında bölüne
   expect(quantityField).toContain('Math.round(quantity * 1000) === quantity * 1000')
   expect(quantityField).toContain('(isDivisibleOrderItemUnit(unit) || Number.isInteger(quantity))')
   expect(quantityField).toContain('inputMode="decimal"')
-  expect(unitField).toContain('ORDER_ITEM_UNITS.map')
-  expect(unitField).toContain('disabled={(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}')
+  expect(unitField).toContain('<OrderItemUnitCombobox')
+  expect(unitField).toContain('(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)')
 })
 
 test("BİRİM FİYAT ham `unitPrice`'tır — gösterim çevrimi yok", () => {

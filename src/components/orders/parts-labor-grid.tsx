@@ -51,12 +51,11 @@ import {
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
 import { evaluateMoneyExpression } from "@/lib/money-expression"
-import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS, type OrderItemUnit } from "@/lib/orders/quantity"
+import { isDivisibleOrderItemUnit, ORDER_ITEM_UNIT_LABELS, ORDER_ITEM_UNITS } from "@/lib/orders/quantity"
 import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
 import {
   needsMarkup,
@@ -77,6 +76,7 @@ import { VinLinkPrompt } from "@/components/parts/vin-link-prompt"
 import { PartAttrOptionsProvider } from "@/components/parts/part-attr-options"
 import { SupplierPriceDialog } from "@/components/parts/supplier-price-dialog"
 import { ManualPartDialog, type ManualPartDraft } from "@/components/parts/manual-part-dialog"
+import { OrderItemUnitCombobox } from "@/components/orders/order-item-unit-combobox"
 import { PartDetailDialog, type PartDetailTarget } from "@/components/parts/part-detail-dialog"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
@@ -1425,31 +1425,19 @@ function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onC
   if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
   if (!editable) return <span className="text-sm">{ORDER_ITEM_UNIT_LABELS[unit]}</span>
   return (
-    <Select
+    <OrderItemUnitCombobox
       value={unit}
-      onValueChange={(value) => {
-        const next = value as OrderItemUnit
+      ariaLabel={`${row.name || "Parça"} birimi`}
+      className="h-9 w-28"
+      isOptionDisabled={(candidate) =>
+        (row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
+      onValueChange={(next) => {
         onCell(row, {
           unit: next,
           ...(!isDivisibleOrderItemUnit(next) && !Number.isInteger(row.quantity) ? { quantity: Math.max(1, Math.round(row.quantity)) } : {}),
         })
       }}
-    >
-      <SelectTrigger size="compact" className="h-9 w-24" aria-label={`${row.name || "Parça"} birimi`}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {ORDER_ITEM_UNITS.map((candidate) => (
-          <SelectItem
-            key={candidate}
-            value={candidate}
-            disabled={(row.hasStockLink || !!row.__partId) && isDivisibleOrderItemUnit(candidate)}
-          >
-            {ORDER_ITEM_UNIT_LABELS[candidate]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    />
   )
 }
 
