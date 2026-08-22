@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { VehicleDetail } from "@/components/vehicles/vehicle-detail"
-import { calculateOrderTotals } from "@/lib/totals"
+import { calculateOrderTotals, ORDER_TOTALS_ITEM_SELECT } from "@/lib/totals"
 import { formatWorkOrderNo } from "@/lib/work-order-number"
 import { getVehicleReminders } from "@/lib/reminders/queries"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
@@ -19,7 +19,11 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
       customer: true,
       intakes: {
         include: {
-          order: { include: { items: true } },
+          order: {
+            include: {
+              items: { select: { name: true, ...ORDER_TOTALS_ITEM_SELECT } },
+            },
+          },
           damageMarks: true,
           photos: {
             // Dış alım fotoğrafları araç foto geçmişine karışmaz (dahili-yalnız).
@@ -52,13 +56,16 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
       ...i,
       createdAt: i.createdAt.toISOString(),
       approvedAt: i.approvedAt ? i.approvedAt.toISOString() : null,
+      // Kalem satırlarını istemciye geçirme: `quantity` Prisma Decimal ve RSC
+      // serileştirilemez (BAK-211). Toplam ve parça adları sunucuda hesaplanır.
       order: i.order
         ? {
-            ...i.order,
+            id: i.order.id,
             workOrderNo: formatWorkOrderNo(i.order),
+            status: i.order.status,
+            paymentStatus: i.order.paymentStatus,
             estimatedDeliveryAt: i.order.estimatedDeliveryAt ? i.order.estimatedDeliveryAt.toISOString() : null,
             createdAt: i.order.createdAt.toISOString(),
-            updatedAt: i.order.updatedAt.toISOString(),
             changedPartLabels: i.order.items
               .filter((item) => item.type === "part")
               .map((item) => item.name),
