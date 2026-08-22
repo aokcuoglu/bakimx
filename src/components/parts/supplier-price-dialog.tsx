@@ -9,16 +9,15 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatTRY } from "@/lib/format"
-import { readJsonObject } from "@/lib/http/json-response"
 import type { GetirbakimExactProduct, GetirbakimOffer } from "@/lib/parts/getirbakim/types"
+import {
+  readOfferResponse, readPurchaseResponse, readQuoteResponse, SupplierResponseError,
+  type OfferResponse, type Quote,
+} from "@/lib/parts/supplier-price-responses"
 import { transactionalAvailability } from "./supplier-offer-availability"
 
 type PartInfo = { name: string; sku?: string | null; brand?: string | null }
-type OfferResponse =
-  | { status: "matched" | "no_offers"; normalizedPartNo: string; products: GetirbakimExactProduct[] }
-  | { status: "no_match" | "upstream_error"; normalizedPartNo: string }
 type SelectedOffer = { product: GetirbakimExactProduct; offer: GetirbakimOffer }
-type Quote = { bindingNetKurus: number; bindingVatKurus: number; bindingGrossKurus: number; unitNetKurus: number; currency: string; policyVersion: string; expiresAt: string; confirmationToken: string }
 
 const RECONFIRMATION_REQUIRED_CODES = new Set(["PRICE_CHANGED", "QUOTE_CHANGED", "QUOTE_EXPIRED"])
 
@@ -44,10 +43,10 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
     const controller = new AbortController()
     void fetch(`/api/catalog/getirbakim/offers?partNo=${encodeURIComponent(partNo)}`, { signal: controller.signal })
       .then(async (response) => {
-        const data = await readJsonObject<OfferResponse & Record<string, unknown>>(response)
+        const data = await readOfferResponse(response)
         setRequest({
           partNo,
-          result: response.ok ? data : { status: "upstream_error", normalizedPartNo: partNo },
+          result: data,
         })
       })
       .catch((error: unknown) => {
@@ -61,9 +60,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
     setSelected({ product, offer }); setQuote(null); setConfirmationChanged(false); setPending(true)
     try {
       const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "quote", selectedOfferId: offer.selectedOfferId, quantity: purchaseQuantity }) })
-      const data = await readJsonObject<{ error?: string; code?: string; quote: Quote }>(response)
-      if (!response.ok) throw new Error(data.error || "Bağlayıcı fiyat alınamadı.")
-      setQuote(data.quote)
+      setQuote(await readQuoteResponse(response))
     } catch (error) { toast.error(error instanceof Error ? error.message : "Bağlayıcı fiyat alınamadı.") }
     finally { setPending(false) }
   }
@@ -80,15 +77,16 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
         productPresentation: { name: part.name, brand: selected.product.brandName, partNumber: selected.product.manufacturerPartNumber.value },
         informationalSnapshot: { unitPriceKurus: selected.offer.informationalPriceKurus ?? undefined, currency: selected.offer.currency, availability: selected.offer.availability, capturedAt: new Date().toISOString() },
       }) })
-      const data = await readJsonObject<{ error?: string; code?: string; procurement?: unknown }>(response)
-      if (!response.ok) {
-        if (data.code && RECONFIRMATION_REQUIRED_CODES.has(data.code)) {
+      try {
+        await readPurchaseResponse(response)
+      } catch (error) {
+        if (error instanceof SupplierResponseError && error.code && RECONFIRMATION_REQUIRED_CODES.has(error.code)) {
           setQuote(null)
           await chooseOffer(selected.product, selected.offer)
           setConfirmationChanged(true)
           return
         }
-        throw new Error(data.error || "Satın alma talebi oluşturulamadı.")
+        throw error
       }
       toast.success("Satın alma talebi oluşturuldu; tedarik bekleniyor.")
       onOpenChange(false); router.refresh()
@@ -148,7 +146,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
 }
 
 function StateMessage({ children, error = false }: { children: ReactNode; error?: boolean }) {
-  return <div className={`flex min-h-28 items-center justify-center gap-2 rounded-lg border p-4 text-center text-sm ${error ? "text-destructive-strong" : "text-muted-foreground"}`}>{error ? <AlertCircle className="size-4 shrink-0" /> : null}{children}</div>
+  return <div role={error ? "alert" : undefined} aria-live={error ? "assertive" : undefined} className={`flex min-h-28 items-center justify-center gap-2 rounded-lg border p-4 text-center text-sm ${error ? "text-destructive-strong" : "text-muted-foreground"}`}>{error ? <AlertCircle className="size-4 shrink-0" aria-hidden="true" /> : null}{children}</div>
 }
 
 function OfferCard({ offer, quantity, selected, disabled, onSelect }: { offer: GetirbakimOffer; quantity: number; selected: boolean; disabled: boolean; onSelect: () => void }) {
