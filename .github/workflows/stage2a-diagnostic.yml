@@ -1,0 +1,35 @@
+name: Stage 2A activation diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c
+        with:
+          role-to-assume: arn:aws:iam::075550799591:role/bakimx-prod-gha-deploy
+          aws-region: eu-central-1
+      - name: Read failed activation task and log
+        shell: bash
+        run: |
+          set -euo pipefail
+          CLUSTER=bakimx-prod-cluster
+          TASK=$(aws ecs list-tasks --cluster "$CLUSTER" --desired-status STOPPED --started-by gha-stage2a-pilot --query 'taskArns[-1]' --output text)
+          test -n "$TASK" && test "$TASK" != None
+          aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" --output json > task.json
+          jq '{taskArn:.tasks[0].taskArn,taskDefinitionArn:.tasks[0].taskDefinitionArn,stopCode:.tasks[0].stopCode,stoppedReason:.tasks[0].stoppedReason,containers:[.tasks[0].containers[]|{name,exitCode,reason}]}' task.json
+          TD=$(jq -r '.tasks[0].taskDefinitionArn' task.json)
+          TASK_ID=${TASK##*/}
+          DEF=$(aws ecs describe-task-definition --task-definition "$TD" --output json)
+          GROUP=$(jq -r '.taskDefinition.containerDefinitions[]|select(.name=="app")|.logConfiguration.options["awslogs-group"]' <<<"$DEF")
+          PREFIX=$(jq -r '.taskDefinition.containerDefinitions[]|select(.name=="app")|.logConfiguration.options["awslogs-stream-prefix"]' <<<"$DEF")
+          STREAM="$PREFIX/app/$TASK_ID"
+          aws logs get-log-events --log-group-name "$GROUP" --log-stream-name "$STREAM" --limit 200 --output json \
+            | jq -r '.events[].message' \
+            | sed -E 's#(postgres(ql)?://)[^ @]+@#\1[REDACTED]@#Ig; s/(Bearer|token|secret|api[_ -]?key)[=:][^ ]+/\1=[REDACTED]/Ig'
