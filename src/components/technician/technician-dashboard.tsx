@@ -7,10 +7,15 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { TECHNICIAN_ROLES, ORDER_STATUS } from "@/lib/constants"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
 import { TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+
+type DashboardFilter = "all" | "assigned" | "in_progress" | "waiting" | "completed" | "today_delivery"
+
+const DASHBOARD_FILTER_PARAM = "filter"
 
 type TechnicianInfo = {
   id: string
@@ -42,6 +47,7 @@ type OrderRow = {
   assignedAt: string | null
   completedAt: string | null
   createdAt: string
+  assignedTechnicianId: string | null
   technicianName: string | null
   checklistProgress: { completed: number; total: number }
   hasActiveLabor: boolean
@@ -61,6 +67,7 @@ export function TechnicianDashboard({
   orders: OrderRow[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
   // Seçim URL'de taşınır: sunucu KPI'ları ve iş emirlerini seçilen teknisyene
@@ -78,8 +85,22 @@ export function TechnicianDashboard({
     if (!value || value === optimisticId) return
     setOptimisticId(value)
     startTransition(() => {
-      router.replace(`/technician?${TECHNICIAN_PARAM}=${encodeURIComponent(value)}`, { scroll: false })
+      const params = new URLSearchParams(searchParams.toString())
+      params.set(TECHNICIAN_PARAM, value)
+      router.replace(`/technician?${params.toString()}`, { scroll: false })
     })
+  }
+
+  const requestedFilter = searchParams.get(DASHBOARD_FILTER_PARAM)
+  const activeFilter: DashboardFilter = ["assigned", "in_progress", "waiting", "completed", "today_delivery"].includes(requestedFilter ?? "")
+    ? requestedFilter as DashboardFilter
+    : "all"
+
+  function handleFilterChange(filter: DashboardFilter) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (filter === activeFilter) params.delete(DASHBOARD_FILTER_PARAM)
+    else params.set(DASHBOARD_FILTER_PARAM, filter)
+    startTransition(() => router.replace(`/technician${params.size ? `?${params.toString()}` : ""}`, { scroll: false }))
   }
 
   const activeOrders = orders.filter((o) =>
@@ -88,12 +109,40 @@ export function TechnicianDashboard({
   const waitingOrders = orders.filter((o) => ["draft", "waiting_approval"].includes(o.status))
   const completedOrders = orders.filter((o) => ["ready_for_delivery", "delivered"].includes(o.status))
 
+  const today = new Date().toLocaleDateString("en-CA")
+  const selectedOrders = orders.filter((o) => o.assignedTechnicianId === selectedTechnicianId)
+  const assignedOrders = selectedOrders.filter((o) => !["delivered", "cancelled"].includes(o.status))
+  const inProgressOrders = selectedOrders.filter((o) => o.status === "in_progress")
+  const selectedWaitingOrders = selectedOrders.filter((o) => ["approved", "waiting_parts"].includes(o.status))
+  const selectedCompletedOrders = selectedOrders.filter((o) =>
+    o.status === "delivered" && o.completedAt && new Date(o.completedAt).toLocaleDateString("en-CA") === today
+  )
+  const todayDeliveryOrders = selectedOrders.filter((o) =>
+    o.estimatedDeliveryAt && new Date(o.estimatedDeliveryAt).toLocaleDateString("en-CA") === today && !["delivered", "cancelled"].includes(o.status)
+  )
+
+  const visibleSections = activeFilter === "all"
+    ? [
+        { title: "Aktif İşler", orders: activeOrders, empty: "Aktif iş bulunmuyor" },
+        { title: "Bekleyen İşler", orders: waitingOrders, empty: "Bekleyen iş bulunmuyor" },
+        { title: "Son Tamamlananlar", orders: completedOrders.slice(0, 5), empty: "Tamamlanan iş bulunmuyor" },
+      ]
+    : activeFilter === "assigned"
+      ? [{ title: "Bana Atanan İşler", orders: assignedOrders, empty: "Atanmış iş bulunmuyor" }]
+      : activeFilter === "in_progress"
+      ? [{ title: "Devam Eden İşler", orders: inProgressOrders, empty: "Devam eden iş bulunmuyor" }]
+      : activeFilter === "waiting"
+        ? [{ title: "Bekleyen İşler", orders: selectedWaitingOrders, empty: "Bekleyen iş bulunmuyor" }]
+        : activeFilter === "completed"
+          ? [{ title: "Tamamlanan İşler", orders: selectedCompletedOrders, empty: "Bugün tamamlanan iş bulunmuyor" }]
+          : [{ title: "Bugün Teslim Edilecekler", orders: todayDeliveryOrders, empty: "Bugün teslim edilecek iş bulunmuyor" }]
+
   const kpiCards = [
-    { label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary-strong" },
-    { label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
-    { label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
-    { label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
-    { label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary-strong" },
+    { filter: "assigned" as const, label: "Bana Atanan", value: stats.assignedToMe, icon: Wrench, color: "bg-primary/10 text-primary-strong" },
+    { filter: "in_progress" as const, label: "Devam Eden", value: stats.inProgress, icon: Clock, color: "bg-warning/10 text-warning-strong" },
+    { filter: "waiting" as const, label: "Bekleyen", value: stats.waiting, icon: AlertTriangle, color: "bg-warning/10 text-warning-strong" },
+    { filter: "completed" as const, label: "Tamamlanan", value: stats.completed, icon: CheckCircle2, color: "bg-success/10 text-success-strong" },
+    { filter: "today_delivery" as const, label: "Bugün Teslim", value: stats.todayDelivery, icon: Truck, color: "bg-primary/10 text-primary-strong" },
   ]
 
   return (
@@ -137,55 +186,43 @@ export function TechnicianDashboard({
           {kpiCards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.label} className="rounded-lg border border-border bg-card p-4">
+              <Button
+                key={card.label}
+                type="button"
+                variant="ghost"
+                aria-pressed={activeFilter === card.filter}
+                onClick={() => handleFilterChange(card.filter)}
+                className={cn(
+                  "h-auto min-w-0 items-start justify-start rounded-lg border border-border bg-card p-4 text-left hover:border-primary hover:bg-primary/5",
+                  activeFilter === card.filter && "border-primary bg-primary/5 ring-2 ring-primary/20"
+                )}
+              >
+                <span className="w-full">
                 <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
                   <Icon className="size-4" />
                 </div>
                 <p className="text-2xl font-bold text-foreground">{card.value}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
-              </div>
+                </span>
+              </Button>
             )
           })}
         </div>
 
-        <section>
-          <h3 className="text-base font-semibold text-foreground mb-3">Aktif İşler</h3>
-          {activeOrders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">Aktif iş bulunmuyor</div>
-          ) : (
-            <div className="space-y-2">
-              {activeOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h3 className="text-base font-semibold text-foreground mb-3">Bekleyen İşler</h3>
-          {waitingOrders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">Bekleyen iş bulunmuyor</div>
-          ) : (
-            <div className="space-y-2">
-              {waitingOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h3 className="text-base font-semibold text-foreground mb-3">Son Tamamlananlar</h3>
-          {completedOrders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">Tamamlanan iş bulunmuyor</div>
-          ) : (
-            <div className="space-y-2">
-              {completedOrders.slice(0, 5).map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
-          )}
-        </section>
+        {visibleSections.map((section) => (
+          <section key={section.title}>
+            <h3 className="text-base font-semibold text-foreground mb-3">{section.title}</h3>
+            {section.orders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">{section.empty}</div>
+            ) : (
+              <div className="space-y-2">
+                {section.orders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            )}
+          </section>
+        ))}
       </div>
     </div>
   )

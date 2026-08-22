@@ -89,6 +89,7 @@ export interface TechnicianOrderRow {
   assignedAt: string | null
   completedAt: string | null
   createdAt: string
+  assignedTechnicianId: string | null
   technicianName: string | null
   checklistProgress: { completed: number; total: number }
   hasActiveLabor: boolean
@@ -144,6 +145,7 @@ export async function getTechnicianOrders(
       assignedAt: o.assignedAt?.toISOString() ?? null,
       completedAt: o.completedAt?.toISOString() ?? null,
       createdAt: o.createdAt.toISOString(),
+      assignedTechnicianId: o.assignedTechnicianId,
       technicianName: o.assignedTechnician?.fullName || o.technicianName || null,
       checklistProgress: { completed: checklistCompleted, total: checklistTotal },
       hasActiveLabor,

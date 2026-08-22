@@ -13,6 +13,7 @@ import {
   Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
+  Package,
 } from "lucide-react"
 import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -29,10 +30,7 @@ import {
   type SupplierInfo,
   type TechnicianInfo,
 } from "@/components/technician/purchase-form-sheet"
-import {
-  ORDER_STATUS,
-  fuelTypeLabel, transmissionLabel,
-} from "@/lib/constants"
+import { fuelTypeLabel, transmissionLabel } from "@/lib/constants"
 import {
   startWorkAction, holdWorkAction, completeWorkAction,
   addInternalNoteAction, deleteInternalNoteAction,
@@ -64,6 +62,7 @@ import type { OrderItem } from "@/components/orders/order-management-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import { TechnicianPartsLaborSection } from "@/components/technician/technician-parts-labor-section"
 import { workOrderPath } from "@/lib/technician/cross-links"
+import { StatusBadge } from "@/components/shared/status-badge"
 import {
   countRemainingChecklist,
   countIncompleteItems,
@@ -136,11 +135,11 @@ type OrderData = {
 }
 
 const TECHNICIAN_ORDER_STEPS = [
-  { id: "start", label: "İşi başlat" },
-  { id: "check", label: "Araç kontrolü" },
-  { id: "items", label: "Yapılacak işler" },
-  { id: "needs", label: "Parça ve dış hizmet" },
-  { id: "finish", label: "Fotoğraf ve bitir" },
+  { id: "start", label: "İşi başlat", icon: Play },
+  { id: "check", label: "Araç kontrolü", icon: Car },
+  { id: "items", label: "Yapılacak işler", icon: ListChecks },
+  { id: "needs", label: "Parça ve dış hizmet", icon: Package },
+  { id: "finish", label: "Fotoğraf ve bitir", icon: Camera },
 ] as const
 
 type StepId = (typeof TECHNICIAN_ORDER_STEPS)[number]["id"]
@@ -177,10 +176,6 @@ export function TechnicianOrderDetail({
   // BAK-140: ofis personeli/dış alım bu iş emrine parça eklediğinde teknisyen
   // sayfayı yenilemeden görsün — office tarafındaki aynı desen (work-order-detail.tsx).
   useOrderSync(order.id)
-
-  const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
-  const statusLabel = statusInfo?.label || order.status
-  const statusColor = statusInfo?.color || "bg-muted text-foreground"
 
   const activeLabor = order.laborSessions.find((l) => !l.endTime)
 
@@ -330,9 +325,7 @@ export function TechnicianOrderDetail({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">{order.workOrderNo}</h2>
-            <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", statusColor)}>
-              {statusLabel}
-            </span>
+            <StatusBadge status={order.status} />
           </div>
           {order.assignedTechnicianName && (
             <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -393,15 +386,17 @@ export function TechnicianOrderDetail({
           önceki adımın tamamlanmış olması bir sekmeye geçişi engellemez,
           kilit yalnız düzenlemeyi durdurur (yukarıdaki salt-okunur uyarısı). */}
       <Tabs value={currentStep} onValueChange={(value) => isStepId(value) && goToStep(value)}>
-        <div className="max-w-full overflow-x-auto pb-1">
-          <TabsList className="w-max">
-            {steps.map((step, i) => (
-              <TabsTrigger key={step.id} value={step.id}>
-                {i + 1}. {step.label}
+        <TabsList variant="line" className="flex w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {steps.map((step) => {
+            const Icon = step.icon
+            return (
+              <TabsTrigger key={step.id} value={step.id} className="px-3 py-2.5 shrink-0 flex-none">
+                <Icon className="size-4" />
+                <span>{step.label}</span>
               </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+            )
+          })}
+        </TabsList>
 
         <section className="min-w-0 space-y-4 mt-4" aria-live="polite">
           <WizardHeading
