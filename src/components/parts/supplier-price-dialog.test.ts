@@ -24,6 +24,14 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain('result?.status === "no_match"')
     expect(source).toContain('result?.status === "no_offers"')
     expect(source).toContain('result?.status === "upstream_error"')
+    expect(source).toContain('role={error ? "alert" : undefined}')
+    expect(source).toContain('aria-live={error ? "assertive" : undefined}')
+  })
+
+  test("offer, quote ve purchase yanıtlarını endpoint-specific guardlarla doğrular", () => {
+    expect(source).toContain("readOfferResponse(response)")
+    expect(source).toContain("readQuoteResponse(response)")
+    expect(source).toContain("readPurchaseResponse(response)")
   })
 
   test("çakışan parça numarası sonuçlarını sourceProductId ile ayrı gruplar", () => {
@@ -37,7 +45,7 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain("confirmationToken: quote.confirmationToken")
     expect(source).not.toContain("expectedPolicyVersion: quote.policyVersion")
     expect(source).not.toContain("expectedExpiresAt: quote.expiresAt")
-    expect(source).toContain("RECONFIRMATION_REQUIRED_CODES.has(data.code)")
+    expect(source).toContain("RECONFIRMATION_REQUIRED_CODES.has(error.code)")
     expect(source).toContain("setQuote(null)")
     expect(source).toContain("Politika {quote.policyVersion}")
     expect(source).toContain("yeniden açıkça onaylayın")
