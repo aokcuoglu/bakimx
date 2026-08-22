@@ -51,9 +51,11 @@ import {
   AutocompleteEmpty,
 } from "@/components/ui/autocomplete"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatTRY } from "@/lib/format"
 import { formatItemAddedMessage } from "@/lib/orders/item-added-message"
 import { kurusToLira, parseTRYToKurus } from "@/lib/money"
+import { evaluateMoneyExpression } from "@/lib/money-expression"
 import { effectiveTaxBps, lineVatKurus } from "@/lib/orders/line-vat"
 import {
   needsMarkup,
@@ -309,7 +311,8 @@ export function PartsLaborEditor({
           <colgroup>
             <col className="w-40" />{/* Tür */}
             <col />{/* Parça / İşçilik + Marka/Kategori meta (kalan alan) */}
-            <col className="w-24" />{/* Miktar */}
+            <col className="w-28" />{/* Miktar */}
+            <col className="w-24" />{/* Birim */}
             {vatPerLine && <col className="w-16" />}{/* KDV */}
             <col className="w-36" />{/* Birim Fiyat */}
             <col className="w-28" />{/* Toplam */}
@@ -321,6 +324,7 @@ export function PartsLaborEditor({
               <TableHead className={cn(headCls, "pl-[18px]")}>Tür</TableHead>
               <TableHead className={headCls}>Parça / İşçilik</TableHead>
               <TableHead className={cn(headCls, "text-center")}>Miktar</TableHead>
+              <TableHead className={cn(headCls, "text-center")}>Birim</TableHead>
               {/* BAK-53 — satır KDV'ye tabi mi. Tick açıkken satırın altında
                   eklenecek KDV tutarı yazar; Genel Toplam'a da o KDV girer. */}
               {vatPerLine && <TableHead className={cn(headCls, "text-center")}>KDV</TableHead>}
@@ -332,7 +336,7 @@ export function PartsLaborEditor({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={vatPerLine ? 7 : 6}>
+                <TableCell colSpan={vatPerLine ? 8 : 7}>
                   <EmptyItemsHint locked={locked} />
                 </TableCell>
               </TableRow>
@@ -1012,6 +1016,7 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
       category: d.category,
       categoryId: d.categoryId,
       quantity: d.quantity,
+      unit: d.unit,
       unitPrice: d.unitPrice,
     })
     if (ok) setDialogOpen(false)
@@ -1263,9 +1268,11 @@ function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: bool
   function startPrice() { setPriceDraft(toPriceDraft(row.unitPrice)); setEditingPrice(true) }
   function commitPrice() {
     setEditingPrice(false)
-    // Alan artık düz metin (bkz. PriceField): "120,50", "1.234,56", "₺120" ve
-    // "120.5" aynı tutarı vermeli — çevrimin tek yeri parseTRYToKurus.
-    const entered = parseTRYToKurus(priceDraft)
+    // Alan artık düz metin (bkz. PriceField): normal TRY girdisi mevcut parser'a,
+    // işlem içeren girdi güvenli ifade ayrıştırıcısına gider.
+    const entered = /[+*/×÷()]/.test(priceDraft) || /-(?!^)/.test(priceDraft)
+      ? evaluateMoneyExpression(priceDraft)
+      : parseTRYToKurus(priceDraft)
     if (entered == null || entered < 0) return
     if (entered !== row.unitPrice) onCell(row, { unitPrice: entered })
   }
@@ -1375,6 +1382,66 @@ function QtyStepper({ row, editable, onCell }: { row: Row; editable: boolean; on
         <Plus />
       </Button>
     </div>
+  )
+}
+
+function QuantityField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+  const unit = row.unit === "litre" ? "litre" : "adet"
+  const [draft, setDraft] = useState(String(row.quantity))
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sunucudan doğrulanan miktarı alan taslağına taşır
+    setDraft(String(row.quantity))
+  }, [row.quantity])
+  if (!editable) return <span className="text-sm tabular-nums">{row.quantity}</span>
+  function commit() {
+    const quantity = Number(draft.replace(",", "."))
+    const valid = Number.isFinite(quantity) && quantity > 0 && quantity <= 999
+      && Math.round(quantity * 1000) === quantity * 1000
+      && (unit === "litre" || Number.isInteger(quantity))
+    if (!valid) {
+      setDraft(String(row.quantity))
+      return
+    }
+    setDraft(String(quantity))
+    if (quantity !== row.quantity) onCell(row, { quantity })
+  }
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      aria-label={`${row.name || "Satır"} miktarı`}
+      className="h-9 w-24 text-center text-sm tabular-nums"
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur() }}
+    />
+  )
+}
+
+function UnitField({ row, editable, onCell }: { row: Row; editable: boolean; onCell: OnCell }) {
+  const unit = row.unit === "litre" ? "litre" : "adet"
+  if (row.type !== "part") return <span className="text-xs text-muted-foreground">—</span>
+  if (!editable) return <span className="text-sm">{unit === "litre" ? "Litre" : "Adet"}</span>
+  return (
+    <Select
+      value={unit}
+      onValueChange={(value) => {
+        const next = value as "adet" | "litre"
+        onCell(row, {
+          unit: next,
+          ...(next === "adet" && !Number.isInteger(row.quantity) ? { quantity: Math.max(1, Math.round(row.quantity)) } : {}),
+        })
+      }}
+    >
+      <SelectTrigger size="compact" className="h-9 w-24" aria-label={`${row.name || "Parça"} birimi`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="adet">Adet</SelectItem>
+        <SelectItem value="litre" disabled={row.hasStockLink || !!row.__partId}>Litre</SelectItem>
+      </SelectContent>
+    </Select>
   )
 }
 
@@ -2118,7 +2185,16 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
       {/* Miktar */}
       <TableCell className="py-3.5">
         <div className="flex justify-center">
-          <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+          {ed.isPart
+            ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
+            : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
+        </div>
+      </TableCell>
+
+      {/* Birim — ondalıklı miktar yalnız litre seçiliyken geçerlidir. */}
+      <TableCell className="py-3.5">
+        <div className="flex justify-center">
+          <UnitField row={row} editable={ed.editable} onCell={onCell} />
         </div>
       </TableCell>
 
@@ -2234,7 +2310,12 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
           Birim fiyat NET, Toplam KDV DAHİL. */}
       <div className="mt-3 space-y-2 border-t border-border pt-3">
         <div className="flex items-center justify-between gap-2">
-          <QtyStepper row={row} editable={ed.editable} onCell={onCell} />
+          <div className="flex items-center gap-2">
+            {ed.isPart
+              ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
+              : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
+            <UnitField row={row} editable={ed.editable} onCell={onCell} />
+          </div>
           {vatPerLine && (
             <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
               <VatCell row={row} ed={ed} onCell={onCell} />

@@ -150,6 +150,7 @@ export default async function OrderDetailPage({
       name: i.name,
       sku: i.sku,
       unit: i.unit,
+      hasStockLink: i.partId != null,
       quantity: quantityToNumber(i.quantity),
       unitPrice: i.unitPrice,
       totalPrice: i.totalPrice,
