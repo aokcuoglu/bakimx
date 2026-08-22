@@ -21,6 +21,8 @@ import { formatTRY } from "@/lib/format"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
+import { useGetirbakimSearch } from "@/lib/parts/getirbakim/client"
+import { GetirbakimProductRow } from "@/components/parts/getirbakim-product-row"
 import { bakimxStockLabel } from "@/lib/parts/bakimx-item"
 import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 import {
@@ -285,8 +287,16 @@ export function PartSearchInput({
     limit: BAKIMX_SUGGESTION_LIMIT,
     vehicleTypeId,
   })
+  // GetirBakım modal aramasıyla aynı mevcut sözleşme. Satır salt-okunurdur:
+  // kaleme bağlamak kaynak/migration kararı gerektirir (GetirbakimProductRow).
+  const { products: getirbakimResults } = useGetirbakimSearch({
+    enabled: !!onSelectBakimxProduct,
+    q: query,
+    limit: BAKIMX_SUGGESTION_LIMIT,
+    vehicleTypeId,
+  })
 
-  const suggestions = buildPartSuggestions(results, bakimxResults, stockResults)
+  const suggestions = buildPartSuggestions(results, bakimxResults, stockResults, getirbakimResults)
 
   // Araç kataloğa bağlı değil VE ne BakımX ne stok araması var → arama yapacak
   // bir şey kalmaz, düz metin girişi + (composer'da) create aksiyonları.
@@ -382,7 +392,16 @@ export function PartSearchInput({
             )}
           </AutocompleteEmpty>
           <AutocompleteList>
-            {(s: PartSuggestion) => (s.kind === "bakimx" ? (
+            {(s: PartSuggestion) => (s.kind === "getirbakim" ? (
+              <AutocompleteItem
+                key={suggestionKey(s)}
+                value={s}
+                disabled
+                className="pointer-events-none block p-0 opacity-100 data-disabled:opacity-100"
+              >
+                <GetirbakimProductRow product={s.product} />
+              </AutocompleteItem>
+            ) : s.kind === "bakimx" ? (
               // BAK-35 — BakımX kataloğu: araca bağlı değil ama satılabilirliği ve
               // fiyatı bizde kayıtlı. Gösterilen tutar ATÖLYENİN ALIŞ fiyatıdır
               // (KDV hariç); etiketi kaldırmayın, satış fiyatı sanılırsa atölye
