@@ -131,13 +131,30 @@ test("mapImportHeaders keeps the first column when a field repeats", () => {
 test("validateImportHeader reports missing required columns per mode", () => {
   const onlySku = mapImportHeaders(["Ürün Kodu"])
   expect(validateImportHeader(onlySku, { mode: "upsert", pricesIncludeVat: false })).toEqual([
-    "Dosyada zorunlu kolon eksik: Ürün Adı, Fiyat (KDV hariç), Stok.",
+    "Dosyada zorunlu kolon eksik: Ürün Adı, Stok.",
   ])
   // Yalnız fiyat/stok modunda ürün adı istenmez ama güncellenecek bir kolon şart.
   expect(validateImportHeader(onlySku, { mode: "price_stock_only", pricesIncludeVat: false })).toHaveLength(1)
   expect(
     validateImportHeader(mapImportHeaders(["Ürün Kodu", "Stok"]), { mode: "price_stock_only", pricesIncludeVat: false }),
   ).toEqual([])
+})
+
+test("upsert accepts a blank price and defaults a new product to zero", () => {
+  const csv = "Ürün Kodu;Ürün Adı;Fiyat (KDV hariç);Stok\nA1;Akü;;5\n"
+  const plan = planFrom(csv)
+
+  expect(plan.counts).toEqual({ total: 1, created: 1, updated: 0, skipped: 0, error: 0 })
+  expect(plan.entries[0].input?.workshopPriceKurus).toBe(0)
+})
+
+test("upsert accepts a missing price column and preserves an existing price", () => {
+  const seed = planFrom(TR_EXCEL_CSV).entries[0].input!
+  const csv = "Ürün Kodu;Ürün Adı;Stok\nMTL-60AH;Mutlu Akü 60Ah 540A;30\n"
+  const plan = planFrom(csv, { existing: [asExisting(seed, "prod_1")] })
+
+  expect(plan.counts.error).toBe(0)
+  expect(plan.entries[0].input?.workshopPriceKurus).toBe(seed.workshopPriceKurus)
 })
 
 test("validateImportHeader refuses a KDV-dahil price column when the flag is off", () => {
