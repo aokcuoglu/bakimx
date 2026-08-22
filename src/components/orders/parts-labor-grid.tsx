@@ -1291,12 +1291,9 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-// Liste satırındaki parçanın salt-okunur kimliği: [parça no] + ad.
-// Katalog parçasında veri katalogdan gelir → bozulmamalı. Manuel/dış alım
-// kaleminde ise alan düzenlenebilir GÖRÜNÜP kaydedilmiyordu (katalog aramalı
-// Autocomplete yalnız "sonuç yok + Enter" ile commit ediyor; blur'da yazılan ad
-// sessizce eski haline dönüyordu) → yanıltıcı affordance kaldırıldı.
-// Her iki durumda da ad hatalıysa satır silinip yeniden eklenir.
+// Liste satırındaki parçanın kimliği: [parça no] + ad. Katalog kimliği salt
+// okunur kalır; manuel eklenen parçanın adı ise doğrudan satırda düzenlenir ve
+// iş emri adaptöründeki mevcut PATCH üzerinden kalıcılaşır.
 /**
  * BAK-104 — `oneLine`: masaüstü tablo satırında ad TEK satırda kalır ve taşarsa
  * kırpılır. Sarmalı ad satır yüksekliğini iki-üç katına çıkarıp aynı satırdaki
@@ -1337,8 +1334,44 @@ function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
   )
 }
 
-// Liste satırının ad hücresi. Parçada ad SALT-OKUNUR (bkz. PartIdentity);
-// işçilikte serbest metin olarak düzenlenebilir (debounce'lu otosave çalışıyor).
+function ManualPartNameField({ row, onCell }: { row: Row; onCell: OnCell }) {
+  const [draft, setDraft] = useState(row.name)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sunucudan doğrulanan tanımı taslağa taşır
+    setDraft(row.name)
+  }, [row.name])
+
+  function commit() {
+    const name = draft.trim()
+    if (!name) {
+      setDraft(row.name)
+      return
+    }
+    setDraft(name)
+    if (name !== row.name) onCell(row, { name })
+  }
+
+  return (
+    <Input
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur()
+        if (event.key === "Escape") {
+          setDraft(row.name)
+          event.currentTarget.blur()
+        }
+      }}
+      placeholder="Parça tanımı"
+      aria-label="Parça tanımı"
+      className="h-9 min-w-0 text-sm font-medium"
+    />
+  )
+}
+
+// Liste satırının ad hücresi. Katalog/dış alım parçasında ad salt okunur,
+// manuel parçada blur/Enter ile; işçilikte debounce'lu olarak düzenlenebilir.
 //
 // BAK-104 — satır-içi aksiyon ikonları (parça detayı ⓘ, tedarikçi fiyatı 🏷)
 // BURADAN ÇIKARILDI. Ad hücresinin içinde durdukları için konumları satırdan
@@ -1352,7 +1385,9 @@ function PartField({ row, ed, onCell, oneLine }: {
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      {ed.isPart ? (
+      {ed.isPart && row.source === "manual" && ed.editable ? (
+        <ManualPartNameField row={row} onCell={onCell} />
+      ) : ed.isPart ? (
         <PartIdentity row={row} oneLine={oneLine} />
       ) : (
         <Input
