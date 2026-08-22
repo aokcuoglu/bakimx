@@ -45,6 +45,7 @@ import { ORDER_STATUS, PAYMENT_STATUS, DAMAGE_TYPES, DAMAGE_SEVERITY, PHOTO_TYPE
 import { formatTRY, formatMileage, customerDisplayName } from "@/lib/format"
 import { FuelGauge } from "@/components/intake/fuel-gauge"
 import { formatDate, formatDateTime } from "@/lib/utils-client"
+import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -389,11 +390,12 @@ export function VehiclePassport({ data }: { data: PassportData }) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {allPhotos.map((p) => {
                   const pt = PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]
+                  const src = resolvePhotoSrc(p)
                   return (
                     <div key={p.id} className="block rounded-lg border border-border overflow-hidden">
                       <div className="aspect-[4/3] bg-muted flex items-center justify-center">
-                        {p.fileUrl ? (
-                          <Image src={p.fileUrl} alt={p.label || pt?.label || "Fotoğraf"} width={160} height={120} unoptimized className="w-full h-full object-cover" />
+                        {src ? (
+                          <Image src={src} alt={p.label || pt?.label || "Fotoğraf"} width={160} height={120} unoptimized className="w-full h-full object-cover" />
                         ) : (
                           <Camera className="size-6 text-muted-foreground/50" />
                         )}
