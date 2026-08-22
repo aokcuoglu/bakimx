@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatTRY } from "@/lib/format"
 import type { GetirbakimExactProduct, GetirbakimOffer } from "@/lib/parts/getirbakim/types"
+import { transactionalAvailability } from "./supplier-offer-availability"
 
 type PartInfo = { name: string; sku?: string | null; brand?: string | null }
 type OfferResponse =
@@ -127,7 +128,7 @@ export function SupplierPriceDialog({ open, onOpenChange, part, orderId, orderIt
                 <span>· {product.manufacturerPartNumber.value}</span>
               </div>
               {product.offers.map((offer, index) => (
-                <OfferCard key={`${product.sourceProductId}:${offer.selectedOfferId}:${index}`} offer={offer} selected={selected?.offer.selectedOfferId === offer.selectedOfferId} disabled={pending} onSelect={() => void chooseOffer(product, offer)} />
+                <OfferCard key={`${product.sourceProductId}:${offer.selectedOfferId}:${index}`} offer={offer} quantity={purchaseQuantity} selected={selected?.offer.selectedOfferId === offer.selectedOfferId} disabled={pending} onSelect={() => void chooseOffer(product, offer)} />
               ))}
             </section>
           ))}
@@ -149,13 +150,8 @@ function StateMessage({ children, error = false }: { children: ReactNode; error?
   return <div className={`flex min-h-28 items-center justify-center gap-2 rounded-lg border p-4 text-center text-sm ${error ? "text-destructive-strong" : "text-muted-foreground"}`}>{error ? <AlertCircle className="size-4 shrink-0" /> : null}{children}</div>
 }
 
-export function supplierAvailabilityLabel(offer: GetirbakimOffer): string {
-  if (offer.availability === "IN_STOCK") return offer.stockQty == null ? "Stokta" : `Stokta · ${offer.stockQty} adet`
-  if (offer.availability === "SUPPLYABLE") return "Tedarik edilebilir"
-  return "Stok bilgisi yok"
-}
-
-function OfferCard({ offer, selected, disabled, onSelect }: { offer: GetirbakimOffer; selected: boolean; disabled: boolean; onSelect: () => void }) {
+function OfferCard({ offer, quantity, selected, disabled, onSelect }: { offer: GetirbakimOffer; quantity: number; selected: boolean; disabled: boolean; onSelect: () => void }) {
+  const transactional = transactionalAvailability(offer, quantity)
   const date = offer.lastSyncedAt ? new Date(offer.lastSyncedAt) : null
   const synced = date && Number.isFinite(date.getTime())
     ? new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(date)
@@ -166,7 +162,7 @@ function OfferCard({ offer, selected, disabled, onSelect }: { offer: GetirbakimO
         <div className="min-w-0 space-y-1.5">
           <span className="block truncate text-sm font-medium text-foreground">{offer.supplierDisplayName}</span>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><Package className="size-3" />{supplierAvailabilityLabel(offer)}</span>
+            <span className="inline-flex items-center gap-1"><Package className="size-3" aria-hidden="true" />{transactional.label}</span>
             {synced ? <span className="inline-flex items-center gap-1"><Clock3 className="size-3" />Son güncelleme: {synced}</span> : null}
           </div>
         </div>
@@ -175,7 +171,7 @@ function OfferCard({ offer, selected, disabled, onSelect }: { offer: GetirbakimO
           <Badge variant="outline">Bilgilendirme</Badge>
         </div>
       </div>
-      <Button type="button" variant={selected ? "secondary" : "outline"} size="sm" className="mt-3 w-full" disabled={disabled || offer.informationalPriceKurus == null} onClick={onSelect}>{selected ? "Seçildi" : "Teklifi seç"}</Button>
+      <Button type="button" variant={selected ? "secondary" : "outline"} size="sm" className="mt-3 w-full" disabled={disabled || offer.informationalPriceKurus == null || !transactional.canRequestQuote} onClick={onSelect}>{selected ? "Seçildi" : transactional.selectionLabel}</Button>
     </div>
   )
 }

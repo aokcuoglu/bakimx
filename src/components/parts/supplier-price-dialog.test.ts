@@ -13,6 +13,12 @@ describe("SupplierPriceDialog real-offer UI contract", () => {
     expect(source).toContain("bilgilendirme amaçlıdır ve bağlayıcı teklif değildir")
   })
 
+  test("transactional uygunluğu olmayan teklif erişilebilir biçimde seçilemez", () => {
+    expect(source).toContain("!transactional.canRequestQuote")
+    expect(source).toContain("transactional.selectionLabel")
+    expect(source).toContain('aria-hidden="true"')
+  })
+
   test("yükleme, eşleşme yok, teklif yok ve upstream hata durumlarını sunar", () => {
     expect(source).toContain("yükleniyor")
     expect(source).toContain('result?.status === "no_match"')
