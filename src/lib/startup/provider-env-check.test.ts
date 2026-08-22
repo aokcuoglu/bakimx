@@ -9,6 +9,7 @@ const allReal = {
   TECDOC_PROVIDER: "rapidapi",
   OCR_PROVIDER: "anthropic",
   AI_PROVIDER: "anthropic",
+  MARKET_RESEARCH_PROVIDER: "anthropic",
 }
 
 test("findMockProviders: flags unset, empty, and explicit mock; ignores real values", () => {
@@ -34,6 +35,7 @@ test("findMockProviders: OCR ve AI de kapsanır (#256)", () => {
     "TECDOC_PROVIDER",
     "OCR_PROVIDER",
     "AI_PROVIDER",
+    "MARKET_RESEARCH_PROVIDER",
   ])
 })
 
