@@ -108,7 +108,10 @@ export function buildCrossWorkshopHistory({
     const workshopCity = show(row.workshopCity, null)
 
     for (const intake of row.intakes) {
-      if (intake.order) {
+      // Sorgu da yalnız `delivered` emirleri seçer; bu ikinci kontrol DTO
+      // sınırını bağımsız olarak güvenli tutar ve yanlışlıkla daha geniş bir
+      // satır kümesi geçirilse bile yabancı taslak/iptal emirlerini dışarı vermez.
+      if (intake.order?.status === "delivered") {
         orders.push({
           key: `${row.workshopId}:o${orders.length}`,
           workshopName,

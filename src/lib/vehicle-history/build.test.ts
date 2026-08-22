@@ -185,6 +185,67 @@ test("iş emirleri en yeniden eskiye sıralanır", () => {
   ])
 })
 
+test("yabancı iş emirlerinden yalnız teslim edilenler istemciye açılır", () => {
+  const statuses = ["draft", "waiting_approval", "cancelled", "delivered"]
+  const h = buildCrossWorkshopHistory({
+    plate: "34ABC123",
+    rows: [
+      row({
+        intakes: statuses.map((status, index) => ({
+          createdAt: new Date(`2026-03-0${index + 1}T09:00:00Z`),
+          mileageAtIntake: 84000 + index,
+          customerComplaint: `${status} şikayeti`,
+          damageMarks: [],
+          order: {
+            status,
+            arrivalReason: status,
+            createdAt: new Date(`2026-03-0${index + 1}T09:10:00Z`),
+            itemNames: [`${status} kalemi`],
+          },
+        })),
+      }),
+    ],
+    accessReason: "own_record",
+  })
+
+  expect(h.orderCount).toBe(1)
+  expect(h.orders).toHaveLength(1)
+  expect(h.orders[0]).toMatchObject({
+    status: "delivered",
+    arrivalReason: "delivered",
+    complaint: "delivered şikayeti",
+    itemLabels: ["delivered kalemi"],
+  })
+})
+
+test("teslim edilmemiş yabancı emirlerin ayrıntıları maskesiz yanıtta bile sızmaz", () => {
+  const h = buildCrossWorkshopHistory({
+    plate: "34ABC123",
+    rows: [
+      row({
+        intakes: [
+          {
+            createdAt: new Date("2026-03-01T09:00:00Z"),
+            mileageAtIntake: 84000,
+            customerComplaint: "GİZLİ TASLAK ŞİKAYETİ",
+            damageMarks: [],
+            order: {
+              status: "draft",
+              arrivalReason: "GİZLİ TASLAK NEDENİ",
+              createdAt: new Date("2026-03-01T09:10:00Z"),
+              itemNames: ["GİZLİ TASLAK KALEMİ"],
+            },
+          },
+        ],
+      }),
+    ],
+    accessReason: "registration_scan",
+  })
+
+  expect(JSON.stringify(h)).not.toContain("GİZLİ TASLAK")
+  expect(h.orders).toEqual([])
+})
+
 test("yabancı kayıt yoksa boş sonuç kilitli görünmez", () => {
   const h = emptyCrossWorkshopHistory("34ABC123")
   expect(h.locked).toBe(false)

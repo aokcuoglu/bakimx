@@ -72,6 +72,10 @@ export async function getCrossWorkshopVehicleHistory({
             select: { zone: true, damageType: true, severity: true, createdAt: true },
           },
           order: {
+            // Başka kiracıya ait iş emirlerinde yalnız tamamlanmış servis
+            // kaydı paylaşılır. Tekil ilişkiyi burada filtrelemek, taslak/iptal
+            // içeriğinin DTO katmanına dahi ulaşmasını engeller.
+            where: { status: "delivered" },
             select: {
               status: true,
               arrivalReason: true,
