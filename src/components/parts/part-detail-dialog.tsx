@@ -356,7 +356,7 @@ export function PartDetailDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Lightbox portal'ı body'ye çıkar ve z-[100] ile Dialog'un (z-50) üstünde kalır. */}
+      {/* Fotoğraf Dialog'u body'ye çıkar; parça diyaloğunun üstünde ikinci bir modal olur. */}
       {imageUrl && (
         <PhotoLightbox
           photos={[

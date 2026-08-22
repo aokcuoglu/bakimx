@@ -689,7 +689,7 @@ function ComplaintCard({ complaint }: { complaint: string }) {
 /**
  * Faz bazlı fotoğraf ızgarası. Kaynak `fileUrl` değil `resolvePhotoSrc` ile
  * belirlenir (depo referansı doğrudan açılamaz), dokununca diğer ekranlardaki
- * gibi tam ekran `PhotoLightbox` açılır. `canDelete` verildiğinde her karenin
+ * gibi modal carousel (`PhotoLightbox`) açılır. `canDelete` verildiğinde her karenin
  * köşesinde sil butonu çıkar (silme sunucuda soft'tur).
  */
 function PhotoSection({
@@ -816,7 +816,7 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
  * Dış alım kaleminin kartı içindeki fotoğraf şeridi (BAK-111).
  *
  * Teknisyen parça kutusunun/fişin üzerindeki yazıyı küçük karede okuyamıyordu;
- * dokununca galeriyle AYNI tam ekran `PhotoLightbox` açılır (X, Escape, kaydırma
+ * dokununca galeriyle AYNI modal carousel (`PhotoLightbox`) açılır (X, Escape, kaydırma
  * ve çift dokunuşla yakınlaştırma oradan gelir). Kalemde birden çok kare varsa
  * hepsi aynı lightbox içinde gezilir.
  *

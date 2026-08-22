@@ -21,7 +21,7 @@ export type GalleryPhoto = {
 
 /**
  * Tıklanabilir fotoğraf grid'i — kartlardan birine dokununca aynı grup içinde
- * gezinilebilen tam ekran lightbox (`PhotoLightbox`) açılır. Dosyası olmayan
+ * gezinilebilen modal carousel (`PhotoLightbox`) açılır. Dosyası olmayan
  * kayıtlar tıklanamaz. Hasar notu hem kartta hem lightbox'ta gösterilir.
  *
  * `canDelete` verildiğinde her kartın köşesinde sil butonu çıkar (yanlış çekilen

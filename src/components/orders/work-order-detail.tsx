@@ -102,6 +102,8 @@ import { TechnicianAssign, type AssignableTechnician } from "@/components/orders
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
+import { AiPartSearch } from "@/components/parts/ai-part-search"
+import type { AiPartSuggestion } from "@/lib/parts/ai-search"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -225,6 +227,7 @@ export function WorkOrderDetail({
   order,
   technicians,
   hasAiAdvisor,
+  canUseAiPartSearch,
   activity = [],
   editInitially = false,
   laborCatalog,
@@ -235,6 +238,7 @@ export function WorkOrderDetail({
   order: OrderDetailData
   technicians?: AssignableTechnician[]
   hasAiAdvisor: boolean
+  canUseAiPartSearch: boolean
   activity?: OrderActivityEntry[]
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
@@ -696,6 +700,24 @@ export function WorkOrderDetail({
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleAddAiPart(item: AiPartSuggestion) {
+    setLoading(true); setError("")
+    try {
+      const formData = new FormData()
+      formData.set("serviceOrderId", order.id); formData.set("type", "part"); formData.set("name", item.name); formData.set("quantity", "1")
+      if (item.sku) formData.set("sku", item.sku)
+      if (item.brand) formData.set("brand", item.brand)
+      if (item.partId) formData.set("partId", item.partId)
+      if (item.tecdocArticleId != null) { formData.set("tecdocArticleId", String(item.tecdocArticleId)); formData.set("source", "catalog") }
+      if (item.bakimxProductId) { formData.set("bakimxProductId", item.bakimxProductId); formData.set("source", "bakimx") }
+      if (item.getirbakimProductId) { formData.set("getirbakimProductId", item.getirbakimProductId); formData.set("source", "getirbakim") }
+      const response = await fetch("/api/orders/items", { method: "POST", body: formData })
+      const data = await response.json() as { success?: boolean; error?: string }
+      if (!response.ok || !data.success) throw new Error(data.error || "Parça eklenemedi")
+      toast.success(`${item.name} kaleme eklendi`); router.refresh()
+    } finally { setLoading(false) }
   }
 
   const customerName =
@@ -1251,14 +1273,14 @@ export function WorkOrderDetail({
               </AccordionTrigger>
               <AccordionContent className="pt-3 pb-0">
                 {hasAiAdvisor ? (
-                  <ServiceAdvisorPanel
+                  <div className="space-y-3">{canUseAiPartSearch && <AiPartSearch vehicleTypeId={order.vehicle.catalogVehicleTypeId} disabled={orderLocked || loading} onAdd={handleAddAiPart} />}<ServiceAdvisorPanel
                     intakeFormId={intake.id}
                     customerComplaint={order.intake.customerComplaint}
                     vehicleBrand={order.vehicle.brand}
                     vehicleModel={order.vehicle.model}
                     mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
                     onAddItems={handleAddAiItems}
-                  />
+                  /></div>
                 ) : (
                   <AdvisorPremiumLock />
                 )}
