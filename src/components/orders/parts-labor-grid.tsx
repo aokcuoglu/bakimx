@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -1585,6 +1586,36 @@ function DoneBadge({ completedAt, className }: { completedAt?: string | null; cl
   )
 }
 
+function ProcurementBadge({ procurement }: { procurement?: OrderItem["externalProcurement"] }) {
+  const router = useRouter()
+  const [cancelling, setCancelling] = useState(false)
+  if (!procurement) return null
+  const label = procurement.cancellationRequestedAt
+    ? "İptal talebi iletildi"
+    : procurement.status === "REQUESTED"
+      ? "Tedarik bekleniyor"
+      : procurement.status === "CONFIRMED"
+        ? "Tedarik onaylandı"
+        : procurement.status === "SHIPPED"
+          ? "Sevkiyatta"
+          : procurement.status === "COMPLETED"
+            ? "Tedarik tamamlandı"
+            : procurement.status === "CANCELLED"
+              ? "Tedarik iptal edildi"
+              : procurement.status === "FAILED" ? "Tedarik başarısız" : procurement.status
+  async function requestCancellation() {
+    setCancelling(true)
+    try {
+      const response = await fetch("/api/orders/external-procurements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "cancel", procurementId: procurement!.id }) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "İptal talebi iletilemedi.")
+      toast.success("İptal talebi GetirBakım'a iletildi."); router.refresh()
+    } catch (error) { toast.error(error instanceof Error ? error.message : "İptal talebi iletilemedi.") }
+    finally { setCancelling(false) }
+  }
+  return <span className="mt-1.5 flex flex-wrap items-center gap-2"><Badge variant="outline">{label}</Badge>{procurement.status === "CONFIRMED" && !procurement.cancellationRequestedAt ? <Button type="button" variant="link" size="sm" className="h-auto px-0 text-destructive-strong" disabled={cancelling} onClick={() => void requestCancellation()}>{cancelling ? "İletiliyor…" : "İptal talep et"}</Button> : null}</span>
+}
+
 // Başarılı otosave ("Kaydedildi") veya yeni ekleme ("Eklendi") sonrası 2 sn'lik
 // onay işareti. Masaüstünde dar kolonlara sığması için iconOnly, mobil kart
 // başlığında metinli sürüm.
@@ -1779,6 +1810,9 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
           open={priceOpen}
           onOpenChange={setPriceOpen}
           part={{ name: row.name, sku: row.sku, brand: row.brand }}
+          orderId={orderId}
+          orderItemId={row.id}
+          quantity={row.quantity}
         />
       )}
 
@@ -2077,6 +2111,7 @@ function DesktopPartRow({ row, orderId, locked, vehicle, showAttributes = true, 
             </div>
           )}
           <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
+          <ProcurementBadge procurement={row.externalProcurement} />
         </div>
       </TableCell>
 
@@ -2178,6 +2213,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
         <PartField row={row} ed={ed} onCell={onCell} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
         <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
+        <ProcurementBadge procurement={row.externalProcurement} />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}

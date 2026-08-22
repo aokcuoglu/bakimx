@@ -7,7 +7,7 @@ datasource db {
 }
 
 model Workshop {
-  id String @id @default(cuid())
+  id           String   @id @default(cuid())
   // Tenant giriş kodu (BAK-40). E-postasız kullanıcı `/w/<loginCode>` ile kendi
   // atölyesini seçer; kullanıcı adları YALNIZ bu tenant içinde benzersizdir.
   // Format: küçük harf `a-z0-9-`, 3–20 karakter (bkz. `src/lib/workshop-code.ts`).
@@ -45,7 +45,7 @@ model Workshop {
 
   // --- BakımX pricing (BAK-47) ---
   // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
-  bakimxDiscountBps  Int                    @default(0)
+  bakimxDiscountBps Int @default(0)
 
   // --- Paid subscription period (manual/havale billing v1) ---
   // Set on the first confirmed paid order. Null = legacy/admin-provisioned or
@@ -53,46 +53,47 @@ model Workshop {
   billingCycle     BillingCycle?
   currentPeriodEnd DateTime?
 
-  settings               WorkshopSettings?
-  users                  User[]
-  pushSubscriptions      PushSubscription[]
-  customers              Customer[]
-  vehicles               Vehicle[]
-  intakes                VehicleIntakeForm[]
-  photos                 VehiclePhoto[]
-  damageMarks            DamageMark[]
-  approvals              ApprovalRequest[]
-  shareLinks             PublicShareLink[]
-  timelineEvents         IntakeTimelineEvent[]
-  orders                 ServiceOrder[]
-  quotes                 Quote[]
-  quoteItems             QuoteItem[]
-  appointments           Appointment[]
-  reminders              MaintenanceReminder[]
-  auditLogs              AuditLog[]
-  partStockItems         PartStockItem[]
-  stockMovements         StockMovement[]
-  suppliers              Supplier[]
-  partSupplierPrices     PartSupplierPrice[]
-  collections            CollectionPayment[]
-  ocrLogs                OcrLog[]
-  passportTokens         VehiclePassportToken[]
-  technicians            Technician[]
-  checklistItems         ChecklistItem[]
-  internalNotes          InternalNote[]
-  partsRequests          PartsRequest[]
-  laborSessions          LaborSession[]
-  communicationTemplates CommunicationTemplate[]
-  communicationLogs      CommunicationLog[]
-  calendarSyncLogs       CalendarSyncLog[]
-  reminderExecutionLogs  ReminderExecutionLog[]
-  invites                Invite[]
-  billingOrders          BillingOrder[]
-  featureOverrides       WorkshopFeatureOverride[]
-  laborCatalogItems      LaborCatalogItem[]
-  bakimxOrders           BakimxOrder[]
-  vehicleHistoryGrants   VehicleHistoryGrant[]
-  supportRequests        SupportRequest[]
+  settings                  WorkshopSettings?
+  users                     User[]
+  pushSubscriptions         PushSubscription[]
+  customers                 Customer[]
+  vehicles                  Vehicle[]
+  intakes                   VehicleIntakeForm[]
+  photos                    VehiclePhoto[]
+  damageMarks               DamageMark[]
+  approvals                 ApprovalRequest[]
+  shareLinks                PublicShareLink[]
+  timelineEvents            IntakeTimelineEvent[]
+  orders                    ServiceOrder[]
+  quotes                    Quote[]
+  quoteItems                QuoteItem[]
+  appointments              Appointment[]
+  reminders                 MaintenanceReminder[]
+  auditLogs                 AuditLog[]
+  partStockItems            PartStockItem[]
+  stockMovements            StockMovement[]
+  suppliers                 Supplier[]
+  partSupplierPrices        PartSupplierPrice[]
+  collections               CollectionPayment[]
+  ocrLogs                   OcrLog[]
+  passportTokens            VehiclePassportToken[]
+  technicians               Technician[]
+  checklistItems            ChecklistItem[]
+  internalNotes             InternalNote[]
+  partsRequests             PartsRequest[]
+  laborSessions             LaborSession[]
+  communicationTemplates    CommunicationTemplate[]
+  communicationLogs         CommunicationLog[]
+  calendarSyncLogs          CalendarSyncLog[]
+  reminderExecutionLogs     ReminderExecutionLog[]
+  invites                   Invite[]
+  billingOrders             BillingOrder[]
+  featureOverrides          WorkshopFeatureOverride[]
+  laborCatalogItems         LaborCatalogItem[]
+  bakimxOrders              BakimxOrder[]
+  vehicleHistoryGrants      VehicleHistoryGrant[]
+  supportRequests           SupportRequest[]
+  externalProcurementOrders ExternalProcurementOrder[]
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -271,33 +272,33 @@ model WorkshopSettings {
 }
 
 model User {
-  id String @id @default(cuid())
+  id                 String      @id @default(cuid())
   // BAK-40: e-postasız usta/çırak hesabı açılabilsin diye NULLABLE. Postgres
   // birden çok NULL'a izin verdiği için @unique korunur. `owner`/`manager`
   // rollerinde DOLU olması DB CHECK'i ile zorunlu tutulur.
-  email      String?  @unique
+  email              String?     @unique
   // Tenant içi giriş adı — küçük harfe normalize edilmiş saklanır. Global DEĞİL:
   // her atölyede bir "ahmet" olabilir.
-  username   String?
-  password   String
+  username           String?
+  password           String
   // Sahibin ürettiği geçici şifreyle ilk girişte şifre değiştirmeye zorlar (P1).
-  mustChangePassword Boolean @default(false)
-  firstName  String?
-  lastName   String?
-  workshopId String
-  workshop   Workshop @relation(fields: [workshopId], references: [id])
+  mustChangePassword Boolean     @default(false)
+  firstName          String?
+  lastName           String?
+  workshopId         String
+  workshop           Workshop    @relation(fields: [workshopId], references: [id])
   // Team/RBAC: default `owner` is backfill-safe — existing/seed users become the
   // workshop owner with no data fixup. Invited users get their role explicitly.
-  role       UserRole @default(owner)
+  role               UserRole    @default(owner)
   // Soft-disable a seat (blocks sign-in) without deleting history.
-  isActive   Boolean  @default(true)
+  isActive           Boolean     @default(true)
   // BAK-39: Opsiyonel bağ — giriş hesabını personel kaydıyla eşler. Bağlı kullanıcılar
   // teknisyen panelinde kendi işlerini görür; bağsız olanlar listedeki ilk teknisyeni seçer.
   // Bağ kaldırıldığında NULL'a döner; eski davranış korunur (geriye dönük kırılma yok).
-  technicianId String?
-  technician   Technician? @relation(fields: [technicianId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  technicianId       String?
+  technician         Technician? @relation(fields: [technicianId], references: [id])
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   auditLogs             AuditLog[]
   sentInvites           Invite[]             @relation("InviteCreatedBy")
@@ -802,14 +803,15 @@ model ServiceOrder {
   updatedAt            DateTime          @updatedAt
 
   items                    ServiceOrderItem[]
-  convertedFromQuote       Quote?              @relation("QuoteToServiceOrder")
-  convertedFromAppointment Appointment?        @relation("AppointmentToServiceOrder")
+  convertedFromQuote       Quote?                     @relation("QuoteToServiceOrder")
+  convertedFromAppointment Appointment?               @relation("AppointmentToServiceOrder")
   collections              CollectionPayment[]
   checklistItems           ChecklistItem[]
   internalNotes            InternalNote[]
   partsRequests            PartsRequest[]
   laborSessions            LaborSession[]
   photos                   VehiclePhoto[]
+  externalProcurements     ExternalProcurementOrder[]
 
   paidAmount      Int? // kuruş
   remainingAmount Int? // kuruş
@@ -893,37 +895,37 @@ model CollectionPayment {
 }
 
 model ServiceOrderItem {
-  id                 String           @id @default(cuid())
-  workshopId         String
-  serviceOrderId     String
-  serviceOrder       ServiceOrder     @relation(fields: [serviceOrderId], references: [id])
-  type               OrderItemType
-  name               String
-  sku                String?
-  unit               String?
-  quantity           Int              @default(1)
-  unitPrice          Int? // kuruş
-  totalPrice         Int? // kuruş
-  partId             String?
-  part               PartStockItem?   @relation(fields: [partId], references: [id])
-  note               String?
+  id                      String                        @id @default(cuid())
+  workshopId              String
+  serviceOrderId          String
+  serviceOrder            ServiceOrder                  @relation(fields: [serviceOrderId], references: [id])
+  type                    OrderItemType
+  name                    String
+  sku                     String?
+  unit                    String?
+  quantity                Int                           @default(1)
+  unitPrice               Int? // kuruş
+  totalPrice              Int? // kuruş
+  partId                  String?
+  part                    PartStockItem?                @relation(fields: [partId], references: [id])
+  note                    String?
   // Parça markası (TecDoc supplier adı veya serbest). Eski satırlarda marka note'ta kalabilir.
-  brand              String?
+  brand                   String?
   // Seçilen yaprak kategori etiketi (örn. "Yağ filtresi").
-  category           String?
+  category                String?
   // TecDoc kategori düğüm id'si (ileride filtre/rapor için); serbest metin kategoride null.
-  categoryId         Int?
+  categoryId              Int?
   // TecDoc article linkage when the part was picked from the vehicle catalog
   // (no FK — external id). Enables future reorder/OEM cross-reference.
-  tecdocArticleId    Int?
+  tecdocArticleId         Int?
   // Kalem bir BakımX katalog ürününden geldiyse o ürünün id'si. FK YOK:
   // fiyat kalemde donmuş bir anlık görüntüdür, ürün kartı sonradan silinse
   // veya pasifleşse bile geçmiş iş emri satırı olduğu gibi kalmalı.
-  bakimxProductId    String?
+  bakimxProductId         String?
   // Kalemin nasıl eklendiği: katalog akışı mı serbest/manuel mi, yoksa
   // teknisyenin dışarıdan satın aldığı (purchase) parça mı. Yalnız açıklayıcı
   // (rozet + raporlama); eski satırlarda null → rozetsiz.
-  source             OrderItemSource?
+  source                  OrderItemSource?
   // --- Alış fiyatı + dış alım (source=purchase) alanları ---
   // Alış maliyeti (kuruş, KDV HARİÇ). Satış unitPrice'ından bağımsızdır;
   // oluşturmada unitPrice buradan otomatik doldurulur, sonrasında ayrı
@@ -933,33 +935,34 @@ model ServiceOrderItem {
   //   • source=bakimx   → atölyenin BakımX'ten alış fiyatı (bakimx_products
   //     .workshop_price_kurus'un anlık görüntüsü). Tedarikçi alanları BOŞ kalır;
   //     kaynak bakimx_product_id ile bellidir (bkz. src/lib/parts/bakimx-item.ts).
-  purchasePriceKurus Int?
+  purchasePriceKurus      Int?
   // Tedarikçi adı serbest metin olarak DAİMA yazılır (supplierId seçilse bile)
   // ki liste ekranı join olmadan render edebilsin.
-  supplierName       String?
-  supplierId         String?
-  supplier           Supplier?        @relation(fields: [supplierId], references: [id])
-  purchasedAt        DateTime?
-  purchasedById      String?
-  purchasedBy        Technician?      @relation(fields: [purchasedById], references: [id])
+  supplierName            String?
+  supplierId              String?
+  supplier                Supplier?                     @relation(fields: [supplierId], references: [id])
+  purchasedAt             DateTime?
+  purchasedById           String?
+  purchasedBy             Technician?                   @relation(fields: [purchasedById], references: [id])
   // --- Teknisyen tamamlama takibi ---
   // Dolu ⇒ kalem sahada yapıldı. Ofis buradan işaretlemez, yalnız görür.
-  completedAt        DateTime?
+  completedAt             DateTime?
   // Atanmış usta (Technician↔User bağı yok); gerçek kullanıcı AuditLog'a düşer.
-  completedById      String?
-  completedBy        Technician?      @relation("ItemCompletedBy", fields: [completedById], references: [id])
+  completedById           String?
+  completedBy             Technician?                   @relation("ItemCompletedBy", fields: [completedById], references: [id])
   // Şu an yazılmıyor/okunmuyor — kalem bazlı teknisyen notu UI'ı için rezerve.
-  completionNote     String?
+  completionNote          String?
   // Alış anında çekilen parça kutusu fotoğrafı (dahili-yalnız).
-  photos             VehiclePhoto[]
+  photos                  VehiclePhoto[]
+  externalProcurementItem ExternalProcurementOrderItem?
   // Satır KDV'ye TABİ mi (BAK-53). Tabi satırların net toplamı, belgenin
   // `taxRate`'iyle Genel Toplam'a eklenen KDV'nin matrahıdır (src/lib/totals.ts).
   // Varsayılan BAK-75'te `true` → `false` çevrildi: KDV kimseye sorulmadan
   // eklenmez, servis tick'i kendisi açar. MEVCUT satırlar değişmez — migration
   // yalnız kolonun DEFAULT'unu değiştirir, hiçbir satırı güncellemez.
-  includeVat         Boolean          @default(false)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  includeVat              Boolean                       @default(false)
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -968,6 +971,92 @@ model ServiceOrderItem {
   @@index([supplierId])
   @@index([serviceOrderId, completedAt])
   @@index([bakimxProductId])
+}
+
+/// Provider-neutral audit/projection record for a purchase fulfilled outside
+/// BakımX. It intentionally stores no supplier cost, margin, secret, or raw
+/// provider response. Provider status remains a string so adding a provider or
+/// status never requires a PostgreSQL enum migration.
+model ExternalProcurementOrder {
+  id                      String                         @id @default(cuid())
+  provider                String
+  workshopId              String
+  workshop                Workshop                       @relation(fields: [workshopId], references: [id], onDelete: Restrict)
+  serviceOrderId          String
+  serviceOrder            ServiceOrder                   @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
+  idempotencyKey          String
+  requestHash             String
+  externalOrderId         String?
+  partnerStatus           String
+  partnerVersion          Int                            @default(0)
+  bindingNetKurus         Int?
+  bindingVatKurus         Int?
+  bindingGrossKurus       Int?
+  currency                String?
+  pricingPolicyVersion    String?
+  reservationExpiresAt    DateTime?
+  invoiceReference        String?
+  cancellationCode        String?
+  failureCode             String?
+  requestedByUserId       String
+  cancellationRequestedAt DateTime?
+  failedAt                DateTime?
+  lastReconciledAt        DateTime?
+  nextReconcileAt         DateTime?
+  reconcileFailureCount   Int                            @default(0)
+  lastReconcileError      String?
+  manualReconcileRequiredAt DateTime?
+  createdAt               DateTime                       @default(now())
+  updatedAt               DateTime                       @updatedAt
+  items                   ExternalProcurementOrderItem[]
+
+  @@unique([provider, workshopId, idempotencyKey])
+  @@unique([provider, externalOrderId])
+  @@index([workshopId, serviceOrderId])
+  @@index([provider, partnerStatus, updatedAt])
+  @@index([provider, nextReconcileAt])
+}
+
+/// Durable inbox for authenticated provider events. Raw payloads and secrets are
+/// intentionally excluded; the row is only a dedupe and operations record.
+model ExternalProcurementEvent {
+  id                String    @id @default(cuid())
+  provider          String
+  eventId           String
+  contractVersion   String
+  eventType         String
+  externalOrderId   String
+  partnerVersion    Int
+  status            String    @default("received")
+  failureCode       String?
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+
+  @@unique([provider, eventId])
+  @@index([provider, externalOrderId, partnerVersion])
+  @@index([status, receivedAt])
+}
+
+model ExternalProcurementOrderItem {
+  id                          String                   @id @default(cuid())
+  externalProcurementOrderId  String
+  externalProcurementOrder    ExternalProcurementOrder @relation(fields: [externalProcurementOrderId], references: [id], onDelete: Cascade)
+  serviceOrderItemId          String                   @unique
+  serviceOrderItem            ServiceOrderItem         @relation(fields: [serviceOrderItemId], references: [id], onDelete: Restrict)
+  externalProductId           String
+  externalOfferId             String
+  externalOrderItemId         String?
+  quantity                    Int
+  /// Curated immutable display fields only (name, brand, part number, image).
+  productPresentationSnapshot Json
+  /// Curated, non-binding pre-confirm display price/availability only.
+  informationalSnapshot       Json?
+  unitNetKurus                Int?
+  unitVatKurus                Int?
+  unitGrossKurus              Int?
+  createdAt                   DateTime                 @default(now())
+
+  @@index([externalProcurementOrderId])
 }
 
 enum OrderItemType {
@@ -1412,15 +1501,15 @@ model ChecklistItem {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
+  /// Aynı iş emrine aynı şablon maddesi ikinci kez seed edilemez (eşzamanlı
+  /// atama yarışına karşı DB seviyesi koruma). Postgres'te templateKey NULL
+  /// olan serbest maddeler bu kısıtla çakışmaz (NULL != NULL).
+  @@unique([serviceOrderId, templateKey])
   @@index([workshopId])
   @@index([serviceOrderId])
   @@index([category])
   @@index([isCompleted])
   @@index([deletedAt])
-  /// Aynı iş emrine aynı şablon maddesi ikinci kez seed edilemez (eşzamanlı
-  /// atama yarışına karşı DB seviyesi koruma). Postgres'te templateKey NULL
-  /// olan serbest maddeler bu kısıtla çakışmaz (NULL != NULL).
-  @@unique([serviceOrderId, templateKey])
 }
 
 enum ChecklistCategory {
@@ -1449,40 +1538,40 @@ model InternalNote {
 }
 
 model PartsRequest {
-  id             String             @id @default(cuid())
-  workshopId     String
-  workshop       Workshop           @relation(fields: [workshopId], references: [id])
-  serviceOrderId String
-  serviceOrder   ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
-  requestedById  String?
-  requestedBy    Technician?        @relation(fields: [requestedById], references: [id])
+  id                  String             @id @default(cuid())
+  workshopId          String
+  workshop            Workshop           @relation(fields: [workshopId], references: [id])
+  serviceOrderId      String
+  serviceOrder        ServiceOrder       @relation(fields: [serviceOrderId], references: [id])
+  requestedById       String?
+  requestedBy         Technician?        @relation(fields: [requestedById], references: [id])
   /// Talebin cinsi. BAK-105 öncesi her talep parçadır; DEFAULT part olduğu için
   /// mevcut satırlar backfill'siz doğru değeri alır.
-  type           PartsRequestType   @default(part)
+  type                PartsRequestType   @default(part)
   /// Parça talebinde parça adı, dış işçilik talebinde işçiliğin adı
   /// (ör. "Rot balans ayarı"). Tek kolon: talebin geri kalan makinesi
   /// (karar kapısı, iptal, kaleme çevirme) iki tipte de aynı çalışır.
-  partName       String
-  partSku        String?
+  partName            String
+  partSku             String?
   /// Katalogdan seçildiyse parça markası (TecDoc supplier adı); serbest metinde null.
-  brand          String?
+  brand               String?
   /// Katalogdan seçildiyse TecDoc article id — ofis talebi kalemlerken taşınır.
-  tecdocArticleId Int?
-  quantity       Int                @default(1)
-  note           String?
-  status         PartsRequestStatus @default(requested)
+  tecdocArticleId     Int?
+  quantity            Int                @default(1)
+  note                String?
+  status              PartsRequestStatus @default(requested)
   /// Dolu ⇒ ofis bu talebi iş emri kalemine çevirdi (kalıcı, geri alınmaz).
   /// `status` fiziksel teslimat akışını (requested→prepared→delivered) izlemeye
   /// devam eder; convertedAt ondan bağımsız, "kaleme çevrildi mi" sorusuna
   /// tek doğru kaynaktır — status tekrar "requested"a dönemeyeceği için ayrı alan gerekir.
-  convertedAt    DateTime?
+  convertedAt         DateTime?
   /// Dolu ⇒ talep karara bağlanarak REDDEDİLDİ (`status = cancelled` ile birlikte
   /// yazılır). `convertedAt` ile birlikte "karar verildi mi" sorusunun iki
   /// yanıtından biridir — ikisi de boşsa talep hâlâ karar bekliyordur ve iş emri
   /// teslime alınamaz (bkz. src/lib/orders/parts-request-guard.ts).
-  cancelledAt    DateTime?
+  cancelledAt         DateTime?
   /// İptal gerekçesi — ATÖLYE İÇİ not, müşteri yüzeyine çıkmaz.
-  cancelReason   String?
+  cancelReason        String?
   /// YALNIZ dış işçilikte: teknisyenin bildirdiği tahmini tutar (kuruş, KDV
   /// hariç). Satış fiyatı DEĞİL, atölyenin ödeyeceği maliyet tahminidir; kaleme
   /// çevrilirken ServiceOrderItem.purchasePriceKurus'a taşınır, satış fiyatını
@@ -1490,9 +1579,9 @@ model PartsRequest {
   estimatedPriceKurus Int?
   /// YALNIZ dış işçilikte: işi yapan firma (serbest metin, Supplier kaydı
   /// aranmaz — usta sahada firma kartı açamaz). Kaleme supplierName olarak geçer.
-  supplierName   String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  supplierName        String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   @@index([workshopId])
   @@index([serviceOrderId])
@@ -2338,12 +2427,12 @@ enum BakimxOrderStatus {
 
 /// Atölyenin BakımX'e verdiği sipariş talebi.
 model BakimxOrder {
-  id         String   @id @default(cuid())
-  workshopId String   @map("workshop_id")
-  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  workshopId      String   @map("workshop_id")
+  workshop        Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
   /// Talebi açan kullanıcı. FK YOK — `bakimx_product_imports.created_by_user_id`
   /// ile aynı sözleşme: kullanıcı silinse de sipariş geçmişi yaşar.
-  createdByUserId String @map("created_by_user_id")
+  createdByUserId String   @map("created_by_user_id")
 
   status BakimxOrderStatus @default(requested)
   note   String?
@@ -2403,8 +2492,8 @@ model BakimxOrderItem {
 /// `src/lib/rate-limit.ts` süresi dolmuş satırları periyodik olarak siler.
 model RateLimitCounter {
   /// Kova anahtarı — ör. `login:203.0.113.7`, `login:acct:email:a@b.com`.
-  key   String @id
-  count Int
+  key     String   @id
+  count   Int
   /// Pencerenin bittiği an; bu andan sonraki ilk istek sayacı 1'e çeker.
   resetAt DateTime
 
@@ -2423,7 +2512,7 @@ enum StatusIncidentSeverity {
 /// olan satırlar "aktif" sayılır; genel platform durumu bunların en yüksek
 /// ciddiyetinden türetilir. Geçmiş için satır asla silinmez, yalnız çözülür.
 model StatusIncident {
-  id       String                  @id @default(cuid())
+  id       String                 @id @default(cuid())
   title    String
   severity StatusIncidentSeverity
   message  String
@@ -2463,8 +2552,8 @@ model PushSubscription {
   /// Push servisinin uç adresi — RFC 8030. Global benzersiz.
   endpoint String @unique
   /// RFC 8291 içerik şifreleme anahtarları (`subscription.getKey()`, base64url).
-  p256dh String
-  auth   String
+  p256dh   String
+  auth     String
 
   /// Tanılama için: aboneliği açan tarayıcı/PWA. Kişisel veri taşımaz.
   userAgent String?
