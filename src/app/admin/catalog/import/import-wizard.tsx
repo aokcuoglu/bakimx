@@ -185,7 +185,7 @@ export function CatalogImportWizard({
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Ürün İçe Aktarma</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Marka seçip CSV yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
+            Marka seçip CSV veya JSON yükleyin. Değişiklikler <strong>siz onaylamadan</strong> uygulanmaz.
           </p>
         </div>
         <Button size="sm" variant="outline" asChild>
@@ -269,13 +269,13 @@ export function CatalogImportWizard({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="import-file">
-              Dosya (.csv)
+              Dosya (.csv veya .json)
             </label>
             <Input
               id="import-file"
               ref={fileInputRef}
               type="file"
-              accept=".csv,text/csv,text/plain"
+              accept=".csv,.json,text/csv,text/plain,application/json"
               className="py-2"
               disabled={pending}
               onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}

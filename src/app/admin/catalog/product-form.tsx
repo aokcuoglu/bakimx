@@ -45,6 +45,7 @@ export interface CatalogProductFormData {
   description: string | null
   imageUrl: string | null
   oemNumbers: string[]
+  crossReferences: string[]
   workshopPriceKurus: number
   vatRateBps: number
   costPriceKurus: number | null
@@ -87,6 +88,7 @@ function toDefaults(product?: CatalogProductFormData): BakimxProductFormValues {
     description: product?.description ?? "",
     imageUrl: product?.imageUrl ?? "",
     oemNumbers: product?.oemNumbers.join(", ") ?? "",
+    crossReferences: product?.crossReferences.join(", ") ?? "",
     workshopPrice: product ? kurusToLira(product.workshopPriceKurus) : 0,
     vatRate: product ? bpsToPercent(product.vatRateBps) : 20,
     costPrice: product?.costPriceKurus != null ? String(kurusToLira(product.costPriceKurus)) : "",
@@ -159,6 +161,7 @@ export function CatalogProductForm({
       description: values.description,
       imageUrl: values.imageUrl,
       oemNumbers: parseOemNumbers(values.oemNumbers),
+      crossReferences: parseOemNumbers(values.crossReferences),
       workshopPriceKurus: liraToKurus(Number(values.workshopPrice) || 0),
       vatRateBps: percentToBps(Number(values.vatRate) || 0),
       costPriceKurus: costLira == null ? null : liraToKurus(costLira),
@@ -372,6 +375,21 @@ export function CatalogProductForm({
                     <Textarea {...field} rows={2} placeholder="Virgül veya satır ile ayırın" />
                   </FormControl>
                   <FormDescription>Arama anahtarını besler; muadil eşleştirme Faz 2’de kullanılır.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="crossReferences"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cross-reference kodları</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={2} placeholder="Virgül veya satır ile ayırın" />
+                  </FormControl>
+                  <FormDescription>OEM numaralarından ayrı saklanan üretici muadil kodlarıdır.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
