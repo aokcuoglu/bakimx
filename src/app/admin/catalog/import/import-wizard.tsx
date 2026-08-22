@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
 import { formatKurus } from "@/lib/money"
 import {
   CATALOG_IMPORT_COLUMNS,
@@ -25,12 +26,7 @@ import {
 import type { CatalogBrandOption } from "@/app/admin/catalog/data"
 import type { CatalogImportHistoryRow } from "@/app/admin/catalog/import/data"
 import { cancelBakimxCatalogImportAction } from "@/app/admin/catalog/import/actions"
-import type {
-  ImportActionError,
-  ImportApplyResult,
-  ImportPreviewResult,
-  ImportPreviewRow,
-} from "@/lib/catalog/bakimx-import-service"
+import type { ImportActionError, ImportApplyResult, ImportPreviewResult, ImportPreviewRow } from "@/lib/catalog/bakimx-import-service"
 
 /**
  * İçe aktarma sihirbazı: **dosya seç → ön izle → uygula.**
@@ -46,18 +42,21 @@ import type {
  * bakimx-import-service.ts). 404 yetki reddidir: admin konsolunun varlığı ele
  * verilmesin diye sunucu `notFound()` fırlatıyor.
  */
-async function postImport<T extends { ok: true }>(
-  endpoint: "preview" | "apply",
-  body: FormData,
-): Promise<T | ImportActionError> {
+async function postImport<T extends { ok: true }>(endpoint: "preview" | "apply", body: FormData): Promise<T | ImportActionError> {
   try {
-    const response = await fetch(`/api/admin/catalog/import/${endpoint}`, { method: "POST", body })
+    const response = await fetch(`/api/admin/catalog/import/${endpoint}`, {
+      method: "POST",
+      body,
+    })
     if (response.status === 404) return { ok: false, error: "Bu işlem için yetkiniz yok." }
     const payload = (await response.json()) as T | ImportActionError
     if (!response.ok && !("error" in payload)) return { ok: false, error: "İşlem tamamlanamadı." }
     return payload
   } catch {
-    return { ok: false, error: "Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin." }
+    return {
+      ok: false,
+      error: "Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    }
   }
 }
 
@@ -77,13 +76,9 @@ const STATUS_VARIANTS: Record<CatalogImportHistoryRow["status"], "default" | "se
   cancelled: "outline",
 }
 
-export function CatalogImportWizard({
-  brands,
-  history,
-}: {
-  brands: CatalogBrandOption[]
-  history: CatalogImportHistoryRow[]
-}) {
+const PREVIEW_PAGE_SIZE = 25
+
+export function CatalogImportWizard({ brands, history }: { brands: CatalogBrandOption[]; history: CatalogImportHistoryRow[] }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -93,7 +88,10 @@ export function CatalogImportWizard({
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<ImportPreviewResult | null>(null)
   const [applied, setApplied] = useState<ImportPreviewResult | null>(null)
-  const [error, setError] = useState<{ message: string; details: string[] } | null>(null)
+  const [error, setError] = useState<{
+    message: string
+    details: string[]
+  } | null>(null)
   const [pending, startTransition] = useTransition()
 
   const brandName = brands.find((b) => b.id === brandId)?.name ?? ""
@@ -199,6 +197,21 @@ export function CatalogImportWizard({
 
       <Card>
         <CardContent className="p-4 space-y-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              ["1", "Dosyayı seçin"],
+              ["2", "Sonuçları inceleyin"],
+              ["3", "Değişiklikleri uygulayın"],
+            ].map(([step, label]) => (
+              <div key={step} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  {step}
+                </span>
+                <span className="font-medium text-foreground">{label}</span>
+              </div>
+            ))}
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground" htmlFor="import-brand">
@@ -311,15 +324,7 @@ export function CatalogImportWizard({
         </Alert>
       )}
 
-      {preview && (
-        <PreviewPanel
-          preview={preview}
-          brandName={brandName}
-          pending={pending}
-          onApply={runApply}
-          onCancel={runCancel}
-        />
-      )}
+      {preview && <PreviewPanel preview={preview} brandName={brandName} pending={pending} onApply={runApply} onCancel={runCancel} />}
 
       <ImportHistory rows={history} />
     </div>
@@ -332,8 +337,8 @@ function AppliedSummary({ result }: { result: ImportPreviewResult }) {
       <CheckCircle2 />
       <AlertTitle>İçe aktarma tamamlandı — {result.fileName}</AlertTitle>
       <AlertDescription>
-        {result.counts.created} yeni ürün, {result.counts.updated} güncelleme, {result.counts.skipped} atlanan,{" "}
-        {result.counts.error} hatalı satır.{" "}
+        {result.counts.created} yeni ürün, {result.counts.updated} güncelleme, {result.counts.skipped} atlanan, {result.counts.error} hatalı
+        satır.{" "}
         <Link href="/admin/catalog" className="underline underline-offset-2">
           Katalogu aç
         </Link>
@@ -405,7 +410,7 @@ function PreviewPanel({
         )}
 
         <Tabs defaultValue={counts.error > 0 ? "errors" : "creates"}>
-          <TabsList>
+          <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="creates">Yeni ({counts.created})</TabsTrigger>
             <TabsTrigger value="updates">Güncellenecek ({counts.updated})</TabsTrigger>
             <TabsTrigger value="skips">Atlanan ({counts.skipped})</TabsTrigger>
@@ -456,8 +461,7 @@ function PreviewPanel({
 
         <Alert>
           <AlertDescription>
-            Hatalı satırlar yazılmaz, geri kalan satırlar uygulanır. Uygulamadan sonra parti geçmişte kalıcı olarak
-            görünür.
+            Hatalı satırlar yazılmaz, geri kalan satırlar uygulanır. Uygulamadan sonra parti geçmişte kalıcı olarak görünür.
           </AlertDescription>
         </Alert>
 
@@ -488,47 +492,56 @@ function PreviewRows({
 }) {
   if (rows.length === 0) return <p className="p-4 text-sm text-muted-foreground">{emptyLabel}</p>
 
+  return <PaginatedPreviewRows rows={rows} total={total} showNote={showNote} />
+}
+
+function PaginatedPreviewRows({ rows, total, showNote }: { rows: ImportPreviewRow[]; total: number; showNote: boolean }) {
+  const { page, pageCount, pageItems, setPage } = useDashboardPage(rows, PREVIEW_PAGE_SIZE)
+
   return (
     <div className="rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-20">Satır</TableHead>
-            <TableHead className="w-40">Ürün Kodu</TableHead>
-            <TableHead>Ürün</TableHead>
-            {showNote ? (
-              <TableHead>Gerekçe</TableHead>
-            ) : (
-              <>
-                <TableHead className="text-right">Fiyat (KDV hariç)</TableHead>
-                <TableHead className="text-right">Stok</TableHead>
-              </>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={`${row.line}-${row.sku}`}>
-              <TableCell className="tabular-nums">{row.line}</TableCell>
-              <TableCell className="font-mono text-xs">{row.sku}</TableCell>
-              <TableCell className="text-sm">{row.name || "—"}</TableCell>
+      <div className="overflow-x-auto">
+        <Table className="min-w-[720px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Satır</TableHead>
+              <TableHead className="w-40">Ürün Kodu</TableHead>
+              <TableHead>Ürün</TableHead>
               {showNote ? (
-                <TableCell className="text-sm text-muted-foreground">{row.note}</TableCell>
+                <TableHead>Gerekçe</TableHead>
               ) : (
                 <>
-                  <TableCell className="text-right tabular-nums">{formatKurus(row.workshopPriceKurus)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.stockQty}</TableCell>
+                  <TableHead className="text-right">Fiyat (KDV hariç)</TableHead>
+                  <TableHead className="text-right">Stok</TableHead>
                 </>
               )}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {pageItems.map((row) => (
+              <TableRow key={`${row.line}-${row.sku}`}>
+                <TableCell className="tabular-nums">{row.line}</TableCell>
+                <TableCell className="font-mono text-xs">{row.sku}</TableCell>
+                <TableCell className="text-sm">{row.name || "—"}</TableCell>
+                {showNote ? (
+                  <TableCell className="text-sm text-muted-foreground">{row.note}</TableCell>
+                ) : (
+                  <>
+                    <TableCell className="text-right tabular-nums">{formatKurus(row.workshopPriceKurus)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.stockQty}</TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
       {total > rows.length && (
         <p className="p-3 text-xs text-muted-foreground">
           {total.toLocaleString("tr-TR")} satırdan ilk {rows.length} tanesi gösteriliyor.
         </p>
       )}
+      <DashboardPagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   )
 }
