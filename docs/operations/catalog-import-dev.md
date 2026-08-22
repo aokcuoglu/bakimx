@@ -31,8 +31,8 @@ Ekli `wunderfilter_urunler.json` 1.641 satır içerir. Alan eşlemeleri:
 | `fiyat_tl` | Fiyat |
 | `image_url` | Görsel URL |
 
-Wunder içe aktarımında Ürün Adı `wunder_no` değerinden, Stok ise ilk aşamada
-`0` olarak türetilir. Dosya yine de doğrudan uygulanmaya hazır değildir:
+Wunder içe aktarımında Ürün Adı `Wunderfilter + kategori etiketi + wunder_no`
+biçiminde, Stok ise ilk aşamada `0` olarak türetilir. Dosya yine de doğrudan uygulanmaya hazır değildir:
 1.640 satırda fiyat boştur ve 126 ürün kodu yinelenir. `marka` ürün üreticisi
 değil araç markası, `cinsi` ise iç kategoriye çevrilmesi gereken kaynak değeridir
 (`KABIN→polen-filtresi`, `MAZOT/BENZIN→yakit-filtresi`, `HAVA→hava-filtresi`,

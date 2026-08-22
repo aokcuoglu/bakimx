@@ -114,7 +114,7 @@ test("Wunder rows derive name and zero stock while keeping OEM and cross referen
   )
   expect(values.errors).toEqual([])
   expect(values.patch).toMatchObject({
-    name: "WP226",
+    name: "Wunderfilter Polen Filtresi WP226",
     stockQty: 0,
     categoryKey: "polen-filtresi",
     oemNumbers: ["64116823726"],

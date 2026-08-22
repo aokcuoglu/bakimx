@@ -21,6 +21,7 @@ import { netFromGrossKurus, parseTRYToKurus, percentToBps } from "@/lib/money"
 import { generateCSV } from "@/lib/reports/export"
 import {
   BAKIMX_CATEGORIES,
+  bakimxCategoryLabel,
   isBakimxCategoryKey,
   parseOemNumbers,
   type BakimxProductWriteInput,
@@ -525,8 +526,6 @@ export function parseImportRow(
   if (name) {
     if (name.length > 200) errors.push("Ürün adı 200 karakteri aşıyor.")
     else patch.name = name
-  } else if (options.mode === "upsert" && mapping.sourceKind === "wunder" && sku) {
-    patch.name = sku
   } else if (options.mode === "upsert" && byField.name !== undefined) {
     errors.push("Ürün adı boş.")
   }
@@ -542,6 +541,11 @@ export function parseImportRow(
     const category = parseCategoryCell(cellAt(row, byField.categoryKey))
     if (category === undefined) errors.push(`Kategori tanınmadı: ${cellAt(row, byField.categoryKey)}`)
     else if (category !== null) patch.categoryKey = category
+  }
+
+  if (options.mode === "upsert" && mapping.sourceKind === "wunder" && sku) {
+    const categoryLabel = patch.categoryKey ? bakimxCategoryLabel(patch.categoryKey) : null
+    patch.name = [options.brandName, categoryLabel, sku].filter(Boolean).join(" ")
   }
 
   if (byField.oemNumbers !== undefined) {
