@@ -8,6 +8,7 @@ import {
 } from "./suggestions"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
+import type { GetirbakimProduct } from "@/lib/parts/getirbakim/types"
 
 const article = (no: string, name = "Katalog parçası"): ArticleSearchResult =>
   ({
@@ -56,9 +57,19 @@ const stock = (id: string, over: Partial<StockPartLite> = {}): StockPartLite => 
   ...over,
 })
 
-test("sıra TecDoc → BakımX → atölye stoğu", () => {
-  const out = buildPartSuggestions([article("A1")], [bakimx("b1")], [stock("s1")])
-  expect(out.map((s) => s.kind)).toEqual(["catalog", "bakimx", "stock"])
+const getirbakim = (id: string): GetirbakimProduct => ({
+  contractVersion: "1.2", sourceProductId: id, id, partNo: `GB-${id}`,
+  manufacturerPartNumber: null, name: `GetirBakım ${id}`, brandName: "GB",
+  categoryName: null, oemNumbers: [], references: [],
+  exactFitment: { requestedVehicleTypeId: null, status: "NOT_REQUESTED", matchedVehicleTypeIds: [] },
+  imageUrl: null, listPriceKurus: 10000, b2bPriceKurus: 9000, discountBps: 1000,
+  vatRateBps: 2000, currency: "TRY", stockQty: 1, availability: "IN_STOCK",
+  lastSyncedAt: null,
+})
+
+test("sıra TecDoc → BakımX → GetirBakım → atölye stoğu", () => {
+  const out = buildPartSuggestions([article("A1")], [bakimx("b1")], [stock("s1")], [getirbakim("g1")])
+  expect(out.map((s) => s.kind)).toEqual(["catalog", "bakimx", "getirbakim", "stock"])
 })
 
 /** #181'in çekirdeği: yalnız TecDoc satırı "araca uygun" sayılır, uyarı bu bayrağa bağlı. */
@@ -121,7 +132,7 @@ test("BakımX listesi boşken diğer iki kaynak hiç etkilenmez", () => {
   expect(out.map((s) => s.kind)).toEqual(["catalog", "stock"])
 })
 
-test("etiket ve anahtar üç kaynak için de üretilir", () => {
+test("etiket ve anahtar seçilebilir üç kaynak için de üretilir", () => {
   const [cat, bx, stk] = buildPartSuggestions(
     [article("A1", "Hava filtresi")],
     [bakimx("b1", { name: "Akü 60Ah" })],
@@ -135,6 +146,13 @@ test("etiket ve anahtar üç kaynak için de üretilir", () => {
   expect(suggestionKey(stk)).toBe("s-s1")
 })
 
-test("üç kaynak da boşsa liste boş kalır", () => {
+test("GetirBakım satırı için kaynaklar arası benzersiz etiket ve anahtar üretilir", () => {
+  const suggestion = buildPartSuggestions([], [], [], [getirbakim("g1")])[0]
+  expect(suggestionLabel(suggestion)).toBe("GetirBakım g1")
+  expect(suggestionKey(suggestion)).toBe("g-g1")
+  expect(suggestionFitsVehicle(suggestion)).toBe(false)
+})
+
+test("dört kaynak da boşsa liste boş kalır", () => {
   expect(buildPartSuggestions([], [], [])).toEqual([])
 })
