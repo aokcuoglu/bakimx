@@ -35,16 +35,22 @@ test("id sorgu dizesine güvenli kodlanır", () => {
  * S3 referansıdır ve 403 döner. Kanıt sekmesi `resolvePhotoSrc` kullanır; bu
  * iki personel yüzeyi de aynı sözleşmeyi tutmak zorunda. TypeScript yakalamaz.
  */
-const VEHICLE_PHOTO_GRIDS = [
+test("araç fotoğraf ızgarası ham fileUrl basmaz, proxy + modal carousel kullanır", () => {
+  const grid = readFileSync(join(SRC_ROOT, "components/vehicles/vehicle-photo-history.tsx"), "utf8")
+  expect(grid).toContain("resolvePhotoSrc")
+  expect(grid).toContain("PhotoLightbox")
+  expect(grid).not.toMatch(/src=\{p\.fileUrl\}/)
+  expect(grid).not.toMatch(/src=\{photo\.fileUrl\}/)
+  expect(grid).not.toContain("/orders/")
+})
+
+for (const file of [
   "components/vehicles/vehicle-detail.tsx",
   "components/vehicles/vehicle-passport.tsx",
-] as const
-
-for (const file of VEHICLE_PHOTO_GRIDS) {
-  test(`${file} ham fileUrl basmaz, resolvePhotoSrc kullanır`, () => {
+] as const) {
+  test(`${file} fotoğraf geçmişini paylaşılan ızgaradan açar`, () => {
     const source = readFileSync(join(SRC_ROOT, file), "utf8")
-    expect(source).toContain("resolvePhotoSrc")
+    expect(source).toContain("VehiclePhotoGrid")
     expect(source).not.toMatch(/src=\{p\.fileUrl\}/)
-    expect(source).not.toMatch(/src=\{photo\.fileUrl\}/)
   })
 }

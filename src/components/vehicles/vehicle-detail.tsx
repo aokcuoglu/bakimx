@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
-import Image from "next/image"
 import {
   Car,
   ArrowLeft,
@@ -48,15 +47,14 @@ import { formatDate, formatDateTime } from "@/lib/utils-client"
 import {
   DAMAGE_TYPES,
   DAMAGE_SEVERITY,
-  PHOTO_TYPES,
   arrivalReasonLabel,
   vehicleTypeLabel,
   fuelTypeLabel,
   transmissionLabel,
 } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { resolvePhotoSrc } from "@/lib/photos/photo-src"
 import type { ReminderRow } from "@/lib/reminders/queries"
+import { VehiclePhotoGrid } from "@/components/vehicles/vehicle-photo-history"
 import {
   CrossWorkshopHistoryCard,
   WorkshopChip,
@@ -436,50 +434,7 @@ export function VehicleDetail({
                 <p className="text-sm">Bu araç için fotoğraf bulunmuyor</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {allPhotos.map((p) => {
-                  const pt = PHOTO_TYPES[p.type as keyof typeof PHOTO_TYPES]
-                  const src = resolvePhotoSrc(p)
-                  const cardClassName =
-                    "block rounded-lg border border-border overflow-hidden hover:border-border transition-colors"
-                  const card = (
-                    <>
-                      <div className="aspect-[4/3] bg-muted flex items-center justify-center">
-                        {src ? (
-                          <Image
-                            src={src}
-                            alt={p.label || pt?.label || "Fotoğraf"}
-                            width={160}
-                            height={120}
-                            unoptimized
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Camera className="size-6 text-muted-foreground/50" />
-                        )}
-                      </div>
-                      <div className="px-2 py-1.5">
-                        <p className="text-[11px] font-medium text-foreground truncate">
-                          {pt?.label || p.label || p.type}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">{formatDate(p.createdAt)}</p>
-                      </div>
-                    </>
-                  )
-                  if (p.orderId) {
-                    return (
-                      <Link key={p.id} href={`/orders/${p.orderId}`} className={cardClassName}>
-                        {card}
-                      </Link>
-                    )
-                  }
-                  return (
-                    <div key={p.id} className={cardClassName}>
-                      {card}
-                    </div>
-                  )
-                })}
-              </div>
+              <VehiclePhotoGrid photos={allPhotos} />
             )}
           </SectionCard>
 
