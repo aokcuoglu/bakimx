@@ -447,6 +447,7 @@ const OPACITY_EXCEPTIONS: OpacityException[] = [
   { file: "components/technician/parts-request-section.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
   { file: "components/vehicles/vehicle-detail.tsx", className: "text-muted-foreground/50", decorative: true, reason: `${IMAGE_PLACEHOLDER} Ayrıca boş-durum ikonları.` },
   { file: "components/vehicles/vehicle-passport.tsx", className: "text-muted-foreground/50", decorative: true, reason: `${IMAGE_PLACEHOLDER} Ayrıca boş-durum ikonları.` },
+  { file: "components/vehicles/vehicle-photo-history.tsx", className: "text-muted-foreground/50", decorative: true, reason: IMAGE_PLACEHOLDER },
   { file: "components/intake/grouped-photo-gallery.tsx", className: "text-muted-foreground/30", decorative: true, reason: IMAGE_PLACEHOLDER },
   { file: "components/intake/photo-gallery-grid.tsx", className: "text-muted-foreground/30", decorative: true, reason: IMAGE_PLACEHOLDER },
 
