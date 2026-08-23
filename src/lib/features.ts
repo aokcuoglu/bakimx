@@ -11,6 +11,7 @@ export const GATED_FEATURES: GatedFeature[] = [
   "partsCatalog",
   "bakimxCatalog",
   "getirbakimCatalog",
+  "marketResearch",
 ]
 
 export const FEATURE_LABELS: Record<GatedFeature, string> = {
@@ -22,6 +23,7 @@ export const FEATURE_LABELS: Record<GatedFeature, string> = {
   partsCatalog: "Araca uygun parça kataloğu",
   bakimxCatalog: "BakımX ürün kataloğu",
   getirbakimCatalog: "GetirBakım stok/fiyat",
+  marketResearch: "Piyasa araştırması",
 }
 
 export function isGatedFeature(key: string): key is GatedFeature {

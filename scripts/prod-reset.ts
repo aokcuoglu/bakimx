@@ -112,6 +112,10 @@ export const TENANT_TABLES = [
   // Sağlayıcı webhook inbox'ı sipariş kimliği üzerinden kiracı operasyon
   // geçmişidir; kiracı siparişleri silinirken yetim dedupe kayıtları kalmamalı.
   "ExternalProcurementEvent",
+  // Şirkete ait BYOK sırrı ve kullanım defteri tenant verisidir. Global platform
+  // harcama tavanı aşağıdaki market_research_budgets tablosunda ayrıca korunur.
+  "market_research_credentials",
+  "market_research_usages",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */

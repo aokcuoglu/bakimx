@@ -27,7 +27,16 @@ export interface MarketResearchResult {
   usage?: { costMicroUsd: number; webSearches: number }
 }
 
+export interface MarketResearchRunOptions {
+  maxMonthlyRequests?: number
+  workshop?: {
+    workshopId: string
+    userId: string
+    fundingSource: "platform" | "customer"
+  }
+}
+
 export interface MarketResearchProvider {
   readonly name: MarketResearchProviderName
-  research(input: MarketResearchInput, options?: { maxMonthlyRequests?: number }): Promise<MarketResearchResult>
+  research(input: MarketResearchInput, options?: MarketResearchRunOptions): Promise<MarketResearchResult>
 }
