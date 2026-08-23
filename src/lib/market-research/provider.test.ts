@@ -21,15 +21,41 @@ describe("anthropic fail-closed sınırları", () => {
   })
 
   test("izinli domain listesi yoksa açılmaz", () => {
-    expect(() => parseAnthropicMarketResearchConfig(env({ ANTHROPIC_API_KEY: "key", MARKET_RESEARCH_MAX_USES: "2" }))).toThrow("ALLOWED_DOMAINS")
+    expect(() => parseAnthropicMarketResearchConfig(env({ ANTHROPIC_API_KEY: "key", MARKET_RESEARCH_MAX_USES: "2", MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5" }))).toThrow("ALLOWED_DOMAINS")
+  })
+
+  test("aylık bütçe tavanı olmadan açılmaz", () => {
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_ALLOWED_DOMAINS: "example.com",
+    }))).toThrow("bütçe")
+  })
+
+  test("domainsiz keşif yalnız non-production ortamında açılır", () => {
+    expect(parseAnthropicMarketResearchConfig(env({
+      NODE_ENV: "test",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toMatchObject({ discoveryMode: true, allowedDomains: [] })
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      NODE_ENV: "production",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toThrow("production")
   })
 
   test("yalnız açıkça verilen değerleri kabul eder", () => {
     expect(parseAnthropicMarketResearchConfig(env({
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "2",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
       MARKET_RESEARCH_ALLOWED_DOMAINS: "example.com, shop.example",
-    }))).toMatchObject({ maxUses: 2, allowedDomains: ["example.com", "shop.example"] })
+    }))).toMatchObject({ maxUses: 2, monthlyBudgetMicroUsd: 5_000_000, allowedDomains: ["example.com", "shop.example"] })
   })
 })
 

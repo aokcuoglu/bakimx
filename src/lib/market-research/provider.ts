@@ -7,6 +7,7 @@ import type {
   MarketResearchSource,
   MarketResearchSuggestion,
 } from "./types"
+import { MICRO_USD, reserveMarketResearchBudget, settleMarketResearchBudget } from "./budget"
 
 type EnvReader = (name: string) => string | undefined
 
@@ -15,6 +16,8 @@ export interface AnthropicMarketResearchConfig {
   model: string
   maxUses: number
   allowedDomains: string[]
+  monthlyBudgetMicroUsd: number
+  discoveryMode: boolean
 }
 
 export function parseAnthropicMarketResearchConfig(getEnv: EnvReader): AnthropicMarketResearchConfig | null {
@@ -31,8 +34,18 @@ export function parseAnthropicMarketResearchConfig(getEnv: EnvReader): Anthropic
     .split(",")
     .map((domain) => domain.trim().toLowerCase())
     .filter(Boolean)
-  if (allowedDomains.length === 0) {
+  const discoveryMode = getEnv("MARKET_RESEARCH_DISCOVERY_MODE")?.trim().toLowerCase() === "true"
+  const nodeEnv = getEnv("NODE_ENV")?.trim().toLowerCase()
+  if (discoveryMode && nodeEnv === "production") {
+    throw new Error("Piyasa araştırması domain keşif modu production ortamında açılamaz.")
+  }
+  if (allowedDomains.length === 0 && !discoveryMode) {
     throw new Error("Anthropic piyasa araştırması MARKET_RESEARCH_ALLOWED_DOMAINS onaylanmadan açılamaz.")
+  }
+
+  const monthlyBudgetUsd = Number(getEnv("MARKET_RESEARCH_MONTHLY_BUDGET_USD")?.trim())
+  if (!Number.isFinite(monthlyBudgetUsd) || monthlyBudgetUsd <= 0) {
+    throw new Error("Anthropic piyasa araştırması aylık bütçe tavanı onaylanmadan açılamaz.")
   }
 
   return {
@@ -40,6 +53,8 @@ export function parseAnthropicMarketResearchConfig(getEnv: EnvReader): Anthropic
     model: getEnv("MARKET_RESEARCH_MODEL")?.trim() || "claude-sonnet-5",
     maxUses,
     allowedDomains: [...new Set(allowedDomains)],
+    monthlyBudgetMicroUsd: Math.floor(monthlyBudgetUsd * MICRO_USD),
+    discoveryMode,
   }
 }
 
@@ -98,21 +113,28 @@ class AnthropicMarketResearchProvider implements MarketResearchProvider {
   }
 
   async research(input: MarketResearchInput): Promise<MarketResearchResult> {
+    const monthStart = await reserveMarketResearchBudget(this.config.monthlyBudgetMicroUsd)
+    const webSearchTool = {
+      type: "web_search_20260209" as const,
+      name: "web_search" as const,
+      max_uses: this.config.maxUses,
+      ...(this.config.discoveryMode ? {} : { allowed_domains: this.config.allowedDomains }),
+    }
     const request: MessageCreateParamsNonStreaming = {
       model: this.config.model,
       max_tokens: 1800,
       system: "Yalnız izin verilen web kaynaklarında otomotiv parçası araştır. JSON dizi döndür: name, brand, partNumber, priceText, notes, sources (url,title). Kaynağı olmayan ürünü dahil etme. Sipariş verme veya kesin uyumluluk iddiasında bulunma.",
       messages: [{ role: "user", content: JSON.stringify(input) }],
-      tools: [{
-        type: "web_search_20260209",
-        name: "web_search",
-        max_uses: this.config.maxUses,
-        allowed_domains: this.config.allowedDomains,
-      }],
+      tools: [webSearchTool],
     }
     const response: Message = await this.client.messages.create(request)
+    const costMicroUsd = await settleMarketResearchBudget(monthStart, response.usage)
     const text = response.content.filter((block) => block.type === "text").map((block) => block.text).join("\n")
-    return { provider: this.name, suggestions: parseSourcedSuggestions(text) }
+    return {
+      provider: this.name,
+      suggestions: parseSourcedSuggestions(text),
+      usage: { costMicroUsd, webSearches: response.usage.server_tool_use?.web_search_requests ?? 0 },
+    }
   }
 }
 
