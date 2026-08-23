@@ -6,12 +6,25 @@ import {
   Wrench, Clock, CheckCircle2, Truck, AlertTriangle,
   ChevronRight,
 } from "lucide-react"
-import { TECHNICIAN_ROLES, ORDER_STATUS } from "@/lib/constants"
+import { TECHNICIAN_ROLES } from "@/lib/constants"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
 import { TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemHeader,
+  ItemTitle,
+} from "@/components/ui/item"
+import { StatusBadge } from "@/components/shared/status-badge"
 
 type DashboardFilter = "all" | "assigned" | "in_progress" | "waiting" | "completed" | "today_delivery"
 
@@ -193,8 +206,8 @@ export function TechnicianDashboard({
                 aria-pressed={activeFilter === card.filter}
                 onClick={() => handleFilterChange(card.filter)}
                 className={cn(
-                  "h-auto min-w-0 items-start justify-start rounded-lg border border-border bg-card p-4 text-left hover:border-primary hover:bg-primary/5",
-                  activeFilter === card.filter && "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  "h-auto min-w-0 items-start justify-start rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 hover:bg-primary/5 hover:ring-primary",
+                  activeFilter === card.filter && "bg-primary/5 ring-2 ring-primary/20 ring-primary"
                 )}
               >
                 <span className="w-full">
@@ -210,16 +223,20 @@ export function TechnicianDashboard({
         </div>
 
         {visibleSections.map((section) => (
-          <section key={section.title}>
-            <h3 className="text-base font-semibold text-foreground mb-3">{section.title}</h3>
+          <section key={section.title} className="space-y-3">
+            <h3 className="font-heading text-base font-medium text-foreground">{section.title}</h3>
             {section.orders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">{section.empty}</div>
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  {section.empty}
+                </CardContent>
+              </Card>
             ) : (
-              <div className="space-y-2">
+              <ItemGroup className="gap-2">
                 {section.orders.map((order) => (
                   <OrderCard key={order.id} order={order} />
                 ))}
-              </div>
+              </ItemGroup>
             )}
           </section>
         ))}
@@ -229,61 +246,55 @@ export function TechnicianDashboard({
 }
 
 function OrderCard({ order }: { order: OrderRow }) {
-  const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
-  const statusLabel = statusInfo?.label || order.status
-  const statusColor = statusInfo?.color || "bg-muted text-foreground"
   const progressPct = order.checklistProgress.total > 0
     ? Math.round((order.checklistProgress.completed / order.checklistProgress.total) * 100)
     : 0
 
   return (
-    <Link
-      href={`/technician/orders/${order.id}`}
-      className="block rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-primary/5 transition-colors touch-manipulation"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-mono font-semibold text-foreground">{order.workOrderNo}</span>
-            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", statusColor)}>
-              {statusLabel}
-            </span>
-            {order.hasActiveLabor && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success-strong border border-success/20">
-                ⏱ İşçilik
-              </span>
-            )}
-          </div>
-          <div className="text-sm font-semibold text-foreground">
-            {order.plate} — {order.brand} {order.model}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {order.customerName} {order.technicianName && `· ${order.technicianName}`}
-          </div>
-          {order.customerComplaint && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{order.customerComplaint}</p>
-          )}
-        </div>
-        <ChevronRight className="size-5 text-muted-foreground shrink-0 mt-1" />
-      </div>
-
-      {order.checklistProgress.total > 0 && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Kontrol listesi</span>
-            <span>{order.checklistProgress.completed}/{order.checklistProgress.total}</span>
-          </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                progressPct === 100 ? "bg-success" : progressPct >= 50 ? "bg-primary" : "bg-warning"
+    <Item variant="outline" asChild className="hover:bg-primary/5 hover:ring-primary">
+      <Link href={`/technician/orders/${order.id}`}>
+        <ItemContent>
+          <ItemHeader>
+            <span className="font-mono text-sm font-semibold text-foreground">{order.workOrderNo}</span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              <StatusBadge status={order.status} />
+              {order.hasActiveLabor && (
+                <Badge variant="outline" className="border-success/20 bg-success/10 text-success-strong">
+                  İşçilik
+                </Badge>
               )}
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-      )}
-    </Link>
+            </span>
+          </ItemHeader>
+          <ItemTitle className="line-clamp-2">
+            {order.plate} — {order.brand} {order.model}
+          </ItemTitle>
+          <ItemDescription>
+            {order.customerName}
+            {order.technicianName ? ` · ${order.technicianName}` : ""}
+            {order.customerComplaint ? ` · ${order.customerComplaint}` : ""}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </ItemActions>
+        {order.checklistProgress.total > 0 && (
+          <ItemFooter>
+            <span className="text-xs text-muted-foreground">Kontrol listesi</span>
+            <span className="text-xs text-muted-foreground">
+              {order.checklistProgress.completed}/{order.checklistProgress.total}
+            </span>
+            <div className="h-1.5 w-full basis-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  progressPct === 100 ? "bg-success" : progressPct >= 50 ? "bg-primary" : "bg-warning"
+                )}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </ItemFooter>
+        )}
+      </Link>
+    </Item>
   )
 }

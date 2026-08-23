@@ -43,6 +43,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WizardActions, WizardHeading } from "@/components/intake/wizard-ui"
 import {
@@ -372,14 +379,16 @@ export function TechnicianOrderDetail({
       )}
 
       {activeLabor && (
-        <div className="flex min-h-8 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
+        <Alert variant="success" className="bg-success/10 text-success-strong">
           <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
-          <span className="text-sm font-medium text-foreground">İşçilik sürüyor</span>
-          <span className="text-xs text-muted-foreground">
-            {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
-          </span>
-          {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
-        </div>
+          <AlertTitle>İşçilik sürüyor</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-2">
+            <span>
+              {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
+            </span>
+            {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
@@ -440,17 +449,25 @@ export function TechnicianOrderDetail({
           </TabsContent>
 
           <TabsContent value="items" className="space-y-4">
-              <div className="rounded-lg border border-border bg-card p-4">
-                <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
-                {order.totals.hasAnyPrice && <OrderTotals order={order} />}
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <StickyNote /> İç Notlar <span className="text-xs font-normal text-muted-foreground">(Müşteriye görünmez)</span>
-                </h3>
-                <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
-                {!locked && <AddInternalNoteForm orderId={order.id} />}
-              </div>
+              <Card>
+                <CardContent>
+                  <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
+                  {order.totals.hasAnyPrice && <OrderTotals order={order} />}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    <StickyNote className="size-4 text-muted-foreground" />
+                    İç Notlar
+                  </CardTitle>
+                  <CardDescription>Müşteriye görünmez</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
+                  {!locked && <AddInternalNoteForm orderId={order.id} />}
+                </CardContent>
+              </Card>
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("check")}>Geri</Button>}>
                 <Button size="lg" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
               </WizardActions>
@@ -494,32 +511,34 @@ export function TechnicianOrderDetail({
                   <PartsRequestSection orderId={order.id} vehicle={pickerVehicle} requests={order.partsRequests} locked={locked} />
                 </TabsContent>
                 <TabsContent value="purchases">
-                  <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <ShoppingCart className="size-4 text-muted-foreground" />
-            Dışarıdan Alınan Parçalar
-          </h3>
-        </div>
-        <PurchasedItemsSection
-          items={purchasedItems}
-          photosByItem={purchasePhotosByItem}
-          orderId={order.id}
-          vehicle={pickerVehicle}
-          suppliers={suppliers}
-          technicians={technicians}
-          deleteDecision={purchaseDelete}
-        />
-        {!locked && (
-          <AddPurchaseButton
-            orderId={order.id}
-            vehicle={pickerVehicle}
-            suppliers={suppliers}
-            technicians={technicians}
-            defaultTechnicianId={order.assignedTechnicianId}
-          />
-        )}
-                  </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-1.5">
+                        <ShoppingCart className="size-4 text-muted-foreground" />
+                        Dışarıdan Alınan Parçalar
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <PurchasedItemsSection
+                        items={purchasedItems}
+                        photosByItem={purchasePhotosByItem}
+                        orderId={order.id}
+                        vehicle={pickerVehicle}
+                        suppliers={suppliers}
+                        technicians={technicians}
+                        deleteDecision={purchaseDelete}
+                      />
+                      {!locked && (
+                        <AddPurchaseButton
+                          orderId={order.id}
+                          vehicle={pickerVehicle}
+                          suppliers={suppliers}
+                          technicians={technicians}
+                          defaultTechnicianId={order.assignedTechnicianId}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
               <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("items")}>Geri</Button>}>
@@ -542,21 +561,30 @@ export function TechnicianOrderDetail({
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="photos">
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground"><Camera /> Onarım Fotoğrafları</h3>
-                    <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
-                    {!locked && <TechnicianPhotoUpload intakeFormId={order.intake.id} orderStatus={order.status} existingPhotoTypes={order.photos.map((p) => p.type)} />}
-                  </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-1.5">
+                        <Camera className="size-4 text-muted-foreground" />
+                        Onarım Fotoğrafları
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                      <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                      <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                      {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
+                      {!locked && <TechnicianPhotoUpload intakeFormId={order.intake.id} orderStatus={order.status} existingPhotoTypes={order.photos.map((p) => p.type)} />}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
                 <TabsContent value="review">
-                  <div className="space-y-2 rounded-lg border border-border bg-card p-4">
-                    <ReviewRow label="Araç kontrolü" detail={`${checklist.items.filter((item) => item.isCompleted && !item.deletedAt).length}/${checklist.items.filter((item) => !item.deletedAt).length}`} complete={completeChecklistLeft === 0} />
-                    <ReviewRow label="Yapılacak işler" detail={completeBlockedMessage ?? "Tümü tamamlandı"} complete={!completeBlockedMessage} />
-                    <ReviewRow label="Bekleyen talepler" detail={`${order.partsRequests.filter((request) => request.status === "requested").length}`} complete={!order.partsRequests.some((request) => request.status === "requested")} />
-                  </div>
+                  <Card>
+                    <CardContent className="space-y-2">
+                      <ReviewRow label="Araç kontrolü" detail={`${checklist.items.filter((item) => item.isCompleted && !item.deletedAt).length}/${checklist.items.filter((item) => !item.deletedAt).length}`} complete={completeChecklistLeft === 0} />
+                      <ReviewRow label="Yapılacak işler" detail={completeBlockedMessage ?? "Tümü tamamlandı"} complete={!completeBlockedMessage} />
+                      <ReviewRow label="Bekleyen talepler" detail={`${order.partsRequests.filter((request) => request.status === "requested").length}`} complete={!order.partsRequests.some((request) => request.status === "requested")} />
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
 
@@ -591,20 +619,26 @@ export function TechnicianOrderDetail({
 
 function DamageMarks({ marks }: { marks: OrderData["damageMarks"] }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">Mevcut Hasarlar</h3>
-      <div className="space-y-1.5">
+    <Card>
+      <CardHeader>
+        <CardTitle>Mevcut Hasarlar</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-1.5">
         {marks.map((mark) => (
-          <div key={mark.id} className="flex min-h-8 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
-            <span className="font-medium text-foreground">{mark.zone}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-foreground">{mark.damageType}</span>
-            <span className="text-xs text-muted-foreground">({mark.severity})</span>
-            {mark.note && <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{mark.note}</span>}
-          </div>
+          <Item key={mark.id} variant="muted" size="sm" className="bg-destructive/10 text-destructive-strong">
+            <ItemContent>
+              <ItemTitle>
+                {mark.zone} · {mark.damageType}
+              </ItemTitle>
+              <ItemDescription>
+                {mark.severity}
+                {mark.note ? ` · ${mark.note}` : ""}
+              </ItemDescription>
+            </ItemContent>
+          </Item>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -620,10 +654,12 @@ function OrderTotals({ order }: { order: OrderData }) {
 
 function ReviewRow({ label, detail, complete }: { label: string; detail: string; complete: boolean }) {
   return (
-    <div className="flex min-h-8 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
-      <span className="font-medium text-foreground">{complete ? "✓" : "!"} {label}</span>
-      <span className="text-right text-xs text-muted-foreground">{detail}</span>
-    </div>
+    <Item variant="muted" size="sm">
+      <ItemContent>
+        <ItemTitle>{complete ? "Tamam" : "Eksik"} · {label}</ItemTitle>
+        <ItemDescription>{detail}</ItemDescription>
+      </ItemContent>
+    </Item>
   )
 }
 
@@ -655,18 +691,22 @@ function ChecklistReminder({ message, onReveal }: { message: string; onReveal: (
 
 function VehicleCard({ vehicle }: { vehicle: OrderData["vehicle"] }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Car className="size-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">Araç</h3>
-      </div>
-      <div className="text-lg font-bold text-foreground mb-1">{vehicle.plate}</div>
-      <div className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model}</div>
-      {vehicle.modelYear && <div className="text-xs text-muted-foreground">Yıl: {vehicle.modelYear}</div>}
-      {vehicle.mileage && <div className="text-xs text-muted-foreground">KM: {vehicle.mileage.toLocaleString("tr-TR")}</div>}
-      {vehicle.fuelType && <div className="text-xs text-muted-foreground">Yakıt: {fuelTypeLabel(vehicle.fuelType)}</div>}
-      {vehicle.transmission && <div className="text-xs text-muted-foreground">Vites: {transmissionLabel(vehicle.transmission)}</div>}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Car className="size-4 text-muted-foreground" />
+          Araç
+        </CardTitle>
+        <CardDescription>{vehicle.plate}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm text-muted-foreground">
+        <p className="font-heading text-base font-medium text-foreground">{vehicle.brand} {vehicle.model}</p>
+        {vehicle.modelYear && <p>Yıl: {vehicle.modelYear}</p>}
+        {vehicle.mileage && <p>KM: {vehicle.mileage.toLocaleString("tr-TR")}</p>}
+        {vehicle.fuelType && <p>Yakıt: {fuelTypeLabel(vehicle.fuelType)}</p>}
+        {vehicle.transmission && <p>Vites: {transmissionLabel(vehicle.transmission)}</p>}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -676,29 +716,35 @@ function CustomerCard({ customer }: { customer: OrderData["customer"] }) {
     : customer.fullName || [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "Müşteri"
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <User className="size-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">Müşteri</h3>
-      </div>
-      <div className="text-base font-semibold text-foreground">{name}</div>
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-        <Phone className="size-3.5" />
-        <a href={`tel:${customer.phone}`} className="text-primary hover:underline">{customer.phone}</a>
-      </div>
-      {customer.email && (
-        <div className="text-xs text-muted-foreground mt-1">{customer.email}</div>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="size-4 text-muted-foreground" />
+          Müşteri
+        </CardTitle>
+        <CardDescription>{name}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm text-muted-foreground">
+        <p className="flex items-center gap-1.5">
+          <Phone className="size-3.5" />
+          <a href={`tel:${customer.phone}`} className="text-primary hover:underline">{customer.phone}</a>
+        </p>
+        {customer.email && <p>{customer.email}</p>}
+      </CardContent>
+    </Card>
   )
 }
 
 function ComplaintCard({ complaint }: { complaint: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="text-sm font-semibold text-foreground mb-2">Müşteri Şikayeti</h3>
-      <p className="text-sm text-foreground whitespace-pre-wrap">{complaint}</p>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Müşteri Şikayeti</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="whitespace-pre-wrap text-sm text-foreground">{complaint}</p>
+      </CardContent>
+    </Card>
   )
 }
 

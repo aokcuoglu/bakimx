@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -345,16 +346,19 @@ export function LaborSessionCard({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-1.5">
           <Timer className="size-4 text-muted-foreground" />
           İşçilik Süresi
-        </h3>
+        </CardTitle>
         {totalMinutes > 0 && (
-          <span className="text-sm font-medium text-foreground">Toplam: {formatMinutes(totalMinutes)}</span>
+          <CardAction>
+            <span className="text-sm font-medium text-foreground">Toplam: {formatMinutes(totalMinutes)}</span>
+          </CardAction>
         )}
-      </div>
+      </CardHeader>
+      <CardContent>
 
       {!activeSession && !locked && (
         <Button
@@ -410,6 +414,7 @@ export function LaborSessionCard({
       )}
 
       <EditLaborSessionDialog session={editing} onOpenChange={(open) => !open && setEditing(null)} />
-    </div>
+      </CardContent>
+    </Card>
   )
 }

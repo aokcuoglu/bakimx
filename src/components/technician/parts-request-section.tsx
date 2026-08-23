@@ -7,6 +7,7 @@ import {
   TriangleAlert, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -71,21 +72,23 @@ export function PartsRequestSection({
   const pendingCount = requests.filter((r) => r.status !== "delivered" && r.status !== "cancelled").length
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-1.5">
           <Package className="size-4 text-muted-foreground" />
           Parça &amp; İşçilik Talepleri
-        </h3>
+        </CardTitle>
         {requests.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {requests.length} talep{pendingCount > 0 && ` · ${pendingCount} bekliyor`}
-          </span>
+          <CardAction>
+            <span className="text-xs text-muted-foreground">
+              {requests.length} talep{pendingCount > 0 && ` · ${pendingCount} bekliyor`}
+            </span>
+          </CardAction>
         )}
-      </div>
-
+      </CardHeader>
+      <CardContent className="space-y-3">
       {locked ? (
-        <p className="text-xs text-muted-foreground mb-2">
+        <p className="text-xs text-muted-foreground">
           Teslim edilmiş/iptal edilmiş iş emrinde talep açılamaz
         </p>
       ) : (
@@ -93,7 +96,8 @@ export function PartsRequestSection({
       )}
 
       <PartsRequestList requests={requests} locked={locked} />
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
