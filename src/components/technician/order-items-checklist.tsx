@@ -1,13 +1,17 @@
 "use client"
 
 import { useCallback, useEffect, useOptimistic, useRef, useState, useTransition } from "react"
-import { CheckSquare, ListChecks, Loader2, Square } from "lucide-react"
+import { CheckSquare, ListChecks, Loader2, Square, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatTRY } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { applyCompletion, completionSummary, incompleteIds } from "@/lib/technician/order-items"
-import { completeAllOrderItemsAction, toggleOrderItemCompletedAction } from "@/app/(app)/technician/actions"
+import {
+  completeAllOrderItemsAction,
+  toggleOrderItemCompletedAction,
+  uncompleteAllOrderItemsAction,
+} from "@/app/(app)/technician/actions"
 
 export interface OrderItemRow {
   id: string
@@ -36,7 +40,7 @@ const NO_IDS: ReadonlySet<string> = new Set<string>()
  * bırakır. Sunucu reddederse iyimser durum kendiliğinden geri alınır ve hata
  * toast'a düşer — geri dönüş de görsel bir sinyal olur.
  *
- * Sayaç ve "Tümünü tamamla" bu bileşenin içinde: iyimser durumla aynı yerde
+ * Sayaç ve toplu durum eylemleri bu bileşenin içinde: iyimser durumla aynı yerde
  * durmazlarsa başlık tiklerin gerisinde kalır ve liste bozuk görünür.
  */
 export function OrderItemsChecklist({
@@ -140,6 +144,22 @@ export function OrderItemsChecklist({
     })
   }
 
+  function uncompleteAll() {
+    if (locked || bulkPending) return
+    const ids = optimisticItems.filter((item) => !!item.completedAt).map((item) => item.id)
+    if (ids.length === 0) return
+
+    setBulkPending(true)
+    setBusy(ids, true)
+    startTransition(async () => {
+      patchOptimistic({ ids, done: false })
+      const res = await uncompleteAllOrderItemsAction(orderId)
+      if (res && "error" in res && res.error) reportError(res.error)
+      setBusy(ids, false)
+      setBulkPending(false)
+    })
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -150,19 +170,30 @@ export function OrderItemsChecklist({
           </span>
         </h3>
         {!locked && total > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={completeAll}
-            disabled={remaining === 0 || bulkPending}
-            className="shrink-0 gap-1.5 touch-manipulation"
-          >
-            {bulkPending
-              ? <Loader2 className="size-3.5 animate-spin" />
-              : <ListChecks className="size-3.5" />}
-            Tümünü tamamla
-          </Button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={uncompleteAll}
+              disabled={done === 0 || bulkPending}
+              className="gap-1.5 touch-manipulation"
+            >
+              {bulkPending ? <Loader2 className="size-3.5 animate-spin" /> : <Undo2 className="size-3.5" />}
+              Tümünü kaldır
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={completeAll}
+              disabled={remaining === 0 || bulkPending}
+              className="gap-1.5 touch-manipulation"
+            >
+              {bulkPending ? <Loader2 className="size-3.5 animate-spin" /> : <ListChecks className="size-3.5" />}
+              Tümünü tamamla
+            </Button>
+          </div>
         )}
       </div>
 

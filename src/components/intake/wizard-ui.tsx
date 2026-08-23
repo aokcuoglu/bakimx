@@ -198,11 +198,24 @@ export function WizardChoiceCard({
 }
 
 /** Adım alt çubuğu: solda Geri, sağda ileri/eylem düğmeleri. */
-export function WizardActions({ back, children }: { back?: ReactNode; children?: ReactNode }) {
+export function WizardActions({
+  back,
+  children,
+  sticky = false,
+}: {
+  back?: ReactNode
+  children?: ReactNode
+  /** İş akışı ekranlarında sonraki adıma geçiş her zaman viewport'un altında kalır. */
+  sticky?: boolean
+}) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+    <div className={
+      sticky
+        ? "fixed inset-x-0 bottom-16 z-20 flex items-center justify-between gap-2 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:bottom-0 sm:px-6"
+        : "flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4"
+    }>
       <div>{back}</div>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      <div className="flex items-center gap-2">{children}</div>
     </div>
   )
 }

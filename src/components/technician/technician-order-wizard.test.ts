@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 const source = readFileSync(join(import.meta.dir, "technician-order-detail.tsx"), "utf8")
+const partsSectionSource = readFileSync(join(import.meta.dir, "technician-parts-labor-section.tsx"), "utf8")
 const routeDir = join(import.meta.dir, "../../app/(app)/technician/orders/[id]")
 
 describe("teknisyen iş emri adım kabuğu", () => {
@@ -75,6 +76,31 @@ describe("teknisyen iş emri adım kabuğu", () => {
     expect(source.split('"Tamire devam et"').length - 1).toBe(1)
   })
 
+  test("üst aksiyonları İş Emri ile tek, taşabilen mobil satırda toplar", () => {
+    expect(source).toContain('flex-nowrap items-center gap-2 overflow-x-auto')
+    expect(source).toContain('sm:w-auto sm:justify-end')
+    expect(source).toContain('<FileText />')
+  })
+
+  test("sekme geçişinde ortak sayfa yükleme durumunu gösterir ve adım başlığını tekrar etmez", () => {
+    expect(source).toContain('import { PageLoading } from "@/components/shared/page-loading"')
+    expect(source).toContain('{isStepPending ? <PageLoading /> : <>')
+    expect(source).toContain('startStepTransition(() => {')
+    expect(source).not.toContain("WizardHeading")
+  })
+
+  test("iş emri adımlarındaki kart yüzeylerini ortak hafif primary tonu ile tutarlı kılar", () => {
+    expect(source).toContain('bg-primary/[0.04]')
+    expect(partsSectionSource).toContain('section className="relative rounded-xl border border-border bg-primary/[0.04]')
+  })
+
+  test("ileri/geri aksiyonlarını küçük ve sabit alt çubukta tutar", () => {
+    expect(source).toContain("<WizardActions sticky")
+    expect(source).toContain('size="sm" onClick={() => goToStep("needs")}')
+    const wizardUi = readFileSync(join(import.meta.dir, "../intake/wizard-ui.tsx"), "utf8")
+    expect(wizardUi).toContain("fixed inset-x-0 bottom-16")
+  })
+
   test("kilitli iş emrini tek uyarıyla salt okunur gösterir", () => {
     expect(source).toContain("Bu iş emri salt okunur")
     expect(source).toContain("Bilgiler değiştirilemez; adımları inceleyebilirsiniz.")
@@ -93,5 +119,31 @@ describe("teknisyen iş emri adım kabuğu", () => {
     const errorSource = readFileSync(join(routeDir, "error.tsx"), "utf8")
     expect(errorSource).toContain("İş emri açılamadı")
     expect(errorSource).toContain("Tekrar dene")
+  })
+})
+
+describe("talep akışının sökülmesi", () => {
+  test("Talepler sekmesi ve PartsRequestSection kaldırıldı", () => {
+    expect(source).not.toContain('value="requests"')
+    expect(source).not.toContain("PartsRequestSection")
+  })
+
+  test("dış işçilik artık gerçek iş emri kalemi, grid'den süzülüyor", () => {
+    expect(source).toMatch(/type !== "external_labor"/)
+    expect(source).toContain("externalLaborItems")
+  })
+
+  test("parça & işçilik grid'i dış işçilik modunu kapatıyor", () => {
+    expect(partsSectionSource).toContain("allowExternalLabor={false}")
+  })
+
+  test("dış alımlar sekmesinde dış işçilik ekleme butonu var", () => {
+    expect(source).toContain("AddExternalLaborButton")
+    expect(source).toContain("AddPurchaseCardButton")
+  })
+
+  test("karar bekleyen eski talepler için salt-okunur uyarı gösterilir", () => {
+    expect(source).toContain("findUndecidedPartsRequests")
+    expect(source).toContain("undecidedRequestNames")
   })
 })

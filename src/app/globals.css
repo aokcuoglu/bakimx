@@ -632,5 +632,9 @@
   }
   html {
     @apply font-sans scroll-smooth;
+    /* Radix Dialog arka planı kaydırmayı kilitlediğinde tarayıcı scrollbar'ı
+       kaybolur. Gutter'ı baştan ayırmak, sabit alt navigasyon ve sayfa
+       içeriğinin modal açılışında yatay kaymasını önler. */
+    scrollbar-gutter: stable;
   }
 }
