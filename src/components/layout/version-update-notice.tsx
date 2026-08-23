@@ -136,17 +136,20 @@ export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: stri
               <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-muted">
                 <div className="version-reload-bar h-full w-1/3 bg-brand" />
               </div>
-              <div className="relative flex size-40 items-center justify-center">
-                <span
-                  className="version-reload-ripple pointer-events-none absolute inset-0 rounded-full border-2 border-brand/30"
-                  aria-hidden="true"
-                />
-                <span
-                  className="version-reload-ripple pointer-events-none absolute inset-3 rounded-full border-2 border-navy/25 dark:border-brand/25"
-                  style={{ animationDelay: "0.35s" }}
-                  aria-hidden="true"
-                />
-                <BrandSpinner size={72} label="Yeni sürüm yükleniyor…" />
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative flex size-36 items-center justify-center">
+                  <span
+                    className="version-reload-ripple pointer-events-none absolute inset-0 rounded-full border-2 border-brand/30"
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="version-reload-ripple pointer-events-none absolute inset-3 rounded-full border-2 border-navy/25 dark:border-brand/25"
+                    style={{ animationDelay: "0.35s" }}
+                    aria-hidden="true"
+                  />
+                  <BrandSpinner size={72} />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">Yeni sürüm yükleniyor…</p>
               </div>
             </div>,
             document.body,
