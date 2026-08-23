@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { aiPartSearchAllowedRole, mockAiPartSearchQuery, normalizeAiSearchQuery } from "./ai-search"
+import { aiPartCatalogQuery, aiPartSearchAllowedRole, mockAiPartSearchQuery, normalizeAiPartSearchPlan, normalizeAiSearchQuery } from "./ai-search"
 import { bakimxProductSearchTerms, buildBakimxProductSearchKey } from "./bakimx-search-key"
 
 test("AI parça araması yalnız yönetici ve ustaya açıktır", () => {
@@ -27,4 +27,14 @@ test("mock doğal dil kalıbını katalog sorgusundan çıkarır", () => {
     sku: "W712",
   })
   expect(bakimxProductSearchTerms(query).every((term) => productKey.includes(term))).toBe(true)
+})
+
+test("açık marka isteği zorunlu katalog filtresine ve küçük sonuç limitine dönüşür", () => {
+  const plan = normalizeAiPartSearchPlan({
+    query: "yağ filtresi",
+    brand: "  MAGNETI   MARELLI ",
+    limit: 20,
+  }, "fallback")
+  expect(plan).toEqual({ query: "yağ filtresi", brand: "MAGNETI MARELLI", limit: 5 })
+  expect(aiPartCatalogQuery(plan)).toBe("MAGNETI MARELLI yağ filtresi")
 })
