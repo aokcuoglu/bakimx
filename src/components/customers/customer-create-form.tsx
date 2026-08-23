@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   FileText,
   Loader2,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,7 +32,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { createCustomerAction, updateCustomerAction } from "@/app/(app)/customers/actions"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils-client"
@@ -39,6 +40,10 @@ import { useForm } from "react-hook-form"
 import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer"
 import { typedResolver } from "@/lib/validations/resolver"
 import { formatPhoneTR, toTrUpper } from "@/lib/format"
+import {
+  ALLOW_DUPLICATE_PHONE_FIELD,
+  type ExistingCustomer,
+} from "@/lib/customers/duplicate-phone"
 import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
 import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
 
@@ -122,7 +127,13 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
   const priceGroup = form.watch("priceGroup")
   const kvkkApprovedAt = form.watch("kvkkApprovedAt")
 
-  type ActionState = { error?: string; success?: boolean; id?: string; existingCustomer?: { id: string; label: string } }
+  type ActionState = {
+    error?: string
+    success?: boolean
+    id?: string
+    existingCustomer?: ExistingCustomer
+    existingCustomers?: ExistingCustomer[]
+  }
 
   const action = async (_prev: ActionState | null, formData: FormData): Promise<ActionState | null> => {
     if (isEdit && initial?.id) {
@@ -132,6 +143,12 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
   }
 
   const [state, formAction, pending] = useActionState(action, null as ActionState | null)
+
+  const existingCustomers = state?.existingCustomers?.length
+    ? state.existingCustomers
+    : state?.existingCustomer
+      ? [state.existingCustomer]
+      : []
 
   useEffect(() => {
     if (state?.success) {
@@ -146,7 +163,7 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
     }
   }, [state, router, isEdit, initial?.id])
 
-  function onSubmit(values: CustomerFormValues) {
+  function toFormData(values: CustomerFormValues, allowDuplicate = false) {
     const formData = new FormData()
     for (const [key, value] of Object.entries(values)) {
       if (typeof value === "boolean") {
@@ -157,27 +174,53 @@ export function CustomerCreateForm({ initial, mode = "create", onCancel }: { ini
     }
     // discountRate is entered as a percent but stored as bps.
     formData.set("discountRate", String(percentToBps(Number(values.discountRate) || 0)))
-    startTransition(() => formAction(formData))
+    if (allowDuplicate) formData.set(ALLOW_DUPLICATE_PHONE_FIELD, "on")
+    return formData
+  }
+
+  function onSubmit(values: CustomerFormValues) {
+    startTransition(() => formAction(toFormData(values)))
+  }
+
+  function onConfirmDuplicate() {
+    startTransition(() => formAction(toFormData(form.getValues(), true)))
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-        {state?.error && (
-          <Alert variant="destructive">
+        {existingCustomers.length > 0 ? (
+          <Alert variant="warning">
+            <AlertTriangle />
+            <AlertTitle>Bu telefon başka müşteride kayıtlı</AlertTitle>
             <AlertDescription>
-              {state.error}
-              {state.existingCustomer && (
-                <>
-                  {" "}
-                  <Link href={`/customers/${state.existingCustomer.id}`} className="font-medium underline underline-offset-2">
-                    {state.existingCustomer.label} kaydını aç
-                  </Link>
-                </>
-              )}
+              <p>{state?.error}</p>
+              <ul className="mt-2 space-y-1">
+                {existingCustomers.map((customer) => (
+                  <li key={customer.id}>
+                    <Link href={`/customers/${customer.id}`} className="font-medium">
+                      {customer.label} kaydını aç
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-3"
+                onClick={onConfirmDuplicate}
+                disabled={pending}
+              >
+                Yine de kaydet
+              </Button>
             </AlertDescription>
           </Alert>
-        )}
+        ) : state?.error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        ) : null}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">

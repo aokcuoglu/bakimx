@@ -17,6 +17,10 @@ import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/comp
 import { ChevronDown, Loader2, Plus, User } from "lucide-react"
 import type { UnifiedResult } from "@/lib/search/unified-results"
 import { formatPhoneTR, toTrUpper } from "@/lib/format"
+import {
+  ALLOW_DUPLICATE_PHONE_FIELD,
+  type ExistingCustomer,
+} from "@/lib/customers/duplicate-phone"
 import { CityDistrictFields } from "@/components/shared/forms/city-district-fields"
 import { TaxIdentityFields } from "@/components/shared/forms/tax-identity-fields"
 
@@ -70,8 +74,8 @@ export function CustomerSearchOrCreate({
   const [district, setDistrict] = useState("")
   const [address, setAddress] = useState("")
   // When the entered phone already belongs to a customer, offer to select them
-  // instead of creating a duplicate (a phone belongs to a single customer).
-  const [duplicate, setDuplicate] = useState<{ id: string; label: string } | null>(null)
+  // or confirm creating another customer with the same number.
+  const [duplicates, setDuplicates] = useState<ExistingCustomer[]>([])
 
   useEffect(() => {
     if (creating || query.trim().length < 1) {
@@ -114,7 +118,7 @@ export function CustomerSearchOrCreate({
     setPhone("")
     setBusy(false)
     setError("")
-    setDuplicate(null)
+    setDuplicates([])
     setShowExtra(false)
     setIdentityNumber("")
     setTaxNumber("")
@@ -137,9 +141,9 @@ export function CustomerSearchOrCreate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCreate, initialName, initialCompanyName])
 
-  async function handleCreate() {
+  async function handleCreate(allowDuplicate = false) {
     setError("")
-    setDuplicate(null)
+    if (!allowDuplicate) setDuplicates([])
     if (!phone.trim()) { setError("Telefon zorunludur"); return }
     if (type === "individual" && !firstName.trim()) { setError("Ad zorunludur"); return }
     if (type === "corporate" && !companyName.trim()) { setError("Şirket adı zorunludur"); return }
@@ -160,9 +164,21 @@ export function CustomerSearchOrCreate({
       if (city.trim()) cf.set("city", city.trim())
       if (district.trim()) cf.set("district", district.trim())
       if (address.trim()) cf.set("address", address.trim())
+      if (allowDuplicate) cf.set(ALLOW_DUPLICATE_PHONE_FIELD, "on")
       const res = await fetch("/api/customers", { method: "POST", body: cf })
-      const data = await res.json() as { success?: boolean; id?: string; error?: string; existingCustomer?: { id: string; label: string } }
-      if (data?.existingCustomer) { setDuplicate(data.existingCustomer); setError(data.error || ""); setBusy(false); return }
+      const data = await res.json() as {
+        success?: boolean
+        id?: string
+        error?: string
+        existingCustomer?: ExistingCustomer
+        existingCustomers?: ExistingCustomer[]
+      }
+      const existing = data.existingCustomers?.length
+        ? data.existingCustomers
+        : data.existingCustomer
+          ? [data.existingCustomer]
+          : []
+      if (existing.length) { setDuplicates(existing); setError(data.error || ""); setBusy(false); return }
       if (!data?.success || !data.id) { setError(data?.error || "Müşteri oluşturulamadı"); setBusy(false); return }
       const label = type === "corporate" ? companyName.trim() : [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
       setBusy(false)
@@ -187,7 +203,7 @@ export function CustomerSearchOrCreate({
         ) : (
           <div className="space-y-1"><Label>Şirket adı *</Label><Input autoFocus value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
         )}
-        <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicate(null); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
+        <div className="space-y-1"><Label>Telefon *</Label><Input value={phone} onChange={(e) => { setPhone(formatPhoneTR(e.target.value)); setDuplicates([]); setError("") }} inputMode="tel" placeholder="0544 515 74 08" /></div>
         <button
           type="button"
           onClick={() => setShowExtra((s) => !s)}
@@ -219,17 +235,36 @@ export function CustomerSearchOrCreate({
             </div>
           </div>
         )}
-        {duplicate ? (
+        {duplicates.length > 0 ? (
           <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-2.5">
-            <p className="text-sm text-foreground">Bu telefon <span className="font-medium">{duplicate.label}</span> adlı müşteriye ait.</p>
-            <Button type="button" size="sm" className="w-full" onClick={() => onSelected(duplicate.id, duplicate.label)}><User className="size-4 mr-1" /> Bu müşteriyi seç</Button>
+            <p className="text-sm text-foreground">
+              {duplicates.length === 1 ? (
+                <>Bu telefon <span className="font-medium">{duplicates[0].label}</span> adlı müşteriye ait. Mevcut kaydı seçebilir veya yine de yeni müşteri oluşturabilirsiniz.</>
+              ) : (
+                <>Bu telefon {duplicates.length} müşteriye ait. Mevcut kayıtlardan birini seçebilir veya yine de yeni müşteri oluşturabilirsiniz.</>
+              )}
+            </p>
+            {duplicates.map((customer) => (
+              <Button
+                key={customer.id}
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => onSelected(customer.id, customer.label)}
+              >
+                <User className="size-4 mr-1" /> {customer.label} müşterisini seç
+              </Button>
+            ))}
           </div>
         ) : error ? (
           <p className="text-sm text-destructive-strong">{error}</p>
         ) : null}
         <div className="flex justify-end gap-2">
-          <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError("") }}>Vazgeç</Button>
-          <Button type="button" size="sm" onClick={handleCreate} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : "Müşteriyi oluştur"}</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setError(""); setDuplicates([]) }}>Vazgeç</Button>
+          <Button type="button" size="sm" onClick={() => handleCreate(duplicates.length > 0)} disabled={busy}>
+            {busy ? <Loader2 className="size-4 animate-spin" /> : duplicates.length > 0 ? "Yine de yeni müşteri oluştur" : "Müşteriyi oluştur"}
+          </Button>
         </div>
       </div>
     )

@@ -105,3 +105,11 @@ test("lightbox geri tuşuyla da kapanır ve Next'in geçmiş durumunu ezmez", ()
   expect(LIGHTBOX_SOURCE).toContain('window.addEventListener("popstate"')
   expect(LIGHTBOX_SOURCE).toContain("{ ...window.history.state, bakimxLightbox: true }")
 })
+
+test("fotoğraf görüntüleyici tam ekran değil, ortada Dialog + Carousel açılır", () => {
+  expect(LIGHTBOX_SOURCE).toContain("DialogContent")
+  expect(LIGHTBOX_SOURCE).toContain("<Carousel")
+  expect(LIGHTBOX_SOURCE).toContain("cursor-zoom-in")
+  expect(LIGHTBOX_SOURCE).not.toContain("bg-black/95")
+  expect(LIGHTBOX_SOURCE).not.toContain("framer-motion")
+})

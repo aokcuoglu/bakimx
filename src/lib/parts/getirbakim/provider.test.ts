@@ -11,6 +11,7 @@ const ENV_KEYS = [
   "GETIRBAKIM_API_KEY",
   "GETIRBAKIM_API_URL",
   "GETIRBAKIM_TIMEOUT_MS",
+  "NODE_ENV",
 ] as const
 
 const original = new Map(ENV_KEYS.map((key) => [key, process.env[key]]))
@@ -68,6 +69,20 @@ describe("getGetirbakimProvider", () => {
     process.env.GETIRBAKIM_API_KEY = "sk_test_0123456789abcdef"
     delete process.env.GETIRBAKIM_API_URL
     expect(getGetirbakimProvider().name).toBe("mock")
+  })
+
+  test("production'da mock sağlayıcıyı reddeder", () => {
+    process.env.NODE_ENV = "production"
+    process.env.GETIRBAKIM_PROVIDER = "mock"
+    expect(() => getGetirbakimProvider()).toThrow(/production ortamında http/)
+  })
+
+  test("production'da eksik http kimliğiyle demo veriye düşmez", () => {
+    process.env.NODE_ENV = "production"
+    process.env.GETIRBAKIM_PROVIDER = "http"
+    delete process.env.GETIRBAKIM_API_KEY
+    process.env.GETIRBAKIM_API_URL = "https://getirbakim.example"
+    expect(() => getGetirbakimProvider()).toThrow(/GETIRBAKIM_API_KEY/)
   })
 
   test("seçim bir kez yapılır, tekrar çağrıda aynı örnek döner", () => {

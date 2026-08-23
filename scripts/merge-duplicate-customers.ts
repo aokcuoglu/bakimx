@@ -14,8 +14,9 @@ if (typeof process.loadEnvFile === "function") {
 
 /**
  * Merge duplicate customers so a phone belongs to a single customer per
- * workshop (pre-flight cleanup for the `@@unique([workshopId, phone])`
- * migration — see scripts/find-duplicate-phones.ts).
+ * workshop (optional cleanup — see scripts/find-duplicate-phones.ts).
+ * Duplicate phones are allowed; this is for workshops that want to collapse
+ * accidental double records.
  *
  * For each colliding (workshopId, phone) group it keeps ONE survivor and folds
  * the rest into it: every related row (vehicles, intakes, quotes, appointments,

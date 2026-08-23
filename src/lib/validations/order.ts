@@ -25,6 +25,8 @@ export const serviceOrderItemSchema = z.object({
   // BakımX katalog ürünü (BAK-35). Doluysa kalemin kimlik/fiyat alanları SUNUCUDA
   // ürün kaydından türetilir — istemciden gelen ad/fiyat yazılmaz.
   bakimxProductId: z.string().optional(),
+  // GetirBakım ürünü. Doluysa kimlik/fiyat SUNUCUDA sağlayıcıdan türetilir.
+  getirbakimProductId: z.string().optional(),
   /**
    * Satır KDV'ye tabi mi (BAK-53). `true`/alan yok → tabi; `false` → belgenin
    * KDV'si bu satıra uygulanmaz (src/lib/totals.ts tek karar noktası).

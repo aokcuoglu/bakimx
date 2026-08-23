@@ -1,5 +1,9 @@
 import { test, expect } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { resolvePhotoSrc } from "./photo-src"
+
+const SRC_ROOT = join(import.meta.dir, "../..")
 
 test("depo referansı asla doğrudan kullanılmaz, proxy'ye çevrilir", () => {
   expect(
@@ -25,3 +29,28 @@ test("dosyası olmayan kayıt null döner", () => {
 test("id sorgu dizesine güvenli kodlanır", () => {
   expect(resolvePhotoSrc({ id: "a b&c", fileUrl: "https://example.com/a.jpg" })).toBe("/api/photos?id=a%20b%26c")
 })
+
+/**
+ * Araç detayı / pasaport geçmişi üretimde boş kutu gösteriyordu: ham `fileUrl`
+ * S3 referansıdır ve 403 döner. Kanıt sekmesi `resolvePhotoSrc` kullanır; bu
+ * iki personel yüzeyi de aynı sözleşmeyi tutmak zorunda. TypeScript yakalamaz.
+ */
+test("araç fotoğraf ızgarası ham fileUrl basmaz, proxy + modal carousel kullanır", () => {
+  const grid = readFileSync(join(SRC_ROOT, "components/vehicles/vehicle-photo-history.tsx"), "utf8")
+  expect(grid).toContain("resolvePhotoSrc")
+  expect(grid).toContain("PhotoLightbox")
+  expect(grid).not.toMatch(/src=\{p\.fileUrl\}/)
+  expect(grid).not.toMatch(/src=\{photo\.fileUrl\}/)
+  expect(grid).not.toContain("/orders/")
+})
+
+for (const file of [
+  "components/vehicles/vehicle-detail.tsx",
+  "components/vehicles/vehicle-passport.tsx",
+] as const) {
+  test(`${file} fotoğraf geçmişini paylaşılan ızgaradan açar`, () => {
+    const source = readFileSync(join(SRC_ROOT, file), "utf8")
+    expect(source).toContain("VehiclePhotoGrid")
+    expect(source).not.toMatch(/src=\{p\.fileUrl\}/)
+  })
+}

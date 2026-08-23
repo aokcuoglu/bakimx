@@ -14,22 +14,18 @@ if (typeof process.loadEnvFile === "function") {
 }
 
 /**
- * Read-only duplicate-phone report (pre-flight for the `Customer` unique
- * constraint on [workshopId, phone]).
+ * Read-only duplicate-phone report.
  *
- * A phone belongs to a single customer within a workshop. Before the
- * `@@unique([workshopId, phone])` migration can apply, every workshop must have
- * at most one customer per phone. This script lists the colliding groups with
- * enough context (record counts, dates) to decide which record to KEEP and
- * which to merge/retire.
+ * A phone may belong to more than one customer in a workshop (create/update
+ * warn, then allow with confirmation). This script lists colliding groups with
+ * enough context (record counts, dates) to decide which records to keep or
+ * merge via scripts/merge-duplicate-customers.ts.
  *
  * Usage (run from project root, against the target DB):
  *   bunx tsx scripts/find-duplicate-phones.ts
  *
- * Exit code: 0 = no duplicates (safe to migrate), 1 = duplicates found.
- * NEVER writes — resolve collisions manually (reassign the duplicate's
- * vehicles/intakes/quotes to the survivor, then delete it, or fix a mistyped
- * phone). Re-run until it reports 0.
+ * Exit code: 0 = no duplicates, 1 = duplicates found.
+ * NEVER writes.
  */
 
 const pool = new Pool({ connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL })
@@ -58,7 +54,7 @@ async function main() {
   })
 
   if (groups.length === 0) {
-    console.log("✓ Mükerrer telefon yok — @@unique([workshopId, phone]) migration'ı güvenle uygulanabilir.")
+    console.log("✓ Mükerrer telefon yok.")
     return 0
   }
 

@@ -6,7 +6,7 @@ function row(over: Partial<QuoteEditorRow> = {}): QuoteEditorRow {
   return {
     id: "q0", type: "part", name: "Fren balatası", sku: "P-1", unit: "adet",
     quantity: 2, unitPrice: 15000, totalPrice: null, note: null, partId: null,
-    bakimxProductId: null, ...over,
+    bakimxProductId: null, getirbakimProductId: null, ...over,
   }
 }
 
@@ -45,6 +45,14 @@ test("BakımX bağı taşınır ve stok bağıyla karışmaz", () => {
   expect(item.partId).toBe("")
   expect(rowToQuoteItem(row({ bakimxProductId: null })).bakimxProductId).toBe("")
   expect(quoteItemToRow(item, "q9").bakimxProductId).toBe("bx-1")
+})
+
+test("GetirBakım bağı taşınır ve stok/BakımX bağıyla karışmaz", () => {
+  const item = rowToQuoteItem(row({ getirbakimProductId: "gb-1" }))
+  expect(item.getirbakimProductId).toBe("gb-1")
+  expect(item.bakimxProductId).toBe("")
+  expect(item.partId).toBe("")
+  expect(quoteItemToRow(item, "q9").getirbakimProductId).toBe("gb-1")
 })
 
 test("adsız satırlar teklife yazılmaz", () => {
