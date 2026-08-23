@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test"
 
+const port = process.env.PLAYWRIGHT_PORT || "3000"
+const baseURL = `http://127.0.0.1:${port}`
+
 export default defineConfig({
   testDir: "./e2e",
   // `.e2e.ts` uzantısı bilinçli: Playwright'ın varsayılan `*.spec.ts` deseni
@@ -12,7 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -23,8 +26,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "bun run dev",
-    url: "http://127.0.0.1:3000/api/health",
+    command: `bun run dev -- -p ${port}`,
+    url: `${baseURL}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
