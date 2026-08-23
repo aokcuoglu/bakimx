@@ -527,12 +527,13 @@
   --chart-5: oklch(0.15 0.05 260);
   --radius: 0.625rem;
   /* Sidebar zemini navy (#071F49); accent siyah lekesi gibi görünmesin diye
-     yarı saydam beyaz highlight — hover/selected navy üzerinde yumuşak vurgu. */
+     navy üzerinde ~%12 beyaz karışımı (#253A5F) — yumuşak hover/selected.
+     Opak tutulur: tema AA taraması alfa kompozit etmez. */
   --sidebar: #071F49;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(1 0 0 / 12%);
+  --sidebar-accent: #253A5F;
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
@@ -589,7 +590,7 @@
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(1 0 0 / 12%);
+  --sidebar-accent: #253A5F;
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
