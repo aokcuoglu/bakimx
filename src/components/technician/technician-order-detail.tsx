@@ -13,7 +13,7 @@ import {
   Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
-  Package,
+  Package, Wrench,
 } from "lucide-react"
 import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -462,13 +462,23 @@ export function TechnicianOrderDetail({
                   doğrudan girebilmesi, talep açması değil. İzni olmayan (çırak)
                   eski varsayılanda kalır — ona düzenleyici zaten açılmıyor. */}
               <Tabs defaultValue={canEditOrder ? "kalemler" : "requests"}>
-                <div className="max-w-full overflow-x-auto pb-1">
-                  <TabsList>
-                    <TabsTrigger value="kalemler">Parça &amp; İşçilik ({order.items.length})</TabsTrigger>
-                    <TabsTrigger value="requests">Talepler ({order.partsRequests.length})</TabsTrigger>
-                    <TabsTrigger value="purchases">Dış alımlar ({purchasedItems.length})</TabsTrigger>
-                  </TabsList>
-                </div>
+                {/* Üst adım şeridiyle aynı çizgi sekme deseni: kenarlık + aktifte
+                    alt çizgi, ikonlu tetikler, taşmada yatay kaydırma. İkonlar
+                    bölümlerin kendi başlık ikonlarıdır (Wrench/Package/ShoppingCart). */}
+                <TabsList variant="line" className="flex w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <TabsTrigger value="kalemler" className="px-3 py-2.5 shrink-0 flex-none">
+                    <Wrench className="size-4" />
+                    <span>Parça &amp; İşçilik ({order.items.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="requests" className="px-3 py-2.5 shrink-0 flex-none">
+                    <Package className="size-4" />
+                    <span>Talepler ({order.partsRequests.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="purchases" className="px-3 py-2.5 shrink-0 flex-none">
+                    <ShoppingCart className="size-4" />
+                    <span>Dış alımlar ({purchasedItems.length})</span>
+                  </TabsTrigger>
+                </TabsList>
                 <TabsContent value="kalemler">
                   <TechnicianPartsLaborSection
                     orderId={order.id}
@@ -519,12 +529,18 @@ export function TechnicianOrderDetail({
 
           <TabsContent value="finish" className="space-y-4">
               <Tabs defaultValue="photos">
-                <div className="max-w-full overflow-x-auto pb-1">
-                  <TabsList>
-                    <TabsTrigger value="photos">Fotoğraflar</TabsTrigger>
-                    <TabsTrigger value="review">Son kontrol</TabsTrigger>
-                  </TabsList>
-                </div>
+                {/* "needs" adımındaki iç sekmeyle aynı çizgi desen — ikonlar
+                    bölüm başlıklarından (Camera/CheckCircle2). */}
+                <TabsList variant="line" className="flex w-full flex-nowrap gap-1 border-b border-border pb-0 -mb-px overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <TabsTrigger value="photos" className="px-3 py-2.5 shrink-0 flex-none">
+                    <Camera className="size-4" />
+                    <span>Fotoğraflar</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="review" className="px-3 py-2.5 shrink-0 flex-none">
+                    <CheckCircle2 className="size-4" />
+                    <span>Son kontrol</span>
+                  </TabsTrigger>
+                </TabsList>
                 <TabsContent value="photos">
                   <div className="rounded-lg border border-border bg-card p-4">
                     <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground"><Camera /> Onarım Fotoğrafları</h3>
