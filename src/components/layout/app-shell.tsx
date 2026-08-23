@@ -241,14 +241,16 @@ function AppHeader({
             daraltma/genişletme kontrolü fiilen kayıptı. */}
         <SidebarTrigger className={cn("-ml-2", mobileSearchOpen && "hidden sm:inline-flex")} />
 
+        {/* Logo yalnız dar mobilde (<sm): sm+ arama input açılınca absolute logo
+            input'un üstüne biniyordu. lg'de sidebar zaten markayı taşıyor. */}
         <div
           className={cn(
-            "absolute left-1/2 -translate-x-1/2 lg:hidden",
-            mobileSearchOpen && "hidden sm:block",
+            "absolute left-1/2 -translate-x-1/2 sm:hidden",
+            mobileSearchOpen && "hidden",
           )}
         >
           <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
-            <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+            <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
         </div>
 
