@@ -134,6 +134,7 @@ function SidebarProvider({
     <SidebarContext.Provider value={contextValue}>
       <div
         data-slot="sidebar-wrapper"
+        data-sidebar-state={state}
         style={
           {
             "--sidebar-width": SIDEBAR_WIDTH,

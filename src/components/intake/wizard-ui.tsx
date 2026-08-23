@@ -211,7 +211,7 @@ export function WizardActions({
   return (
     <div className={
       sticky
-        ? "fixed inset-x-0 bottom-16 z-20 flex items-center justify-between gap-2 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:bottom-0 sm:px-6"
+        ? "fixed inset-x-0 bottom-16 z-20 flex items-center justify-between gap-2 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:bottom-0 sm:px-6 lg:left-(--sidebar-width) lg:transition-[left] lg:group-data-[sidebar-state=collapsed]/sidebar-wrapper:left-(--sidebar-width-icon)"
         : "flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4"
     }>
       <div>{back}</div>
