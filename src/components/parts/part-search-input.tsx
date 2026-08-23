@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/autocomplete"
 import { Info, PackageSearch, Search, XIcon, Plus, PencilLine, TriangleAlert, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { formatTRY } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import type { ArticleSearchResult } from "@/lib/tecdoc/catalog"
 import type { BakimxProductSummary } from "@/lib/parts/bakimx-catalog"
 import { BAKIMX_SUGGESTION_LIMIT, useBakimxProductSearch } from "@/lib/parts/bakimx-client"
@@ -55,6 +57,8 @@ export function PartSearchInput({
   categoryId,
   disabled,
   placeholder,
+  inputClassName,
+  plain,
   onNameChange,
   onSelectArticle,
   onCommit,
@@ -84,6 +88,10 @@ export function PartSearchInput({
   categoryId?: number | null
   disabled?: boolean
   placeholder?: string
+  /** Composer gibi yüzeyler giriş alanını çevresinden daha belirgin yapabilir. */
+  inputClassName?: string
+  /** Composer'da gruplu arama yüzeyi yerine doğrudan shadcn Input kullanır. */
+  plain?: boolean
   /** Yazarken çağrılır — YALNIZ yerel güncelleme (kaydetmez); katalog modunda arama sorgusu. */
   onNameChange: (name: string) => void
   onSelectArticle: (a: ArticleSearchResult) => void
@@ -303,6 +311,37 @@ export function PartSearchInput({
 
   const suggestions = buildPartSuggestions(results, bakimxResults, stockResults, getirbakimResults)
 
+  const plainActions = (inputValue: string) => (
+    <div className="absolute inset-y-0 right-1 flex items-center gap-1">
+      {onSearchClick && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={searchTitle ?? "Ara"}
+          title={searchTitle}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onSearchClick}
+          disabled={searchDisabled}
+        >
+          <Search />
+        </Button>
+      )}
+      {canClear && inputValue && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Temizle"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onClear}
+        >
+          <XIcon />
+        </Button>
+      )}
+    </div>
+  )
+
   // Araç kataloğa bağlı değil VE ne BakımX ne stok araması var → arama yapacak
   // bir şey kalmaz, düz metin girişi + (composer'da) create aksiyonları.
   //
@@ -311,6 +350,28 @@ export function PartSearchInput({
   // işe yaradığı durum. Bu erken dönüş yüzünden stok sonuçları hiç
   // görünmüyordu.
   if (vehicleTypeId == null && !onSelectStockPart && !onSelectBakimxProduct && !onSelectGetirbakimProduct) {
+    if (plain) {
+      return (
+        <div className="relative">
+          <Input
+            value={value}
+            onChange={(e) => onNameChange(e.target.value)}
+            onBlur={showCreate ? undefined : onCommit}
+            onKeyDown={showCreate ? (e) => {
+              if (e.key === "Enter" && value.trim()) {
+                e.preventDefault()
+                onCreate?.(value.trim())
+              }
+            } : undefined}
+            placeholder={placeholder}
+            disabled={disabled}
+            title={value || undefined}
+            className={cn("h-8 rounded-lg pr-16 text-sm", inputClassName)}
+          />
+          {plainActions(value)}
+        </div>
+      )
+    }
     const inputGroup = (
       <InputGroup>
         {skuChip}
@@ -333,7 +394,7 @@ export function PartSearchInput({
           placeholder={placeholder}
           disabled={disabled}
           title={value || undefined}
-          className="text-sm"
+          className={cn("text-sm", inputClassName)}
         />
         {trailing}
       </InputGroup>
@@ -360,6 +421,20 @@ export function PartSearchInput({
         onNameChange(v)
       }}
     >
+      {plain ? (
+        <div className="relative">
+          <AutocompleteInput
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && suggestions.length === 0 && query.trim()) {
+                e.preventDefault()
+                onCommit?.()
+              }
+            }}
+            render={<Input placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("h-8 rounded-lg pr-16 text-sm", inputClassName)} />}
+          />
+          {plainActions(query)}
+        </div>
+      ) : (
       <InputGroup>
         {skuChip}
         <AutocompleteInput
@@ -372,11 +447,12 @@ export function PartSearchInput({
             }
           }}
           render={
-            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className="text-sm" />
+            <InputGroupInput placeholder={placeholder} disabled={disabled} title={value || undefined} className={cn("text-sm", inputClassName)} />
           }
         />
         {trailing}
       </InputGroup>
+      )}
       {((showCreate ? query.trim().length >= 1 : query.trim().length >= 2) ||
         supplierId != null ||
         categoryId != null) && (

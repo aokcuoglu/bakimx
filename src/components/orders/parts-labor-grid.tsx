@@ -305,10 +305,8 @@ export function PartsLaborEditor({
       {/* Geniş kapsayıcı (≥52rem): gerçek shadcn Base <table>. Eşik tablonun kendi
           min genişliği; altında tablo zaten yatay kaydırmaya düşerdi, onun yerine
           aşağıdaki kart düzeni devreye girer.
-          BAK-75 §4 — satır alanı KENDİ İÇİNDE kaydırılır (`ITEM_LIST_SCROLL`):
-          10 kalem eklendiğinde sayfa aşağı kaymadığı için üstteki finansal şerit
-          (Ara Toplam / İndirim / KDV / Genel Toplam) ekranda kalır. Başlık satırı
-          `sticky` — kaydırırken hangi kolonun ne olduğu kaybolmaz. */}
+          Satır alanı kendi içinde kayar; listenin sonunda `overscroll` sayfaya
+          devredildiği için kullanıcı aynı hareketle ana sayfayı sürdürür. */}
       <div className="hidden overflow-hidden rounded-lg border border-border @min-[52rem]:block">
         <Table className="min-w-[52rem] table-fixed" containerClassName={ITEM_LIST_SCROLL}>
           <colgroup>
@@ -364,8 +362,8 @@ export function PartsLaborEditor({
       </div>
 
       {/* Dar kapsayıcı (<52rem): kart düzeni — mobil ekran VE masaüstündeki dar
-          kolon (teklif formu) aynı düzeni paylaşır. Kaydırma kuralı masaüstüyle
-          aynı (BAK-75 §4). */}
+          kolon (teklif formu) aynı düzeni paylaşır. İç scroll sonu sayfaya
+          zincirlenir; kullanıcı parmağını/işaretçiyi taşımak zorunda kalmaz. */}
       <div className={cn("space-y-2 @min-[52rem]:hidden", rows.length > 0 && ITEM_LIST_SCROLL)}>
         {rows.length === 0 ? (
           <EmptyItemsHint locked={locked} />
@@ -402,26 +400,18 @@ export function PartsLaborEditor({
 }
 
 /**
- * Kalem listesinin kendi kaydırma alanı (BAK-75 §4).
- *
- * Yükseklik `vh` ile değil sabit `rem` ile sınırlanır: iOS'ta adres çubuğu
- * gizlenip görünürken `vh` değişip liste zıplıyor. ~26rem beş satır gösterir,
- * altıncısının ucu görünür — liste devam ediyor sinyali. `overscroll-contain`:
- * liste sonuna gelince kaydırma sayfaya SIÇRAMAZ.
- *
- * Masaüstünde bu sınıflar tablonun KENDİ kabına (`containerClassName`) verilir,
- * dıştaki kutuya değil: `sticky` başlık en yakın kaydıran atasına göre yapışır
- * ve o ata, shadcn `Table`'ın `overflow-x-auto`'lu kabıdır.
+ * Kalem listesi, iş emri özetini görünür tutacak kadar sınırlıdır; kritik fark
+ * `overscroll-contain` OLMAMASIDIR. Liste sona gelince wheel/touch hareketi
+ * ana sayfanın kaydırmasına zincirlenir.
  */
-const ITEM_LIST_SCROLL = "max-h-[26rem] overflow-y-auto overscroll-contain"
+const ITEM_LIST_SCROLL = "max-h-[26rem] overflow-y-auto"
 
 /**
  * Liste üstü marj hatırlatması (BAK-91).
  *
  * Satır-içi renk tek kalemi işaretler; bu şerit iş emrini KAPATAN kişiye toplu
- * cevap verir ("2 kalem hâlâ alış fiyatında"). Liste kendi içinde kaydığı için
- * (ITEM_LIST_SCROLL) uyarılı satır ekranın dışında kalabilir — şerit listenin
- * ÜSTÜNDE, kaydırma alanının dışında durur.
+ * cevap verir ("2 kalem hâlâ alış fiyatında"). Şerit kalemlerin ÜSTÜNDE kalır;
+ * uzun listede kullanıcı iç listeyi kaydırır, sonunda hareket sayfaya devreder.
  *
  * Engelleyici DEĞİLDİR: sıfır marjla satmak geçerli bir karar olabilir (garanti,
  * jest). Eksik olan kural değil görünürlüktü.
@@ -444,6 +434,7 @@ function PurchaseMarginNotice({ rows }: { rows: Row[] }) {
  */
 export function PartsLaborGrid({
   orderId, status, items, vehicle, onError, loading, laborCatalog, taxRateBps, onApplyStandardTax,
+  allowExternalLabor = true,
 }: {
   orderId: string
   status: string
@@ -457,6 +448,12 @@ export function PartsLaborGrid({
   taxRateBps?: number | null
   /** İş emrinde KDV oranı yokken standart %20'yi uygulayan geri çağırım. */
   onApplyStandardTax?: () => void
+  /**
+   * İşçilik composer'ında İç/Dış mod geçişi. Teknisyen ekranında KAPALI: dış
+   * işçilik orada "Dış Alımlar" sekmesine taşındı; ofis ekranı varsayılanla
+   * (true) değişmeden devam eder.
+   */
+  allowExternalLabor?: boolean
 }) {
   const router = useRouter()
   const locked = isOrderLocked(status as OrderStatus)
@@ -605,16 +602,17 @@ export function PartsLaborGrid({
   }
 
   return (
-    <PartsLaborEditor
-      rows={rows}
-      vehicle={vehicle}
-      locked={locked}
-      loading={loading}
-      laborCatalog={laborCatalog}
-      orderId={orderId}
-      taxRateBps={taxRateBps}
-      onApplyStandardTax={onApplyStandardTax}
-      flash={flash}
+      <PartsLaborEditor
+        rows={rows}
+        vehicle={vehicle}
+        locked={locked}
+        loading={loading}
+        laborCatalog={laborCatalog}
+        orderId={orderId}
+        taxRateBps={taxRateBps}
+        onApplyStandardTax={onApplyStandardTax}
+        allowExternalLabor={allowExternalLabor}
+        flash={flash}
       onAdd={addItem}
       onCell={onCell}
       onRemove={removeRow}
@@ -622,14 +620,10 @@ export function PartsLaborGrid({
   )
 }
 
-// ── Composer "ekleme kartı" kabuğu: composer'ı listeden görsel olarak ayıran,
-// hafif marka-tintli, "Yeni kalem ekle" etiketli belirgin alan.
+// ── Composer ekleme kartı: composer'ı listeden görsel olarak ayıran hafif marka tonu.
 function ComposerCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative rounded-xl border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4 pt-5">
-      <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-        Yeni kalem ekle
-      </span>
+    <div className="rounded-xl border border-border bg-gradient-to-b from-primary/[0.06] to-transparent p-4">
       {children}
     </div>
   )
@@ -716,7 +710,7 @@ function LaborAutocompleteField({ draft, onCell, disabled, catalog }: {
             placeholder="İşçilik ara veya kendi kalemini yaz"
             disabled={disabled}
             title={draft.name || undefined}
-            className="text-sm"
+            className="h-8 rounded-lg bg-background text-sm"
           />
         }
       />
@@ -806,7 +800,7 @@ function LaborComposerBody({ mode, onAdd, disabled, onAdded, catalog }: {
             placeholder="Dış işçilik adı (ör. dış atölye kaporta)"
             title={draft.name || undefined}
             disabled={disabled}
-            className="text-sm"
+            className="h-8 rounded-lg bg-background text-sm"
           />
         ) : (
           <LaborAutocompleteField draft={draft} onCell={onCell} disabled={disabled} catalog={catalog} />
@@ -1071,6 +1065,8 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
         categoryId={filter.categoryId ?? null}
         disabled={disabled}
         placeholder="Parça no, adı, marka veya OEM ara…"
+        inputClassName="bg-background"
+        plain
         onNameChange={setName}
         onSelectArticle={(a) => void add(catalogDraft(a))}
         onSelectStockPart={(p) => setStockConfirm(p)}
@@ -1200,11 +1196,11 @@ function UnifiedPartComposer({ vehicle, onAdd, disabled, onShowDetail }: {
 // sekmeye yönlendiren boş durum (masaüstü tablo hücresi + mobil aynı bileşen).
 function EmptyItemsHint({ locked }: { locked: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-      <PackageSearch className="size-8 text-muted-foreground/40" />
-      <p className="text-sm font-medium text-foreground">Henüz parça veya işçilik eklenmedi</p>
+    <div className="flex items-center justify-center gap-2 py-4 text-center sm:flex-col sm:gap-1.5 sm:py-8">
+      <PackageSearch className="size-5 text-muted-foreground/40 sm:size-8" />
+      <p className="text-sm font-medium text-foreground">Henüz kalem eklenmedi</p>
       {!locked && (
-        <p className="text-xs text-muted-foreground">
+        <p className="hidden text-xs text-muted-foreground sm:block">
           Yukarıdaki <span className="font-semibold text-foreground">Parça</span> kutusundan arayarak veya
           {" "}<span className="font-semibold text-foreground">Oluştur</span> ile ekleyerek başlayın
         </p>
@@ -2318,7 +2314,7 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
   const showMeta = showAttributes && ed.isPart && (ed.editable || !!row.brand || !!row.category)
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3 pl-4 shadow-sm">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-2.5 pl-3.5 shadow-sm">
       {/* Sol tür aksanı */}
       <span className={cn("absolute inset-y-3 left-0 w-[3px] rounded-r-full", ROW_ACCENT[type] ?? "bg-transparent")} />
 
@@ -2341,20 +2337,20 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
 
       {/* Parça / İşçilik adı (öne çıkan) — hayalet: kenarlıksız, odakta belirir */}
       <div className={cn(
-        "mt-2",
+        "mt-1.5",
         "[&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input]]:border-transparent [&_[data-slot=input]]:bg-transparent",
         "[&_[data-slot=input-group]]:px-0 [&_[data-slot=input]]:!px-0 [&_[data-slot=input]]:font-medium",
         "focus-within:[&_[data-slot=input-group]]:border-input focus-within:[&_[data-slot=input]]:border-input focus-within:[&_[data-slot=input]]:!px-2.5",
       )}>
         <PartField row={row} ed={ed} onCell={onCell} />
         <RowTecdocPicker row={row} ed={ed} vehicle={vehicle} onCell={onCell} onShowDetail={onShowDetail} />
-        <DoneBadge completedAt={row.completedAt} className="mt-1.5" />
+        <DoneBadge completedAt={row.completedAt} className="mt-1" />
         <ProcurementBadge procurement={row.externalProcurement} />
       </div>
 
       {/* Marka / Kategori — kompakt gri çipler (etiketsiz), yalnız parça */}
       {showMeta && (
-        <div className={cn("mt-1.5 flex flex-wrap gap-1.5", META_FIELD_MOBILE)}>
+        <div className={cn("mt-1 flex flex-wrap gap-1.5", META_FIELD_MOBILE)}>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="brand" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
           <div className="min-w-[7rem] flex-1"><AttrCell kind="category" row={row} ed={ed} vehicle={vehicle} onCell={onCell} bare /></div>
         </div>
@@ -2363,26 +2359,26 @@ function MobilePartRow({ row, orderId, locked, vehicle, showAttributes = true, o
       {/* Mobil finans bloğu: üç ana giriş aynı hizada ve görünür. Her alanın
           etiketi üstünde olduğu için rakamın anlamı kart genişliğinden bağımsız;
           sabit ilk iki kolon + esnek fiyat kolonu 360px ekranda taşmaz. */}
-      <div className="mt-3 border-t border-border pt-3">
-        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_7rem] items-start gap-2">
+      <div className="mt-2 border-t border-border pt-2">
+        <div className="grid grid-cols-[4rem_minmax(0,1fr)_6.5rem] items-start gap-1.5">
           <div className="min-w-0 space-y-1 [&_input]:!w-full">
-            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Miktar</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Miktar</span>
             {ed.isPart
               ? <QuantityField row={row} editable={ed.editable} onCell={onCell} />
               : <QtyStepper row={row} editable={ed.editable} onCell={onCell} />}
           </div>
           <div className="min-w-0 space-y-1 [&_[role=combobox]]:!w-full">
-            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Birim</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Birim</span>
             <UnitField row={row} editable={ed.editable} onCell={onCell} />
           </div>
           <div className="min-w-0 space-y-1 [&_[data-slot=price-field]]:!w-full">
-            <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Birim fiyat</span>
+            <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Fiyat</span>
             <PriceField row={row} ed={ed} />
             <PurchaseCostHint row={row} ed={ed} />
           </div>
         </div>
 
-        <div className="mt-3 flex min-h-10 items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+        <div className="mt-2 flex min-h-8 items-center justify-between gap-2 border-t border-border/60 pt-2">
           {vatPerLine ? (
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <VatCell row={row} ed={ed} onCell={onCell} />

@@ -77,6 +77,9 @@ const orderItemCreateSchema = serviceOrderItemSchema.extend({
   // Kalemin kaynağı: katalog akışı mı, manuel mi, BakımX kataloğu mu. Rozet +
   // raporlama içindir; `bakimx` gönderilse bile ürün doğrulanamazsa yazılmaz.
   source: z.enum(["catalog", "manual", "bakimx", "getirbakim"]).optional(),
+  // Dış işçiliğin yaptırıldığı firma ("nerede yaptırıldı"). Yalnız
+  // type=external_labor'da yazılır — parça/işçilik satırına tedarikçi sızmasın.
+  supplierName: z.string().max(160).optional(),
 })
 
 export async function addOrderItemAction(formData: FormData) {
@@ -99,6 +102,7 @@ export async function addOrderItemAction(formData: FormData) {
     category: formData.get("category") as string,
     categoryId: formData.get("categoryId") as string,
     source: formData.get("source") as string,
+    supplierName: (formData.get("supplierName") as string) || "",
     bakimxProductId: formData.get("bakimxProductId") as string,
     getirbakimProductId: formData.get("getirbakimProductId") as string,
     includeVat: formData.get("includeVat") as string,
@@ -119,6 +123,7 @@ export async function addOrderItemAction(formData: FormData) {
     category: raw.category || undefined,
     categoryId: raw.categoryId ? Number(raw.categoryId) : undefined,
     source: raw.source || undefined,
+    supplierName: raw.supplierName.trim() || undefined,
     bakimxProductId: raw.bakimxProductId || undefined,
     getirbakimProductId: raw.getirbakimProductId || undefined,
     includeVat: raw.includeVat || undefined,
@@ -232,6 +237,10 @@ export async function addOrderItemAction(formData: FormData) {
           // Alış fiyatı anlık görüntüdür: ürün sonradan zamlansa da bu satır donar.
           purchasePriceKurus: catalogFields?.purchasePriceKurus ?? null,
           source: catalogFields ? catalogFields.source : parsed.data.source ?? null,
+          // "Nerede yaptırıldı" yalnız dış işçilikte anlamlıdır; diğer tiplerde
+          // alan boş kalır (satın alma akışı kendi supplierName'ini kendisi yazar).
+          supplierName:
+            parsed.data.type === "external_labor" ? parsed.data.supplierName?.trim() || null : null,
           // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
           // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
           // girer, KDV yalnız satırın tick'i açılınca üstüne biner.

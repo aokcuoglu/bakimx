@@ -28,6 +28,7 @@ import {
   deleteChecklistItemAction,
   restoreChecklistItemAction,
   toggleChecklistItemAction,
+  uncompleteAllChecklistItemsAction,
 } from "@/app/(app)/technician/actions"
 
 /** Satır parlaması ve tik animasyonunun süresi — globals.css'teki keyframe'lerle eş. */
@@ -62,6 +63,7 @@ export interface ChecklistState {
   remove: (item: ChecklistItemRow) => void
   restore: (item: ChecklistItemRow) => void
   completeCategory: (category: string) => void
+  uncompleteCategory: (category: string) => void
 }
 
 /**
@@ -216,6 +218,27 @@ export function useChecklistState(
     [bulkCategory, flash, locked, optimisticItems, orderId, patchOptimistic, reportError, setBusy]
   )
 
+  const uncompleteCategory = useCallback(
+    (category: string) => {
+      if (locked || bulkCategory) return
+      const ids = activeChecklist(optimisticItems)
+        .filter((item) => item.category === category && item.isCompleted)
+        .map((item) => item.id)
+      if (ids.length === 0) return
+
+      setBulkCategory(category)
+      setBusy(ids, true)
+      startTransition(async () => {
+        patchOptimistic({ type: "toggle", ids, done: false })
+        const res = await uncompleteAllChecklistItemsAction(orderId, category)
+        if (res && "error" in res && res.error) reportError(res.error)
+        setBusy(ids, false)
+        setBulkCategory(null)
+      })
+    },
+    [bulkCategory, locked, optimisticItems, orderId, patchOptimistic, reportError, setBusy]
+  )
+
   return {
     items: optimisticItems,
     busyIds,
@@ -226,6 +249,7 @@ export function useChecklistState(
     remove,
     restore,
     completeCategory,
+    uncompleteCategory,
   }
 }
 
@@ -264,10 +288,10 @@ export function OrderChecklist({
       className={cn(
         "rounded-lg border px-4 scroll-mt-4 transition-colors",
         allDone
-          ? "border-success/30 bg-success/5"
+          ? "border-success/30 bg-primary/[0.04]"
           : progress.total > 0 && !locked
             ? "border-primary/25 bg-primary/[0.04]"
-            : "border-border bg-card"
+            : "border-border bg-primary/[0.04]"
       )}
     >
       <Accordion type="multiple" value={open} onValueChange={onOpenChange}>
@@ -375,18 +399,31 @@ function ChecklistSection({
         </span>
         {/* Aşama bazlı toplu işaretleme: teslim kontrolleri araç tamir
             edilmeden işaretlenmesin diye liste geneli değil. */}
-        {!locked && remaining > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => state.completeCategory(category)}
-            disabled={bulkPending}
-            className="ml-auto gap-1 text-primary hover:text-primary"
-          >
-            {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <ListChecks className="size-3" />}
-            Tümünü işaretle
-          </Button>
+        {!locked && (
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={() => state.uncompleteCategory(category)}
+              disabled={done === 0 || bulkPending}
+              className="gap-1 text-muted-foreground hover:text-foreground"
+            >
+              {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <Undo2 className="size-3" />}
+              Tümünü kaldır
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={() => state.completeCategory(category)}
+              disabled={remaining === 0 || bulkPending}
+              className="gap-1 text-primary hover:text-primary"
+            >
+              {bulkPending ? <BrandSpinner size={12} className="!flex-row !gap-0" /> : <ListChecks className="size-3" />}
+              Tümünü işaretle
+            </Button>
+          </div>
         )}
       </div>
 
@@ -570,7 +607,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
         type="button"
         variant="outline"
         onClick={() => setShow(true)}
-        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-card/60 text-primary hover:bg-card hover:text-primary"
+        className="mt-3 w-full justify-center gap-1.5 border-dashed bg-primary/[0.04] text-primary hover:bg-primary/[0.08] hover:text-primary"
       >
         <Plus className="size-4" />
         Kontrol maddesi ekle
@@ -599,7 +636,7 @@ function AddChecklistItemForm({ orderId }: { orderId: string }) {
       onKeyDown={(e) => {
         if (e.key === "Escape") close()
       }}
-      className="mt-3 space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm"
+      className="mt-3 space-y-3 rounded-lg border border-border bg-primary/[0.04] p-3 shadow-sm"
     >
       <p className="text-xs font-semibold text-foreground">Yeni kontrol maddesi</p>
 

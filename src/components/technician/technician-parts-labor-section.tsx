@@ -4,7 +4,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Wrench } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
 import type { OrderItem } from "@/components/orders/order-management-panel"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
@@ -61,17 +60,20 @@ export function TechnicianPartsLaborSection({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5">
-          <Wrench className="size-4 text-muted-foreground" />
-          Kullanılan Parçalar &amp; İşçilikler
-        </CardTitle>
-        <CardAction>
-          <span className="text-xs text-muted-foreground">{items.length} kalem</span>
-        </CardAction>
-      </CardHeader>
-      <CardContent>
+    <section className="relative rounded-xl border border-border bg-primary/[0.04] p-4 pt-5">
+      <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+        Kullanılan Kalemler
+      </span>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <Wrench className="size-4 text-muted-foreground" />
+            Kullanılan Parçalar &amp; İşçilikler
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">İş emrine eklenen kalemleri buradan düzenleyin.</p>
+        </div>
+        <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">{items.length} kalem</span>
+      </div>
       {/* Hata TOAST ile — ofis tarafıyla aynı gerekçe: uzun kalem listesinde
           sayfa-üstü banner viewport dışında kalıyor ve görülmüyor. */}
       <PartsLaborGrid
@@ -84,8 +86,8 @@ export function TechnicianPartsLaborSection({
         loading={loading}
         laborCatalog={laborCatalog}
         taxRateBps={taxRateBps}
+        allowExternalLabor={false}
       />
-      </CardContent>
-    </Card>
+    </section>
   )
 }
