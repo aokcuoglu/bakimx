@@ -22,3 +22,18 @@ export function normalizeAiSearchQuery(value: unknown, fallback: string): string
   const query = value.trim().replace(/\s+/g, " ")
   return (query || fallback.trim()).slice(0, 120)
 }
+
+/**
+ * Mock sağlayıcı da uçtan uca kullanılabildiği için yalnız girdiyi yankılamaz.
+ * Gerçek modelin tool çağrısında yaptığı en temel işi deterministik biçimde
+ * taklit eder: konuşma kalıplarını atıp katalogda bulunabilecek parça terimini
+ * bırakır. Bu bir katalog araması değildir; yalnız mock query planner'dır.
+ */
+export function mockAiPartSearchQuery(message: string): string {
+  const stripped = message
+    .trim()
+    .replace(/^(?:merhaba[,!]?\s*)?(?:bana\s+)?(?:bu\s+)?(?:araç|araba|otomobil)(?:ım|im|um|üm)?\s+(?:için\s+)?/i, "")
+    .replace(/^(?:bana\s+)?/i, "")
+    .replace(/\s+(?:arıyorum|arayabilir\s+misin|bulabilir\s+misin|bulur\s+musun|bul|lazım|gerekiyor)[.!?\s]*$/i, "")
+  return normalizeAiSearchQuery(stripped, message)
+}
