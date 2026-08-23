@@ -6,9 +6,9 @@
  * `src/components/technician/technician-parts-labor-section.tsx`). Yazma kapısı
  * bu yüzden YENİ bir izin değil, #183'ten beri var olan `order.edit`:
  *
- *  - `usta` / `staff` / `manager` / `owner` → `order.edit` taşır, düzenleyiciyi görür.
- *  - `cirak`                                → yalnız `parts.purchase` taşır; iş emri
- *    kalemi ekleyemez, "Talepler" sekmesinden parça talebi açar (ofis kaleme çevirir).
+  *  - `usta` / `staff` / `manager` / `owner` → `order.edit` taşır, düzenleyiciyi görür.
+  *  - `cirak`                                → yalnız `parts.purchase` taşır; iş emri
+  *    kalemi ekleyemez, ancak "Dış Alımlar" sekmesinden parça alımı kaydedebilir.
  *
  * Sunucu kapısı `addOrderItemAction`/`updateOrderItemAction`/`removeOrderItemAction`
  * içindeki `requireWritableWorkshop("order.edit")` darboğazıdır; buradaki karar
@@ -40,4 +40,4 @@ export function technicianItemEditorMode(canEditOrder: boolean): TechnicianItemE
 
 /** `request-only` modda gösterilen gerekçe — kullanıcıyı çalışan yola yönlendirir. */
 export const REQUEST_ONLY_MESSAGE =
-  "İş emrine doğrudan kalem ekleme yetkiniz yok. İhtiyacınız olan parçayı \"Talepler\" sekmesinden talep edin; ofis onaylayınca kalem olarak iş emrine düşer."
+  "İş emrine doğrudan kalem ekleme yetkiniz yok. Ofis ekibi kalemleri işler; \"Dış Alımlar\" sekmesinden parça alımı kaydedebilirsiniz."

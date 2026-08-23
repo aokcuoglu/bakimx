@@ -25,6 +25,8 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
+import { formatDate } from "@/lib/utils-client"
 
 type DashboardFilter = "all" | "assigned" | "in_progress" | "waiting" | "completed" | "today_delivery"
 
@@ -72,12 +74,14 @@ export function TechnicianDashboard({
   canSelectTechnician,
   stats,
   orders,
+  recentCompletedOrders,
 }: {
   technicians: TechnicianInfo[]
   selectedTechnicianId: string
   canSelectTechnician: boolean
   stats: DashboardStats
   orders: OrderRow[]
+  recentCompletedOrders: OrderRow[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -120,7 +124,8 @@ export function TechnicianDashboard({
     ["in_progress", "approved", "waiting_parts"].includes(o.status)
   )
   const waitingOrders = orders.filter((o) => ["draft", "waiting_approval"].includes(o.status))
-  const completedOrders = orders.filter((o) => ["ready_for_delivery", "delivered"].includes(o.status))
+  const { page: completedPage, pageCount: completedPageCount, pageItems: completedPageItems, setPage: setCompletedPage } =
+    useDashboardPage(recentCompletedOrders, 10)
 
   const today = new Date().toLocaleDateString("en-CA")
   const selectedOrders = orders.filter((o) => o.assignedTechnicianId === selectedTechnicianId)
@@ -138,7 +143,13 @@ export function TechnicianDashboard({
     ? [
         { title: "Aktif İşler", orders: activeOrders, empty: "Aktif iş bulunmuyor" },
         { title: "Bekleyen İşler", orders: waitingOrders, empty: "Bekleyen iş bulunmuyor" },
-        { title: "Son Tamamlananlar", orders: completedOrders.slice(0, 5), empty: "Tamamlanan iş bulunmuyor" },
+        {
+          title: "Son Tamamlananlar",
+          orders: completedPageItems,
+          total: recentCompletedOrders.length,
+          empty: "Son 2 günde tamamlanan iş bulunmuyor",
+          paginated: true,
+        },
       ]
     : activeFilter === "assigned"
       ? [{ title: "Bana Atanan İşler", orders: assignedOrders, empty: "Atanmış iş bulunmuyor" }]
@@ -206,16 +217,18 @@ export function TechnicianDashboard({
                 aria-pressed={activeFilter === card.filter}
                 onClick={() => handleFilterChange(card.filter)}
                 className={cn(
-                  "h-auto min-w-0 items-start justify-start rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 hover:bg-primary/5 hover:ring-primary",
+                  "h-auto min-w-0 cursor-pointer items-start justify-start rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 hover:bg-primary/5 hover:ring-primary",
                   activeFilter === card.filter && "bg-primary/5 ring-2 ring-primary/20 ring-primary"
                 )}
               >
-                <span className="w-full">
-                <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
-                  <Icon className="size-4" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">{card.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
+                <span className="flex w-full items-center gap-3 sm:block">
+                  <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg sm:mb-2 sm:size-9", card.color)}>
+                    <Icon className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-xl font-bold text-foreground sm:text-2xl">{card.value}</span>
+                    <span className="block text-xs text-muted-foreground sm:mt-0.5">{card.label}</span>
+                  </span>
                 </span>
               </Button>
             )
@@ -224,7 +237,12 @@ export function TechnicianDashboard({
 
         {visibleSections.map((section) => (
           <section key={section.title} className="space-y-3">
-            <h3 className="font-heading text-base font-medium text-foreground">{section.title}</h3>
+            <h3 className="font-heading text-base font-medium text-foreground">
+              {section.title}{" "}
+              <span className="text-muted-foreground">
+                {section.total !== undefined ? <>({section.total})</> : <>({section.orders.length})</>}
+              </span>
+            </h3>
             {section.orders.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
@@ -237,6 +255,15 @@ export function TechnicianDashboard({
                   <OrderCard key={order.id} order={order} />
                 ))}
               </ItemGroup>
+            )}
+            {section.paginated && completedPageCount > 1 && (
+              <div className="rounded-lg border border-border bg-card">
+                <DashboardPagination
+                  page={completedPage}
+                  pageCount={completedPageCount}
+                  onPageChange={setCompletedPage}
+                />
+              </div>
             )}
           </section>
         ))}
@@ -251,7 +278,11 @@ function OrderCard({ order }: { order: OrderRow }) {
     : 0
 
   return (
-    <Item variant="outline" asChild className="hover:bg-primary/5 hover:ring-primary">
+    <Item
+      variant="outline"
+      asChild
+      className="cursor-pointer bg-card/80 shadow-xs transition-all hover:border-primary/40 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
+    >
       <Link href={`/technician/orders/${order.id}`}>
         <ItemContent>
           <ItemHeader>
@@ -275,6 +306,9 @@ function OrderCard({ order }: { order: OrderRow }) {
           </ItemDescription>
         </ItemContent>
         <ItemActions>
+          {order.completedAt && (
+            <span className="text-xs text-muted-foreground">Tamamlandı: {formatDate(order.completedAt)}</span>
+          )}
           <ChevronRight className="size-4 text-muted-foreground" />
         </ItemActions>
         {order.checklistProgress.total > 0 && (

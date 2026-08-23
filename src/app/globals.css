@@ -637,4 +637,13 @@
        içeriğinin modal açılışında yatay kaymasını önler. */
     scrollbar-gutter: stable;
   }
+
+  /* `scrollbar-gutter` alanı baştan ayırır. react-remove-scroll (Radix
+     overlay'lerinin kullandığı kilit) ayrıca aynı genişlikte `margin-right`
+     eklemeye çalışırsa içerik ikinci kez daralır. Bu telafi gereksiz olduğundan
+     kilit anında devre dışı bırakılır; modal, Sheet ve AlertDialog aynı kuralı
+     paylaşır. */
+  body[data-scroll-locked] {
+    margin-right: 0 !important;
+  }
 }

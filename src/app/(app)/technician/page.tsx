@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { prisma } from "@/lib/db"
 import { TechnicianDashboard } from "@/components/technician/technician-dashboard"
-import { getTechnicianDashboardStats, getTechnicianOrders } from "@/lib/technician/queries"
+import {
+  getRecentCompletedTechnicianOrders,
+  getTechnicianDashboardStats,
+  getTechnicianOrders,
+} from "@/lib/technician/queries"
 import {
   canSelectAnyTechnician,
   resolveSelectedTechnicianId,
@@ -65,12 +69,11 @@ export default async function TechnicianPage({
     )
   }
 
-  const [stats, orders] = await Promise.all([
+  const technicianFilter = canSelectTechnician ? selectedTechnicianId : undefined
+  const [stats, orders, recentCompletedOrders] = await Promise.all([
     getTechnicianDashboardStats(user.workshopId, selectedTechnicianId),
-    getTechnicianOrders(
-      user.workshopId,
-      canSelectTechnician ? selectedTechnicianId : undefined
-    ),
+    getTechnicianOrders(user.workshopId, technicianFilter),
+    getRecentCompletedTechnicianOrders(user.workshopId, technicianFilter),
   ])
 
   return (
@@ -87,6 +90,7 @@ export default async function TechnicianPage({
         canSelectTechnician={canSelectTechnician}
         stats={stats}
         orders={orders}
+        recentCompletedOrders={recentCompletedOrders}
       />
     </AppShell>
   )

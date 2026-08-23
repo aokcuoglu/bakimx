@@ -346,7 +346,7 @@ export function LaborSessionCard({
   }
 
   return (
-    <Card>
+    <Card className="bg-primary/[0.04]">
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <Timer className="size-4 text-muted-foreground" />

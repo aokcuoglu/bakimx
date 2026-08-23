@@ -93,7 +93,8 @@ test("teknisyen ekranı dış alım karelerini bu yardımcıdan okur", () => {
 })
 
 test("fotoğrafı olmayan kalemde görsel alanı hiç açılmaz", () => {
-  expect(DETAIL_SOURCE).toContain("photos.length > 0 ? <PurchasePhotoStrip")
+  expect(DETAIL_SOURCE).toContain("photos.length > 0 ? (")
+  expect(DETAIL_SOURCE).toContain("<PhotoThumbnail")
 })
 
 const LIGHTBOX_SOURCE = readFileSync(

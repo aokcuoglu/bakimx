@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BottomSheet } from "@/components/shared/bottom-sheet"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
 import { SupplierAutocompleteField } from "@/components/suppliers/supplier-autocomplete-field"
 import { PartSearchInput } from "@/components/parts/part-search-input"
@@ -139,7 +139,7 @@ export function EditPurchaseButton(props: {
  * Sunucu tarafı (`addPurchaseItemAction` / `updatePurchaseItemAction`) katalog
  * bağı olarak yalnız `tecdocArticleId` yazar — gerekçesi purchase-match.ts'te.
  */
-function PurchaseFormSheet({
+export function PurchaseFormSheet({
   orderId,
   vehicle,
   suppliers,
@@ -331,304 +331,305 @@ function PurchaseFormSheet({
   }
 
   return (
-    <BottomSheet
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) close()
-      }}
-      title={editing ? "Dış Alım Kaydını Düzenle" : "Dışarıdan Parça Alımı"}
-      description={
-        editing
-          ? "Parça bilgilerini güncelleyin; kalem iş emrinde aynı anda değişir."
-          : "Aldığınız parçayı bu iş emrine kalem olarak ekleyin."
-      }
-      footer={
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            size="lg"
-            className="flex-1 touch-manipulation"
-            disabled={submitting || !name.trim()}
-            onClick={handleSubmit}
-          >
-            <Send className="size-3.5" />
-            {submitting ? "Kaydediliyor…" : editing ? "Kaydet" : "Kalem Olarak Ekle"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="touch-manipulation"
-            disabled={submitting}
-            onClick={close}
-          >
-            İptal
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3 py-1">
-        {error && (
-          <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
+    <Dialog open={open} onOpenChange={(o) => { if (!o) close() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{editing ? "Dış Alım Kaydını Düzenle" : "Dışarıdan Parça Alımı"}</DialogTitle>
+          <DialogDescription>
+            {editing
+              ? "Parça bilgilerini güncelleyin; kalem iş emrinde aynı anda değişir."
+              : "Aldığınız parçayı bu iş emrine kalem olarak ekleyin."}
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Parça adı *</label>
-          {/* "Yeni Parça Talebi" ile AYNI arama: araca uygun katalog + atölye stoğu.
-              Katalogda olmayan parça yazılmaya devam edilebilir (serbest metin). */}
-          <PartSearchInput
-            value={name}
-            sku={null}
-            vehicleTypeId={vehicle.catalogVehicleTypeId}
-            placeholder="Parça no, adı, marka veya OEM ara…"
-            onNameChange={(v) => {
-              setName(v)
-              if (link) setLink(null)
-            }}
-            onSelectArticle={(a) => {
-              setName(a.productName)
-              setSku(a.articleNo)
-              setBrand(a.supplierName || "")
-              setDismissedNo(null)
-              setLink({
-                tecdocArticleId: a.tecdocArticleId,
-                category: a.categoryName || "",
-                categoryId: a.categoryId || null,
-                label: "Araç kataloğundan seçildi",
-              })
-            }}
-            onSelectStockPart={(p) => {
-              setName(p.name)
-              setSku(p.sku || p.oemNo || "")
-              setBrand(p.brand || "")
-              setDismissedNo(null)
-              // Stok kartına KİMLİK bağı kurulmaz: partId stok düşümü tetiklerdi,
-              // oysa parça dışarıdan alındı (bkz. purchase-match.ts).
-              setLink({
-                tecdocArticleId: null,
-                category: "",
-                categoryId: null,
-                label: "Stok kartınızdan dolduruldu",
-              })
-            }}
-            onClear={() => {
-              setName("")
-              setLink(null)
-            }}
-            showClear={!!name}
-          />
-        </div>
+        <div className="space-y-3 py-1">
+          {error && (
+            <p className="text-sm text-destructive-strong bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
 
-        {link && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-            <span className="text-xs font-medium text-primary">{link.label}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearLink}
-              className="-my-1 h-7 text-xs text-muted-foreground"
-            >
-              <Link2Off className="size-3.5" />
-              Bağı kaldır
-            </Button>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Parça no / OEM</label>
-            <Input value={sku} onChange={(e) => onSkuChange(e.target.value)} placeholder="SKU / OEM" />
-          </div>
-          <div className="w-24 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Miktar</label>
-            <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          </div>
-        </div>
-
-        {link == null && dismissedNo !== sku.trim() && (
-          <PartNumberMatchAlert
-            matches={matches}
-            searching={searching}
-            onApply={applyMatch}
-            onDismiss={() => setDismissedNo(sku.trim())}
-          />
-        )}
-
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Marka</label>
-          <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Örn. BOSCH" />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Tedarikçi</label>
-          <SupplierAutocompleteField
-            suppliers={suppliers}
-            value={supplierName}
-            onChange={setSupplierName}
-            onSelectSupplier={setSupplierId}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Alış fiyatı (₺)</label>
-            <Input
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="0,00"
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Parça adı *</label>
+            {/* "Yeni Parça Talebi" ile AYNI arama: araca uygun katalog + atölye stoğu.
+                Katalogda olmayan parça yazılmaya devam edilebilir (serbest metin). */}
+            <PartSearchInput
+              value={name}
+              sku={null}
+              vehicleTypeId={vehicle.catalogVehicleTypeId}
+              placeholder="Parça no, adı, marka veya OEM ara…"
+              onNameChange={(v) => {
+                setName(v)
+                if (link) setLink(null)
+              }}
+              onSelectArticle={(a) => {
+                setName(a.productName)
+                setSku(a.articleNo)
+                setBrand(a.supplierName || "")
+                setDismissedNo(null)
+                setLink({
+                  tecdocArticleId: a.tecdocArticleId,
+                  category: a.categoryName || "",
+                  categoryId: a.categoryId || null,
+                  label: "Araç kataloğundan seçildi",
+                })
+              }}
+              onSelectStockPart={(p) => {
+                setName(p.name)
+                setSku(p.sku || p.oemNo || "")
+                setBrand(p.brand || "")
+                setDismissedNo(null)
+                // Stok kartına KİMLİK bağı kurulmaz: partId stok düşümü tetiklerdi,
+                // oysa parça dışarıdan alındı (bkz. purchase-match.ts).
+                setLink({
+                  tecdocArticleId: null,
+                  category: "",
+                  categoryId: null,
+                  label: "Stok kartınızdan dolduruldu",
+                })
+              }}
+              onClear={() => {
+                setName("")
+                setLink(null)
+              }}
+              showClear={!!name}
             />
           </div>
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Alış tarihi</label>
-            <DatePicker value={purchasedAt} onChange={setPurchasedAt} />
-          </div>
-        </div>
 
-        {!editing && technicians.length > 0 && (
+          {link && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+              <span className="text-xs font-medium text-primary">{link.label}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearLink}
+                className="-my-1 h-7 text-xs text-muted-foreground"
+              >
+                <Link2Off className="size-3.5" />
+                Bağı kaldır
+              </Button>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Parça no / OEM</label>
+              <Input value={sku} onChange={(e) => onSkuChange(e.target.value)} placeholder="SKU / OEM" />
+            </div>
+            <div className="w-24 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Miktar</label>
+              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            </div>
+          </div>
+
+          {link == null && dismissedNo !== sku.trim() && (
+            <PartNumberMatchAlert
+              matches={matches}
+              searching={searching}
+              onApply={applyMatch}
+              onDismiss={() => setDismissedNo(sku.trim())}
+            />
+          )}
+
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
-            <Select value={technicianId} onValueChange={(v) => setTechnicianId(v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seçiniz" />
-              </SelectTrigger>
-              <SelectContent>
-                {technicians.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.fullName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-xs font-medium text-muted-foreground">Marka</label>
+            <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Örn. BOSCH" />
           </div>
-        )}
 
-        {/* Parça kutusu fotoğrafı + OCR yalnız EKLEME kipinde: kutu alım anında
-            çekilir, düzenleme kaydı sonradan açar. Fotoğrafın kendisi masa
-            tarafındaki satın alma detayından değiştirilir. */}
-        {!editing && (
-          <>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Parça kutusu fotoğrafı</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Tedarikçi</label>
+            <SupplierAutocompleteField
+              suppliers={suppliers}
+              value={supplierName}
+              onChange={setSupplierName}
+              onSelectSupplier={setSupplierId}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alış fiyatı (₺)</label>
+              <Input
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0,00"
               />
-              {previewUrl ? (
-                <div className="relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alış tarihi</label>
+              <DatePicker value={purchasedAt} onChange={setPurchasedAt} />
+            </div>
+          </div>
+
+          {!editing && technicians.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Alan teknisyen</label>
+              <Select value={technicianId} onValueChange={(v) => setTechnicianId(v)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seçiniz" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Parça kutusu fotoğrafı + OCR yalnız EKLEME kipinde: kutu alım anında
+              çekilir, düzenleme kaydı sonradan açar. Fotoğrafın kendisi masa
+              tarafındaki satın alma detayından değiştirilir. */}
+          {!editing && (
+            <>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Parça kutusu fotoğrafı</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                />
+                {previewUrl ? (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={previewUrl} alt="Parça kutusu" className="w-full max-h-48 object-contain rounded-lg border border-border bg-muted" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 touch-manipulation"
+                      onClick={() => onPickFile(null)}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Kaldır
+                    </Button>
+                  </div>
+                ) : (
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="mt-2 touch-manipulation"
-                    onClick={() => onPickFile(null)}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex h-auto w-full flex-col items-center justify-center gap-1.5 border-dashed bg-muted/40 py-6 text-sm font-normal text-muted-foreground touch-manipulation"
                   >
-                    <Trash2 className="size-3.5" />
-                    Kaldır
+                    <Camera className="size-6" />
+                    Fotoğraf çek / seç
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex h-auto w-full flex-col items-center justify-center gap-1.5 border-dashed bg-muted/40 py-6 text-sm font-normal text-muted-foreground touch-manipulation"
-                >
-                  <Camera className="size-6" />
-                  Fotoğraf çek / seç
-                </Button>
-              )}
-            </div>
-
-            {ocrLoading && (
-              <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 py-6">
-                <BrandSpinner size={36} label="Kutu okunuyor…" />
+                )}
               </div>
-            )}
 
-            {ocrError && !ocrLoading && (
-              <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
-                {ocrError}
-              </p>
-            )}
+              {ocrLoading && (
+                <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 py-6">
+                  <BrandSpinner size={36} label="Kutu okunuyor…" />
+                </div>
+              )}
 
-            {ocrResult && !ocrLoading && (
-              <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-                <p className="text-xs font-medium text-primary">Kutudan okunan öneriler</p>
+              {ocrError && !ocrLoading && (
+                <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
+                  {ocrError}
+                </p>
+              )}
 
-                {ocrResult.partName.value && (
-                  <div className="space-y-1">
-                    <span className="text-[11px] text-muted-foreground">Parça adı</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setName(ocrResult.partName.value)}
-                        className="rounded-full text-xs font-normal touch-manipulation"
-                      >
-                        {ocrResult.partName.value}
-                      </Button>
-                      {ocrResult.brand.value && (
+              {ocrResult && !ocrLoading && (
+                <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                  <p className="text-xs font-medium text-primary">Kutudan okunan öneriler</p>
+
+                  {ocrResult.partName.value && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] text-muted-foreground">Parça adı</span>
+                      <div className="flex flex-wrap gap-1.5">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setName(partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value))
-                            setBrand(ocrResult.brand.value)
-                          }}
+                          onClick={() => setName(ocrResult.partName.value)}
                           className="rounded-full text-xs font-normal touch-manipulation"
                         >
-                          {partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value)}
+                          {ocrResult.partName.value}
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {ocrResult.partNumbers.length > 0 && (
-                  <div className="space-y-1">
-                    <span className="text-[11px] text-muted-foreground">Parça no (birini seçin)</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ocrResult.partNumbers.map((pn: PartNumberSuggestion) => {
-                        const low = pn.confidence != null && pn.confidence < LOW_CONFIDENCE_THRESHOLD
-                        return (
+                        {ocrResult.brand.value && (
                           <Button
-                            key={pn.value}
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => onSkuChange(pn.value)}
-                            title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
-                            className={
-                              "rounded-full text-xs font-normal touch-manipulation " +
-                              (low ? "border-warning/40 bg-warning/10 text-warning-strong" : "")
-                            }
+                            onClick={() => {
+                              setName(partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value))
+                              setBrand(ocrResult.brand.value)
+                            }}
+                            className="rounded-full text-xs font-normal touch-manipulation"
                           >
-                            <span className="text-muted-foreground">{pn.label}</span>
-                            <span className="text-border">·</span>
-                            {pn.value}
+                            {partNameWithBrand(ocrResult.partName.value, ocrResult.brand.value)}
                           </Button>
-                        )
-                      })}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </BottomSheet>
+                  )}
+
+                  {ocrResult.partNumbers.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] text-muted-foreground">Parça no (birini seçin)</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ocrResult.partNumbers.map((pn: PartNumberSuggestion) => {
+                          const low = pn.confidence != null && pn.confidence < LOW_CONFIDENCE_THRESHOLD
+                          return (
+                            <Button
+                              key={pn.value}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onSkuChange(pn.value)}
+                              title={low ? "Düşük okuma güveni — kontrol edin" : undefined}
+                              className={
+                                "rounded-full text-xs font-normal touch-manipulation " +
+                                (low ? "border-warning/40 bg-warning/10 text-warning-strong" : "")
+                              }
+                            >
+                              <span className="text-muted-foreground">{pn.label}</span>
+                              <span className="text-border">·</span>
+                              {pn.value}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <DialogFooter>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="flex-1 touch-manipulation"
+              disabled={submitting || !name.trim()}
+              onClick={handleSubmit}
+            >
+              <Send className="size-3.5" />
+              {submitting ? "Kaydediliyor…" : editing ? "Kaydet" : "Kalem Olarak Ekle"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="touch-manipulation"
+              disabled={submitting}
+              onClick={close}
+            >
+              İptal
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
