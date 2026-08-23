@@ -4,6 +4,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Wrench } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartsLaborGrid } from "@/components/orders/parts-labor-grid"
 import type { OrderItem } from "@/components/orders/order-management-panel"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
@@ -60,14 +61,17 @@ export function TechnicianPartsLaborSection({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-1.5">
           <Wrench className="size-4 text-muted-foreground" />
           Kullanılan Parçalar &amp; İşçilikler
-        </h3>
-        <span className="text-xs text-muted-foreground">{items.length} kalem</span>
-      </div>
+        </CardTitle>
+        <CardAction>
+          <span className="text-xs text-muted-foreground">{items.length} kalem</span>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
       {/* Hata TOAST ile — ofis tarafıyla aynı gerekçe: uzun kalem listesinde
           sayfa-üstü banner viewport dışında kalıyor ve görülmüyor. */}
       <PartsLaborGrid
@@ -81,6 +85,7 @@ export function TechnicianPartsLaborSection({
         laborCatalog={laborCatalog}
         taxRateBps={taxRateBps}
       />
-    </div>
+      </CardContent>
+    </Card>
   )
 }
