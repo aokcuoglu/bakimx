@@ -8,13 +8,13 @@ import { rateLimit } from "@/lib/rate-limit"
 import { searchVehicleArticles } from "@/lib/tecdoc/catalog"
 import { searchBakimxProducts } from "@/lib/parts/bakimx-catalog"
 import { searchGetirbakimProducts } from "@/lib/parts/getirbakim/search"
-import { aiPartSearchAllowedRole, normalizeAiSearchQuery, type AiPartSuggestion } from "@/lib/parts/ai-search"
+import { aiPartSearchAllowedRole, mockAiPartSearchQuery, normalizeAiSearchQuery, type AiPartSuggestion } from "@/lib/parts/ai-search"
 
 const MAX_RESULTS_PER_SOURCE = 5
 
 async function resolveQuery(message: string): Promise<{ query: string; provider: "mock" | "anthropic" }> {
   if ((process.env.AI_PROVIDER || "mock").toLowerCase() === "mock") {
-    return { query: normalizeAiSearchQuery(message, message), provider: "mock" }
+    return { query: mockAiPartSearchQuery(message), provider: "mock" }
   }
   if ((process.env.AI_PROVIDER || "").toLowerCase() !== "anthropic" || !process.env.ANTHROPIC_API_KEY) {
     throw new Error("AI parça araması için AI_PROVIDER=anthropic ve ANTHROPIC_API_KEY gereklidir.")
