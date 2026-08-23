@@ -32,21 +32,28 @@ describe("anthropic fail-closed sınırları", () => {
     }))).toThrow("bütçe")
   })
 
-  test("domainsiz keşif yalnız non-production ortamında açılır", () => {
+  test("domainsiz keşif yalnız exact app-dev URL'inde açılır", () => {
     expect(parseAnthropicMarketResearchConfig(env({
-      NODE_ENV: "test",
+      APP_URL: "https://app-dev.bakimx.com",
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "10",
       MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
       MARKET_RESEARCH_DISCOVERY_MODE: "true",
     }))).toMatchObject({ discoveryMode: true, allowedDomains: [] })
     expect(() => parseAnthropicMarketResearchConfig(env({
-      NODE_ENV: "production",
+      APP_URL: "https://app.bakimx.com",
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "10",
       MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
       MARKET_RESEARCH_DISCOVERY_MODE: "true",
-    }))).toThrow("production")
+    }))).toThrow("app-dev")
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      APP_URL: "https://app-dev.bakimx.com.evil.example",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toThrow("app-dev")
   })
 
   test("yalnız açıkça verilen değerleri kabul eder", () => {
