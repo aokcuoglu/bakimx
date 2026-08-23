@@ -68,6 +68,7 @@ export const PLAN_PACKAGES: PlanPackage[] = [
       "Profesyonel'deki her şey",
       "e-Fatura / e-Arşiv entegrasyonu",
       "AI servis danışmanı",
+      "Kaynaklı parça piyasa araştırması",
       "Çoklu şube & gelişmiş yetkilendirme",
     ],
   },

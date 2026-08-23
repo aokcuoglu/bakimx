@@ -6,12 +6,27 @@ import {
   Wrench, Clock, CheckCircle2, Truck, AlertTriangle,
   ChevronRight,
 } from "lucide-react"
-import { TECHNICIAN_ROLES, ORDER_STATUS } from "@/lib/constants"
+import { TECHNICIAN_ROLES } from "@/lib/constants"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
 import { TECHNICIAN_PARAM } from "@/lib/technician/selected-technician"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemHeader,
+  ItemTitle,
+} from "@/components/ui/item"
+import { StatusBadge } from "@/components/shared/status-badge"
+import { DashboardPagination, useDashboardPage } from "@/components/dashboard/dashboard-pagination"
+import { formatDate } from "@/lib/utils-client"
 
 type DashboardFilter = "all" | "assigned" | "in_progress" | "waiting" | "completed" | "today_delivery"
 
@@ -59,12 +74,14 @@ export function TechnicianDashboard({
   canSelectTechnician,
   stats,
   orders,
+  recentCompletedOrders,
 }: {
   technicians: TechnicianInfo[]
   selectedTechnicianId: string
   canSelectTechnician: boolean
   stats: DashboardStats
   orders: OrderRow[]
+  recentCompletedOrders: OrderRow[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -107,7 +124,8 @@ export function TechnicianDashboard({
     ["in_progress", "approved", "waiting_parts"].includes(o.status)
   )
   const waitingOrders = orders.filter((o) => ["draft", "waiting_approval"].includes(o.status))
-  const completedOrders = orders.filter((o) => ["ready_for_delivery", "delivered"].includes(o.status))
+  const { page: completedPage, pageCount: completedPageCount, pageItems: completedPageItems, setPage: setCompletedPage } =
+    useDashboardPage(recentCompletedOrders, 10)
 
   const today = new Date().toLocaleDateString("en-CA")
   const selectedOrders = orders.filter((o) => o.assignedTechnicianId === selectedTechnicianId)
@@ -125,7 +143,13 @@ export function TechnicianDashboard({
     ? [
         { title: "Aktif İşler", orders: activeOrders, empty: "Aktif iş bulunmuyor" },
         { title: "Bekleyen İşler", orders: waitingOrders, empty: "Bekleyen iş bulunmuyor" },
-        { title: "Son Tamamlananlar", orders: completedOrders.slice(0, 5), empty: "Tamamlanan iş bulunmuyor" },
+        {
+          title: "Son Tamamlananlar",
+          orders: completedPageItems,
+          total: recentCompletedOrders.length,
+          empty: "Son 2 günde tamamlanan iş bulunmuyor",
+          paginated: true,
+        },
       ]
     : activeFilter === "assigned"
       ? [{ title: "Bana Atanan İşler", orders: assignedOrders, empty: "Atanmış iş bulunmuyor" }]
@@ -193,16 +217,18 @@ export function TechnicianDashboard({
                 aria-pressed={activeFilter === card.filter}
                 onClick={() => handleFilterChange(card.filter)}
                 className={cn(
-                  "h-auto min-w-0 items-start justify-start rounded-lg border border-border bg-card p-4 text-left hover:border-primary hover:bg-primary/5",
-                  activeFilter === card.filter && "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  "h-auto min-w-0 cursor-pointer items-start justify-start rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 hover:bg-primary/5 hover:ring-primary",
+                  activeFilter === card.filter && "bg-primary/5 ring-2 ring-primary/20 ring-primary"
                 )}
               >
-                <span className="w-full">
-                <div className={cn("inline-flex items-center justify-center size-9 rounded-lg mb-2", card.color)}>
-                  <Icon className="size-4" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">{card.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
+                <span className="flex w-full items-center gap-3 sm:block">
+                  <span className={cn("inline-flex size-8 shrink-0 items-center justify-center rounded-lg sm:mb-2 sm:size-9", card.color)}>
+                    <Icon className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-xl font-bold text-foreground sm:text-2xl">{card.value}</span>
+                    <span className="block text-xs text-muted-foreground sm:mt-0.5">{card.label}</span>
+                  </span>
                 </span>
               </Button>
             )
@@ -210,15 +236,33 @@ export function TechnicianDashboard({
         </div>
 
         {visibleSections.map((section) => (
-          <section key={section.title}>
-            <h3 className="text-base font-semibold text-foreground mb-3">{section.title}</h3>
+          <section key={section.title} className="space-y-3">
+            <h3 className="font-heading text-base font-medium text-foreground">
+              {section.title}{" "}
+              <span className="text-muted-foreground">
+                {section.total !== undefined ? <>({section.total})</> : <>({section.orders.length})</>}
+              </span>
+            </h3>
             {section.orders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">{section.empty}</div>
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  {section.empty}
+                </CardContent>
+              </Card>
             ) : (
-              <div className="space-y-2">
+              <ItemGroup className="gap-2">
                 {section.orders.map((order) => (
                   <OrderCard key={order.id} order={order} />
                 ))}
+              </ItemGroup>
+            )}
+            {section.paginated && completedPageCount > 1 && (
+              <div className="rounded-lg border border-border bg-card">
+                <DashboardPagination
+                  page={completedPage}
+                  pageCount={completedPageCount}
+                  onPageChange={setCompletedPage}
+                />
               </div>
             )}
           </section>
@@ -229,61 +273,62 @@ export function TechnicianDashboard({
 }
 
 function OrderCard({ order }: { order: OrderRow }) {
-  const statusInfo = (ORDER_STATUS as Record<string, { label: string; color: string }>)[order.status]
-  const statusLabel = statusInfo?.label || order.status
-  const statusColor = statusInfo?.color || "bg-muted text-foreground"
   const progressPct = order.checklistProgress.total > 0
     ? Math.round((order.checklistProgress.completed / order.checklistProgress.total) * 100)
     : 0
 
   return (
-    <Link
-      href={`/technician/orders/${order.id}`}
-      className="block rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-primary/5 transition-colors touch-manipulation"
+    <Item
+      variant="outline"
+      asChild
+      className="cursor-pointer bg-card/80 shadow-xs transition-all hover:border-primary/40 hover:bg-primary/10 hover:ring-2 hover:ring-primary/20"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-mono font-semibold text-foreground">{order.workOrderNo}</span>
-            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border", statusColor)}>
-              {statusLabel}
-            </span>
-            {order.hasActiveLabor && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success-strong border border-success/20">
-                ⏱ İşçilik
-              </span>
-            )}
-          </div>
-          <div className="text-sm font-semibold text-foreground">
-            {order.plate} — {order.brand} {order.model}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {order.customerName} {order.technicianName && `· ${order.technicianName}`}
-          </div>
-          {order.customerComplaint && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{order.customerComplaint}</p>
-          )}
-        </div>
-        <ChevronRight className="size-5 text-muted-foreground shrink-0 mt-1" />
-      </div>
-
-      {order.checklistProgress.total > 0 && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Kontrol listesi</span>
-            <span>{order.checklistProgress.completed}/{order.checklistProgress.total}</span>
-          </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                progressPct === 100 ? "bg-success" : progressPct >= 50 ? "bg-primary" : "bg-warning"
+      <Link href={`/technician/orders/${order.id}`}>
+        <ItemContent>
+          <ItemHeader>
+            <span className="font-mono text-sm font-semibold text-foreground">{order.workOrderNo}</span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              <StatusBadge status={order.status} />
+              {order.hasActiveLabor && (
+                <Badge variant="outline" className="border-success/20 bg-success/10 text-success-strong">
+                  İşçilik
+                </Badge>
               )}
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-      )}
-    </Link>
+            </span>
+          </ItemHeader>
+          <ItemTitle className="line-clamp-2">
+            {order.plate} — {order.brand} {order.model}
+          </ItemTitle>
+          <ItemDescription>
+            {order.customerName}
+            {order.technicianName ? ` · ${order.technicianName}` : ""}
+            {order.customerComplaint ? ` · ${order.customerComplaint}` : ""}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          {order.completedAt && (
+            <span className="text-xs text-muted-foreground">Tamamlandı: {formatDate(order.completedAt)}</span>
+          )}
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </ItemActions>
+        {order.checklistProgress.total > 0 && (
+          <ItemFooter>
+            <span className="text-xs text-muted-foreground">Kontrol listesi</span>
+            <span className="text-xs text-muted-foreground">
+              {order.checklistProgress.completed}/{order.checklistProgress.total}
+            </span>
+            <div className="h-1.5 w-full basis-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  progressPct === 100 ? "bg-success" : progressPct >= 50 ? "bg-primary" : "bg-warning"
+                )}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </ItemFooter>
+        )}
+      </Link>
+    </Item>
   )
 }

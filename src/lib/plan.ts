@@ -134,6 +134,7 @@ export type GatedFeature =
   | "partsCatalog"
   | "bakimxCatalog"
   | "getirbakimCatalog"
+  | "marketResearch"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   eInvoice: "premium",
   aiAdvisor: "premium",
@@ -152,6 +153,9 @@ const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   // Aynı gerekçeyle `partsCatalog` (TecDoc) kapısının da arkasında değil; bkz.
   // src/lib/parts/bakimx-catalog-guard.ts'teki aynı ayrım.
   getirbakimCatalog: "starter",
+  // Kaynaklı web araştırması her istekte ücretli sağlayıcı ve web-search kotası
+  // tüketir; bu nedenle katalog aramasından ayrı, Premium'a özgü bir kapıdır.
+  marketResearch: "premium",
 }
 
 type WorkshopPlanFields = Pick<

@@ -13,7 +13,7 @@ import {
   Trash2,
   User, Phone, Car, CheckCircle2, ShoppingCart,
   ImageOff, Loader2, ListChecks, FileText,
-  Package,
+  Package, Wrench, CalendarDays, Store,
 } from "lucide-react"
 import { toast } from "sonner"
 import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lightbox"
@@ -22,11 +22,10 @@ import { groupPurchasePhotos, type PurchasePhoto } from "@/lib/photos/purchase-p
 import { OrderItemsChecklist } from "@/components/technician/order-items-checklist"
 import { OrderChecklist, useChecklistState } from "@/components/technician/order-checklist"
 import { TechnicianPhotoUpload } from "@/components/technician/technician-photo-upload"
-import { PartCard } from "@/components/parts/part-card"
 import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 import {
-  AddPurchaseButton,
   EditPurchaseButton,
+  PurchaseFormSheet,
   type SupplierInfo,
   type TechnicianInfo,
 } from "@/components/technician/purchase-form-sheet"
@@ -43,12 +42,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { WizardActions, WizardHeading } from "@/components/intake/wizard-ui"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  PartsRequestSection,
-  type TechnicianPartsRequest,
-} from "@/components/technician/parts-request-section"
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { WizardActions } from "@/components/intake/wizard-ui"
+import { AddExternalLaborButton } from "@/components/technician/external-labor-sheet"
+import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { purchaseDeleteDecision, type PurchaseDeleteDecision } from "@/lib/orders/purchase-delete"
 import { removePurchaseItemAction } from "@/app/(app)/orders/actions"
@@ -63,6 +67,7 @@ import type { LaborCatalogRow } from "@/lib/labor/types"
 import { TechnicianPartsLaborSection } from "@/components/technician/technician-parts-labor-section"
 import { workOrderPath } from "@/lib/technician/cross-links"
 import { StatusBadge } from "@/components/shared/status-badge"
+import { PageLoading } from "@/components/shared/page-loading"
 import {
   countRemainingChecklist,
   countIncompleteItems,
@@ -86,6 +91,27 @@ type TechnicianOrderItem = OrderItem & {
   supplierName: string | null
   purchasedAt: string | null
   completedAt: string | null
+}
+
+/**
+ * Eski parça/işçilik talebi DTO'su. Talep açma akışı söküldü (teknisyen
+ * kalemleri kendisi giriyor); alan, geçmiş emirlerdeki kayıtları — ve ofis
+ * tarafında henüz karara bağlanmamışları — okuyabilmek için durur.
+ */
+type TechnicianPartsRequest = {
+  id: string
+  /** "part" | "external_labor" — dış işçilik talebinde katalog alanları boştur. */
+  type: string
+  partName: string
+  partSku: string | null
+  brand: string | null
+  tecdocArticleId: number | null
+  quantity: number
+  note: string | null
+  status: string
+  convertedAt: string | null
+  cancelledAt: string | null
+  cancelReason: string | null
 }
 
 type OrderData = {
@@ -171,6 +197,7 @@ export function TechnicianOrderDetail({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+  const [isStepPending, startStepTransition] = useTransition()
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
 
   // BAK-140: ofis personeli/dış alım bu iş emrine parça eklediğinde teknisyen
@@ -198,6 +225,10 @@ export function TechnicianOrderDetail({
   const afterPhotos = galleryPhotos.filter((p) => p.phase === "delivery")
 
   const purchasedItems = order.items.filter((i) => i.source === "purchase")
+  // Dış işçilik artık gerçek iş emri kalemi ve "Dış Alımlar" sekmesinde yaşar;
+  // grid'e giden listeden süzülür ki aynı kalem iki yerde birikmesin.
+  const externalLaborItems = order.items.filter((i) => i.type === "external_labor")
+  const gridItems = order.items.filter((i) => i.type !== "external_labor")
 
   // Galeriden dışlanan alış kareleri kaybolmasın: ait oldukları kalemin kartında
   // gösterilir (BAK-111). Teknisyen kutunun/fişin üzerindeki yazıyı okumak için
@@ -208,6 +239,18 @@ export function TechnicianOrderDetail({
   // fonksiyondan okunur; butonlar yalnız gerçekten izinliyken çıkar, aksi halde
   // gerekçe yazılır.
   const purchaseDelete = purchaseDeleteDecision(order.status as OrderStatus, canEditOrder)
+
+  // Talep akışı söküldü ama eski emirlerde ofisin henüz karara bağlamadığı
+  // talepler kalabilir; bunlar sunucu kapısında "Teslime Hazır"ı hâlâ bloklar.
+  // Teknisyen en azından neyin beklendiğini görsün (salt-okunur bilgi).
+  const undecidedRequests = findUndecidedPartsRequests(order.partsRequests)
+  // İlk iki isim yazılır, kalanı sayıya çevrilir (sunucu kapısı mesajıyla aynı biçim).
+  const undecidedRequestNames = (() => {
+    const names = undecidedRequests.map((r) => r.partName)
+    const rest = names.length - 2
+    const shown = names.slice(0, 2).join(", ")
+    return rest > 0 ? `${shown} (+${rest})` : shown
+  })()
 
   // Parça arayan bileşenlerin (talep kutusu, dış alım formu) beklediği araç
   // özeti — iki bölüm de aynı katalog kapsamını görsün diye tek yerde kurulur.
@@ -255,7 +298,6 @@ export function TechnicianOrderDetail({
   // sekme serbestçe gezilebilsin diye currentStep artık "finish"e sabitlenmez,
   // derivedStep sadece varsayılan iniş noktasını belirler.
   const currentStep: StepId = validRequestedStep ?? rememberedStep ?? derivedStep
-  const currentIndex = steps.findIndex((step) => step.id === currentStep)
 
   useEffect(() => {
     if (validRequestedStep) return
@@ -273,16 +315,23 @@ export function TechnicianOrderDetail({
   }, [order.id, validRequestedStep])
 
   function goToStep(step: StepId) {
-    setRememberedStep(step)
-    try {
-      localStorage.setItem(`bakimx:technician-order:${order.id}:step`, step)
-    } catch {
-      // Depolama kapalıysa adım URL'de korunmaya devam eder.
-    }
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("step", step)
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    if (step === currentStep) return
+
+    // URL güncellenirken, özellikle yavaş bağlantıda, içerik alanı ortak sayfa
+    // yükleme durumu ile geri bildirim verir. Transition, mevcut kabuğun ve
+    // sekme şeridinin etkileşimli kalmasını sağlar.
+    startStepTransition(() => {
+      setRememberedStep(step)
+      try {
+        localStorage.setItem(`bakimx:technician-order:${order.id}:step`, step)
+      } catch {
+        // Depolama kapalıysa adım URL'de korunmaya devam eder.
+      }
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("step", step)
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    })
   }
 
   function handleStartWork() {
@@ -312,55 +361,49 @@ export function TechnicianOrderDetail({
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link href="/technician" className="hover:text-foreground inline-flex items-center gap-1">
-          <ArrowLeft className="size-3.5" />
-          Teknisyen Paneli
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground font-medium">{order.workOrderNo}</span>
-      </div>
+      <Link href="/technician" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-3.5" />
+        Teknisyen Paneli
+      </Link>
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">{order.workOrderNo}</h2>
             <StatusBadge status={order.status} />
+            {order.assignedTechnicianName && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <User className="size-3.5" />
+                {order.assignedTechnicianName}
+              </span>
+            )}
           </div>
-          {order.assignedTechnicianName && (
-            <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-              <User className="size-3.5" />
-              {order.assignedTechnicianName}
-            </p>
-          )}
         </div>
-        {/* Aynı işin iş emri görünümüne kısayol (BAK-23): fiyat, tahsilat ve
-            kanıt burada yok. Link olmadığı için kenar çubuğundan /orders'a
-            gidip aynı işi listede yeniden aramak gerekiyordu. */}
-        <Button variant="outline" size="sm" className="shrink-0" asChild>
-          <Link href={workOrderPath(order.id)}>
-            <FileText />
-            İş Emri
-          </Link>
-        </Button>
+        <div className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:justify-end">
+          {/* BAK-148: beklemeye alma/devam etme hızlı kararı adım/sekme
+              içeriğine gömülü değil; İş Emri ile aynı aksiyon grubundadır. */}
+          {(canHold || canStart) && (
+            <>
+              {canHold && (
+                <Button variant="outline" size="sm" className="shrink-0" onClick={handleHoldWork} disabled={isPending}>
+                  <Pause /> Beklemeye al
+                </Button>
+              )}
+              {canStart && (
+                <Button size="sm" className="shrink-0" onClick={handleStartWork} disabled={isPending}>
+                  <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
+                </Button>
+              )}
+            </>
+          )}
+          <Button variant="outline" size="sm" className="shrink-0" asChild>
+            <Link href={workOrderPath(order.id)}>
+              <FileText />
+              İş Emri
+            </Link>
+          </Button>
+        </div>
       </div>
-
-      {/* BAK-148: beklemeye alma/devam etme hızlı kararı adım/sekme içeriğine
-          gömülü değil, teknisyen hangi adımda olursa olsun burada durur. */}
-      {(canHold || canStart) && (
-        <div className="flex flex-wrap items-center gap-2">
-          {canHold && (
-            <Button variant="warning" size="lg" onClick={handleHoldWork} disabled={isPending}>
-              <Pause /> Beklemeye al
-            </Button>
-          )}
-          {canStart && (
-            <Button size="lg" onClick={handleStartWork} disabled={isPending}>
-              <Play /> {order.status === "waiting_parts" ? "Tamire devam et" : "Tamire başla"}
-            </Button>
-          )}
-        </div>
-      )}
 
       {locked && (
         <Alert>
@@ -372,14 +415,16 @@ export function TechnicianOrderDetail({
       )}
 
       {activeLabor && (
-        <div className="flex min-h-8 flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2">
+        <Alert variant="success" className="bg-success/10 text-success-strong">
           <span className="size-2 rounded-full bg-success motion-safe:animate-pulse" />
-          <span className="text-sm font-medium text-foreground">İşçilik sürüyor</span>
-          <span className="text-xs text-muted-foreground">
-            {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
-          </span>
-          {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
-        </div>
+          <AlertTitle>İşçilik sürüyor</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-2">
+            <span>
+              {new Date(activeLabor.startTime).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} başlangıç
+            </span>
+            {!locked && <StopLaborButton orderId={order.id} className="ml-auto" />}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Sekmeler baştan tamamı görünür ve serbestçe gezilebilir (BAK-137):
@@ -398,19 +443,8 @@ export function TechnicianOrderDetail({
           })}
         </TabsList>
 
-        <section className="min-w-0 space-y-4 mt-4" aria-live="polite">
-          <WizardHeading
-            eyebrow={`Adım ${currentIndex + 1} / ${steps.length}`}
-            title={steps[currentIndex].label}
-            description={
-              currentStep === "start" ? "Araç ve şikâyeti kontrol edip tamire başlayın." :
-              currentStep === "check" ? "Araç kontrollerini ve mevcut hasarları gözden geçirin." :
-              currentStep === "items" ? "Yapılan işleri işaretleyin ve gerekli notları ekleyin." :
-              currentStep === "needs" ? "Kullanılan parça ve işçilikleri girin; gerekirse talep açın veya dış alım kaydedin." :
-              "Fotoğrafları ekleyip son kontrollerden sonra işi tamamlayın."
-            }
-          />
-
+        <section className="min-w-0 space-y-4 mt-4 pb-24 sm:pb-20" aria-live="polite" aria-busy={isStepPending}>
+          {isStepPending ? <PageLoading /> : <>
           <TabsContent value="start" className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <VehicleCard vehicle={order.vehicle} />
@@ -425,8 +459,8 @@ export function TechnicianOrderDetail({
                 canStart={canStart || canHold}
                 canEdit={canEditOrder}
               />
-              <WizardActions>
-                <Button size="lg" onClick={() => goToStep("check")}>Kontrole geç</Button>
+              <WizardActions sticky>
+                <Button size="sm" onClick={() => goToStep("check")}>Kontrole geç</Button>
               </WizardActions>
               {canStart && startReminder && <ChecklistReminder message={startReminder} onReveal={() => goToStep("check")} />}
           </TabsContent>
@@ -434,126 +468,117 @@ export function TechnicianOrderDetail({
           <TabsContent value="check" className="space-y-4">
               <OrderChecklist orderId={order.id} state={checklist} locked={locked} open={checklistOpen} onOpenChange={setChecklistOpen} containerRef={checklistRef} />
               {order.damageMarks.length > 0 && <DamageMarks marks={order.damageMarks} />}
-              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("start")}>Geri</Button>}>
-                <Button size="lg" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
+              <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("start")}>Geri</Button>}>
+                <Button size="sm" onClick={() => goToStep("items")}>Yapılacak işlere geç</Button>
               </WizardActions>
           </TabsContent>
 
           <TabsContent value="items" className="space-y-4">
-              <div className="rounded-lg border border-border bg-card p-4">
+              <div className={cn(
+                "rounded-lg border px-4 py-3 transition-colors",
+                order.items.length > 0 && order.items.every((i) => i.completedAt)
+                  ? "border-success/30 bg-success/5"
+                  : "border-border bg-primary/[0.04]"
+              )}>
                 <OrderItemsChecklist orderId={order.id} items={order.items} locked={locked} />
                 {order.totals.hasAnyPrice && <OrderTotals order={order} />}
               </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <StickyNote /> İç Notlar <span className="text-xs font-normal text-muted-foreground">(Müşteriye görünmez)</span>
-                </h3>
-                <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
-                {!locked && <AddInternalNoteForm orderId={order.id} />}
-              </div>
-              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("check")}>Geri</Button>}>
-                <Button size="lg" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
+              <Card className="bg-primary/[0.04]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    <StickyNote className="size-4 text-muted-foreground" />
+                    İç Notlar
+                  </CardTitle>
+                  <CardDescription>Müşteriye görünmez</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <InternalNotesSection notes={order.internalNotes} orderId={order.id} locked={locked} />
+                  {!locked && <AddInternalNoteForm orderId={order.id} />}
+                </CardContent>
+              </Card>
+              <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("check")}>Geri</Button>}>
+                <Button size="sm" onClick={() => goToStep("needs")}>Parça ve dış hizmete geç</Button>
               </WizardActions>
           </TabsContent>
 
           <TabsContent value="needs" className="space-y-4">
-              {/* BAK-141 — "Parça & İşçilik" ilk sekme ve `order.edit` taşıyan
-                  kullanıcıda VARSAYILAN: müşterinin isteği teknisyenin kalemi
-                  doğrudan girebilmesi, talep açması değil. İzni olmayan (çırak)
-                  eski varsayılanda kalır — ona düzenleyici zaten açılmıyor. */}
-              <Tabs defaultValue={canEditOrder ? "kalemler" : "requests"}>
-                <div className="max-w-full overflow-x-auto pb-1">
-                  <TabsList>
-                    <TabsTrigger value="kalemler">Parça &amp; İşçilik ({order.items.length})</TabsTrigger>
-                    <TabsTrigger value="requests">Talepler ({order.partsRequests.length})</TabsTrigger>
-                    <TabsTrigger value="purchases">Dış alımlar ({purchasedItems.length})</TabsTrigger>
-                  </TabsList>
-                </div>
-                <TabsContent value="kalemler">
-                  <TechnicianPartsLaborSection
-                    orderId={order.id}
-                    status={order.status}
-                    items={order.items}
-                    vehicle={pickerVehicle}
-                    laborCatalog={laborCatalog}
-                    taxRateBps={order.taxRate}
-                    canEditOrder={canEditOrder}
-                  />
-                </TabsContent>
-                <TabsContent value="requests">
-                  <PartsRequestSection orderId={order.id} vehicle={pickerVehicle} requests={order.partsRequests} locked={locked} />
-                </TabsContent>
-                <TabsContent value="purchases">
-                  <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <ShoppingCart className="size-4 text-muted-foreground" />
-            Dışarıdan Alınan Parçalar
-          </h3>
-        </div>
-        <PurchasedItemsSection
-          items={purchasedItems}
-          photosByItem={purchasePhotosByItem}
-          orderId={order.id}
-          vehicle={pickerVehicle}
-          suppliers={suppliers}
-          technicians={technicians}
-          deleteDecision={purchaseDelete}
-        />
-        {!locked && (
-          <AddPurchaseButton
-            orderId={order.id}
-            vehicle={pickerVehicle}
-            suppliers={suppliers}
-            technicians={technicians}
-            defaultTechnicianId={order.assignedTechnicianId}
-          />
-        )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("items")}>Geri</Button>}>
-                <Button size="lg" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
+              {undecidedRequests.length > 0 && (
+                <Alert variant="warning">
+                  <Package />
+                  <AlertTitle>Karar bekleyen eski talep var</AlertTitle>
+                  <AlertDescription>
+                    {undecidedRequestNames}. Ofis karar verince kalem olarak burada görünür.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <TechnicianPartsLaborSection
+                orderId={order.id}
+                status={order.status}
+                items={gridItems}
+                vehicle={pickerVehicle}
+                laborCatalog={laborCatalog}
+                taxRateBps={order.taxRate}
+                canEditOrder={canEditOrder}
+              />
+              <PurchasesSection
+                orderId={order.id}
+                locked={locked}
+                purchases={purchasedItems}
+                laborItems={externalLaborItems}
+                photosByItem={purchasePhotosByItem}
+                vehicle={pickerVehicle}
+                suppliers={suppliers}
+                technicians={technicians}
+                defaultTechnicianId={order.assignedTechnicianId}
+                deleteDecision={purchaseDelete}
+                canDeleteLabor={canEditOrder}
+              />
+              <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("items")}>Geri</Button>}>
+                <Button size="sm" onClick={() => goToStep("finish")}>Fotoğraf ve bitirmeye geç</Button>
               </WizardActions>
           </TabsContent>
 
           <TabsContent value="finish" className="space-y-4">
-              <Tabs defaultValue="photos">
-                <div className="max-w-full overflow-x-auto pb-1">
-                  <TabsList>
-                    <TabsTrigger value="photos">Fotoğraflar</TabsTrigger>
-                    <TabsTrigger value="review">Son kontrol</TabsTrigger>
-                  </TabsList>
-                </div>
-                <TabsContent value="photos">
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground"><Camera /> Onarım Fotoğrafları</h3>
-                    <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
-                    {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
-                    {!locked && <TechnicianPhotoUpload intakeFormId={order.intake.id} orderStatus={order.status} existingPhotoTypes={order.photos.map((p) => p.type)} />}
-                  </div>
-                </TabsContent>
-                <TabsContent value="review">
-                  <div className="space-y-2 rounded-lg border border-border bg-card p-4">
-                    <ReviewRow label="Araç kontrolü" detail={`${checklist.items.filter((item) => item.isCompleted && !item.deletedAt).length}/${checklist.items.filter((item) => !item.deletedAt).length}`} complete={completeChecklistLeft === 0} />
-                    <ReviewRow label="Yapılacak işler" detail={completeBlockedMessage ?? "Tümü tamamlandı"} complete={!completeBlockedMessage} />
-                    <ReviewRow label="Bekleyen talepler" detail={`${order.partsRequests.filter((request) => request.status === "requested").length}`} complete={!order.partsRequests.some((request) => request.status === "requested")} />
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <Card className="bg-primary/[0.04]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    <Camera className="size-4 text-muted-foreground" />
+                    Onarım Fotoğrafları
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PhotoSection label="Onarım Öncesi" photos={beforePhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                  <PhotoSection label="Onarım Sırasında" photos={duringPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                  <PhotoSection label="Onarım Sonrası" photos={afterPhotos} canDelete={!locked} onDeleted={() => router.refresh()} />
+                  {galleryPhotos.length === 0 && <p className="text-sm text-muted-foreground">Henüz fotoğraf eklenmedi.</p>}
+                  {!locked && <TechnicianPhotoUpload intakeFormId={order.intake.id} orderStatus={order.status} existingPhotoTypes={order.photos.map((p) => p.type)} />}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-primary/[0.04]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    <CheckCircle2 className="size-4 text-muted-foreground" />
+                    Son kontrol
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <ReviewRow label="Araç kontrolü" detail={`${checklist.items.filter((item) => item.isCompleted && !item.deletedAt).length}/${checklist.items.filter((item) => !item.deletedAt).length}`} complete={completeChecklistLeft === 0} />
+                  <ReviewRow label="Yapılacak işler" detail={completeBlockedMessage ?? "Tümü tamamlandı"} complete={!completeBlockedMessage} />
+                </CardContent>
+              </Card>
 
               {canComplete && completeBlockedMessage && <BlockedMessage message={completeBlockedMessage} />}
               {canComplete && completeReminder && <ChecklistReminder message={completeReminder} onReveal={() => goToStep("check")} />}
-              <WizardActions back={<Button variant="outline" size="lg" onClick={() => goToStep("needs")}>Geri</Button>}>
+              <WizardActions sticky back={<Button variant="outline" size="sm" onClick={() => goToStep("needs")}>Geri</Button>}>
                 {canComplete && (
-                  <Button variant="success" size="lg" onClick={() => setCompleteDialogOpen(true)} disabled={isPending || !!completeBlockedMessage}>
+                  <Button variant="success" size="sm" onClick={() => setCompleteDialogOpen(true)} disabled={isPending || !!completeBlockedMessage}>
                     <CheckCircle2 /> İşi tamamla
                   </Button>
                 )}
               </WizardActions>
           </TabsContent>
+          </>}
         </section>
       </Tabs>
 
@@ -575,20 +600,26 @@ export function TechnicianOrderDetail({
 
 function DamageMarks({ marks }: { marks: OrderData["damageMarks"] }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">Mevcut Hasarlar</h3>
-      <div className="space-y-1.5">
+    <Card className="bg-primary/[0.04]">
+      <CardHeader>
+        <CardTitle>Mevcut Hasarlar</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-1.5">
         {marks.map((mark) => (
-          <div key={mark.id} className="flex min-h-8 flex-wrap items-center gap-2 rounded bg-destructive/10 px-3 py-2 text-sm">
-            <span className="font-medium text-foreground">{mark.zone}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-foreground">{mark.damageType}</span>
-            <span className="text-xs text-muted-foreground">({mark.severity})</span>
-            {mark.note && <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{mark.note}</span>}
-          </div>
+          <Item key={mark.id} variant="muted" size="sm" className="bg-destructive/10 text-destructive-strong">
+            <ItemContent>
+              <ItemTitle>
+                {mark.zone} · {mark.damageType}
+              </ItemTitle>
+              <ItemDescription>
+                {mark.severity}
+                {mark.note ? ` · ${mark.note}` : ""}
+              </ItemDescription>
+            </ItemContent>
+          </Item>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -604,10 +635,12 @@ function OrderTotals({ order }: { order: OrderData }) {
 
 function ReviewRow({ label, detail, complete }: { label: string; detail: string; complete: boolean }) {
   return (
-    <div className="flex min-h-8 items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
-      <span className="font-medium text-foreground">{complete ? "✓" : "!"} {label}</span>
-      <span className="text-right text-xs text-muted-foreground">{detail}</span>
-    </div>
+    <Item variant="muted" size="sm">
+      <ItemContent>
+        <ItemTitle>{complete ? "Tamam" : "Eksik"} · {label}</ItemTitle>
+        <ItemDescription>{detail}</ItemDescription>
+      </ItemContent>
+    </Item>
   )
 }
 
@@ -639,18 +672,22 @@ function ChecklistReminder({ message, onReveal }: { message: string; onReveal: (
 
 function VehicleCard({ vehicle }: { vehicle: OrderData["vehicle"] }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Car className="size-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">Araç</h3>
-      </div>
-      <div className="text-lg font-bold text-foreground mb-1">{vehicle.plate}</div>
-      <div className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model}</div>
-      {vehicle.modelYear && <div className="text-xs text-muted-foreground">Yıl: {vehicle.modelYear}</div>}
-      {vehicle.mileage && <div className="text-xs text-muted-foreground">KM: {vehicle.mileage.toLocaleString("tr-TR")}</div>}
-      {vehicle.fuelType && <div className="text-xs text-muted-foreground">Yakıt: {fuelTypeLabel(vehicle.fuelType)}</div>}
-      {vehicle.transmission && <div className="text-xs text-muted-foreground">Vites: {transmissionLabel(vehicle.transmission)}</div>}
-    </div>
+    <Card className="bg-primary/[0.04]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Car className="size-4 text-muted-foreground" />
+          Araç
+        </CardTitle>
+        <CardDescription>{vehicle.plate}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm text-muted-foreground">
+        <p className="font-heading text-base font-medium text-foreground">{vehicle.brand} {vehicle.model}</p>
+        {vehicle.modelYear && <p>Yıl: {vehicle.modelYear}</p>}
+        {vehicle.mileage && <p>KM: {vehicle.mileage.toLocaleString("tr-TR")}</p>}
+        {vehicle.fuelType && <p>Yakıt: {fuelTypeLabel(vehicle.fuelType)}</p>}
+        {vehicle.transmission && <p>Vites: {transmissionLabel(vehicle.transmission)}</p>}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -660,29 +697,35 @@ function CustomerCard({ customer }: { customer: OrderData["customer"] }) {
     : customer.fullName || [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "Müşteri"
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <User className="size-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold text-foreground">Müşteri</h3>
-      </div>
-      <div className="text-base font-semibold text-foreground">{name}</div>
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-        <Phone className="size-3.5" />
-        <a href={`tel:${customer.phone}`} className="text-primary hover:underline">{customer.phone}</a>
-      </div>
-      {customer.email && (
-        <div className="text-xs text-muted-foreground mt-1">{customer.email}</div>
-      )}
-    </div>
+    <Card className="bg-primary/[0.04]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="size-4 text-muted-foreground" />
+          Müşteri
+        </CardTitle>
+        <CardDescription>{name}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm text-muted-foreground">
+        <p className="flex items-center gap-1.5">
+          <Phone className="size-3.5" />
+          <a href={`tel:${customer.phone}`} className="text-primary hover:underline">{customer.phone}</a>
+        </p>
+        {customer.email && <p>{customer.email}</p>}
+      </CardContent>
+    </Card>
   )
 }
 
 function ComplaintCard({ complaint }: { complaint: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="text-sm font-semibold text-foreground mb-2">Müşteri Şikayeti</h3>
-      <p className="text-sm text-foreground whitespace-pre-wrap">{complaint}</p>
-    </div>
+    <Card className="bg-primary/[0.04]">
+      <CardHeader>
+        <CardTitle>Müşteri Şikayeti</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="whitespace-pre-wrap text-sm text-foreground">{complaint}</p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -813,36 +856,293 @@ function PhotoThumbnail({ src, label, onOpen }: { src: string; label: string; on
 }
 
 /**
- * Dış alım kaleminin kartı içindeki fotoğraf şeridi (BAK-111).
- *
- * Teknisyen parça kutusunun/fişin üzerindeki yazıyı küçük karede okuyamıyordu;
- * dokununca galeriyle AYNI modal carousel (`PhotoLightbox`) açılır (X, Escape, kaydırma
- * ve çift dokunuşla yakınlaştırma oradan gelir). Kalemde birden çok kare varsa
- * hepsi aynı lightbox içinde gezilir.
- *
- * Karenin genişliği 64px: mobil dokunma hedefi eşiğinin (44px) üstünde.
+ * "Dış Alımlar" sekmesi — dışarıdan alınan parçalar VE dış işçilik kalemleri.
+ * Talep akışı söküldükten sonra teknisyenin her şeyin "dışarıda kalanını"
+ * kaydettiği tek yüzey: üstte özet bandı (toplam + adetler + kayıt butonları),
+ * altta bölüm bölüm zengin kartlar; hiç kayıt yoksa çizgili davet kutusu.
  */
-function PurchasePhotoStrip({ photos, itemName }: { photos: PurchasePhoto[]; itemName: string }) {
+function PurchasesSection({
+  orderId,
+  locked,
+  purchases,
+  laborItems,
+  photosByItem,
+  vehicle,
+  suppliers,
+  technicians,
+  defaultTechnicianId,
+  deleteDecision,
+  canDeleteLabor,
+}: {
+  orderId: string
+  locked: boolean
+  purchases: OrderData["items"]
+  laborItems: OrderData["items"]
+  photosByItem: Map<string, PurchasePhoto[]>
+  vehicle: PickerVehicle
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  defaultTechnicianId: string | null
+  deleteDecision: PurchaseDeleteDecision
+  canDeleteLabor: boolean
+}) {
+  const empty = purchases.length === 0 && laborItems.length === 0
+
+  const totalKurus =
+    purchases.reduce((sum, i) => sum + (i.purchasePriceKurus ?? 0), 0) +
+    laborItems.reduce((sum, i) => sum + (i.unitPrice ?? 0) * i.quantity, 0)
+  const hasAnyPrice =
+    purchases.some((i) => i.purchasePriceKurus != null) || laborItems.some((i) => i.unitPrice != null)
+
+  const addActions = !locked && (
+    <div className="flex shrink-0 items-center gap-2">
+      <AddPurchaseCardButton
+        orderId={orderId}
+        vehicle={vehicle}
+        suppliers={suppliers}
+        technicians={technicians}
+        defaultTechnicianId={defaultTechnicianId}
+      />
+      <AddExternalLaborButton orderId={orderId} />
+    </div>
+  )
+
+  return (
+    <div className="space-y-3">
+      <div className="relative rounded-xl border border-border bg-primary/[0.04] bg-gradient-to-b from-primary/[0.06] to-transparent p-4 pt-5">
+        <span className="absolute -top-2 left-4 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+          Dış Alımlar
+        </span>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-foreground">Dışarıdan alınanlar</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Aldığın parçalar ve yaptırdığın işçilikler iş emri toplamına eklenir.
+            </p>
+          </div>
+          {addActions}
+        </div>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div className="shrink-0">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Toplam</p>
+            <p className="text-lg font-bold tabular-nums text-foreground">
+              {hasAnyPrice ? formatTRY(totalKurus) : "—"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
+            <Package className="size-3.5" />
+            {purchases.length} parça
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
+            <Wrench className="size-3.5" />
+            {laborItems.length} dış işçilik
+          </span>
+          </div>
+        </div>
+        {locked && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Teslim edilmiş/iptal edilmiş iş emrinde dış alım eklenemez.
+          </p>
+        )}
+      </div>
+
+      {empty ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-primary/[0.04] px-4 py-10 text-center">
+          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary-strong">
+            <ShoppingCart className="size-6" />
+          </span>
+          <p className="text-sm font-semibold text-foreground">Henüz dış alım yok</p>
+          <p className="max-w-sm text-xs text-muted-foreground">
+            Dışarıdan aldığın parçayı veya yaptırdığın işçiliği kaydet; tutarlar iş emri toplamına işlenir.
+          </p>
+        </div>
+      ) : (
+        <>
+          {laborItems.length > 0 && (
+            <section className="space-y-2">
+              <h4 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <Wrench className="size-4 text-warning-strong" />
+                Dış İşçilik
+                <span className="text-xs font-normal text-muted-foreground">({laborItems.length})</span>
+              </h4>
+              {laborItems.map((item) => (
+                <ExternalLaborCard key={item.id} item={item} deletable={!locked && canDeleteLabor} orderId={orderId} />
+              ))}
+            </section>
+          )}
+          {purchases.length > 0 && (
+            <section className="space-y-2">
+              <h4 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <Package className="size-4 text-primary-strong" />
+                Dışarıdan Alınan Parçalar
+                <span className="text-xs font-normal text-muted-foreground">({purchases.length})</span>
+              </h4>
+              {purchases.map((item) => (
+                <PurchaseCard
+                  key={item.id}
+                  item={item}
+                  photos={photosByItem.get(item.id) ?? []}
+                  orderId={orderId}
+                  vehicle={vehicle}
+                  suppliers={suppliers}
+                  technicians={technicians}
+                  deleteDecision={deleteDecision}
+                />
+              ))}
+              {!deleteDecision.allowed && (
+                <p className="text-xs text-muted-foreground">{deleteDecision.reason}</p>
+              )}
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Özet bandının CTA'sı — PurchaseFormSheet'i kendi tetikleyicisiyle açar. */
+function AddPurchaseCardButton(props: {
+  orderId: string
+  vehicle: PickerVehicle
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  defaultTechnicianId: string | null
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button type="button" size="sm" onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        Dış Parça
+      </Button>
+      {open && <PurchaseFormSheet {...props} item={null} open onOpenChange={setOpen} />}
+    </>
+  )
+}
+
+/**
+ * Zenginleştirilmiş dış alım kartı: solda kutu fotoğrafı (yoksa simge karesi),
+ * sağda belirgin tutar, altında tedarikçi/tarih/katalog bilgisi ve aksiyonlar.
+ * Fotoğrafa dokunmak galeri lightbox'ını açar; ilk kare avatar olarak büyür,
+ * diğerleri küçük şeritte devam eder (BAK-111).
+ */
+function PurchaseCard({
+  item, photos, orderId, vehicle, suppliers, technicians, deleteDecision,
+}: {
+  item: OrderData["items"][number]
+  photos: PurchasePhoto[]
+  orderId: string
+  vehicle: PickerVehicle
+  suppliers: SupplierInfo[]
+  technicians: TechnicianInfo[]
+  deleteDecision: PurchaseDeleteDecision
+}) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const lightboxPhotos: LightboxPhoto[] = photos.map((p) => ({
     id: p.id,
-    label: itemName,
+    label: `${item.name} — parça fotoğrafı`,
     note: p.note,
     fileUrl: p.src,
   }))
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {photos.map((p, i) => (
-        <div key={p.id} className="w-16">
-          <PhotoThumbnail
-            src={p.src}
-            label={`${itemName} — parça fotoğrafı`}
-            onOpen={() => setLightboxIndex(i)}
-          />
+    <div className="rounded-xl border border-border bg-primary/[0.04] p-2.5">
+      <div className="flex gap-2.5">
+        {photos.length > 0 ? (
+          <div className="w-12 shrink-0">
+            <PhotoThumbnail
+              src={photos[0].src}
+              label={`${item.name} — parça fotoğrafı`}
+              onOpen={() => setLightboxIndex(0)}
+            />
+          </div>
+        ) : (
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong">
+            <Package className="size-4" />
+          </span>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="break-words text-sm font-medium text-foreground">
+              {item.name}
+              {item.quantity !== 1 && (
+                <span className="ml-1.5 whitespace-nowrap text-xs text-muted-foreground">×{item.quantity}</span>
+              )}
+            </p>
+            {item.purchasePriceKurus != null && (
+              <p className="shrink-0 text-sm font-bold tabular-nums text-foreground">
+                {formatTRY(item.purchasePriceKurus)}
+              </p>
+            )}
+          </div>
+
+          {(item.sku || item.brand) && (
+            <p className="mt-0.5 break-words text-xs text-muted-foreground">
+              {item.sku && <span className="font-mono">{item.sku}</span>}
+              {item.brand && <>{item.sku ? " · " : ""}{item.brand}</>}
+            </p>
+          )}
+
+          {photos.length > 1 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {photos.slice(1).map((p, i) => (
+                <div key={p.id} className="w-12">
+                  <PhotoThumbnail
+                    src={p.src}
+                    label={`${item.name} — parça fotoğrafı`}
+                    onOpen={() => setLightboxIndex(i + 1)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ))}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2">
+        <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+          <Store className="size-3 shrink-0" />
+          <span className="truncate">{item.supplierName || "Tedarikçi belirtilmedi"}</span>
+        </span>
+        {item.purchasedAt && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <CalendarDays className="size-3 shrink-0" />
+            {new Date(item.purchasedAt).toLocaleDateString("tr-TR")}
+          </span>
+        )}
+        {item.tecdocArticleId != null && (
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary-strong">
+            Katalog parçası
+          </span>
+        )}
+
+        {deleteDecision.allowed ? (
+          <div className="ml-auto flex items-center gap-1">
+            <EditPurchaseButton
+              orderId={orderId}
+              vehicle={vehicle}
+              suppliers={suppliers}
+              technicians={technicians}
+              item={{
+                id: item.id,
+                name: item.name,
+                sku: item.sku,
+                brand: item.brand,
+                quantity: item.quantity,
+                purchasePriceKurus: item.purchasePriceKurus,
+                supplierName: item.supplierName,
+                purchasedAt: item.purchasedAt,
+                tecdocArticleId: item.tecdocArticleId,
+              }}
+            />
+            <PurchaseDeleteButton item={item} orderId={orderId} />
+          </div>
+        ) : null}
+      </div>
+
       <PhotoLightbox
         photos={lightboxPhotos}
         index={lightboxIndex ?? 0}
@@ -855,93 +1155,100 @@ function PurchasePhotoStrip({ photos, itemName }: { photos: PurchasePhoto[]; ite
 }
 
 /**
- * Dış alım listesi — projenin ortak PARÇA KARTINI kullanır (BAK-84), yani
- * "Parça Talepleri" bölümüyle aynı yerleşim: ad + miktar, altında mono parça
- * numarası ve marka, sağda tutar, altta tarih/kaynak ve aksiyonlar.
- *
- * Düzenleme ve silme AYNI kapıdan geçer (`purchaseDeleteDecision`): kalemi
- * silemeyen roller onu değiştiremez de — ikisi de kalemin kimliğini bozar.
+ * Dış işçilik kartı — type=external_labor kalemi. Amber tonu grid'in "işçilik"
+ * kodunu takip eder; parça kartından ayrıştıran başlıca fark: stok/katalog
+ * alanları yok, yerine "nerede yaptırıldı" bilgisi ve kalem notu durur.
+ * Sil butonu yalnız `deletable` izni açıksa görünür.
  */
-function PurchasedItemsSection({
-  items,
-  photosByItem,
-  orderId,
-  vehicle,
-  suppliers,
-  technicians,
-  deleteDecision,
+function ExternalLaborCard({
+  item, orderId, deletable,
 }: {
-  items: OrderData["items"]
-  /** Kalem kimliği → o kaleme ait gösterilebilir kareler (`groupPurchasePhotos`). */
-  photosByItem: Map<string, PurchasePhoto[]>
+  item: OrderData["items"][number]
   orderId: string
-  vehicle: PickerVehicle
-  suppliers: SupplierInfo[]
-  technicians: TechnicianInfo[]
-  deleteDecision: PurchaseDeleteDecision
+  deletable: boolean
 }) {
-  if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground">Henüz dışarıdan alınan parça yok.</p>
+  const router = useRouter()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  async function confirmDelete() {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/orders/items?id=${item.id}&orderId=${orderId}`, { method: "DELETE" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || "Silinemedi")
+        return
+      }
+      setConfirmOpen(false)
+      toast.success("Dış işçilik kalemi kaldırıldı")
+      router.refresh()
+    } catch {
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin")
+    } finally {
+      setBusy(false)
+    }
   }
+
   return (
-    <div className="space-y-2">
-      {items.map((item) => {
-        const photos = photosByItem.get(item.id) ?? []
-        return (
-        <PartCard
-          key={item.id}
-          name={item.name}
-          quantity={item.quantity}
-          partNo={item.sku}
-          brand={item.brand}
-          // Fotoğrafı olmayan kalemde slot HİÇ verilmez: aksi halde boş bir
-          // kutu ve üst boşluğu kalırdı.
-          media={photos.length > 0 ? <PurchasePhotoStrip photos={photos} itemName={item.name} /> : null}
-          badge={
-            item.purchasePriceKurus != null ? (
-              <span className="text-sm font-semibold text-foreground">
-                {formatTRY(item.purchasePriceKurus)}
-              </span>
-            ) : null
-          }
-          meta={
-            <>
-              {item.supplierName || "Tedarikçi belirtilmedi"}
-              {item.purchasedAt && ` · ${new Date(item.purchasedAt).toLocaleDateString("tr-TR")}`}
-              {item.tecdocArticleId != null && " · Katalog parçası"}
-            </>
-          }
-          actions={
-            deleteDecision.allowed ? (
-              <>
-                <EditPurchaseButton
-                  orderId={orderId}
-                  vehicle={vehicle}
-                  suppliers={suppliers}
-                  technicians={technicians}
-                  item={{
-                    id: item.id,
-                    name: item.name,
-                    sku: item.sku,
-                    brand: item.brand,
-                    quantity: item.quantity,
-                    purchasePriceKurus: item.purchasePriceKurus,
-                    supplierName: item.supplierName,
-                    purchasedAt: item.purchasedAt,
-                    tecdocArticleId: item.tecdocArticleId,
-                  }}
-                />
-                <PurchaseDeleteButton item={item} orderId={orderId} />
-              </>
-            ) : null
-          }
-        />
-        )
-      })}
-      {!deleteDecision.allowed && (
-        <p className="text-xs text-muted-foreground">{deleteDecision.reason}</p>
-      )}
-    </div>
+    <>
+      <div className="rounded-xl border border-border bg-primary/[0.04] p-2.5">
+        <div className="flex gap-2.5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning-strong">
+            <Wrench className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="break-words text-sm font-medium text-foreground">{item.name}</p>
+              {item.unitPrice != null && (
+                <p className="shrink-0 text-sm font-bold tabular-nums text-foreground">
+                  {formatTRY(item.unitPrice * item.quantity)}
+                </p>
+              )}
+            </div>
+            {item.supplierName && (
+              <p className="mt-0.5 break-words text-xs text-muted-foreground">{item.supplierName}</p>
+            )}
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+          {item.note ? (
+            <p className="min-w-0 break-words text-xs text-muted-foreground">{item.note}</p>
+          ) : <span />}
+          {deletable && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setConfirmOpen(true)}
+              aria-label={`${item.name} — dış işçilik kaydını sil`}
+              className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={(o) => { if (!busy) setConfirmOpen(o) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dış işçilik kaydı silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &quot;{item.name}&quot; dış işçilik kalemi iş emrinden kaldırılacak: tutarı toplamdan
+              düşecek. Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={confirmDelete}>
+              {busy && <Loader2 className="size-4 animate-spin" />}
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 

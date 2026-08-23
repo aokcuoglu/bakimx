@@ -24,17 +24,25 @@ describe("anthropic fail-closed sınırları", () => {
     expect(() => parseAnthropicMarketResearchConfig(env({ ANTHROPIC_API_KEY: "key", MARKET_RESEARCH_MAX_USES: "2", MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5" }))).toThrow("ALLOWED_DOMAINS")
   })
 
-  test("aylık bütçe tavanı olmadan açılmaz", () => {
-    expect(() => parseAnthropicMarketResearchConfig(env({
+  test("aylık bütçe tavanı env override yoksa dev için $5 varsayılır", () => {
+    expect(parseAnthropicMarketResearchConfig(env({
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "10",
       MARKET_RESEARCH_ALLOWED_DOMAINS: "example.com",
-    }))).toThrow("bütçe")
+      NODE_ENV: "development",
+    }))?.monthlyBudgetMicroUsd).toBe(5_000_000)
   })
 
-  test("domainsiz keşif yalnız exact app-dev URL'inde açılır", () => {
+  test("domainsiz keşif yalnız localhost veya exact app-dev URL'inde açılır", () => {
     expect(parseAnthropicMarketResearchConfig(env({
       APP_URL: "https://app-dev.bakimx.com",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toMatchObject({ discoveryMode: true, allowedDomains: [] })
+    expect(parseAnthropicMarketResearchConfig(env({
+      APP_URL: "http://localhost:3000",
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "10",
       MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
@@ -75,4 +83,14 @@ test("kaynaksız ve geçersiz URL'li önerileri eler", () => {
   expect(suggestions).toHaveLength(1)
   expect(suggestions[0].name).toBe("Geçerli")
   expect(suggestions[0].sources[0].accessedAt).toBe("2026-08-22T00:00:00.000Z")
+})
+
+test("token sınırında kesilen JSON'dan tamamlanmış ürünleri korur", () => {
+  const suggestions = parseSourcedSuggestions(`\`\`\`json
+  [
+    {"name":"Tam","sources":[{"url":"https://example.com/tam","title":"Kaynak"}]},
+    {"name":"Yarım","sources":[{"url":"https://example.com/yarim"
+  `, "2026-08-23T00:00:00.000Z")
+  expect(suggestions).toHaveLength(1)
+  expect(suggestions[0].name).toBe("Tam")
 })

@@ -70,11 +70,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
-  const enabledFeatures = (
-    await resolveFeature(user.workshopId, workshop.planTier as PlanTier, "bakimxCatalog")
-  )
-    ? ["bakimxCatalog"]
-    : []
+  const featureChecks = await Promise.all([
+    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "bakimxCatalog"),
+    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "marketResearch"),
+  ])
+  const enabledFeatures = ["bakimxCatalog", "marketResearch"].filter((_, index) => featureChecks[index])
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,

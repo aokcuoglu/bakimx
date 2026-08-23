@@ -526,11 +526,14 @@
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.15 0.05 260);
   --radius: 0.625rem;
-  --sidebar: oklch(0.18 0.06 258);
+  /* Sidebar zemini navy (#071F49); accent siyah lekesi gibi görünmesin diye
+     navy üzerinde ~%12 beyaz karışımı (#253A5F) — yumuşak hover/selected.
+     Opak tutulur: tema AA taraması alfa kompozit etmez. */
+  --sidebar: #071F49;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.06 258);
+  --sidebar-accent: #253A5F;
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
@@ -583,11 +586,11 @@
   --chart-3: oklch(0.45 0.15 260);
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.25 0.05 260);
-  --sidebar: oklch(0.18 0.06 258);
+  --sidebar: #071F49;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.06 258);
+  --sidebar-accent: #253A5F;
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
@@ -630,5 +633,18 @@
   }
   html {
     @apply font-sans scroll-smooth;
+    /* Radix Dialog arka planı kaydırmayı kilitlediğinde tarayıcı scrollbar'ı
+       kaybolur. Gutter'ı baştan ayırmak, sabit alt navigasyon ve sayfa
+       içeriğinin modal açılışında yatay kaymasını önler. */
+    scrollbar-gutter: stable;
+  }
+
+  /* `scrollbar-gutter` alanı baştan ayırır. react-remove-scroll (Radix
+     overlay'lerinin kullandığı kilit) ayrıca aynı genişlikte `margin-right`
+     eklemeye çalışırsa içerik ikinci kez daralır. Bu telafi gereksiz olduğundan
+     kilit anında devre dışı bırakılır; modal, Sheet ve AlertDialog aynı kuralı
+     paylaşır. */
+  body[data-scroll-locked] {
+    margin-right: 0 !important;
   }
 }

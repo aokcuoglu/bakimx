@@ -35,6 +35,7 @@ import {
   Calendar,
   Receipt,
   PackageSearch,
+  Telescope,
   UserCircle,
   Search,
   X,
@@ -108,6 +109,12 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Depo & Finans",
     items: [
       { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
+      {
+        href: "/market-research",
+        label: "Piyasa Araştırması",
+        icon: Telescope,
+        feature: "marketResearch",
+      },
       { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart },
       {
         href: "/bakimx-orders",
@@ -234,14 +241,16 @@ function AppHeader({
             daraltma/genişletme kontrolü fiilen kayıptı. */}
         <SidebarTrigger className={cn("-ml-2", mobileSearchOpen && "hidden sm:inline-flex")} />
 
+        {/* Logo yalnız dar mobilde (<sm): sm+ arama input açılınca absolute logo
+            input'un üstüne biniyordu. lg'de sidebar zaten markayı taşıyor. */}
         <div
           className={cn(
-            "absolute left-1/2 -translate-x-1/2 lg:hidden",
-            mobileSearchOpen && "hidden sm:block",
+            "absolute left-1/2 -translate-x-1/2 sm:hidden",
+            mobileSearchOpen && "hidden",
           )}
         >
           <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX" className="flex items-center">
-            <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+            <BrandLogo variant="icon-light" size="md" priority alt="BakimX" />
           </Link>
         </div>
 
@@ -344,18 +353,13 @@ function AppSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="BakimX">
-              <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX">
-                <div className="flex items-center justify-center size-8">
-                  <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
-                </div>
-                <span className="sr-only">BakimX</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Link
+          href={isTechRole ? "/technician" : "/dashboard"}
+          aria-label="BakimX"
+          className="flex size-8 items-center justify-center"
+        >
+          <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContentSlot>

@@ -4,6 +4,7 @@ import { getHealthDetail } from "@/lib/ops/health"
 import { getRapidApiUsage } from "@/lib/rapidapi-quota"
 import { cn } from "@/lib/utils"
 import { MarketResearchProbe } from "./market-research-probe"
+import { MarketResearchUsage } from "./market-research-usage"
 
 export const dynamic = "force-dynamic"
 
@@ -150,6 +151,10 @@ export default async function AdminHealthPage() {
 
       <Section title="Piyasa Araştırması Keşfi">
         <MarketResearchProbe />
+      </Section>
+
+      <Section title="Piyasa Araştırması Bütçesi (bu ay)">
+        <MarketResearchUsage />
       </Section>
 
       <Section title={`Başarısız İletişim (son 24s · ${detail.failedComms.length})`}>

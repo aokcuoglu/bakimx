@@ -297,9 +297,7 @@ export async function toggleChecklistItemAction(itemId: string, checked: boolean
  * Kasıtlı olarak AŞAMA BAZLI, liste geneli değil: teslim kontrolleri araç daha
  * tamir edilmeden işaretlenmemeli, aşamalar farklı zamanlarda bitiyor.
  * Yalnız `isCompleted: false` satırlara dokunur — önceden işaretlenenlerin
- * zaman damgası ve "kim tamamladı" bilgisi korunur. Toplu geri alma yok:
- * bir aşamanın tamamlama geçmişini tek dokunuşla silen, telafisi olmayan bir
- * aksiyon olurdu; tek tek geri alma zaten duruyor.
+ * zaman damgası ve "kim tamamladı" bilgisi korunur.
  */
 export async function completeAllChecklistItemsAction(orderId: string, category: string) {
   const { requireWritableWorkshop } = await import("@/lib/auth")
@@ -337,6 +335,48 @@ export async function completeAllChecklistItemsAction(orderId: string, category:
       "ServiceOrder",
       order.id,
       "checklist_items_completed_all",
+      JSON.stringify({ orderId: order.id, category: parsedCategory.data, count })
+    )
+  }
+
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath(`/orders/${order.id}`)
+  return { success: true, count }
+}
+
+/** Bir kontrol listesi aşamasındaki işaretleri tek seferde kaldırır. */
+export async function uncompleteAllChecklistItemsAction(orderId: string, category: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const parsedCategory = checklistItemSchema.shape.category.safeParse(category)
+  if (!parsedCategory.success) return { error: "Geçerli bir kategori seçiniz" }
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { count } = await prisma.checklistItem.updateMany({
+    where: {
+      serviceOrderId: order.id,
+      workshopId: user.workshopId,
+      category: parsedCategory.data,
+      isCompleted: true,
+      ...ACTIVE_CHECKLIST_ITEM,
+    },
+    data: { isCompleted: false, completedAt: null, completedById: null },
+  })
+
+  if (count > 0) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "ServiceOrder",
+      order.id,
+      "checklist_items_uncompleted_all",
       JSON.stringify({ orderId: order.id, category: parsedCategory.data, count })
     )
   }
@@ -916,9 +956,7 @@ export async function toggleOrderItemCompletedAction(itemId: string, done: boole
  *
  * Yalnız `completedAt: null` satırlara dokunur: daha önce işaretlenmiş
  * kalemlerin zaman damgası ve kim tamamladı bilgisi korunur, aksi hâlde toplu
- * işlem gerçek tamamlama saatlerini eziyordu. Geri alma bilinçli olarak yok —
- * toplu geri alma iş emri geçmişini sessizce silen, telafisi olmayan bir
- * aksiyon olurdu; tek tek geri alma zaten mümkün.
+ * işlem gerçek tamamlama saatlerini eziyordu.
  *
  * Attribution `toggleOrderItemCompletedAction` ile aynı: `completedById` iş
  * emrinin atanmış ustası, eylemi yapan kullanıcı AuditLog'a yazılır.
@@ -946,6 +984,39 @@ export async function completeAllOrderItemsAction(orderId: string) {
       "ServiceOrder",
       order.id,
       "order_items_completed_all",
+      JSON.stringify({ orderId: order.id, count })
+    )
+  }
+
+  revalidatePath(`/technician/orders/${order.id}`)
+  revalidatePath(`/orders/${order.id}`)
+  return { success: true, count }
+}
+
+/** İş emrindeki tüm tamamlanmış kalemleri tek seferde tekrar açık duruma alır. */
+export async function uncompleteAllOrderItemsAction(orderId: string) {
+  const { requireWritableWorkshop } = await import("@/lib/auth")
+  const { user } = await requireWritableWorkshop("order.edit")
+
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: orderId, workshopId: user.workshopId },
+    select: { id: true, status: true },
+  })
+  if (!order) return { error: "İş emri bulunamadı" }
+  if (isOrderLocked(order.status)) return { error: ORDER_LOCKED_ERROR }
+
+  const { count } = await prisma.serviceOrderItem.updateMany({
+    where: { serviceOrderId: order.id, workshopId: user.workshopId, completedAt: { not: null } },
+    data: { completedAt: null, completedById: null },
+  })
+
+  if (count > 0) {
+    await AuditLogAction(
+      user.workshopId,
+      user.id,
+      "ServiceOrder",
+      order.id,
+      "order_items_uncompleted_all",
       JSON.stringify({ orderId: order.id, count })
     )
   }

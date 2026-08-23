@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { prisma } from "@/lib/db"
 import { WorkshopLoginForm } from "@/components/auth/workshop-login-form"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
@@ -48,9 +49,12 @@ export default async function WorkshopLoginPage({
           {/* Atölyenin logosu ve adı */}
           {workshop.logoUrl && (
             <div className="mb-8 flex justify-center">
-              <img
+              <Image
                 src={workshop.logoUrl}
                 alt={workshop.name}
+                width={200}
+                height={64}
+                unoptimized
                 className="max-h-16 max-w-[200px] object-contain"
               />
             </div>

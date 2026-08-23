@@ -85,3 +85,16 @@ test("toplu tamamlama sunucu tarafında kiracı izolasyonunu korur", () => {
   // Yalnız eksik kalemler yazılır; işaretli olanların damgası korunur.
   expect(body).toMatch(/completedAt: null/)
 })
+
+test("toplu kaldırma yalnız bu iş emrinin tamamlanan kalemlerini geri alır", () => {
+  expect(CHECKLIST).toContain("Tümünü kaldır")
+  expect(CHECKLIST).toContain("uncompleteAllOrderItemsAction")
+
+  const start = ACTIONS.indexOf("export async function uncompleteAllOrderItemsAction")
+  expect(start).toBeGreaterThan(-1)
+  const body = ACTIONS.slice(start, ACTIONS.indexOf("\n}\n", start))
+  expect(body).toMatch(/workshopId: user\.workshopId/)
+  expect(body).toMatch(/completedAt: \{ not: null \}/)
+  expect(body).toMatch(/completedById: null/)
+  expect(body).toMatch(/isOrderLocked/)
+})

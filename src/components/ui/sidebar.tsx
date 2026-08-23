@@ -27,7 +27,8 @@ import { PanelLeftIcon } from "lucide-react"
 const SIDEBAR_COOKIE_NAME = "sidebar-state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+// 500 px genişlikte drawer'ın yarı ekranı kaplamaması için mobilde daha kompakt tutuyoruz.
+const SIDEBAR_WIDTH_MOBILE = "13rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -134,6 +135,7 @@ function SidebarProvider({
     <SidebarContext.Provider value={contextValue}>
       <div
         data-slot="sidebar-wrapper"
+        data-sidebar-state={state}
         style={
           {
             "--sidebar-width": SIDEBAR_WIDTH,
@@ -173,7 +175,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-        "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
+        "flex h-full w-(--sidebar-width) flex-col bg-gradient-to-br from-navy via-navy to-navy-light text-sidebar-foreground",
           className
         )}
         {...props}
@@ -191,7 +193,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) bg-gradient-to-br from-navy via-navy to-navy-light p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -246,7 +248,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="flex size-full flex-col bg-gradient-to-br from-navy via-navy to-navy-light group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
           {children}
         </div>
