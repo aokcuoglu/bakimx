@@ -181,6 +181,9 @@ jobs:
           #   SESSION_COOKIE_*   — isolate app-dev's session cookie from prod's .bakimx.com
           #                        cookie (the Node routes read these at runtime; the Edge
           #                        middleware gets them at build time via build-args above)
+          #   MARKET_RESEARCH_*  — app-dev-only domain discovery. The provider still
+          #                        requires ANTHROPIC_API_KEY from the task's secrets and
+          #                        enforces the global $5/month budget in Postgres.
           # Idempotent across re-runs. TODO(cdk-backfill): move these into the CDK task def.
           aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
             --query taskDefinition --output json \
@@ -190,10 +193,18 @@ jobs:
                   ((. // [])
                    | map(select(.name != "DB_SSL_NO_VERIFY"
                                 and .name != "SESSION_COOKIE_NAME"
-                                and .name != "SESSION_COOKIE_DOMAIN"))
+                                and .name != "SESSION_COOKIE_DOMAIN"
+                                and .name != "MARKET_RESEARCH_PROVIDER"
+                                and .name != "MARKET_RESEARCH_MAX_USES"
+                                and .name != "MARKET_RESEARCH_MONTHLY_BUDGET_USD"
+                                and .name != "MARKET_RESEARCH_DISCOVERY_MODE"))
                    + [{name: "DB_SSL_NO_VERIFY",     value: "true"},
                       {name: "SESSION_COOKIE_NAME",   value: "bakimx_session_dev"},
-                      {name: "SESSION_COOKIE_DOMAIN", value: "app-dev.bakimx.com"}])
+                      {name: "SESSION_COOKIE_DOMAIN", value: "app-dev.bakimx.com"},
+                      {name: "MARKET_RESEARCH_PROVIDER", value: "anthropic"},
+                      {name: "MARKET_RESEARCH_MAX_USES", value: "3"},
+                      {name: "MARKET_RESEARCH_MONTHLY_BUDGET_USD", value: "5"},
+                      {name: "MARKET_RESEARCH_DISCOVERY_MODE", value: "true"}])
               | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                     .compatibilities, .registeredAt, .registeredBy)
             ' > new-taskdef.json
