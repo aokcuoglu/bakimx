@@ -35,9 +35,9 @@ export function parseAnthropicMarketResearchConfig(getEnv: EnvReader): Anthropic
     .map((domain) => domain.trim().toLowerCase())
     .filter(Boolean)
   const discoveryMode = getEnv("MARKET_RESEARCH_DISCOVERY_MODE")?.trim().toLowerCase() === "true"
-  const nodeEnv = getEnv("NODE_ENV")?.trim().toLowerCase()
-  if (discoveryMode && nodeEnv === "production") {
-    throw new Error("Piyasa araştırması domain keşif modu production ortamında açılamaz.")
+  const appUrl = getEnv("APP_URL")?.trim()
+  if (discoveryMode && appUrl !== "https://app-dev.bakimx.com") {
+    throw new Error("Piyasa araştırması domain keşif modu yalnız app-dev ortamında açılabilir.")
   }
   if (allowedDomains.length === 0 && !discoveryMode) {
     throw new Error("Anthropic piyasa araştırması MARKET_RESEARCH_ALLOWED_DOMAINS onaylanmadan açılamaz.")
@@ -112,8 +112,12 @@ class AnthropicMarketResearchProvider implements MarketResearchProvider {
     this.client = new Anthropic({ apiKey: config.apiKey })
   }
 
-  async research(input: MarketResearchInput): Promise<MarketResearchResult> {
-    const monthStart = await reserveMarketResearchBudget(this.config.monthlyBudgetMicroUsd)
+  async research(input: MarketResearchInput, options?: { maxMonthlyRequests?: number }): Promise<MarketResearchResult> {
+    const monthStart = await reserveMarketResearchBudget(
+      this.config.monthlyBudgetMicroUsd,
+      new Date(),
+      options?.maxMonthlyRequests,
+    )
     const webSearchTool = {
       type: "web_search_20260209" as const,
       name: "web_search" as const,

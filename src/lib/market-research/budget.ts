@@ -28,7 +28,19 @@ function monthStartUtc(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
 }
 
-export async function reserveMarketResearchBudget(limitMicroUsd: number, now = new Date()): Promise<Date> {
+export function monthlyRequestLimitReached(
+  requestCount: number,
+  reservedMicroUsd: bigint,
+  maxMonthlyRequests?: number,
+): boolean {
+  return maxMonthlyRequests != null && (requestCount >= maxMonthlyRequests || reservedMicroUsd > 0)
+}
+
+export async function reserveMarketResearchBudget(
+  limitMicroUsd: number,
+  now = new Date(),
+  maxMonthlyRequests?: number,
+): Promise<Date> {
   const monthStart = monthStartUtc(now)
   await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('market-research-budget'))`
@@ -37,6 +49,9 @@ export async function reserveMarketResearchBudget(limitMicroUsd: number, now = n
       create: { monthStart },
       update: {},
     })
+    if (monthlyRequestLimitReached(row.requestCount, row.reservedMicroUsd, maxMonthlyRequests)) {
+      throw new Error("Bu ayın sınırlı piyasa araştırması keşif çağrısı zaten kullanıldı.")
+    }
     if (row.spentMicroUsd + row.reservedMicroUsd + BigInt(REQUEST_RESERVATION_MICRO_USD) > BigInt(limitMicroUsd)) {
       throw new Error("Aylık piyasa araştırması bütçe tavanına ulaşıldı.")
     }

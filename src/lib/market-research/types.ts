@@ -29,5 +29,5 @@ export interface MarketResearchResult {
 
 export interface MarketResearchProvider {
   readonly name: MarketResearchProviderName
-  research(input: MarketResearchInput): Promise<MarketResearchResult>
+  research(input: MarketResearchInput, options?: { maxMonthlyRequests?: number }): Promise<MarketResearchResult>
 }
