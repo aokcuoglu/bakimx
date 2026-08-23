@@ -202,6 +202,58 @@
   .enter-pop {
     animation: none;
   }
+
+  .version-reload-iris {
+    animation: none;
+  }
+
+  .version-reload-ripple,
+  .version-reload-bar {
+    animation: none;
+  }
+}
+
+/* Sürüm yenileme örtüsü — Motion "iris from click" + loading ripple.
+   Alert sağ altta; örtü oradan genişleyen clip-path daire. JS yok. */
+@keyframes version-reload-iris {
+  from {
+    clip-path: circle(0% at 92% 92%);
+  }
+  to {
+    clip-path: circle(160% at 92% 92%);
+  }
+}
+
+.version-reload-iris {
+  animation: version-reload-iris 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes version-reload-ripple {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+.version-reload-ripple {
+  animation: version-reload-ripple 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes version-reload-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.version-reload-bar {
+  animation: version-reload-bar 1.15s ease-in-out infinite;
 }
 
 /* `RuhsatDemoSection`taki tarama çizgisi (BAK-165). Eskiden framer-motion'ın

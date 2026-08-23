@@ -1,8 +1,12 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { toast } from "sonner"
+import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { InfoIcon, XIcon } from "lucide-react"
 import { isOutdatedBuild } from "@/lib/app-version"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { BrandSpinner } from "@/components/shared/brand-spinner"
 
 /**
  * "Yeni sürüm var — yenile" bildirimi (engellemeyen).
@@ -10,7 +14,7 @@ import { isOutdatedBuild } from "@/lib/app-version"
  * `loadedSignature` bu belgeyi RENDER EDEN sunucunun build imzasıdır; yani açık
  * sekmenin elindeki `/_next/static/...` chunk'larının ait olduğu build. Sekme
  * odaklandığında ve periyodik olarak `/api/version` sorulur, imza değiştiyse
- * kullanıcıya sonner toast'u gösterilir.
+ * kullanıcıya shadcn Alert gösterilir.
  *
  * Kasıtlı olarak YAPILMAYANLAR: modal yok, otomatik reload yok, geri sayım yok.
  * Yarım kalmış bir iş emri/teklif formu varken zorla yenileme veri kaybettirir —
@@ -23,15 +27,31 @@ import { isOutdatedBuild } from "@/lib/app-version"
  * dakikalarla sınırlı olduğu için sticky-session karmaşıklığına girilmedi.
  */
 
-// Yoklama aralığı — deploy dakikalar sürer, sık sorgunun faydası yok.
 const POLL_INTERVAL_MS = 10 * 60 * 1000
-// Odak/görünürlük olayları arka arkaya tetiklenebilir; aynı saniyede iki istek atma.
 const MIN_CHECK_GAP_MS = 60 * 1000
-const TOAST_ID = "app-version-update"
+/** Iris örtüsü görülsün diye yenilemeden önceki bekleme (hareket azaltmada kısaltılır). */
+const RELOAD_HOLD_MS = 780
+const RELOAD_HOLD_REDUCED_MS = 80
 
 export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: string }) {
   const lastCheckedAt = useRef(0)
   const notified = useRef(false)
+  const [visible, setVisible] = useState(false)
+  const [reloading, setReloading] = useState(false)
+
+  function reloadWithOverlay() {
+    if (reloading) return
+    setReloading(true)
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    window.setTimeout(
+      () => {
+        window.location.reload()
+      },
+      reduced ? RELOAD_HOLD_REDUCED_MS : RELOAD_HOLD_MS,
+    )
+  }
 
   useEffect(() => {
     if (!loadedSignature) return
@@ -50,23 +70,13 @@ export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: stri
         if (!res.ok) return
         data = await res.json()
       } catch {
-        // Çevrimdışı / geçici ağ hatası: sessizce geç, bir sonraki turda yeniden dene.
         return
       }
       if (cancelled || notified.current) return
       if (!isOutdatedBuild(loadedSignature, data)) return
 
       notified.current = true
-      toast.info("Yeni sürüm kullanılabilir", {
-        id: TOAST_ID,
-        description: "Sayfayı yenileyerek güncel sürüme geçebilirsiniz. Lütfen açık formlarınızı öncesinde kaydedin.",
-        duration: Infinity,
-        closeButton: true,
-        action: {
-          label: "Şimdi Yenile",
-          onClick: () => window.location.reload(),
-        },
-      })
+      setVisible(true)
     }
 
     const onVisible = () => {
@@ -85,5 +95,66 @@ export function VersionUpdateNotice({ loadedSignature }: { loadedSignature: stri
     }
   }, [loadedSignature])
 
-  return null
+  if (!visible && !reloading) return null
+
+  return (
+    <>
+      {visible && !reloading && (
+        <div className="pointer-events-none fixed inset-x-3 bottom-28 z-50 flex justify-end sm:inset-x-auto sm:right-4 sm:bottom-4">
+          <Alert className="pointer-events-auto w-full max-w-md shadow-sm has-data-[slot=alert-action]:pr-28">
+            <InfoIcon />
+            <AlertTitle>Yeni sürüm kullanılabilir</AlertTitle>
+            <AlertDescription>
+              Sayfayı yenileyerek güncel sürüme geçebilirsiniz. Lütfen açık formlarınızı öncesinde
+              kaydedin.
+            </AlertDescription>
+            <AlertAction className="flex items-start gap-1">
+              <Button size="sm" onClick={reloadWithOverlay}>
+                Şimdi Yenile
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Kapat"
+                onClick={() => setVisible(false)}
+              >
+                <XIcon />
+              </Button>
+            </AlertAction>
+          </Alert>
+        </div>
+      )}
+      {reloading && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="version-reload-iris fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
+              role="status"
+              aria-live="assertive"
+              aria-busy="true"
+            >
+              <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-muted">
+                <div className="version-reload-bar h-full w-1/3 bg-brand" />
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative flex size-36 items-center justify-center">
+                  <span
+                    className="version-reload-ripple pointer-events-none absolute inset-0 rounded-full border-2 border-brand/30"
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="version-reload-ripple pointer-events-none absolute inset-3 rounded-full border-2 border-navy/25 dark:border-brand/25"
+                    style={{ animationDelay: "0.35s" }}
+                    aria-hidden="true"
+                  />
+                  <BrandSpinner size={72} />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">Yeni sürüm yükleniyor…</p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  )
 }

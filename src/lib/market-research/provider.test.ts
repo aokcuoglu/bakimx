@@ -21,15 +21,48 @@ describe("anthropic fail-closed sınırları", () => {
   })
 
   test("izinli domain listesi yoksa açılmaz", () => {
-    expect(() => parseAnthropicMarketResearchConfig(env({ ANTHROPIC_API_KEY: "key", MARKET_RESEARCH_MAX_USES: "2" }))).toThrow("ALLOWED_DOMAINS")
+    expect(() => parseAnthropicMarketResearchConfig(env({ ANTHROPIC_API_KEY: "key", MARKET_RESEARCH_MAX_USES: "2", MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5" }))).toThrow("ALLOWED_DOMAINS")
+  })
+
+  test("aylık bütçe tavanı olmadan açılmaz", () => {
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_ALLOWED_DOMAINS: "example.com",
+    }))).toThrow("bütçe")
+  })
+
+  test("domainsiz keşif yalnız exact app-dev URL'inde açılır", () => {
+    expect(parseAnthropicMarketResearchConfig(env({
+      APP_URL: "https://app-dev.bakimx.com",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toMatchObject({ discoveryMode: true, allowedDomains: [] })
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      APP_URL: "https://app.bakimx.com",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toThrow("app-dev")
+    expect(() => parseAnthropicMarketResearchConfig(env({
+      APP_URL: "https://app-dev.bakimx.com.evil.example",
+      ANTHROPIC_API_KEY: "key",
+      MARKET_RESEARCH_MAX_USES: "10",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
+      MARKET_RESEARCH_DISCOVERY_MODE: "true",
+    }))).toThrow("app-dev")
   })
 
   test("yalnız açıkça verilen değerleri kabul eder", () => {
     expect(parseAnthropicMarketResearchConfig(env({
       ANTHROPIC_API_KEY: "key",
       MARKET_RESEARCH_MAX_USES: "2",
+      MARKET_RESEARCH_MONTHLY_BUDGET_USD: "5",
       MARKET_RESEARCH_ALLOWED_DOMAINS: "example.com, shop.example",
-    }))).toMatchObject({ maxUses: 2, allowedDomains: ["example.com", "shop.example"] })
+    }))).toMatchObject({ maxUses: 2, monthlyBudgetMicroUsd: 5_000_000, allowedDomains: ["example.com", "shop.example"] })
   })
 })
 

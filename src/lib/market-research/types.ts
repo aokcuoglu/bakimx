@@ -24,9 +24,10 @@ export interface MarketResearchSuggestion {
 export interface MarketResearchResult {
   provider: MarketResearchProviderName
   suggestions: MarketResearchSuggestion[]
+  usage?: { costMicroUsd: number; webSearches: number }
 }
 
 export interface MarketResearchProvider {
   readonly name: MarketResearchProviderName
-  research(input: MarketResearchInput): Promise<MarketResearchResult>
+  research(input: MarketResearchInput, options?: { maxMonthlyRequests?: number }): Promise<MarketResearchResult>
 }

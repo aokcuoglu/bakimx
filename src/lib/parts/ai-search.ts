@@ -13,6 +13,31 @@ export type AiPartSuggestion = {
   getirbakimProductId?: string
 }
 
+export type AiPartSearchPlan = {
+  query: string
+  brand: string | null
+  limit: number
+}
+
+export function normalizeAiPartSearchPlan(
+  input: { query?: unknown; brand?: unknown; limit?: unknown },
+  fallback: string,
+): AiPartSearchPlan {
+  const brand = typeof input.brand === "string"
+    ? input.brand.trim().replace(/\s+/g, " ").slice(0, 80) || null
+    : null
+  const requestedLimit = typeof input.limit === "number" ? Math.floor(input.limit) : 5
+  return {
+    query: normalizeAiSearchQuery(input.query, fallback),
+    brand,
+    limit: Math.max(1, Math.min(requestedLimit, 5)),
+  }
+}
+
+export function aiPartCatalogQuery(plan: AiPartSearchPlan): string {
+  return [plan.brand, plan.query].filter(Boolean).join(" ")
+}
+
 export function aiPartSearchAllowedRole(role: string): boolean {
   return role === "owner" || role === "usta"
 }
