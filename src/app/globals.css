@@ -526,11 +526,13 @@
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.15 0.05 260);
   --radius: 0.625rem;
-  --sidebar: oklch(0.18 0.06 258);
+  /* Sidebar zemini navy (#071F49); accent siyah lekesi gibi görünmesin diye
+     yarı saydam beyaz highlight — hover/selected navy üzerinde yumuşak vurgu. */
+  --sidebar: #071F49;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.06 258);
+  --sidebar-accent: oklch(1 0 0 / 12%);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);
@@ -583,11 +585,11 @@
   --chart-3: oklch(0.45 0.15 260);
   --chart-4: oklch(0.35 0.10 260);
   --chart-5: oklch(0.25 0.05 260);
-  --sidebar: oklch(0.18 0.06 258);
+  --sidebar: #071F49;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.54 0.20 258);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.06 258);
+  --sidebar-accent: oklch(1 0 0 / 12%);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.54 0.20 258);

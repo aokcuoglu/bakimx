@@ -351,18 +351,13 @@ function AppSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="BakimX">
-              <Link href={isTechRole ? "/technician" : "/dashboard"} aria-label="BakimX">
-                <div className="flex items-center justify-center size-8">
-                  <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
-                </div>
-                <span className="sr-only">BakimX</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Link
+          href={isTechRole ? "/technician" : "/dashboard"}
+          aria-label="BakimX"
+          className="flex size-8 items-center justify-center"
+        >
+          <BrandLogo variant="icon-dark" size="sm" priority alt="BakimX" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContentSlot>
