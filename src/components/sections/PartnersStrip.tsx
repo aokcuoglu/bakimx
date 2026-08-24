@@ -8,15 +8,6 @@ import { Reveal } from "@/components/shared/reveal";
 // img'de en-boy oranını bozuyordu).
 const partners = [
   {
-    name: "Mutlu Akü",
-    src: "/landing/partners/mutlu.png",
-    width: 96,
-    height: 44,
-    imgClass:
-      "opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0 dark:opacity-100 dark:grayscale-0",
-    wrapClass: "dark:rounded-md dark:bg-white dark:p-1.5",
-  },
-  {
     name: "AWS Startups",
     src: "/landing/partners/aws-startups.png",
     width: 114,
