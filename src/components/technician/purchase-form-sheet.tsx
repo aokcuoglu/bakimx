@@ -404,7 +404,7 @@ export function PurchaseFormSheet({
                 variant="ghost"
                 size="sm"
                 onClick={clearLink}
-                className="-my-1 h-7 text-xs text-muted-foreground"
+                className="-my-1 h-8 text-xs text-muted-foreground"
               >
                 <Link2Off className="size-3.5" />
                 Bağı kaldır

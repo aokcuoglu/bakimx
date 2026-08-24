@@ -102,7 +102,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/orders/new"
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation shadow-sm"
+              className="inline-flex items-center justify-center gap-2 h-8 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors touch-manipulation shadow-sm"
             >
               <Plus className="size-4" />
               Yeni İş Emri

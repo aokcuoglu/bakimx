@@ -49,7 +49,7 @@ export function PartNumberMatchAlert({
           variant="ghost"
           size="sm"
           onClick={onDismiss}
-          className="-my-1 h-7 shrink-0 text-xs text-muted-foreground"
+          className="-my-1 h-8 shrink-0 text-xs text-muted-foreground"
         >
           Yok say
         </Button>

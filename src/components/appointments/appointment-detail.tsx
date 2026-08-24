@@ -381,7 +381,7 @@ export function AppointmentDetail({
                   <input type="hidden" name="status" value="cancelled" />
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-2 w-full h-9 px-3 rounded-lg border border-destructive/20 bg-card text-sm font-medium text-destructive-strong hover:bg-destructive/10 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full h-8 px-3 rounded-lg border border-destructive/20 bg-card text-sm font-medium text-destructive-strong hover:bg-destructive/10 transition-colors"
                   >
                     <XCircle className="size-4" />
                     Randevuyu İptal Et

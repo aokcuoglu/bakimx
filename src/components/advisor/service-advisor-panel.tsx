@@ -321,23 +321,23 @@ export function ServiceAdvisorPanel({
                         value={customName}
                         onChange={(e) => setCustomName(e.target.value)}
                         placeholder={`${addingCustom === "labor" ? "İşçilik" : "Parça"} adı...`}
-                        className="h-7 text-xs"
+                        className="h-8 text-xs"
                         autoFocus
                         onKeyDown={(e) => e.key === "Enter" && addCustomItem(addingCustom)}
                       />
-                      <Button size="sm" variant="outline" onClick={() => addCustomItem(addingCustom)} className="h-7 text-xs shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => addCustomItem(addingCustom)} className="h-8 text-xs shrink-0">
                         Ekle
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => { setAddingCustom(null); setCustomName("") }} className="h-7 text-xs shrink-0">
+                      <Button size="sm" variant="ghost" onClick={() => { setAddingCustom(null); setCustomName("") }} className="h-8 text-xs shrink-0">
                         <X className="size-3" />
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => setAddingCustom("labor")} className="h-7 text-[11px]">
+                      <Button size="sm" variant="outline" onClick={() => setAddingCustom("labor")} className="h-8 text-[11px]">
                         <Wrench className="size-3 mr-1" /> İşçilik Ekle
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setAddingCustom("part")} className="h-7 text-[11px]">
+                      <Button size="sm" variant="outline" onClick={() => setAddingCustom("part")} className="h-8 text-[11px]">
                         <Package className="size-3 mr-1" /> Parça Ekle
                       </Button>
                     </>

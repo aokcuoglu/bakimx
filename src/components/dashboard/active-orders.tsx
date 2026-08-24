@@ -121,7 +121,7 @@ export function ActiveOrdersDesktop({ orders }: { orders: ActiveWorkOrderRow[] }
                   <div className="flex items-center justify-end gap-1">
                     <Link
                       href={`/orders/${o.id}`}
-                      className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-muted hover:bg-muted text-xs font-medium text-foreground transition-colors touch-manipulation"
+                      className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-muted hover:bg-muted text-xs font-medium text-foreground transition-colors touch-manipulation"
                     >
                       <Eye className="size-3" />
                       Görüntüle

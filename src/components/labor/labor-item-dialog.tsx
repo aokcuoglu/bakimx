@@ -156,7 +156,7 @@ export function LaborItemDialog({
             </div>
             <div className="space-y-1">
               <span className="block text-xs font-medium text-muted-foreground">Varsayılan ücret</span>
-              <InputGroup className="h-9">
+              <InputGroup className="h-8">
                 <InputGroupAddon className="text-muted-foreground">₺</InputGroupAddon>
                 <InputGroupInput
                   type="number"
