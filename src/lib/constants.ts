@@ -128,6 +128,18 @@ export const PHOTO_TYPES = {
 
 export type PhotoTypeKey = keyof typeof PHOTO_TYPES
 
+/** Hasar detayı Kanıt altındaki Hasar kartından yönetilir; araç galerisine girmez. */
+export const DAMAGE_PHOTO_TYPE = "damage_detail" as const satisfies PhotoTypeKey
+
+/** Üst "Fotoğraflar" grid / ekle diyalogu — `damage_detail` hariç. */
+export const VEHICLE_PHOTO_TYPES = Object.fromEntries(
+  (Object.entries(PHOTO_TYPES) as [PhotoTypeKey, (typeof PHOTO_TYPES)[PhotoTypeKey]][]).filter(
+    ([key]) => key !== DAMAGE_PHOTO_TYPE
+  )
+) as Omit<typeof PHOTO_TYPES, typeof DAMAGE_PHOTO_TYPE>
+
+export type VehiclePhotoTypeKey = keyof typeof VEHICLE_PHOTO_TYPES
+
 /** `PhotoPhase` enum'unun kullanıcıya görünen karşılıkları (prisma/schema.prisma). */
 export const PHOTO_PHASES = {
   intake: { label: "Kabul (Intake)" },
@@ -136,6 +148,15 @@ export const PHOTO_PHASES = {
 } as const
 
 export type PhotoPhaseKey = keyof typeof PHOTO_PHASES
+
+/** Tip × aşama matrisinde sütun sırası ve kısa başlıklar. */
+export const PHOTO_PHASE_ORDER = ["intake", "repair_progress", "delivery"] as const satisfies readonly PhotoPhaseKey[]
+
+export const PHOTO_PHASE_SHORT_LABELS: Record<PhotoPhaseKey, string> = {
+  intake: "Kabul",
+  repair_progress: "Onarım",
+  delivery: "Teslim",
+}
 
 export const CUSTOMER_TYPES = {
   individual: { label: "Bireysel", color: "bg-primary/10 text-foreground border-primary/20" },

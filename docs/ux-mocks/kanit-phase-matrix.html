@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kanıt sekmesi — UX mock (tip × aşama)</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #1e3a5f;
+      --primary-soft: #e8eef6;
+      --success: #15803d;
+      --warning: #b45309;
+      --warning-soft: #fff7ed;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --ring: #93c5fd;
+      --radius: 12px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 24px 16px 64px;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    .eyebrow {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    .lede { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-h {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    .card-h h2 {
+      margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px;
+    }
+    .meta { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .card-b { padding: 14px 16px 16px; }
+    .note {
+      font-size: 12px; color: var(--muted);
+      background: var(--primary-soft); border: 1px solid #d5e0ef;
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+    }
+    .note strong { color: var(--primary); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .chip {
+      font-size: 11px; font-weight: 600; padding: 4px 10px;
+      border-radius: 999px; border: 1px solid var(--border); background: #f8fafc;
+      color: var(--muted);
+    }
+    .chip.ok { background: #ecfdf5; border-color: #a7f3d0; color: var(--success); }
+    .chip.miss { background: var(--danger-soft); border-color: #fecaca; color: var(--danger); }
+
+    /* Matrix */
+    .matrix { display: flex; flex-direction: column; gap: 10px; }
+    .row {
+      display: grid;
+      grid-template-columns: 88px repeat(3, 1fr);
+      gap: 8px;
+      align-items: stretch;
+    }
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 64px repeat(3, 1fr); gap: 6px; }
+    }
+    .col-head {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em; color: var(--muted);
+      text-align: center; padding: 4px 0 2px;
+    }
+    .type-label {
+      display: flex; flex-direction: column; justify-content: center;
+      gap: 2px; padding: 4px 2px;
+    }
+    .type-label .name { font-size: 13px; font-weight: 700; }
+    .type-label .hint { font-size: 10px; color: var(--muted); }
+    .cell {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .cell:hover, .cell:focus-visible {
+      border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+      outline: none;
+    }
+    .cell img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .cell.empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; color: var(--muted); border-style: dashed; background: #fff;
+      cursor: pointer;
+    }
+    .cell.empty .plus {
+      width: 28px; height: 28px; border-radius: 999px; border: 1px dashed #cbd5e1;
+      display: grid; place-items: center; font-size: 18px; line-height: 1; color: #94a3b8;
+    }
+    .cell.empty span { font-size: 11px; font-weight: 600; }
+    .badge {
+      position: absolute; left: 6px; top: 6px;
+      font-size: 10px; font-weight: 700; padding: 2px 6px;
+      border-radius: 6px; background: rgba(15,23,42,.72); color: #fff;
+      backdrop-filter: blur(4px);
+    }
+    .badge.intake { background: rgba(30,58,95,.85); }
+    .badge.repair { background: rgba(180,83,9,.9); }
+    .badge.delivery { background: rgba(21,128,61,.9); }
+    .stack-count {
+      position: absolute; right: 6px; bottom: 6px;
+      font-size: 10px; font-weight: 700; padding: 2px 6px;
+      border-radius: 999px; background: rgba(255,255,255,.92);
+      border: 1px solid var(--border); color: var(--text);
+    }
+
+    .actions { display: flex; gap: 8px; margin-top: 14px; }
+    .btn {
+      appearance: none; border: 1px solid var(--border); background: #fff;
+      border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer; color: var(--text);
+    }
+    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn:hover { filter: brightness(0.98); }
+
+    /* Damage section */
+    .damage-h h2 { color: var(--warning); }
+    .damage-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    @media (max-width: 520px) {
+      .damage-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .dmg-card {
+      border: 1px solid #fed7aa; border-radius: 10px; overflow: hidden; background: #fff;
+    }
+    .dmg-card .thumb { aspect-ratio: 4/3; background: #fff7ed; }
+    .dmg-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .dmg-card .meta-line {
+      padding: 8px; font-size: 12px; border-top: 1px solid #ffedd5;
+    }
+    .dmg-card .meta-line strong { display: block; font-size: 12px; }
+    .dmg-card .meta-line span { color: var(--muted); font-size: 11px; }
+
+    /* Lightbox compare */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.72);
+      display: none; align-items: center; justify-content: center; padding: 16px; z-index: 40;
+    }
+    .overlay.open { display: flex; }
+    .lightbox {
+      width: min(960px, 100%); background: #0b1220; color: #fff;
+      border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+    .lb-h {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .lb-h h3 { margin: 0; font-size: 15px; }
+    .lb-h button {
+      background: transparent; border: 0; color: #cbd5e1; font-size: 20px; cursor: pointer;
+    }
+    .compare {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,.08);
+    }
+    @media (max-width: 700px) {
+      .compare { grid-template-columns: 1fr; }
+    }
+    .cmp {
+      background: #0b1220; padding: 10px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .cmp .phase {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      color: #94a3b8;
+    }
+    .cmp .frame {
+      aspect-ratio: 4/3; border-radius: 10px; overflow: hidden; background: #1e293b;
+      border: 2px solid transparent;
+    }
+    .cmp.active .frame { border-color: #60a5fa; }
+    .cmp img { width: 100%; height: 100%; object-fit: cover; }
+    .cmp .empty-frame {
+      height: 100%; display: grid; place-items: center; color: #64748b; font-size: 12px;
+      border: 1px dashed #334155; border-radius: 10px;
+    }
+    .lb-f {
+      padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .pill {
+      font-size: 12px; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; background: transparent;
+      cursor: pointer;
+    }
+    .pill.on { background: #1e3a5f; border-color: #3b82f6; }
+
+    .legend {
+      display: grid; gap: 8px; margin-top: 20px;
+      font-size: 13px; color: var(--muted);
+    }
+    .legend li { margin-left: 18px; }
+    .section-label {
+      margin: 28px 0 10px; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">BakımX · Kanıt sekmesi UX</p>
+    <h1>Araç fotoğrafları × aşama matrisi</h1>
+    <p class="lede">
+      Üst bölüm yalnız araç görselleri. Hasar detayı altta. Aynı açı (ör. Ön)
+      Kabul / Onarım / Teslim hücrelerinde yan yana ilişkilendirilir.
+    </p>
+
+    <p class="section-label">1 · Fotoğraflar (araç)</p>
+    <section class="card">
+      <div class="card-h">
+        <h2>📷 Fotoğraflar</h2>
+        <span class="meta">5 / 6 zorunlu açı · aşama doluluğu ayrı</span>
+      </div>
+      <div class="card-b">
+        <div class="note">
+          <strong>Kural:</strong> Bu grid’de <code>damage_detail</code> yok.
+          “Fotoğraf Ekle” seçenekleri yalnızca araç açıları + ruhsat/VIN/diğer.
+          Hasar görselleri alttaki Hasar kartından eklenir.
+        </div>
+
+        <div class="chips">
+          <span class="chip ok">Ön · 3 aşama</span>
+          <span class="chip ok">Arka · 2 aşama</span>
+          <span class="chip ok">Sol yan</span>
+          <span class="chip miss">Sağ yan eksik</span>
+          <span class="chip ok">Kilometre</span>
+          <span class="chip ok">Yakıt</span>
+        </div>
+
+        <!-- header -->
+        <div class="row" style="margin-bottom:4px">
+          <div></div>
+          <div class="col-head">Kabul</div>
+          <div class="col-head">Onarım</div>
+          <div class="col-head">Teslim</div>
+        </div>
+
+        <div class="matrix">
+          <!-- Ön — full across phases -->
+          <div class="row" data-type="front">
+            <div class="type-label">
+              <span class="name">Ön</span>
+              <span class="hint">zorunlu</span>
+            </div>
+            <button class="cell" type="button" onclick="openCompare('Ön')" title="Kabul · Ön">
+              <span class="badge intake">Kabul</span>
+              <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=300&fit=crop" alt="Ön kabul" />
+            </button>
+            <button class="cell" type="button" onclick="openCompare('Ön')" title="Onarım · Ön">
+              <span class="badge repair">Onarım</span>
+              <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop" alt="Ön onarım" />
+              <span class="stack-count">2</span>
+            </button>
+            <button class="cell" type="button" onclick="openCompare('Ön')" title="Teslim · Ön">
+              <span class="badge delivery">Teslim</span>
+              <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop" alt="Ön teslim" />
+            </button>
+          </div>
+
+          <!-- Arka -->
+          <div class="row">
+            <div class="type-label">
+              <span class="name">Arka</span>
+              <span class="hint">zorunlu</span>
+            </div>
+            <button class="cell" type="button" onclick="openCompare('Arka')">
+              <span class="badge intake">Kabul</span>
+              <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop" alt="Arka kabul" />
+            </button>
+            <div class="cell empty" role="button" tabindex="0" title="Onarım aşaması ekle">
+              <div class="plus">+</div>
+              <span>Ekle</span>
+            </div>
+            <button class="cell" type="button" onclick="openCompare('Arka')">
+              <span class="badge delivery">Teslim</span>
+              <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop" alt="Arka teslim" />
+            </button>
+          </div>
+
+          <!-- Sağ yan missing intake -->
+          <div class="row">
+            <div class="type-label">
+              <span class="name">Sağ yan</span>
+              <span class="hint">eksik</span>
+            </div>
+            <div class="cell empty" role="button" tabindex="0">
+              <div class="plus">+</div>
+              <span>Kabul</span>
+            </div>
+            <div class="cell empty" role="button" tabindex="0">
+              <div class="plus">+</div>
+              <span>Ekle</span>
+            </div>
+            <div class="cell empty" role="button" tabindex="0">
+              <div class="plus">+</div>
+              <span>Ekle</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="button">+ Fotoğraf Ekle</button>
+          <button class="btn" type="button" onclick="openCompare('Ön')">Ön · aşamaları karşılaştır</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="section-label">2 · Hasar (ayrı kaynak)</p>
+    <section class="card damage-h">
+      <div class="card-h">
+        <h2>⚠ Hasar</h2>
+        <span class="meta">işaret + detay fotoğrafları</span>
+      </div>
+      <div class="card-b">
+        <div class="note" style="background:var(--warning-soft);border-color:#fed7aa">
+          <strong>Ayrı yüzey:</strong> Annotate / hasar detayı buradan.
+          Üst grid’e sızmaz; tekrar göstermez.
+        </div>
+        <div class="damage-grid">
+          <div class="dmg-card">
+            <div class="thumb">
+              <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop" alt="Hasar 1" />
+            </div>
+            <div class="meta-line">
+              <strong>Ön tampon</strong>
+              <span>Çizik · Orta</span>
+            </div>
+          </div>
+          <div class="dmg-card">
+            <div class="thumb">
+              <img src="https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=400&h=300&fit=crop" alt="Hasar 2" />
+            </div>
+            <div class="meta-line">
+              <strong>Sol kapı</strong>
+              <span>Göçük · Hafif</span>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" type="button">Hasar işareti / detay ekle</button>
+        </div>
+      </div>
+    </section>
+
+    <ul class="legend">
+      <li><strong>Hücre = tip × aşama.</strong> Aynı açı satırda; zaman soldan sağa (Kabul → Onarım → Teslim).</li>
+      <li><strong>Birden fazla kare</strong> aynı hücredeyse köşede sayı rozeti; tıklayınca o hücrenin carousel’i, üstte de aşama karşılaştırma şeridi.</li>
+      <li><strong>Boş hücre</strong> dashed “+ Ekle” — tıklanınca diyalog tip+aşama önceden dolu açılır.</li>
+      <li><strong>Lightbox</strong> varsayılan: seçilen tipin 3 aşaması yan yana (mobilde dikey stack). Tek kareye odak için pill’ler.</li>
+      <li><strong>Tamamlanma:</strong> zorunlu tipler için en az Kabul dolu; Teslim tamamı teslim checklist’ine bağlanabilir.</li>
+    </ul>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="if(event.target===this)closeCompare()">
+    <div class="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+      <div class="lb-h">
+        <h3 id="lb-title">Ön · aşama karşılaştırması</h3>
+        <button type="button" aria-label="Kapat" onclick="closeCompare()">×</button>
+      </div>
+      <div class="compare">
+        <div class="cmp active">
+          <div class="phase">Kabul (Intake)</div>
+          <div class="frame">
+            <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=450&fit=crop" alt="" />
+          </div>
+        </div>
+        <div class="cmp">
+          <div class="phase">Onarım Aşaması</div>
+          <div class="frame">
+            <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=450&fit=crop" alt="" />
+          </div>
+        </div>
+        <div class="cmp">
+          <div class="phase">Teslim</div>
+          <div class="frame">
+            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&h=450&fit=crop" alt="" />
+          </div>
+        </div>
+      </div>
+      <div class="lb-f">
+        <button class="pill on" type="button">Üçlü karşılaştır</button>
+        <button class="pill" type="button">Yalnız Kabul</button>
+        <button class="pill" type="button">Yalnız Onarım</button>
+        <button class="pill" type="button">Yalnız Teslim</button>
+        <button class="pill" type="button">Önceki / Sonraki açı →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openCompare(typeName) {
+      document.getElementById("lb-title").textContent = typeName + " · aşama karşılaştırması";
+      document.getElementById("overlay").classList.add("open");
+    }
+    function closeCompare() {
+      document.getElementById("overlay").classList.remove("open");
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeCompare();
+    });
+  </script>
+</body>
+</html>
