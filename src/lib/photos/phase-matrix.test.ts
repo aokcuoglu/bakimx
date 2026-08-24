@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import {
   buildPhotoPhaseMatrix,
+  countFilledPhases,
   flattenTypeAcrossPhases,
   isDamagePhotoType,
   isVehiclePhotoType,
   partitionIntakePhotos,
+  phaseCoverSlides,
 } from "./phase-matrix"
 
 describe("partitionIntakePhotos", () => {
@@ -68,5 +70,19 @@ describe("buildPhotoPhaseMatrix", () => {
     ])
     const flat = flattenTypeAcrossPhases(rows.find((r) => r.type === "front")!)
     expect(flat.map((p) => p.id)).toEqual(["i", "r", "d"])
+  })
+
+  test("phaseCoverSlides uses one cover per phase, not every intake duplicate", () => {
+    const rows = buildPhotoPhaseMatrix([
+      { id: "i1", type: "front", phase: "intake", fileUrl: "/a" },
+      { id: "i2", type: "front", phase: "intake", fileUrl: "/b" },
+      { id: "i3", type: "front", phase: "intake", fileUrl: "/c" },
+      { id: "r1", type: "front", phase: "repair_progress", fileUrl: "/d" },
+    ])
+    const front = rows.find((r) => r.type === "front")!
+    const covers = phaseCoverSlides(front)
+    expect(covers.map((c) => c.phase)).toEqual(["intake", "repair_progress"])
+    expect(covers.map((c) => c.photo.id)).toEqual(["i1", "r1"])
+    expect(countFilledPhases(front)).toBe(2)
   })
 })

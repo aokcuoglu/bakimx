@@ -6,13 +6,12 @@ import { ImageOff, Plus } from "lucide-react"
 import {
   PHOTO_PHASE_ORDER,
   PHOTO_PHASE_SHORT_LABELS,
-  PHOTO_PHASES,
   type PhotoPhaseKey,
   type VehiclePhotoTypeKey,
 } from "@/lib/constants"
 import {
   buildPhotoPhaseMatrix,
-  flattenTypeAcrossPhases,
+  phaseCoverSlides,
   type PhaseMatrixPhoto,
   type PhaseMatrixRow,
 } from "@/lib/photos/phase-matrix"
@@ -32,11 +31,12 @@ import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lig
 
 export type { PhaseMatrixPhoto }
 
-const COLS = "3.25rem repeat(3, minmax(0,1fr))"
+const COLS = "2.75rem repeat(3, minmax(0,1fr))"
 
 /**
- * Tip satırı × Kabul / Onarım / Teslim — kompakt matris.
- * Dolu hücre üçlü karşılaştırmayı açar; diyalogdaki kareye tıklayınca zoom lightbox.
+ * Tip satırı × Kabul / Onarım / Teslim — kare thumb matrisi.
+ * Dolu hücre üçlü karşılaştırmayı açar; diyalogdaki kareye tıklayınca
+ * zoom lightbox Kabul → Onarım → Teslim arasında gezinir.
  */
 export function PhotoPhaseMatrix({
   photos,
@@ -55,19 +55,22 @@ export function PhotoPhaseMatrix({
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [carouselPhotos, setCarouselPhotos] = useState<LightboxPhoto[]>([])
 
-  function openZoom(row: PhaseMatrixRow, phase: PhotoPhaseKey, startId?: string) {
-    const cell = row.cells.find((c) => c.phase === phase)
-    const list = (cell?.photos ?? []).filter((p) => p.fileUrl)
-    if (list.length === 0) return
-    const lightbox: LightboxPhoto[] = list.map((p) => ({
-      id: p.id,
-      label: `${row.label} · ${PHOTO_PHASES[phase].label}`,
-      note: p.note,
-      fileUrl: resolvePhotoSrc(p),
+  /** Zoom: tek aşamadaki tüm kareler değil — üç aşamanın kapakları. */
+  function openPhaseZoom(row: PhaseMatrixRow, startPhase: PhotoPhaseKey) {
+    const covers = phaseCoverSlides(row)
+    if (covers.length === 0) return
+    const slides: LightboxPhoto[] = covers.map(({ phase, photo }) => ({
+      id: photo.id,
+      label: `${row.label} · ${PHOTO_PHASE_SHORT_LABELS[phase]}`,
+      note: photo.note,
+      fileUrl: resolvePhotoSrc(photo),
     }))
-    const idx = startId ? Math.max(0, list.findIndex((p) => p.id === startId)) : 0
-    setCarouselPhotos(lightbox)
-    setCarouselIndex(idx < 0 ? 0 : idx)
+    const startIndex = Math.max(
+      0,
+      covers.findIndex((c) => c.phase === startPhase)
+    )
+    setCarouselPhotos(slides)
+    setCarouselIndex(startIndex)
     setCarouselOpen(true)
   }
 
@@ -79,7 +82,7 @@ export function PhotoPhaseMatrix({
 
   return (
     <>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <div
           className="grid items-center gap-x-1.5 gap-y-0.5"
           style={{ gridTemplateColumns: COLS }}
@@ -95,7 +98,7 @@ export function PhotoPhaseMatrix({
           ))}
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {rows.map((row) => (
             <div
               key={row.type}
@@ -143,9 +146,9 @@ export function PhotoPhaseMatrix({
         onOpenChange={(o) => {
           if (!o) setCompareRow(null)
         }}
-        onZoom={(phase, photoId) => {
+        onZoom={(phase) => {
           if (!compareRow) return
-          openZoom(compareRow, phase, photoId)
+          openPhaseZoom(compareRow, phase)
         }}
         canDelete={canDelete}
         onDeleted={onDeleted}
@@ -184,13 +187,12 @@ function EmptyPhaseCell({
     <Button
       type="button"
       variant="outline"
-      size="icon-sm"
       disabled={disabled}
       onClick={onAdd}
       aria-label={`${PHOTO_PHASE_SHORT_LABELS[phase]} fotoğrafı ekle`}
-      className="h-11 w-full rounded-md border-dashed text-muted-foreground hover:text-foreground"
+      className="aspect-square h-auto w-full rounded-md border-dashed text-muted-foreground hover:text-foreground"
     >
-      <Plus className="size-3.5" />
+      <Plus className="size-4" />
     </Button>
   )
 }
@@ -212,18 +214,18 @@ function FilledPhaseCell({
     <button
       type="button"
       onClick={onOpen}
-      className="relative h-11 w-full overflow-hidden rounded-md border bg-muted text-left touch-manipulation hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative aspect-square w-full overflow-hidden rounded-md border bg-muted text-left touch-manipulation hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       aria-label={`${typeLabel} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — üçlü karşılaştır`}
     >
       {photo.fileUrl ? (
         <MatrixThumb photoId={photo.id} fileUrl={photo.fileUrl} />
       ) : (
         <div className="flex h-full items-center justify-center">
-          <ImageOff className="size-3.5 text-muted-foreground" />
+          <ImageOff className="size-4 text-muted-foreground" />
         </div>
       )}
       {count > 1 ? (
-        <span className="absolute bottom-0.5 right-0.5 rounded bg-background/90 px-1 text-[9px] font-semibold tabular-nums leading-none py-0.5 border">
+        <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1 text-[9px] font-semibold tabular-nums leading-none py-0.5 border">
           {count}
         </span>
       ) : null}
@@ -238,7 +240,7 @@ function MatrixThumb({ photoId, fileUrl }: { photoId: string; fileUrl: string })
   if (!src || failed) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <ImageOff className="size-3.5 text-muted-foreground" />
+        <ImageOff className="size-4 text-muted-foreground" />
       </div>
     )
   }
@@ -266,14 +268,12 @@ function PhaseCompareDialog({
   row: PhaseMatrixRow | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onZoom: (phase: PhotoPhaseKey, photoId?: string) => void
+  onZoom: (phase: PhotoPhaseKey) => void
   canDelete?: boolean
   onDeleted?: () => void
   onAdd?: (phase: PhotoPhaseKey) => void
 }) {
   if (!row) return null
-
-  const flatCount = flattenTypeAcrossPhases(row).length
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,7 +281,7 @@ function PhaseCompareDialog({
         <DialogHeader>
           <DialogTitle>{row.label} · üçlü karşılaştır</DialogTitle>
           <DialogDescription>
-            {flatCount} kare · Kabul → Onarım → Teslim. Bir kareye dokununca büyür.
+            Kabul · Onarım · Teslim — bir kareye dokununca büyür.
           </DialogDescription>
         </DialogHeader>
 
@@ -293,7 +293,6 @@ function PhaseCompareDialog({
               <div key={phase} className="min-w-0 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center">
                   {PHOTO_PHASE_SHORT_LABELS[phase]}
-                  {cell.photos.length > 1 ? ` · ${cell.photos.length}` : ""}
                 </p>
                 {cover?.fileUrl ? (
                   <div className="relative">
@@ -309,15 +308,15 @@ function PhaseCompareDialog({
                     ) : null}
                     <button
                       type="button"
-                      className="relative block w-full overflow-hidden rounded-md aspect-[4/3] bg-muted touch-manipulation ring-offset-background hover:ring-2 hover:ring-ring"
-                      onClick={() => onZoom(phase, cover.id)}
+                      className="relative block w-full overflow-hidden rounded-md aspect-square bg-muted touch-manipulation ring-offset-background hover:ring-2 hover:ring-ring"
+                      onClick={() => onZoom(phase)}
                       aria-label={`${row.label} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — büyüt`}
                     >
                       <MatrixThumb photoId={cover.id} fileUrl={cover.fileUrl} />
                     </button>
                   </div>
                 ) : cover ? (
-                  <div className="flex aspect-[4/3] items-center justify-center rounded-md border border-dashed bg-muted/40">
+                  <div className="flex aspect-square items-center justify-center rounded-md border border-dashed bg-muted/40">
                     <span className="text-[10px] text-muted-foreground">Dosya yok</span>
                   </div>
                 ) : (
@@ -327,7 +326,7 @@ function PhaseCompareDialog({
                     disabled={!onAdd}
                     onClick={() => onAdd?.(phase)}
                     className={cn(
-                      "h-auto w-full aspect-[4/3] flex-col gap-0.5 border-dashed text-muted-foreground"
+                      "h-auto w-full aspect-square flex-col gap-0.5 border-dashed text-muted-foreground"
                     )}
                   >
                     <Plus className="size-3.5" />

@@ -98,3 +98,21 @@ export function buildPhotoPhaseMatrix(photos: PhaseMatrixPhoto[]): PhaseMatrixRo
 export function flattenTypeAcrossPhases(row: PhaseMatrixRow): PhaseMatrixPhoto[] {
   return row.cells.flatMap((cell) => cell.photos)
 }
+
+/** Üç aşamanın kapak kareleri (zoom carousel: Kabul → Onarım → Teslim). */
+export function phaseCoverSlides(row: PhaseMatrixRow): {
+  phase: PhotoPhaseKey
+  photo: PhaseMatrixPhoto
+}[] {
+  const slides: { phase: PhotoPhaseKey; photo: PhaseMatrixPhoto }[] = []
+  for (const cell of row.cells) {
+    const cover = cell.photos.find((p) => p.fileUrl)
+    if (!cover?.fileUrl) continue
+    slides.push({ phase: cell.phase, photo: cover })
+  }
+  return slides
+}
+
+export function countFilledPhases(row: PhaseMatrixRow): number {
+  return row.cells.filter((c) => c.photos.some((p) => p.fileUrl)).length
+}
