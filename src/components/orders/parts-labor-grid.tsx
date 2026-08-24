@@ -1962,13 +1962,16 @@ function RowActions({ row, ed, orderId, vehicle, onRemove, onShowDetail }: {
             id: row.id,
             name: row.name,
             sku: row.sku,
+            brand: row.brand ?? null,
             quantity: row.quantity,
             purchasePriceKurus: row.purchasePriceKurus ?? null,
             supplierName: row.supplierName ?? null,
             purchasedAt: row.purchasedAt ?? null,
             purchasedByName: row.purchasedByName ?? null,
             purchasePhotoId: row.purchasePhotoId ?? null,
+            tecdocArticleId: row.tecdocArticleId ?? null,
           }}
+          vehicle={vehicle}
         />
       )}
     </>
