@@ -241,6 +241,7 @@ export async function addOrderItemAction(formData: FormData) {
           // alan boş kalır (satın alma akışı kendi supplierName'ini kendisi yazar).
           supplierName:
             parsed.data.type === "external_labor" ? parsed.data.supplierName?.trim() || null : null,
+          purchasedAt: parsed.data.type === "external_labor" ? new Date() : null,
           // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
           // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
           // girer, KDV yalnız satırın tick'i açılınca üstüne biner.
@@ -807,6 +808,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     quantity: has("quantity") ? Number(formData.get("quantity")) : undefined,
     unitPrice: has("unitPrice") ? Number(formData.get("unitPrice")) : undefined,
     note: has("note") ? (formData.get("note") as string) : undefined,
+    supplierName: has("supplierName") ? (formData.get("supplierName") as string) : undefined,
     brand: has("brand") ? (formData.get("brand") as string) : undefined,
     category: has("category") ? (formData.get("category") as string) : undefined,
     categoryId: has("categoryId")
@@ -821,6 +823,12 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   const parsed = serviceOrderItemUpdateSchema.safeParse(raw)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
+  }
+  if (
+    (parsed.data.supplierName !== undefined || has("purchasedAt")) &&
+    item.type !== "external_labor"
+  ) {
+    return { error: "Tedarikçi ve tarih yalnız dış işçilik kaleminde güncellenebilir" }
   }
   const currentQuantity = quantityToNumber(item.quantity)
   const effectiveQuantity = parsed.data.quantity ?? currentQuantity
@@ -864,6 +872,8 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     quantity?: number
     unitPrice?: number | null
     note?: string | null
+    supplierName?: string | null
+    purchasedAt?: Date
     brand?: string | null
     category?: string | null
     categoryId?: number | null
@@ -877,6 +887,11 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
   if (parsed.data.unitPrice !== undefined) data.unitPrice = parsed.data.unitPrice
   if (parsed.data.note !== undefined) data.note = parsed.data.note || null
+  if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
+  if (has("purchasedAt")) {
+    const purchasedAt = trDateToDate(formData.get("purchasedAt") as string)
+    if (purchasedAt) data.purchasedAt = purchasedAt
+  }
   if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
@@ -943,6 +958,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   )
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath(`/technician/orders/${orderId}`)
   return { success: true }
 }
 

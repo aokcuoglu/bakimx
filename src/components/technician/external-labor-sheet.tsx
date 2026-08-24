@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Send } from "lucide-react"
+import { Pencil, Plus, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { parseTRYToKurus } from "@/lib/money"
 
@@ -29,25 +30,71 @@ export function AddExternalLaborButton({ orderId }: { orderId: string }) {
         <Plus />
         Dış İşçilik
       </Button>
-      {open && <ExternalLaborSheet orderId={orderId} open onOpenChange={setOpen} />}
+      {open && <ExternalLaborSheet orderId={orderId} item={null} open onOpenChange={setOpen} />}
+    </>
+  )
+}
+
+export type ExternalLaborFormItem = {
+  id: string
+  name: string
+  supplierName: string | null
+  unitPrice: number | null
+  note: string | null
+  purchasedAt: string | null
+  createdAt: string
+}
+
+function todayTrString(): string {
+  const now = new Date()
+  return `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`
+}
+
+function isoToTr(iso: string | null): string {
+  if (!iso) return ""
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ""
+  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`
+}
+
+/** Kart üzerindeki kalem simgesi — dış işçilik kaydını düzenler. */
+export function EditExternalLaborButton({ orderId, item }: { orderId: string; item: ExternalLaborFormItem }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setOpen(true)}
+        aria-label={`${item.name} — dış işçilik kaydını düzenle`}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <Pencil className="size-4" />
+      </Button>
+      {open && <ExternalLaborSheet orderId={orderId} item={item} open onOpenChange={setOpen} />}
     </>
   )
 }
 
 function ExternalLaborSheet({
   orderId,
+  item,
   open,
   onOpenChange,
 }: {
   orderId: string
+  item: ExternalLaborFormItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const router = useRouter()
-  const [name, setName] = useState("")
-  const [supplierName, setSupplierName] = useState("")
-  const [price, setPrice] = useState("")
-  const [note, setNote] = useState("")
+  const editing = item != null
+  const [name, setName] = useState(item?.name ?? "")
+  const [supplierName, setSupplierName] = useState(item?.supplierName ?? "")
+  const [price, setPrice] = useState(item?.unitPrice != null ? String(item.unitPrice / 100) : "")
+  const [note, setNote] = useState(item?.note ?? "")
+  const [purchasedAt, setPurchasedAt] = useState(item ? isoToTr(item.purchasedAt ?? item.createdAt) : todayTrString())
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -69,27 +116,33 @@ function ExternalLaborSheet({
     // Grid'in boş dış-işçilik taslağıyla aynı sözleşme: miktar 1, KDV'siz,
     // manuel kaynak. Tutar NET yazılır (kuruş); boşsa sunucu null bırakır.
     const fd = new FormData()
-    fd.set("serviceOrderId", orderId)
-    fd.set("type", "external_labor")
     fd.set("name", name.trim())
-    fd.set("quantity", "1")
-    fd.set("source", "manual")
-    fd.set("includeVat", "false")
     const priceKurus = price.trim() ? parseTRYToKurus(price) : null
     if (priceKurus != null) fd.set("unitPrice", String(priceKurus))
-    if (supplierName.trim()) fd.set("supplierName", supplierName.trim())
-    if (note.trim()) fd.set("note", note.trim())
+    fd.set("supplierName", supplierName.trim())
+    fd.set("note", note.trim())
+    fd.set("purchasedAt", purchasedAt)
+    if (!editing) {
+      fd.set("serviceOrderId", orderId)
+      fd.set("type", "external_labor")
+      fd.set("quantity", "1")
+      fd.set("source", "manual")
+      fd.set("includeVat", "false")
+    }
 
     setSubmitting(true)
     try {
-      const res = await fetch("/api/orders/items", { method: "POST", body: fd })
+      const res = await fetch(
+        editing ? `/api/orders/items?id=${item.id}&orderId=${orderId}` : "/api/orders/items",
+        { method: editing ? "PATCH" : "POST", body: fd },
+      )
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(data?.error || "Kaydedilemedi")
         return
       }
       close()
-      toast.success("Dış işçilik eklendi")
+      toast.success(editing ? "Dış işçilik güncellendi" : "Dış işçilik eklendi")
       router.refresh()
     } catch {
       setError("Bağlantı hatası, lütfen tekrar deneyin")
@@ -102,8 +155,12 @@ function ExternalLaborSheet({
     <Dialog open={open} onOpenChange={(o) => { if (!o) close() }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Dış İşçilik Ekle</DialogTitle>
-          <DialogDescription>Araca dışarıda yaptırdığın işi iş emrine kalem olarak ekle; tutarı toplama işlenir.</DialogDescription>
+          <DialogTitle>{editing ? "Dış İşçiliği Düzenle" : "Dış İşçilik Ekle"}</DialogTitle>
+          <DialogDescription>
+            {editing
+              ? "Dışarıda yaptırılan işin bilgilerini güncelle. Tutar iş emri toplamına işlenir."
+              : "Araca dışarıda yaptırdığın işi iş emrine kalem olarak ekle; tutarı toplama işlenir."}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-1">
@@ -159,6 +216,11 @@ function ExternalLaborSheet({
           </div>
 
           <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Tarih</label>
+            <DatePicker value={purchasedAt} onChange={setPurchasedAt} disabled={submitting} />
+          </div>
+
+          <div className="space-y-1">
             <label htmlFor="external-labor-note" className="text-xs font-medium text-muted-foreground">
               Not
             </label>
@@ -183,7 +245,7 @@ function ExternalLaborSheet({
               onClick={handleSubmit}
             >
               <Send className="size-3.5" />
-              {submitting ? "Kaydediliyor…" : "Kalem Olarak Ekle"}
+              {submitting ? "Kaydediliyor…" : editing ? "Değişiklikleri Kaydet" : "Kalem Olarak Ekle"}
             </Button>
             <Button
               type="button"

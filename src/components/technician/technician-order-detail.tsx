@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/item"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WizardActions } from "@/components/intake/wizard-ui"
-import { AddExternalLaborButton } from "@/components/technician/external-labor-sheet"
+import { AddExternalLaborButton, EditExternalLaborButton } from "@/components/technician/external-labor-sheet"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
 import { isOrderLocked } from "@/lib/status-transitions"
 import { purchaseDeleteDecision, type PurchaseDeleteDecision } from "@/lib/orders/purchase-delete"
@@ -90,6 +90,7 @@ type TechnicianOrderItem = OrderItem & {
   purchasePriceKurus: number | null
   supplierName: string | null
   purchasedAt: string | null
+  createdAt: string
   completedAt: string | null
 }
 
@@ -967,7 +968,13 @@ function PurchasesSection({
                 <span className="text-xs font-normal text-muted-foreground">({laborItems.length})</span>
               </h4>
               {laborItems.map((item) => (
-                <ExternalLaborCard key={item.id} item={item} deletable={!locked && canDeleteLabor} orderId={orderId} />
+                <ExternalLaborCard
+                  key={item.id}
+                  item={item}
+                  deletable={!locked && canDeleteLabor}
+                  editable={!locked && canDeleteLabor}
+                  orderId={orderId}
+                />
               ))}
             </section>
           )}
@@ -1161,11 +1168,12 @@ function PurchaseCard({
  * Sil butonu yalnız `deletable` izni açıksa görünür.
  */
 function ExternalLaborCard({
-  item, orderId, deletable,
+  item, orderId, deletable, editable,
 }: {
   item: OrderData["items"][number]
   orderId: string
   deletable: boolean
+  editable: boolean
 }) {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -1206,26 +1214,49 @@ function ExternalLaborCard({
                 </p>
               )}
             </div>
-            {item.supplierName && (
-              <p className="mt-0.5 break-words text-xs text-muted-foreground">{item.supplierName}</p>
-            )}
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
-          {item.note ? (
-            <p className="min-w-0 break-words text-xs text-muted-foreground">{item.note}</p>
-          ) : <span />}
-          {deletable && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setConfirmOpen(true)}
-              aria-label={`${item.name} — dış işçilik kaydını sil`}
-              className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
-            >
-              <Trash2 className="size-4" />
-            </Button>
+        {item.note && <p className="mt-0.5 break-words text-xs text-muted-foreground">{item.note}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2">
+          <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+            <Store className="size-3 shrink-0" />
+            <span className="truncate">{item.supplierName || "Tedarikçi belirtilmedi"}</span>
+          </span>
+          {(item.purchasedAt || item.createdAt) && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <CalendarDays className="size-3 shrink-0" />
+              {new Date(item.purchasedAt ?? item.createdAt).toLocaleDateString("tr-TR")}
+            </span>
+          )}
+          {(editable || deletable) && (
+            <div className="ml-auto flex items-center gap-1">
+              {editable && (
+                <EditExternalLaborButton
+                  orderId={orderId}
+                  item={{
+                    id: item.id,
+                    name: item.name,
+                    supplierName: item.supplierName,
+                    unitPrice: item.unitPrice,
+                    note: item.note,
+                    purchasedAt: item.purchasedAt,
+                    createdAt: item.createdAt,
+                  }}
+                />
+              )}
+              {deletable && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setConfirmOpen(true)}
+                  aria-label={`${item.name} — dış işçilik kaydını sil`}
+                  className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive-strong"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
