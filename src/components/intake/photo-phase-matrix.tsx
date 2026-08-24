@@ -31,9 +31,9 @@ import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lig
 
 export type { PhaseMatrixPhoto }
 
-/** Etiket + 3 sabit kare (~44px = önceki tam genişlik karelerin ~yarısı). */
-const COLS = "auto repeat(3, 2.75rem)"
-const CELL = "size-11" // 2.75rem
+/** Etiket + 3 sabit kare (~88px = size-11'in 2×). */
+const COLS = "auto repeat(3, 5.5rem)"
+const CELL = "size-[5.5rem]"
 
 /**
  * Tip satırı × Kabul / Onarım / Teslim — kare thumb matrisi.
