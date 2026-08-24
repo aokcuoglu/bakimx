@@ -828,12 +828,14 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   const quantityError = validateQuantityForUnit(effectiveQuantity, effectiveUnit, item.partId != null)
   if (quantityError) return { error: quantityError }
 
-  // Katalogdan (TecDoc) eklenen parçanın kimliği — ad, parça no, marka, kategori —
+  // Katalogdan (TecDoc) eklenen parçanın kimliği — parça no, marka, kategori —
   // katalog verisidir ve değiştirilemez; aksi halde satır ⓘ detayda/fiyat
-  // karşılaştırmada başka bir parçayı gösterirdi. UI bu alanları salt-okunur
-  // render eder; burada sunucu tarafında da zorlanır. İstisna: satır komple BAŞKA
-  // bir katalog parçasıyla değiştiriliyorsa (yeni tecdocArticleId) kimlik birlikte
-  // değişir.
+  // karşılaştırmada başka bir parçayı gösterirdi. Satır `name` (görünen tanım)
+  // transaction-only override'dır: fatura/PDF/özet için serbest; katalog ürün
+  // kartı ve sku/marka bağı değişmez. UI sku/marka/kategoriyi salt-okunur
+  // render eder; burada sunucu tarafında da zorlanır. İstisna: satır komple
+  // BAŞKA bir katalog parçasıyla değiştiriliyorsa (yeni tecdocArticleId)
+  // kimlik birlikte değişir.
   if (item.type === "part" && item.tecdocArticleId != null) {
     const replacingArticle =
       parsed.data.tecdocArticleId != null && parsed.data.tecdocArticleId !== item.tecdocArticleId
@@ -843,7 +845,6 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     const overwrites = (next: string | undefined, current: string | null) =>
       next !== undefined && current != null && (next || null) !== current
     const changesIdentity =
-      (parsed.data.name !== undefined && parsed.data.name !== item.name) ||
       overwrites(parsed.data.sku, item.sku) ||
       overwrites(parsed.data.brand, item.brand) ||
       overwrites(parsed.data.category, item.category) ||
@@ -851,7 +852,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
         item.categoryId != null &&
         (parsed.data.categoryId ?? null) !== item.categoryId)
     if (!replacingArticle && changesIdentity) {
-      return { error: "Katalogdan eklenen parçanın adı, kodu, markası ve kategorisi değiştirilemez" }
+      return { error: "Katalogdan eklenen parçanın kodu, markası ve kategorisi değiştirilemez" }
     }
   }
 

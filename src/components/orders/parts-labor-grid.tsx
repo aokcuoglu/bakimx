@@ -1242,12 +1242,13 @@ function VatHint({ vatKurus, className, included }: { vatKurus: number; classNam
 function useRowEditor(row: Row, vehicle: PickerVehicle | undefined, locked: boolean, onCell: OnCell) {
   const isPart = row.type === "part"
   const editable = !locked
-  // Katalogdan seçilmiş parçanın KİMLİĞİ kilitlidir: ad, parça no ve marka
-  // katalog verisidir — elle değiştirilirse satır artık gerçek parçayı göstermez
-  // (ⓘ detay, fiyat karşılaştırma, sipariş hep yanlış parçayı işaret eder).
-  // Miktar/fiyat/kategori düzenlenebilir kalır. Sunucu da reddeder
-  // (updateOrderItemAction). `tecdocArticleId` YALNIZ TecDoc seçiminde,
-  // `bakimxProductId` YALNIZ BakımX seçiminde dolar; ikisi de katalog kimliği.
+  // Katalogdan seçilmiş parçanın KİMLİĞİ (parça no / marka / kategori) kilitlidir:
+  // elle değiştirilirse satır ⓘ detay, fiyat karşılaştırma ve siparişte yanlış
+  // parçayı işaret eder. Satır `name` (görünen tanım) transaction-only
+  // override'dır — fatura/PDF için serbest; katalog ürün kartı değişmez.
+  // Sunucu sku/marka/kategori overwrite'ını reddeder (updateOrderItemAction).
+  // `tecdocArticleId` YALNIZ TecDoc seçiminde, `bakimxProductId` YALNIZ BakımX
+  // seçiminde dolar; ikisi de katalog kimliği.
   const identityLocked = isPart && (
     row.tecdocArticleId != null || row.bakimxProductId != null || row.getirbakimProductId != null
   )
@@ -1313,9 +1314,9 @@ type RowEditor = ReturnType<typeof useRowEditor>
 
 // ── Layout-bağımsız hücre içerikleri (masaüstü + mobil + composer ortak) ─────
 
-// Liste satırındaki parçanın kimliği: [parça no] + ad. Katalog kimliği salt
-// okunur kalır; manuel eklenen parçanın adı ise doğrudan satırda düzenlenir ve
-// iş emri adaptöründeki mevcut PATCH üzerinden kalıcılaşır.
+// Liste satırındaki parçanın salt-okunur kimliği: [parça no] + ad.
+// Kilitli emirlerde (teslim/iptal) kullanılır; düzenlenebilir emirlerde ad
+// `PartNameField` ile transaction-only override edilir.
 /**
  * BAK-104 — `oneLine`: masaüstü tablo satırında ad TEK satırda kalır ve taşarsa
  * kırpılır. Sarmalı ad satır yüksekliğini iki-üç katına çıkarıp aynı satırdaki
@@ -1323,13 +1324,7 @@ type RowEditor = ReturnType<typeof useRowEditor>
  * Tam ad `title`'da (hover ipucu) ve mobil kartta sarılı hâliyle görünür.
  */
 function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
-  const lockNote = row.bakimxProductId != null
-    ? "BakımX kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
-    : row.getirbakimProductId != null
-      ? "GetirBakım'dan eklendi — ad, parça no ve marka değiştirilemez"
-    : row.tecdocArticleId != null
-      ? "TecDoc kataloğundan eklendi — ad, parça no ve marka değiştirilemez"
-      : "Parça adı değiştirilemez — düzeltmek için satırı silip yeniden ekleyin"
+  const lockNote = "İş emri kilitli — parça tanımı değiştirilemez"
   // Kırpılan adda `title` ÖNCE tam adı vermeli: kullanıcı hover'da okumak
   // istediği şey kilit gerekçesi değil, görünmeyen ad.
   const title = oneLine ? `${row.name} — ${lockNote}` : lockNote
@@ -1358,7 +1353,8 @@ function PartIdentity({ row, oneLine }: { row: Row; oneLine?: boolean }) {
   )
 }
 
-function ManualPartNameField({ row, onCell }: { row: Row; onCell: OnCell }) {
+/** İş emri satırı görünen tanımı — katalog/stok kartını değiştirmez. */
+function PartNameField({ row, onCell, oneLine }: { row: Row; onCell: OnCell; oneLine?: boolean }) {
   const [draft, setDraft] = useState(row.name)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sunucudan doğrulanan tanımı taslağa taşır
@@ -1375,27 +1371,44 @@ function ManualPartNameField({ row, onCell }: { row: Row; onCell: OnCell }) {
     if (name !== row.name) onCell(row, { name })
   }
 
+  const hint =
+    "Yalnız bu iş emri ve çıktılarda görünür; katalog / stok tanımı değişmez"
+
   return (
-    <Input
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") event.currentTarget.blur()
-        if (event.key === "Escape") {
-          setDraft(row.name)
-          event.currentTarget.blur()
-        }
-      }}
-      placeholder="Parça tanımı"
-      aria-label="Parça tanımı"
-      className="h-9 min-w-0 text-sm font-medium"
-    />
+    <div
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-x-1.5",
+        oneLine ? "flex-nowrap" : "flex-wrap",
+      )}
+      title={hint}
+    >
+      {row.sku && (
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[11px] leading-none text-muted-foreground">
+          {row.sku}
+        </span>
+      )}
+      <Input
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur()
+          if (event.key === "Escape") {
+            setDraft(row.name)
+            event.currentTarget.blur()
+          }
+        }}
+        placeholder="Parça tanımı"
+        aria-label="Parça tanımı"
+        title={hint}
+        className="h-9 min-w-0 flex-1 text-sm font-medium"
+      />
+    </div>
   )
 }
 
-// Liste satırının ad hücresi. Katalog/dış alım parçasında ad salt okunur,
-// manuel parçada blur/Enter ile; işçilikte debounce'lu olarak düzenlenebilir.
+// Liste satırının ad hücresi. Düzenlenebilir emirde tüm parça kaynaklarında
+// blur/Enter ile transaction-only tanım; işçilikte debounce'lu input.
 //
 // BAK-104 — satır-içi aksiyon ikonları (parça detayı ⓘ, tedarikçi fiyatı 🏷)
 // BURADAN ÇIKARILDI. Ad hücresinin içinde durdukları için konumları satırdan
@@ -1409,8 +1422,8 @@ function PartField({ row, ed, onCell, oneLine }: {
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      {ed.isPart && row.source === "manual" && ed.editable ? (
-        <ManualPartNameField row={row} onCell={onCell} />
+      {ed.isPart && ed.editable ? (
+        <PartNameField row={row} onCell={onCell} oneLine={oneLine} />
       ) : ed.isPart ? (
         <PartIdentity row={row} oneLine={oneLine} />
       ) : (
