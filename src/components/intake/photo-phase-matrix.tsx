@@ -31,7 +31,9 @@ import { PhotoLightbox, type LightboxPhoto } from "@/components/shared/photo-lig
 
 export type { PhaseMatrixPhoto }
 
-const COLS = "2.75rem repeat(3, minmax(0,1fr))"
+/** Etiket + 3 sabit kare (~44px = önceki tam genişlik karelerin ~yarısı). */
+const COLS = "auto repeat(3, 2.75rem)"
+const CELL = "size-11" // 2.75rem
 
 /**
  * Tip satırı × Kabul / Onarım / Teslim — kare thumb matrisi.
@@ -82,7 +84,7 @@ export function PhotoPhaseMatrix({
 
   return (
     <>
-      <div className="space-y-1.5">
+      <div className="w-fit max-w-full space-y-1.5">
         <div
           className="grid items-center gap-x-1.5 gap-y-0.5"
           style={{ gridTemplateColumns: COLS }}
@@ -105,7 +107,7 @@ export function PhotoPhaseMatrix({
               className="grid items-center gap-x-1.5"
               style={{ gridTemplateColumns: COLS }}
             >
-              <div className="min-w-0 pr-0.5">
+              <div className="min-w-0 pr-1">
                 <span className="block text-[11px] font-medium truncate leading-tight">{row.label}</span>
                 {row.required ? (
                   <span className="block text-[9px] text-muted-foreground leading-tight">zorunlu</span>
@@ -187,12 +189,13 @@ function EmptyPhaseCell({
     <Button
       type="button"
       variant="outline"
+      size="icon-sm"
       disabled={disabled}
       onClick={onAdd}
       aria-label={`${PHOTO_PHASE_SHORT_LABELS[phase]} fotoğrafı ekle`}
-      className="aspect-square h-auto w-full rounded-md border-dashed text-muted-foreground hover:text-foreground"
+      className={cn(CELL, "rounded-md border-dashed text-muted-foreground hover:text-foreground")}
     >
-      <Plus className="size-4" />
+      <Plus className="size-3.5" />
     </Button>
   )
 }
@@ -214,18 +217,21 @@ function FilledPhaseCell({
     <button
       type="button"
       onClick={onOpen}
-      className="relative aspect-square w-full overflow-hidden rounded-md border bg-muted text-left touch-manipulation hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        CELL,
+        "relative shrink-0 overflow-hidden rounded-md border bg-muted text-left touch-manipulation hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      )}
       aria-label={`${typeLabel} · ${PHOTO_PHASE_SHORT_LABELS[phase]} — üçlü karşılaştır`}
     >
       {photo.fileUrl ? (
         <MatrixThumb photoId={photo.id} fileUrl={photo.fileUrl} />
       ) : (
         <div className="flex h-full items-center justify-center">
-          <ImageOff className="size-4 text-muted-foreground" />
+          <ImageOff className="size-3.5 text-muted-foreground" />
         </div>
       )}
       {count > 1 ? (
-        <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1 text-[9px] font-semibold tabular-nums leading-none py-0.5 border">
+        <span className="absolute bottom-0.5 right-0.5 rounded bg-background/90 px-1 text-[9px] font-semibold tabular-nums leading-none py-0.5 border">
           {count}
         </span>
       ) : null}
