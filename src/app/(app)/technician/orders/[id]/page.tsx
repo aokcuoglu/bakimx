@@ -179,6 +179,7 @@ export default async function TechnicianOrderPage({ params }: { params: Promise<
       supplierName: i.supplierName,
       supplierId: i.supplierId,
       purchasedAt: i.purchasedAt ? i.purchasedAt.toISOString() : null,
+      createdAt: i.createdAt.toISOString(),
       purchasedByName: i.purchasedBy?.fullName ?? null,
       purchasePhotoId: i.photos[0]?.id ?? null,
       completedAt: i.completedAt ? i.completedAt.toISOString() : null,

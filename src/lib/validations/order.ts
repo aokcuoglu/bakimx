@@ -47,6 +47,9 @@ export const serviceOrderItemUpdateSchema = z.object({
     .multipleOf(0.001, "Miktar en çok 3 ondalık basamaklı olabilir").optional(),
   unitPrice: z.coerce.number().int("Birim fiyat kuruş (tam sayı) olmalıdır").min(0, "Birim fiyat negatif olamaz").optional(),
   note: z.string().optional(),
+  // Yalnız dış işçilikte kullanılan "nerede yaptırıldı" bilgisi. Parça
+  // tedarikçisi satın alma akışının kendi kapısından güncellenir.
+  supplierName: z.string().trim().max(160, "Tedarikçi adı en fazla 160 karakter olabilir").optional(),
   brand: z.string().optional(),
   category: z.string().optional(),
   categoryId: z.coerce.number().int("Kategori id tam sayı olmalıdır").positive().nullable().optional(),

@@ -22,3 +22,9 @@ test("brand/category/categoryId kabul edilir", () => {
   const r = serviceOrderItemUpdateSchema.safeParse({ brand: "BOSCH", category: "Yağ filtresi", categoryId: 100200 })
   expect(r.success).toBe(true)
 })
+
+test("dış işçilik tedarikçisi kabul edilir", () => {
+  const r = serviceOrderItemUpdateSchema.safeParse({ supplierName: "  Ahmet Rot Balans  " })
+  expect(r.success).toBe(true)
+  if (r.success) expect(r.data.supplierName).toBe("Ahmet Rot Balans")
+})
