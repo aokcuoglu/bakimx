@@ -66,11 +66,16 @@ test("ayarlar ve kayıt yönetimi doğru rollere açık", () => {
   expect(roleCan("cirak", "records.manage")).toBe(false)
 })
 
-test("çırak yalnız parça alımı yapabilir", () => {
-  expect(ROLE_PERMISSIONS.cirak).toEqual(["parts.purchase"])
+test("çırak kayıt oluşturabilir ve parça alımı yapabilir, düzenleyemez", () => {
+  expect(ROLE_PERMISSIONS.cirak).toEqual(["records.create", "parts.purchase"])
+  expect(roleCan("cirak", "records.create")).toBe(true)
   expect(roleCan("cirak", "order.edit")).toBe(false)
   expect(roleCan("cirak", "order.status")).toBe(false)
   expect(roleCan("cirak", "cashbox.manage")).toBe(false)
+})
+
+test("kayıt oluşturma tüm rollere açıktır", () => {
+  for (const r of ALL_ROLES) expect(roleCan(r, "records.create")).toBe(true)
 })
 
 test("usta iş emrini düzenler ve ilerletir, kasa/katalog yönetemez", () => {

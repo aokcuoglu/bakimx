@@ -17,6 +17,12 @@ export const TECHNICIAN_RESTRICTED_ROLES: readonly UserRole[] = ["usta", "cirak"
 export const TECHNICIAN_ALLOWED_PREFIXES: readonly string[] = [
   "/technician",
   "/account",
+  // Oluşturma merkezi (+) tüm rollere açık: yalnız "new" ekranları izinli,
+  // liste/detay (/orders, /quotes…) deny-by-default kalmaya devam eder.
+  "/orders/new",
+  "/quotes/new",
+  "/appointments/new",
+  "/reminders/new",
 ]
 
 export function isTechnicianRestrictedRole(role: string | undefined | null): boolean {

@@ -22,17 +22,31 @@ const OPTION_ICONS = {
   reminder: BellRing,
 } as const
 
-export function CreateCenterDialog() {
-  const [open, setOpen] = useState(false)
+export function CreateCenterDialog({
+  open,
+  onOpenChange,
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+} = {}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = open !== undefined
+  const isOpen = isControlled ? open : internalOpen
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next)
+    onOpenChange?.(next)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">Oluştur</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button type="button" className="w-8 px-0 sm:w-auto sm:px-2.5" aria-label="Yeni kayıt oluştur">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Oluştur</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent showCloseButton={false} className="top-auto bottom-0 max-h-[calc(100dvh-1rem)] max-w-none translate-y-0 overflow-y-auto rounded-b-none sm:top-1/2 sm:bottom-auto sm:max-w-xl sm:-translate-y-1/2 sm:rounded-xl">
         <DialogClose asChild>
           <Button

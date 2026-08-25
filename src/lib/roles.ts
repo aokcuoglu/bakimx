@@ -22,7 +22,7 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   owner: "Her şeyi yapabilir; kapalı iş emrini yeniden açabilir.",
   manager: "Tüm operasyonlar ve ekip yönetimi.",
   usta: "İş emrini düzenler ve ilerletir.",
-  cirak: "Parça alır, maliyet girer.",
+  cirak: "İş emri, teklif, randevu ve hatırlatma oluşturur; parça alır, maliyet girer.",
   staff: "Eski kayıt — Usta ile aynı yetkilere sahiptir.",
 }
 
@@ -53,6 +53,8 @@ export const PERMISSIONS = [
   "settings.manage",
   /** Müşteri, araç, randevu, teklif, hatırlatma kayıtları. */
   "records.manage",
+  /** Yalnız oluşturma: iş emri/kabul, teklif, randevu, hatırlatma, müşteri/araç. */
+  "records.create",
   /** İş emri / kabul metinlerini ve kalemlerini düzenleme. */
   "order.edit",
   /** Durum ilerletme (tamire başla, tamamla, teslim et…). */
@@ -72,9 +74,9 @@ export type Permission = (typeof PERMISSIONS)[number]
 /**
  * Rol → izin matrisi. Tek doğruluk kaynağı; hem sunucu kapıları hem UI bunu okur.
  *
- * Çırak bilinçli olarak yalnız `parts.purchase` taşır: issue'daki tanım "araca
- * göre parça alır, maliyetini girer". İş emrini düzenlemesi ya da durum
- * ilerletmesi beklenmiyor.
+ * Çırak `records.create` + `parts.purchase` taşır: kayıt oluşturabilir ve
+ * "araca göre parça alır, maliyetini girer". İş emrini düzenlemesi ya da durum
+ * ilerletmesi beklenmez — o kapılar `order.edit`/`order.status`'ta kalır.
  */
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   owner: [...PERMISSIONS],
@@ -82,15 +84,16 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "team.manage",
     "settings.manage",
     "records.manage",
+    "records.create",
     "order.edit",
     "order.status",
     "parts.purchase",
     "catalog.manage",
     "cashbox.manage",
   ],
-  usta: ["records.manage", "order.edit", "order.status", "parts.purchase"],
-  staff: ["records.manage", "order.edit", "order.status", "parts.purchase"],
-  cirak: ["parts.purchase"],
+  usta: ["records.manage", "records.create", "order.edit", "order.status", "parts.purchase"],
+  staff: ["records.manage", "records.create", "order.edit", "order.status", "parts.purchase"],
+  cirak: ["records.create", "parts.purchase"],
 }
 
 export function roleCan(role: UserRole, permission: Permission): boolean {

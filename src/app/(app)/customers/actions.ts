@@ -62,7 +62,7 @@ async function findCustomersByPhone(
 }
 
 export async function createCustomerAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user } = await requireWritableWorkshop("records.create")
 
   const type = (formData.get("type") as string) || "individual"
   const raw = {

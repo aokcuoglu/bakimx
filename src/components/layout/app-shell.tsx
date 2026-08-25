@@ -39,6 +39,7 @@ import {
   UserCircle,
   Search,
   X,
+  QrCode,
 } from "lucide-react"
 import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
@@ -309,7 +310,7 @@ function AppHeader({
             mobileSearchOpen && "hidden sm:flex",
           )}
         >
-          {!isTechRole && <CreateCenterDialog />}
+          <CreateCenterDialog />
           {isTechRole ? (
             <TechnicianNotificationsBell />
           ) : (
@@ -491,26 +492,41 @@ function NavMenuItem({ item, pathname }: { item: NavItem; pathname: string }) {
 function MobileBottomNav({ userIdentity }: { userIdentity?: UserIdentity }) {
   const pathname = usePathname()
   const { isMobile } = useSidebar()
+  const [createOpen, setCreateOpen] = useState(false)
 
   if (!isMobile) return null
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border safe-area-bottom">
       {isTechnicianRestrictedRole(userIdentity?.role) ? (
-        <div className="grid grid-cols-2 gap-1 px-2 py-1.5">
-          <MobileNavLink
-            href="/technician"
-            label="Teknisyen"
-            icon={HardHat}
-            active={pathname === "/technician" || pathname.startsWith("/technician/")}
-          />
-          <MobileNavLink
-            href="/account"
-            label="Hesabım"
-            icon={UserCircle}
-            active={pathname === "/account" || pathname.startsWith("/account/")}
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-1 px-2 py-1.5">
+            <MobileNavLink
+              href="/technician"
+              label="Teknisyen"
+              icon={HardHat}
+              active={pathname === "/technician" || pathname.startsWith("/technician/")}
+            />
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                size="icon"
+                className="-mt-7 size-14 rounded-full shadow-md ring-4 ring-background"
+                aria-label="Oluşturma merkezi"
+                onClick={() => setCreateOpen(true)}
+              >
+                <QrCode className="size-6" />
+              </Button>
+            </div>
+            <MobileNavLink
+              href="/account"
+              label="Hesabım"
+              icon={UserCircle}
+              active={pathname === "/account" || pathname.startsWith("/account/")}
+            />
+          </div>
+          <CreateCenterDialog open={createOpen} onOpenChange={setCreateOpen} />
+        </>
       ) : (
         <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
           <MobileNavLink href="/dashboard" label="Panel" icon={LayoutDashboard} active={pathname === "/dashboard"} />
