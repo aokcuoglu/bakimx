@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Loader2, Save } from "lucide-react"
+import { Clock3, Loader2, Save } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,22 @@ const TIMEZONES: Record<string, string> = {
   UTC: "UTC",
 }
 
+/**
+ * Saat alanlarını tarayıcının yerelleştirilmiş `input[type=time]` arayüzüne
+ * bırakmak yerine her platformda aynı çalışan bir seçim listesi sunar.
+ * Mevcut bir ayar 15 dakikalık aralıkta değilse de listede tutulur; böylece
+ * sadece ekranı açıp kaydetmek kayıtlı çalışma saatini değiştirmez.
+ */
+const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
+  const hours = String(Math.floor(index / 4)).padStart(2, "0")
+  const minutes = String((index % 4) * 15).padStart(2, "0")
+  return `${hours}:${minutes}`
+})
+
+function timeOptionsFor(value: string) {
+  return TIME_OPTIONS.includes(value) ? TIME_OPTIONS : [...TIME_OPTIONS, value].sort()
+}
+
 export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveChatSettingsValues }) {
   const [error, setError] = useState("")
   const [pending, startTransition] = useTransition()
@@ -43,6 +59,7 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
   // React Compiler react-hook-form'un watch()'ını memoize edemiyor; repo deseni
   // gereği dosya bazında bastırılır (docs/agent-workflows/repo-guardrails.md §1).
   const enabled = form.watch("enabled") // eslint-disable-line react-hooks/incompatible-library
+  const schedule = form.watch("schedule")
 
   function onSubmit(values: LiveChatSettingsValues) {
     setError("")
@@ -129,13 +146,22 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
           <CardHeader>
             <CardTitle>Çalışma Saatleri</CardTitle>
             <CardDescription>
-              Ekip yalnız bu aralıklarda &quot;Çevrimiçi&quot; görünür. Kapalı saatlerde ziyaretçi mesajını
+              Bir günü açın, ardından başlangıç ve bitiş saatini seçin. Kapalı saatlerde ziyaretçi mesajını
               bırakabilir; mesaj gelen kutusuna düşer.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-5">
+            <div className="overflow-hidden rounded-xl border">
+              <div className="hidden grid-cols-[minmax(11rem,1fr)_10rem_10rem] gap-3 border-b bg-muted/50 px-4 py-2.5 sm:grid">
+                <p className="text-xs font-medium text-muted-foreground">Gün</p>
+                <p className="text-xs font-medium text-muted-foreground">Başlangıç</p>
+                <p className="text-xs font-medium text-muted-foreground">Bitiş</p>
+              </div>
             {DISPLAY_ORDER.map((day) => (
-              <div key={day} className="grid grid-cols-1 gap-2 sm:grid-cols-[150px_1fr_1fr] sm:items-end">
+              <div
+                key={day}
+                className="grid gap-3 border-b px-4 py-3 last:border-b-0 sm:grid-cols-[minmax(11rem,1fr)_10rem_10rem] sm:items-center"
+              >
                 <FormField
                   control={form.control}
                   name={`schedule.${day}.enabled`}
@@ -145,7 +171,10 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
                         <FormControl>
                           <Switch checked={field.value} onCheckedChange={(c) => field.onChange(c)} />
                         </FormControl>
-                        <FormLabel className="cursor-pointer">{DAY_LABELS[day]}</FormLabel>
+                        <FormLabel className="cursor-pointer font-medium">{DAY_LABELS[day]}</FormLabel>
+                        <span className="text-xs text-muted-foreground">
+                          {field.value ? "Açık" : "Kapalı"}
+                        </span>
                       </div>
                     </FormItem>
                   )}
@@ -154,11 +183,23 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
                   control={form.control}
                   name={`schedule.${day}.start`}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">Başlangıç</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="time" />
-                      </FormControl>
+                    <FormItem className="grid grid-cols-[5.5rem_1fr] items-center gap-2 sm:block">
+                      <FormLabel className="text-xs text-muted-foreground sm:sr-only">Başlangıç</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange} disabled={!schedule[day].enabled}>
+                        <FormControl>
+                          <SelectTrigger className="w-full sm:w-40" aria-label={`${DAY_LABELS[day]} başlangıç saati`}>
+                            <Clock3 className="size-3.5 text-muted-foreground" />
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {timeOptionsFor(field.value).map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -167,17 +208,30 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
                   control={form.control}
                   name={`schedule.${day}.end`}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">Bitiş</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="time" />
-                      </FormControl>
+                    <FormItem className="grid grid-cols-[5.5rem_1fr] items-center gap-2 sm:block">
+                      <FormLabel className="text-xs text-muted-foreground sm:sr-only">Bitiş</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange} disabled={!schedule[day].enabled}>
+                        <FormControl>
+                          <SelectTrigger className="w-full sm:w-40" aria-label={`${DAY_LABELS[day]} bitiş saati`}>
+                            <Clock3 className="size-3.5 text-muted-foreground" />
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {timeOptionsFor(field.value).map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
             ))}
+            </div>
 
             <FormField
               control={form.control}
@@ -201,9 +255,15 @@ export function LiveChatSettingsForm({ defaultValues }: { defaultValues: LiveCha
         <Card>
           <CardHeader>
             <CardTitle>Otomatik Mesajlar</CardTitle>
-            <CardDescription>Ziyaretçi sohbeti başlattığında ilk gördüğü metinler.</CardDescription>
+            <CardDescription>Ziyaretçi sohbeti başlattığında durumuna göre otomatik gösterilen metinler.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                Bu mesajlar açıktır: ziyaretçi çevrimiçiyken karşılama, çevrimdışıyken çevrimdışı mesajı
+                otomatik olarak sohbetin içinde gösterilir.
+              </AlertDescription>
+            </Alert>
             <FormField
               control={form.control}
               name="greeting"
