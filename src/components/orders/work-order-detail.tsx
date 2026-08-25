@@ -343,6 +343,9 @@ export function WorkOrderDetail({
   const [addingPhoto, setAddingPhoto] = useState(false)
   const [photoType, setPhotoType] = useState("")
   const [photoPhase, setPhotoPhase] = useState("intake")
+  // Matris hücresinden açıldığında tip ve aşama hücrenin kendisinden gelir;
+  // seçimler kilitlenir. Serbest "Fotoğraf Ekle" butonunda editable kalır.
+  const [photoContextLocked, setPhotoContextLocked] = useState(false)
   const [photoNote, setPhotoNote] = useState("")
   // Çoklu yükleme: seçilen kareler yüklenene kadar burada birikir. Önizleme
   // blob URL'i her kare için tutulur ve listeden çıkınca serbest bırakılır.
@@ -783,6 +786,9 @@ export function WorkOrderDetail({
   function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
     if (typeKey) setPhotoType(typeKey)
     if (phase) setPhotoPhase(phase)
+    // İkisi de biliniyorsa hücre bağlamıdır (matris karesi / karşılaştır "+")
+    // → tür ve aşama diyaloğda kilitli gelir.
+    setPhotoContextLocked(Boolean(typeKey && phase))
     setAddingPhoto(true)
     if (activeTab === "kanit") {
       // Panel zaten mount; doğrudan kaydır.
@@ -1403,7 +1409,7 @@ export function WorkOrderDetail({
 
               {/* Add photo trigger + dialog */}
               {!orderLocked && (<>
-              <Button variant="outline" onClick={() => setAddingPhoto(true)} className="w-full">
+              <Button variant="outline" onClick={() => { setPhotoContextLocked(false); setAddingPhoto(true) }} className="w-full">
                 <Plus className="size-3.5 mr-1" /> Fotoğraf Ekle
               </Button>
 
@@ -1415,6 +1421,7 @@ export function WorkOrderDetail({
                   if (!o) {
                     setPhotoType("")
                     setPhotoPhase("intake")
+                    setPhotoContextLocked(false)
                     setPhotoNote("")
                     resetPhotoDraft()
                   }
@@ -1427,7 +1434,7 @@ export function WorkOrderDetail({
                   <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Fotoğraf Türü</Label>
-                  <Select value={photoType} onValueChange={(v) => setPhotoType(v)}>
+                  <Select value={photoType} onValueChange={(v) => setPhotoType(v)} disabled={photoContextLocked}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seçiniz..." />
                     </SelectTrigger>
@@ -1444,7 +1451,7 @@ export function WorkOrderDetail({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Aşama</Label>
-                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v)}>
+                  <Select value={photoPhase} onValueChange={(v) => setPhotoPhase(v)} disabled={photoContextLocked}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aşama seçin" />
                     </SelectTrigger>
