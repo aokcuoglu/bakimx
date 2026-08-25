@@ -13,7 +13,7 @@ import { syncMaintenanceReminderToCalendar } from "@/lib/calendar/sync"
 import type { MaintenanceReminderStatus, MaintenanceReminderType, MaintenanceChannel } from "@prisma/client"
 
 export async function createReminderAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user } = await requireWritableWorkshop("records.create")
 
   const raw = {
     customerId: formData.get("customerId") as string,

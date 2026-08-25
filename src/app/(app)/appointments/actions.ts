@@ -12,7 +12,7 @@ import { notifyAppointmentCreated } from "@/lib/communications/triggers"
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync"
 
 export async function createAppointmentAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user } = await requireWritableWorkshop("records.create")
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}

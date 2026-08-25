@@ -59,7 +59,7 @@ async function validateCatalogSelection(data: {
 }
 
 export async function createVehicleAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user } = await requireWritableWorkshop("records.create")
 
   const raw = {
     customerId: formData.get("customerId") as string,
