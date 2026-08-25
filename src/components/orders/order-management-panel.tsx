@@ -57,8 +57,9 @@ export type OrderItem = {
   categoryId: number | null
   // TecDoc katalog bağlantısı — doluysa satırda parça detayı (ⓘ) açılabilir.
   tecdocArticleId?: number | null
-  // BakımX ürün kataloğu bağlantısı (BAK-35) — doluysa satırın kimliği katalogdan
-  // gelir ve düzenlenemez. FK değildir: fiyat kalemde donmuş anlık görüntüdür.
+  // BakımX ürün kataloğu bağlantısı (BAK-35) — doluysa sku/marka/kategori
+  // katalog kimliğidir (görünen ad transaction-only override edilebilir).
+  // FK değildir: fiyat kalemde donmuş anlık görüntüdür.
   bakimxProductId?: string | null
   getirbakimProductId?: string | null
   // Kalemin nasıl eklendiği (katalog/manuel/dış alım/BakımX/GetirBakım); eski

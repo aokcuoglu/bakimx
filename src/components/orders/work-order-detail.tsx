@@ -55,7 +55,15 @@ import {
   HardHat,
 } from "lucide-react"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { PHOTO_TYPES, PHOTO_PHASES, DAMAGE_TYPES, DAMAGE_SEVERITY, VEHICLE_ZONES, type PhotoPhaseKey } from "@/lib/constants"
+import {
+  PHOTO_TYPES,
+  PHOTO_PHASES,
+  VEHICLE_PHOTO_TYPES,
+  DAMAGE_TYPES,
+  DAMAGE_SEVERITY,
+  VEHICLE_ZONES,
+  type PhotoPhaseKey,
+} from "@/lib/constants"
 import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
@@ -69,6 +77,8 @@ import { canOpenTechnicianView, technicianOrderPath } from "@/lib/technician/cro
 import type { OrderStatus, PaymentStatus } from "@prisma/client"
 import { PhotoAnnotate } from "@/components/intake/photo-annotate"
 import { PhotoGalleryGrid } from "@/components/intake/photo-gallery-grid"
+import { PhotoPhaseMatrix } from "@/components/intake/photo-phase-matrix"
+import { partitionIntakePhotos } from "@/lib/photos/phase-matrix"
 import { generateWhatsAppShareText, getWhatsAppSendUrl } from "@/lib/share/whatsapp"
 import { calculatePhotoCompletion } from "@/lib/intake/completeness"
 import { IntakeEvidenceSummary } from "@/components/intake/intake-evidence-summary"
@@ -751,10 +761,12 @@ export function WorkOrderDetail({
       (a.key === "ready_for_delivery" && partsDecisionBlocked),
   }))
 
-  const damagePhotos = intake.photos.filter((p) => p.type === "damage_detail")
-  const takenPhotoTypes = new Set(intake.photos.map((p) => p.type))
-  const missingRequired = Object.entries(PHOTO_TYPES).filter(([key, v]) => v.required && !takenPhotoTypes.has(key))
-  const photoCompletion = calculatePhotoCompletion(intake.photos.map((p) => p.type))
+  const { vehicle: vehiclePhotos, damage: damagePhotos } = partitionIntakePhotos(intake.photos)
+  const takenPhotoTypes = new Set(vehiclePhotos.map((p) => p.type))
+  const missingRequired = Object.entries(VEHICLE_PHOTO_TYPES).filter(
+    ([key, v]) => v.required && !takenPhotoTypes.has(key)
+  )
+  const photoCompletion = calculatePhotoCompletion(vehiclePhotos.map((p) => p.type))
   const approvalStatus = intake.approvals.length > 0
     ? intake.approvals[0].status === "verified" ? "verified" as const : "pending" as const
     : "none" as const
@@ -768,8 +780,9 @@ export function WorkOrderDetail({
 
   // Eksik/istenen foto akışı: Kanıt sekmesine geç (paneli mount et), tipini
   // seç ve dialog'u aç; scroll useEffect ile panel render olunca yapılır.
-  function focusPhoto(typeKey?: string) {
+  function focusPhoto(typeKey?: string, phase?: PhotoPhaseKey) {
     if (typeKey) setPhotoType(typeKey)
+    if (phase) setPhotoPhase(phase)
     setAddingPhoto(true)
     if (activeTab === "kanit") {
       // Panel zaten mount; doğrudan kaydır.
@@ -1347,15 +1360,26 @@ export function WorkOrderDetail({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2"><Camera className="size-4" /> Fotoğraflar</span>
-                <span className="text-sm font-normal text-muted-foreground">{takenPhotoTypes.size} / {Object.entries(PHOTO_TYPES).length} tamamlandı</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {photoCompletion.requiredCompleted} / {photoCompletion.required} zorunlu açı
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Gallery */}
-              {intake.photos.length > 0 ? (
-                <PhotoGalleryGrid photos={intake.photos} canDelete={!orderLocked} onDeleted={() => router.refresh()} />
+              {/* Tip × aşama matrisi — hasar detayı alt kartta, burada yok */}
+              {vehiclePhotos.length > 0 || missingRequired.length > 0 ? (
+                <PhotoPhaseMatrix
+                  photos={vehiclePhotos}
+                  canDelete={!orderLocked}
+                  onDeleted={() => router.refresh()}
+                  onAdd={
+                    orderLocked
+                      ? undefined
+                      : (type, phase) => focusPhoto(type, phase)
+                  }
+                />
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-3">Henüz fotoğraf eklenmedi</p>
+                <p className="text-sm text-muted-foreground text-center py-3">Henüz araç fotoğrafı eklenmedi</p>
               )}
 
               {/* Missing required chips */}
@@ -1388,7 +1412,12 @@ export function WorkOrderDetail({
                 onOpenChange={(o) => {
                   if (!o && loading) return // yükleme sürerken kapanmasın
                   setAddingPhoto(o)
-                  if (!o) { setPhotoType(""); setPhotoNote(""); resetPhotoDraft() }
+                  if (!o) {
+                    setPhotoType("")
+                    setPhotoPhase("intake")
+                    setPhotoNote("")
+                    resetPhotoDraft()
+                  }
                 }}
               >
                 <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -1404,11 +1433,14 @@ export function WorkOrderDetail({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Seçiniz...</SelectItem>
-                      {Object.entries(PHOTO_TYPES).map(([key, val]) => (
+                      {Object.entries(VEHICLE_PHOTO_TYPES).map(([key, val]) => (
                         <SelectItem key={key} value={key}>{val.label} {val.required ? "(Zorunlu)" : "(Opsiyonel)"}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Hasar detayı görselleri alttaki Hasar bölümünden eklenir.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Aşama</Label>

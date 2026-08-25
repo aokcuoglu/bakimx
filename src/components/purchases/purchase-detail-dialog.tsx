@@ -17,17 +17,21 @@ import { formatTRY } from "@/lib/format"
 import { parseTRYToKurus, kurusToLira } from "@/lib/money"
 import { Camera, Pencil, Trash2, ShoppingCart } from "lucide-react"
 import { PhotoDeleteButton } from "@/components/intake/photo-delete-button"
+import { PurchaseFormSheet } from "@/components/technician/purchase-form-sheet"
+import type { PickerVehicle } from "@/components/parts/tecdoc-part-picker"
 
 export type PurchaseDetailItem = {
   id: string
   name: string
   sku: string | null
+  brand: string | null
   quantity: number
   purchasePriceKurus: number | null
   supplierName: string | null
   purchasedAt: string | null
   purchasedByName: string | null
   purchasePhotoId: string | null
+  tecdocArticleId: number | null
 }
 
 /** ISO tarih → dd.MM.yyyy (DatePicker depolama formatı). */
@@ -59,15 +63,19 @@ export function PurchaseDetailDialog({
   orderId,
   item,
   editable,
+  vehicle,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   orderId: string
   item: PurchaseDetailItem
   editable: boolean
+  /** İş emri ekranından gelince tam dış alım düzenleme formu açılır. */
+  vehicle?: PickerVehicle
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
+  const [fullEditOpen, setFullEditOpen] = useState(false)
   const [supplierName, setSupplierName] = useState(item.supplierName ?? "")
   const [purchasedAt, setPurchasedAt] = useState(isoToTr(item.purchasedAt))
   const [price, setPrice] = useState(
@@ -135,13 +143,14 @@ export function PurchaseDetailDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) resetEdit()
-        onOpenChange(o)
-      }}
-    >
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) resetEdit()
+          onOpenChange(o)
+        }}
+      >
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -258,14 +267,49 @@ export function PurchaseDetailDialog({
               </Button>
             </>
           ) : editable ? (
-            <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (vehicle) {
+                  onOpenChange(false)
+                  setFullEditOpen(true)
+                } else {
+                  setEditing(true)
+                }
+              }}
+            >
               <Pencil className="size-3.5" />
               Düzenle
             </Button>
           ) : null}
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      {vehicle && fullEditOpen && (
+        <PurchaseFormSheet
+          orderId={orderId}
+          vehicle={vehicle}
+          suppliers={[]}
+          technicians={[]}
+          defaultTechnicianId={null}
+          item={{
+            id: item.id,
+            name: item.name,
+            sku: item.sku,
+            brand: item.brand,
+            quantity: item.quantity,
+            purchasePriceKurus: item.purchasePriceKurus,
+            supplierName: item.supplierName,
+            purchasedAt: item.purchasedAt,
+            tecdocArticleId: item.tecdocArticleId,
+          }}
+          open={fullEditOpen}
+          onOpenChange={setFullEditOpen}
+        />
+      )}
+    </>
   )
 }
 

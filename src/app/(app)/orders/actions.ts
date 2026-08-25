@@ -241,6 +241,7 @@ export async function addOrderItemAction(formData: FormData) {
           // alan boş kalır (satın alma akışı kendi supplierName'ini kendisi yazar).
           supplierName:
             parsed.data.type === "external_labor" ? parsed.data.supplierName?.trim() || null : null,
+          purchasedAt: parsed.data.type === "external_labor" ? new Date() : null,
           // Satır KDV'ye tabi mi (BAK-53). Varsayılan `false` (BAK-75): KDV
           // kimseye sorulmadan eklenmez — girilen tutar neyse Genel Toplam'a o
           // girer, KDV yalnız satırın tick'i açılınca üstüne biner.
@@ -807,6 +808,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     quantity: has("quantity") ? Number(formData.get("quantity")) : undefined,
     unitPrice: has("unitPrice") ? Number(formData.get("unitPrice")) : undefined,
     note: has("note") ? (formData.get("note") as string) : undefined,
+    supplierName: has("supplierName") ? (formData.get("supplierName") as string) : undefined,
     brand: has("brand") ? (formData.get("brand") as string) : undefined,
     category: has("category") ? (formData.get("category") as string) : undefined,
     categoryId: has("categoryId")
@@ -822,18 +824,26 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }
   }
+  if (
+    (parsed.data.supplierName !== undefined || has("purchasedAt")) &&
+    item.type !== "external_labor"
+  ) {
+    return { error: "Tedarikçi ve tarih yalnız dış işçilik kaleminde güncellenebilir" }
+  }
   const currentQuantity = quantityToNumber(item.quantity)
   const effectiveQuantity = parsed.data.quantity ?? currentQuantity
   const effectiveUnit = parsed.data.unit ?? item.unit
   const quantityError = validateQuantityForUnit(effectiveQuantity, effectiveUnit, item.partId != null)
   if (quantityError) return { error: quantityError }
 
-  // Katalogdan (TecDoc) eklenen parçanın kimliği — ad, parça no, marka, kategori —
+  // Katalogdan (TecDoc) eklenen parçanın kimliği — parça no, marka, kategori —
   // katalog verisidir ve değiştirilemez; aksi halde satır ⓘ detayda/fiyat
-  // karşılaştırmada başka bir parçayı gösterirdi. UI bu alanları salt-okunur
-  // render eder; burada sunucu tarafında da zorlanır. İstisna: satır komple BAŞKA
-  // bir katalog parçasıyla değiştiriliyorsa (yeni tecdocArticleId) kimlik birlikte
-  // değişir.
+  // karşılaştırmada başka bir parçayı gösterirdi. Satır `name` (görünen tanım)
+  // transaction-only override'dır: fatura/PDF/özet için serbest; katalog ürün
+  // kartı ve sku/marka bağı değişmez. UI sku/marka/kategoriyi salt-okunur
+  // render eder; burada sunucu tarafında da zorlanır. İstisna: satır komple
+  // BAŞKA bir katalog parçasıyla değiştiriliyorsa (yeni tecdocArticleId)
+  // kimlik birlikte değişir.
   if (item.type === "part" && item.tecdocArticleId != null) {
     const replacingArticle =
       parsed.data.tecdocArticleId != null && parsed.data.tecdocArticleId !== item.tecdocArticleId
@@ -843,7 +853,6 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     const overwrites = (next: string | undefined, current: string | null) =>
       next !== undefined && current != null && (next || null) !== current
     const changesIdentity =
-      (parsed.data.name !== undefined && parsed.data.name !== item.name) ||
       overwrites(parsed.data.sku, item.sku) ||
       overwrites(parsed.data.brand, item.brand) ||
       overwrites(parsed.data.category, item.category) ||
@@ -851,7 +860,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
         item.categoryId != null &&
         (parsed.data.categoryId ?? null) !== item.categoryId)
     if (!replacingArticle && changesIdentity) {
-      return { error: "Katalogdan eklenen parçanın adı, kodu, markası ve kategorisi değiştirilemez" }
+      return { error: "Katalogdan eklenen parçanın kodu, markası ve kategorisi değiştirilemez" }
     }
   }
 
@@ -863,6 +872,8 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
     quantity?: number
     unitPrice?: number | null
     note?: string | null
+    supplierName?: string | null
+    purchasedAt?: Date
     brand?: string | null
     category?: string | null
     categoryId?: number | null
@@ -876,6 +887,11 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   if (parsed.data.quantity !== undefined) data.quantity = parsed.data.quantity
   if (parsed.data.unitPrice !== undefined) data.unitPrice = parsed.data.unitPrice
   if (parsed.data.note !== undefined) data.note = parsed.data.note || null
+  if (parsed.data.supplierName !== undefined) data.supplierName = parsed.data.supplierName || null
+  if (has("purchasedAt")) {
+    const purchasedAt = trDateToDate(formData.get("purchasedAt") as string)
+    if (purchasedAt) data.purchasedAt = purchasedAt
+  }
   if (parsed.data.brand !== undefined) data.brand = parsed.data.brand || null
   if (parsed.data.category !== undefined) data.category = parsed.data.category || null
   if (parsed.data.categoryId !== undefined) data.categoryId = parsed.data.categoryId ?? null
@@ -942,6 +958,7 @@ export async function updateOrderItemAction(itemId: string, orderId: string, for
   )
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath(`/technician/orders/${orderId}`)
   return { success: true }
 }
 

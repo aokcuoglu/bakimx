@@ -164,12 +164,14 @@ export function PurchasesList({ rows, kpis }: { rows: PurchaseRow[]; kpis: Kpis 
             id: selected.id,
             name: selected.name,
             sku: selected.sku,
+            brand: null,
             quantity: selected.quantity,
             purchasePriceKurus: selected.purchasePriceKurus,
             supplierName: selected.supplierName,
             purchasedAt: selected.purchasedAt,
             purchasedByName: selected.purchasedByName,
             purchasePhotoId: selected.photoId,
+            tecdocArticleId: null,
           }}
         />
       )}
