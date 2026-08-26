@@ -44,6 +44,7 @@ describe("iş yeri aktivite sorgusu", () => {
 test("iş yeri detayının ilk render'ı aktivite kayıtlarını sorgulamaz", () => {
   const page = readFileSync(resolve(process.cwd(), "src/app/admin/workshops/[id]/page.tsx"), "utf8")
   const activityTables = readFileSync(resolve(process.cwd(), "src/app/admin/workshop-activity-tables.tsx"), "utf8")
+  const dateRangePicker = readFileSync(resolve(process.cwd(), "src/components/ui/date-range-picker.tsx"), "utf8")
 
   for (const lookup of [
     "prisma.auditLog.findMany",
@@ -55,4 +56,8 @@ test("iş yeri detayının ilk render'ı aktivite kayıtlarını sorgulamaz", ()
   expect(page).toContain("<WorkshopActivityTables workshopId={id} />")
   expect(activityTables.match(/Run Query/g)?.length).toBe(1)
   expect(activityTables).not.toContain("bg-muted/60")
+  expect(activityTables).not.toContain('type="date"')
+  expect(activityTables).toContain("<DateRangePicker")
+  expect(dateRangePicker).toContain('<PopoverTrigger asChild>')
+  expect(dateRangePicker).toContain('mode="range"')
 })

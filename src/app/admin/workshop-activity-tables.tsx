@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useTransition, type ReactNode } from "react"
-import { CalendarDays, Filter, LoaderCircle, Play } from "lucide-react"
+import { format, isValid, parse } from "date-fns"
+import { Filter, LoaderCircle, Play } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
@@ -44,41 +45,35 @@ function Filters({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap items-center gap-2">{children}</div>
 }
 
+function parseFilterDate(value: string): Date | undefined {
+  if (!value) return undefined
+  const date = parse(value, "yyyy-MM-dd", new Date())
+  return isValid(date) && format(date, "yyyy-MM-dd") === value ? date : undefined
+}
+
 function DateFilters({
   from,
   to,
   disabled,
-  onFromChange,
-  onToChange,
+  onChange,
 }: {
   from: string
   to: string
   disabled: boolean
-  onFromChange: (value: string) => void
-  onToChange: (value: string) => void
+  onChange: (from: string, to: string) => void
 }) {
-  return <>
-    <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
-    <Input
-      type="date"
-      aria-label="Başlangıç tarihi"
-      className="w-36"
-      value={from}
-      max={to || undefined}
-      disabled={disabled}
-      onChange={(event) => onFromChange(event.target.value)}
-    />
-    <span className="text-xs text-muted-foreground" aria-hidden="true">–</span>
-    <Input
-      type="date"
-      aria-label="Bitiş tarihi"
-      className="w-36"
-      value={to}
-      min={from || undefined}
-      disabled={disabled}
-      onChange={(event) => onToChange(event.target.value)}
-    />
-  </>
+  const fromDate = parseFilterDate(from)
+  const toDate = parseFilterDate(to)
+
+  return <DateRangePicker
+    value={fromDate || toDate ? { from: fromDate, to: toDate } : undefined}
+    disabled={disabled}
+    className="w-64"
+    onChange={(range) => onChange(
+      range?.from ? format(range.from, "yyyy-MM-dd") : "",
+      range?.to ? format(range.to, "yyyy-MM-dd") : "",
+    )}
+  />
 }
 
 function QueryPrompt({ colSpan, pending, onRun }: { colSpan: number; pending: boolean; onRun: () => void }) {
@@ -187,8 +182,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
             from={auditFrom}
             to={auditTo}
             disabled={auditPending}
-            onFromChange={(value) => { setAuditFrom(value); invalidateAudit() }}
-            onToChange={(value) => { setAuditTo(value); invalidateAudit() }}
+            onChange={(from, to) => { setAuditFrom(from); setAuditTo(to); invalidateAudit() }}
           />
         </Filters>
       </div>
@@ -235,8 +229,7 @@ export function WorkshopActivityTables({ workshopId }: { workshopId: string }) {
             from={communicationFrom}
             to={communicationTo}
             disabled={communicationPending}
-            onFromChange={(value) => { setCommunicationFrom(value); invalidateCommunication() }}
-            onToChange={(value) => { setCommunicationTo(value); invalidateCommunication() }}
+            onChange={(from, to) => { setCommunicationFrom(from); setCommunicationTo(to); invalidateCommunication() }}
           />
         </Filters>
       </div>
