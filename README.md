@@ -19,7 +19,7 @@ Müşteri kabulünden iş emri, teklif/onay, fotoğraf & hasar dokümantasyonu, 
 - **Stok & tedarikçi**, **randevu & takvim senkron**, **bakım hatırlatmaları (SMS/WhatsApp/e-posta)**.
 - **Müşteriye açık servis paylaşımı** — public link + PDF, alan-bazlı gizlilik kontrolleri.
 - **Araç servis pasaportu** — araca yapışan dijital geçmiş.
-- **Admin back-office** — işletme onayı, billing, impersonation, işletme bazlı feature flag, denetim/health.
+- **Admin back-office** — işletme onayı, billing, impersonation, denetim/health.
 - **Abonelik/billing** — public fiyatlandırma, in-app checkout, dönem yönetimi, makbuz.
 
 Modül ve mimari diyagramları: [docs/architecture](./docs/architecture/).
@@ -36,7 +36,6 @@ Modül ve mimari diyagramları: [docs/architecture](./docs/architecture/).
 - **Validasyon:** Zod v4
 - **Depolama:** S3-uyumlu — MinIO (yerel) / Cloudflare R2 (prod)
 - **OCR:** Plaka — Tesseract + OpenCV (self-hosted) · Ruhsat — Claude Vision (Sonnet 5)
-- **AI Danışman:** Claude (Anthropic) — Premium'a gated
 - **Paket yöneticisi:** Bun
 - **Altyapı:** AWS (ECS/ECR, CDK) · Docker (prod imajı) · GitHub Actions (CI/CD)
 

@@ -40,6 +40,7 @@ const REMOVED_REFERENCES = [
   "AI Parça Bulucu",
   "/api/advisor",
   "AiPartSearch",
+  "activate-stage2a-pilot",
 ]
 
 function collectFiles(dir: string, files: string[] = []): string[] {
@@ -65,10 +66,13 @@ test("aktif kaynak ve yapılandırmada kaldırılan özelliklere referans kalmaz
   const files = [
     ...collectFiles(join(ROOT, "src")),
     ...collectFiles(join(ROOT, "scripts")),
+    join(ROOT, "README.md"),
     join(ROOT, "prisma", "schema.prisma"),
     join(ROOT, ".env.example"),
     join(ROOT, ".env.local.example"),
+    join(ROOT, "Dockerfile"),
     join(ROOT, ".github", "workflows", "deploy-dev-aws.yml"),
+    join(ROOT, ".github", "workflows", "deploy-prod-aws.yml"),
     join(ROOT, "docs", "configuration.md"),
     join(ROOT, "docs", "operations", "platform-admin-model.md"),
     join(ROOT, "docs", "operations", "support-runbook.md"),
