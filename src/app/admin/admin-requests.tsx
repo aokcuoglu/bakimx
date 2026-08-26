@@ -366,7 +366,9 @@ function SupportRequestRow({
     >
       <Button
         type="button"
-        className="flex w-full items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
+        variant="ghost"
+        aria-expanded={expanded}
+        className="h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-xl p-4 text-left transition-colors hover:bg-muted/30"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="min-w-0 flex-1 space-y-1">
