@@ -16,7 +16,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
-import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema, salesReferralSchema } from "@/lib/validations/sales"
+import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
   convertSalesLead,
@@ -26,10 +26,8 @@ import {
   deactivateSalesDiscountCode,
   setSalesLeadStatus,
   updateSalesCommission,
-  createSalesReferral,
-  setSalesReferralStatus,
 } from "./actions"
-import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, UserPlus, Pencil, Ban, Building2, CalendarDays } from "lucide-react"
+import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays } from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -74,20 +72,6 @@ type DiscountCode = {
 }
 
 type Advisor = { id: string; name: string }
-type Referral = {
-  id: string
-  status: string
-  referrerName: string
-  referrerPhone: string
-  referredBusinessName: string
-  referredContactName: string
-  referredPhone: string
-  referredEmail: string | null
-  notes: string | null
-  createdAt: string
-  advisorName: string | null
-}
-
 const statuses = [
   ["new", "Yeni", "bg-primary/10 text-primary-strong border-primary/20"],
   ["contacted", "İletişim", "bg-warning/10 text-warning-strong border-warning/20"],
@@ -128,7 +112,6 @@ export function SalesConsole({
   commissions,
   discountCodes,
   advisors,
-  referrals,
   isAdmin,
   initialLeadId,
 }: {
@@ -136,7 +119,6 @@ export function SalesConsole({
   commissions: Commission[]
   discountCodes: DiscountCode[]
   advisors: Advisor[]
-  referrals: Referral[]
   isAdmin: boolean
   initialLeadId: string | null
 }) {
@@ -214,8 +196,6 @@ export function SalesConsole({
           </div>
         ))}
       </div>
-
-      <ReferralSection referrals={referrals} pending={pending} startTransition={startTransition} />
 
       {/* New Lead Form */}
       <section className="rounded-xl border bg-card">
@@ -380,85 +360,6 @@ export function SalesConsole({
         </section>
       )}
     </div>
-  )
-}
-
-function ReferralSection({
-  referrals,
-  pending,
-  startTransition,
-}: {
-  referrals: Referral[]
-  pending: boolean
-  startTransition: ReturnType<typeof useTransition>[1]
-}) {
-  const form = useForm({
-    resolver: zodResolver(salesReferralSchema),
-    defaultValues: { referrerName: "", referrerPhone: "", referredBusinessName: "", referredContactName: "", referredPhone: "", referredEmail: "", notes: "" },
-  })
-
-  function submitReferral(values: { referrerName: string; referrerPhone: string; referredBusinessName: string; referredContactName: string; referredPhone: string; referredEmail: string; notes: string }) {
-    startTransition(async () => {
-      const res = await createSalesReferral(values)
-      if (!res.ok) { toast.error(res.error); return }
-      form.reset()
-      toast.success("Referans satış havuzuna eklendi.")
-    })
-  }
-
-  return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 sm:p-5">
-      <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 text-primary-strong"><UserPlus className="size-5" /></div>
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Referanslar</h2>
-          <p className="text-sm text-muted-foreground">Üye müşterilerin önerdiği yeni müşterileri kaydedin ve satış sürecini takip edin.</p>
-        </div>
-      </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(submitReferral)} className="grid gap-3 sm:grid-cols-2">
-          {([
-            ["referrerName", "Referans veren müşteri"], ["referrerPhone", "Müşteri telefonu"],
-            ["referredBusinessName", "Yeni müşteri / servis"], ["referredContactName", "Yeni müşteri yetkilisi"],
-            ["referredPhone", "Yeni müşteri telefonu"], ["referredEmail", "Yeni müşteri e-posta"],
-          ] as const).map(([name, label]) => (
-            <FormField key={name} control={form.control} name={name} render={({ field }) => (
-              <FormItem><FormLabel>{label}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-          ))}
-          <FormField control={form.control} name="notes" render={({ field }) => (
-            <FormItem className="sm:col-span-2"><FormLabel>Not</FormLabel><FormControl><Textarea {...field} rows={2} placeholder="Referansın nasıl geldiği veya takip notu" /></FormControl><FormMessage /></FormItem>
-          )} />
-          <div className="sm:col-span-2"><Button type="submit" disabled={pending}>Referans ekle</Button></div>
-        </form>
-      </Form>
-      {referrals.length > 0 && (
-        <div className="space-y-2 border-t pt-4">
-          <h3 className="font-semibold text-foreground">Kayıtlı referanslar ({referrals.length})</h3>
-          {referrals.map((referral) => (
-            <div key={referral.id} className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="font-medium text-foreground">{referral.referredBusinessName}</p>
-                <p className="text-sm text-muted-foreground">{referral.referredContactName} · {referral.referredPhone}</p>
-                <p className="text-xs text-muted-foreground">Referans: {referral.referrerName} · {referral.referrerPhone}</p>
-              </div>
-              <Select value={referral.status} disabled={pending} onValueChange={(status) => startTransition(async () => {
-                const res = await setSalesReferralStatus(referral.id, status)
-                if (!res.ok) toast.error(res.error); else toast.success("Referans durumu güncellendi.")
-              })}>
-                <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">Yeni</SelectItem>
-                  <SelectItem value="contacted">İletişim</SelectItem>
-                  <SelectItem value="won">Kazanıldı</SelectItem>
-                  <SelectItem value="lost">Kaybedildi</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   )
 }
 

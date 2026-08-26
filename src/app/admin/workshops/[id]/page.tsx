@@ -21,7 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { WorkshopActivityTables } from "@/app/admin/workshop-activity-tables"
 import { AcquisitionEditor } from "@/app/admin/acquisition-editor"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
-import { salesAdvisorDisplayName, salesLeadAdminHref } from "@/lib/sales/links"
+import { salesAdvisorDisplayName, salesLeadAdminHref, workshopAdminHref } from "@/lib/sales/links"
 
 export const dynamic = "force-dynamic"
 
@@ -74,6 +74,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
       acquisitionAdvisor: {
         include: { user: { select: { firstName: true, lastName: true, email: true } } },
       },
+      referredByWorkshop: { select: { id: true, name: true } },
     },
   })
   if (!workshop) notFound()
@@ -219,6 +220,19 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
         <Section title="Edinim kaynağı">
           <Field label="Mevcut kaynak" value={ACQUISITION_SOURCE_LABELS[workshop.acquisitionSource]} />
           <Field label="Temsilci" value={acquisitionAdvisorName} />
+          {workshop.referralCodeUsed && (
+            <Field label="Kullanılan referans kodu" value={<span className="font-mono">{workshop.referralCodeUsed}</span>} />
+          )}
+          {workshop.referredByWorkshop && (
+            <Field
+              label="Davet eden iş yeri"
+              value={
+                <Link href={workshopAdminHref(workshop.referredByWorkshop.id)} className="text-primary hover:underline">
+                  {workshop.referredByWorkshop.name}
+                </Link>
+              }
+            />
+          )}
           {can(ctx, "manageWorkshops") && <AcquisitionEditor workshopId={id} source={workshop.acquisitionSource} advisorId={workshop.acquisitionAdvisorId} advisors={advisors.map((a) => ({ id: a.id, label: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email || "—" }))} />}
         </Section>
 
