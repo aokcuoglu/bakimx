@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { resetAdvisorProvider } from "@/lib/advisor/provider"
+import { resetLandingAssistantProvider } from "@/lib/landing/assistant-provider"
 import { askLandingAssistant } from "./assistant-ai"
 
 afterEach(() => {
   process.env.AI_PROVIDER = "mock"
-  resetAdvisorProvider()
+  resetLandingAssistantProvider()
 })
 
 describe("landing AI — grounded mock", () => {
   test("corpus'taki soruya tek cevap ve görünür kaynak döner", async () => {
     process.env.AI_PROVIDER = "mock"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
     const result = await askLandingAssistant("stok takibi nasıl çalışıyor?")
 
     expect(result?.answer).toContain("stok")
@@ -19,7 +19,7 @@ describe("landing AI — grounded mock", () => {
 
   test("olmayan özellik sorusunda cevap uydurmaz", async () => {
     process.env.AI_PROVIDER = "mock"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
 
     expect(await askLandingAssistant("Muhasebe programına otomatik e-fatura kesiyor musunuz?")).toBeNull()
   })

@@ -33,7 +33,6 @@ const TECHNICIAN_DENIED_ROUTES: string[] = [
   "/dashboard",
   "/intakes",
   "/inventory",
-  "/market-research",
   "/orders",
   "/parts",
   "/purchases",

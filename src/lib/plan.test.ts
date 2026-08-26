@@ -47,20 +47,6 @@ test("active subscription with null period keeps access (legacy/admin-provisione
   expect(s.subscriptionDaysLeft).toBe(null)
 })
 
-// AI Servis Danışmanı is a Premium-only capability. Trial workshops run on the
-// `pro` tier, so the advisor stays locked until they upgrade.
-test("aiAdvisor is gated to the premium tier", () => {
-  expect(hasFeature("premium", "aiAdvisor")).toBe(true)
-  expect(hasFeature("pro", "aiAdvisor")).toBe(false)
-  expect(hasFeature("starter", "aiAdvisor")).toBe(false)
-})
-
-test("marketResearch is gated to the premium tier", () => {
-  expect(hasFeature("premium", "marketResearch")).toBe(true)
-  expect(hasFeature("pro", "marketResearch")).toBe(false)
-  expect(hasFeature("starter", "marketResearch")).toBe(false)
-})
-
 // VIN'den araç tanıma (rapidapi) is a Pro+ capability: billed external lookups,
 // so starter is locked out while trial (pro) and premium keep access.
 test("vinLookup is gated to the pro tier and above", () => {
@@ -70,7 +56,7 @@ test("vinLookup is gated to the pro tier and above", () => {
 })
 
 test("all premium-gated features are locked below the premium tier", () => {
-  const premiumOnly = ["eInvoice", "aiAdvisor", "multiBranch", "rbac", "marketResearch"] as const
+  const premiumOnly = ["eInvoice", "multiBranch", "rbac"] as const
   for (const feature of premiumOnly) {
     expect(hasFeature("starter", feature)).toBe(false)
     expect(hasFeature("pro", feature)).toBe(false)

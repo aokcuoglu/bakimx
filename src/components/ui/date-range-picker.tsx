@@ -1,104 +1,76 @@
 "use client"
 
 import * as React from "react"
-import { format } from "date-fns"
+import { format, isSameDay } from "date-fns"
 import { tr } from "date-fns/locale"
-import { CalendarDays } from "lucide-react"
-import type { DateRange } from "react-day-picker"
+import { CalendarRange } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
+export type DateRangeValue = {
+  from?: Date
+  to?: Date
+}
+
 export interface DateRangePickerProps {
-  value?: DateRange
-  onChange?: (value: DateRange | undefined) => void
+  value: DateRangeValue | undefined
+  onChange: (value: DateRangeValue | undefined) => void
   placeholder?: string
   disabled?: boolean
+  id?: string
   className?: string
-  "aria-label"?: string
+}
+
+function rangeLabel(value: DateRangeValue | undefined, placeholder: string): string {
+  if (!value?.from && value?.to) return `… – ${format(value.to, "dd.MM.yyyy")}`
+  if (!value?.from) return placeholder
+  if (!value.to) return `${format(value.from, "dd.MM.yyyy")} – …`
+  if (isSameDay(value.from, value.to)) return format(value.from, "dd.MM.yyyy")
+  return `${format(value.from, "dd.MM.yyyy")} – ${format(value.to, "dd.MM.yyyy")}`
 }
 
 export function DateRangePicker({
   value,
   onChange,
-  placeholder = "Tarih aralığı",
+  placeholder = "Tarih aralığı seçin",
   disabled,
+  id,
   className,
-  "aria-label": ariaLabel = "Tarih aralığı",
 }: DateRangePickerProps) {
-  const [open, setOpen] = React.useState(false)
-  const selectionStarted = React.useRef(false)
-  const currentYear = new Date().getFullYear()
-
-  const label = value?.from
-    ? value.to
-      ? `${format(value.from, "dd.MM.yyyy")} – ${format(value.to, "dd.MM.yyyy")}`
-      : `${format(value.from, "dd.MM.yyyy")} – Bitiş tarihi`
-    : placeholder
+  const label = rangeLabel(value, placeholder)
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (nextOpen) selectionStarted.current = false
-        setOpen(nextOpen)
-      }}
-    >
+    <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           disabled={disabled}
-          aria-label={ariaLabel}
+          aria-label={label}
           className={cn(
-            "w-64 justify-start gap-2 font-normal",
+            "w-full justify-start gap-2 bg-transparent font-normal",
             !value?.from && "text-muted-foreground",
             className,
           )}
         >
-          <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
+          <CalendarRange className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        aria-label="Tarih aralığı seçimi"
-        className="w-auto max-w-[calc(100vw-2rem)] p-0"
-        align="end"
-      >
+      <PopoverContent aria-label="Tarih aralığı seçimi" className="w-auto bg-popover p-0" align="start">
         <Calendar
+          autoFocus
           mode="range"
-          selected={value}
+          min={0}
+          selected={value ? { from: value.from ?? value.to, to: value.to } : undefined}
           defaultMonth={value?.from}
-          captionLayout="dropdown"
-          startMonth={new Date(currentYear - 10, 0)}
-          endMonth={new Date(currentYear + 1, 11)}
           locale={tr}
-          onSelect={(range) => {
-            onChange?.(range)
-            if (selectionStarted.current && range?.from && range.to) setOpen(false)
-            selectionStarted.current = true
-          }}
+          onSelect={onChange}
         />
-        {(value?.from || value?.to) && (
-          <div className="flex justify-between border-t border-border p-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onChange?.(undefined)
-                setOpen(false)
-              }}
-            >
-              Temizle
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Tamam
-            </Button>
-          </div>
-        )}
       </PopoverContent>
     </Popover>
   )

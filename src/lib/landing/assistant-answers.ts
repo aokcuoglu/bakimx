@@ -6,7 +6,8 @@
  * döndürülür. Eşleşme yoksa boş dizi döner ve panel canlı destek / demo akışına
  * düşer. Bu bilinçli bir sınır — uydurulmuş cevap riskini sıfırda tutar.
  *
- * Gerçek AI yanıtı (yaklaşım B) ayrı bir issue'nun ve bayrağın konusudur.
+ * Gerçek sağlayıcı kullanılsa da kaynak kimlikleri bu corpus'a çözülür;
+ * kaynaksız model yanıtı kullanıcıya gösterilmez.
  */
 import { FAQ_ITEMS } from "@/lib/faq-data";
 import { LANDING_OBJECTIONS } from "./objections";

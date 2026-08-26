@@ -482,8 +482,8 @@ export function shouldPurgeUnverifiedWorkshop(w: PurgeCandidateWorkshop, now: Da
  *
  * Silme sırası FK'lere uyar (çocuktan ebeveyne): PaymentTransaction (denormalize
  * workshopId, gerçek FK yok ama tutarlılık için) → CommunicationLog → AuditLog →
- * WorkshopFeatureOverride → Invite (User'a da FK'li, User'dan ÖNCE silinir) →
- * WorkshopSettings → User → Workshop. schema.prisma'daki Workshop'a FK'li ~30
+ * Invite (User'a da FK'li, User'dan ÖNCE silinir) → WorkshopSettings → User →
+ * Workshop. schema.prisma'daki Workshop'a FK'li diğer modeller
  * diğer model (Customer/Vehicle/ServiceOrder/...) uygulamaya erişim gerektirir;
  * pending+doğrulamasız bir workshop hiçbir zaman bu tabloları dolduramaz
  * (approval gate uygulamayı kilitler) — yine de beklenmedik bir FK çakışması
@@ -579,7 +579,6 @@ export async function sweepUnverifiedRegistrations(): Promise<LifecycleSweepResu
         await tx.paymentTransaction.deleteMany({ where: { workshopId: w.id } })
         await tx.communicationLog.deleteMany({ where: { workshopId: w.id } })
         await tx.auditLog.deleteMany({ where: { workshopId: w.id } })
-        await tx.workshopFeatureOverride.deleteMany({ where: { workshopId: w.id } })
         await tx.invite.deleteMany({ where: { workshopId: w.id } })
         await tx.workshopSettings.deleteMany({ where: { workshopId: w.id } })
         await tx.user.deleteMany({ where: { workshopId: w.id } })

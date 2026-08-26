@@ -8,8 +8,6 @@ const allReal = {
   VIN_PROVIDER: "rapidapi",
   TECDOC_PROVIDER: "rapidapi",
   OCR_PROVIDER: "anthropic",
-  AI_PROVIDER: "anthropic",
-  MARKET_RESEARCH_PROVIDER: "anthropic",
 }
 
 test("findMockProviders: flags unset, empty, and explicit mock; ignores real values", () => {
@@ -25,17 +23,14 @@ test("findMockProviders: flags unset, empty, and explicit mock; ignores real val
   expect(findMockProviders(env(allReal))).toEqual([])
 })
 
-test("findMockProviders: OCR ve AI de kapsanır (#256)", () => {
+test("findMockProviders: OCR da kapsanır (#256)", () => {
   expect(findMockProviders(env({ ...allReal, OCR_PROVIDER: undefined })).map((i) => i.env)).toEqual(["OCR_PROVIDER"])
-  expect(findMockProviders(env({ ...allReal, AI_PROVIDER: "mock" })).map((i) => i.env)).toEqual(["AI_PROVIDER"])
 
-  // Boş ortamda dördü birden yakalanmalı.
+  // Boş ortamda üçü birden yakalanmalı.
   expect(findMockProviders(env({})).map((i) => i.env)).toEqual([
     "VIN_PROVIDER",
     "TECDOC_PROVIDER",
     "OCR_PROVIDER",
-    "AI_PROVIDER",
-    "MARKET_RESEARCH_PROVIDER",
   ])
 })
 
@@ -78,7 +73,6 @@ test("checkProviderEnvAtStartup: info-only when all real in prod", () => {
   expect(infos[0]).toContain("vin=rapidapi")
   expect(infos[0]).toContain("tecdoc=rapidapi")
   expect(infos[0]).toContain("ocr=anthropic")
-  expect(infos[0]).toContain("ai=anthropic")
 })
 
 test("buildProviderWarningBanner: one bullet + one fix line per issue", () => {

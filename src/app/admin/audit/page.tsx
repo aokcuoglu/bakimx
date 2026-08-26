@@ -41,8 +41,7 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 /** Yönetici eylemleri bu sayfaya özeldir; geri kalanı ortak kullanıcı dili
- * sözlüğünden gelir. Böylece `feature_override_set` gibi DB anahtarları
- * hiçbir yönetici yüzeyinde görünmez. */
+ * sözlüğünden gelir. Böylece DB anahtarları yönetici yüzeyinde görünmez. */
 function displayActionLabel(action: string) {
   return ACTION_LABELS[action] ?? auditActionLabel(action)
 }
@@ -90,7 +89,6 @@ export default async function AdminAuditPage({
   const entityLabel = (entityType: string, entityId: string) => {
     const labels: Record<string, string> = {
       Workshop: "İş yeri",
-      WorkshopFeatureOverride: "Özellik erişimi",
       ImpersonationSession: "Taklit oturumu",
       SupportRequest: "Destek talebi",
       User: "Kullanıcı",

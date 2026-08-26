@@ -36,7 +36,6 @@ export type AdminCapability =
   | "viewHealth"
   | "impersonate"
   | "sendPasswordReset"
-  | "manageFlags"
   | "exportData"
   | "manageCatalog"
   | "manageLiveChat"
@@ -62,7 +61,6 @@ const CAPABILITIES: Record<AdminCapability, readonly AdminRole[]> = {
   manageLiveChat: ["founder", "support"],
   // Dokümandaki matriste yok; demo/destek talebi akışı destek personelinin işi.
   manageLeads: ["founder", "support"],
-  manageFlags: ["founder"],
   manageCatalog: ["founder"],
   manageAdmins: ["founder"],
   // Kesinti iletişimi destek ekibinin de işi (BAK-119/BAK-128) — founder'a kilitli değil.

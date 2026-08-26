@@ -1,7 +1,5 @@
 import { getAppData } from "@/app/(app)/data"
 import { roleCan } from "@/lib/roles"
-import { type PlanTier } from "@/lib/plan"
-import { resolveFeature } from "@/lib/features"
 import { AppShell } from "@/components/layout/app-shell"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -17,7 +15,6 @@ import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 import { ACTIVE_CHECKLIST_ITEM } from "@/lib/technician/checklist-visibility"
 import { currentWorkOrderCustomer } from "@/lib/orders/current-customer"
 import { quantityToNumber } from "@/lib/orders/quantity"
-import { aiPartSearchAllowedRole } from "@/lib/parts/ai-search"
 
 export default async function OrderDetailPage({
   params,
@@ -32,9 +29,6 @@ export default async function OrderDetailPage({
   const sp = await searchParams
   const editInitially = sp.edit === "1"
   const { user, workshop } = await getAppData()
-  const hasAiAdvisor = !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "aiAdvisor"))
-  const canUseAiPartSearch = hasAiAdvisor && aiPartSearchAllowedRole(user.role)
-
   const order = await prisma.serviceOrder.findFirst({
     where: { id, workshopId: user.workshopId },
     include: {
@@ -362,8 +356,6 @@ export default async function OrderDetailPage({
         intake={intakeProp}
         order={safeOrder}
         technicians={technicians}
-        hasAiAdvisor={hasAiAdvisor}
-        canUseAiPartSearch={canUseAiPartSearch}
         activity={activity}
         editInitially={editInitially}
         laborCatalog={laborCatalog}

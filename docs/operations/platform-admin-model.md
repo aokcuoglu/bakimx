@@ -16,7 +16,7 @@ Bunlar kodda doğrulanmış gerçeklerdir, tasarım hedefi değil.
 
 | Konu | Bugünkü durum | Kaynak |
 |---|---|---|
-| Konsol | `/admin`, 9 bölüm (Genel Bakış, İş Yerleri, Faturalandırma, Talepler, Canlı Destek, Ürün Kataloğu, Özellik Bayrakları, Denetim Kaydı, Sistem Sağlığı) | `src/app/admin/admin-nav.tsx:30` |
+| Konsol | `/admin`, 12 bölüm (Genel Bakış, İş Yerleri, Faturalandırma, Talepler, Satış, Canlı Destek, Ürün Kataloğu, Denetim Kaydı, İletişim, Sistem Sağlığı, Durum, Yöneticiler) | `src/app/admin/admin-nav.tsx` |
 | Üyelik | `PlatformAdmin` tablosu (BAK-93). `ADMIN_EMAILS` yalnız tablo boşken çalışan bootstrap yolu; ikisi de boşsa konsol **herkese 404**. Karar şifreli giriş ve SSO için ORTAK (BAK-114) | `src/lib/admin-membership.ts` |
 | Kimlik | Admin, bir atölyeye ait normal bir `User` satırıdır; `PlatformAdmin` o kullanıcıya platform erişimi ekler | `prisma/schema.prisma` |
 | Rol | `founder \| support \| finance \| readonly`; `can()` §2'deki matristen karar verir | `src/lib/admin.ts` |
@@ -73,7 +73,6 @@ Yetki tablosu (uygulanan hâli — kaynak: `src/lib/admin.ts`):
 | `confirmBilling` | ✅ | — | ✅ | — |
 | `impersonate` (salt-okunur) | ✅ | ✅ | — | — |
 | `sendPasswordReset` (kullanıcıya bağlantı gönder) | ✅ | ✅ | — | — |
-| `manageFlags` | ✅ | — | — | — |
 | `manageCatalog` | ✅ | — | — | — |
 | `manageLiveChat` | ✅ | ✅ | — | — |
 | `viewAudit` | ✅ | ✅ | ✅ | ✅ |

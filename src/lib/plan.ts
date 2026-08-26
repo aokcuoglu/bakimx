@@ -27,10 +27,6 @@ import type { Workshop } from "@prisma/client"
  *    founder impersonation, so a locked tenant can still be inspected.
  *
  * Per-feature gating:
- *  - `aiAdvisor`: WIRED via `hasFeature` in the `/api/advisor` and
- *    `/api/orders/advisor` API routes (return 403 + feature_locked). The UI
- *    conditionally renders the panel/`AdvisorPremiumLock` CTA based on
- *    `hasFeature(workshop.planTier, "aiAdvisor")`.
  *  - `assertFeature` (throw-based) is ready to adopt inside server actions as
  *    further premium features ship.
  *  - `eInvoice`: planned gate on e-Fatura issuance when the integration lands
@@ -136,36 +132,31 @@ export function isPlanExpiredLock(
 
 const TIER_RANK: Record<PlanTier, number> = { lite: 0, starter: 1, pro: 2, premium: 3 }
 
-// Gated capabilities. Used by assertFeature() as these features come online.
-// During the trial a workshop is on the `pro` tier, so premium features remain
-// locked behind an upgrade. `starter` min tier = enabled for every plan (the
-// gate then only serves as a per-tenant kill switch via feature overrides).
+// Plan-gated capabilities. During the trial a workshop is on the `pro` tier,
+// so premium features remain locked behind an upgrade. `starter` min tier means
+// the capability is enabled for every paid plan.
 export type GatedFeature =
   | "ocrIntake"
   | "photoChecklist"
   | "damageMap"
   | "eInvoice"
-  | "aiAdvisor"
   | "multiBranch"
   | "rbac"
   | "vinLookup"
   | "partsCatalog"
   | "bakimxCatalog"
   | "getirbakimCatalog"
-  | "marketResearch"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
   ocrIntake: "starter",
   photoChecklist: "starter",
   damageMap: "starter",
   eInvoice: "premium",
-  aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
   vinLookup: "pro",
   partsCatalog: "starter",
   bakimxCatalog: "starter",
   getirbakimCatalog: "starter",
-  marketResearch: "premium",
 }
 
 type WorkshopPlanFields = Pick<

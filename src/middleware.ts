@@ -41,7 +41,7 @@ const PROTECTED_API_PREFIX = [
   "/api/workshop", "/api/photos", "/api/cashbox", "/api/parts",
   "/api/smart-capture", "/api/reminders", "/api/suppliers",
   "/api/technician", "/api/appointments", "/api/quotes", "/api/reports",
-  "/api/advisor", "/api/billing", "/api/communications", "/api/calendar",
+  "/api/billing", "/api/communications", "/api/calendar",
   "/api/catalog",
 ]
 

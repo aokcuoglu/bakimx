@@ -4,7 +4,7 @@ import {
   Lock,
   Link2,
   Smartphone,
-  Sparkles,
+  Workflow,
 } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
@@ -36,9 +36,9 @@ const differentiators = [
     description: "Kurulum yok; telefon veya bilgisayardan aynı gün başlarsınız.",
   },
   {
-    icon: Sparkles,
-    title: "AI servis danışmanı",
-    description: "Premium'da araç geçmişine göre işlem önerir, sorularınızı yanıtlar.",
+    icon: Workflow,
+    title: "Uçtan uca servis akışı",
+    description: "Kabulden iş emrine, onaydan tahsilata kadar tüm süreç tek kayıtta ilerler.",
   },
 ];
 

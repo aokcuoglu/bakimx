@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { requireWritableWorkshop } from "@/lib/auth"
-import { resolveFeature } from "@/lib/features"
-import type { PlanTier } from "@prisma/client"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { prisma } from "@/lib/db"
 import { getProcurementProvider } from "@/lib/external-procurement/provider"
 import { cancelExternalProcurement, startExternalProcurement } from "@/lib/external-procurement/service"
@@ -24,7 +23,7 @@ const purchaseSchema = z.object({
 export async function POST(request: Request) {
   try {
     const { user, workshop } = await requireWritableWorkshop("parts.purchase")
-    if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "getirbakimCatalog"))) {
+    if (!hasFeature(workshop.planTier as PlanTier, "getirbakimCatalog")) {
       return NextResponse.json({ error: "GetirBakım satın alma bu çalışma alanında kapalı.", code: "feature_locked" }, { status: 403 })
     }
     const body: unknown = await request.json()

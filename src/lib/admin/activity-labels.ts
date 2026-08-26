@@ -18,8 +18,6 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   workshop_bakimx_discount_updated: "BakımX iskontosu güncellendi",
   workshop_user_role_updated: "Kullanıcı rolü güncellendi",
   workshop_user_active_changed: "Kullanıcı durumu güncellendi",
-  feature_override_set: "Özellik erişimi güncellendi",
-  feature_override_cleared: "Özel özellik ayarı kaldırıldı",
   platform_admin_added: "Platform yöneticisi eklendi",
   platform_admin_role_changed: "Platform yöneticisi rolü güncellendi",
   platform_admin_disabled: "Platform yöneticisi devre dışı bırakıldı",

@@ -45,8 +45,6 @@ import {
   Wallet,
   History,
   ArrowRight,
-  Sparkles,
-  Lock,
   Calculator,
   TriangleAlert,
   Images,
@@ -54,7 +52,6 @@ import {
   Wrench,
   HardHat,
 } from "lucide-react"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import {
   PHOTO_TYPES,
   PHOTO_PHASES,
@@ -68,8 +65,6 @@ import { formatDate } from "@/lib/utils-client"
 import { formatTRY } from "@/lib/format"
 import { kurusToLira, bpsToPercent, liraToKurus, percentToBps } from "@/lib/money"
 import { STANDARD_TAX_BPS } from "@/lib/orders/line-vat"
-import { ServiceAdvisorPanel } from "@/components/advisor/service-advisor-panel"
-import { AdvisorPremiumLock } from "@/components/advisor/advisor-premium-lock"
 import { isOrderLocked, isCollectionLockedForOrder } from "@/lib/status-transitions"
 import { findUnpricedItems } from "@/lib/orders/pricing-guard"
 import { findUndecidedPartsRequests } from "@/lib/orders/parts-request-guard"
@@ -112,8 +107,6 @@ import { TechnicianAssign, type AssignableTechnician } from "@/components/orders
 import { PartsRequestPanel } from "@/components/orders/parts-request-panel"
 import type { LaborCatalogRow } from "@/lib/labor/types"
 import { MAX_BATCH_PHOTOS, describeUploadFailure, selectPhotoFiles } from "@/lib/photos/select-photo-files"
-import { AiPartSearch } from "@/components/parts/ai-part-search"
-import type { AiPartSuggestion } from "@/lib/parts/ai-search"
 
 // Header aksiyon ikonları (eski orders ekranıyla aynı görünüm).
 const ORDER_ACTION_ICONS: Record<string, DetailHeaderAction["icon"]> = {
@@ -236,8 +229,6 @@ export function WorkOrderDetail({
   intake,
   order,
   technicians,
-  hasAiAdvisor,
-  canUseAiPartSearch,
   activity = [],
   editInitially = false,
   laborCatalog,
@@ -247,8 +238,6 @@ export function WorkOrderDetail({
   intake: IntakeDetailProps
   order: OrderDetailData
   technicians?: AssignableTechnician[]
-  hasAiAdvisor: boolean
-  canUseAiPartSearch: boolean
   activity?: OrderActivityEntry[]
   // Listeden "Düzenle" ile gelindiğinde (?edit=1) Şikayet & Notlar kartı
   // doğrudan düzenleme modunda açılır. Kilitli emirde yok sayılır.
@@ -690,47 +679,6 @@ export function WorkOrderDetail({
     } finally {
       setLoading(false)
     }
-  }
-
-  // AI danışman önerilerini iş emrine kalem olarak ekle.
-  async function handleAddAiItems(items: Array<{ type: "labor" | "part"; name: string }>) {
-    setLoading(true)
-    setError("")
-    try {
-      for (const item of items) {
-        const formData = new FormData()
-        formData.set("serviceOrderId", order.id)
-        formData.set("type", item.type)
-        formData.set("name", item.name)
-        formData.set("quantity", "1")
-        const res = await fetch("/api/orders/items", { method: "POST", body: formData })
-        const data = await res.json()
-        if (!data.success) { setError(data.error || "Kalem eklenemedi"); break }
-      }
-      router.refresh()
-    } catch {
-      setError("AI önerileri eklenirken hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleAddAiPart(item: AiPartSuggestion) {
-    setLoading(true); setError("")
-    try {
-      const formData = new FormData()
-      formData.set("serviceOrderId", order.id); formData.set("type", "part"); formData.set("name", item.name); formData.set("quantity", "1")
-      if (item.sku) formData.set("sku", item.sku)
-      if (item.brand) formData.set("brand", item.brand)
-      if (item.partId) formData.set("partId", item.partId)
-      if (item.tecdocArticleId != null) { formData.set("tecdocArticleId", String(item.tecdocArticleId)); formData.set("source", "catalog") }
-      if (item.bakimxProductId) { formData.set("bakimxProductId", item.bakimxProductId); formData.set("source", "bakimx") }
-      if (item.getirbakimProductId) { formData.set("getirbakimProductId", item.getirbakimProductId); formData.set("source", "getirbakim") }
-      const response = await fetch("/api/orders/items", { method: "POST", body: formData })
-      const data = await response.json() as { success?: boolean; error?: string }
-      if (!response.ok || !data.success) throw new Error(data.error || "Parça eklenemedi")
-      toast.success(`${item.name} kaleme eklendi`); router.refresh()
-    } finally { setLoading(false) }
   }
 
   const customerName =
@@ -1279,33 +1227,6 @@ export function WorkOrderDetail({
               görülmüyordu — kullanıcı yalnız değerin geri sarıldığını görüyordu.
               Başarıda satırdaki "✓ Kaydedildi" işaretiyle simetrik. */}
           <PartsLaborCard orderId={order.id} status={order.status} items={order.items} vehicle={order.vehicle} onError={(msg) => toast.error(msg)} onLoading={setLoading} loading={loading} laborCatalog={laborCatalog} taxRateBps={order.taxRate} onApplyStandardTax={orderLocked ? undefined : applyStandardTaxRate} />
-
-          {/* AI Danışman: kapalı başlar — ekran kalabalığını azaltır. Premium
-              kilidi accordion İÇİNDE aynen korunur (gating advisor API'lerinde). */}
-          <Accordion type="single" collapsible>
-            <AccordionItem value="ai-advisor" className="border-0">
-              <AccordionTrigger className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card px-4 py-3 hover:no-underline">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <Sparkles className="size-4 text-primary" /> AI Öneri Al
-                  {!hasAiAdvisor && <Lock className="size-3.5 text-muted-foreground" />}
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pt-3 pb-0">
-                {hasAiAdvisor ? (
-                  <div className="space-y-3">{canUseAiPartSearch && <AiPartSearch vehicleTypeId={order.vehicle.catalogVehicleTypeId} disabled={orderLocked || loading} onAdd={handleAddAiPart} />}<ServiceAdvisorPanel
-                    intakeFormId={intake.id}
-                    customerComplaint={order.intake.customerComplaint}
-                    vehicleBrand={order.vehicle.brand}
-                    vehicleModel={order.vehicle.model}
-                    mileage={order.intake.mileageAtIntake ?? order.vehicle.mileage}
-                    onAddItems={handleAddAiItems}
-                  /></div>
-                ) : (
-                  <AdvisorPremiumLock />
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
 
           {/* Mobil yapışkan toplam: kalem eklerken genel toplam hep görünür;
               dokununca Fiyatlandırma kartına kaydırır. Alt navigasyonun (fixed,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { resetAdvisorProvider } from "@/lib/advisor/provider"
+import { resetLandingAssistantProvider } from "@/lib/landing/assistant-provider"
 import { askWithTimeout, POST } from "./route"
 
 const request = (body: unknown, ip = "198.51.100.10") => new Request("http://localhost/api/assistant/ask", {
@@ -11,7 +11,7 @@ const request = (body: unknown, ip = "198.51.100.10") => new Request("http://loc
 afterEach(() => {
   process.env.LANDING_ASSISTANT_AI = "off"
   process.env.AI_PROVIDER = "mock"
-  resetAdvisorProvider()
+  resetLandingAssistantProvider()
 })
 
 describe("POST /api/assistant/ask", () => {
@@ -30,7 +30,7 @@ describe("POST /api/assistant/ask", () => {
   test("mock sağlayıcıyla kaynaklı yanıt verir", async () => {
     process.env.LANDING_ASSISTANT_AI = "on"
     process.env.AI_PROVIDER = "mock"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
     const body = await (await POST(request({ question: "stok takibi nasıl çalışıyor?" }))).json()
     expect(body.mode).toBe("ai")
     expect(body.sources[0].id).toBe("stok-dusumu")
@@ -39,7 +39,7 @@ describe("POST /api/assistant/ask", () => {
   test("olmayan özellikte fallback döner", async () => {
     process.env.LANDING_ASSISTANT_AI = "on"
     process.env.AI_PROVIDER = "mock"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
     const body = await (await POST(request({ question: "Muhasebe programına otomatik e-fatura kesiyor musunuz?" }))).json()
     expect(body).toEqual({ success: true, mode: "fallback" })
   })
@@ -47,7 +47,7 @@ describe("POST /api/assistant/ask", () => {
   test("sağlayıcı hatasında deterministik fallback döner", async () => {
     process.env.LANDING_ASSISTANT_AI = "on"
     process.env.AI_PROVIDER = "gecersiz"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
     const response = await POST(request({ question: "stok takibi" }, "198.51.100.20"))
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ success: true, mode: "fallback" })
@@ -56,7 +56,7 @@ describe("POST /api/assistant/ask", () => {
   test("IP hız sınırında 429 yerine deterministik fallback döner", async () => {
     process.env.LANDING_ASSISTANT_AI = "on"
     process.env.AI_PROVIDER = "mock"
-    resetAdvisorProvider()
+    resetLandingAssistantProvider()
     let body: unknown
     for (let index = 0; index < 11; index++) {
       body = await (await POST(request({ question: "stok takibi" }, "198.51.100.30"))).json()
