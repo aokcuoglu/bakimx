@@ -48,30 +48,24 @@ describe("landing itiraz kartları", () => {
   });
 
   test("metinler tek veri dosyasında — bileşenler kendi kopyasını tutmuyor", () => {
-    const card = read("../../components/sections/ObjectionCards.tsx");
+    const askBar = read("../../components/sections/HeroAskBar.tsx");
     const faq = read("../../components/sections/FAQSection.tsx");
 
-    expect(card).toContain("LANDING_OBJECTIONS");
+    expect(askBar).toContain("LANDING_OBJECTIONS");
     expect(faq).toContain("LANDING_OBJECTIONS");
 
     for (const objection of LANDING_OBJECTIONS) {
-      expect(card).not.toContain(objection.question);
-      expect(card).not.toContain(objection.answer);
+      expect(askBar).not.toContain(objection.question);
+      expect(askBar).not.toContain(objection.answer);
       expect(faq).not.toContain(objection.question);
       expect(faq).not.toContain(objection.answer);
     }
   });
 
-  test("şerit görselleri LCP yarışına girmiyor", () => {
-    const card = read("../../components/sections/ObjectionCards.tsx");
+  test("hero LCP H1'de — video paneli öncelikli görsel yarışı oluşturmaz", () => {
     const hero = read("../../components/sections/HeroSection.tsx");
 
-    // Yalnız JSX prop'unu ara — "priority" kelimesi açıklama satırlarında geçiyor.
     const priorityProp = /^\s*priority(\s*=|\s*$)/m;
-
-    expect(card).toContain('loading="lazy"');
-    expect(card).not.toMatch(priorityProp);
-    // Hero'nun LCP'si artık H1 metni; sağ kolonda öncelikli görsel kalmadı.
     expect(hero).not.toMatch(priorityProp);
   });
 });

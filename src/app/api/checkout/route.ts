@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { checkoutPublicSchema } from "@/lib/validations/billing"
+import { normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getPlanPriceMinor } from "@/lib/billing/pricing"
@@ -47,6 +48,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || "Geçersiz bilgiler" }, { status: 400 })
   }
   const data = parsed.data
+  const acquisitionAdvisorId = normalizeAcquisitionAdvisorId(data.acquisitionAdvisorId)
+  if (data.acquisitionSource === "sales_advisor" && !acquisitionAdvisorId) {
+    return NextResponse.json({ error: "Satış temsilcisi seçimi zorunludur." }, { status: 400 })
+  }
+  if (acquisitionAdvisorId) {
+    const advisor = await prisma.salesAdvisor.findFirst({ where: { id: acquisitionAdvisorId, disabledAt: null }, select: { id: true } })
+    if (!advisor) return NextResponse.json({ error: "Etkin satış temsilcisi bulunamadı." }, { status: 400 })
+  }
 
   const existing = await prisma.user.findUnique({ where: { email: data.email }, select: { id: true } })
   if (existing) {
@@ -64,7 +73,16 @@ export async function POST(request: Request) {
     address: data.address,
     email: data.email,
     phone: data.phone,
+    district: data.district ?? "",
+    workshopEmail: data.workshopEmail ?? "",
   }
+
+  // Çalışma saatleri — register API ile aynı mantık
+  const workingDaysArr = data.workingDays
+    ? data.workingDays.split(",").map((d) => parseInt(d, 10))
+    : [1, 2, 3, 4, 5]
+  const weekdayDays = workingDaysArr.filter((d) => d >= 1 && d <= 5).join(",")
+  const weekendDays = workingDaysArr.filter((d) => d === 0 || d === 6).join(",")
 
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
@@ -84,8 +102,9 @@ export async function POST(request: Request) {
               name: data.workshopName,
               phone: data.phone,
               city: data.city,
+              district: data.district || null,
               address: data.address,
-              email: data.email,
+              email: data.workshopEmail || data.email,
               invoiceTitle: data.invoiceTitle,
               taxNumber: data.taxNumber,
               taxOffice: data.taxOffice || null,
@@ -96,9 +115,20 @@ export async function POST(request: Request) {
               trialStartedAt: now,
               trialEndsAt: computeTrialEnd(now),
               planTier: "pro",
+              acquisitionSource: data.acquisitionSource,
+              acquisitionAdvisorId,
               requestedPlanTier: tier,
               planRequestedAt: now,
-              settings: { create: {} },
+              settings: {
+                create: {
+                  weekdayStart: data.weekdayStart || "09:00",
+                  weekdayEnd: data.weekdayEnd || "18:00",
+                  weekdayWorkingDays: weekdayDays || "1,2,3,4,5",
+                  weekendStart: data.weekdayStart || "09:00",
+                  weekendEnd: data.weekdayEnd || "18:00",
+                  weekendWorkingDays: weekendDays || "",
+                },
+              },
             },
           })
           const ownerTechnician = await tx.technician.create({

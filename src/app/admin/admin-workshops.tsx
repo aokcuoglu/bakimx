@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
+import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 
 export interface AdminWorkshopRow {
   id: string
@@ -15,8 +16,11 @@ export interface AdminWorkshopRow {
   planTier: string
   requestedPlanTier: string | null
   trialEndsAt: string | null
+  currentPeriodEnd?: string | null
   extraSeats: number
   createdAt: string
+  acquisitionSource: keyof typeof ACQUISITION_SOURCE_LABELS
+  acquisitionAdvisorId: string | null
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -67,6 +71,7 @@ function Row({ w, canManage }: { w: AdminWorkshopRow; canManage: boolean }) {
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             {w.ownerEmail ?? "—"}
+            <span> · {ACQUISITION_SOURCE_LABELS[w.acquisitionSource] ?? w.acquisitionSource}</span>
             {trial && <span> · deneme bitiş: {trial}</span>}
           </p>
           <Link

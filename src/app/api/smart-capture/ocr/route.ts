@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { assertWritableOr403 } from "@/lib/plan-guard"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { getOcrProvider } from "@/lib/ocr/provider"
 import { hashImageBuffer } from "@/lib/ocr/image-hash"
 import { normalizeRegistrationImage } from "@/lib/ocr/normalize-registration-image"
@@ -14,6 +15,13 @@ export async function POST(request: Request) {
     const { user, workshop } = await getCurrentUserWithWorkshop()
     const locked = assertWritableOr403(workshop)
     if (locked) return locked
+
+    if (!hasFeature(workshop.planTier as PlanTier, "ocrIntake")) {
+      return NextResponse.json(
+        { error: "Bu pakette OCR özelliği bulunmuyor. Paketinizi yükseltin." },
+        { status: 403 },
+      )
+    }
 
     const parsed = await parseOcrImageRequest(request)
     if (parsed instanceof NextResponse) return parsed

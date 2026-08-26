@@ -48,3 +48,25 @@ test("aktif değil ama dönem sonu var + aynı paket → yükseltme (yenileme de
     })
   ).toBe("upgrade")
 })
+
+test("lite paketinden yükseltme → upgrade", () => {
+  expect(
+    deriveBillingOrderType({
+      subscriptionStatus: "active",
+      planTier: "lite",
+      currentPeriodEnd: future,
+      targetTier: "starter",
+    })
+  ).toBe("upgrade")
+})
+
+test("lite paketinde ilk alım → new_purchase", () => {
+  expect(
+    deriveBillingOrderType({
+      subscriptionStatus: "trialing",
+      planTier: "lite",
+      currentPeriodEnd: null,
+      targetTier: "lite",
+    })
+  ).toBe("new_purchase")
+})

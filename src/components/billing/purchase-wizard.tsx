@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { Controller, useForm } from "react-hook-form"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard } from "lucide-react"
+import { ChevronLeft, ChevronRight, CheckCircle2, Landmark, Copy, CreditCard, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Form } from "@/components/ui/form"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { typedResolver } from "@/lib/validations/resolver"
 import {
@@ -29,10 +31,21 @@ import { BrandRail } from "@/components/billing/brand-rail"
 import { CardPaymentPanel } from "@/components/billing/card-payment-panel"
 import { getPlanPackage } from "@/lib/plans-catalog"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 
 type Mode = "public" | "inapp"
 type Cycle = "monthly" | "yearly"
 type PayMethod = "card" | "havale"
+
+const DAY_LABELS = [
+  { value: "1", short: "Pzt" },
+  { value: "2", short: "Sal" },
+  { value: "3", short: "Çar" },
+  { value: "4", short: "Per" },
+  { value: "5", short: "Cum" },
+  { value: "6", short: "Cmt" },
+  { value: "0", short: "Paz" },
+]
 
 export function PurchaseWizard({
   mode,
@@ -42,6 +55,7 @@ export function PurchaseWizard({
   ownedTier = null,
   havale,
   defaultInvoiceTitle = "",
+  advisors = [],
 }: {
   mode: Mode
   initialTier?: PlanTier
@@ -51,6 +65,7 @@ export function PurchaseWizard({
   ownedTier?: PlanTier | null
   havale: HavaleInfo
   defaultInvoiceTitle?: string
+  advisors?: { id: string; label: string }[]
 }) {
   const isPublic = mode === "public"
   const STEPS = isPublic
@@ -76,6 +91,8 @@ export function PurchaseWizard({
       tier: initialTier,
       cycle: initialCycle,
       invoiceTitle: defaultInvoiceTitle,
+      acquisitionSource: "unknown",
+      acquisitionAdvisorId: "",
       taxNumber: "",
       taxOffice: "",
       ...(isPublic
@@ -87,7 +104,12 @@ export function PurchaseWizard({
             workshopName: "",
             phone: "",
             city: "",
+            district: "",
             address: "",
+            workshopEmail: "",
+            workingDays: "1,2,3,4,5",
+            weekdayStart: "09:00",
+            weekdayEnd: "18:00",
             kvkkConsent: false,
           }
         : {}),
@@ -302,6 +324,17 @@ export function PurchaseWizard({
                           <Field label="İş yeri adı" error={fieldError(formState, "workshopName")}>
                             <Input {...register("workshopName" as never)} />
                           </Field>
+                          <Field label="BakımX&apos;ı nereden duydunuz?" error={fieldError(formState, "acquisitionSource")}>
+                            <Controller control={form.control} name={"acquisitionSource" as never} render={({ field }) => (
+                              <Select value={String(field.value ?? "unknown")} onValueChange={field.onChange}>
+                                <SelectTrigger><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                                <SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                              </Select>
+                            )} />
+                          </Field>
+                          <Field label="Satış temsilcisi" error={fieldError(formState, "acquisitionAdvisorId")}>
+                            <Controller control={form.control} name={"acquisitionAdvisorId" as never} render={({ field }) => <Select value={String(field.value ?? "")} onValueChange={field.onChange}><SelectTrigger><SelectValue placeholder="Atanmadı" /></SelectTrigger><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select>} />
+                          </Field>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <Field label="Ad" error={fieldError(formState, "firstName")}>
                               <Input {...register("firstName" as never)} />
@@ -324,8 +357,14 @@ export function PurchaseWizard({
                               <Input {...register("city" as never)} />
                             </Field>
                           </div>
+                          <Field label="İlçe (opsiyonel)" error={fieldError(formState, "district")}>
+                            <Input {...register("district" as never)} placeholder="Örnek: Kadıköy" />
+                          </Field>
                           <Field label="Adres" error={fieldError(formState, "address")}>
                             <Input {...register("address" as never)} />
+                          </Field>
+                          <Field label="İşletme e-postası (opsiyonel)" error={fieldError(formState, "workshopEmail")}>
+                            <Input type="email" {...register("workshopEmail" as never)} placeholder="servis@isyeri.com" />
                           </Field>
                         </>
                       )}
@@ -340,6 +379,50 @@ export function PurchaseWizard({
                           <Input {...register("taxOffice" as never)} />
                         </Field>
                       </div>
+                      {isPublic && (
+                        <div className="space-y-3 pt-2">
+                          <div className="flex items-center gap-2">
+                            <Clock className="size-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">Çalışma Günleri</span>
+                          </div>
+                          <Controller
+                            control={form.control}
+                            name={"workingDays" as never}
+                            render={({ field }) => {
+                              const selectedDays = field.value ? String(field.value).split(",").filter(Boolean) : []
+                              return (
+                                <ToggleGroup
+                                  type="multiple"
+                                  value={selectedDays}
+                                  onValueChange={(vals) => field.onChange(vals.join(","))}
+                                  className="flex-wrap"
+                                >
+                                  {DAY_LABELS.map((day) => (
+                                    <ToggleGroupItem
+                                      key={day.value}
+                                      value={day.value}
+                                      variant="outline"
+                                      className="rounded-lg px-3 py-1.5 text-sm font-medium data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary-strong hover:border-primary/40"
+                                    >
+                                      {day.short}
+                                    </ToggleGroupItem>
+                                  ))}
+                                </ToggleGroup>
+                              )
+                            }}
+                          />
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground shrink-0">Saat:</span>
+                            <Field label="" error={undefined} className="flex-1">
+                              <Input {...register("weekdayStart" as never)} type="time" />
+                            </Field>
+                            <span className="text-muted-foreground">-</span>
+                            <Field label="" error={undefined} className="flex-1">
+                              <Input {...register("weekdayEnd" as never)} type="time" />
+                            </Field>
+                          </div>
+                        </div>
+                      )}
                       {isPublic && (
                         <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
                           <Controller
@@ -530,10 +613,10 @@ function DonePanel({
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children, className }: { label: string; error?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
+    <div className={cn("space-y-1", className)}>
+      {label && <Label className="text-xs">{label}</Label>}
       {children}
       {/* Sabit yükseklikli validation slotu — mesaj gelince/gidince layout kaymaz */}
       <p className="min-h-[16px] text-xs leading-4 text-destructive-strong">{error ?? ""}</p>

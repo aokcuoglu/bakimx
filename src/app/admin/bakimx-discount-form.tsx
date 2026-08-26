@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -22,7 +23,7 @@ interface BakimxDiscountFormProps {
 }
 
 /**
- * Atölyenin BakımX iskonto oranını ayarlar (BAK-47).
+ * Atölyenin GetirBakım kaynaklı iskonto oranını ayarlar (BAK-47).
  *
  * Alan YÜZDE girer (0–100), sunucuya bps gider — dönüşüm tek yerde
  * (`percentToBps`). Sunucu oranı ayrıca kendi doğruluyor; buradaki doğrulama
@@ -52,9 +53,12 @@ export function BakimxDiscountForm({ workshopId, currentDiscountBps }: BakimxDis
       const result = await updateWorkshopBakimxDiscount(workshopId, percentToBps(values.discountPercent))
       if (!result.ok) {
         setServerError(result.error)
+        toast.error(result.error)
         return
       }
-      setSuccessMessage(`İskonto %${values.discountPercent} olarak güncellendi`)
+      const message = `GetirBakım iskontosu %${values.discountPercent} olarak güncellendi`
+      setSuccessMessage(message)
+      toast.success(message)
     })
   }
 
@@ -67,7 +71,7 @@ export function BakimxDiscountForm({ workshopId, currentDiscountBps }: BakimxDis
             name="discountPercent"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>BakımX İskontosu (%)</FormLabel>
+                <FormLabel>GetirBakım İskontosu (%)</FormLabel>
                 <FormControl>
                   <Input {...field} type="number" step="0.01" inputMode="decimal" placeholder="0" disabled={isPending} />
                 </FormControl>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { KeyRound, Loader2, RefreshCw, Search } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,7 @@ export function MarketResearchUsage() {
   const [data, setData] = useState<AdminUsage | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
-  const load = useCallback(async () => {
+  const load = useCallback(async (notify = false) => {
     setLoading(true)
     setError("")
     try {
@@ -31,8 +32,11 @@ export function MarketResearchUsage() {
       const payload = await response.json().catch(() => ({})) as AdminUsage & { error?: string }
       if (!response.ok) throw new Error(payload.error || "Kullanım verisi yüklenemedi.")
       setData(payload)
+      if (notify) toast.success("Kullanım verisi yenilendi")
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Kullanım verisi yüklenemedi.")
+      const message = caught instanceof Error ? caught.message : "Kullanım verisi yüklenemedi."
+      setError(message)
+      if (notify) toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -52,7 +56,7 @@ export function MarketResearchUsage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">Platform anahtarıyla yapılan çağrılar bütçeden düşer; şirket anahtarlı çağrılar ayrıca sayılır.</p><Button variant="ghost" size="icon-sm" onClick={() => void load()} disabled={loading} aria-label="Piyasa araştırması kullanımını yenile">{loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}</Button></div>
+      <div className="flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">Platform anahtarıyla yapılan çağrılar bütçeden düşer; şirket anahtarlı çağrılar ayrıca sayılır.</p><Button variant="ghost" size="icon-sm" onClick={() => void load(true)} disabled={loading} aria-label="Piyasa araştırması kullanımını yenile">{loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}</Button></div>
       {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg bg-muted p-3"><p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Search className="size-3.5" aria-hidden="true" />Başarılı araştırma</p><p className="mt-1 text-xl font-semibold tabular-nums">{summary.requestCount.toLocaleString("tr-TR")}</p><p className="text-xs text-muted-foreground">{summary.webSearchCount.toLocaleString("tr-TR")} web araması</p></div>

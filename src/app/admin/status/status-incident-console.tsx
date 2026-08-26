@@ -193,6 +193,7 @@ function CreateIncidentDialog({
       const result = await createStatusIncidentAction(values)
       if (!result.ok) {
         setError(result.error)
+        toast.error(result.error)
         return
       }
       toast.success("Olay yayınlandı")
@@ -306,6 +307,7 @@ function ResolveIncidentDialog({
       const result = await resolveStatusIncidentAction(values)
       if (!result.ok) {
         setError(result.error)
+        toast.error(result.error)
         return
       }
       toast.success("Olay çözüldü olarak işaretlendi")

@@ -19,8 +19,10 @@ const landingOrder = [
   "BeforeAfterSection",
   "TrustOnboardingSection",
   "FAQSection",
-  "DemoFormSection",
+  // Koyu bookend + form kapanışı (UI denetimi §3.5): FinalCTA formdan ÖNCE,
+  // demo formu sayfayı kapatır — secondary CTA aşağı kaydırır, yukarı değil.
   "FinalCTASection",
+  "DemoFormSection",
   "Footer",
 ];
 

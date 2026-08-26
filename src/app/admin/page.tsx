@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { Clock, Sparkles, PhoneIncoming, LifeBuoy, Building2, Landmark, ArrowRight } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
-import { getWorkshopSummary, getLeadRows, getBillingData } from "@/app/admin/data"
+import { getWorkshopSummary, getLeadRows, getBillingData, getAcquisitionSummary } from "@/app/admin/data"
+import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
+import { formatMinor } from "@/lib/billing/pricing"
 import { HealthBand } from "@/app/admin/health/health-band"
 import { ActiveImpersonations } from "@/app/admin/active-impersonations"
 
@@ -10,10 +12,11 @@ export const dynamic = "force-dynamic"
 export default async function AdminHomePage() {
   const ctx = await getAdminContext()
 
-  const [workshops, leads, billing] = await Promise.all([
+  const [workshops, leads, billing, acquisition] = await Promise.all([
     getWorkshopSummary(),
     getLeadRows(),
     getBillingData(),
+    getAcquisitionSummary(),
   ])
 
   const newDemoCount = leads.demoRows.filter((r) => r.status === "new").length
@@ -34,6 +37,13 @@ export default async function AdminHomePage() {
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Genel Bakış</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Operasyonel durum ve dikkat gerektirenler.</p>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold text-foreground">Edinim özeti</h2>
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full text-sm"><thead><tr className="border-b text-left text-muted-foreground"><th className="p-3">Kaynak</th><th className="p-3">Atölye</th><th className="p-3">Aktif</th><th className="p-3">Satın almış</th><th className="p-3 text-right">Onaylı tahsilat</th></tr></thead><tbody>{acquisition.map((row) => <tr key={row.source} className="border-b last:border-0"><td className="p-3 font-medium">{ACQUISITION_SOURCE_LABELS[row.source]}</td><td className="p-3">{row.workshops}</td><td className="p-3">{row.active}</td><td className="p-3">{row.purchased}</td><td className="p-3 text-right">{formatMinor(row.revenueMinor)}</td></tr>)}</tbody></table>
+        </div>
+      </section>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {counters.map((c) => (

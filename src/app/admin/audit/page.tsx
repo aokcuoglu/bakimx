@@ -2,12 +2,15 @@ import Link from "next/link"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import type { Prisma } from "@prisma/client"
+import { Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FilterSelect } from "@/components/shared/filter-select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { auditActionLabel } from "@/lib/admin/activity-labels"
 
 export const dynamic = "force-dynamic"
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
 /** Friendly labels for known audit actions; unknown actions fall back to raw. */
 const ACTION_LABELS: Record<string, string> = {
@@ -36,6 +39,13 @@ const ACTION_LABELS: Record<string, string> = {
   password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
 }
 
+/** Yönetici eylemleri bu sayfaya özeldir; geri kalanı ortak kullanıcı dili
+ * sözlüğünden gelir. Böylece `feature_override_set` gibi DB anahtarları
+ * hiçbir yönetici yüzeyinde görünmez. */
+function displayActionLabel(action: string) {
+  return ACTION_LABELS[action] ?? auditActionLabel(action)
+}
+
 interface AuditSearchParams {
   workshopId?: string
   action?: string
@@ -55,7 +65,7 @@ export default async function AdminAuditPage({
   if (sp.workshopId) where.workshopId = sp.workshopId
   if (sp.action) where.action = sp.action
 
-  const [logs, total, workshops] = await Promise.all([
+  const [logs, total, workshops, actions] = await Promise.all([
     prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -70,10 +80,11 @@ export default async function AdminAuditPage({
     }),
     prisma.auditLog.count({ where }),
     prisma.workshop.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.auditLog.findMany({ distinct: ["action"], orderBy: { action: "asc" }, select: { action: true } }),
   ])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const knownActions = Object.keys(ACTION_LABELS)
+  const knownActions = actions.map(({ action }) => action)
 
   const buildHref = (overrides: Partial<AuditSearchParams>) => {
     const next = { ...sp, ...overrides }
@@ -86,108 +97,113 @@ export default async function AdminAuditPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Denetim Kaydı</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+    <div className="space-y-7">
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-primary">Platform operasyonları</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Denetim Kaydı</h1>
+        <p className="text-sm text-muted-foreground">
           Tüm yönetici işlemleri. {total} kayıt.
         </p>
       </div>
 
-      {/* GET form — no client JS needed; filters live in the URL. */}
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          İş yeri
-          <FilterSelect
-            name="workshopId"
-            defaultValue={sp.workshopId ?? ""}
-            placeholder="Tümü"
-            options={[{ value: "", label: "Tümü" }, ...workshops.map((w) => ({ value: w.id, label: w.name }))]}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          İşlem
-          <FilterSelect
-            name="action"
-            defaultValue={sp.action ?? ""}
-            placeholder="Tümü"
-            options={[{ value: "", label: "Tümü" }, ...knownActions.map((a) => ({ value: a, label: ACTION_LABELS[a] }))]}
-          />
-        </label>
-        <Button type="submit">
-          Filtrele
-        </Button>
-        {(sp.workshopId || sp.action) && (
-          <Button variant="ghost" asChild>
-            <Link href="/admin/audit">
-              Temizle
-            </Link>
-          </Button>
-        )}
-      </form>
-
-      {logs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Kayıt bulunamadı.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="px-3 py-2 font-medium">Tarih</th>
-                <th className="px-3 py-2 font-medium">İşlem</th>
-                <th className="px-3 py-2 font-medium">İş yeri</th>
-                <th className="px-3 py-2 font-medium">Yapan</th>
-                <th className="px-3 py-2 font-medium">Detay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((l) => (
-                <tr key={l.id} className="border-b last:border-0 align-top">
-                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-                    {l.createdAt.toLocaleString("tr-TR")}
-                  </td>
-                  <td className="px-3 py-2 font-medium text-foreground">
-                    {ACTION_LABELS[l.action] ?? l.action}
-                  </td>
-                  <td className="px-3 py-2">
-                    <Link href={`/admin/workshops/${l.workshopId}`} className="text-primary hover:underline">
-                      {l.workshop?.name ?? l.workshopId}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {l.actorUser ? (l.actorUser.email ?? l.actorUser.username ?? "—") : "sistem"}
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{l.metadataJson ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* GET form keeps filters shareable while matching the workshop activity table. */}
+      <section className="space-y-3 rounded-xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Denetim işlemleri</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">Platformdaki yönetici işlemleri sayfalanır ve filtrelenir.</p>
+          </div>
+          <form method="get" className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2">
+            <Filter className="size-4 text-muted-foreground" aria-hidden="true" />
+            <label>
+              <span className="sr-only">İş yeri</span>
+              <FilterSelect
+                name="workshopId"
+                defaultValue={sp.workshopId ?? ""}
+                placeholder="Tüm iş yerleri"
+                className="h-8 w-44 bg-background"
+                autoSubmit
+                options={[{ value: "", label: "Tüm iş yerleri" }, ...workshops.map((w) => ({ value: w.id, label: w.name }))]}
+              />
+            </label>
+            <label>
+              <span className="sr-only">İşlem</span>
+              <FilterSelect
+                name="action"
+                defaultValue={sp.action ?? ""}
+                placeholder="Tüm işlemler"
+                className="h-8 w-44 bg-background"
+                autoSubmit
+                options={[{ value: "", label: "Tüm işlemler" }, ...knownActions.map((action) => ({ value: action, label: displayActionLabel(action) }))]}
+              />
+            </label>
+          </form>
         </div>
-      )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
+        {logs.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Bu filtreyle eşleşen işlem yok.</p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>İşlem</TableHead>
+                  <TableHead>İş yeri</TableHead>
+                  <TableHead>Yapan</TableHead>
+                  <TableHead className="text-right">Tarih</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell>
+                      <p className="font-medium text-foreground">{displayActionLabel(log.action)}</p>
+                      {log.metadataJson && <p className="max-w-96 truncate font-mono text-xs text-muted-foreground">{log.metadataJson}</p>}
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/admin/workshops/${log.workshopId}`} className="text-primary hover:underline">
+                        {log.workshop?.name ?? log.workshopId}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {log.actorUser ? (log.actorUser.email ?? log.actorUser.username ?? "—") : "sistem"}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {log.createdAt.toLocaleDateString("tr-TR")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </section>
+
+      <div className="flex items-center justify-between gap-3 pt-1 text-sm">
           <span className="text-muted-foreground">
-            Sayfa {page} / {totalPages}
+            Sayfa {page} / {totalPages} · {total} kayıt
           </span>
           <div className="flex gap-2">
-            {page > 1 && (
-              <Button variant="outline" asChild>
+            {page > 1 ? (
+              <Button variant="outline" size="sm" asChild>
                 <Link href={buildHref({ page: String(page - 1) })}>
                   Önceki
                 </Link>
               </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled>Önceki</Button>
             )}
-            {page < totalPages && (
-              <Button variant="outline" asChild>
+            {page < totalPages ? (
+              <Button variant="outline" size="sm" asChild>
                 <Link href={buildHref({ page: String(page + 1) })}>
                   Sonraki
                 </Link>
               </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled>Sonraki</Button>
             )}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

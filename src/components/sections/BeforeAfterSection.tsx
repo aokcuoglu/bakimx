@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle } from "lucide-react";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
 
 const beforeItems = [
@@ -19,12 +20,10 @@ export function BeforeAfterSection() {
   return (
     <section className="bg-muted/30 py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-          Defterden panele geçin
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-center text-base text-muted-foreground">
-          Servislerin her gün yaşadığı dağınıklığın BakimX&apos;teki karşılığı:
-        </p>
+        <SectionHeading
+          title="Defterden panele geçin"
+          subtitle="Servislerin her gün yaşadığı dağınıklığın BakimX'teki karşılığı:"
+        />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <Reveal
             from="left"

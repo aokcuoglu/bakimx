@@ -43,14 +43,28 @@ import type { Workshop } from "@prisma/client"
 export const TRIAL_DAYS = 7
 const DAY_MS = 86_400_000
 
-export type PlanTier = "starter" | "pro" | "premium"
+export const PLAN_TIERS = ["lite", "starter", "pro", "premium"] as const
+export type PlanTier = (typeof PLAN_TIERS)[number]
+
+export function isPlanTier(value: unknown): value is PlanTier {
+  return typeof value === "string" && PLAN_TIERS.some((tier) => tier === value)
+}
 
 // Included login seats per plan tier. During the trial a workshop is on `pro`,
 // so it gets pro's seat allowance. Extra seats are granted per-workshop on top.
 export const PLAN_SEATS: Record<PlanTier, number> = {
+  lite: 1,
   starter: 1,
   pro: 5,
   premium: 15,
+}
+
+/** Per-tier monthly VIN/katalog kotası (atölye başına). Ek kota Workshop.extraVinQuota ile eklenir. */
+export const VIN_LOOKUP_QUOTA: Record<PlanTier, number> = {
+  lite: 0,
+  starter: 1_000,
+  pro: 5_000,
+  premium: 15_000,
 }
 
 /** Effective seat limit = tier-included seats + founder-granted extra seats. */
@@ -60,6 +74,7 @@ export function getSeatLimit(tier: PlanTier, extraSeats: number = 0): number {
 
 /** Pakete göre okunur ad — hata metinlerinde "starter" değil "Başlangıç" geçsin. */
 export const PLAN_LABELS: Record<PlanTier, string> = {
+  lite: "Lite",
   starter: "Başlangıç",
   pro: "Profesyonel",
   premium: "Premium",
@@ -119,13 +134,16 @@ export function isPlanExpiredLock(
   return PLAN_EXPIRED_LOCK_REASONS.includes(reason as PlanExpiredLockReason)
 }
 
-const TIER_RANK: Record<PlanTier, number> = { starter: 1, pro: 2, premium: 3 }
+const TIER_RANK: Record<PlanTier, number> = { lite: 0, starter: 1, pro: 2, premium: 3 }
 
 // Gated capabilities. Used by assertFeature() as these features come online.
 // During the trial a workshop is on the `pro` tier, so premium features remain
 // locked behind an upgrade. `starter` min tier = enabled for every plan (the
 // gate then only serves as a per-tenant kill switch via feature overrides).
 export type GatedFeature =
+  | "ocrIntake"
+  | "photoChecklist"
+  | "damageMap"
   | "eInvoice"
   | "aiAdvisor"
   | "multiBranch"
@@ -136,25 +154,17 @@ export type GatedFeature =
   | "getirbakimCatalog"
   | "marketResearch"
 const FEATURE_MIN_TIER: Record<GatedFeature, PlanTier> = {
+  ocrIntake: "starter",
+  photoChecklist: "starter",
+  damageMap: "starter",
   eInvoice: "premium",
   aiAdvisor: "premium",
   multiBranch: "premium",
   rbac: "premium",
   vinLookup: "pro",
   partsCatalog: "starter",
-  // BakımX'in KENDİ kataloğu: sorgu bizim DB'mize gidiyor, dış kota yakmıyor —
-  // bu yüzden `partsCatalog` (TecDoc/RapidAPI) kapısının arkasına konmaz ve
-  // taban katman `starter`. Kapı yalnız atölye bazında kapatma düğmesi olarak
-  // durur (bkz. /admin/flags, resolveFeature).
   bakimxCatalog: "starter",
-  // GetirBakım kataloğu (BAK-183): `bakimxCatalog`tan AYRI bir kapı. Sorgu
-  // DIŞARI, GetirBakım partner API'sine gidiyor — tek kapıya bağlansaydı, yalnız
-  // kendi kataloğunu isteyen bir atölye farkında olmadan dış trafik de üretirdi.
-  // Aynı gerekçeyle `partsCatalog` (TecDoc) kapısının da arkasında değil; bkz.
-  // src/lib/parts/bakimx-catalog-guard.ts'teki aynı ayrım.
   getirbakimCatalog: "starter",
-  // Kaynaklı web araştırması her istekte ücretli sağlayıcı ve web-search kotası
-  // tüketir; bu nedenle katalog aramasından ayrı, Premium'a özgü bir kapıdır.
   marketResearch: "premium",
 }
 

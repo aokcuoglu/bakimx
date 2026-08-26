@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon, XIcon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
@@ -10,6 +10,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      position="bottom-right"
+      closeButton
       className="toaster group"
       icons={{
         success: (
@@ -27,6 +29,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         loading: (
           <Loader2Icon className="size-4 animate-spin" />
         ),
+        close: <XIcon className="size-3" aria-hidden="true" />,
       }}
       style={
         {
@@ -37,11 +40,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       toastOptions={{
+        closeButtonAriaLabel: "Bildirimi kapat",
         classNames: {
           toast: "cn-toast",
           title: "cn-toast-title",
           description: "cn-toast-description",
           actionButton: "cn-toast-action",
+          closeButton: "cn-toast-close",
         },
       }}
       {...props}

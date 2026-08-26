@@ -42,6 +42,11 @@ model Workshop {
   // Founder-granted extra login seats beyond the plan tier's included seats
   // (paid overage / custom deals — charged offline until usage billing lands).
   extraSeats         Int                    @default(0)
+  // Extra monthly VIN/katalog kotası (satın alınan ek kota — base tier kotasının üzerine eklenir).
+  extraVinQuota      Int                    @default(0)
+
+  acquisitionSource    AcquisitionSource @default(unknown)
+  acquisitionAdvisorId String?
 
   // --- BakımX pricing (BAK-47) ---
   // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
@@ -96,11 +101,16 @@ model Workshop {
   externalProcurementOrders ExternalProcurementOrder[]
   marketResearchCredential  MarketResearchCredential?
   marketResearchUsages      MarketResearchUsage[]
+  salesLeads                SalesLead[]
+  demoSessions              SalesDemoSession[]
+  salesDiscountCodes        SalesDiscountCode[]
+  acquisitionAdvisor        SalesAdvisor? @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
 // granted "pro" so it experiences the full value of the paid product.
 enum PlanTier {
+  lite
   starter
   pro
   premium
@@ -122,6 +132,18 @@ enum WorkshopApprovalStatus {
   rejected
 }
 
+enum AcquisitionSource {
+  sales_advisor
+  instagram
+  website
+  google
+  referral
+  field_visit
+  partner
+  other
+  unknown
+}
+
 model BillingOrder {
   id               String             @id @default(cuid())
   workshopId       String
@@ -138,6 +160,7 @@ model BillingOrder {
   note             String?
   createdAt        DateTime           @default(now())
   confirmedAt      DateTime?
+  salesCommission  SalesCommission?
   confirmedByEmail String?
   periodStart      DateTime?
   periodEnd        DateTime?
@@ -315,6 +338,9 @@ model User {
   pushSubscriptions     PushSubscription[]
   /// BAK-138: Bu hesabın elle düzelttiği işçilik süresi kayıtları.
   editedLaborSessions   LaborSession[]       @relation("LaborSessionEditedBy")
+  salesAdvisor          SalesAdvisor?
+  salesActivities       SalesActivity[]      @relation("SalesActivityActor")
+  createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1828,6 +1854,203 @@ model PlatformAdmin {
   @@index([disabledAt])
 }
 
+/// Saha satış personeli için platform profili. Tenant içi `UserRole` yerine bu
+/// tablo kullanılır; böylece müşteri iş yeri yetkileriyle satış erişimi karışmaz.
+model SalesAdvisor {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  disabledAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  leads      SalesLead[]
+  commissions SalesCommission[]
+  demoSessions SalesDemoSession[]
+  discountCodes SalesDiscountCode[]
+  acquisitionWorkshops Workshop[] @relation("WorkshopAcquisitionAdvisor")
+  referrals SalesReferral[]
+
+  @@index([disabledAt])
+}
+
+enum SalesLeadSource {
+  field
+  public_demo_request
+  customer_referral
+}
+
+enum SalesLeadStatus {
+  new
+  contacted
+  demo_scheduled
+  demo_completed
+  proposal
+  won
+  lost
+}
+
+enum SalesActivityType {
+  visit
+  phone
+  whatsapp
+  email
+  demo
+  note
+}
+
+enum SalesCommissionStatus {
+  draft
+  approved
+  paid
+  void
+}
+
+/// BakımX'ın kendi satış hunisi. Globaldir; müşteri tenant verisi değildir.
+model SalesLead {
+  id                 String          @id @default(cuid())
+  source             SalesLeadSource @default(field)
+  status             SalesLeadStatus @default(new)
+  businessName       String
+  contactName        String
+  phone              String
+  email              String?
+  city               String?
+  district           String?
+  address            String?
+  monthlyVehicles    String?
+  notes              String?
+  nextActionAt       DateTime?
+  lostReason         String?
+  advisorId          String?
+  advisor            SalesAdvisor?  @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  workshopId         String?         @unique
+  workshop           Workshop?       @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  demoRequestId      String?         @unique
+  demoRequest        DemoRequest?    @relation(fields: [demoRequestId], references: [id], onDelete: SetNull)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  activities         SalesActivity[]
+  demoSessions       SalesDemoSession[]
+  commissions        SalesCommission[]
+  discountCodes      SalesDiscountCode[]
+  referral           SalesReferral?
+
+  @@index([advisorId, status])
+  @@index([status, nextActionAt])
+  @@index([createdAt])
+}
+
+model SalesActivity {
+  id          String            @id @default(cuid())
+  leadId      String
+  lead        SalesLead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type        SalesActivityType
+  summary     String
+  occurredAt  DateTime          @default(now())
+  nextActionAt DateTime?
+  createdById String
+  createdBy   User              @relation("SalesActivityActor", fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+
+  @@index([leadId, occurredAt])
+}
+
+/// Ekran paylaşımı için açılan, üretimden izole demo iş yeri oturumu.
+model SalesDemoSession {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        SalesLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  advisorId   String
+  advisor     SalesAdvisor @relation(fields: [advisorId], references: [id], onDelete: Cascade)
+  workshopId  String   @unique
+  workshop    Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  endedAt     DateTime?
+  createdById String
+  createdBy   User     @relation("SalesDemoSessionCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([advisorId, expiresAt])
+  @@index([expiresAt])
+}
+
+model SalesCommission {
+  id              String                @id @default(cuid())
+  leadId          String
+  lead            SalesLead             @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  advisorId       String
+  advisor         SalesAdvisor          @relation(fields: [advisorId], references: [id], onDelete: Restrict)
+  billingOrderId  String                @unique
+  billingOrder    BillingOrder          @relation(fields: [billingOrderId], references: [id], onDelete: Restrict)
+  status          SalesCommissionStatus @default(draft)
+  amountMinor     Int?
+  note            String?
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([advisorId, status])
+  @@index([leadId])
+}
+
+/// Satış danışmanlarının müşteri adayları için ürettiği tek kullanımlık indirim
+/// kodları. Kod 7 gün geçerlidir; bir müşteri iş yeri tarafından ilk kullanımda
+/// bağlanır (workshopId doldurulur) ve sonra tükenir.
+model SalesDiscountCode {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  discountPercent   Int      // 1-100 arası yüzde
+  maxUses           Int      @default(1)
+  usedCount         Int      @default(0)
+  advisorId         String?
+  advisor           SalesAdvisor? @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  leadId            String?
+  lead              SalesLead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  workshopId        String?
+  workshop          Workshop?    @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  expiresAt         DateTime
+  usedAt            DateTime?
+  disabledAt         DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([code])
+  @@index([advisorId, createdAt])
+  @@index([expiresAt])
+  @@index([disabledAt])
+}
+
+enum SalesReferralStatus {
+  new
+  contacted
+  won
+  lost
+}
+
+model SalesReferral {
+  id                   String             @id @default(cuid())
+  status               SalesReferralStatus @default(new)
+  referrerName         String
+  referrerPhone        String
+  referredBusinessName String
+  referredContactName  String
+  referredPhone        String
+  referredEmail        String?
+  notes                String?
+  advisorId            String?
+  advisor              SalesAdvisor?      @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  leadId               String             @unique
+  lead                 SalesLead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([advisorId, status])
+  @@index([createdAt])
+}
+
 /// Platform yöneticisi rolleri — yetki matrisi `src/lib/admin.ts` içindeki
 /// `CAPABILITIES` tablosundadır (kaynak: `docs/operations/platform-admin-model.md` §2).
 enum AdminRole {
@@ -1869,6 +2092,7 @@ model DemoRequest {
   status          DemoRequestStatus @default(new)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  salesLead       SalesLead?
 
   @@index([status])
   @@index([createdAt])
@@ -2048,6 +2272,20 @@ model TecdocCache {
   @@index([createdAt])
   @@index([endpoint])
   @@map("tecdoc_cache")
+}
+
+/// Per-workshop quota usage tracking. Each billable RapidAPI call (VIN lookup or
+/// TecDoc catalog query) creates one row here with the requesting workshopId.
+/// This enables per-tier quota enforcement without polluting the global cache tables.
+model QuotaUsage {
+  id          String   @id @default(cuid())
+  workshopId  String
+  source      String   // "vin" | "tecdoc"
+  createdAt   DateTime @default(now())
+
+  @@index([workshopId, createdAt])
+  @@index([createdAt])
+  @@map("quota_usage")
 }
 
 /// Normalized TecDoc article rows extracted from cached raw payloads, so repeat

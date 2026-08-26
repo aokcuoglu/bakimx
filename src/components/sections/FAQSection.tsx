@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Separator } from "@/components/ui/separator";
+import { BrandEyebrow } from "@/components/shared/brand-decor";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
-import { FAQ_ITEMS } from "@/lib/faq-data";
+import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
 import {
   LANDING_OBJECTIONS,
   objectionFaqAnchor,
@@ -26,7 +29,7 @@ const OBJECTION_ENTRIES = LANDING_OBJECTIONS.map((objection) => ({
   answer: objection.answer,
 }));
 
-const FAQ_ENTRIES = FAQ_ITEMS.map((faq, index) => ({
+const FAQ_ENTRIES = LANDING_FAQ_ITEMS.map((faq, index) => ({
   value: `item-${index}`,
   anchor: undefined,
   question: faq.question,
@@ -52,7 +55,6 @@ function isObjectionAnchor(anchor: string) {
 }
 
 export function FAQSection() {
-  const entries = useMemo(() => [...OBJECTION_ENTRIES, ...FAQ_ENTRIES], []);
   const hash = useSyncExternalStore(subscribeToHash, readHash, readServerHash);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [appliedHash, setAppliedHash] = useState<string | null>(null);
@@ -71,11 +73,11 @@ export function FAQSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-3 lg:gap-16">
           <Reveal amount={0.3}>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">SSS</h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              BakimX hakkında en çok sorulanlar. Aradığınızı bulamadıysanız
-              demo talebinde sorunuzu iletebilirsiniz.
-            </p>
+            <SectionHeading
+              align="left"
+              title="SSS"
+              subtitle="En çok sorulanlar. Diğer sorularınızın yanıtını BakımX Asistanı'na sorabilirsiniz."
+            />
           </Reveal>
           <div className="lg:col-span-2">
             <Accordion
@@ -84,7 +86,37 @@ export function FAQSection() {
               value={openItems}
               onValueChange={setOpenItems}
             >
-              {entries.map((entry, index) => (
+              {OBJECTION_ENTRIES.map((entry, index) => (
+                <Reveal
+                  key={entry.value}
+                  amount={0.1}
+                  delay={index * 40}
+                  style={{ "--reveal-y": "0.625rem", "--reveal-duration": "0.35s" } as CSSProperties}
+                >
+                  <AccordionItem
+                    id={entry.anchor}
+                    value={entry.value}
+                    className="mb-3 scroll-mt-24 rounded-lg border bg-card px-5"
+                  >
+                    <AccordionTrigger className="py-4 text-left text-base font-medium">
+                      {entry.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4 leading-relaxed text-muted-foreground">
+                      {entry.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Reveal>
+              ))}
+
+              {/* İtiraz-cevap grubu ile genel SSS arasındaki editoryal sınır:
+                  tırnaklı sorular müşteri sesi, alttakiler genel meraktır. */}
+              <div className="mt-7 mb-4 flex items-center gap-3">
+                <Separator className="flex-1" />
+                <BrandEyebrow>Diğer sık sorulanlar</BrandEyebrow>
+                <Separator className="flex-1" />
+              </div>
+
+              {FAQ_ENTRIES.map((entry, index) => (
                 <Reveal
                   key={entry.value}
                   amount={0.1}

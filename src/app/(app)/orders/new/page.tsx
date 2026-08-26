@@ -34,6 +34,7 @@ export default async function NewOrderPage({
           prefillCustomerId={params.customerId}
           prefillVehicleId={params.vehicleId}
           source={params.source}
+          planTier={workshop?.planTier ?? "pro"}
         />
       </div>
     </AppShell>

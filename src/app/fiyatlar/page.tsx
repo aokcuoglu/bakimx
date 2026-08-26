@@ -37,7 +37,7 @@ export default function FiyatlarPage() {
     <>
       <JsonLd data={softwareApplicationStructuredData} />
       <Header />
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-12 space-y-8">
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 space-y-8">
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Oto servis programı paketleri ve fiyatları</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">

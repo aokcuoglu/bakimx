@@ -14,7 +14,7 @@ import { DemoFormSection } from "@/components/sections/DemoFormSection";
 import { FinalCTASection } from "@/components/sections/FinalCTASection";
 import { Footer } from "@/components/sections/Footer";
 import { JsonLd } from "@/components/seo/json-ld";
-import { FAQ_ITEMS } from "@/lib/faq-data";
+import { LANDING_FAQ_ITEMS } from "@/lib/faq-data";
 import { SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ const homeStructuredData = [
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQ_ITEMS.map((item) => ({
+    mainEntity: LANDING_FAQ_ITEMS.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -58,8 +58,8 @@ export default function Home() {
         <BeforeAfterSection />
         <TrustOnboardingSection />
         <FAQSection />
-        <DemoFormSection />
         <FinalCTASection />
+        <DemoFormSection />
       </main>
       <Footer />
     </>

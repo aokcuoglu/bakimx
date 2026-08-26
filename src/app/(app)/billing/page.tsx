@@ -79,7 +79,7 @@ export default async function BillingPage({
                   </p>
                   <Link
                     href={`/payment/result?ref=${encodeURIComponent(pendingOrder.reference)}`}
-                    className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                    className="mt-2 inline-flex h-8 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                   >
                     Ödemeye devam et
                   </Link>

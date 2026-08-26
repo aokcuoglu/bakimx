@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { AlertTriangle, ExternalLink, Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,8 +35,11 @@ export function MarketResearchProbe() {
       const payload = await response.json().catch(() => ({})) as Partial<ProbeResult> & { error?: string }
       if (!response.ok) throw new Error(payload.error || "Piyasa araştırması başlatılamadı.")
       setResult(payload as ProbeResult)
+      toast.success("Piyasa araştırması tamamlandı")
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Piyasa araştırması başlatılamadı.")
+      const message = caught instanceof Error ? caught.message : "Piyasa araştırması başlatılamadı."
+      setError(message)
+      toast.error(message)
     } finally {
       setPending(false)
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { registerSchema } from "@/lib/validations/auth"
+import { normalizeAcquisitionAdvisorId } from "@/lib/acquisition-sources"
 import { rateLimit } from "@/lib/rate-limit"
 import { clientIpFromHeaders } from "@/lib/auth-login"
 import { getAdminEmails } from "@/lib/admin"
@@ -69,6 +70,14 @@ export async function POST(request: Request) {
   }
 
   const data = parsed.data
+  const acquisitionAdvisorId = normalizeAcquisitionAdvisorId(data.acquisitionAdvisorId)
+  if (data.acquisitionSource === "sales_advisor" && !acquisitionAdvisorId) {
+    return NextResponse.json({ error: "Satış temsilcisi seçimi zorunludur." }, { status: 400 })
+  }
+  if (acquisitionAdvisorId) {
+    const advisor = await prisma.salesAdvisor.findFirst({ where: { id: acquisitionAdvisorId, disabledAt: null }, select: { id: true } })
+    if (!advisor) return NextResponse.json({ error: "Etkin satış temsilcisi bulunamadı." }, { status: 400 })
+  }
 
   // Existing e-mail: either an AUTH-BOUNDED resume of an interrupted registration
   // or the ordinary "e-posta kullanımda" rejection. RESUME only when the supplied
@@ -128,8 +137,8 @@ export async function POST(request: Request) {
                 address: data.address,
                 email: data.workshopEmail || data.email,
                 taxOffice: data.taxOffice || null,
-                taxNumber: data.taxNumber || null,
-                invoiceTitle: data.invoiceTitle || null,
+                taxNumber: data.taxNumber,
+                invoiceTitle: data.invoiceTitle,
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",
@@ -137,6 +146,8 @@ export async function POST(request: Request) {
                 trialStartedAt: null,
                 trialEndsAt: null,
                 planTier: "pro",
+                acquisitionSource: data.acquisitionSource,
+                acquisitionAdvisorId,
                 settings: {
                   create: {
                     weekdayStart: data.weekdayStart || "09:00",

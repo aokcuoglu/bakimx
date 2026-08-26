@@ -48,7 +48,10 @@ export async function getWorkshopRows(query: WorkshopListQuery): Promise<Worksho
         planTier: true,
         requestedPlanTier: true,
         trialEndsAt: true,
+        currentPeriodEnd: true,
         extraSeats: true,
+        acquisitionSource: true,
+        acquisitionAdvisorId: true,
         createdAt: true,
         // İlk kullanıcı artık e-postasız olabilir (BAK-40); sütun "iletişim
         // e-postası" gösterdiği için e-postası olan ilk üyeyi seçiyoruz.
@@ -72,7 +75,10 @@ export async function getWorkshopRows(query: WorkshopListQuery): Promise<Worksho
     planTier: w.planTier,
     requestedPlanTier: w.requestedPlanTier,
     trialEndsAt: w.trialEndsAt ? w.trialEndsAt.toISOString() : null,
+    currentPeriodEnd: w.currentPeriodEnd ? w.currentPeriodEnd.toISOString() : null,
     extraSeats: w.extraSeats,
+    acquisitionSource: w.acquisitionSource,
+    acquisitionAdvisorId: w.acquisitionAdvisorId,
     createdAt: w.createdAt.toISOString(),
   }))
 
@@ -89,6 +95,19 @@ export interface AdminWorkshopSummary {
   planRequests: number
   /** En eski bekleyenden başlayan kısa liste; `pending` toplamı bundan büyük olabilir. */
   pendingPreview: { id: string; name: string }[]
+}
+
+export async function getAcquisitionSummary() {
+  const groups = await prisma.workshop.groupBy({ by: ["acquisitionSource"], _count: { _all: true }, where: {} })
+  const rows = await Promise.all(groups.map(async (group) => {
+    const [active, purchased, revenue] = await Promise.all([
+      prisma.workshop.count({ where: { acquisitionSource: group.acquisitionSource, subscriptionStatus: { in: ["active", "trialing"] } } }),
+      prisma.workshop.count({ where: { acquisitionSource: group.acquisitionSource, billingOrders: { some: { status: "confirmed" } } } }),
+      prisma.billingOrder.aggregate({ where: { status: "confirmed", workshop: { acquisitionSource: group.acquisitionSource } }, _sum: { amountMinor: true } }),
+    ])
+    return { source: group.acquisitionSource, workshops: group._count._all, active, purchased, revenueMinor: revenue._sum.amountMinor ?? 0 }
+  }))
+  return rows
 }
 
 /** Ops ana sayfası sayaçları — tüm tabloyu çekmeden `count` ile hesaplanır. */
@@ -228,7 +247,7 @@ const TXN_HISTORY_TAKE = 5
 
 type OrderWithTxns = {
   id: string
-  workshop: { name: string }
+  workshop: { id: string; name: string; currentPeriodEnd: Date | null }
   type: string
   planTier: string
   billingCycle: string
@@ -267,6 +286,7 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
   const txnHistory = o.paymentTransactions.map(toTxnRow)
   return {
     id: o.id,
+    workshopId: o.workshop.id,
     workshopName: o.workshop.name,
     type: o.type,
     planTier: o.planTier,
@@ -279,6 +299,10 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
     method: o.method,
     status: o.status,
     confirmedByEmail: o.confirmedByEmail,
+    periodEnd: o.workshop.currentPeriodEnd?.toISOString() ?? null,
+    daysLeft: o.workshop.currentPeriodEnd
+      ? Math.max(0, Math.ceil((o.workshop.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : null,
     lastTxn: txnHistory[0] ?? null,
     txnHistory,
   }
@@ -290,7 +314,7 @@ function toOrderRow(o: OrderWithTxns): AdminOrderRow {
 export async function getBillingData(): Promise<BillingData> {
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   const orderInclude = {
-    workshop: { select: { name: true } },
+    workshop: { select: { id: true, name: true, currentPeriodEnd: true } },
     paymentTransactions: { orderBy: { createdAt: "desc" as const }, take: TXN_HISTORY_TAKE },
   }
   const [pendingOrders, recentOrdersRaw, stuckTxns, monthOrders, activeWorkshops] = await Promise.all([

@@ -34,6 +34,7 @@ import { findExactPlateMatch } from "@/lib/search/exact-plate-match"
 import { normalizePlate } from "@/lib/format"
 import { isValidVin, normalizeVin, type VinCandidate } from "@/lib/vin/types"
 import { ocrVehicleTypeToSlug, ocrFuelToSlug, tecdocFuelToFormValue } from "@/lib/constants"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import {
   ENTRY_METHODS,
   entryStepLabels,
@@ -75,10 +76,12 @@ export function VehicleEntryWizard({
   value,
   onChange,
   onComplete,
+  planTier,
 }: {
   value: { customerId: string; vehicleId: string }
   onChange: (v: { customerId: string; vehicleId: string }) => void
   onComplete: () => void
+  planTier?: string
 }) {
   const [step, setStep] = useState<EntryStep>("method")
   const [method, setMethod] = useState<EntryMethod | null>(null)
@@ -512,12 +515,20 @@ export function VehicleEntryWizard({
             title="Ruhsatı yükleyin"
             description="Fotoğrafı çekin ya da dosyadan seçin; plaka, marka, model ve teknik alanlar otomatik dolar."
           />
-          <RuhsattanOku
-            variant="hero"
-            title="Ruhsat fotoğrafını yükleyin"
-            description="Kamerayla çekin, dosyadan seçin veya bu alana sürükleyin."
-            onResult={applyOcr}
-          />
+          {hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") ? (
+            <RuhsattanOku
+              variant="hero"
+              title="Ruhsat fotoğrafını yükleyin"
+              description="Kamerayla çekin, dosyadan seçin veya bu alana sürükleyin."
+              onResult={applyOcr}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              OCR ile ruhsat okuma özelliği paketinizde bulunmuyor.
+              <br />
+              Bilgileri elle girerek devam edebilirsiniz.
+            </div>
+          )}
           <WizardActions back={<Button type="button" variant="outline" onClick={goBack}>Geri</Button>}>
             <Button type="button" variant="ghost" onClick={() => goToVehicleStep()}>
               Ruhsatsız devam et — bilgileri elle gir
@@ -690,11 +701,13 @@ export function VehicleEntryWizard({
           />
           {/* Hangi yoldan gelinirse gelinsin (plaka araması, şase, müşteri) ruhsat
               burada da okutulabilir — alanları elle doldurmak zorunda kalmayın. */}
-          <RuhsattanOku
-            title="Ruhsattan otomatik doldur"
-            description="Ruhsatı kamerayla çekin ya da dosyadan seçin; aşağıdaki alanlar dolsun."
-            onResult={applyOcr}
-          />
+          {hasFeature((planTier ?? "pro") as PlanTier, "ocrIntake") && (
+            <RuhsattanOku
+              title="Ruhsattan otomatik doldur"
+              description="Ruhsatı kamerayla çekin ya da dosyadan seçin; aşağıdaki alanlar dolsun."
+              onResult={applyOcr}
+            />
+          )}
           {conflicts.length > 0 && (
             <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
               <p className="flex items-start gap-2 text-sm font-medium text-foreground">

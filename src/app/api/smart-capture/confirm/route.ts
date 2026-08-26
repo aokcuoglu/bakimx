@@ -311,7 +311,7 @@ export async function POST(request: Request) {
           workshop != null &&
           (await resolveFeature(user.workshopId, workshop.planTier as PlanTier, "vinLookup"))
         if (entitled) {
-          const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear))
+          const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear), user.workshopId)
           if (resolution.status === "resolved" && resolution.autoSelected != null) {
             await prisma.vehicle.update({
               where: { id: vehicle.id },
