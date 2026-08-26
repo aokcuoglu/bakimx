@@ -3,6 +3,8 @@ import { auditActionLabel, calendarSyncSubjectLabel, communicationActivityStatus
 
 test("iş yeri hareketleri makine anahtarları yerine kullanıcı diliyle görünür", () => {
   expect(auditActionLabel("order_item_added")).toBe("İş emrine kalem eklendi")
+  expect(auditActionLabel("admin_extra_seats_set")).toBe("Ek koltuk ayarlandı")
+  expect(auditActionLabel("workshop_acquisition_updated")).toBe("Edinim kaynağı güncellendi")
   expect(auditActionLabel("unmapped_action")).toBe("Sistem işlemi kaydedildi")
 })
 

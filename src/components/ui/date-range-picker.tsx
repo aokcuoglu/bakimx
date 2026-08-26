@@ -61,7 +61,7 @@ export function DateRangePicker({
           <span className="truncate">{label}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto bg-popover p-0" align="start">
+      <PopoverContent aria-label="Tarih aralığı seçimi" className="w-auto bg-popover p-0" align="start">
         <Calendar
           autoFocus
           mode="range"

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { FilterSelect } from "@/components/shared/filter-select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { auditActionLabel } from "@/lib/admin/activity-labels"
+import { AuditLogDetailDialog } from "./audit-log-detail-dialog"
 
 export const dynamic = "force-dynamic"
 
@@ -85,6 +86,16 @@ export default async function AdminAuditPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const knownActions = actions.map(({ action }) => action)
 
+  const entityLabel = (entityType: string, entityId: string) => {
+    const labels: Record<string, string> = {
+      Workshop: "İş yeri",
+      ImpersonationSession: "Taklit oturumu",
+      SupportRequest: "Destek talebi",
+      User: "Kullanıcı",
+    }
+    return `${labels[entityType] ?? entityType} · ${entityId}`
+  }
+
   const buildHref = (overrides: Partial<AuditSearchParams>) => {
     const next = { ...sp, ...overrides }
     const qs = new URLSearchParams()
@@ -156,8 +167,18 @@ export default async function AdminAuditPage({
                 {logs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell>
-                      <p className="font-medium text-foreground">{displayActionLabel(log.action)}</p>
-                      {log.metadataJson && <p className="max-w-96 truncate font-mono text-xs text-muted-foreground">{log.metadataJson}</p>}
+                      <AuditLogDetailDialog
+                        actionLabel={displayActionLabel(log.action)}
+                        metadataJson={log.metadataJson}
+                        workshopName={log.workshop?.name ?? log.workshopId}
+                        actorLabel={log.actorUser ? (log.actorUser.email ?? log.actorUser.username ?? "—") : "sistem"}
+                        dateLabel={log.createdAt.toLocaleString("tr-TR", {
+                          dateStyle: "long",
+                          timeStyle: "short",
+                          timeZone: "Europe/Istanbul",
+                        })}
+                        entityLabel={entityLabel(log.entityType, log.entityId)}
+                      />
                     </TableCell>
                     <TableCell>
                       <Link href={`/admin/workshops/${log.workshopId}`} className="text-primary hover:underline">
