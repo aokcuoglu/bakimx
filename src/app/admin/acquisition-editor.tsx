@@ -18,12 +18,64 @@ export function AcquisitionEditor({ workshopId, source, advisorId, advisors }: {
   const form = useForm<z.infer<typeof acquisitionSchema>>({ resolver: typedResolver(acquisitionSchema), defaultValues: { acquisitionSource: source, acquisitionAdvisorId: advisorId ?? "" } })
   async function submit(values: z.infer<typeof acquisitionSchema>) {
     const result = await updateWorkshopAcquisition(workshopId, values)
-    if (result.ok) toast.success("Edinim bilgisi güncellendi")
+    if (result.ok) toast.success("Referans bilgisi güncellendi")
     else toast.error(result.error)
   }
-  return <Form {...form}><form onSubmit={form.handleSubmit(submit)} className="space-y-3">
-    <FormField control={form.control} name="acquisitionSource" render={({ field }) => <FormItem><FormLabel>Kaynak</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
-    <FormField control={form.control} name="acquisitionAdvisorId" render={({ field }) => <FormItem><FormLabel>Satış temsilcisi</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Atanmadı" /></SelectTrigger></FormControl><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>} />
-    <Button type="submit" disabled={form.formState.isSubmitting}>Kaydet</Button>
-  </form></Form>
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(submit)} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="acquisitionSource"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kaynak</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {ACQUISITION_SOURCE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="acquisitionAdvisorId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Satış temsilcisi</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Atanmadı" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Atanmadı</SelectItem>
+                    {advisors.map((advisor) => (
+                      <SelectItem key={advisor.id} value={advisor.id}>{advisor.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={form.formState.isSubmitting}>Kaydet</Button>
+        </div>
+      </form>
+    </Form>
+  )
 }

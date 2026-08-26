@@ -23,7 +23,6 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
   const [effective, setEffective] = useState(f.effective)
   const [hasOverride, setHasOverride] = useState(Boolean(f.override))
   const reduceMotion = useReducedMotion()
-  const compact = f.key === "damageMap"
 
   function run(
     fn: () => Promise<{ ok: boolean; error?: string }>,
@@ -50,11 +49,11 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
       layout={!reduceMotion}
       animate={reduceMotion ? undefined : { scale: pending ? 0.995 : 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
-      className={`grid rounded-xl border bg-muted/30 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center ${compact ? "gap-3 p-3" : "gap-4 p-4"}`}
+      className="grid gap-3 rounded-lg border bg-muted/30 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`${compact ? "text-sm" : "text-base"} font-semibold text-foreground`}>{f.label}</span>
+          <span className="text-sm font-semibold text-foreground">{f.label}</span>
           <AnimatePresence initial={false} mode="wait">
             <motion.div
               key={effective ? "enabled" : "disabled"}
@@ -63,7 +62,7 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
               exit={reduceMotion ? undefined : { opacity: 0, scale: 0.9 }}
               transition={{ duration: reduceMotion ? 0 : 0.14, ease: "easeOut" }}
             >
-              <Badge variant={effective ? "default" : "secondary"} className="px-2.5">
+              <Badge variant={effective ? "default" : "secondary"} className="px-2">
                 {effective ? "açık" : "kapalı"}
               </Badge>
             </motion.div>
@@ -74,16 +73,16 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
             </span>
           )}
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Plan varsayılanı: {f.tierGrants ? "açık" : "kapalı"}
         </p>
         {error && <p className="mt-1 text-xs text-destructive-strong" role="alert">{error}</p>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
         {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Kapalı</span>
+          <span className="text-xs text-muted-foreground">Kapalı</span>
           <Switch
             checked={effective}
             disabled={pending}
@@ -98,7 +97,7 @@ function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
             }}
             aria-label={`${f.label} özelliğini ${effective ? "kapat" : "aç"}`}
           />
-          <span className="text-sm font-medium text-foreground">Açık</span>
+          <span className="text-xs font-medium text-foreground">Açık</span>
         </div>
         <Button
           disabled={pending || !hasOverride}
