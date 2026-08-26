@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUserWithWorkshop, requireWritableWorkshop } from "@/lib/auth"
-import { resolveFeature } from "@/lib/features"
-import { type PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { rateLimit } from "@/lib/rate-limit"
 import { type Permission } from "@/lib/roles"
 
@@ -18,7 +17,7 @@ import { type Permission } from "@/lib/roles"
 export async function bakimxCatalogRouteGuard(): Promise<NextResponse | { workshopId: string }> {
   const { user, workshop } = await getCurrentUserWithWorkshop()
 
-  if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "bakimxCatalog"))) {
+  if (!hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")) {
     return NextResponse.json(
       { error: "BakımX ürün kataloğu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 },
@@ -56,7 +55,7 @@ export async function bakimxCatalogWriteGuard(
 ): Promise<NextResponse | { workshopId: string; userId: string }> {
   const { user, workshop } = await requireWritableWorkshop(permission)
 
-  if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "bakimxCatalog"))) {
+  if (!hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")) {
     return NextResponse.json(
       { error: "BakımX ürün kataloğu bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 },

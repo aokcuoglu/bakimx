@@ -35,7 +35,6 @@ import {
   Calendar,
   Receipt,
   PackageSearch,
-  Telescope,
   UserCircle,
   Search,
   X,
@@ -110,12 +109,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Depo & Finans",
     items: [
       { href: "/parts", label: "Stok / Parçalar", icon: Boxes },
-      {
-        href: "/market-research",
-        label: "Piyasa Araştırması",
-        icon: Telescope,
-        feature: "marketResearch",
-      },
       { href: "/purchases", label: "Dış Alımlar", icon: ShoppingCart },
       {
         href: "/bakimx-orders",

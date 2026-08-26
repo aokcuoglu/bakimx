@@ -2,7 +2,6 @@ import { expect, test } from "bun:test"
 import { auditActionLabel, calendarSyncSubjectLabel, communicationActivityStatusLabel, communicationSubjectLabel, reminderJobLabel } from "./activity-labels"
 
 test("iş yeri hareketleri makine anahtarları yerine kullanıcı diliyle görünür", () => {
-  expect(auditActionLabel("feature_override_set")).toBe("Özellik erişimi güncellendi")
   expect(auditActionLabel("order_item_added")).toBe("İş emrine kalem eklendi")
   expect(auditActionLabel("unmapped_action")).toBe("Sistem işlemi kaydedildi")
 })

@@ -4,7 +4,6 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
-import { getEffectiveFeatures } from "@/lib/features"
 import { formatMinor } from "@/lib/billing/pricing"
 import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -12,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
-import { WorkshopFlags } from "@/app/admin/workshop-flags"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
 import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
 import { WorkshopUserActions } from "@/app/admin/workshop-user-actions"
@@ -102,12 +100,11 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   })
   if (!workshop) notFound()
 
-  const [customerTotal, vehicleTotal, serviceOrderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, billingOrderFilteredCount, features, salesLead, advisors] =
+  const [customerTotal, vehicleTotal, serviceOrderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, billingOrderFilteredCount, salesLead, advisors] =
     await Promise.all([
       prisma.customer.count({ where: { workshopId: id } }), prisma.vehicle.count({ where: { workshopId: id } }), prisma.serviceOrder.count({ where: { workshopId: id } }), prisma.appointment.count({ where: { workshopId: id } }),
       prisma.customer.count({ where: periodWhere }), prisma.vehicle.count({ where: periodWhere }), prisma.serviceOrder.count({ where: periodWhere }), prisma.appointment.count({ where: periodWhere }),
       prisma.billingOrder.count({ where: billingOrderWhere }),
-      getEffectiveFeatures(id, workshop.planTier as PlanTier),
       prisma.salesLead.findUnique({ where: { workshopId: id }, select: { id: true } }),
       prisma.salesAdvisor.findMany({ where: { disabledAt: null }, include: { user: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "asc" } }),
     ])
@@ -121,17 +118,6 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
     skip: (orderPage - 1) * WORKSHOP_ORDER_PAGE_SIZE,
     take: WORKSHOP_ORDER_PAGE_SIZE,
   })
-
-  const flagRows = features.map((f) => ({
-    key: f.key,
-    label: f.label,
-    tierGrants: f.tierGrants,
-    effective: f.effective,
-    override: f.override
-      ? { enabled: f.override.enabled, expiresAt: f.override.expiresAt?.toISOString() ?? null, reason: f.override.reason }
-      : null,
-  }))
-
   const canManageTeam = can(ctx, "manageWorkshops")
   const canSendReset = can(ctx, "sendPasswordReset")
   const plan = getPlanState(workshop)
@@ -290,12 +276,6 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
             </Table>
           </div>
         </Section>
-
-        {can(ctx, "manageFlags") && (
-          <Section title="Özellik Bayrakları" className="w-full md:col-span-2">
-            <WorkshopFlags workshopId={workshop.id} flags={flagRows} />
-          </Section>
-        )}
 
         {can(ctx, "manageWorkshops") && (
           <Section title="GetirBakım İskontosu">

@@ -5,8 +5,7 @@ import { assertWritableOr403 } from "@/lib/plan-guard"
 import { prisma } from "@/lib/db"
 import { normalizePhone, normalizePlate } from "@/lib/format"
 import { AuditLogAction } from "@/lib/audit"
-import { resolveFeature } from "@/lib/features"
-import { type PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { isValidVin } from "@/lib/vin/types"
 import { prefetchCommonVehicleParts } from "@/lib/tecdoc/prefetch"
@@ -307,9 +306,7 @@ export async function POST(request: Request) {
           where: { id: user.workshopId },
           select: { planTier: true },
         })
-        const entitled =
-          workshop != null &&
-          (await resolveFeature(user.workshopId, workshop.planTier as PlanTier, "vinLookup"))
+        const entitled = workshop != null && hasFeature(workshop.planTier as PlanTier, "vinLookup")
         if (entitled) {
           const resolution = await resolveVinToCatalog(vin, buildVinHints(ocrLog.extractedJson, modelYear), user.workshopId)
           if (resolution.status === "resolved" && resolution.autoSelected != null) {

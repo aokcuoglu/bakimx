@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache"
 import { requireAdminCapability } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
-import { isGatedFeature } from "@/lib/features"
 import { computeTrialEnd, type PlanTier } from "@/lib/plan"
 import { activateBillingOrder } from "@/lib/billing/activate"
 import { activateVerifiedWorkshop } from "@/lib/billing/verify-activation"
@@ -196,7 +195,6 @@ export async function deleteEmptyWorkshop(workshopId: string, confirmationName: 
     await tx.calendarSyncLog.deleteMany({ where: { workshopId } })
     await tx.reminderExecutionLog.deleteMany({ where: { workshopId } })
     await tx.communicationTemplate.deleteMany({ where: { workshopId } })
-    await tx.workshopFeatureOverride.deleteMany({ where: { workshopId } })
     await tx.invite.deleteMany({ where: { workshopId } })
     await tx.pushSubscription.deleteMany({ where: { workshopId } })
     await tx.workshopSettings.deleteMany({ where: { workshopId } })
@@ -697,65 +695,6 @@ export async function setWorkshopUserActive(workshopId: string, userId: string, 
   await prisma.user.update({ where: { id: user.id }, data: { isActive } })
   await AuditLogAction(workshopId, ctx.user.id, "User", user.id, "workshop_user_active_changed", JSON.stringify({ isActive }))
   revalidatePath(`/admin/workshops/${workshopId}`, "page")
-  return { ok: true }
-}
-
-/** Set (upsert) a per-tenant feature override. `enabled` forces the feature on/off
- *  for this workshop regardless of plan tier (resolveFeature composes with this).
- *  Optional ISO `expiresAt` auto-expires the grant (e.g. time-boxed beta). */
-export async function setWorkshopFeatureOverride(
-  workshopId: string,
-  featureKey: string,
-  enabled: boolean,
-  expiresAtIso?: string | null,
-): Promise<Result> {
-  const ctx = await requireAdminCapability("manageFlags")
-  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
-
-  let expiresAt: Date | null = null
-  if (expiresAtIso) {
-    const d = new Date(expiresAtIso)
-    if (Number.isNaN(d.getTime())) return { ok: false, error: "Geçersiz bitiş tarihi." }
-    expiresAt = d
-  }
-
-  await prisma.workshopFeatureOverride.upsert({
-    where: { workshopId_featureKey: { workshopId, featureKey } },
-    create: { workshopId, featureKey, enabled, expiresAt, createdBy: ctx.user.id },
-    update: { enabled, expiresAt, createdBy: ctx.user.id },
-  })
-  await AuditLogAction(
-    workshopId,
-    ctx.user.id,
-    "WorkshopFeatureOverride",
-    featureKey,
-    "feature_override_set",
-    JSON.stringify({ featureKey, enabled, expiresAt: expiresAt?.toISOString() ?? null }),
-  )
-  revalidatePath("/admin", "layout")
-  return { ok: true }
-}
-
-/** Remove a per-tenant override → the feature falls back to the plan tier. */
-export async function clearWorkshopFeatureOverride(
-  workshopId: string,
-  featureKey: string,
-): Promise<Result> {
-  const ctx = await requireAdminCapability("manageFlags")
-  if (!workshopId) return { ok: false, error: "İş yeri seçilmedi." }
-  if (!isGatedFeature(featureKey)) return { ok: false, error: "Geçersiz özellik." }
-
-  await prisma.workshopFeatureOverride.deleteMany({ where: { workshopId, featureKey } })
-  await AuditLogAction(
-    workshopId,
-    ctx.user.id,
-    "WorkshopFeatureOverride",
-    featureKey,
-    "feature_override_cleared",
-    JSON.stringify({ featureKey }),
-  )
-  revalidatePath("/admin", "layout")
   return { ok: true }
 }
 

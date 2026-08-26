@@ -10,9 +10,8 @@ import {
   BAKIMX_ORDER_STATUS_LABELS,
   type BakimxOrderStatusValue,
 } from "@/lib/catalog/bakimx-order"
-import { resolveFeature } from "@/lib/features"
 import { formatTRY } from "@/lib/format"
-import { type PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { formatDiscountLabel } from "@/lib/parts/bakimx-price"
 
 export const dynamic = "force-dynamic"
@@ -38,8 +37,7 @@ const STATUS_BADGE: Record<BakimxOrderStatusValue, { variant: "default" | "secon
 export default async function BakimxOrdersPage() {
   const { user, workshop } = await getAppData()
 
-  const gateOpen =
-    !!workshop && (await resolveFeature(workshop.id, workshop.planTier as PlanTier, "bakimxCatalog"))
+  const gateOpen = !!workshop && hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")
   if (!gateOpen) notFound()
 
   // Sorgu daima oturumdaki atölyeyle süzülür — başka atölyenin siparişi görünmez.

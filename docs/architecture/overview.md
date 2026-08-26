@@ -2,8 +2,8 @@
 
 > **Purpose of this document.** Prepared for AWS infrastructure planning. It describes the
 > **current, as-built (implementation-aligned)** architecture of BakımX — not a target/aspirational
-> design. Diagrams are provided in Mermaid source plus high-resolution SVG/PNG renders in this
-> folder. An AWS-equivalent mapping is included in the appendix as a migration starting point.
+> design. Diagrams are provided as Mermaid source in this folder. An AWS-equivalent mapping is
+> included in the appendix as a migration starting point.
 >
 > | | |
 > |---|---|
@@ -12,7 +12,7 @@
 > | **Primary usage** | Mobile-first web (workshop staff on phones/tablets) |
 > | **Hosting today** | Single self-managed VPS, co-hosted with a sibling project (`getirbakim`) |
 > | **Repository** | Next.js monorepo (single app), deployed as one Docker image |
-> | **Document files** | `bakimx-infrastructure.{mmd,svg,png}`, `bakimx-modules.{mmd,svg,png}` |
+> | **Document files** | `bakimx-infrastructure.mmd`, `bakimx-modules.mmd` |
 
 ---
 
@@ -23,7 +23,7 @@ BakımX is a **single Next.js 16 application** (App Router, React 19, TypeScript
 **owned and operated by a co-hosted sibling stack (`getirbakim`)**. State lives in a
 **self-hosted PostgreSQL 16 container**; uploaded media (vehicle/registration photos) lives in
 **Cloudflare R2** (S3-compatible object storage). All other third-party integrations
-(AI advisor, OCR, SMS, WhatsApp, e-mail, calendar) are behind a **pluggable provider abstraction**
+(landing product assistant, OCR, SMS, WhatsApp, e-mail, calendar) are behind a **pluggable provider abstraction**
 that defaults to in-process **`mock`** implementations, so the product runs end-to-end with **zero
 external dependencies** and real providers are enabled per environment via environment variables.
 
@@ -63,7 +63,7 @@ These are the natural candidates for the AWS build-out (see §12).
 | Object storage SDK | `@aws-sdk/client-s3` v3 + `@aws-sdk/s3-request-presigner` |
 | PDF generation | Print-ready HTML routes (`/p/[token]/pdf`, `/s/[token]/pdf`) — the browser's print-to-PDF does the rendering; `@react-pdf/renderer` was retired in 2026-07 |
 | Image handling | `sharp` + `heic-convert` (iOS HEIC → web), client-side **OpenCV.js + jscanify** (vendored) for live registration-document scanning |
-| OCR | `tesseract.js` (optional local OCR) + remote vision OCR (OpenAI / DeepSeek) |
+| OCR | `tesseract.js` (optional local OCR) + remote vision OCR (OpenAI / Anthropic) |
 
 ### Infrastructure / delivery
 | Concern | Technology |
@@ -84,9 +84,7 @@ These are the natural candidates for the AWS build-out (see §12).
 
 ## 3. High-level infrastructure & component layout
 
-![Infrastructure](./bakimx-infrastructure.png)
-
-> Source: [`bakimx-infrastructure.mmd`](./bakimx-infrastructure.mmd) · Vector: [`bakimx-infrastructure.svg`](./bakimx-infrastructure.svg)
+Source: [`bakimx-infrastructure.mmd`](./bakimx-infrastructure.mmd)
 
 ### Deployment topology (current)
 - **One VPS** (Ubuntu) hosts **two independent stacks**: `getirbakim` and `bakimx`.
@@ -120,9 +118,7 @@ These are the natural candidates for the AWS build-out (see §12).
 
 ## 4. Implementation-aligned module view
 
-![Modules](./bakimx-modules.png)
-
-> Source: [`bakimx-modules.mmd`](./bakimx-modules.mmd) · Vector: [`bakimx-modules.svg`](./bakimx-modules.svg)
+Source: [`bakimx-modules.mmd`](./bakimx-modules.mmd)
 
 The app is a layered monolith inside one container:
 
@@ -215,34 +211,27 @@ recommended for media recovery.
 
 ## 8. AI provider integrations
 
-Two distinct AI-backed capabilities, both behind provider interfaces, both **`mock` by default**:
+Two distinct AI-backed capabilities remain, both behind provider interfaces:
 
-### a) AI Service Advisor (`src/lib/advisor/`)
-- **Purpose:** given a customer complaint + vehicle + prior work orders, suggest inspections, labor,
-  parts, a customer-facing description, and an internal note (Turkish, strict JSON output).
-- **Providers:** `mock` | `openai` | `deepseek`.
-- **Endpoints called:** `https://api.openai.com/v1/chat/completions` and
-  `https://api.deepseek.com/v1/chat/completions` (OpenAI-compatible chat-completions, `temperature 0.3`,
-  `max_tokens 1500`).
-- **Models (configurable):** `gpt-4o-mini` (OpenAI default), `deepseek-chat` (DeepSeek default);
-  overridable via `AI_MODEL`.
-- **Gating:** the advisor is a **Premium-tier** feature (403 + UI upsell for lower tiers).
+### a) Landing product assistant (`src/lib/landing/`)
+- **Purpose:** answer public product questions from the curated BakımX corpus. It is separate from
+  authenticated workshop operations and cannot add labor or parts to work orders.
+- **Providers:** grounded local `mock` matcher (default) | `openai` | `anthropic`.
+- **Configuration:** `AI_PROVIDER`, optional `AI_MODEL`, and the selected provider's API key.
 
 ### b) Registration-document OCR (`src/lib/ocr/`)
 - **Purpose:** read the vehicle registration (ruhsat) to auto-fill plate/brand/VIN/owner, then the
   user confirms before save. Every run is recorded in an `OcrLog` (raw text never exposed publicly).
-- **Providers:** `mock` | `openai` | `deepseek` | `tesseract`.
-  - `openai`/`deepseek` — remote vision/text models (`gpt-4o` / `deepseek-chat` defaults, via
-    `OCR_MODEL`).
+- **Providers:** `mock` | `openai` | `anthropic` | `tesseract`.
+  - `openai`/`anthropic` — remote vision models configured via `OCR_MODEL`.
   - `tesseract` — fully local OCR (`tesseract.js`), no API key, lower accuracy (fallback).
 - **Client-side assist:** the live camera scanner runs **OpenCV.js + jscanify in the browser**
   (vendored, self-hosted — deliberately **not** an npm dependency so `canvas`/`jsdom` never reach the
   Alpine production image) for document edge-detection/normalization before OCR.
 
-> **Important for AWS planning:** there is **no Anthropic/Bedrock integration today**; AI is optional
-> and OpenAI/DeepSeek-based. If AI moves to AWS, **Amazon Bedrock** (LLM) and **Amazon Textract** (OCR)
-> are the natural managed equivalents and would slot behind the existing provider interfaces with a
-> new implementation class each.
+> **Important for AWS planning:** AI remains optional. If it moves to AWS, **Amazon Bedrock** (LLM)
+> and **Amazon Textract** (OCR) are the natural managed equivalents and would slot behind the existing
+> provider interfaces with a new implementation class each.
 
 ---
 
@@ -351,7 +340,7 @@ only create a GitHub Release; they never deploy. Full runbook: [`docs/releasing.
 | PostgreSQL 16 container (`pgdata`) | **Amazon RDS for PostgreSQL** (or Aurora PostgreSQL) | Managed backups/PITR/HA/read replicas; keep Prisma `migrate deploy` flow |
 | Cloudflare R2 (`bakimx-media`) | **Amazon S3** (+ CloudFront for public media) | Code already uses AWS SDK v3 S3 client — point `S3_ENDPOINT`/creds at S3 |
 | In-process rate limit / no cache | **Amazon ElastiCache (Redis)** | Prerequisite for running >1 app instance |
-| OpenAI / DeepSeek (advisor + OCR) | **Amazon Bedrock** (LLM) + **Amazon Textract** (OCR) | Optional; add new provider implementations behind existing interfaces |
+| OpenAI / Anthropic (landing assistant + OCR) | **Amazon Bedrock** (LLM) + **Amazon Textract** (OCR) | Optional; add new provider implementations behind existing interfaces |
 | External system cron → `/api/cron/reminders` | **EventBridge Scheduler** → ALB/HTTPS (Bearer secret in **Secrets Manager**) | Keep the bearer-token contract |
 | GitHub Actions → GHCR → SSH | **GitHub Actions → ECR → ECS deploy** (or CodePipeline/CodeBuild) | Replace SSH step with ECS service update |
 | `.env.production` on disk | **AWS Secrets Manager / SSM Parameter Store** | `SESSION_SECRET`, `CRON_SECRET`, DB + provider keys |

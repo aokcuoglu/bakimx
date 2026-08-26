@@ -30,7 +30,6 @@ bir arada gösterir:
 | **Ekip & Koltuk** | Kullanıcılar, rolleri, **pasif** olanlar, koltuk limiti |
 | **Son İşlemler (Denetim)** | Kim ne yaptı |
 | **İletişim & İşler** | Gönderilen e-postalar ve `sent` / `failed` durumları |
-| **Özellik Bayrakları** | Müşterinin gördüğü özellik gerçekten açık mı |
 
 > Bugün bu sayfaya iş yeri **adıyla arama** yok; liste tarih sırasında geliyor
 > (`platform-admin-model.md` §4/1). Tarayıcı içi arama kullanın.
@@ -104,8 +103,9 @@ adrese gider. Kim yaptıysa yazılı gerekçe bıraksın.
 
 1. **Deploy sonrası mı?** Deploy sonrası beyaz ekran çoğunlukla bayat sekmedeki
    `ChunkLoadError`'dır — sert yenileme (Cmd/Ctrl+Shift+R) çözer.
-2. **Özellik bayrağı kapalı mı?** Detay sayfası → Özellik Bayrakları. Müşteri
-   paketinin kapsamadığı bir özelliği soruyor olabilir.
+2. **Paket kapsamında mı?** Detay sayfasındaki paket bilgisini ve
+   `/billing` ekranındaki kapsamı kontrol edin. Müşteri paketinin sunmadığı
+   bir yeteneği soruyor olabilir.
 3. **Genel mi, tek müşteriye mi özel?** `/admin/health` ortam kontrollerini
    gösterir. Birden fazla müşteri aynı anda yazıyorsa altyapıdır; tek müşteriyse
    veri/ayar sorunudur.

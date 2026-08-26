@@ -6,8 +6,8 @@ import {
 import type { GetirbakimProvider, GetirbakimProviderName } from "./types"
 
 /**
- * GetirBakım sağlayıcı seçimi (BAK-183) — OCR/AI sağlayıcı deseninin kardeşi
- * (`src/lib/ocr/provider.ts`, `src/lib/advisor/provider.ts`).
+ * GetirBakım sağlayıcı seçimi (BAK-183) — OCR sağlayıcı deseninin kardeşi
+ * (`src/lib/ocr/provider.ts`).
  *
  * Mock sağlayıcı yalnız development/test içindir. Production'da eksik veya
  * hatalı yapılandırma demo fiyat göstermemeli; fail-closed davranır.

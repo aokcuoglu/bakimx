@@ -27,7 +27,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     question: "Hangi modüller bugün hazır?",
     showOnLanding: true,
     answer:
-      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim. AI servis danışmanı Premium pakettedir.",
+      "İş emri, teklif, randevu, stok/parça, tedarikçi, kasa, müşteri & araç yönetimi, bakım hatırlatmaları, raporlar ve iletişim.",
   },
   {
     question: "Stok, tedarikçi ve tahsilat takibi var mı?",

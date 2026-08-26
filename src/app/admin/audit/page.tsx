@@ -40,8 +40,7 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 /** Yönetici eylemleri bu sayfaya özeldir; geri kalanı ortak kullanıcı dili
- * sözlüğünden gelir. Böylece `feature_override_set` gibi DB anahtarları
- * hiçbir yönetici yüzeyinde görünmez. */
+ * sözlüğünden gelir. Böylece DB anahtarları yönetici yüzeyinde görünmez. */
 function displayActionLabel(action: string) {
   return ACTION_LABELS[action] ?? auditActionLabel(action)
 }
