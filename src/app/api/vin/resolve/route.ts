@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
 import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
-import { type PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
 import { assertQuotaAvailable } from "@/lib/rapidapi-quota"
-import { resolveFeature } from "@/lib/features"
 import { rateLimit } from "@/lib/rate-limit"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
 import { VinLookupError, isValidVin } from "@/lib/vin/types"
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
   const locked = assertWritableOr403(workshop)
   if (locked) return locked
 
-  if (!(await resolveFeature(workshop.id, workshop.planTier as PlanTier, "vinLookup"))) {
+  if (!hasFeature(workshop.planTier as PlanTier, "vinLookup")) {
     return NextResponse.json(
       { error: "VIN'den araç tanıma bu çalışma alanında kapalı.", code: "feature_locked" },
       { status: 403 }

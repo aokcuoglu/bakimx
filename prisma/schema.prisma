@@ -93,14 +93,11 @@ model Workshop {
   reminderExecutionLogs     ReminderExecutionLog[]
   invites                   Invite[]
   billingOrders             BillingOrder[]
-  featureOverrides          WorkshopFeatureOverride[]
   laborCatalogItems         LaborCatalogItem[]
   bakimxOrders              BakimxOrder[]
   vehicleHistoryGrants      VehicleHistoryGrant[]
   supportRequests           SupportRequest[]
   externalProcurementOrders ExternalProcurementOrder[]
-  marketResearchCredential  MarketResearchCredential?
-  marketResearchUsages      MarketResearchUsage[]
   salesLeads                SalesLead[]
   demoSessions              SalesDemoSession[]
   salesDiscountCodes        SalesDiscountCode[]
@@ -1799,25 +1796,6 @@ model CronRun {
   @@index([job, startedAt])
 }
 
-// Per-tenant feature override. Composes with hasFeature(): an override (not
-// expired) wins; otherwise the plan tier is the floor. Lets a founder grant a
-// beta/premium feature to one workshop without touching FEATURE_MIN_TIER.
-model WorkshopFeatureOverride {
-  id         String    @id @default(cuid())
-  workshopId String
-  workshop   Workshop  @relation(fields: [workshopId], references: [id])
-  featureKey String // GatedFeature ("aiAdvisor" | "eInvoice" | "multiBranch" | "rbac") or future "beta_*"
-  enabled    Boolean
-  reason     String?
-  expiresAt  DateTime? // auto-expire (e.g. time-boxed beta grants)
-  createdBy  String // founder userId
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  @@unique([workshopId, featureKey])
-  @@index([workshopId])
-}
-
 /// BakımX PERSONELİNİN `/admin` konsoluna erişimi (BAK-93). Kiracı içi ekip
 /// rolleriyle (`UserRole`) karıştırılmamalı — bu tablo platform tarafıdır.
 ///
@@ -2753,73 +2731,6 @@ model RateLimitCounter {
   resetAt DateTime
 
   @@index([resetAt])
-}
-
-/// Piyasa araştırması için global aylık USD mikro-birim bütçesi.
-/// Çağrıdan önce ayrılan tutar eşzamanlı isteklerin tavanı aşmasını engeller;
-/// başarılı cevapta gerçek Anthropic usage maliyetine dönüştürülür.
-model MarketResearchBudget {
-  monthStart       DateTime @id @map("month_start") @db.Date
-  spentMicroUsd    BigInt   @default(0) @map("spent_micro_usd")
-  reservedMicroUsd BigInt   @default(0) @map("reserved_micro_usd")
-  requestCount     Int      @default(0) @map("request_count")
-  webSearchCount   Int      @default(0) @map("web_search_count")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  @@map("market_research_budgets")
-}
-
-/// Atölyenin kendi Anthropic anahtarı. API anahtarı yalnız sürümlü AES-GCM
-/// zarfı olarak tutulur; istemciye hiçbir zaman geri verilmez.
-model MarketResearchCredential {
-  id              String   @id @default(cuid())
-  workshopId      String   @unique @map("workshop_id")
-  workshop        Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-  encryptedApiKey String   @map("encrypted_api_key") @db.Text
-  maskedLast4     String   @map("masked_last_4")
-  updatedByUserId String   @map("updated_by_user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  @@map("market_research_credentials")
-}
-
-enum MarketResearchFundingSource {
-  platform
-  customer
-}
-
-enum MarketResearchUsageStatus {
-  running
-  succeeded
-  failed
-}
-
-/// Piyasa araştırması maliyet defteri. Sorgu ve sağlayıcı yanıtı mahremiyet
-/// gereği tutulmaz; yalnız ölçüm/kota metadatası kaydedilir.
-model MarketResearchUsage {
-  id                    String                      @id @default(cuid())
-  workshopId            String                      @map("workshop_id")
-  workshop              Workshop                    @relation(fields: [workshopId], references: [id], onDelete: Cascade)
-  userId                 String                      @map("user_id")
-  monthStart             DateTime                    @map("month_start") @db.Date
-  provider               String                      @default("anthropic")
-  fundingSource          MarketResearchFundingSource @map("funding_source")
-  status                 MarketResearchUsageStatus   @default(running)
-  estimatedCostMicroUsd  BigInt                      @default(0) @map("estimated_cost_micro_usd")
-  inputTokens            Int                         @default(0) @map("input_tokens")
-  outputTokens           Int                         @default(0) @map("output_tokens")
-  cacheCreationTokens    Int                         @default(0) @map("cache_creation_tokens")
-  cacheReadTokens        Int                         @default(0) @map("cache_read_tokens")
-  webSearchCount         Int                         @default(0) @map("web_search_count")
-  durationMs             Int?                        @map("duration_ms")
-  errorCode              String?                     @map("error_code")
-  createdAt              DateTime                    @default(now()) @map("created_at")
-  completedAt            DateTime?                   @map("completed_at")
-
-  @@index([workshopId, monthStart, status])
-  @@index([createdAt])
-  @@map("market_research_usages")
 }
 
 /// Bir olayın ciddiyeti. `operational` bilerek burada YOK — bu enum yalnız aktif

@@ -70,23 +70,20 @@ function product(input: {
   }
 }
 
-/** Kapının açık/kapalı olması testler arasında değiştirilir. */
-let featureEnabled = true
+/** Paket kapsamı testler arasında değiştirilir. */
+let planTier = "starter"
 /** Rate limit süreç genelinde tutulduğu için her test kendi atölyesiyle çalışır. */
 let workshopId = "ws-0"
 
 mock.module("@/lib/auth", () => ({
   getCurrentUserWithWorkshop: async () => ({
     user: { id: "user-1", workshopId },
-    workshop: { id: workshopId, planTier: "starter" },
+    workshop: { id: workshopId, planTier },
   }),
-}))
-
-mock.module("@/lib/features", () => ({
-  resolveFeature: async (_workshopId: string, _tier: string, feature: string) => {
-    expect(feature).toBe("bakimxCatalog")
-    return featureEnabled
-  },
+  requireWritableWorkshop: async () => ({
+    user: { id: "user-1", workshopId },
+    workshop: { id: workshopId, planTier },
+  }),
 }))
 
 type FakeFindManyArgs = {
@@ -139,7 +136,7 @@ function categoriesRequest(query = ""): Request {
 
 describe("GET /api/catalog/bakimx/search", () => {
   it("kapı kapalıyken 403 + feature_locked döner", async () => {
-    featureEnabled = false
+    planTier = "lite"
     workshopId = "ws-locked"
     const response = await searchGET(searchRequest("?q=aku"))
     expect(response.status).toBe(403)
@@ -148,7 +145,7 @@ describe("GET /api/catalog/bakimx/search", () => {
     const categories = await categoriesGET(categoriesRequest())
     expect(categories.status).toBe(403)
     expect(await categories.json()).toMatchObject({ code: "feature_locked" })
-    featureEnabled = true
+    planTier = "starter"
   })
 
   it("yanıtta maliyet ve iç alanlar YOK, alış fiyatı + KDV oranı VAR", async () => {

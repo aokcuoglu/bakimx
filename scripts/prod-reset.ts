@@ -44,7 +44,6 @@ const CONFIRM_FLAG = "--confirm"
 export const TENANT_TABLES = [
   "Workshop",
   "WorkshopSettings",
-  "WorkshopFeatureOverride",
   "User",
   "Invite",
   "PasswordResetToken",
@@ -122,10 +121,6 @@ export const TENANT_TABLES = [
   // Sağlayıcı webhook inbox'ı sipariş kimliği üzerinden kiracı operasyon
   // geçmişidir; kiracı siparişleri silinirken yetim dedupe kayıtları kalmamalı.
   "ExternalProcurementEvent",
-  // Şirkete ait BYOK sırrı ve kullanım defteri tenant verisidir. Global platform
-  // harcama tavanı aşağıdaki market_research_budgets tablosunda ayrıca korunur.
-  "market_research_credentials",
-  "market_research_usages",
   "quota_usage",
 ]
 
@@ -158,9 +153,6 @@ export const KEEP_TABLES = [
   // Herkese açık durum sayfası (BAK-128) platform geneli olay geçmişidir;
   // hiçbir atölyeye ait olmadığı için kiracı sıfırlamasında korunur.
   "status_incidents",
-  // Piyasa araştırması bütçesi platform genelidir. Kiracı resetinde silinirse
-  // aynı ayın harcaması unutulur ve onaylı USD tavanı yeniden harcanabilir.
-  "market_research_budgets",
   "_prisma_migrations",
 ]
 

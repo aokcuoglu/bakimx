@@ -22,8 +22,7 @@ import { bakimxLineItemFields, type BakimxLineItemFields } from "@/lib/parts/bak
 import { getirbakimLineItemFields, type GetirbakimLineItemFields, isGetirbakimSelectable } from "@/lib/parts/getirbakim-item"
 import { resolveGetirbakimProduct } from "@/lib/parts/getirbakim/search"
 import { validateBakimxProductFitment } from "@/lib/parts/bakimx-fitment"
-import { resolveFeature } from "@/lib/features"
-import type { PlanTier } from "@/lib/plan"
+import { hasFeature, type PlanTier } from "@/lib/plan"
 import { getStorageProvider, validateUploadFile, buildStoragePath } from "@/lib/storage"
 import { trDateToDate } from "@/lib/format"
 import { nanoid } from "nanoid"
@@ -161,11 +160,7 @@ export async function addOrderItemAction(formData: FormData) {
     // Katalog ürünü yalnız PARÇA kalemi olabilir; işçiliğe ürün bağı takılırsa
     // rozet ve raporlama anlamsızlaşır.
     if (parsed.data.type !== "part") return { error: "BakımX ürünü yalnız parça kalemine eklenebilir" }
-    const gateOpen = await resolveFeature(
-      workshop.id,
-      workshop.planTier as PlanTier,
-      "bakimxCatalog",
-    )
+    const gateOpen = hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")
     if (!gateOpen) return { error: "BakımX ürün kataloğu bu çalışma alanında kapalı." }
     // Araç süzgeci burada BİLEREK boş: araç uyumluluğu aşağıda siparişin kendi
     // aracıyla ayrıca doğrulanır (BAK-46). `workshop.id` iskonto için gerekir
@@ -179,11 +174,7 @@ export async function addOrderItemAction(formData: FormData) {
   if (parsed.data.getirbakimProductId) {
     if (parsed.data.type !== "part") return { error: "GetirBakım ürünü yalnız parça kalemine eklenebilir" }
     if (bakimxFields) return { error: "Bir kalem hem BakımX hem GetirBakım kaynağı olamaz" }
-    const gateOpen = await resolveFeature(
-      workshop.id,
-      workshop.planTier as PlanTier,
-      "getirbakimCatalog",
-    )
+    const gateOpen = hasFeature(workshop.planTier as PlanTier, "getirbakimCatalog")
     if (!gateOpen) return { error: "GetirBakım kataloğu bu çalışma alanında kapalı." }
     const product = await resolveGetirbakimProduct(
       parsed.data.getirbakimProductId,

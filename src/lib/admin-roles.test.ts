@@ -40,7 +40,6 @@ describe("can() yetki matrisi", () => {
       "impersonate",
       "confirmBilling",
       "manageWorkshops",
-      "manageFlags",
       "manageCatalog",
       "manageLiveChat",
       "manageLeads",

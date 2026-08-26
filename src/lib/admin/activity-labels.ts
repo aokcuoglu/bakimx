@@ -2,7 +2,6 @@ import { communicationStatusLabel } from "@/lib/communications/status-labels"
 import { communicationTemplateLabel } from "@/lib/communications/template-labels"
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
-  feature_override_set: "Özellik erişimi güncellendi",
   password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
   member_password_reset: "Ekip üyesine şifre sıfırlama bağlantısı gönderildi",
   order_item_added: "İş emrine kalem eklendi",

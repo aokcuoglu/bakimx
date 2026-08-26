@@ -29,8 +29,8 @@ flowchart TB
             subgraph prov["Pluggable provider interfaces (mock ⇄ real, env-selected)"]
                 direction LR
                 storeP["storage<br/>mock | S3"]
-                ocrP["ocr<br/>mock | openai | deepseek | tesseract"]
-                aiP["advisor<br/>mock | openai | deepseek"]
+                ocrP["ocr<br/>mock | openai | anthropic | tesseract"]
+                aiP["landing assistant<br/>mock | openai | anthropic"]
                 commP["comms<br/>mock | netgsm | whatsapp | resend"]
                 calP["calendar<br/>mock | google"]
             end
@@ -45,7 +45,7 @@ flowchart TB
 
     db[("PostgreSQL<br/>33 tables · 30 enums · 68 FKs<br/>multi-tenant: workshopId on every row")]
     r2["Cloudflare R2 / S3"]
-    aiapi["OpenAI / DeepSeek<br/>/v1/chat/completions"]
+    aiapi["OpenAI / Anthropic<br/>provider APIs"]
     commsvc["Netgsm · Meta Graph · Resend"]
     gcalapi["Google Calendar API"]
 

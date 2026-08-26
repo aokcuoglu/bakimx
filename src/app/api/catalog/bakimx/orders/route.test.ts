@@ -35,7 +35,7 @@ const PRODUCT_ROW = {
   leadTimeDays: null,
 }
 
-let featureEnabled = true
+let planTier = "starter"
 let guardError: Error | null = null
 let workshopId = "ws-1"
 let productExists = true
@@ -53,20 +53,13 @@ mock.module("@/lib/auth", () => ({
     if (guardError) throw guardError
     return {
       user: { id: "user-1", workshopId },
-      workshop: { id: workshopId, planTier: "starter" },
+      workshop: { id: workshopId, planTier },
     }
   },
   getCurrentUserWithWorkshop: async () => ({
     user: { id: "user-1", workshopId },
-    workshop: { id: workshopId, planTier: "starter" },
+    workshop: { id: workshopId, planTier },
   }),
-}))
-
-mock.module("@/lib/features", () => ({
-  resolveFeature: async (_workshopId: string, _tier: string, feature: string) => {
-    expect(feature).toBe("bakimxCatalog")
-    return featureEnabled
-  },
 }))
 
 mock.module("@/lib/db", () => ({
@@ -112,7 +105,7 @@ function request(body: unknown): Request {
 }
 
 beforeEach(() => {
-  featureEnabled = true
+  planTier = "starter"
   guardError = null
   productExists = true
   discountBps = 1500
@@ -122,7 +115,7 @@ beforeEach(() => {
 
 describe("POST /api/catalog/bakimx/orders", () => {
   it("kapı kapalıyken 403 + feature_locked döner, sipariş açılmaz", async () => {
-    featureEnabled = false
+    planTier = "lite"
     workshopId = "ws-locked"
 
     const response = await POST(request({ items: [{ bakimxProductId: "bx-aku", quantity: 1 }] }))

@@ -82,15 +82,16 @@ OCR_PROVIDER=mock
 - Kullanıcı onayı zorunludur — OCR sonucu otomatik kaydedilmez
 - Düşük güven oranlı alanlar sarı vurgu ile işaretlenir
 
-### AI Servis Danışmanı Ortam Değişkenleri
+### Landing Ürün Asistanı Ortam Değişkenleri
 
 ```env
-# Varsayılan: mock (demo önerileri döndürür, API anahtarı gerekmez)
+# Varsayılan: hazırlanan ve kaynaklı yanıt eşleştiricisi; dış çağrı yapmaz
+LANDING_ASSISTANT_AI=off
 AI_PROVIDER=mock
 
-# Gerçek AI için: openai veya deepseek
+# Gerçek AI için: openai veya anthropic
 # AI_PROVIDER=openai
-# AI_PROVIDER=deepseek
+# AI_PROVIDER=anthropic
 
 # Sağlayıcıdan bağımsız model override (opsiyonel)
 # AI_MODEL=gpt-4o-mini
@@ -99,15 +100,16 @@ AI_PROVIDER=mock
 # OPENAI_API_KEY=your-key (OCR ile paylaşımlı)
 # AI_MODEL=gpt-4o-mini
 
-# DeepSeek (AI_PROVIDER=deepseek iken gerekli)
-# DEEPSEEK_API_KEY=your-key (OCR ile paylaşımlı)
-# AI_MODEL=deepseek-chat
+# Anthropic (AI_PROVIDER=anthropic iken gerekli)
+# ANTHROPIC_API_KEY=your-key (OCR ile paylaşımlı)
+# AI_MODEL=claude-haiku-4-5
 ```
 
-**AI danışman davranışı:**
-- `AI_PROVIDER` ayarlanmazsa veya `mock` ise: anahtar kelime eşlemeli demo önerileri döndürülür, API anahtarı gerekmez
+**Landing asistanı davranışı:**
+- `LANDING_ASSISTANT_AI=off` iken ziyaretçiye yalnız hazırlanmış, kaynaklı yanıtlar sunulur ve sunucu AI çağrısı yapmaz
+- `AI_PROVIDER` ayarlanmazsa veya `mock` ise kaynaklı yerel eşleştirici kullanılır, API anahtarı gerekmez
 - `AI_PROVIDER=openai`: OpenAI Chat Completions API; `OPENAI_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: gpt-4o-mini)
-- `AI_PROVIDER=deepseek`: DeepSeek Chat API; `DEEPSEEK_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: deepseek-chat)
+- `AI_PROVIDER=anthropic`: Anthropic Messages API; `ANTHROPIC_API_KEY` zorunlu, `AI_MODEL` opsiyonel (varsayılan: claude-haiku-4-5)
 - `AI_MODEL` ortam değişkeni, sağlayıcıya özel model ayarını override eder
 
 ### Web Push (Teknisyen Bildirimleri) Ortam Değişkenleri
@@ -224,7 +226,7 @@ CALENDAR_PROVIDER=mock
 - `CALENDAR_PROVIDER` ayarlanmazsa veya `mock` ise: takvim etkinlikleri uygulama içinde gösterilir, harici senkronizasyon yapılmaz
 - `CALENDAR_PROVIDER=google`: Google Calendar API v3 ile randevu, teslimat ve bakım hatırlatmalarını senkronize eder
 - Kimlik bilgileri eksikse `google` sağlayıcısı otomatik olarak mock'a döner (hata vermez)
-- `OPENAI_API_KEY` ve `DEEPSEEK_API_KEY` OCR sağlayıcısı ile paylaşımlıdır
+- `OPENAI_API_KEY` ve `ANTHROPIC_API_KEY` OCR sağlayıcısı ile paylaşılabilir
 
 **Depolama davranışı:**
 - `STORAGE_PROVIDER` ayarlanmazsa veya `mock` ise: dosyalar bellekte base64 data URL olarak tutulur (sunucu yeniden başlatıldığında kaybolur). Hızlı geliştirme için uygundur.

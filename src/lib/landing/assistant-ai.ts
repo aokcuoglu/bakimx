@@ -1,4 +1,4 @@
-import { getAdvisorProvider } from "@/lib/advisor/provider"
+import { getLandingAssistantProvider } from "@/lib/landing/assistant-provider"
 import { getAssistantAnswerById, type AssistantAnswer } from "./assistant-answers"
 
 export const LANDING_ASSISTANT_TIMEOUT_MS = 8_000
@@ -12,8 +12,8 @@ export async function askLandingAssistant(
   question: string,
   signal?: AbortSignal,
 ): Promise<LandingAssistantAnswer | null> {
-  const provider = await getAdvisorProvider()
-  const result = await provider.askLanding(question, signal)
+  const provider = getLandingAssistantProvider()
+  const result = await provider.ask(question, signal)
   const sources = [...new Set(result.sourceIds)]
     .map(getAssistantAnswerById)
     .filter((source): source is AssistantAnswer => Boolean(source))

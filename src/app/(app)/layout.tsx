@@ -4,8 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
-import { resolveFeature } from "@/lib/features"
+import { getPlanState, hasFeature, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
 import { LOGOUT_REASON_PARAM, SESSION_INVALID_REASON } from "@/lib/session-recovery"
 import { PlanLocked } from "@/components/billing/plan-locked"
 import { ForcePasswordChange } from "@/components/auth/force-password-change"
@@ -70,11 +69,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Kapısı olan menü satırları için (BAK-60: BakımX Siparişleri). Kapı SUNUCUDA
   // çözülür; istemciye yalnız "açık olanlar" listesi iner, kapının nasıl
   // hesaplandığı değil.
-  const featureChecks = await Promise.all([
-    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "bakimxCatalog"),
-    resolveFeature(user.workshopId, workshop.planTier as PlanTier, "marketResearch"),
-  ])
-  const enabledFeatures = ["bakimxCatalog", "marketResearch"].filter((_, index) => featureChecks[index])
+  const enabledFeatures = hasFeature(workshop.planTier as PlanTier, "bakimxCatalog")
+    ? ["bakimxCatalog"]
+    : []
 
   // Full-screen lock: only the approval gate (pending/rejected) blocks the whole
   // app now. Plan-expiry reasons drop to read-only mode below (data visible,

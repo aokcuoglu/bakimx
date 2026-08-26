@@ -5,18 +5,18 @@ import { describe, expect, it, mock } from "bun:test"
  * Asıl test havuzu bakimx-catalog.test.ts'te; burada uç davranışı test edilir.
  */
 
-let featureEnabled = true
+let planTier = "starter"
 let workshopId = "ws-0"
 
 mock.module("@/lib/auth", () => ({
   getCurrentUserWithWorkshop: async () => ({
     user: { id: "user-1", workshopId },
-    workshop: { id: workshopId, planTier: "starter" },
+    workshop: { id: workshopId, planTier },
   }),
-}))
-
-mock.module("@/lib/features", () => ({
-  resolveFeature: async () => featureEnabled,
+  requireWritableWorkshop: async () => ({
+    user: { id: "user-1", workshopId },
+    workshop: { id: workshopId, planTier },
+  }),
 }))
 
 mock.module("@/lib/db", () => ({
@@ -62,12 +62,12 @@ function matchRequest(articleNumbers: string[]): Request {
 
 describe("POST /api/catalog/bakimx/match", () => {
   it("kapı kapalıyken 403 + feature_locked döner", async () => {
-    featureEnabled = false
+    planTier = "lite"
     workshopId = "ws-locked"
     const res = await POST(matchRequest(["C 27 125"]))
     expect(res.status).toBe(403)
     expect(await res.json()).toMatchObject({ code: "feature_locked" })
-    featureEnabled = true
+    planTier = "starter"
   })
 
   it("istemci sınırı uygulanır", async () => {

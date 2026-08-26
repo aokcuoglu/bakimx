@@ -9,6 +9,10 @@
 > doc reconcile), and the **unreleased (untagged)** `HEAD` commit `37cad36` "close Phase 1 technical debt"
 > — pushed to `origin/main` on 2026-06-23; no version tag yet. New timeline rows in §1, debt status in §6, progress note in §8.
 
+> **Current-state note (2026-08-26):** the AI service advisor was removed in #559. References in the
+> release timeline below document what older versions shipped; they are not descriptions of current
+> routes, entitlements, or runtime modules.
+
 > Note: tags are annotated/lightweight on the remote and weren't present locally until fetched.
 > Releases `v0.3.2`, `v0.5.5`, `v0.5.6`, `v0.5.8`, `v0.5.9` ship **without** a `docs/releases/*.md`
 > file — their intent was reconstructed from commit bodies. There is **no separate `v0.5.7.x` tag**
@@ -78,8 +82,7 @@
 ## 3. Active / Partial Modules (foundation built, real integration not validated)
 
 - **Communications (SMS/WhatsApp/Email)** — provider abstraction complete (NetGSM/Resend/WhatsApp Business), but **mock is default**; real-send path unproven in production
-- **OCR smart capture** — ruhsat extraction works; real providers (DeepSeek/OpenAI/Tesseract) selectable but not the default; accuracy unvalidated
-- **AI Service Advisor** — suggestion-only, confirm-mandatory; mock default; **now server-gated to Premium** (`hasFeature("aiAdvisor")`→403 in both advisor routes + UI upsell lock, v0.5.11)
+- **OCR smart capture** — ruhsat extraction works; real providers (OpenAI/Anthropic/Tesseract) selectable but not the default; accuracy unvalidated
 - **Subscription & billing** — plan tiers, trial window, seat limits, upgrade-request flow present in DB+UI (v0.5.10); manual/havale activation plus TAMI virtual POS card payment (3DS) — not iyzico
 - **Calendar sync** — Google Calendar provider scaffolded, automation scheduler present; OAuth/real sync not productionized
 - **Maintenance reminders** — records + channel preferences stored; **no guaranteed real dispatch**
@@ -95,12 +98,13 @@
 - **Per-location/duplicated totals math** → centralized `lib/totals.ts` (v0.1.2) → **epsilon-aware `lib/money.ts` (v0.5.9)**
 - **Naive multi-write flows** → **`prisma.$transaction`-wrapped in v0.5.9**
 - **Many scattered migrations** → **squashed into `0_init` baseline (v0.5.9)**
+- **AI Service Advisor** (v0.3.4, Premium-gated in v0.5.11) → **removed in #559**
 
 ## 5. Current Architecture Maturity Level
 
 **Level: Late-MVP / Pre-1.0 hardened beta (≈ "production-pilot ready").**
 
-- ✅ Consistent **provider-abstraction pattern** across storage, OCR, AI, comms, calendar (clean, swappable, mock-default)
+- ✅ Consistent **provider-abstraction pattern** across storage, OCR, comms, calendar (clean, swappable, mock-default)
 - ✅ **Security P0s closed** (v0.5.7–v0.5.8), **data integrity** addressed (v0.5.9 transactions + money)
 - ✅ Self-hosted, containerized **deploy pipeline** with migration baselining
 - ⚠️ **Thin automated test coverage** — only 3 unit files (`money.test.ts`, `totals.test.ts`, `cashbox/status.test.ts`); no integration/E2E
@@ -116,7 +120,7 @@
 | OTP entropy / expiry / attempt-limit hardening | v0.5.7 deferred | Med — approval-flow abuse | ⬜ open → **v0.6.0 (next)** |
 | `db.ts` placeholder DB connection fallback | still in `src/lib/db.ts` (verified 06-23) | Low — masks misconfig | ⬜ open → v0.6.0 |
 | `middleware.ts` uses deprecated Next 16 convention (`proxy`) | v0.1.2 documented | Low — framework churn | 🟡 rewritten host-aware in v0.5.11; `proxy` convention migration still pending |
-| Real comms/OCR/AI/calendar providers unvalidated in prod | foundations only | Med — feature reliability | 🟡 reduced — unimplemented provider enums (iletimerkezi/sendgrid/custom) dropped + advisor Premium-gated; prod validation still open → v0.6.1–v0.6.3 |
+| Real comms/OCR/calendar providers unvalidated in prod | foundations only | Med — feature reliability | 🟡 reduced — unimplemented provider enums (iletimerkezi/sendgrid/custom) dropped; prod validation still open → v0.6.1–v0.6.3 |
 | Minimal automated test coverage | repo-wide | High — regression exposure | ⬜ open → v0.6.4 (`plan.test.ts` updated; coverage still thin) |
 | `Yakında` stubs: Excel import, voice fill | landing/features | Low — marketing promise gap | 🟡 `/inventory`→`/parts` stub removed; voice-fill stub remains |
 | No e-fatura, no subscription/billing, no multi-branch | roadmap gaps | Product scope | 🟡 billing tiers/trial/seats scaffolded in DB+UI (v0.5.10, no gateway); e-fatura/multi-branch open → v0.7.2 / v0.8.0 / v0.9–1.0 |
@@ -140,8 +144,7 @@
 **Strategic theme: convert "foundations" into validated, scalable, billable production capability → 1.0.**
 
 > **Progress since v0.5.9 (reconciled 2026-06-23):** v0.5.10 shipped RBAC/teams + admin + billing scaffold;
-> v0.5.11 shipped the subdomain split and **server-side Premium gating of the AI advisor** — partially
-> advancing v0.6.3's "advisor prod-gating" and laying the entitlement groundwork for v0.8.0. The local/
+> v0.5.11 shipped the subdomain split. The local/
 > unreleased Phase-1 commit (`37cad36`) closed maintainability debt (validations, migrations) and added
 > lead management, but **touched none of v0.6.0's items**. **→ v0.6.0 remains the #1 next step:** the
 > in-memory rate-limiter, OTP hardening, and the `db.ts` placeholder are all still open (verified 06-23).
@@ -151,7 +154,7 @@
 | **v0.6.0** | Distributed resilience | Redis/DB-backed rate-limit + OTP store (expiry, attempt-limit, entropy), remove `db.ts` placeholder | Unblocks multi-instance + closes top open security debt |
 | **v0.6.1** | Comms go-live | Validate NetGSM SMS + WhatsApp Business + Resend in prod; delivery logs, retries, opt-out/KVKK enforcement | Activates the most-promised feature ("Yakında" SMS) |
 | **v0.6.2** | Reminder automation live | Real scheduled dispatch of maintenance reminders over live comms; idempotent cron | Completes v0.2.3/v0.5.1 partials |
-| **v0.6.3** | OCR/AI production validation | Real OCR accuracy benchmarking, fallback chain, cost guardrails; advisor prod-gating | De-risks AI cost/quality before charging |
+| **v0.6.3** | OCR production validation | Real OCR accuracy benchmarking, fallback chain, cost guardrails | De-risks OCR cost/quality before charging |
 | **v0.6.4** | Test & CI hardening | Vitest/Playwright E2E for intake→approval→order→payment; coverage gate in GH Actions | Highest leverage against regression risk |
 | **v0.7.0** | Money correctness | Migrate money to `Decimal`/integer-minor-units; backfill migration; rounding audit | Retires the Float debt before billing |
 | **v0.7.1** | Calendar sync GA | Google OAuth, two-way sync, conflict handling | Completes v0.5.1 foundation |
