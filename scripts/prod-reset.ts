@@ -101,6 +101,7 @@ export const TENANT_TABLES = [
   "SalesDemoSession",
   "SalesCommission",
   "SalesDiscountCode",
+  "SalesReferral",
   "CronRun",
   // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
   // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri

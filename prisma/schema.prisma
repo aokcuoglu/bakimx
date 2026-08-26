@@ -45,6 +45,9 @@ model Workshop {
   // Extra monthly VIN/katalog kotası (satın alınan ek kota — base tier kotasının üzerine eklenir).
   extraVinQuota      Int                    @default(0)
 
+  acquisitionSource    AcquisitionSource @default(unknown)
+  acquisitionAdvisorId String?
+
   // --- BakımX pricing (BAK-47) ---
   // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
   bakimxDiscountBps Int @default(0)
@@ -101,6 +104,7 @@ model Workshop {
   salesLeads                SalesLead[]
   demoSessions              SalesDemoSession[]
   salesDiscountCodes        SalesDiscountCode[]
+  acquisitionAdvisor        SalesAdvisor? @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -126,6 +130,18 @@ enum WorkshopApprovalStatus {
   pending
   approved
   rejected
+}
+
+enum AcquisitionSource {
+  sales_advisor
+  instagram
+  website
+  google
+  referral
+  field_visit
+  partner
+  other
+  unknown
 }
 
 model BillingOrder {
@@ -1852,6 +1868,8 @@ model SalesAdvisor {
   commissions SalesCommission[]
   demoSessions SalesDemoSession[]
   discountCodes SalesDiscountCode[]
+  acquisitionWorkshops Workshop[] @relation("WorkshopAcquisitionAdvisor")
+  referrals SalesReferral[]
 
   @@index([disabledAt])
 }
@@ -1859,6 +1877,7 @@ model SalesAdvisor {
 enum SalesLeadSource {
   field
   public_demo_request
+  customer_referral
 }
 
 enum SalesLeadStatus {
@@ -1916,6 +1935,7 @@ model SalesLead {
   demoSessions       SalesDemoSession[]
   commissions        SalesCommission[]
   discountCodes      SalesDiscountCode[]
+  referral           SalesReferral?
 
   @@index([advisorId, status])
   @@index([status, nextActionAt])
@@ -1994,11 +2014,41 @@ model SalesDiscountCode {
   workshop          Workshop?    @relation(fields: [workshopId], references: [id], onDelete: SetNull)
   expiresAt         DateTime
   usedAt            DateTime?
+  disabledAt         DateTime?
   createdAt         DateTime @default(now())
 
   @@index([code])
   @@index([advisorId, createdAt])
   @@index([expiresAt])
+  @@index([disabledAt])
+}
+
+enum SalesReferralStatus {
+  new
+  contacted
+  won
+  lost
+}
+
+model SalesReferral {
+  id                   String             @id @default(cuid())
+  status               SalesReferralStatus @default(new)
+  referrerName         String
+  referrerPhone        String
+  referredBusinessName String
+  referredContactName  String
+  referredPhone        String
+  referredEmail        String?
+  notes                String?
+  advisorId            String?
+  advisor              SalesAdvisor?      @relation(fields: [advisorId], references: [id], onDelete: SetNull)
+  leadId               String             @unique
+  lead                 SalesLead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([advisorId, status])
+  @@index([createdAt])
 }
 
 /// Platform yöneticisi rolleri — yetki matrisi `src/lib/admin.ts` içindeki
