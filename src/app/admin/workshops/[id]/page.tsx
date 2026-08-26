@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Handshake } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight, Handshake } from "lucide-react"
 import { can, getAdminContext } from "@/lib/admin"
 import { prisma } from "@/lib/db"
 import { getPlanState, getSeatLimit, type PlanTier } from "@/lib/plan"
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { ROLE_LABELS } from "@/lib/roles"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WorkshopActions } from "@/app/admin/workshop-actions"
 import { ImpersonateButton } from "@/app/admin/impersonate-button"
 import { BakimxDiscountForm } from "@/app/admin/bakimx-discount-form"
@@ -20,10 +20,19 @@ import { WorkshopActivityTables } from "@/app/admin/workshop-activity-tables"
 import { AcquisitionEditor } from "@/app/admin/acquisition-editor"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 import { salesAdvisorDisplayName, salesLeadAdminHref } from "@/lib/sales/links"
+import { UsageDateFilter, WorkshopOrderFilters } from "@/app/admin/workshop-detail-filters"
+import {
+  hasWorkshopOrderFilters,
+  normalizeWorkshopOrderPage,
+  parseWorkshopDateRange,
+  parseWorkshopOrderFilters,
+  type WorkshopDetailSearchParams,
+  WORKSHOP_ORDER_PAGE_SIZE,
+} from "@/lib/admin/workshop-detail-query"
 
 export const dynamic = "force-dynamic"
 
-const TIER_LABELS: Record<string, string> = { starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
+const TIER_LABELS: Record<string, string> = { lite: "Lite", starter: "Başlangıç", pro: "Profesyonel", premium: "Premium" }
 const CYCLE_LABELS: Record<string, string> = { monthly: "Aylık", yearly: "Yıllık" }
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_payment: "Ödeme bekliyor",
@@ -35,10 +44,12 @@ const SUB_LABELS: Record<string, string> = { trialing: "Denemede", active: "Akti
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn("space-y-3 rounded-xl border bg-card p-5 shadow-sm", className)}>
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </section>
+    <Card size="sm" className={className}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">{children}</CardContent>
+    </Card>
   )
 }
 
@@ -51,19 +62,32 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-function dateParam(value: string | undefined, endOfDay = false) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined
-  const [year, month, day] = value.split("-").map(Number)
-  return endOfDay ? new Date(Date.UTC(year, month - 1, day + 1)) : new Date(Date.UTC(year, month - 1, day))
+function pageHref(id: string, searchParams: WorkshopDetailSearchParams, page: number): string {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) value.forEach((item) => query.append(key, item))
+    else if (value) query.set(key, value)
+  }
+  if (page > 1) query.set("orderPage", String(page))
+  else query.delete("orderPage")
+  const suffix = query.toString()
+  return `/admin/workshops/${id}${suffix ? `?${suffix}` : ""}`
 }
 
-export default async function WorkshopDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string; to?: string }> }) {
+export default async function WorkshopDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<WorkshopDetailSearchParams> }) {
   const ctx = await getAdminContext()
   const { id } = await params
-  const period = await searchParams
-  const from = /^\d{4}-\d{2}-\d{2}$/.test(period.from ?? "") ? period.from : ""
-  const to = /^\d{4}-\d{2}-\d{2}$/.test(period.to ?? "") ? period.to : ""
-  const periodWhere = { workshopId: id, ...(dateParam(from) || dateParam(to, true) ? { createdAt: { ...(dateParam(from) ? { gte: dateParam(from) } : {}), ...(dateParam(to, true) ? { lt: dateParam(to, true) } : {}) } } : {}) }
+  const query = await searchParams
+  const usageRange = parseWorkshopDateRange(query.from, query.to)
+  const orderFilters = parseWorkshopOrderFilters(query)
+  const periodWhere = { workshopId: id, ...(usageRange.range ? { createdAt: usageRange.range } : {}) }
+  const billingOrderWhere = {
+    workshopId: id,
+    ...(orderFilters.range ? { createdAt: orderFilters.range } : {}),
+    ...(orderFilters.status ? { status: orderFilters.status } : {}),
+    ...(orderFilters.plan ? { planTier: orderFilters.plan } : {}),
+    ...(orderFilters.cycle ? { billingCycle: orderFilters.cycle } : {}),
+  }
 
   const workshop = await prisma.workshop.findUnique({
     where: { id },
@@ -76,15 +100,24 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   })
   if (!workshop) notFound()
 
-  const [customerTotal, vehicleTotal, orderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, orders, salesLead, advisors] =
+  const [customerTotal, vehicleTotal, serviceOrderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, billingOrderFilteredCount, salesLead, advisors] =
     await Promise.all([
       prisma.customer.count({ where: { workshopId: id } }), prisma.vehicle.count({ where: { workshopId: id } }), prisma.serviceOrder.count({ where: { workshopId: id } }), prisma.appointment.count({ where: { workshopId: id } }),
       prisma.customer.count({ where: periodWhere }), prisma.vehicle.count({ where: periodWhere }), prisma.serviceOrder.count({ where: periodWhere }), prisma.appointment.count({ where: periodWhere }),
-      prisma.billingOrder.findMany({ where: { workshopId: id }, orderBy: { createdAt: "desc" }, take: 10 }),
+      prisma.billingOrder.count({ where: billingOrderWhere }),
       prisma.salesLead.findUnique({ where: { workshopId: id }, select: { id: true } }),
       prisma.salesAdvisor.findMany({ where: { disabledAt: null }, include: { user: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "asc" } }),
     ])
 
+  const orderPage = normalizeWorkshopOrderPage(orderFilters.requestedPage, billingOrderFilteredCount)
+  const orderPageCount = Math.max(1, Math.ceil(billingOrderFilteredCount / WORKSHOP_ORDER_PAGE_SIZE))
+  const orderFiltersActive = hasWorkshopOrderFilters(orderFilters)
+  const orders = await prisma.billingOrder.findMany({
+    where: billingOrderWhere,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: (orderPage - 1) * WORKSHOP_ORDER_PAGE_SIZE,
+    take: WORKSHOP_ORDER_PAGE_SIZE,
+  })
   const canManageTeam = can(ctx, "manageWorkshops")
   const canSendReset = can(ctx, "sendPasswordReset")
   const plan = getPlanState(workshop)
@@ -97,7 +130,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   const [billingCount, paymentCount, supportCount] = await Promise.all([
     prisma.billingOrder.count({ where: { workshopId: id } }), prisma.paymentTransaction.count({ where: { workshopId: id } }), prisma.supportRequest.count({ where: { workshopId: id } }),
   ])
-  const deleteBlockers = [[customerTotal, "müşteri"], [vehicleTotal, "araç"], [orderTotal, "iş emri"], [appointmentTotal, "randevu"], [billingCount, "fatura/sipariş"], [paymentCount, "ödeme"], [supportCount, "destek kaydı"]].filter(([count]) => Number(count) > 0).map(([, label]) => label as string)
+  const deleteBlockers = [[customerTotal, "müşteri"], [vehicleTotal, "araç"], [serviceOrderTotal, "iş emri"], [appointmentTotal, "randevu"], [billingCount, "fatura/sipariş"], [paymentCount, "ödeme"], [supportCount, "destek kaydı"]].filter(([count]) => Number(count) > 0).map(([, label]) => label as string)
 
   const APPROVAL_BADGE: Record<string, string> = {
     pending: "bg-warning/10 text-warning-strong",
@@ -203,13 +236,28 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
           <Field label="VKN" value={workshop.taxNumber} />
         </Section>
 
-        <Section title="Edinim kaynağı">
-          <Field label="Mevcut kaynak" value={ACQUISITION_SOURCE_LABELS[workshop.acquisitionSource]} />
-          <Field label="Temsilci" value={acquisitionAdvisorName} />
+        <Section title="Referans Kaynağı">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">Referans</p>
+              <Badge variant="outline" className="bg-muted text-muted-foreground">
+                {ACQUISITION_SOURCE_LABELS[workshop.acquisitionSource]}
+              </Badge>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">Temsilci</p>
+              <Badge
+                variant="outline"
+                className={acquisitionAdvisorName ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground"}
+              >
+                {acquisitionAdvisorName ?? "Atanmadı"}
+              </Badge>
+            </div>
+          </div>
           {can(ctx, "manageWorkshops") && <AcquisitionEditor workshopId={id} source={workshop.acquisitionSource} advisorId={workshop.acquisitionAdvisorId} advisors={advisors.map((a) => ({ id: a.id, label: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email || "—" }))} />}
         </Section>
 
-        <Section title="Ekip & Koltuk">
+        <Section title="Ekip & Koltuk" className="w-full md:col-span-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-muted p-3"><p className="text-xs text-muted-foreground">Aktif koltuk</p><p className="mt-1 text-xl font-semibold tabular-nums">{activeUsers} <span className="text-sm font-medium text-muted-foreground">/ {seatLimit}</span></p></div>
             <div className="rounded-lg bg-muted p-3"><p className="text-xs text-muted-foreground">Ek koltuk</p><p className="mt-1 text-xl font-semibold tabular-nums">{workshop.extraSeats}</p></div>
@@ -236,49 +284,93 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
         )}
 
         <Section title="Kullanım">
-          <form method="get" className="space-y-3 rounded-lg bg-muted p-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1 text-xs text-muted-foreground">Başlangıç tarihi<Input name="from" type="date" defaultValue={from} /></label>
-              <label className="space-y-1 text-xs text-muted-foreground">Bitiş tarihi<Input name="to" type="date" defaultValue={to} /></label>
-            </div>
-            <div className="flex items-center justify-between gap-2"><span className="text-xs text-muted-foreground">{from || to ? `${from || "…"} – ${to || "…"}` : "Tüm zamanlar"}</span><div className="flex gap-2"><Button type="submit" size="sm">Uygula</Button>{(from || to) && <Button type="button" size="sm" variant="ghost" asChild><Link href={`/admin/workshops/${id}`}>Sıfırla</Link></Button>}</div></div>
-          </form>
+          <UsageDateFilter key={`usage-${usageRange.from}-${usageRange.to}`} from={usageRange.from} to={usageRange.to} />
           <Field label="Müşteri" value={String(customerCount)} />
           <Field label="Araç" value={String(vehicleCount)} />
           <Field label="İş emri" value={String(orderCount)} />
           <Field label="Randevu" value={String(appointmentCount)} />
         </Section>
 
-        <Section title="Sipariş Geçmişi">
+        <Section title="Sipariş Geçmişi" className="w-full md:col-span-2">
+          <WorkshopOrderFilters
+            key={`orders-${orderFilters.from}-${orderFilters.to}-${orderFilters.status}-${orderFilters.plan}-${orderFilters.cycle}`}
+            from={orderFilters.from}
+            to={orderFilters.to}
+            status={orderFilters.status}
+            plan={orderFilters.plan}
+            cycle={orderFilters.cycle}
+            hasFilters={orderFiltersActive}
+          />
           {orders.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sipariş yok.</p>
+            <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              {orderFiltersActive ? "Filtrelere uyan sipariş bulunamadı." : "Sipariş yok."}
+            </p>
           ) : (
-            <div className="space-y-2">
-              {orders.map((o) => (
-                <div key={o.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {o.createdAt.toLocaleDateString("tr-TR")} · {TIER_LABELS[o.planTier] ?? o.planTier}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{formatMinor(o.amountMinor)}</span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[11px]",
-                        o.status === "confirmed"
-                          ? "bg-success/10 text-success-strong"
-                          : o.status === "cancelled"
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-warning/10 text-warning-strong"
-                      )}
-                    >
-                      {ORDER_STATUS_LABELS[o.status] ?? o.status}
-                    </Badge>
-                  </span>
-                </div>
-              ))}
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tarih</TableHead>
+                    <TableHead>Paket</TableHead>
+                    <TableHead>Faturalama</TableHead>
+                    <TableHead className="text-right">Tutar</TableHead>
+                    <TableHead>Durum</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.createdAt.toLocaleDateString("tr-TR")}</TableCell>
+                      <TableCell className="font-medium">{TIER_LABELS[order.planTier] ?? order.planTier}</TableCell>
+                      <TableCell>{CYCLE_LABELS[order.billingCycle] ?? order.billingCycle}</TableCell>
+                      <TableCell className="text-right font-medium">{formatMinor(order.amountMinor)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[11px]",
+                            order.status === "confirmed"
+                              ? "bg-success/10 text-success-strong"
+                              : order.status === "cancelled"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-warning/10 text-warning-strong",
+                          )}
+                        >
+                          {ORDER_STATUS_LABELS[order.status] ?? order.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
+          <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">Toplam {billingOrderFilteredCount} kayıt</p>
+            {orderPageCount > 1 && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" asChild={orderPage > 1} disabled={orderPage <= 1}>
+                  {orderPage > 1 ? (
+                    <Link href={pageHref(id, query, orderPage - 1)}>
+                      <ChevronLeft /> Önceki
+                    </Link>
+                  ) : (
+                    <span><ChevronLeft /> Önceki</span>
+                  )}
+                </Button>
+                <span className="text-xs text-muted-foreground">{orderPage} / {orderPageCount}</span>
+                <Button variant="outline" size="sm" asChild={orderPage < orderPageCount} disabled={orderPage >= orderPageCount}>
+                  {orderPage < orderPageCount ? (
+                    <Link href={pageHref(id, query, orderPage + 1)}>
+                      Sonraki <ChevronRight />
+                    </Link>
+                  ) : (
+                    <span>Sonraki <ChevronRight /></span>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </Section>
       </div>
 
