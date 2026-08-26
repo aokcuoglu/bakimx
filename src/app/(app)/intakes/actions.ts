@@ -15,7 +15,7 @@ import { isArrivalReason, type ArrivalReasonKey } from "@/lib/constants"
 import { VISIBLE_PHOTO } from "@/lib/intake/photo-visibility"
 
 export async function createIntakeAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user } = await requireWritableWorkshop("records.create")
 
   const raw = {
     customerId: formData.get("customerId") as string,
@@ -283,7 +283,7 @@ export async function updateIntakeDetailsAction(
 }
 
 export async function addDamageMarkAction(input: unknown) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user } = await requireWritableWorkshop("records.create")
   const parsed = damageMarkSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Hasar bilgileri geçersiz" }
 
@@ -315,7 +315,7 @@ export async function removeDamageMarkAction(id: string) {
 }
 
 export async function addPhotoAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("order.edit")
+  const { user } = await requireWritableWorkshop("records.create")
 
   const intakeFormId = formData.get("intakeFormId") as string
   const type = formData.get("type") as string

@@ -13,7 +13,7 @@ import { calculateOrderTotals } from "@/lib/totals"
 import { reserveStockInTx, getActiveWorkshopPart } from "@/lib/parts/stock-movement"
 
 export async function createQuoteAction(formData: FormData) {
-  const { user } = await requireWritableWorkshop("records.manage")
+  const { user } = await requireWritableWorkshop("records.create")
   const workshopId = user.workshopId
 
   const raw: Record<string, unknown> = {}
