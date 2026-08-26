@@ -1,6 +1,7 @@
 import { z } from "zod/v4"
 import { isEmailIdentifier } from "@/lib/user-identity"
 import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
+import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
 
 /**
  * Giriş formu tek kimlik alanı taşır (BAK-40): değer `@` içeriyorsa e-posta
@@ -23,46 +24,57 @@ export const loginSchema = z
     path: ["workshopCode"],
   })
 
-export const registerSchema = z.object({
-  acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
-  acquisitionAdvisorId: z.string().optional().default(""),
-  email: z.email("Geçerli bir e-posta adresi giriniz"),
-  password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
-  firstName: z.string().min(1, "Ad zorunludur"),
-  lastName: z.string().min(1, "Soyad zorunludur"),
-  workshopName: z.string().min(2, "İş yeri adı zorunludur"),
-  phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
-  city: z.string().min(1, "Şehir zorunludur"),
-  address: z.string().min(1, "Adres zorunludur"),
-  district: z.string().optional().default(""),
-  workshopEmail: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || z.email().safeParse(v).success, {
-      message: "Geçerli bir e-posta adresi giriniz",
-    }),
-  taxOffice: z.string().optional().default(""),
-  taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
-  invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
-  weekdayStart: z.string().optional().default("09:00"),
-  weekdayEnd: z.string().optional().default("18:00"),
-  workingDays: z.string().optional().default("1,2,3,4,5,6"),
-  teamMembers: z
-    .array(
-      z.object({
-        fullName: z.string().min(1),
-        role: z.enum(["usta", "teknisyen", "servis_danismani"]),
+export const registerSchema = z
+  .object({
+    acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
+    acquisitionAdvisorId: z.string().optional().default(""),
+    referralCode: optionalReferralCodeSchema,
+    email: z.email("Geçerli bir e-posta adresi giriniz"),
+    password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
+    firstName: z.string().min(1, "Ad zorunludur"),
+    lastName: z.string().min(1, "Soyad zorunludur"),
+    workshopName: z.string().min(2, "İş yeri adı zorunludur"),
+    phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
+    city: z.string().min(1, "Şehir zorunludur"),
+    address: z.string().min(1, "Adres zorunludur"),
+    district: z.string().optional().default(""),
+    workshopEmail: z
+      .string()
+      .optional()
+      .default("")
+      .refine((v) => !v || z.email().safeParse(v).success, {
+        message: "Geçerli bir e-posta adresi giriniz",
       }),
-    )
-    .optional()
-    .default([]),
-  kvkkConsent: z
-    .union([z.literal("on"), z.literal("true"), z.boolean()])
-    .refine((v) => v === true || v === "on" || v === "true", {
-      message: "Devam etmek için aydınlatma metnini onaylamanız gerekir",
-    }),
-})
+    taxOffice: z.string().optional().default(""),
+    taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
+    invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
+    weekdayStart: z.string().optional().default("09:00"),
+    weekdayEnd: z.string().optional().default("18:00"),
+    workingDays: z.string().optional().default("1,2,3,4,5,6"),
+    teamMembers: z
+      .array(
+        z.object({
+          fullName: z.string().min(1),
+          role: z.enum(["usta", "teknisyen", "servis_danismani"]),
+        }),
+      )
+      .optional()
+      .default([]),
+    kvkkConsent: z
+      .union([z.literal("on"), z.literal("true"), z.boolean()])
+      .refine((v) => v === true || v === "on" || v === "true", {
+        message: "Devam etmek için aydınlatma metnini onaylamanız gerekir",
+      }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.acquisitionSource === "referral" && !data.referralCode) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["referralCode"],
+        message: "Referans kaynağı için referans kodu zorunludur",
+      })
+    }
+  })
 
 export const forgotPasswordSchema = z.object({
   email: z.email("Geçerli bir e-posta adresi giriniz"),

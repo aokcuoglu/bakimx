@@ -48,6 +48,13 @@ model Workshop {
   acquisitionSource    AcquisitionSource @default(unknown)
   acquisitionAdvisorId String?
 
+  // Atölyenin müşterilere paylaşacağı benzersiz kod ile kayıt anındaki atıf
+  // birbirinden ayrıdır. Kod sonradan değişse bile referralCodeUsed geçmiş
+  // kaydın hangi kodla geldiğini korur.
+  referralCode         String? @unique
+  referredByWorkshopId String?
+  referralCodeUsed     String?
+
   // --- BakımX pricing (BAK-47) ---
   // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
   bakimxDiscountBps Int @default(0)
@@ -102,6 +109,10 @@ model Workshop {
   demoSessions              SalesDemoSession[]
   salesDiscountCodes        SalesDiscountCode[]
   acquisitionAdvisor        SalesAdvisor? @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
+  referredByWorkshop        Workshop?     @relation("WorkshopReferralAttribution", fields: [referredByWorkshopId], references: [id], onDelete: SetNull)
+  referredWorkshops         Workshop[]    @relation("WorkshopReferralAttribution")
+
+  @@index([referredByWorkshopId])
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is

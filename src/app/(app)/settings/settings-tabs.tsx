@@ -62,6 +62,7 @@ type WorkshopData = {
   taxNumber: string | null
   taxOffice: string | null
   invoiceTitle: string | null
+  referralCode: string | null
   createdAt: string
 }
 

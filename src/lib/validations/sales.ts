@@ -32,15 +32,3 @@ export const salesDiscountCodeSchema = z.object({
 export const salesDiscountCodeUpdateSchema = z.object({
   expiresAt: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Geçerli bir tarih seçin"),
 })
-
-export const salesReferralSchema = z.object({
-  referrerName: z.string().trim().min(2, "Referans veren müşterinin adı zorunludur").max(120),
-  referrerPhone: z.string().trim().min(7, "Referans veren müşterinin telefonu geçersiz").max(30),
-  referredBusinessName: z.string().trim().min(2, "Yeni müşteri/servis adı en az 2 karakter olmalıdır").max(160),
-  referredContactName: z.string().trim().min(2, "Yetkili adı en az 2 karakter olmalıdır").max(120),
-  referredPhone: z.string().trim().min(7, "Yeni müşterinin telefonu geçersiz").max(30),
-  referredEmail: z.string().trim().email("Geçerli bir e-posta girin").or(z.literal("")),
-  notes: z.string().trim().max(2000),
-})
-
-export const salesReferralStatusSchema = z.enum(["new", "contacted", "won", "lost"])

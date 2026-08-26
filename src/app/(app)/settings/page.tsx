@@ -40,6 +40,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     taxNumber: workshop.taxNumber,
     taxOffice: workshop.taxOffice,
     invoiceTitle: workshop.invoiceTitle,
+    referralCode: workshop.referralCode,
     createdAt: workshop.createdAt.toISOString(),
   }
 

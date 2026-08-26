@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getSalesAccess, assertSalesLeadAccess } from "@/lib/sales/access"
-import { salesActivitySchema, salesCommissionSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema, salesLeadSchema, salesLeadStatusSchema, salesReferralSchema, salesReferralStatusSchema } from "@/lib/validations/sales"
+import { salesActivitySchema, salesCommissionSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema, salesLeadSchema, salesLeadStatusSchema } from "@/lib/validations/sales"
 import { workshopCodeCandidate } from "@/lib/workshop-code"
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -28,56 +28,6 @@ export async function createSalesLead(input: unknown): Promise<Result> {
       advisorId: access.advisorId,
     },
   })
-  refresh()
-  return { ok: true }
-}
-
-export async function createSalesReferral(input: unknown): Promise<Result> {
-  const access = await getSalesAccess()
-  const parsed = salesReferralSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz referans" }
-  const data = parsed.data
-  await prisma.$transaction(async (tx) => {
-    const lead = await tx.salesLead.create({
-      data: {
-        source: "customer_referral",
-        businessName: data.referredBusinessName,
-        contactName: data.referredContactName,
-        phone: data.referredPhone,
-        email: data.referredEmail || null,
-        notes: data.notes || null,
-        advisorId: access.advisorId,
-      },
-      select: { id: true },
-    })
-    await tx.salesReferral.create({
-      data: {
-        referrerName: data.referrerName,
-        referrerPhone: data.referrerPhone,
-        referredBusinessName: data.referredBusinessName,
-        referredContactName: data.referredContactName,
-        referredPhone: data.referredPhone,
-        referredEmail: data.referredEmail || null,
-        notes: data.notes || null,
-        advisorId: access.advisorId,
-        leadId: lead.id,
-      },
-    })
-  })
-  refresh()
-  return { ok: true }
-}
-
-export async function setSalesReferralStatus(referralId: string, status: string): Promise<Result> {
-  const access = await getSalesAccess()
-  const parsed = salesReferralStatusSchema.safeParse(status)
-  if (!referralId || !parsed.success) return { ok: false, error: "Geçersiz referans aşaması." }
-  const referral = await prisma.salesReferral.findUnique({ where: { id: referralId }, select: { advisorId: true, leadId: true } })
-  if (!referral || (access.kind === "advisor" && referral.advisorId !== access.advisorId)) return { ok: false, error: "Bu referansa erişim yetkiniz yok." }
-  await prisma.$transaction([
-    prisma.salesReferral.update({ where: { id: referralId }, data: { status: parsed.data } }),
-    prisma.salesLead.update({ where: { id: referral.leadId }, data: { status: parsed.data } }),
-  ])
   refresh()
   return { ok: true }
 }

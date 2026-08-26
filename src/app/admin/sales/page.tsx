@@ -38,18 +38,6 @@ export default async function SalesPage({
     },
   })
 
-  const referrals = await prisma.salesReferral.findMany({
-    where: salesLeadScope(access) ? { advisorId: access.advisorId! } : {},
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    select: {
-      id: true, status: true, referrerName: true, referrerPhone: true,
-      referredBusinessName: true, referredContactName: true, referredPhone: true,
-      referredEmail: true, notes: true, createdAt: true,
-      advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
-    },
-  })
-
   const commissions = access.kind === "admin"
     ? await prisma.salesCommission.findMany({
         where: { status: { in: ["draft", "approved"] } },
@@ -106,14 +94,6 @@ export default async function SalesPage({
       : null,
   }))
 
-  const serializedReferrals = referrals.map((referral) => ({
-    ...referral,
-    createdAt: referral.createdAt.toISOString(),
-    advisorName: referral.advisor
-      ? [referral.advisor.user.firstName, referral.advisor.user.lastName].filter(Boolean).join(" ") || referral.advisor.user.email
-      : null,
-  }))
-
   return (
     <div className="space-y-6">
       <div>
@@ -130,7 +110,6 @@ export default async function SalesPage({
           advisorName: [c.advisor.user.firstName, c.advisor.user.lastName].filter(Boolean).join(" ") || c.advisor.user.email || "—",
         }))}
         discountCodes={serializedDiscountCodes}
-        referrals={serializedReferrals}
         advisors={advisors.map((a) => ({
           id: a.id,
           name: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email || "—",

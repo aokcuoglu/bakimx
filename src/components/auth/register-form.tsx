@@ -26,6 +26,7 @@ import {
   Trash2,
   CircleCheck,
   Sparkles,
+  Hash,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -55,6 +56,7 @@ import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
 import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
+import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
 
 const STEPS = [
   { label: "Paket Seçimi" },
@@ -68,6 +70,7 @@ const STEPS = [
 const registerWizardSchema = z.object({
   acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
   acquisitionAdvisorId: z.string().optional().default(""),
+  referralCode: optionalReferralCodeSchema,
   selectedPlan: z.enum(["lite", "starter", "pro", "premium"]),
   billingPeriod: z.enum(["monthly", "yearly"]),
   workshopName: z.string().min(2, "İş yeri adı zorunludur"),
@@ -98,6 +101,14 @@ const registerWizardSchema = z.object({
     (v) => v === true || v === "on" || v === "true",
     { message: "Devam etmek için aydınlatma metnini onaylamanız gerekir" },
   ),
+}).superRefine((data, ctx) => {
+  if (data.acquisitionSource === "referral" && !data.referralCode) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["referralCode"],
+      message: "Referans kaynağı için referans kodu zorunludur",
+    })
+  }
 })
 
 type WizardFormValues = z.infer<typeof registerWizardSchema>
@@ -105,7 +116,7 @@ type WizardForm = UseFormReturn<WizardFormValues, unknown, WizardFormValues>
 
 const STEP_FIELDS: Record<number, (keyof WizardFormValues)[]> = {
   0: ["selectedPlan", "billingPeriod"],
-  1: ["workshopName", "phone", "city", "address"],
+  1: ["workshopName", "phone", "city", "address", "referralCode"],
   2: ["taxOffice", "taxNumber", "invoiceTitle", "weekdayStart", "weekdayEnd", "workingDays"],
   3: ["teamMembers"],
   4: ["firstName", "lastName", "email", "password"],
@@ -154,6 +165,7 @@ export function RegisterForm({ onPlanChange, advisors = [] }: { onPlanChange?: (
       billingPeriod: "monthly",
       acquisitionSource: "unknown",
       acquisitionAdvisorId: "",
+      referralCode: "",
       workshopName: "",
       phone: "",
       city: "",
@@ -233,6 +245,7 @@ export function RegisterForm({ onPlanChange, advisors = [] }: { onPlanChange?: (
         kvkkConsent: true,
         acquisitionSource: values.acquisitionSource,
         acquisitionAdvisorId: values.acquisitionAdvisorId || undefined,
+        referralCode: values.referralCode || undefined,
       }
 
       const res = await fetch("/api/auth/register", {
@@ -577,6 +590,7 @@ function StepBusinessInfo({
   advisors?: { id: string; label: string }[]
 }) {
   const slug = workshopName.length >= 2 ? slugifyWorkshopCode(workshopName) : ""
+  const acquisitionSource = form.watch("acquisitionSource")
 
   return (
     <div className="space-y-4">
@@ -622,6 +636,36 @@ function StepBusinessInfo({
       <FormField control={form.control} name="acquisitionAdvisorId" render={({ field }) => (
         <FormItem><FormLabel>Satış temsilcisi</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Atanmadı" /></SelectTrigger></FormControl><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
       )} />
+
+      <FormField
+        control={form.control}
+        name="referralCode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Referans kodu{" "}
+              <span className="font-normal text-muted-foreground">
+                ({acquisitionSource === "referral" ? "zorunlu" : "opsiyonel"})
+              </span>
+            </FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  {...field}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  placeholder="ÖRN: ORNEK-OTO"
+                  className="pl-9 uppercase"
+                  onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+                />
+              </div>
+            </FormControl>
+            <p className="text-xs text-muted-foreground">Sizi davet eden iş yerinin paylaştığı kod.</p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <FormField
         control={form.control}
@@ -1101,6 +1145,7 @@ function StepConfirmation({ form }: { form: WizardForm }) {
           {values.workshopEmail && (
             <SummaryRow label="İşletme e-postası" value={values.workshopEmail} />
           )}
+          {values.referralCode && <SummaryRow label="Referans kodu" value={values.referralCode} />}
         </SummarySection>
 
         <SummarySection title="Vergi Bilgileri">

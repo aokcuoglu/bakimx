@@ -110,6 +110,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: EMAIL_IN_USE_ERROR }, { status: 409 })
   }
 
+  // Referans kodu yalnız yeni kayıt için çözülür. Yarım kalmış bir kaydın
+  // doğrulama e-postasını yeniden gönderen resume yolu, sonradan girilen başka
+  // bir kodla mevcut atfı değiştiremez.
+  const referrerWorkshop = data.referralCode
+    ? await prisma.workshop.findUnique({
+        where: { referralCode: data.referralCode },
+        select: { id: true },
+      })
+    : null
+  if (data.referralCode && !referrerWorkshop) {
+    return NextResponse.json({ error: "Referans kodu geçerli değil." }, { status: 400 })
+  }
+
   try {
     const passwordHash = await bcrypt.hash(data.password, 12)
 
@@ -146,8 +159,10 @@ export async function POST(request: Request) {
                 trialStartedAt: null,
                 trialEndsAt: null,
                 planTier: "pro",
-                acquisitionSource: data.acquisitionSource,
+                acquisitionSource: referrerWorkshop ? "referral" : data.acquisitionSource,
                 acquisitionAdvisorId,
+                referredByWorkshopId: referrerWorkshop?.id ?? null,
+                referralCodeUsed: data.referralCode || null,
                 settings: {
                   create: {
                     weekdayStart: data.weekdayStart || "09:00",
