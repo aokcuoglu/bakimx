@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "BakimX iş yeri hesabınızı oluşturun — kart doğrulamasının ardından 7 gün ücretsiz deneme.",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function RegisterPage() {
   if (await isAuthenticated()) {
     redirect("/dashboard")
