@@ -1,8 +1,11 @@
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { ShieldCheck } from "lucide-react"
-import { adminCapabilities, can, getAdminContext, ADMIN_ROLE_LABELS } from "@/lib/admin"
+import { adminCapabilities, can, getAdminContext, isCurrentUserAdmin, ADMIN_ROLE_LABELS } from "@/lib/admin"
+import { getSalesAccess } from "@/lib/sales/access"
 import { logoutAction } from "@/app/(auth)/login/actions"
-import { AdminNav } from "@/app/admin/admin-nav"
+import { AdminShell } from "@/components/layout/admin-shell"
+import { AdminPageTransition } from "@/app/admin/admin-page-transition"
 import { getUnansweredCount } from "@/app/admin/live-chat/data"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
@@ -15,6 +18,28 @@ export const dynamic = "force-dynamic"
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Real gate for the whole console. Server actions re-assert their own capability
   // (defense in depth — actions do not inherit this guard).
+  const hasAdminAccess = await isCurrentUserAdmin()
+
+  // Sales advisors are platform staff, not tenant admins. They intentionally
+  // receive a minimal console shell; all non-sales admin pages retain their
+  // existing getAdminContext() gates.
+  if (!hasAdminAccess) {
+    await getSalesAccess()
+    return (
+      <div className="min-h-screen bg-muted">
+        <header className="border-b bg-card">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <Link href="/admin/sales" className="flex items-center gap-2 font-semibold text-foreground">
+              <ShieldCheck className="size-5 text-primary" /> BakimX Satış
+            </Link>
+            <form action={logoutAction}><Button type="submit" variant="ghost" size="sm">Çıkış</Button></form>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6"><AdminPageTransition>{children}</AdminPageTransition></main>
+      </div>
+    )
+  }
+
   const ctx = await getAdminContext()
 
   // Yanıt bekleyen canlı destek görüşmesi sayısı — konsolun her sayfasında
@@ -24,38 +49,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ? await getUnansweredCount().catch(() => 0)
     : 0
 
-  return (
-    <div className="min-h-screen bg-muted">
-      <header className="border-b bg-card">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2 font-semibold text-foreground">
-            <ShieldCheck className="size-5 text-primary" />
-            BakimX Yönetim
-          </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="hidden sm:inline text-xs text-muted-foreground">
-              {ADMIN_ROLE_LABELS[ctx.adminRole]}
-            </span>
-            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
-              Uygulamaya dön
-            </Link>
-            <form action={logoutAction}>
-              <Button type="submit" variant="ghost" size="sm">
-                Çıkış
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
+  const cookieStore = await cookies()
+  const initialSidebarCollapsed = cookieStore.get("sidebar-state")?.value === "collapsed"
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:flex md:gap-6">
-        <aside className="md:w-52 md:shrink-0">
-          <div className="md:sticky md:top-6">
-            <AdminNav liveChatUnanswered={liveChatUnanswered} capabilities={adminCapabilities(ctx)} />
-          </div>
-        </aside>
-        <main className="min-w-0 flex-1 pt-4 md:pt-0">{children}</main>
-      </div>
-    </div>
+  return (
+    <AdminShell
+      initialSidebarCollapsed={initialSidebarCollapsed}
+      liveChatUnanswered={liveChatUnanswered}
+      capabilities={adminCapabilities(ctx)}
+      userName={[ctx.user.firstName, ctx.user.lastName].filter(Boolean).join(" ") || ctx.user.email}
+      userRoleLabel={ADMIN_ROLE_LABELS[ctx.adminRole]}
+    >
+      <AdminPageTransition>{children}</AdminPageTransition>
+    </AdminShell>
   )
 }

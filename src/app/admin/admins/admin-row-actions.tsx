@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Loader2, LogOut, Power } from "lucide-react"
+import { toast } from "sonner"
 import type { AdminRole } from "@/lib/admin-roles"
 import { ADMIN_ROLES, ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_LABELS } from "@/lib/admin-roles"
 import { Badge } from "@/components/ui/badge"
@@ -43,11 +44,17 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
+  function run(fn: () => Promise<{ ok: boolean; error?: string }>, successMessage: string) {
     setError("")
     startTransition(async () => {
       const res = await fn()
-      if (!res.ok) setError(res.error || "İşlem başarısız")
+      if (!res.ok) {
+        const message = res.error || "İşlem başarısız"
+        setError(message)
+        toast.error(message)
+      } else {
+        toast.success(successMessage)
+      }
     })
   }
 
@@ -66,7 +73,7 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
       <td className="px-3 py-2">
         <Select
           value={admin.role}
-          onValueChange={(v) => v && v !== admin.role && run(() => changePlatformAdminRole(admin.id, v))}
+          onValueChange={(v) => v && v !== admin.role && run(() => changePlatformAdminRole(admin.id, v), "Yönetici rolü güncellendi")}
           disabled={pending}
         >
           <SelectTrigger className="w-40" aria-label={`${admin.email} rolü`}>
@@ -112,7 +119,7 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
             size="sm"
             variant="outline"
             disabled={pending}
-            onClick={() => run(() => setPlatformAdminDisabled(admin.id, !admin.disabled))}
+            onClick={() => run(() => setPlatformAdminDisabled(admin.id, !admin.disabled), admin.disabled ? "Yönetici erişimi açıldı" : "Yönetici erişimi kapatıldı")}
           >
             <Power className="size-3.5" />
             {admin.disabled ? "Erişimi aç" : "Erişimi kapat"}
@@ -121,7 +128,7 @@ export function PlatformAdminRow({ admin }: { admin: PlatformAdminRowData }) {
             size="sm"
             variant="outline"
             disabled={pending || admin.disabled}
-            onClick={() => run(() => revokePlatformAdminSessions(admin.id))}
+            onClick={() => run(() => revokePlatformAdminSessions(admin.id), "Yönetici oturumları kapatıldı")}
           >
             <LogOut className="size-3.5" />
             Oturumları kapat

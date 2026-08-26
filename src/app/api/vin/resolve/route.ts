@@ -3,6 +3,7 @@ import { z } from "zod/v4"
 import { getCurrentUserWithWorkshop } from "@/lib/auth"
 import { type PlanTier } from "@/lib/plan"
 import { assertWritableOr403 } from "@/lib/plan-guard"
+import { assertQuotaAvailable } from "@/lib/rapidapi-quota"
 import { resolveFeature } from "@/lib/features"
 import { rateLimit } from "@/lib/rate-limit"
 import { resolveVinToCatalog } from "@/lib/vin/resolve"
@@ -58,8 +59,22 @@ export async function POST(request: Request) {
     )
   }
 
+  // Per-workshop quota check
   try {
-    const resolution = await resolveVinToCatalog(body.vin, body.hints ?? {})
+    await assertQuotaAvailable(
+      workshop.id,
+      workshop.planTier as PlanTier,
+      workshop.extraVinQuota,
+    )
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Kota limitiniz dolu.", code: "quota_exceeded" },
+      { status: 429 }
+    )
+  }
+
+  try {
+    const resolution = await resolveVinToCatalog(body.vin, body.hints ?? {}, workshop.id)
     return NextResponse.json(resolution)
   } catch (err) {
     if (err instanceof VinLookupError) {

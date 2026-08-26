@@ -7,7 +7,7 @@ import { formatMinor } from "@/lib/billing/pricing"
 import { getHavaleInstructions } from "@/lib/billing/provider"
 import { prisma } from "@/lib/db"
 import { getPlanPackage } from "@/lib/plans-catalog"
-import { getPlanState, isPlanExpiredLock, type PlanTier } from "@/lib/plan"
+import { getPlanState, isPlanExpiredLock, isPlanTier, type PlanTier } from "@/lib/plan"
 import { Button } from "@/components/ui/button"
 import { PRIVATE_ROBOTS } from "@/lib/seo"
 
@@ -21,18 +21,18 @@ const HAVALE = getHavaleInstructions()
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tier?: string; cycle?: string }>
+  searchParams: Promise<{ tier?: string | string[]; cycle?: string | string[] }>
 }) {
   const { workshop } = await getAppData()
   const sp = await searchParams
-  const hasExplicitTier = ["starter", "pro", "premium"].includes(sp.tier ?? "")
-  const tier = (hasExplicitTier ? sp.tier : "pro") as PlanTier
+  const explicitTier = isPlanTier(sp.tier) ? sp.tier : null
+  const tier = explicitTier ?? "pro"
   const cycle = (sp.cycle === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
   const ownedTier = workshop?.subscriptionStatus === "active" ? (workshop.planTier as PlanTier) : null
   // Açık bir paketle gelindiyse (yükseltme VEYA aynı paketi yenileme) doğrudan
   // fatura adımına atla. Aynı paketin yenilenmesi kasıtlı olarak mümkündür
   // (bkz. deriveBillingOrderType → "renewal"); adım 0'da yine seçili görünür.
-  const skipPackageStep = hasExplicitTier
+  const skipPackageStep = explicitTier !== null
 
   // createBillingOrder da aynı kuralı sunucu tarafında zorunlu kılar; bu yalnızca
   // sihirbazın 3 adımını doldurup sonda reddedilmek yerine erken ve net bir mesaj verir.

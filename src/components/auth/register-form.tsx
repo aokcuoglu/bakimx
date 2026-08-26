@@ -24,6 +24,8 @@ import {
   FileText,
   Plus,
   Trash2,
+  CircleCheck,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -48,9 +50,11 @@ import {
 import { CitySelect, DistrictSelect } from "@/components/shared/location-select"
 import { formatPhoneTR } from "@/lib/format"
 import { PLAN_PACKAGES, type PlanPackage } from "@/lib/plans-catalog"
+import { VIN_LOOKUP_QUOTA } from "@/lib/plan"
 import { slugifyWorkshopCode } from "@/lib/workshop-code"
 import { cn } from "@/lib/utils"
 import { trackMarketingEvent } from "@/lib/marketing-analytics"
+import { ACQUISITION_SOURCES, ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 
 const STEPS = [
   { label: "Paket Seçimi" },
@@ -62,7 +66,9 @@ const STEPS = [
 ] as const
 
 const registerWizardSchema = z.object({
-  selectedPlan: z.enum(["starter", "pro", "premium"]),
+  acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
+  acquisitionAdvisorId: z.string().optional().default(""),
+  selectedPlan: z.enum(["lite", "starter", "pro", "premium"]),
   billingPeriod: z.enum(["monthly", "yearly"]),
   workshopName: z.string().min(2, "İş yeri adı zorunludur"),
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
@@ -71,8 +77,8 @@ const registerWizardSchema = z.object({
   address: z.string().min(1, "Adres zorunludur"),
   workshopEmail: z.string().optional().default(""),
   taxOffice: z.string().optional().default(""),
-  taxNumber: z.string().optional().default(""),
-  invoiceTitle: z.string().optional().default(""),
+  taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
+  invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
   weekdayStart: z.string().default("09:00"),
   weekdayEnd: z.string().default("18:00"),
   workingDays: z.string().default("1,2,3,4,5,6"),
@@ -88,7 +94,10 @@ const registerWizardSchema = z.object({
   lastName: z.string().min(1, "Soyad zorunludur"),
   email: z.email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
-  kvkkConsent: z.literal(true, { message: "Devam etmek için aydınlatma metnini onaylamanız gerekir" }),
+  kvkkConsent: z.union([z.literal("on"), z.literal("true"), z.boolean()]).refine(
+    (v) => v === true || v === "on" || v === "true",
+    { message: "Devam etmek için aydınlatma metnini onaylamanız gerekir" },
+  ),
 })
 
 type WizardFormValues = z.infer<typeof registerWizardSchema>
@@ -127,7 +136,7 @@ const ROLE_OPTIONS = [
   { value: "servis_danismani", label: "Servis Danışmanı" },
 ]
 
-export function RegisterForm() {
+export function RegisterForm({ onPlanChange, advisors = [] }: { onPlanChange?: (tier: string, cycle: string) => void; advisors?: { id: string; label: string }[] }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState("")
@@ -143,6 +152,8 @@ export function RegisterForm() {
     defaultValues: {
       selectedPlan: "pro",
       billingPeriod: "monthly",
+      acquisitionSource: "unknown",
+      acquisitionAdvisorId: "",
       workshopName: "",
       phone: "",
       city: "",
@@ -169,6 +180,10 @@ export function RegisterForm() {
   const selectedPlan = form.watch("selectedPlan")
   const workshopName = form.watch("workshopName")
   const city = form.watch("city")
+
+  useEffect(() => {
+    onPlanChange?.(selectedPlan, billingPeriod)
+  }, [selectedPlan, billingPeriod, onPlanChange])
 
   async function goNext() {
     const fields = STEP_FIELDS[currentStep]
@@ -210,12 +225,14 @@ export function RegisterForm() {
         password: values.password,
         workshopEmail: values.workshopEmail || undefined,
         taxOffice: values.taxOffice || undefined,
-        taxNumber: values.taxNumber || undefined,
-        invoiceTitle: values.invoiceTitle || undefined,
+        taxNumber: values.taxNumber,
+        invoiceTitle: values.invoiceTitle,
         weekdayStart: values.weekdayStart,
         weekdayEnd: values.weekdayEnd,
         workingDays: values.workingDays,
         kvkkConsent: true,
+        acquisitionSource: values.acquisitionSource,
+        acquisitionAdvisorId: values.acquisitionAdvisorId || undefined,
       }
 
       const res = await fetch("/api/auth/register", {
@@ -307,7 +324,7 @@ export function RegisterForm() {
                   />
                 )}
                 {currentStep === 1 && (
-                  <StepBusinessInfo form={form} workshopName={workshopName} city={city} />
+                  <StepBusinessInfo form={form} workshopName={workshopName} city={city} advisors={advisors} />
                 )}
                 {currentStep === 2 && <StepTaxAndHours form={form} />}
                 {currentStep === 3 && <StepTeam form={form} />}
@@ -455,7 +472,7 @@ function StepPlanSelection({
         name="selectedPlan"
         render={({ field }) => (
           <FormItem>
-            <div className="grid gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {PLAN_PACKAGES.map((pkg) => (
                 <PlanCard
                   key={pkg.tier}
@@ -486,38 +503,64 @@ function PlanCard({
   onSelect: () => void
 }) {
   const price = billingPeriod === "monthly" ? pkg.monthlyLabel : pkg.yearlyLabel
+  const vinQuota = VIN_LOOKUP_QUOTA[pkg.tier]
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "relative flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all",
+        "relative flex flex-col rounded-xl border-2 p-4 text-left transition-all",
         selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20"
           : "border-border hover:border-primary/40",
       )}
     >
+      {pkg.popular && (
+        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          <Sparkles className="size-3" /> En popüler
+        </span>
+      )}
+
+      <div className="mb-2">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-foreground">{pkg.name}</span>
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground">{pkg.tagline}</p>
+      </div>
+
+      <div className="mb-2">
+        <span className="text-xl font-bold text-foreground">{price}</span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5">KDV dahil</span>
+      </div>
+
+      <p className="mb-2 text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">{pkg.seats} kullanıcı</span> dahil
+      </p>
+
+      {vinQuota > 0 && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{vinQuota.toLocaleString("tr-TR")} kota/ay</span> VIN & katalog
+        </p>
+      )}
+
+      <ul className="space-y-1.5 mt-auto">
+        {pkg.highlights.map((h) => (
+          <li key={h} className="flex items-start gap-2 text-xs text-foreground">
+            <CircleCheck className="size-3.5 text-primary shrink-0 mt-0.5" />
+            <span className="leading-snug">{h}</span>
+          </li>
+        ))}
+      </ul>
+
       <div
         className={cn(
-          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          "mt-3 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           selected ? "border-primary bg-primary" : "border-muted-foreground/40",
         )}
       >
         {selected && <Check className="size-3 text-primary-foreground" />}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">{pkg.name}</span>
-          {pkg.popular && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
-              Popüler
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">{pkg.tagline}</p>
-      </div>
-      <span className="shrink-0 text-sm font-semibold text-foreground">{price}</span>
     </button>
   )
 }
@@ -526,10 +569,12 @@ function StepBusinessInfo({
   form,
   workshopName,
   city,
+  advisors = [],
 }: {
   form: WizardForm
   workshopName: string
   city: string
+  advisors?: { id: string; label: string }[]
 }) {
   const slug = workshopName.length >= 2 ? slugifyWorkshopCode(workshopName) : ""
 
@@ -563,6 +608,20 @@ function StepBusinessInfo({
           </FormItem>
         )}
       />
+
+      <FormField control={form.control} name="acquisitionSource" render={({ field }) => (
+        <FormItem>
+          <FormLabel>BakımX&apos;ı nereden duydunuz?</FormLabel>
+          <Select value={field.value} onValueChange={field.onChange}>
+            <FormControl><SelectTrigger><SelectValue placeholder="Seçiniz" /></SelectTrigger></FormControl>
+            <SelectContent>{ACQUISITION_SOURCE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <FormField control={form.control} name="acquisitionAdvisorId" render={({ field }) => (
+        <FormItem><FormLabel>Satış temsilcisi</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue placeholder="Atanmadı" /></SelectTrigger></FormControl><SelectContent><SelectItem value="">Atanmadı</SelectItem>{advisors.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+      )} />
 
       <FormField
         control={form.control}
@@ -613,7 +672,9 @@ function StepBusinessInfo({
           name="district"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>İlçe</FormLabel>
+              <FormLabel>
+                İlçe <span className="text-muted-foreground font-normal">(opsiyonel)</span>
+              </FormLabel>
               <FormControl>
                 <DistrictSelect
                   city={city}
@@ -685,7 +746,9 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
           name="taxOffice"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vergi dairesi</FormLabel>
+              <FormLabel>
+                Vergi dairesi <span className="text-muted-foreground font-normal">(opsiyonel)</span>
+              </FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Kadıköy VD" />
               </FormControl>
@@ -698,7 +761,7 @@ function StepTaxAndHours({ form }: { form: WizardForm }) {
           name="taxNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vergi numarası</FormLabel>
+              <FormLabel>Vergi / TC kimlik no</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="1234567890" />
               </FormControl>
@@ -1013,8 +1076,6 @@ function StepConfirmation({ form }: { form: WizardForm }) {
     .filter(Boolean)
     .join(", ")
 
-  const hasTaxInfo = values.taxOffice || values.taxNumber || values.invoiceTitle
-
   return (
     <div className="space-y-5">
       <div>
@@ -1042,13 +1103,11 @@ function StepConfirmation({ form }: { form: WizardForm }) {
           )}
         </SummarySection>
 
-        {hasTaxInfo && (
-          <SummarySection title="Vergi Bilgileri">
-            {values.taxOffice && <SummaryRow label="Vergi dairesi" value={values.taxOffice} />}
-            {values.taxNumber && <SummaryRow label="Vergi no" value={values.taxNumber} />}
-            {values.invoiceTitle && <SummaryRow label="Fatura ünvanı" value={values.invoiceTitle} />}
-          </SummarySection>
-        )}
+        <SummarySection title="Vergi Bilgileri">
+          <SummaryRow label="Vergi dairesi" value={values.taxOffice || "Belirtilmedi"} />
+          <SummaryRow label="Vergi / TC no" value={values.taxNumber} />
+          <SummaryRow label="Fatura ünvanı" value={values.invoiceTitle} />
+        </SummarySection>
 
         <SummarySection title="Çalışma Saatleri">
           <SummaryRow label="Günler" value={dayNames || "Belirtilmedi"} />
@@ -1083,7 +1142,7 @@ function StepConfirmation({ form }: { form: WizardForm }) {
             <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer">
               <FormControl>
                 <Checkbox
-                  checked={field.value === true}
+                  checked={field.value === true || field.value === "on" || field.value === "true"}
                   onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
                   className="mt-0.5"
                   aria-label="Kullanım koşulları ve aydınlatma metinlerini onayla"

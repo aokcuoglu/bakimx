@@ -3,6 +3,9 @@ import { hasFeature, type GatedFeature, type PlanTier } from "@/lib/plan"
 
 /** Founder-toggleable gated features (the GatedFeature union, enumerated). */
 export const GATED_FEATURES: GatedFeature[] = [
+  "ocrIntake",
+  "photoChecklist",
+  "damageMap",
   "aiAdvisor",
   "eInvoice",
   "multiBranch",
@@ -15,6 +18,9 @@ export const GATED_FEATURES: GatedFeature[] = [
 ]
 
 export const FEATURE_LABELS: Record<GatedFeature, string> = {
+  ocrIntake: "OCR ile ruhsat okuma",
+  photoChecklist: "Fotoğraf kontrol listesi",
+  damageMap: "Hasar haritası",
   aiAdvisor: "AI Servis Danışmanı",
   eInvoice: "e-Fatura",
   multiBranch: "Çoklu şube",

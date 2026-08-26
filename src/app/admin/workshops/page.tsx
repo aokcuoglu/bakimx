@@ -14,11 +14,13 @@ import {
   type WorkshopListQuery,
   type WorkshopListSearchParams,
 } from "@/lib/admin-workshop-filters"
+import { ACQUISITION_SOURCE_OPTIONS } from "@/lib/acquisition-sources"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FilterSelect } from "@/components/shared/filter-select"
 import { EmptyState } from "@/components/shared/empty-state"
 import { BrandSpinner } from "@/components/shared/brand-spinner"
+import { prisma } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
@@ -96,6 +98,7 @@ export default async function AdminWorkshopsPage({
   const ctx = await getAdminContext()
   const query = parseWorkshopListParams(await searchParams)
   const filtered = isWorkshopListFiltered(query)
+  const advisors = await prisma.salesAdvisor.findMany({ where: { disabledAt: null }, include: { user: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "asc" } })
 
   return (
     <div className="space-y-6">
@@ -129,6 +132,14 @@ export default async function AdminWorkshopsPage({
             options={WORKSHOP_APPROVAL_OPTIONS}
             className="w-full sm:w-44"
           />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          Edinim kaynağı
+          <FilterSelect name="acquisitionSource" defaultValue={query.acquisitionSource ?? ""} placeholder="Tümü" options={[{ value: "", label: "Tümü" }, ...ACQUISITION_SOURCE_OPTIONS]} className="w-full sm:w-44" />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          Satış temsilcisi
+          <FilterSelect name="acquisitionAdvisorId" defaultValue={query.acquisitionAdvisorId ?? ""} placeholder="Tümü" options={[{ value: "", label: "Tümü" }, ...advisors.map((a) => ({ value: a.id, label: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email || "—" }))]} className="w-full sm:w-48" />
         </label>
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Abonelik

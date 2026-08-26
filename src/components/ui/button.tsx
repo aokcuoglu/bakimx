@@ -10,6 +10,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        gradient:
+          "relative overflow-hidden bg-gradient-to-br from-primary via-primary to-navy text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 hover:brightness-110 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:hover:translate-y-0 before:pointer-events-none before:absolute before:inset-0 before:translate-x-[-150%] before:skew-x-[-12deg] before:bg-gradient-to-r before:from-transparent before:via-primary-foreground/25 before:to-transparent before:transition-transform before:duration-700 hover:before:translate-x-[150%] motion-reduce:before:transition-none motion-reduce:hover:before:translate-x-[-150%]",
         navy: "bg-navy text-navy-foreground hover:bg-navy/90",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",

@@ -4,7 +4,7 @@ export const MARKETING_EVENT_NAMES = [
 ] as const
 
 export type MarketingEventName = (typeof MARKETING_EVENT_NAMES)[number]
-export type PlanTier = "starter" | "pro" | "premium"
+export type PlanTier = "lite" | "starter" | "pro" | "premium"
 export type BillingCycle = "monthly" | "yearly"
 
 type Common = {

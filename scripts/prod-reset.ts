@@ -92,6 +92,14 @@ export const TENANT_TABLES = [
   // listede olmasaydı zaten iptal ederdi. Sıfırlama sonrası üyelik `ADMIN_EMAILS`
   // bootstrap'ından yeniden kurulur (bkz. dosya başı, `src/lib/admin.ts`).
   "PlatformAdmin",
+  // Satış danışmanı profilleri personel User'ına, satış kayıtları ise demo ve
+  // dönüşmüş Workshop satırlarına FK taşır. Bu reset tüm tenant/user verisini
+  // sildiği için aynı transaction içinde bunlar da temizlenmelidir.
+  "SalesAdvisor",
+  "SalesLead",
+  "SalesActivity",
+  "SalesDemoSession",
+  "SalesCommission",
   "CronRun",
   // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
   // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri

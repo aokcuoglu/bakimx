@@ -31,7 +31,7 @@ export function BrandRail({
   const isSummary = step === 2
 
   return (
-    <aside className="relative isolate flex flex-col overflow-hidden bg-navy text-navy-foreground">
+    <aside className="relative isolate flex flex-col h-full overflow-hidden bg-navy text-navy-foreground">
       {/* derinlik için yumuşak gradient + ışık */}
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-navy via-navy to-navy-light" />
       <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/25 blur-3xl" />

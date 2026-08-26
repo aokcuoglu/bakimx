@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Eye, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { startImpersonation } from "@/app/admin/impersonation-actions"
 
@@ -16,7 +17,10 @@ export function ImpersonateButton({ workshopId }: { workshopId: string }) {
     startTransition(async () => {
       const res = await startImpersonation(workshopId)
       // A successful start redirects; reaching here means it returned an error.
-      if (res && !res.ok) setError(res.error)
+      if (res && !res.ok) {
+        setError(res.error)
+        toast.error(res.error)
+      }
     })
   }
 

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { BrowserFrame, PhoneFrame } from "@/components/sections/DeviceFrame";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Reveal } from "@/components/shared/reveal";
 
 interface Feature {
@@ -19,7 +20,7 @@ const features: Feature[] = [
     kicker: "İş Emri",
     title: "Tek iş emrinde her şey: fotoğraf, kalem, onay",
     description:
-      "Kabulden teslimata bütün süreç tek sayfada. Fotoğraf kanıtı ve hasar haritası iş emrine kilitlenir; işlem geçmişi kim-ne-zaman yaptı gösterir.",
+      "Kabulden teslimata bütün süreç tek sayfada; fotoğraf kanıtı değiştirilemez, işlem geçmişi kayıt altında.",
     bullets: [
       "Fotoğraf checklist ve hasar işaretleme",
       "Kanıtlar değiştirilemez — anlaşmazlık biter",
@@ -37,7 +38,7 @@ const features: Feature[] = [
     kicker: "Parça Kataloğu",
     title: "Şasiden araca uygun parçayı bulun",
     description:
-      "Ruhsattan gelen şasi (VIN) numarası araç modeliyle eşleşir; iş emrine parça eklerken yalnız o araca uyan parçaları görürsünüz.",
+      "İş emrine parça eklerken yalnız o araca uyanları görürsünüz — elle arama ve yanlış parça riski yok.",
     bullets: [
       "VIN'den otomatik araç eşleşmesi",
       "Araca uygun parça listesi, elle arama yok",
@@ -55,7 +56,7 @@ const features: Feature[] = [
     kicker: "Müşteri Deneyimi",
     title: "Müşteriniz aracını canlı izler",
     description:
-      "Her iş emri için güvenli bir takip linki oluşur. Müşteri telefonundan aracın durumunu, fotoğrafları ve teklifi görür — sizi aramasına gerek kalmaz.",
+      "Her iş emri için güvenli takip linki oluşur; müşteri durum ve teklifi telefonundan görür, sizi aramasına gerek kalmaz.",
     bullets: [
       "Kişiye özel güvenli takip linki",
       "WhatsApp'tan tek dokunuşla paylaşım",
@@ -76,14 +77,10 @@ export function FeatureShowcaseSection() {
   return (
     <section id="ozellikler" className="scroll-mt-24 bg-background py-16 sm:py-24 overflow-x-clip">
       <div className="mx-auto max-w-7xl space-y-20 px-4 sm:px-6 sm:space-y-28 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Oto servis işlerinizi tek yerden yönetin
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            Araç kabulünden müşteri onayına kadar günlük servis akışını telefonunuzdan takip edin.
-          </p>
-        </div>
+        <SectionHeading
+          title="Oto servis işlerinizi tek yerden yönetin"
+          subtitle="Araç kabulünden müşteri onayına kadar günlük servis akışını telefonunuzdan takip edin."
+        />
         {features.map((feature, i) => {
           const reversed = i % 2 === 1;
           return (

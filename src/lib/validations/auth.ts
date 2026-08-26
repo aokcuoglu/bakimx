@@ -1,5 +1,6 @@
 import { z } from "zod/v4"
 import { isEmailIdentifier } from "@/lib/user-identity"
+import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
 
 /**
  * Giriş formu tek kimlik alanı taşır (BAK-40): değer `@` içeriyorsa e-posta
@@ -23,6 +24,8 @@ export const loginSchema = z
   })
 
 export const registerSchema = z.object({
+  acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
+  acquisitionAdvisorId: z.string().optional().default(""),
   email: z.email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
   firstName: z.string().min(1, "Ad zorunludur"),
@@ -31,19 +34,20 @@ export const registerSchema = z.object({
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz (en az 10 hane)"),
   city: z.string().min(1, "Şehir zorunludur"),
   address: z.string().min(1, "Adres zorunludur"),
-  district: z.string().optional(),
+  district: z.string().optional().default(""),
   workshopEmail: z
     .string()
     .optional()
+    .default("")
     .refine((v) => !v || z.email().safeParse(v).success, {
       message: "Geçerli bir e-posta adresi giriniz",
     }),
-  taxOffice: z.string().optional(),
-  taxNumber: z.string().optional(),
-  invoiceTitle: z.string().optional(),
-  weekdayStart: z.string().optional(),
-  weekdayEnd: z.string().optional(),
-  workingDays: z.string().optional(),
+  taxOffice: z.string().optional().default(""),
+  taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
+  invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
+  weekdayStart: z.string().optional().default("09:00"),
+  weekdayEnd: z.string().optional().default("18:00"),
+  workingDays: z.string().optional().default("1,2,3,4,5,6"),
   teamMembers: z
     .array(
       z.object({

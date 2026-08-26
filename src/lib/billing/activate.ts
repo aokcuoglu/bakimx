@@ -91,5 +91,8 @@ export async function activateBillingOrder(
       actor: opts.actor,
     })
   )
+  // Hakediş dış ödeme yolundan da manuel onay yolundan da aynı idempotent
+  // noktada açılır. Tutarı kural motoru değil yönetici belirler.
+  await (await import("@/lib/sales/commission")).createCommissionDraftForBillingOrder(order.id)
   return { ok: true }
 }

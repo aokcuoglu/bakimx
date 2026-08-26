@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { toast } from "sonner"
 import { ArrowLeft, CheckCircle2, Loader2, MoonStar, RotateCcw, Send } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { MAX_MESSAGE_LENGTH } from "@/lib/validations/live-chat"
@@ -60,10 +64,12 @@ function ConversationList({
   rows,
   filter,
   selectedId,
+  onSelect,
 }: {
   rows: InboxRow[]
   filter: InboxFilter
   selectedId: string | null
+  onSelect: (event: React.MouseEvent<HTMLAnchorElement>, href: string, id: string) => void
 }) {
   return (
     <div className="space-y-3">
@@ -92,6 +98,8 @@ function ConversationList({
             <li key={row.id}>
               <Link
                 href={`/admin/live-chat?filter=${filter}&c=${row.id}`}
+                prefetch
+                onClick={(event) => onSelect(event, `/admin/live-chat?filter=${filter}&c=${row.id}`, row.id)}
                 className={cn(
                   "flex flex-col gap-1 px-3 py-2.5 transition-colors hover:bg-muted",
                   selectedId === row.id && "bg-primary/5",
@@ -126,6 +134,29 @@ function ConversationList({
   )
 }
 
+function ThreadPanelLoading() {
+  return (
+    <div className="flex min-h-[60vh] flex-col rounded-lg border bg-card" aria-busy="true" aria-live="polite">
+      <div className="flex items-center gap-3 border-b px-3 py-3">
+        <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col justify-end gap-3 px-3 py-4">
+        <Skeleton className="h-14 w-3/5 rounded-2xl" />
+        <Skeleton className="ml-auto h-12 w-2/5 rounded-2xl" />
+        <Skeleton className="h-16 w-4/5 rounded-2xl" />
+      </div>
+      <div className="border-t p-3">
+        <Skeleton className="h-14 w-full rounded-md" />
+      </div>
+      <span className="sr-only">Görüşme yükleniyor</span>
+    </div>
+  )
+}
+
 function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFilter }) {
   const [draft, setDraft] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -150,15 +181,25 @@ function ThreadPanel({ thread, filter }: { thread: ThreadDetail; filter: InboxFi
     setError(null)
     startTransition(async () => {
       const result = await sendAgentReplyAction(thread.id, body)
-      if (result.ok) setDraft("")
-      else setError(result.error)
+      if (result.ok) {
+        setDraft("")
+        toast.success("Yanıt gönderildi")
+      } else {
+        setError(result.error)
+        toast.error(result.error)
+      }
     })
   }
 
   function toggleStatus() {
     startTransition(async () => {
       const result = await setConversationStatusAction(thread.id, thread.status === "open" ? "closed" : "open")
-      if (!result.ok) setError(result.error)
+      if (!result.ok) {
+        setError(result.error)
+        toast.error(result.error)
+      } else {
+        toast.success(thread.status === "open" ? "Görüşme kapatıldı" : "Görüşme yeniden açıldı")
+      }
     })
   }
 
@@ -268,23 +309,71 @@ export function LiveChatInbox({
   thread: ThreadDetail | null
   filter: InboxFilter
 }) {
-  useAutoRefresh(true)
+  const router = useRouter()
+  const reduceMotion = useReducedMotion()
+  const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(null)
+  const [isSelecting, startSelecting] = useTransition()
+
+  useAutoRefresh(!isSelecting)
+
+  function selectConversation(event: React.MouseEvent<HTMLAnchorElement>, href: string, id: string) {
+    // Orta tık / yeni sekme gibi tarayıcı davranışları Link'in varsayılanında kalır.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || id === thread?.id) return
+    event.preventDefault()
+    setPendingSelectionId(id)
+    startSelecting(() => router.push(href))
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <div className={cn(thread && "hidden lg:block")}>
-        <ConversationList rows={rows} filter={filter} selectedId={thread?.id ?? null} />
+      <div className={cn((thread || isSelecting) && "hidden lg:block")}>
+        <ConversationList
+          rows={rows}
+          filter={filter}
+          selectedId={isSelecting ? pendingSelectionId : thread?.id ?? null}
+          onSelect={selectConversation}
+        />
       </div>
-      <div className={cn(!thread && "hidden lg:block")}>
-        {thread ? (
-          <ThreadPanel thread={thread} filter={filter} />
-        ) : (
-          <div className="flex min-h-[60vh] items-center justify-center rounded-lg border border-dashed">
-            <p className="px-6 text-center text-sm text-muted-foreground">
-              Yanıtlamak için soldan bir görüşme seçin.
-            </p>
-          </div>
-        )}
+      <div className={cn(!thread && !isSelecting && "hidden lg:block")}>
+        <AnimatePresence initial={false} mode="wait">
+          {isSelecting ? (
+            <motion.div
+              key="thread-loading"
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+              transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+            >
+              <ThreadPanelLoading />
+            </motion.div>
+          ) : thread ? (
+            <motion.div
+              key={thread.id}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+              transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
+            >
+              <ThreadPanel thread={thread} filter={filter} />
+            </motion.div>
+          ) : (
+            <div className="flex min-h-[60vh] items-center justify-center rounded-lg border border-dashed bg-card px-6">
+              <div className="max-w-sm text-center">
+                <Image
+                  src="/illustrations/live-chat-empty.svg"
+                  alt="Otomotiv hizmeti illüstrasyonu"
+                  width={942}
+                  height={688}
+                  className="mx-auto w-52"
+                />
+                <h2 className="mt-5 text-base font-semibold text-foreground">Bir görüşme seçin</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Soldaki listeden bir görüşme açarak müşterinize yanıt verin.
+                </p>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

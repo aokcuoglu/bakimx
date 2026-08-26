@@ -1,9 +1,12 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Loader2 } from "lucide-react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { toast } from "sonner"
+import { Loader2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { setWorkshopFeatureOverride, clearWorkshopFeatureOverride } from "@/app/admin/actions"
 
 export interface FlagRow {
@@ -17,64 +20,106 @@ export interface FlagRow {
 function FlagItem({ workshopId, f }: { workshopId: string; f: FlagRow }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
+  const [effective, setEffective] = useState(f.effective)
+  const [hasOverride, setHasOverride] = useState(Boolean(f.override))
+  const reduceMotion = useReducedMotion()
+  const compact = f.key === "damageMap"
 
-  function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
+  function run(
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    onSuccess: () => void,
+    onError: () => void,
+  ) {
     setError("")
     startTransition(async () => {
       const res = await fn()
-      if (!res.ok) setError(res.error || "İşlem başarısız")
+      if (res.ok) {
+        onSuccess()
+        toast.success("Özellik ayarı güncellendi")
+      } else {
+        onError()
+        const message = res.error || "İşlem başarısız"
+        setError(message)
+        toast.error(message)
+      }
     })
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+    <motion.div
+      layout={!reduceMotion}
+      animate={reduceMotion ? undefined : { scale: pending ? 0.995 : 1 }}
+      transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+      className={`grid rounded-xl border bg-muted/30 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center ${compact ? "gap-3 p-3" : "gap-4 p-4"}`}
+    >
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-foreground">{f.label}</span>
-          <Badge variant={f.effective ? "default" : "secondary"}>
-            {f.effective ? "açık" : "kapalı"}
-          </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`${compact ? "text-sm" : "text-base"} font-semibold text-foreground`}>{f.label}</span>
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={effective ? "enabled" : "disabled"}
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0, scale: 0.9 }}
+              transition={{ duration: reduceMotion ? 0 : 0.14, ease: "easeOut" }}
+            >
+              <Badge variant={effective ? "default" : "secondary"} className="px-2.5">
+                {effective ? "açık" : "kapalı"}
+              </Badge>
+            </motion.div>
+          </AnimatePresence>
           {f.override && (
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary-strong">
               override{f.override.expiresAt ? ` · ${new Date(f.override.expiresAt).toLocaleDateString("tr-TR")}` : ""}
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="mt-1 text-sm text-muted-foreground">
           Plan varsayılanı: {f.tierGrants ? "açık" : "kapalı"}
         </p>
-        {error && <p className="text-xs text-destructive-strong mt-0.5">{error}</p>}
+        {error && <p className="mt-1 text-xs text-destructive-strong" role="alert">{error}</p>}
       </div>
 
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
         {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Kapalı</span>
+          <Switch
+            checked={effective}
+            disabled={pending}
+            onCheckedChange={(enabled) => {
+              const previous = effective
+              setEffective(enabled)
+              run(
+                () => setWorkshopFeatureOverride(workshopId, f.key, enabled),
+                () => setHasOverride(true),
+                () => setEffective(previous),
+              )
+            }}
+            aria-label={`${f.label} özelliğini ${effective ? "kapat" : "aç"}`}
+          />
+          <span className="text-sm font-medium text-foreground">Açık</span>
+        </div>
         <Button
-          disabled={pending || (f.override?.enabled === true)}
-          onClick={() => run(() => setWorkshopFeatureOverride(workshopId, f.key, true))}
-          variant="outline"
-          size="sm"
-        >
-          Aç
-        </Button>
-        <Button
-          disabled={pending || (f.override?.enabled === false)}
-          onClick={() => run(() => setWorkshopFeatureOverride(workshopId, f.key, false))}
-          variant="outline"
-          size="sm"
-        >
-          Kapat
-        </Button>
-        <Button
-          disabled={pending || !f.override}
-          onClick={() => run(() => clearWorkshopFeatureOverride(workshopId, f.key))}
+          disabled={pending || !hasOverride}
+          onClick={() => {
+            const previous = effective
+            setEffective(f.tierGrants)
+            run(
+              () => clearWorkshopFeatureOverride(workshopId, f.key),
+              () => setHasOverride(false),
+              () => setEffective(previous),
+            )
+          }}
           variant="ghost"
           size="sm"
           aria-label="Özel ayarı kaldır ve plan varsayılanına dön"
         >
+          <RotateCcw />
           Sıfırla
         </Button>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

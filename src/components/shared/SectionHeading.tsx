@@ -1,4 +1,7 @@
+import { BrandEyebrow } from "@/components/shared/brand-decor";
+
 interface SectionHeadingProps {
+  /** Mono uppercase eyebrow etiketi — markanın "veri sesi" (bkz. brand-decor). */
   badge?: string;
   title: string;
   titleHighlight?: string;
@@ -7,6 +10,11 @@ interface SectionHeadingProps {
   align?: "center" | "left";
 }
 
+/**
+ * Landing bölüm başlıklarının tek kaynağı: mono eyebrow + tek ölçekli H2 +
+ * alt metin. Bölümler kendi başlıklarını elle yazmaz; aksi halde iki farklı
+ * rozet dili ve iki H2 ölçeği bir arada yaşıyordu (UI denetimi §2.2–2.3).
+ */
 export function SectionHeading({
   badge,
   title,
@@ -20,12 +28,12 @@ export function SectionHeading({
 
   return (
     <div className={`${alignment} ${maxW} ${className}`}>
-      {badge && (
-        <div className="mb-4 inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-foreground">
-          {badge}
-        </div>
-      )}
-      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+      {badge && <BrandEyebrow>{badge}</BrandEyebrow>}
+      <h2
+        className={`text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl ${
+          badge ? "mt-3" : ""
+        }`}
+      >
         {titleHighlight ? (
           <>
             {title} <span className="text-primary">{titleHighlight}</span>
@@ -35,7 +43,7 @@ export function SectionHeading({
         )}
       </h2>
       {subtitle && (
-        <p className="mt-4 text-muted-foreground text-base sm:text-lg leading-relaxed">
+        <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
           {subtitle}
         </p>
       )}

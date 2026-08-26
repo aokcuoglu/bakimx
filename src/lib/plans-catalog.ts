@@ -23,19 +23,37 @@ export interface PlanPackage {
 
 export const PLAN_PACKAGES: PlanPackage[] = [
   {
+    tier: "lite",
+    name: "Lite",
+    monthlyPrice: 499,
+    yearlyPrice: 4990,
+    monthlyLabel: "₺499/ay",
+    yearlyLabel: "₺4.990/yıl",
+    tagline: "Temel araç kabul ve müşteri yönetimi",
+    seats: PLAN_SEATS.lite,
+    highlights: [
+      "Sınırsız müşteri & araç kaydı",
+      "Temel servis kaydı",
+      "Temel fotoğraf yükleme",
+      "Müşteriye link / WhatsApp paylaşımı",
+    ],
+  },
+  {
     tier: "starter",
     name: "Başlangıç",
     monthlyPrice: 749,
     yearlyPrice: 7490,
     monthlyLabel: "₺749/ay",
     yearlyLabel: "₺7.490/yıl",
-    tagline: "Tek kullanıcı, temel araç kabul akışı",
+    tagline: "OCR, fotoğraf checklist & temel katalog",
     seats: PLAN_SEATS.starter,
     highlights: [
       "Mobil araç kabul + ruhsat OCR",
       "Fotoğraf checklist'i & hasar haritası",
+      "Tahsilat, kasa & alacak yaşlandırma",
+      "Araç pasaportu & servis geçmişi",
+      "Parça kataloğu (1.000 kota/ay)",
       "Müşteriye link / WhatsApp paylaşımı",
-      "Sınırsız müşteri & araç kaydı",
     ],
   },
   {
@@ -49,10 +67,11 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     popular: true,
     seats: PLAN_SEATS.pro,
     highlights: [
-      "Tahsilat, kasa & alacak yaşlandırma",
-      "Parça/stok, tedarikçi, randevu",
-      "Çok kanallı bildirim & analitik",
-      "Araç pasaportu & servis geçmişi",
+      "Başlangıç'taki her şey",
+      "5 kullanıcı dahil",
+      "VIN'den araç tanıma & parça stok",
+      "Randevu & çok kanallı bildirim",
+      "Analitik & raporlama (5.000 kota/ay)",
     ],
   },
   {
@@ -66,10 +85,11 @@ export const PLAN_PACKAGES: PlanPackage[] = [
     seats: PLAN_SEATS.premium,
     highlights: [
       "Profesyonel'deki her şey",
+      "15 kullanıcı dahil",
       "e-Fatura / e-Arşiv entegrasyonu",
       "AI servis danışmanı",
       "Kaynaklı parça piyasa araştırması",
-      "Çoklu şube & gelişmiş yetkilendirme",
+      "Çoklu şube & gelişmiş yetkilendirme (15.000 kota/ay)",
     ],
   },
 ]

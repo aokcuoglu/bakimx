@@ -25,6 +25,8 @@ const EXACT_LABELS: Record<string, string> = {
   password_reset: "Şifre Sıfırlama",
   workshop_approved: "Hesabınız Onaylandı",
   workshop_rejected: "Başvuru Sonucu",
+  application_received: "Başvuru Alındı",
+  new_application_admin: "Yeni İş Yeri Başvurusu",
   test: "Test Gönderimi",
 }
 
@@ -34,6 +36,9 @@ const PREFIX_LABELS: [prefix: string, label: string][] = [
   ["payment_receipt", "Ödeme Makbuzu"],
   ["trial_expiry_t", "Deneme Süresi Hatırlatması"],
   ["sub_expiry_t", "Abonelik Hatırlatması"],
+  ["stuck_txn_alert", "Takılı Ödeme İşlemi Uyarısı"],
+  ["hash_fail_alert", "Ödeme Doğrulama Hatası Uyarısı"],
+  ["tami_misconfig_alert", "Ödeme Yapılandırması Uyarısı"],
 ]
 
 /**

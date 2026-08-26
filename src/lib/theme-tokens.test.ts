@@ -425,11 +425,6 @@ const IMAGE_PLACEHOLDER = "Görsel yer tutucu ikonu; ürünün adı/metni yanın
 const SEPARATOR_DOT = "Ayraç noktası; kaldırılsa bilgi kaybı yok."
 
 const OPACITY_EXCEPTIONS: OpacityException[] = [
-  // --- Alert: zemini sabit `bg-card`, açıklama metni başlıktan bir ton açık.
-  { file: "components/ui/alert.tsx", className: "text-destructive-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
-  { file: "components/ui/alert.tsx", className: "text-success-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
-  { file: "components/ui/alert.tsx", className: "text-warning-strong/90", surface: "card", reason: "Alert zemini her varyantta bg-card; açıklama başlıktan bir ton açık." },
-
   // --- Dekoratif grafikler
   { file: "components/damage/vehicle-damage-map.tsx", className: "text-border/40", decorative: true, reason: "Araç şemasının panel çizgileri; hasar işaretleri tam kontrastta ayrı katmanda." },
   { file: "components/shared/brand-spinner.tsx", className: "text-brand/70", decorative: true, reason: "aria-hidden çark grafiği; durumu sr-only 'Yükleniyor' metni bildiriyor." },
@@ -653,14 +648,6 @@ const OPACITY_UTILITY_EXCEPTIONS: OpacityUtilityException[] = [
     reason:
       "Çipin ✕ kaldırma düğmesi; içinde metin yok (yalnız `XIcon`), silinecek etiket " +
       "aynı çipte tam opaklıkta duruyor ve hover'da tam opaklığa çıkıyor.",
-  },
-  {
-    file: "components/sections/PartnersStrip.tsx",
-    className: "opacity-60",
-    reason:
-      "Landing iş ortağı logoları — `grayscale` ile birlikte verilen bilinçli monokrom " +
-      "işlem, hover'da tam renge dönüyor. Soldurulan şey `<Image>`, metin değil; " +
-      "ortak adı `alt` metninde tam olarak duruyor.",
   },
 
   // --- Ölçülebilen ve geçen tek durak

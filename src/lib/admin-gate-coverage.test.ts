@@ -20,6 +20,26 @@ const ADMIN_DIR = join(import.meta.dir, "..", "app", "admin")
 /** Kapıdan bilerek muaf mutasyonlar. Anahtar: "dosya::fonksiyon". */
 const ALLOWLIST = new Map<string, string>([
   [
+    "sales/actions.ts::createSalesLead",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::setSalesLeadStatus",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::addSalesActivity",
+    "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
+  ],
+  [
+    "sales/actions.ts::updateSalesCommission",
+    "Hakediş action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışmanların tutar veya ödeme durumuna erişimi yoktur.",
+  ],
+  [
+    "sales/actions.ts::convertSalesLead",
+    "İş yeri açma action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışman üretim tenant'ı oluşturamaz.",
+  ],
+  [
     "impersonation-actions.ts::stopImpersonation",
     "Kendi impersonation oturumunu KAPATMA işlemi. Yetki kapısına bağlansaydı, yetkisi geri alınmış bir yönetici açık oturumdan çıkamaz hâle gelirdi; işlem yalnız çerezdeki kendi oturumunu sonlandırır.",
   ],

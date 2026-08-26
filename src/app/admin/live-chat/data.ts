@@ -61,7 +61,19 @@ export async function getInbox(filter: InboxFilter): Promise<InboxRow[]> {
     // Son 5 mesaj: önizleme otomatik (system) metinleri ATLAR. Aksi hâlde
     // mesai dışı açılan her görüşme, ziyaretçinin asıl sorusu yerine kendi
     // çevrimdışı şablonumuzu gösterirdi — listede hepsi birbirinin aynı olurdu.
-    include: { messages: { orderBy: { createdAt: "desc" }, take: 5 } },
+    select: {
+      id: true,
+      visitorName: true,
+      visitorEmail: true,
+      visitorPhone: true,
+      status: true,
+      startedOffline: true,
+      lastVisitorMessageAt: true,
+      agentLastReadAt: true,
+      lastMessageAt: true,
+      createdAt: true,
+      messages: { select: { sender: true, body: true }, orderBy: { createdAt: "desc" }, take: 5 },
+    },
   })
 
   return conversations.map((c) => ({
@@ -91,7 +103,22 @@ export async function getUnansweredCount(): Promise<number> {
 export async function getThread(conversationId: string): Promise<ThreadDetail | null> {
   const conversation = await prisma.liveChatConversation.findUnique({
     where: { id: conversationId },
-    include: { messages: { orderBy: { createdAt: "asc" }, take: 500 } },
+    select: {
+      id: true,
+      visitorName: true,
+      visitorEmail: true,
+      visitorPhone: true,
+      status: true,
+      startedOffline: true,
+      pageUrl: true,
+      clientIp: true,
+      createdAt: true,
+      messages: {
+        select: { id: true, sender: true, agentEmail: true, body: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+        take: 500,
+      },
+    },
   })
   if (!conversation) return null
 

@@ -9,6 +9,10 @@ import {
   PLAN_SEATS,
   getSeatLimit,
   seatLimitMessage,
+  VIN_LOOKUP_QUOTA,
+  PLAN_LABELS,
+  PLAN_TIERS,
+  isPlanTier,
 } from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
@@ -225,4 +229,60 @@ test("tek koltuklu pakette mesaj nedeni açıkça anlatır", () => {
   expect(message).toContain("Başlangıç")
   expect(message).toContain("tek kullanıcı")
   expect(message).toContain("yükseltmeniz")
+})
+
+// --- Lite tier tests ---------------------------------------------------------
+
+test("lite tier has rank 0 (below starter)", () => {
+  expect(PLAN_SEATS.lite).toBe(1)
+  expect(PLAN_LABELS.lite).toBe("Lite")
+  expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
+})
+
+test("checkout tier doğrulaması Lite dahil merkezi paket listesini kullanır", () => {
+  expect(PLAN_TIERS).toEqual(["lite", "starter", "pro", "premium"])
+  for (const tier of PLAN_TIERS) expect(isPlanTier(tier)).toBe(true)
+  expect(isPlanTier("enterprise")).toBe(false)
+  expect(isPlanTier(["lite"])).toBe(false)
+})
+
+test("ocrIntake is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "ocrIntake")).toBe(false)
+  expect(hasFeature("starter", "ocrIntake")).toBe(true)
+  expect(hasFeature("pro", "ocrIntake")).toBe(true)
+  expect(hasFeature("premium", "ocrIntake")).toBe(true)
+})
+
+test("photoChecklist is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "photoChecklist")).toBe(false)
+  expect(hasFeature("starter", "photoChecklist")).toBe(true)
+  expect(hasFeature("pro", "photoChecklist")).toBe(true)
+  expect(hasFeature("premium", "photoChecklist")).toBe(true)
+})
+
+test("damageMap is gated to starter tier and above", () => {
+  expect(hasFeature("lite", "damageMap")).toBe(false)
+  expect(hasFeature("starter", "damageMap")).toBe(true)
+  expect(hasFeature("pro", "damageMap")).toBe(true)
+  expect(hasFeature("premium", "damageMap")).toBe(true)
+})
+
+test("partsCatalog is available from starter tier (not lite)", () => {
+  expect(hasFeature("lite", "partsCatalog")).toBe(false)
+  expect(hasFeature("starter", "partsCatalog")).toBe(true)
+})
+
+test("vinLookup requires pro tier (not available in lite or starter)", () => {
+  expect(hasFeature("lite", "vinLookup")).toBe(false)
+  expect(hasFeature("starter", "vinLookup")).toBe(false)
+  expect(hasFeature("pro", "vinLookup")).toBe(true)
+})
+
+// --- VIN quota tests ---------------------------------------------------------
+
+test("VIN quotas increase by tier", () => {
+  expect(VIN_LOOKUP_QUOTA.lite).toBe(0)
+  expect(VIN_LOOKUP_QUOTA.starter).toBe(1_000)
+  expect(VIN_LOOKUP_QUOTA.pro).toBe(5_000)
+  expect(VIN_LOOKUP_QUOTA.premium).toBe(15_000)
 })

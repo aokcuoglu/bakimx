@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import {
   ScanLine,
   CheckCircle2,
-  ArrowRight,
   Sparkles,
   RotateCcw,
   Pencil,
@@ -21,6 +19,9 @@ import {
  * gösterir. Ziyaretçiye "aha" anını yaşatıp kayda yönlendirir.
  *
  * Dürüstlük: parçalar araca UYGUN katalog parçalarıdır; fiyat/temin iddiası yoktur.
+ * Belge GERÇEK ruhsat düzenine göre çizilir (alan kodları A/B/C/D/E..., mavi
+ * çerçeve, kırmızı kaşe) ama içerik temsilidir — kart başlığındaki
+ * "Demo · örnek ruhsat" etiketi bunu açıkça söyler.
  */
 
 type Field = {
@@ -136,8 +137,8 @@ export function RuhsatDemoSection() {
                   <Button
                     type="button"
                     onClick={start}
-                    size="default"
-                    className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    variant="gradient"
+                    className="h-11 w-full gap-2 text-sm font-semibold"
                   >
                     <ScanLine className="h-4 w-4" />
                     Örnek ruhsatı okut
@@ -147,8 +148,7 @@ export function RuhsatDemoSection() {
                     type="button"
                     onClick={reset}
                     variant="outline"
-                    size="default"
-                    className="w-full gap-2 border-primary/30"
+                    className="h-11 w-full gap-2 border-primary/30"
                   >
                     <RotateCcw className="h-4 w-4" />
                     Yeniden oynat
@@ -228,43 +228,19 @@ export function RuhsatDemoSection() {
             </div>
           </div>
         </div>
-
-        {/* CTA */}
-        {phase === "done" && (
-          <div
-            style={{ "--enter-duration": "0.4s", "--enter-delay": "100ms" } as CSSProperties}
-            className="enter-up mt-10 flex flex-col items-center gap-3 text-center"
-          >
-              <p className="text-base font-medium">
-                Kendi aracınızla deneyin — ruhsatı okutun, işi araç bilgileriyle başlatın.
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Link
-                  href="/register"
-                  className={buttonVariants({
-                    size: "default",
-                    className:
-                      "gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 sm:px-8 shadow-lg shadow-primary/25",
-                  })}
-                >
-                  7 Gün Ücretsiz Dene
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/demo"
-                  className={buttonVariants({ variant: "outline", size: "default", className: "px-4 sm:px-8 border-primary/30" })}
-                >
-                  Demo İste
-                </Link>
-              </div>
-          </div>
-        )}
       </div>
     </section>
   );
 }
 
-/** Sol taraftaki stilize ruhsat belgesi + tarama çizgisi. */
+/**
+ * Sol taraftaki GERÇEKÇİ ruhsat belgesi + tarama çizgisi.
+ *
+ * Gerçek tescil belgesinin düzeni taklit edilir: koyu zemin üzerinde hafif
+ * yatık duran belge, mavi çift çerçeve, alan kodlu iki kolon (A plaka, D.1
+ * marka, E şasi...), alt köşede kırmızı kaşe ve QR bloğu, el yazısı plaka.
+ * İçerik temsilidir; kart başlığındaki rozet bunu belirtir.
+ */
 function RuhsatDoc({
   phase,
   prefersReducedMotion,
@@ -273,49 +249,195 @@ function RuhsatDoc({
   prefersReducedMotion: boolean;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-lg border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-5">
-      {/* Belge başlığı */}
-      <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            T.C. — Araç Tescil Belgesi
-          </p>
-          <p className="text-[10px] text-muted-foreground">Ruhsat (örnek / temsili)</p>
-        </div>
-        <div className="rounded bg-primary/10 px-2 py-1 text-[10px] font-mono font-semibold text-primary-strong">
-          34 ABC 123
-        </div>
-      </div>
+    <div className="relative overflow-hidden rounded-lg bg-navy px-4 py-7 sm:px-8 sm:py-9">
+      {/* Fotoğraf zemini: köşelerde koyu vinyet, ortada hafif ışık */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,theme(colors.brand)/15,transparent_55%),radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.5))]"
+      />
 
-      {/* Belge satırları (temsili — okunması zor, gerçekçi görünüm) */}
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5">
-        {[
-          ["A", "34 ABC 123"],
-          ["D.1", "HONDA"],
-          ["D.3", "CIVIC 1.6 i-DTEC"],
-          ["E", "SHHFK2••••U201234"],
-          ["D.4", "2018"],
-          ["P.3", "DİZEL"],
-        ].map(([code, val]) => (
-          <div key={code} className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{code}</p>
-            <p className="truncate font-mono text-[11px] text-foreground">{val}</p>
+      {/* Belge: hafif yatık, gerçekçi gölge */}
+      <div className="relative mx-auto w-full max-w-sm -rotate-1 rounded-[3px] bg-background shadow-[0_18px_40px_-12px_rgba(0,0,0,0.65)] ring-1 ring-black/30 transition-transform duration-500 sm:max-w-md">
+        {/* Mavi çift çerçeve — gerçek belgenin guaj baskısının sade hali */}
+        <div className="m-1.5 rounded-[2px] border-2 border-primary/70 p-[3px]">
+          <div className="rounded-[1px] border border-primary/40 px-3 py-2.5 sm:px-4">
+            {/* Başlık */}
+            <div className="border-b border-primary/30 pb-1.5 text-center">
+              <p className="text-[8px] font-bold tracking-[0.2em] text-primary-strong sm:text-[9px]">
+                T.C.
+              </p>
+              <p className="text-[8px] font-bold tracking-wider text-foreground sm:text-[9px]">
+                ARAÇ TESCİL BELGESİ
+              </p>
+            </div>
+
+            {/* Alanlar: sol araç, sağ sahip — gerçek belgedeki kolon düzeni */}
+            <div className="grid grid-cols-[1.25fr_1fr] gap-x-3 pt-2">
+              <div className="space-y-[5px]">
+                <DocField code="A" value="34 ABC 123" strong />
+                <DocField code="B" value="A 1234567" />
+                <DocField code="C.1" value="15.03.2019" />
+                <DocField code="D.1" value="HONDA" />
+                <DocField code="D.3" value="CIVIC 1.6 i-DTEC" />
+                <DocField code="D.4" value="2018" />
+                <DocField code="E" value="SHHFK2••••U201234" />
+                <DocField code="P.3" value="DİZEL" />
+                <DocField code="L" value="N16A1A•••••" />
+              </div>
+              <div className="space-y-[5px]">
+                <DocField code="2.1" value="DEMO OTO SERVİS" />
+                <DocField code="2.2" value="Şişli / İSTANBUL" />
+                <DocField code="F.1" value="1730 kg" />
+                <DocField code="G" value="1215 kg" />
+                <DocField code="J" value="5 kişi" />
+                <DocField code="O.1" value="BEYAZ" />
+                {/* QR bloğu — gerçek belgedeki karekodun sade hali */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <QrMock />
+                  <div className="min-w-0">
+                    <p className="text-[7px] uppercase tracking-wider text-muted-foreground">
+                      İ.R. No
+                    </p>
+                    <p className="truncate font-mono text-[8px] text-foreground">
+                      TR·455088
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Kaşe + imza: belgenin alt sağında kırmızı yuvarlak kaşe */}
+            <div className="relative mt-1 flex items-end justify-between border-t border-primary/20 pt-1.5">
+              <p className="text-[7px] italic text-muted-foreground">
+                Yolcu nakli + hususi
+              </p>
+              <div className="relative pr-1">
+                <StampMock />
+                {/* Üstüne binen imza kıvrımı */}
+                <svg
+                  aria-hidden
+                  viewBox="0 0 90 24"
+                  className="absolute -bottom-0.5 left-1 w-20 text-foreground/70"
+                  fill="none"
+                >
+                  <path
+                    d="M4 16 C 18 4, 30 22, 44 12 S 72 6, 86 14"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Tarama çizgisi */}
       {phase === "scanning" && !prefersReducedMotion && (
-        <div className="ruhsat-scan-line pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
+        <div className="ruhsat-scan-line pointer-events-none absolute inset-x-0 h-10 bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
       )}
 
+      {/* Durum rozeti */}
       {phase !== "idle" && (
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-medium text-primary">
-          <ScanLine className="size-3.5" />
-          {phase === "scanning" ? "Okunuyor…" : "Okundu"}
+        <div className="absolute left-1/2 top-3 -translate-x-1/2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold shadow-lg ${
+              phase === "scanning"
+                ? "bg-brand text-navy-foreground"
+                : "bg-success text-success-foreground"
+            }`}
+          >
+            <ScanLine className="size-3.5" />
+            {phase === "scanning" ? "Okunuyor…" : "Okundu"}
+          </span>
         </div>
       )}
     </div>
+  );
+}
+
+/** Belge içindeki tek alan satırı: kod + (el yazısı hissi veren) değer. */
+function DocField({
+  code,
+  value,
+  strong = false,
+}: {
+  code: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="min-w-0 border-b border-dotted border-muted-foreground/25 pb-[2px]">
+      <p className="text-[6.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[7px]">
+        {code}
+      </p>
+      <p
+        className={`truncate font-mono text-foreground ${
+          strong ? "text-[10px] font-bold tracking-wide sm:text-[11px]" : "text-[8px] sm:text-[8.5px]"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/** Kırmızı yuvarlak kaşe — gerçek belgedeki daire kaşenin sade hali. */
+function StampMock() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 64 64"
+      className="w-12 rotate-[-12deg] text-destructive-strong sm:w-14"
+      fill="none"
+    >
+      <circle cx="32" cy="32" r="29" stroke="currentColor" strokeWidth="2" />
+      <circle cx="32" cy="32" r="21" stroke="currentColor" strokeWidth="1" />
+      <defs>
+        <path id="stamp-arc-top" d="M 11 32 A 21 21 0 0 1 53 32" />
+        <path id="stamp-arc-bottom" d="M 13 32 A 19 19 0 0 0 51 32" />
+      </defs>
+      <text fontSize="7.5" fontWeight="700" fill="currentColor" letterSpacing="1.5">
+        <textPath href="#stamp-arc-top" startOffset="50%" textAnchor="middle">
+          BAKIMX
+        </textPath>
+      </text>
+      <text fontSize="6" fontWeight="600" fill="currentColor" letterSpacing="1">
+        <textPath href="#stamp-arc-bottom" startOffset="50%" textAnchor="middle">
+          ÖRNEKTİR
+        </textPath>
+      </text>
+      <text
+        x="32"
+        y="35"
+        fontSize="9"
+        fontWeight="800"
+        fill="currentColor"
+        textAnchor="middle"
+      >
+        2019
+      </text>
+    </svg>
+  );
+}
+
+/** Karekod bloğu — deterministik desen; gerçek veri taşımaz. */
+function QrMock() {
+  return (
+    <svg aria-hidden viewBox="0 0 21 21" className="size-8 shrink-0 text-foreground" fill="currentColor">
+      {/* Konum belirteçleri */}
+      <path d="M0 0h7v7H0zM2 2h3v3H2zM14 0h7v7h-7zM16 2h3v3h-3zM0 14h7v7H0zM2 16h3v3H2z" />
+      {/* Veri modülleri (sabit desen) */}
+      {[
+        [9, 0], [11, 1], [9, 2], [12, 2], [10, 3], [12, 4], [9, 5], [11, 5],
+        [9, 7], [10, 8], [12, 8], [8, 9], [11, 9], [13, 9], [9, 10], [12, 11],
+        [10, 12], [13, 12], [8, 13], [11, 13], [9, 14], [12, 14], [10, 16],
+        [12, 16], [8, 17], [11, 17], [13, 17], [9, 18], [12, 19], [10, 20],
+      ].map(([x, y]) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />
+      ))}
+    </svg>
   );
 }
 

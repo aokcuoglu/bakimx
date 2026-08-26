@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import Link from "next/link"
+import { toast } from "sonner"
 import {
   Check,
   X,
@@ -11,6 +13,8 @@ import {
   ChevronUp,
   AlertTriangle,
   RefreshCw,
+  ArrowUpRight,
+  CalendarClock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -32,6 +36,7 @@ export interface AdminTxnRow {
 
 export interface AdminOrderRow {
   id: string
+  workshopId: string
   workshopName: string
   type: string
   planTier: string
@@ -46,6 +51,8 @@ export interface AdminOrderRow {
   /** BillingOrderStatus — pendingOrders'ta hep "pending_payment", recentOrders'ta "confirmed"/"cancelled". */
   status: string
   confirmedByEmail: string | null
+  periodEnd: string | null
+  daysLeft: number | null
   /** En son deneme (varsa) — hızlı özet için. */
   lastTxn: AdminTxnRow | null
   /** Sipariş başına son 5 deneme — "Ödeme denemeleri" bölümü. */
@@ -286,11 +293,17 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState("")
   const isCard = o.method === "card"
-  function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
+  function run(fn: () => Promise<{ ok: boolean; error?: string }>, successMessage: string) {
     setError("")
     startTransition(async () => {
       const res = await fn()
-      if (!res.ok) setError(res.error || "İşlem başarısız")
+      if (!res.ok) {
+        const message = res.error || "İşlem başarısız"
+        setError(message)
+        toast.error(message)
+      } else {
+        toast.success(successMessage)
+      }
     })
   }
   return (
@@ -315,12 +328,12 @@ function OrderRow({ o, canConfirm }: { o: AdminOrderRow; canConfirm: boolean }) 
           {/* Kartlı akış otomatik — yanlışlıkla elle onaylanıp çifte aktivasyona
               yol açmasın diye kartlı bekleyen siparişte confirm butonu YOK. */}
           {canConfirm && !isCard && (
-            <Button type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id))} size="sm">
+            <Button type="button" disabled={pending} onClick={() => run(() => confirmBillingOrder(o.id), "Ödeme onaylandı")} size="sm">
               <Check className="size-3.5" /> Havale alındı
             </Button>
           )}
           {canConfirm && (
-            <Button type="button" disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id))} variant="outline" size="sm">
+            <Button type="button" disabled={pending} onClick={() => run(() => cancelBillingOrder(o.id), "Sipariş iptal edildi")} variant="outline" size="sm">
               <X className="size-3.5" /> İptal
             </Button>
           )}
@@ -358,8 +371,14 @@ function StuckTxnRow({ r }: { r: AdminStuckTxnRow }) {
     setError("")
     startTransition(async () => {
       const res = await retryStuckActivation(r.id)
-      if (!res.ok) setError(res.error || "İşlem başarısız")
-      else setDone(true)
+      if (!res.ok) {
+        const message = res.error || "İşlem başarısız"
+        setError(message)
+        toast.error(message)
+      } else {
+        setDone(true)
+        toast.success("Aktivasyon tamamlandı")
+      }
     })
   }
 
@@ -411,30 +430,57 @@ function RecentOrdersSection({ rows }: { rows: AdminOrderRow[] }) {
 }
 
 function RecentOrderRow({ o }: { o: AdminOrderRow }) {
-  const isCard = o.method === "card"
   const statusTone =
     o.status === "confirmed" ? "text-success-strong" : o.status === "cancelled" ? "text-muted-foreground" : "text-foreground"
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 text-sm">
-          <div className="flex items-center gap-2 flex-wrap">
+    <Link
+      href={`/admin/workshops/${o.workshopId}`}
+      className="group block rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      aria-label={`${o.workshopName} iş yeri detayını aç`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-foreground">{o.workshopName}</span>
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px]">{TIER_LABELS[o.planTier] ?? o.planTier} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}</span>
-            <MethodBadge method={o.method} />
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+              {TIER_LABELS[o.planTier] ?? o.planTier} · {CYCLE_LABELS[o.billingCycle] ?? o.billingCycle}
+            </span>
             <Badge variant="outline" className={cn("text-[11px]", statusTone)}>
               {ORDER_STATUS_LABELS[o.status] ?? o.status}
             </Badge>
-            <SourceBadge o={o} />
-            <span className="font-semibold text-foreground">{o.amountLabel}</span>
           </div>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Referans: <span className="font-mono text-foreground">{o.reference}</span>
           </p>
-          {isCard && <PaymentAttempts txns={o.txnHistory} />}
         </div>
-        <span className="text-xs text-muted-foreground shrink-0">{new Date(o.createdAt).toLocaleDateString("tr-TR")}</span>
+
+        <div className="flex items-start justify-between gap-3 sm:block sm:text-right">
+          <div className="rounded-lg bg-primary/10 px-3 py-2 text-left sm:text-right">
+            <p className="text-[11px] font-medium text-primary-strong">Tahsil edilen</p>
+            <p className="text-xl font-bold tracking-tight text-primary-strong">{o.amountLabel}</p>
+          </div>
+          <ArrowUpRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5" />
+        </div>
       </div>
-    </div>
+
+      <div className="mt-4 grid gap-2 border-t pt-3 text-xs sm:grid-cols-3">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <MethodBadge method={o.method} />
+          <span>{new Date(o.createdAt).toLocaleDateString("tr-TR")}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <CalendarClock className="size-3.5" />
+          {o.periodEnd ? (
+            <span>
+              Bitiş: {new Date(o.periodEnd).toLocaleDateString("tr-TR")}
+              {o.daysLeft != null && ` · ${o.daysLeft} gün`}
+            </span>
+          ) : (
+            <span>Abonelik dönemi yok</span>
+          )}
+        </div>
+        <div className="text-muted-foreground sm:text-right"><SourceBadge o={o} /></div>
+      </div>
+    </Link>
   )
 }
