@@ -89,13 +89,13 @@ type Referral = {
 }
 
 const statuses = [
-  ["new", "Yeni", "bg-blue-50 text-blue-700 border-blue-200"],
-  ["contacted", "İletişim", "bg-amber-50 text-amber-700 border-amber-200"],
-  ["demo_scheduled", "Demo Planlandı", "bg-purple-50 text-purple-700 border-purple-200"],
-  ["demo_completed", "Demo Yapıldı", "bg-indigo-50 text-indigo-700 border-indigo-200"],
-  ["proposal", "Teklif", "bg-cyan-50 text-cyan-700 border-cyan-200"],
-  ["won", "Kazanıldı", "bg-emerald-50 text-emerald-700 border-emerald-200"],
-  ["lost", "Kaybedildi", "bg-red-50 text-red-700 border-red-200"],
+  ["new", "Yeni", "bg-primary/10 text-primary-strong border-primary/20"],
+  ["contacted", "İletişim", "bg-warning/10 text-warning-strong border-warning/20"],
+  ["demo_scheduled", "Demo Planlandı", "bg-muted text-muted-foreground border-border"],
+  ["demo_completed", "Demo Yapıldı", "bg-secondary text-secondary-foreground border-border"],
+  ["proposal", "Teklif", "bg-accent text-accent-foreground border-border"],
+  ["won", "Kazanıldı", "bg-success/10 text-success-strong border-success/20"],
+  ["lost", "Kaybedildi", "bg-destructive/10 text-destructive-strong border-destructive/20"],
 ] as const
 
 const activityIcons: Record<string, typeof Phone> = {
@@ -108,7 +108,7 @@ const activityIcons: Record<string, typeof Phone> = {
 }
 
 function getStatusConfig(status: string) {
-  return statuses.find(([s]) => s === status) ?? ["new", "Yeni", "bg-blue-50 text-blue-700 border-blue-200"]
+  return statuses.find(([s]) => s === status) ?? ["new", "Yeni", "bg-primary/10 text-primary-strong border-primary/20"]
 }
 
 function formatDate(iso: string) {
@@ -201,9 +201,9 @@ export function SalesConsole({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Toplam Aday", value: stats.total, icon: Users, color: "text-foreground" },
-          { label: "Aktif Aday", value: stats.active, icon: TrendingUp, color: "text-blue-600" },
-          { label: "Kazanılan", value: stats.won, icon: CheckCircle2, color: "text-emerald-600" },
-          { label: "Dönüşüm", value: `%${stats.conversionRate}`, icon: TrendingUp, color: "text-primary" },
+          { label: "Aktif Aday", value: stats.active, icon: TrendingUp, color: "text-primary-strong" },
+          { label: "Kazanılan", value: stats.won, icon: CheckCircle2, color: "text-success-strong" },
+          { label: "Dönüşüm", value: `%${stats.conversionRate}`, icon: TrendingUp, color: "text-primary-strong" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border bg-card p-4">
             <div className="flex items-center gap-2">
@@ -219,17 +219,18 @@ export function SalesConsole({
 
       {/* New Lead Form */}
       <section className="rounded-xl border bg-card">
-        <button
+        <Button
           type="button"
           onClick={() => setShowNewLeadForm(!showNewLeadForm)}
-          className="flex w-full items-center justify-between p-4 text-left"
+          variant="ghost"
+          className="flex h-auto w-full items-center justify-between p-4 text-left"
         >
           <div>
             <h2 className="font-semibold text-foreground">Yeni Servis Adayı</h2>
             <p className="text-sm text-muted-foreground">Satış havuzuna yeni bir aday ekleyin.</p>
           </div>
           <span className="text-muted-foreground">{showNewLeadForm ? "−" : "+"}</span>
-        </button>
+        </Button>
         {showNewLeadForm && (
           <div className="border-t px-4 pb-4 pt-4">
             <Form {...form}>
@@ -314,7 +315,7 @@ export function SalesConsole({
 
         {filteredLeads.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center">
-            <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <Users className="mx-auto h-8 w-8 text-muted-foreground-strong" />
             <p className="mt-2 text-sm text-muted-foreground">Henüz servis adayı yok.</p>
           </div>
         ) : (
@@ -504,7 +505,7 @@ function LeadCard({
             <p className="mt-1 text-xs text-muted-foreground">Danışman: {lead.advisorName}</p>
           )}
           {lead.nextActionAt && !isExpired(lead.nextActionAt) && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+            <p className="mt-1 flex items-center gap-1 text-xs text-warning-strong">
               <Clock className="h-3 w-3" />
               Takip: {formatDateTime(lead.nextActionAt)}
             </p>
@@ -546,15 +547,16 @@ function LeadCard({
 
       {/* Activity Summary */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
           type="button"
           onClick={() => setShowActivities(!showActivities)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          variant="ghost"
+          className="h-auto p-0 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <FileText className="h-3 w-3" />
           {lead.activities.length} görüşme
-          <span className="text-muted-foreground/60">{showActivities ? "▲" : "▼"}</span>
-        </button>
+          <span className="text-muted-foreground-strong">{showActivities ? "▲" : "▼"}</span>
+        </Button>
         {lead.activities.length > 0 && (
           <span className="text-xs text-muted-foreground">
             Son: {formatDateTime(lead.activities[0].occurredAt)}
@@ -754,12 +756,12 @@ function DiscountCodeSection({
         </Form>
 
         {generatedCode && (
-          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <div className="mt-4 rounded-lg border border-success/20 bg-success/10 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-emerald-800">Oluşturulan Kod</p>
-                <p className="mt-1 text-2xl font-bold tracking-wider text-emerald-900">{generatedCode.code}</p>
-                <p className="text-sm text-emerald-700">
+                <p className="text-sm font-medium text-success-strong">Oluşturulan Kod</p>
+                <p className="mt-1 text-2xl font-bold tracking-wider text-success-strong">{generatedCode.code}</p>
+                <p className="text-sm text-success-strong">
                   %{generatedCode.discountPercent} indirim · Geçerlilik: {formatDate(generatedCode.expiresAt)}
                 </p>
               </div>

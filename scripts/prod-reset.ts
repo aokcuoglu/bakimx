@@ -100,6 +100,7 @@ export const TENANT_TABLES = [
   "SalesActivity",
   "SalesDemoSession",
   "SalesCommission",
+  "SalesDiscountCode",
   "CronRun",
   // Web Push abonelikleri (BAK-129): kiracının kullanıcılarına bağlı cihaz
   // kayıtları. Kalıcı iş verisi değil — silinince kullanıcılar bildirimleri
@@ -124,6 +125,7 @@ export const TENANT_TABLES = [
   // harcama tavanı aşağıdaki market_research_budgets tablosunda ayrıca korunur.
   "market_research_credentials",
   "market_research_usages",
+  "quota_usage",
 ]
 
 /** Dokunulmayanlar. Satır sayıları öncesi/sonrası karşılaştırılarak doğrulanır. */

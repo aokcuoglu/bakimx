@@ -20,6 +20,7 @@ const SRC = join(import.meta.dir, "..", "..")
 const ALLOWED: Record<string, string> = {
   "app/admin/data.ts": "yönetici konsolunun liste sorgusu — notu okuyan tek yer",
   "app/admin/actions.ts": "konsol mutasyonları (durum, bağlama, atama, not)",
+  "app/admin/workshops/[id]/page.tsx": "yönetici atölye detayında destek talebi sayısını gösterir; internalNote okumaz",
   "app/api/support-request/route.ts": "public form YALNIZ yazar; not alanına hiç dokunmaz",
   "lib/support/workshop-link.ts": "e-posta ile kiracı eşleştirme — Workshop/User okur, talebi değil",
 }

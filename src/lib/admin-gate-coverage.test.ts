@@ -39,6 +39,10 @@ const ALLOWLIST = new Map<string, string>([
     "sales/actions.ts::convertSalesLead",
     "İş yeri açma action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışman üretim tenant'ı oluşturamaz.",
   ],
+  ["sales/actions.ts::setSalesReferralStatus", "Satış referansı getSalesAccess() ve danışman sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::generateSalesDiscountCode", "İndirim kodu getSalesAccess() ve bağlı aday sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::updateSalesDiscountCode", "İndirim kodu güncellemesi satış erişimi ve sahiplik kontrolüyle korunur."],
+  ["sales/actions.ts::deactivateSalesDiscountCode", "İndirim kodu pasifleştirmesi satış erişimi ve sahiplik kontrolüyle korunur."],
   [
     "impersonation-actions.ts::stopImpersonation",
     "Kendi impersonation oturumunu KAPATMA işlemi. Yetki kapısına bağlansaydı, yetkisi geri alınmış bir yönetici açık oturumdan çıkamaz hâle gelirdi; işlem yalnız çerezdeki kendi oturumunu sonlandırır.",

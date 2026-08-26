@@ -19,7 +19,6 @@ import { WorkshopUserActions } from "@/app/admin/workshop-user-actions"
 import { DeleteWorkshopButton } from "@/app/admin/delete-workshop-button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { WorkshopActivityTables } from "@/app/admin/workshop-activity-tables"
-import { auditActionLabel, calendarSyncSubjectLabel, communicationSubjectLabel, reminderJobLabel } from "@/lib/admin/activity-labels"
 import { AcquisitionEditor } from "@/app/admin/acquisition-editor"
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisition-sources"
 import { salesAdvisorDisplayName, salesLeadAdminHref } from "@/lib/sales/links"
@@ -79,19 +78,11 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
   })
   if (!workshop) notFound()
 
-  const [customerTotal, vehicleTotal, orderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, orders, auditLogs, commLogs, reminderLogs, syncLogs, features, salesLead, advisors] =
+  const [customerTotal, vehicleTotal, orderTotal, appointmentTotal, customerCount, vehicleCount, orderCount, appointmentCount, orders, features, salesLead, advisors] =
     await Promise.all([
       prisma.customer.count({ where: { workshopId: id } }), prisma.vehicle.count({ where: { workshopId: id } }), prisma.serviceOrder.count({ where: { workshopId: id } }), prisma.appointment.count({ where: { workshopId: id } }),
       prisma.customer.count({ where: periodWhere }), prisma.vehicle.count({ where: periodWhere }), prisma.serviceOrder.count({ where: periodWhere }), prisma.appointment.count({ where: periodWhere }),
       prisma.billingOrder.findMany({ where: { workshopId: id }, orderBy: { createdAt: "desc" }, take: 10 }),
-      prisma.auditLog.findMany({
-        where: { workshopId: id },
-        orderBy: { createdAt: "desc" },
-        include: { actorUser: { select: { email: true } } },
-      }),
-      prisma.communicationLog.findMany({ where: { workshopId: id }, orderBy: { sentAt: "desc" } }),
-      prisma.reminderExecutionLog.findMany({ where: { workshopId: id }, orderBy: { executedAt: "desc" } }),
-      prisma.calendarSyncLog.findMany({ where: { workshopId: id }, orderBy: { syncedAt: "desc" } }),
       getEffectiveFeatures(id, workshop.planTier as PlanTier),
       prisma.salesLead.findUnique({ where: { workshopId: id }, select: { id: true } }),
       prisma.salesAdvisor.findMany({ where: { disabledAt: null }, include: { user: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "asc" } }),
@@ -310,14 +301,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
         </Section>
       </div>
 
-      <WorkshopActivityTables
-        auditRows={auditLogs.map((log) => ({ id: log.id, action: auditActionLabel(log.action), actor: log.actorUser?.email ?? "sistem", createdAt: log.createdAt.toISOString() }))}
-        communicationRows={[
-          ...commLogs.map((log) => ({ id: log.id, kind: "İletişim" as const, subject: communicationSubjectLabel(log.type, log.templateKey), status: log.status, detail: "İletişim gönderimi", createdAt: log.sentAt.toISOString() })),
-          ...reminderLogs.map((log) => ({ id: log.id, kind: "Hatırlatma" as const, subject: reminderJobLabel(log.jobType), status: log.failedCount > 0 ? "failed" : "success", detail: `${log.sentCount} gönderildi · ${log.failedCount} başarısız`, createdAt: log.executedAt.toISOString() })),
-          ...syncLogs.map((log) => ({ id: log.id, kind: "Takvim" as const, subject: calendarSyncSubjectLabel(log.eventType), status: log.status, detail: "Takvim eşitlemesi", createdAt: log.syncedAt.toISOString() })),
-        ].sort((a, b) => b.createdAt.localeCompare(a.createdAt))}
-      />
+      <WorkshopActivityTables workshopId={id} />
     </div>
   )
 }

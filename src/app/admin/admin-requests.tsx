@@ -85,7 +85,7 @@ const SUPPORT_STATUSES: { value: string; label: string }[] = [
 
 const DEMO_STATUS_BADGE: Record<string, string> = {
   new: "bg-primary/15 text-primary-strong ring-1 ring-primary/20",
-  contacted: "bg-primary/10 text-primary",
+  contacted: "bg-primary/10 text-primary-strong",
   qualified: "bg-success/15 text-success-strong",
   converted: "bg-success/20 text-success-strong ring-1 ring-success/20",
   archived: "bg-muted text-muted-foreground",
@@ -206,7 +206,7 @@ function DemoRequestRow({ r, canManage }: { r: AdminDemoRequestRow; canManage: b
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <CalendarDays className="size-3.5" />
             <span>{dateStr}</span>
-            <span className="text-muted-foreground/60">{timeStr}</span>
+            <span className="text-muted-foreground-strong">{timeStr}</span>
           </div>
 
           {canManage && (
@@ -264,7 +264,7 @@ export function AdminDemoRequests({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <DemoStatCard label="Toplam" value={total} />
         <DemoStatCard label="Yeni" value={newCount} tone="text-primary" />
-        <DemoStatCard label="İletişime geçildi" value={contactedCount} tone="text-primary/70" />
+        <DemoStatCard label="İletişime geçildi" value={contactedCount} tone="text-primary-strong" />
         <DemoStatCard label="Dönüştü" value={convertedCount} tone="text-success-strong" />
       </div>
 
@@ -364,7 +364,7 @@ function SupportRequestRow({
         isNew ? "border-warning/30" : "border-border/60"
       )}
     >
-      <button
+      <Button
         type="button"
         className="flex w-full items-start gap-3 p-4 text-left hover:bg-muted/30 transition-colors"
         onClick={() => setExpanded(!expanded)}
@@ -392,9 +392,9 @@ function SupportRequestRow({
         <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0 pt-0.5">
           <CalendarDays className="size-3.5" />
           <span>{dateStr}</span>
-          <span className="text-muted-foreground/60">{timeStr}</span>
+          <span className="text-muted-foreground-strong">{timeStr}</span>
         </div>
-      </button>
+      </Button>
 
       {expanded && (
         <div className="border-t px-4 pb-4 pt-3 space-y-4">

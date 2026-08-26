@@ -51,7 +51,7 @@ export function HeroSection() {
 
             <p
               style={{ "--enter-delay": "150ms" } as CSSProperties}
-              className="enter-up text-base leading-relaxed text-white/70 sm:text-lg"
+              className="enter-up text-base leading-relaxed text-white sm:text-lg"
             >
               Ruhsat okutarak araca %100 uyumlu yedek parçaları anında bulun,
               tek tıkla iş emrine ekleyin. Yanlış parça siparişi ve zaman
@@ -106,7 +106,7 @@ export function HeroSection() {
               {trustBadges.map(({ icon: Icon, label }) => (
                 <li
                   key={label}
-                  className="inline-flex items-center gap-1.5 text-sm text-white/60"
+                  className="inline-flex items-center gap-1.5 text-sm text-white"
                 >
                   <Icon className="h-4 w-4 text-primary" />
                   {label}
@@ -201,7 +201,7 @@ function HeroVideo() {
           {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </button>
       </div>
-      <figcaption className="text-center text-xs text-white/50">
+      <figcaption className="text-center text-xs text-white">
         Ruhsat okutun, uyumlu parçayı anında bulun — 10 saniye
       </figcaption>
     </figure>

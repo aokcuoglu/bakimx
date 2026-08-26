@@ -24,7 +24,7 @@ export function PartnersStrip() {
           as="p"
           from="fade"
           amount={0.3}
-          className="text-center font-mono text-xs uppercase tracking-[0.18em] text-white/50"
+          className="text-center font-mono text-xs uppercase tracking-[0.18em] text-white"
         >
           Altyapı ve iş ortaklarımız
         </Reveal>

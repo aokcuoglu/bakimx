@@ -69,7 +69,7 @@ export function Header() {
               href={item.href}
               className={`text-sm font-medium transition-colors ${
                 transparent
-                  ? "text-white/80 hover:text-white"
+                  ? "text-white hover:text-white"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -83,7 +83,7 @@ export function Header() {
             href="/login"
             className={`text-sm font-medium transition-colors ${
               transparent
-                ? "text-white/80 hover:text-white"
+                  ? "text-white hover:text-white"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

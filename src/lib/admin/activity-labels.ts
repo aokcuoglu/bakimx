@@ -1,7 +1,7 @@
 import { communicationStatusLabel } from "@/lib/communications/status-labels"
 import { communicationTemplateLabel } from "@/lib/communications/template-labels"
 
-const AUDIT_ACTION_LABELS: Record<string, string> = {
+export const AUDIT_ACTION_LABELS: Record<string, string> = {
   feature_override_set: "Özellik erişimi güncellendi",
   password_reset_sent: "Şifre sıfırlama bağlantısı gönderildi",
   member_password_reset: "Ekip üyesine şifre sıfırlama bağlantısı gönderildi",
@@ -82,6 +82,13 @@ const ACTIVITY_STATUS_LABELS: Record<string, string> = {
   failed: "Başarısız",
   pending: "Bekliyor",
 }
+
+export const AUDIT_ACTION_OPTIONS = Object.entries(AUDIT_ACTION_LABELS)
+  .map(([value, label]) => ({ value, label }))
+  .sort((a, b) => a.label.localeCompare(b.label, "tr"))
+
+export const ACTIVITY_STATUS_OPTIONS = ["sent", "success", "partial", "failed", "pending", "skipped"]
+  .map((value) => ({ value, label: communicationActivityStatusLabel(value) }))
 
 export function auditActionLabel(action: string): string {
   return AUDIT_ACTION_LABELS[action] ?? "Sistem işlemi kaydedildi"

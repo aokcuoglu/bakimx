@@ -99,7 +99,7 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
         <div className="relative flex-1">
           <MessageCircleQuestion
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white"
           />
           <Input
             id={INPUT_ID}
@@ -115,7 +115,7 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
             // Panel kapalıyken o `id` DOM'da yok; var olmayan bir düğüme
             // işaret eden `aria-controls` ekran okuyucuda kırık referanstır.
             aria-controls={panelOpen ? ASSISTANT_PANEL_ID : undefined}
-            className="rounded-full border-white/20 bg-white pl-9 pr-4 text-gray-900 shadow-sm placeholder:text-gray-500 focus-visible:border-white/40 focus-visible:ring-white/20"
+            className="rounded-full border-white/20 bg-white pl-9 pr-4 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-white/40 focus-visible:ring-white/20"
           />
         </div>
         <Button type="submit" size="lg" disabled={value.trim().length === 0} className="gap-2 rounded-full px-4 sm:px-6">
@@ -132,7 +132,7 @@ export function HeroAskBar({ value, onValueChange, focusSignal }: HeroAskBarProp
             variant="outline"
             size="sm"
             onClick={() => ask(objection.question)}
-            className="h-auto whitespace-normal rounded-full border-white/20 bg-white/10 px-3 py-1.5 text-left text-xs font-normal text-white/80 hover:bg-white/20 hover:text-white md:h-auto"
+            className="h-auto whitespace-normal rounded-full border-white/20 bg-white/10 px-3 py-1.5 text-left text-xs font-normal text-white hover:bg-white/20 hover:text-white md:h-auto"
           >
             {objection.question}
           </Button>
