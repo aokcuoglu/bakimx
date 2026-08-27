@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db"
 
 export const metadata: Metadata = {
   title: "Ücretsiz Dene",
-  description: "BakimX iş yeri hesabınızı oluşturun — kart doğrulamasının ardından 7 gün ücretsiz deneme.",
+  description: "BakimX oto servis hesabınızı ücretsiz oluşturun — paket veya kart seçmeden 7 iş günü deneyin.",
 }
 
 export const dynamic = "force-dynamic"

@@ -100,13 +100,14 @@ export default function TermsPage() {
 
       <LegalSection n={4} title="Deneme Süresi, Abonelik ve Ücretlendirme">
         <p>
-          Kayıt sonrası işletmeye belirli süreli (güncel olarak 7 günlük) ücretsiz
+          Kayıt sonrası işletmeye belirli süreli (güncel olarak 7 iş günlük) ücretsiz
           deneme sunulabilir. Deneme süresi ve kapsamı Şirket tarafından
           değiştirilebilir.
         </p>
         <p>
           Ücretli abonelikler, seçilen plana göre periyodik (aylık/yıllık) olarak
-          faturalandırılır. Ödemeler, lisanslı ödeme kuruluşu altyapısı
+          faturalandırılır. Ücretsiz kayıt sırasında kart bilgisi istenmez.
+          Ücretli satın alımlarda ödemeler lisanslı ödeme kuruluşu altyapısı
           üzerinden alınır; kart doğrulaması amacıyla düşük tutarlı bir ön
           provizyon (bloke) uygulanabilir ve bu tutar iade/serbest bırakılır.
         </p>

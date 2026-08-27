@@ -16,7 +16,7 @@ import { isLoginCodeConflict, workshopCodeCandidate } from "@/lib/workshop-code"
  * Self-serve workshop registration (email-verification gated trial).
  *
  * Creates a new isolated Workshop + its first owner User in `pending` status
- * with NO trial started yet — the 7-day trial begins only after the owner
+ * with NO trial started yet — the 7-business-day trial begins only after the owner
  * verifies their e-mail address (see activateVerifiedWorkshop). The welcome
  * e-mail also moved there (single-send). This route sends a verification
  * e-mail via `sendVerifyEmail` and returns `{ ok: true }`; no token is
@@ -150,8 +150,15 @@ export async function POST(request: Request) {
                 address: data.address,
                 email: data.workshopEmail || data.email,
                 taxOffice: data.taxOffice || null,
-                taxNumber: data.taxNumber,
-                invoiceTitle: data.invoiceTitle,
+                taxNumber: data.taxNumber || null,
+                invoiceTitle: data.invoiceTitle || data.workshopName,
+                onboardingProfile: {
+                  sector: data.sector,
+                  businessFeatures: data.businessFeatures,
+                  teamSize: data.teamSize,
+                  selectedModules: data.selectedModules,
+                  setupPreference: data.setupPreference,
+                },
                 // Approval-gated trial: pending until the e-mail is verified. The trial
                 // (trialStartedAt/EndsAt) starts in activateVerifiedWorkshop, not here.
                 approvalStatus: "pending",

@@ -17,7 +17,7 @@ test("workshopApprovedEmail: giriş CTA'sı + 7 gün deneme mesajı", () => {
   expect(e.html).toContain("Ali")
   expect(e.html).toContain("Usta Oto")
   expect(e.html).toContain("/login")
-  expect(e.html).toContain("7 gün")
+  expect(e.html).toContain("7 iş gün")
 })
 
 test("workshopRejectedEmail: CTA yok, iletişim notu var", () => {
@@ -47,7 +47,7 @@ test("welcomeTrialEmail: hoş geldin + deneme bitiş tarihi + giriş CTA'sı", (
   expect(e.html).toContain("Ali")
   expect(e.html).toContain("Usta Oto")
   expect(e.html).toContain("/login")
-  expect(e.html).toContain("7 gün")
+  expect(e.html).toContain("7 iş gün")
   expect(e.html).toContain("12.07.2026")
   expect(e.html).toContain("/billing")
 })
@@ -73,7 +73,7 @@ test("sistem e-postaları kullanıcı değerlerini HTML-escape eder", () => {
 test("trialExpiryWarningEmail: kalan gün > 0 → gün sayısı + /checkout CTA", () => {
   const trialEndsAt = new Date("2026-07-12T00:00:00.000Z")
   const e = trialExpiryWarningEmail({ ownerName: "Ali", workshopName: "Usta Oto", daysLeft: 3, trialEndsAt })
-  expect(e.subject).toContain("3 gün")
+  expect(e.subject).toContain("3 iş günü")
   expect(e.html).toContain("Ali")
   expect(e.html).toContain("Usta Oto")
   expect(e.html).toContain("12.07.2026")
@@ -175,11 +175,12 @@ test("passwordResetEmail falls back to a generic greeting without a name", () =>
   expect(html).toContain("Yetkili")
 })
 
-test("verifyEmailEmail: verifyUrl'i CTA olarak gömer, isim escape edilir, 7 gün deneme metni içerir", () => {
+test("verifyEmailEmail: verifyUrl'i CTA olarak gömer, isim escape edilir, 7 iş günü deneme metni içerir", () => {
   const built = verifyEmailEmail({ verifyUrl: "https://app.bakimx.com/api/auth/verify-email?token=abc", firstName: "Ali<x>" })
   expect(built.subject).toContain("doğrula")
   expect(built.html).toContain("https://app.bakimx.com/api/auth/verify-email?token=abc")
-  expect(built.html).toContain("7 günlük")
+  expect(built.html).toContain("7 iş günlük")
+  expect(built.html).toContain("Kart bilgisi gerekmez")
   // XSS koruması: ham "<x>" HTML'de görünmez, escape'lenir.
   expect(built.html).not.toContain("Ali<x>")
   expect(built.html).toContain("Ali&lt;x&gt;")

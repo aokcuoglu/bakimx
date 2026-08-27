@@ -12,7 +12,7 @@ import { Reveal } from "@/components/shared/reveal";
  */
 
 const steps = [
-  { title: "Ücretsiz hesabınızı açın", description: "Kurulum, indirme yok. Kart doğrulaması sonrası 7 gün ücretsiz." },
+  { title: "Ücretsiz hesabınızı açın", description: "Kurulum, paket veya kart seçimi yok. E-posta doğrulaması sonrası 7 iş günü ücretsiz." },
   { title: "Ruhsatı okutun, ilk aracı ekleyin", description: "Araç, müşteri ve şasi bilgisi fotoğraftan otomatik dolsun." },
   { title: "İş emri açın, linki paylaşın", description: "Müşteriye canlı takip linkini gönderin." },
 ];
@@ -70,7 +70,7 @@ export function TrustOnboardingSection() {
               className: "h-12 gap-2 px-8 text-base",
             })}
           >
-            7 Gün Ücretsiz Dene
+            Ücretsiz Dene
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

@@ -83,7 +83,16 @@ afterAll(() => {
   }
 })
 
-describe("POST /api/auth/register referral attribution", () => {
+describe("POST /api/auth/register onboarding and attribution", () => {
+  test("rejects sectors that are still marked as coming soon", async () => {
+    const response = await POST(
+      request({ ...validBody, sector: "mechanical_service" }, "198.51.100.70"),
+    )
+
+    expect(response.status).toBe(400)
+    expect(transactionCount).toBe(0)
+  })
+
   test("rejects an unknown referral code before creating a workshop", async () => {
     const response = await POST(request({ ...validBody, referralCode: "YOK-2026" }, "198.51.100.71"))
 
@@ -106,5 +115,31 @@ describe("POST /api/auth/register referral attribution", () => {
       referredByWorkshopId: "workshop-referrer",
       referralCodeUsed: "DAVET-42",
     })
+  })
+
+  test("stores the free onboarding profile without a package selection", async () => {
+    const response = await POST(
+      request({
+        ...validBody,
+        sector: "auto_service",
+        businessFeatures: ["stock", "fleet"],
+        teamSize: "2_5",
+        selectedModules: ["customers_vehicles", "work_orders", "stock_parts"],
+        setupPreference: "data_migration",
+      }, "198.51.100.73"),
+    )
+
+    expect(response.status).toBe(200)
+    expect(createdWorkshopData).toMatchObject({
+      planTier: "pro",
+      onboardingProfile: {
+        sector: "auto_service",
+        businessFeatures: ["stock", "fleet"],
+        teamSize: "2_5",
+        selectedModules: ["customers_vehicles", "work_orders", "stock_parts"],
+        setupPreference: "data_migration",
+      },
+    })
+    expect(createdWorkshopData).not.toHaveProperty("billingCycle")
   })
 })

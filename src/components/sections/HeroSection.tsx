@@ -11,7 +11,7 @@ import { trackMarketingEvent } from "@/lib/marketing-analytics";
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
   { icon: Zap, label: "Kurulumsuz" },
-  { icon: CalendarCheck, label: "7 gün ücretsiz" },
+  { icon: CalendarCheck, label: "7 iş günü ücretsiz" },
 ];
 
 const VIDEO_SRC = "/landing/bakimx-landing-page.mp4";
@@ -71,7 +71,7 @@ export function HeroSection() {
                   className: "h-12 gap-2 px-8 text-base",
                 })}
               >
-                7 Gün Ücretsiz Dene
+                Ücretsiz Dene
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
