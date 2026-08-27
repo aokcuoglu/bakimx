@@ -62,7 +62,7 @@ describe("landing itiraz kartları", () => {
     }
   });
 
-  test("hero LCP H1'de — video paneli öncelikli görsel yarışı oluşturmaz", () => {
+  test("hero LCP H1'de — carousel görselleri preload yarışına girmez", () => {
     const hero = read("../../components/sections/HeroSection.tsx");
 
     const priorityProp = /^\s*priority(\s*=|\s*$)/m;
