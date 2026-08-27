@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { canAccessSales, getSalesAccess, salesLeadScope } from "@/lib/sales/access"
+import { istanbulDayBounds } from "@/lib/sales/time"
 import { SalesConsole } from "./sales-console"
 
 export const dynamic = "force-dynamic"
@@ -14,6 +15,8 @@ export default async function SalesPage({
   const canManageCommissions = canAccessSales(access, "manageSalesCommissions")
   const sp = await searchParams
   const initialLeadId = typeof sp.lead === "string" ? sp.lead : null
+  const now = new Date()
+  const { end: tomorrow } = istanbulDayBounds(now)
 
   const leads = await prisma.salesLead.findMany({
     where: salesLeadScope(access),
@@ -24,7 +27,11 @@ export default async function SalesPage({
       businessName: true,
       contactName: true,
       phone: true,
+      email: true,
       city: true,
+      district: true,
+      address: true,
+      monthlyVehicles: true,
       notes: true,
       status: true,
       source: true,
@@ -52,6 +59,31 @@ export default async function SalesPage({
         },
       })
     : []
+
+  const tasks = await prisma.salesTask.findMany({
+    where: {
+      status: "scheduled",
+      startsAt: { lt: tomorrow },
+      ...(access.kind === "advisor" ? { lead: { advisorId: access.advisorId } } : {}),
+    },
+    orderBy: { startsAt: "asc" },
+    take: 100,
+    select: {
+      id: true,
+      type: true,
+      startsAt: true,
+      durationMinutes: true,
+      note: true,
+      lead: {
+        select: {
+          id: true,
+          businessName: true,
+          contactName: true,
+          advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
+        },
+      },
+    },
+  })
 
   const discountCodes = await prisma.salesDiscountCode.findMany({
     where: salesLeadScope(access) ? { advisorId: access.advisorId! } : {},
@@ -109,6 +141,22 @@ export default async function SalesPage({
         canManageCommissions={canManageCommissions}
         initialLeadId={initialLeadId}
         leads={serializedLeads}
+        tasks={tasks.map((task) => ({
+          id: task.id,
+          type: task.type,
+          startsAt: task.startsAt.toISOString(),
+          durationMinutes: task.durationMinutes,
+          note: task.note,
+          overdue: task.startsAt < now,
+          lead: {
+            id: task.lead.id,
+            businessName: task.lead.businessName,
+            contactName: task.lead.contactName,
+          },
+          advisorName: task.lead.advisor
+            ? [task.lead.advisor.user.firstName, task.lead.advisor.user.lastName].filter(Boolean).join(" ") || task.lead.advisor.user.email
+            : null,
+        }))}
         commissions={commissions.map((c) => ({
           id: c.id, status: c.status, amountMinor: c.amountMinor, note: c.note,
           businessName: c.lead.businessName,

@@ -14,8 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-agenda"
 import { cn } from "@/lib/utils"
-import { salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
+import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
 import { territoryPositionForCity } from "@/lib/sales/territory"
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
@@ -40,7 +42,11 @@ type Lead = {
   businessName: string
   contactName: string
   phone: string
+  email: string | null
   city: string | null
+  district: string | null
+  address: string | null
+  monthlyVehicles: string | null
   notes: string | null
   status: string
   source: string
@@ -115,6 +121,7 @@ function isExpired(iso: string) {
 
 export function SalesConsole({
   leads,
+  tasks,
   commissions,
   discountCodes,
   advisors,
@@ -124,6 +131,7 @@ export function SalesConsole({
   initialLeadId,
 }: {
   leads: Lead[]
+  tasks: AgendaTask[]
   commissions: Commission[]
   discountCodes: DiscountCode[]
   advisors: Advisor[]
@@ -135,8 +143,22 @@ export function SalesConsole({
   const [pending, startTransition] = useTransition()
   const form = useForm({
     resolver: zodResolver(salesLeadSchema),
-    defaultValues: { businessName: "", contactName: "", phone: "", email: "", city: "", notes: "" },
+    defaultValues: {
+      businessName: "",
+      contactName: "",
+      phone: "",
+      email: "",
+      city: "",
+      district: "",
+      address: "",
+      monthlyVehicles: "",
+      notes: "",
+      allowDuplicate: false,
+    },
   })
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    duplicates: { id: string; businessName: string; phone: string; email: string | null; matchedBy: ("phone" | "email")[] }[]
+  } | null>(null)
   const [activity, setActivity] = useState<Record<string, string>>({})
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [advisorFilter, setAdvisorFilter] = useState<string>("all")
@@ -200,11 +222,30 @@ export function SalesConsole({
     setOpenStatuses((current) => current.includes(lead.status) ? current : [...current, lead.status])
   }
 
-  function submitLead(values: { businessName: string; contactName: string; phone: string; email: string; city: string; notes: string }) {
+  function submitLead(values: {
+    businessName: string
+    contactName: string
+    phone: string
+    email: string
+    city: string
+    district: string
+    address: string
+    monthlyVehicles: string
+    notes: string
+    allowDuplicate?: boolean
+  }) {
     startTransition(async () => {
       const res = await createSalesLead(values)
-      if (!res.ok) { toast.error(res.error); return }
+      if (!res.ok) {
+        if (res.code === "duplicate" && res.duplicates) {
+          setDuplicateWarning({ duplicates: res.duplicates })
+          return
+        }
+        toast.error(res.error)
+        return
+      }
       form.reset()
+      setDuplicateWarning(null)
       setShowNewLeadForm(false)
       toast.success("Servis adayı satış havuzuna eklendi.")
     })
@@ -313,6 +354,8 @@ export function SalesConsole({
         </aside>
       </section>
 
+      <SalesTaskAgenda canManage={canManagePipeline} tasks={tasks} />
+
       <Dialog open={showNewLeadForm} onOpenChange={setShowNewLeadForm}>
         <DialogContent
           className="sm:max-w-2xl"
@@ -327,7 +370,7 @@ export function SalesConsole({
           </DialogHeader>
           <Form {...form}>
             <form id="new-sales-lead-form" onSubmit={form.handleSubmit(submitLead)} className="grid gap-4 sm:grid-cols-2">
-              {(["businessName", "contactName", "phone", "email", "city"] as const).map((name) => (
+              {(["businessName", "contactName", "phone", "email", "city", "district", "monthlyVehicles"] as const).map((name) => (
                 <FormField
                   key={name}
                   control={form.control}
@@ -335,7 +378,15 @@ export function SalesConsole({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {({ businessName: "Şirket / servis adı", contactName: "Yetkili", phone: "Telefon", email: "E-posta", city: "Şehir" })[name]}
+                        {({
+                          businessName: "Şirket / servis adı",
+                          contactName: "Yetkili",
+                          phone: "Telefon",
+                          email: "E-posta",
+                          city: "Şehir",
+                          district: "İlçe",
+                          monthlyVehicles: "Aylık araç hacmi",
+                        })[name]}
                       </FormLabel>
                       <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
@@ -343,6 +394,17 @@ export function SalesConsole({
                   )}
                 />
               ))}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Adres</FormLabel>
+                    <FormControl><Textarea {...field} rows={2} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="notes"
@@ -354,10 +416,39 @@ export function SalesConsole({
                   </FormItem>
                 )}
               />
+              {duplicateWarning && (
+                <Alert variant="warning" className="sm:col-span-2">
+                  <AlertTitle>Olası mükerrer aday bulundu</AlertTitle>
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      {duplicateWarning.duplicates.map((duplicate) => (
+                        <p key={duplicate.id}>
+                          <Link href={salesLeadAdminHref(duplicate.id)} className="font-medium underline">
+                            {duplicate.businessName}
+                          </Link>{" "}
+                          ({duplicate.matchedBy.includes("phone") ? "telefon" : ""}
+                          {duplicate.matchedBy.length === 2 ? " ve " : ""}
+                          {duplicate.matchedBy.includes("email") ? "e-posta" : ""})
+                        </p>
+                      ))}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </form>
           </Form>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => { form.reset(); setShowNewLeadForm(false) }}>Vazgeç</Button>
+            <Button type="button" variant="outline" onClick={() => { form.reset(); setDuplicateWarning(null); setShowNewLeadForm(false) }}>Vazgeç</Button>
+            {duplicateWarning && (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={pending}
+                onClick={() => submitLead({ ...form.getValues(), allowDuplicate: true })}
+              >
+                Yine de ekle
+              </Button>
+            )}
             <Button type="submit" form="new-sales-lead-form" disabled={pending}>Portföye ekle</Button>
           </DialogFooter>
         </DialogContent>
@@ -665,6 +756,9 @@ function LeadCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button asChild variant="outline" size="sm">
+            <Link href={salesLeadAdminHref(lead.id)}>Detay</Link>
+          </Button>
           {isAdmin && lead.workshopId && (
             <Button asChild variant="outline" size="sm">
               <Link href={workshopAdminHref(lead.workshopId)}>
@@ -672,7 +766,7 @@ function LeadCard({
               </Link>
             </Button>
           )}
-          {canManagePipeline && <Select
+          {canManagePipeline && !["won", "lost"].includes(lead.status) && <Select
             value={lead.status}
             disabled={pending}
             onValueChange={(status) =>
@@ -686,7 +780,7 @@ function LeadCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {statuses.map(([value, label]) => (
+              {statuses.filter(([value]) => !["won", "lost"].includes(value)).map(([value, label]) => (
                 <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
             </SelectContent>
@@ -735,7 +829,7 @@ function LeadCard({
       )}
 
       {/* Activity Input */}
-      {canManagePipeline && <div className="flex gap-2">
+      {canManagePipeline && lead.status !== "won" && <div className="flex gap-2">
         <Input
           value={activity}
           onChange={(e) => onActivityChange(e.target.value)}
