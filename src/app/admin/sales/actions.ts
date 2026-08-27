@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getSalesAccess, assertSalesLeadAccess } from "@/lib/sales/access"
+import { canManageSalesDiscountCode, resolveSalesDiscountAssignment } from "@/lib/sales/discount-policy"
 import { salesActivitySchema, salesCommissionSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema, salesLeadSchema, salesLeadStatusSchema } from "@/lib/validations/sales"
 import { workshopCodeCandidate } from "@/lib/workshop-code"
 
@@ -132,15 +133,27 @@ function generateDiscountCode(): string {
   return code
 }
 
-export async function generateSalesDiscountCode(input: unknown): Promise<Result & { code?: string; discountPercent?: number; expiresAt?: string }> {
+export async function generateSalesDiscountCode(input: unknown): Promise<Result & { code?: string; discountPercent?: number; expiresAt?: string; fundingSource?: "advisor_margin" | "bakimx_funded" }> {
   const access = await getSalesAccess("manageSalesPipeline")
   const parsed = salesDiscountCodeSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz indirim kodu" }
   const { discountPercent, leadId } = parsed.data
 
-  if (leadId) {
-    const lead = await prisma.salesLead.findUnique({ where: { id: leadId }, select: { advisorId: true } })
-    assertSalesLeadAccess(access, lead)
+  const lead = leadId
+    ? await prisma.salesLead.findUnique({
+        where: { id: leadId },
+        select: { id: true, advisorId: true, status: true },
+      })
+    : null
+  const policy = resolveSalesDiscountAssignment(access, parsed.data, lead)
+  if (!policy.ok) return policy
+
+  if (access.kind === "admin") {
+    const activeAdvisor = await prisma.salesAdvisor.findFirst({
+      where: { id: policy.assignment.advisorId, disabledAt: null },
+      select: { id: true },
+    })
+    if (!activeAdvisor) return { ok: false, error: "Seçilen satış danışmanı aktif değil." }
   }
 
   let code = generateDiscountCode()
@@ -157,23 +170,28 @@ export async function generateSalesDiscountCode(input: unknown): Promise<Result 
     data: {
       code,
       discountPercent,
-      advisorId: access.advisorId,
-      leadId: leadId || null,
+      ...policy.assignment,
       expiresAt,
     },
   })
 
   refresh()
-  return { ok: true, code: discountCode.code, discountPercent, expiresAt: expiresAt.toISOString() }
+  return {
+    ok: true,
+    code: discountCode.code,
+    discountPercent,
+    expiresAt: expiresAt.toISOString(),
+    fundingSource: policy.assignment.fundingSource,
+  }
 }
 
 async function getDiscountCodeForUpdate(id: string) {
   const access = await getSalesAccess("manageSalesPipeline")
   const discountCode = await prisma.salesDiscountCode.findUnique({
     where: { id },
-    select: { id: true, advisorId: true, usedAt: true, disabledAt: true },
+    select: { id: true, advisorId: true, fundingSource: true, usedAt: true, disabledAt: true },
   })
-  if (!discountCode || (access.kind === "advisor" && discountCode.advisorId !== access.advisorId)) {
+  if (!discountCode || !canManageSalesDiscountCode(access, discountCode)) {
     return null
   }
   return discountCode

@@ -31,6 +31,7 @@ export default async function SalesPage({
       nextActionAt: true,
       createdAt: true,
       workshopId: true,
+      advisorId: true,
       advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
       activities: {
         orderBy: { occurredAt: "desc" },
@@ -57,10 +58,11 @@ export default async function SalesPage({
     orderBy: { createdAt: "desc" },
     take: 50,
     select: {
-      id: true, code: true, discountPercent: true, usedCount: true, maxUses: true,
+      id: true, code: true, discountPercent: true, fundingSource: true, usedCount: true, maxUses: true,
       expiresAt: true, disabledAt: true, usedAt: true, createdAt: true,
       lead: { select: { businessName: true } },
       advisor: { select: { user: { select: { firstName: true, lastName: true, email: true } } } },
+      createdBy: { select: { firstName: true, lastName: true, email: true } },
     },
   })
 
@@ -94,14 +96,13 @@ export default async function SalesPage({
     advisorName: dc.advisor
       ? [dc.advisor.user.firstName, dc.advisor.user.lastName].filter(Boolean).join(" ") || dc.advisor.user.email
       : null,
+    createdByName: dc.createdBy
+      ? [dc.createdBy.firstName, dc.createdBy.lastName].filter(Boolean).join(" ") || dc.createdBy.email
+      : null,
   }))
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Satış Danışman Paneli</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Servis adayları, görüşmeler ve dönüşüm takibi.</p>
-      </div>
       <SalesConsole
         isAdmin={access.kind === "admin"}
         canManagePipeline={canManagePipeline}
