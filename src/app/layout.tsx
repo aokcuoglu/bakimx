@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteAssistant } from "@/components/site-assistant/site-assistant"
+import { announcementDismissScript } from "@/lib/landing/announcement"
 import { SITE_URL } from "@/lib/seo"
 import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
 
@@ -86,6 +88,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <head>
+        <Script
+          id="announcement-dismiss"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: announcementDismissScript() }}
+        />
         {/*
           JS kapalıyken kaydırma animasyonlarını tamamen devre dışı bırakır
           (BAK-165). `Reveal` gizliliği sunucuda basar — titremeyi önlemek
