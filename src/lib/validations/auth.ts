@@ -2,6 +2,13 @@ import { z } from "zod/v4"
 import { isEmailIdentifier } from "@/lib/user-identity"
 import { ACQUISITION_SOURCES } from "@/lib/acquisition-sources"
 import { optionalReferralCodeSchema } from "@/lib/validations/referral-code"
+import {
+  BUSINESS_FEATURE_IDS,
+  REGISTER_MODULE_IDS,
+  REGISTER_SECTOR_IDS,
+  SETUP_PREFERENCE_IDS,
+  TEAM_SIZE_IDS,
+} from "@/lib/register-onboarding"
 
 /**
  * Giriş formu tek kimlik alanı taşır (BAK-40): değer `@` içeriyorsa e-posta
@@ -26,6 +33,17 @@ export const loginSchema = z
 
 export const registerSchema = z
   .object({
+    sector: z.enum(REGISTER_SECTOR_IDS).default("auto_service"),
+    businessFeatures: z.array(z.enum(BUSINESS_FEATURE_IDS)).default([]),
+    teamSize: z.enum(TEAM_SIZE_IDS).default("solo"),
+    selectedModules: z.array(z.enum(REGISTER_MODULE_IDS)).min(1).default([
+      "customers_vehicles",
+      "work_orders",
+      "appointments",
+      "reports",
+      "digital_intake",
+    ]),
+    setupPreference: z.enum(SETUP_PREFERENCE_IDS).default("self_service"),
     acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
     acquisitionAdvisorId: z.string().optional().default(""),
     referralCode: optionalReferralCodeSchema,
@@ -46,8 +64,14 @@ export const registerSchema = z
         message: "Geçerli bir e-posta adresi giriniz",
       }),
     taxOffice: z.string().optional().default(""),
-    taxNumber: z.string().min(10, "Vergi/TC kimlik no zorunludur (en az 10 hane)"),
-    invoiceTitle: z.string().min(2, "Fatura ünvanı zorunludur"),
+    taxNumber: z
+      .string()
+      .optional()
+      .default("")
+      .refine((value) => !value || /^\d{10,11}$/.test(value.replace(/\s/g, "")), {
+        message: "Vergi/TC kimlik no 10 veya 11 haneli olmalıdır",
+      }),
+    invoiceTitle: z.string().optional().default(""),
     weekdayStart: z.string().optional().default("09:00"),
     weekdayEnd: z.string().optional().default("18:00"),
     workingDays: z.string().optional().default("1,2,3,4,5,6"),

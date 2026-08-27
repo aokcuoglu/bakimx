@@ -11,7 +11,7 @@ const COPY: Record<
   trial_expired: {
     title: "Deneme süreniz doldu",
     description:
-      "7 günlük ücretsiz deneme süreniz sona erdi. Verileriniz güvende — kaldığınız yerden devam etmek için bir paket seçin.",
+      "7 iş günlük ücretsiz kullanımınız sona erdi ve üyeliğiniz donduruldu. Verileriniz güvende — kaldığınız yerden devam etmek için bir paket seçin.",
     icon: Clock,
     showPackages: true,
   },

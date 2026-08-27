@@ -7,7 +7,7 @@ import { PLAN_PACKAGES } from "@/lib/plans-catalog"
 import { publicPageMetadata, SITE_URL } from "@/lib/seo"
 
 const description =
-  "BakımX oto servis programı paketlerini ve KDV dahil fiyatlarını karşılaştırın. 7 gün ücretsiz deneyin; aylık veya yıllık planınızı seçin."
+  "BakımX oto servis programı paketlerini ve KDV dahil fiyatlarını karşılaştırın. 7 iş günü ücretsiz deneyin; aylık veya yıllık planınızı seçin."
 
 export const metadata = publicPageMetadata({
   path: "/fiyatlar",
@@ -41,7 +41,7 @@ export default function FiyatlarPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Oto servis programı paketleri ve fiyatları</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
-            İş yerinize uygun paketi seçin. 7 gün ücretsiz denemek için{" "}
+            İş yerinize uygun paketi seçin. 7 iş günü ücretsiz denemek için{" "}
             <Link href="/register" className="text-primary underline underline-offset-2">kayıt olun</Link>, ya da doğrudan satın alın.
           </p>
         </div>
