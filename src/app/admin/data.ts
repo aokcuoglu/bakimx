@@ -10,6 +10,7 @@ import {
   buildWorkshopWhere,
   type WorkshopListQuery,
 } from "@/lib/admin-workshop-filters"
+import { INTERNAL_OPERATIONS_WORKSHOP_ID } from "@/lib/workshop-kind"
 
 export interface WorkshopListResult {
   rows: AdminWorkshopRow[]
@@ -98,12 +99,12 @@ export interface AdminWorkshopSummary {
 }
 
 export async function getAcquisitionSummary() {
-  const groups = await prisma.workshop.groupBy({ by: ["acquisitionSource"], _count: { _all: true }, where: {} })
+  const groups = await prisma.workshop.groupBy({ by: ["acquisitionSource"], _count: { _all: true }, where: { kind: "customer" } })
   const rows = await Promise.all(groups.map(async (group) => {
     const [active, purchased, revenue] = await Promise.all([
-      prisma.workshop.count({ where: { acquisitionSource: group.acquisitionSource, subscriptionStatus: { in: ["active", "trialing"] } } }),
-      prisma.workshop.count({ where: { acquisitionSource: group.acquisitionSource, billingOrders: { some: { status: "confirmed" } } } }),
-      prisma.billingOrder.aggregate({ where: { status: "confirmed", workshop: { acquisitionSource: group.acquisitionSource } }, _sum: { amountMinor: true } }),
+      prisma.workshop.count({ where: { kind: "customer", acquisitionSource: group.acquisitionSource, subscriptionStatus: { in: ["active", "trialing"] } } }),
+      prisma.workshop.count({ where: { kind: "customer", acquisitionSource: group.acquisitionSource, billingOrders: { some: { status: "confirmed" } } } }),
+      prisma.billingOrder.aggregate({ where: { status: "confirmed", workshop: { kind: "customer", acquisitionSource: group.acquisitionSource } }, _sum: { amountMinor: true } }),
     ])
     return { source: group.acquisitionSource, workshops: group._count._all, active, purchased, revenueMinor: revenue._sum.amountMinor ?? 0 }
   }))
@@ -113,11 +114,11 @@ export async function getAcquisitionSummary() {
 /** Ops ana sayfası sayaçları — tüm tabloyu çekmeden `count` ile hesaplanır. */
 export async function getWorkshopSummary(): Promise<AdminWorkshopSummary> {
   const [total, pending, planRequests, pendingPreview] = await Promise.all([
-    prisma.workshop.count(),
-    prisma.workshop.count({ where: { approvalStatus: "pending" } }),
-    prisma.workshop.count({ where: { requestedPlanTier: { not: null } } }),
+    prisma.workshop.count({ where: { kind: "customer" } }),
+    prisma.workshop.count({ where: { kind: "customer", approvalStatus: "pending" } }),
+    prisma.workshop.count({ where: { kind: "customer", requestedPlanTier: { not: null } } }),
     prisma.workshop.findMany({
-      where: { approvalStatus: "pending" },
+      where: { kind: "customer", approvalStatus: "pending" },
       orderBy: { createdAt: "asc" },
       take: PENDING_PREVIEW_TAKE,
       select: { id: true, name: true },
@@ -152,7 +153,7 @@ function adminLabel(user: {
 /** İş yeri bağlama ve atama listeleri. Yalnız etkin yöneticiler atanabilir. */
 export async function getSupportConsoleOptions(): Promise<SupportConsoleOptions> {
   const [workshops, admins] = await Promise.all([
-    prisma.workshop.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.workshop.findMany({ where: { kind: "customer" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.platformAdmin.findMany({
       where: { disabledAt: null },
       orderBy: { createdAt: "asc" },
@@ -187,7 +188,10 @@ export async function getLeadRows(filters: LeadFilters = {}): Promise<{
       },
     }),
     prisma.supportRequest.findMany({
-      where: filters.supportWorkshopId ? { workshopId: filters.supportWorkshopId } : undefined,
+      where: {
+        OR: [{ workshopId: null }, { workshop: { kind: "customer" } }],
+        ...(filters.supportWorkshopId ? { workshopId: filters.supportWorkshopId } : {}),
+      },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
@@ -319,12 +323,12 @@ export async function getBillingData(): Promise<BillingData> {
   }
   const [pendingOrders, recentOrdersRaw, stuckTxns, monthOrders, activeWorkshops] = await Promise.all([
     prisma.billingOrder.findMany({
-      where: { status: "pending_payment" },
+      where: { status: "pending_payment", workshop: { kind: "customer" } },
       orderBy: { createdAt: "desc" },
       include: orderInclude,
     }),
     prisma.billingOrder.findMany({
-      where: { status: { in: ["confirmed", "cancelled"] } },
+      where: { status: { in: ["confirmed", "cancelled"] }, workshop: { kind: "customer" } },
       orderBy: { createdAt: "desc" },
       take: RECENT_ORDER_TAKE,
       include: orderInclude,
@@ -334,16 +338,16 @@ export async function getBillingData(): Promise<BillingData> {
       // takılabilir (banka çekimi tamamlanmış ama activateVerifiedWorkshop hiç
       // tetiklenmemiş olabilir) — bu ekran artık iki purpose'u da kurtarır
       // (retryStuckActivation'daki purpose dalına bkz.).
-      where: { status: "callback_received" },
+      where: { status: "callback_received", workshopId: { not: INTERNAL_OPERATIONS_WORKSHOP_ID } },
       orderBy: { createdAt: "desc" },
       include: { billingOrder: { select: { reference: true, workshop: { select: { name: true } } } } },
     }),
     prisma.billingOrder.findMany({
-      where: { status: "confirmed", confirmedAt: { gte: monthStart } },
+      where: { status: "confirmed", confirmedAt: { gte: monthStart }, workshop: { kind: "customer" } },
       select: { amountMinor: true },
     }),
     prisma.workshop.findMany({
-      where: { subscriptionStatus: "active", currentPeriodEnd: { not: null } },
+      where: { kind: "customer", subscriptionStatus: "active", currentPeriodEnd: { not: null } },
       select: { id: true, name: true, planTier: true, billingCycle: true, currentPeriodEnd: true },
     }),
   ])
@@ -357,7 +361,7 @@ export async function getBillingData(): Promise<BillingData> {
     ...new Set(stuckTxns.filter((t) => t.purpose === "card_verification").map((t) => t.workshopId)),
   ]
   const verifyWorkshops = verifyWorkshopIds.length
-    ? await prisma.workshop.findMany({ where: { id: { in: verifyWorkshopIds } }, select: { id: true, name: true } })
+    ? await prisma.workshop.findMany({ where: { kind: "customer", id: { in: verifyWorkshopIds } }, select: { id: true, name: true } })
     : []
   const verifyWorkshopNameById = new Map(verifyWorkshops.map((w) => [w.id, w.name]))
 

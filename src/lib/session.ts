@@ -1,5 +1,6 @@
 import { getIronSession } from "iron-session"
 import { cookies } from "next/headers"
+import type { SessionSurface } from "@/lib/technician-route-access"
 
 /**
  * Founder impersonation overlay. Layered ON TOP of the real session — the real
@@ -39,6 +40,8 @@ export interface SessionData {
    * uygulamaz ve layout fallback devreye girer.
    */
   role?: string
+  /** Tenant uygulaması ile iç satış konsolunu middleware'de ayıran imzalı yüzey. */
+  surface?: SessionSurface
   impersonation?: ImpersonationOverlay
 }
 
@@ -103,7 +106,8 @@ export async function establishSession(
   userId: string,
   workshopId: string,
   role?: string,
-  authMethod: SessionData["authMethod"] = "password"
+  authMethod: SessionData["authMethod"] = "password",
+  surface: SessionSurface = "tenant",
 ): Promise<void> {
   const session = await getSession()
   session.destroy()
@@ -111,6 +115,7 @@ export async function establishSession(
   session.workshopId = workshopId
   session.authenticatedAt = Date.now()
   session.authMethod = authMethod
+  session.surface = surface
   if (role) session.role = role
   await session.save()
 }

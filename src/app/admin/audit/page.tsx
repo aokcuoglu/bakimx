@@ -61,7 +61,7 @@ export default async function AdminAuditPage({
   const sp = await searchParams
 
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1)
-  const where: Prisma.AuditLogWhereInput = {}
+  const where: Prisma.AuditLogWhereInput = { workshop: { kind: "customer" } }
   if (sp.workshopId) where.workshopId = sp.workshopId
   if (sp.action) where.action = sp.action
 
@@ -79,8 +79,8 @@ export default async function AdminAuditPage({
       },
     }),
     prisma.auditLog.count({ where }),
-    prisma.workshop.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.auditLog.findMany({ distinct: ["action"], orderBy: { action: "asc" }, select: { action: true } }),
+    prisma.workshop.findMany({ where: { kind: "customer" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.auditLog.findMany({ where: { workshop: { kind: "customer" } }, distinct: ["action"], orderBy: { action: "asc" }, select: { action: true } }),
   ])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))

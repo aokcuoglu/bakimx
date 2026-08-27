@@ -113,6 +113,8 @@ export function SalesConsole({
   discountCodes,
   advisors,
   isAdmin,
+  canManagePipeline,
+  canManageCommissions,
   initialLeadId,
 }: {
   leads: Lead[]
@@ -120,6 +122,8 @@ export function SalesConsole({
   discountCodes: DiscountCode[]
   advisors: Advisor[]
   isAdmin: boolean
+  canManagePipeline: boolean
+  canManageCommissions: boolean
   initialLeadId: string | null
 }) {
   const [pending, startTransition] = useTransition()
@@ -198,7 +202,7 @@ export function SalesConsole({
       </div>
 
       {/* New Lead Form */}
-      <section className="rounded-xl border bg-card">
+      {canManagePipeline && <section className="rounded-xl border bg-card">
         <Button
           type="button"
           onClick={() => setShowNewLeadForm(!showNewLeadForm)}
@@ -254,7 +258,7 @@ export function SalesConsole({
             </Form>
           </div>
         )}
-      </section>
+      </section>}
 
       {/* Sales Pool */}
       <section className="space-y-4">
@@ -323,6 +327,7 @@ export function SalesConsole({
                           lead={lead}
                           isLinked={lead.id === initialLeadId}
                           isAdmin={isAdmin}
+                          canManagePipeline={canManagePipeline}
                           pending={pending}
                           activity={activity[lead.id] ?? ""}
                           onActivityChange={(val) => setActivity((v) => ({ ...v, [lead.id]: val }))}
@@ -343,12 +348,13 @@ export function SalesConsole({
         discountCodes={discountCodes}
         leads={leads}
         isAdmin={isAdmin}
+        canManagePipeline={canManagePipeline}
         pending={pending}
         startTransition={startTransition}
       />
 
       {/* Commission Queue */}
-      {isAdmin && commissions.length > 0 && (
+      {canManageCommissions && commissions.length > 0 && (
         <section className="space-y-3">
           <div>
             <h2 className="text-lg font-bold text-foreground">Hakediş Kuyruğu</h2>
@@ -367,6 +373,7 @@ function LeadCard({
   lead,
   isLinked,
   isAdmin,
+  canManagePipeline,
   pending,
   activity,
   onActivityChange,
@@ -375,6 +382,7 @@ function LeadCard({
   lead: Lead
   isLinked: boolean
   isAdmin: boolean
+  canManagePipeline: boolean
   pending: boolean
   activity: string
   onActivityChange: (val: string) => void
@@ -420,7 +428,7 @@ function LeadCard({
               </Link>
             </Button>
           )}
-          <Select
+          {canManagePipeline && <Select
             value={lead.status}
             disabled={pending}
             onValueChange={(status) =>
@@ -438,7 +446,7 @@ function LeadCard({
                 <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
       </div>
 
@@ -483,7 +491,7 @@ function LeadCard({
       )}
 
       {/* Activity Input */}
-      <div className="flex gap-2">
+      {canManagePipeline && <div className="flex gap-2">
         <Input
           value={activity}
           onChange={(e) => onActivityChange(e.target.value)}
@@ -507,10 +515,10 @@ function LeadCard({
         >
           Ekle
         </Button>
-      </div>
+      </div>}
 
       {/* Admin Actions */}
-      {isAdmin && lead.status !== "won" && (
+      {isAdmin && canManagePipeline && lead.status !== "won" && (
         <div className="flex gap-2 pt-1">
           <Button
             variant="secondary"
@@ -537,12 +545,14 @@ function DiscountCodeSection({
   discountCodes,
   leads,
   isAdmin: _isAdmin,
+  canManagePipeline,
   pending,
   startTransition,
 }: {
   discountCodes: DiscountCode[]
   leads: Lead[]
   isAdmin: boolean
+  canManagePipeline: boolean
   pending: boolean
   startTransition: ReturnType<typeof useTransition>[1]
 }) {
@@ -613,7 +623,7 @@ function DiscountCodeSection({
       </div>
 
       {/* Generate Form */}
-      <div className="rounded-xl border bg-card p-4">
+      {canManagePipeline && <div className="rounded-xl border bg-card p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(generateCode)} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <FormField
@@ -672,7 +682,7 @@ function DiscountCodeSection({
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Code List */}
       {discountCodes.length > 0 && (
@@ -713,7 +723,7 @@ function DiscountCodeSection({
                       <td className="px-4 py-2.5 text-muted-foreground">{dc.advisorName ?? "—"}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{formatDate(dc.createdAt)}</td>
                       <td className="px-4 py-2.5">
-                        {!inactive && !used && (
+                        {canManagePipeline && !inactive && !used && (
                           <div className="flex items-center justify-end gap-1">
                             {active && (
                               <Button variant="ghost" size="icon-sm" onClick={() => copyCode(dc.code)} aria-label="Kodu kopyala">

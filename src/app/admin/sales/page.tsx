@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db"
-import { getSalesAccess, salesLeadScope } from "@/lib/sales/access"
+import { canAccessSales, getSalesAccess, salesLeadScope } from "@/lib/sales/access"
 import { SalesConsole } from "./sales-console"
 
 export const dynamic = "force-dynamic"
@@ -10,6 +10,8 @@ export default async function SalesPage({
   searchParams: Promise<{ lead?: string | string[] }>
 }) {
   const access = await getSalesAccess()
+  const canManagePipeline = canAccessSales(access, "manageSalesPipeline")
+  const canManageCommissions = canAccessSales(access, "manageSalesCommissions")
   const sp = await searchParams
   const initialLeadId = typeof sp.lead === "string" ? sp.lead : null
 
@@ -38,7 +40,7 @@ export default async function SalesPage({
     },
   })
 
-  const commissions = access.kind === "admin"
+  const commissions = canManageCommissions
     ? await prisma.salesCommission.findMany({
         where: { status: { in: ["draft", "approved"] } },
         orderBy: { createdAt: "asc" },
@@ -102,6 +104,8 @@ export default async function SalesPage({
       </div>
       <SalesConsole
         isAdmin={access.kind === "admin"}
+        canManagePipeline={canManagePipeline}
+        canManageCommissions={canManageCommissions}
         initialLeadId={initialLeadId}
         leads={serializedLeads}
         commissions={commissions.map((c) => ({

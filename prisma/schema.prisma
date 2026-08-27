@@ -8,6 +8,7 @@ datasource db {
 
 model Workshop {
   id           String   @id @default(cuid())
+  kind         WorkshopKind @default(customer)
   // Tenant giriş kodu (BAK-40). E-postasız kullanıcı `/w/<loginCode>` ile kendi
   // atölyesini seçer; kullanıcı adları YALNIZ bu tenant içinde benzersizdir.
   // Format: küçük harf `a-z0-9-`, 3–20 karakter (bkz. `src/lib/workshop-code.ts`).
@@ -113,6 +114,12 @@ model Workshop {
   referredWorkshops         Workshop[]    @relation("WorkshopReferralAttribution")
 
   @@index([referredByWorkshopId])
+  @@index([kind])
+}
+
+enum WorkshopKind {
+  customer
+  internal
 }
 
 // Feature/pricing package a workshop is on. During the trial a workshop is
@@ -347,6 +354,7 @@ model User {
   /// BAK-138: Bu hesabın elle düzelttiği işçilik süresi kayıtları.
   editedLaborSessions   LaborSession[]       @relation("LaborSessionEditedBy")
   salesAdvisor          SalesAdvisor?
+  createdSalesAdvisorInvites SalesAdvisorInvite[] @relation("SalesAdvisorInviteCreator")
   salesActivities       SalesActivity[]      @relation("SalesActivityActor")
   createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
 
@@ -1850,6 +1858,8 @@ model SalesAdvisor {
   userId     String   @unique
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   disabledAt DateTime?
+  /// Doluysa bu andan önce açılmış satış oturumları geçersizdir.
+  sessionsValidFrom DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -1861,6 +1871,32 @@ model SalesAdvisor {
   referrals SalesReferral[]
 
   @@index([disabledAt])
+}
+
+enum SalesAdvisorInviteStatus {
+  pending
+  accepted
+  revoked
+}
+
+/// Kurucunun satış danışmanına gönderdiği 72 saatlik tek kullanımlık davet.
+/// Ham token yalnız e-postadaki URL'de bulunur; veritabanında SHA-256 özeti saklanır.
+model SalesAdvisorInvite {
+  id              String                   @id @default(cuid())
+  email           String                   @unique
+  firstName       String
+  lastName        String
+  tokenHash       String                   @unique
+  status          SalesAdvisorInviteStatus @default(pending)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdByUserId String
+  createdBy       User                     @relation("SalesAdvisorInviteCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([status, expiresAt])
+  @@index([createdByUserId])
 }
 
 enum SalesLeadSource {

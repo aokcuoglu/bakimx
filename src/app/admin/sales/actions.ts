@@ -11,7 +11,7 @@ type Result = { ok: true } | { ok: false; error: string }
 const refresh = () => revalidatePath("/admin/sales")
 
 export async function createSalesLead(input: unknown): Promise<Result> {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   const parsed = salesLeadSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz kayıt" }
   const data = parsed.data
@@ -33,7 +33,7 @@ export async function createSalesLead(input: unknown): Promise<Result> {
 }
 
 export async function setSalesLeadStatus(leadId: string, status: string): Promise<Result> {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   const parsed = salesLeadStatusSchema.safeParse(status)
   if (!leadId || !parsed.success) return { ok: false, error: "Geçersiz satış aşaması." }
   const lead = await prisma.salesLead.findUnique({ where: { id: leadId }, select: { advisorId: true, source: true } })
@@ -55,7 +55,7 @@ export async function setSalesLeadStatus(leadId: string, status: string): Promis
 }
 
 export async function addSalesActivity(leadId: string, input: unknown): Promise<Result> {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   const parsed = salesActivitySchema.safeParse(input)
   if (!leadId) return { ok: false, error: "Satış adayı seçilmedi." }
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz görüşme" }
@@ -74,8 +74,7 @@ export async function addSalesActivity(leadId: string, input: unknown): Promise<
 }
 
 export async function updateSalesCommission(id: string, input: unknown, status: "approved" | "paid" | "void"): Promise<Result> {
-  const access = await getSalesAccess()
-  if (access.kind !== "admin") return { ok: false, error: "Hakediş yalnız yöneticiler tarafından işlenebilir." }
+  await getSalesAccess("manageSalesCommissions")
   const parsed = salesCommissionSchema.safeParse(input)
   if (!id) return { ok: false, error: "Hakediş seçilmedi." }
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz hakediş" }
@@ -97,7 +96,7 @@ export async function updateSalesCommission(id: string, input: unknown, status: 
 /** Creates the real, not-yet-provisioned workshop record for a won lead. A
  * platform admin completes owner invitation through the existing admin flow. */
 export async function convertSalesLead(leadId: string): Promise<Result> {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   if (access.kind !== "admin") return { ok: false, error: "İş yeri hesabını yalnız yöneticiler açabilir." }
   const lead = await prisma.salesLead.findUnique({ where: { id: leadId } })
   if (!lead) return { ok: false, error: "Satış adayı bulunamadı." }
@@ -134,7 +133,7 @@ function generateDiscountCode(): string {
 }
 
 export async function generateSalesDiscountCode(input: unknown): Promise<Result & { code?: string; discountPercent?: number; expiresAt?: string }> {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   const parsed = salesDiscountCodeSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Geçersiz indirim kodu" }
   const { discountPercent, leadId } = parsed.data
@@ -169,7 +168,7 @@ export async function generateSalesDiscountCode(input: unknown): Promise<Result 
 }
 
 async function getDiscountCodeForUpdate(id: string) {
-  const access = await getSalesAccess()
+  const access = await getSalesAccess("manageSalesPipeline")
   const discountCode = await prisma.salesDiscountCode.findUnique({
     where: { id },
     select: { id: true, advisorId: true, usedAt: true, disabledAt: true },

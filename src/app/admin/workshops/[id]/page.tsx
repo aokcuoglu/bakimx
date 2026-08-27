@@ -89,8 +89,8 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
     ...(orderFilters.cycle ? { billingCycle: orderFilters.cycle } : {}),
   }
 
-  const workshop = await prisma.workshop.findUnique({
-    where: { id },
+  const workshop = await prisma.workshop.findFirst({
+    where: { id, kind: "customer" },
     include: {
       users: { orderBy: { createdAt: "asc" } },
       acquisitionAdvisor: {

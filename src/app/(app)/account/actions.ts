@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { requireAuth } from "@/lib/auth"
+import { requireIdentity } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { rateLimit } from "@/lib/rate-limit"
@@ -33,7 +33,7 @@ const ATTEMPT_WINDOW_MS = 15 * 60_000
  * Bu muafiyet `src/lib/rbac-coverage.test.ts` ALLOWLIST'inde gerekçesiyle kayıtlı.
  */
 export async function changeOwnPasswordAction(formData: FormData): Promise<Result> {
-  const user = await requireAuth()
+  const user = await requireIdentity()
 
   if (!(await rateLimit(`pwchange:${user.id}`, MAX_ATTEMPTS, ATTEMPT_WINDOW_MS)).allowed) {
     return { ok: false, error: "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin." }
@@ -79,7 +79,7 @@ const updateProfileSchema = z.object({
 })
 
 export async function updateOwnProfileAction(formData: FormData): Promise<Result> {
-  const user = await requireAuth()
+  const user = await requireIdentity()
 
   const parsed = updateProfileSchema.safeParse({
     firstName: String(formData.get("firstName") ?? "").trim(),
