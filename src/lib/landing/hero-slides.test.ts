@@ -7,6 +7,15 @@ const publicFile = (path: string) =>
   new URL(`../../../public${path}`, import.meta.url);
 
 describe("landing hero carousel", () => {
+  test("leads with the ten-second work-order and part-finding promise", () => {
+    const firstSlide = HERO_SLIDES[0];
+
+    expect(`${firstSlide.title} ${firstSlide.highlight}`).toBe(
+      "Oto servisinizde iş emri açmak ve parça bulmak artık 10 saniye.",
+    );
+    expect(firstSlide.description).toContain("VIN'e uyumlu parçaları");
+  });
+
   test("uses three truthful, uniquely identified product stories", () => {
     expect(HERO_SLIDES).toHaveLength(3);
     expect(new Set(HERO_SLIDES.map((slide) => slide.id)).size).toBe(3);

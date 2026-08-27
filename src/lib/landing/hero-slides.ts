@@ -16,15 +16,15 @@ export type HeroSlide = {
 export const HERO_SLIDES = [
   {
     id: "digital-intake",
-    eyebrow: "Dijital Araç Kabul",
-    title: "Ruhsatı okutun,",
-    highlight: "iş emrini saniyeler içinde açın.",
+    eyebrow: "İş Emri + Parça Bulma",
+    title: "Oto servisinizde iş emri açmak ve parça bulmak",
+    highlight: "artık 10 saniye.",
     description:
-      "Araç bilgilerini tek tek yazmadan kayda alın; fotoğraflı kabul sürecini servisin her noktasından başlatın.",
+      "Ruhsatı okutarak aracı saniyeler içinde tanıyın; dijital iş emrini başlatın ve VIN'e uyumlu parçaları aynı akışta bulun.",
     bullets: [
-      "Ruhsattan otomatik araç bilgisi",
-      "Fotoğraflı kabul kaydı",
-      "Mobil ve kurulumsuz kullanım",
+      "Ruhsattan otomatik araç tanıma",
+      "10 saniyede dijital iş emri",
+      "VIN'e uyumlu parça eşleşmesi",
     ],
     image: "/landing/hero/digital-intake.webp",
     imagePosition: "72% center",
