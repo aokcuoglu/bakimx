@@ -3,7 +3,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 import { trackMarketingEvent } from "@/lib/marketing-analytics";
@@ -89,18 +89,14 @@ export function Header() {
           >
             Giriş Yap
           </Link>
-          <Link
-            href="/register"
-            onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "header_desktop" })}
-            className={buttonVariants({
-              size: "default",
-              className: transparent
-                ? "bg-white text-navy hover:bg-white/90"
-                : "bg-primary text-primary-foreground hover:bg-primary/90",
-            })}
-          >
-            Ücretsiz Dene
-          </Link>
+          <Button asChild variant={transparent ? "inverse" : "default"}>
+            <Link
+              href="/register"
+              onClick={() => trackMarketingEvent("trial_cta_click", { cta_location: "header_desktop" })}
+            >
+              Ücretsiz Dene
+            </Link>
+          </Button>
         </div>
 
         <Button
@@ -137,13 +133,14 @@ export function Header() {
               >
                 Giriş Yap
               </Link>
-              <Link
-                href="/register"
-                onClick={() => { setMobileOpen(false); trackMarketingEvent("trial_cta_click", { cta_location: "header_mobile" }) }}
-                className={buttonVariants({ size: "lg", className: "bg-primary text-primary-foreground hover:bg-primary/90 w-full text-center" })}
-              >
-                Ücretsiz Dene
-              </Link>
+              <Button asChild size="lg" className="w-full">
+                <Link
+                  href="/register"
+                  onClick={() => { setMobileOpen(false); trackMarketingEvent("trial_cta_click", { cta_location: "header_mobile" }) }}
+                >
+                  Ücretsiz Dene
+                </Link>
+              </Button>
             </div>
           </div>
         </div>

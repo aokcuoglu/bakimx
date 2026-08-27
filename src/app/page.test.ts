@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { buttonVariants } from "@/components/ui/button";
 
 const appDir = import.meta.dir;
 const sectionsDir = join(appDir, "..", "components", "sections");
 const pageSource = readFileSync(join(appDir, "page.tsx"), "utf8");
 const heroSource = readFileSync(join(sectionsDir, "HeroSection.tsx"), "utf8");
+const headerSource = readFileSync(join(sectionsDir, "Header.tsx"), "utf8");
 
 const landingOrder = [
   "AnnouncementBar",
@@ -50,5 +52,14 @@ describe("landing page composition", () => {
     expect(heading).not.toContain("initial=");
     expect(heading).not.toContain("animate=");
     expect(heading).not.toContain("enter-up");
+  });
+
+  test("uses a collision-free inverse variant for the transparent header CTA", () => {
+    const inverseClasses = buttonVariants({ variant: "inverse" });
+
+    expect(headerSource).toContain('variant={transparent ? "inverse" : "default"}');
+    expect(inverseClasses).toContain("bg-navy-foreground");
+    expect(inverseClasses).toContain("text-navy");
+    expect(inverseClasses).not.toContain("text-primary-foreground");
   });
 });
