@@ -356,6 +356,8 @@ model User {
   salesAdvisor          SalesAdvisor?
   createdSalesAdvisorInvites SalesAdvisorInvite[] @relation("SalesAdvisorInviteCreator")
   salesActivities       SalesActivity[]      @relation("SalesActivityActor")
+  salesLeadAssignments  SalesLeadAssignment[] @relation("SalesLeadAssignmentActor")
+  createdSalesTasks     SalesTask[]          @relation("SalesTaskCreator")
   createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
@@ -1864,6 +1866,8 @@ model SalesAdvisor {
   updatedAt  DateTime @updatedAt
 
   leads      SalesLead[]
+  assignmentsFrom SalesLeadAssignment[] @relation("SalesLeadAssignmentFrom")
+  assignmentsTo   SalesLeadAssignment[] @relation("SalesLeadAssignmentTo")
   commissions SalesCommission[]
   demoSessions SalesDemoSession[]
   discountCodes SalesDiscountCode[]
@@ -1924,6 +1928,30 @@ enum SalesActivityType {
   note
 }
 
+enum SalesActivityResult {
+  reached
+  no_answer
+  follow_up_required
+  demo_scheduled
+  proposal_sent
+  won
+  lost
+}
+
+enum SalesTaskType {
+  call
+  visit
+  online_demo
+  follow_up
+}
+
+enum SalesTaskStatus {
+  scheduled
+  completed
+  cancelled
+  no_show
+}
+
 enum SalesCommissionStatus {
   draft
   approved
@@ -1939,7 +1967,9 @@ model SalesLead {
   businessName       String
   contactName        String
   phone              String
+  normalizedPhone    String?
   email              String?
+  normalizedEmail    String?
   city               String?
   district           String?
   address            String?
@@ -1947,6 +1977,8 @@ model SalesLead {
   notes              String?
   nextActionAt       DateTime?
   lostReason         String?
+  /// Doluysa lead'in danışman atfı artık değiştirilemez. İlk kazanımda dolar.
+  attributionFrozenAt DateTime?
   advisorId          String?
   advisor            SalesAdvisor?  @relation(fields: [advisorId], references: [id], onDelete: SetNull)
   workshopId         String?         @unique
@@ -1957,6 +1989,8 @@ model SalesLead {
   updatedAt          DateTime        @updatedAt
 
   activities         SalesActivity[]
+  assignments        SalesLeadAssignment[]
+  tasks              SalesTask[]
   demoSessions       SalesDemoSession[]
   commissions        SalesCommission[]
   discountCodes      SalesDiscountCode[]
@@ -1964,22 +1998,73 @@ model SalesLead {
 
   @@index([advisorId, status])
   @@index([status, nextActionAt])
+  @@index([normalizedPhone])
+  @@index([normalizedEmail])
   @@index([createdAt])
 }
 
+/// Atanmamış havuzdan danışmana atama ve danışmanlar arası devir geçmişi.
+/// Lead kazanıldıktan sonra `SalesLead.attributionFrozenAt` yeni kayıtları engeller.
+model SalesLeadAssignment {
+  id            String        @id @default(cuid())
+  leadId        String
+  lead          SalesLead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromAdvisorId String?
+  fromAdvisor   SalesAdvisor? @relation("SalesLeadAssignmentFrom", fields: [fromAdvisorId], references: [id], onDelete: SetNull)
+  toAdvisorId   String?
+  toAdvisor     SalesAdvisor? @relation("SalesLeadAssignmentTo", fields: [toAdvisorId], references: [id], onDelete: SetNull)
+  actorId       String
+  actor         User          @relation("SalesLeadAssignmentActor", fields: [actorId], references: [id], onDelete: Restrict)
+  createdAt     DateTime      @default(now())
+
+  @@index([leadId, createdAt])
+  @@index([fromAdvisorId])
+  @@index([toAdvisorId])
+  @@index([actorId])
+}
+
 model SalesActivity {
-  id          String            @id @default(cuid())
-  leadId      String
-  lead        SalesLead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  type        SalesActivityType
-  summary     String
-  occurredAt  DateTime          @default(now())
+  id           String               @id @default(cuid())
+  leadId       String
+  lead         SalesLead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type         SalesActivityType
+  result       SalesActivityResult?
+  summary      String
+  lostReason   String?
+  occurredAt   DateTime             @default(now())
   nextActionAt DateTime?
-  createdById String
-  createdBy   User              @relation("SalesActivityActor", fields: [createdById], references: [id])
-  createdAt   DateTime          @default(now())
+  createdById  String
+  createdBy    User                 @relation("SalesActivityActor", fields: [createdById], references: [id])
+  completedTask SalesTask?          @relation("SalesTaskCompletion")
+  createdAt    DateTime             @default(now())
 
   @@index([leadId, occurredAt])
+  @@index([result, occurredAt])
+}
+
+/// Satış danışmanının arama, ziyaret, demo ve takip ajandası. Görev sahipliği
+/// lead'in güncel danışmanından türetilir; lead devredildiğinde açık görevler de
+/// yeni danışmanın kapsamına atomik olarak geçer.
+model SalesTask {
+  id                    String          @id @default(cuid())
+  leadId                String
+  lead                  SalesLead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type                  SalesTaskType
+  startsAt              DateTime
+  durationMinutes       Int
+  status                SalesTaskStatus @default(scheduled)
+  note                  String?
+  createdById           String
+  createdBy             User            @relation("SalesTaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  completedByActivityId String?         @unique
+  completedByActivity   SalesActivity?  @relation("SalesTaskCompletion", fields: [completedByActivityId], references: [id], onDelete: SetNull)
+  resolvedAt            DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([leadId, status, startsAt])
+  @@index([status, startsAt])
+  @@index([createdById])
 }
 
 /// Ekran paylaşımı için açılan, üretimden izole demo iş yeri oturumu.

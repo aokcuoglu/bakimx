@@ -32,6 +32,18 @@ const ALLOWLIST = new Map<string, string>([
     "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
   ],
   [
+    "sales/actions.ts::assignSalesLead",
+    "Aday atama/devir action'ı getSalesAccess(manageSalesPipeline) sonrasında yalnız platform admin türünü kabul eder ve kazanım sonrası atfı kilitler.",
+  ],
+  [
+    "sales/actions.ts::createSalesTask",
+    "Satış görevi getSalesAccess(manageSalesPipeline) ve aday sahiplik kontrolüyle yalnız yetkili yöneticiye veya adayın danışmanına açılır.",
+  ],
+  [
+    "sales/actions.ts::resolveSalesTask",
+    "Görev sonucu getSalesAccess(manageSalesPipeline) ve görev üzerinden aday sahiplik kontrolüyle korunur.",
+  ],
+  [
     "sales/actions.ts::updateSalesCommission",
     "Hakediş action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışmanların tutar veya ödeme durumuna erişimi yoktur.",
   ],
