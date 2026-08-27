@@ -5,7 +5,7 @@ export const OTO_SERVIS_PROGRAMI_TITLE = "Oto Servis Programı: Araç Kabulden T
 export const OTO_SERVIS_PROGRAMI_H1 = "Oto servis programı ile işin nerede kaldığını herkes görsün"
 
 export const OTO_SERVIS_PROGRAMI_DESCRIPTION =
-  "Oto servis programı ile araç kabul, iş emri, parça, işçilik, müşteri onayı ve teslimat sürecini tek yerden yönetin. BakımX'i 7 gün ücretsiz deneyin."
+  "Oto servis programı ile araç kabul, iş emri, parça, işçilik, müşteri onayı ve teslimat sürecini tek yerden yönetin. BakımX'i 7 iş günü ücretsiz deneyin."
 
 export const OTO_SERVIS_PROGRAMI_INTRO =
   "Oto servis programı; araç kabulden iş emrine, parça ve işçilik kaydından müşteri onayı ve teslimata kadar servis işlerini tek yerde düzenleyen yazılımdır. BakımX, bu akışı telefondan kullanılabilen adımlara taşır; usta hangi aracın hangi aşamada olduğunu görür, yapılan işi ve fotoğrafları aynı kayıtta tutar."
@@ -24,7 +24,7 @@ export const OTO_SERVIS_PROGRAMI_FAQS = [
   {
     question: "Deneme süresi kaç gün?",
     answer:
-      "Kart doğrulamasının ardından 7 günlük ücretsiz deneme başlar. Güncel paketleri ve KDV dahil fiyatları fiyatlar sayfasından inceleyebilirsiniz.",
+      "E-posta doğrulamasının ardından 7 iş günlük ücretsiz kullanım başlar. Güncel paketleri ve KDV dahil fiyatları fiyatlar sayfasından inceleyebilirsiniz.",
   },
   {
     question: "Kurulum yapmak gerekir mi?",

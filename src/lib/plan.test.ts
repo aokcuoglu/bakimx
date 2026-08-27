@@ -13,6 +13,8 @@ import {
   PLAN_LABELS,
   PLAN_TIERS,
   isPlanTier,
+  businessDaysUntil,
+  computeTrialEnd,
 } from "@/lib/plan"
 
 function wsFields(over: Partial<Parameters<typeof getPlanState>[0]> = {}) {
@@ -31,6 +33,18 @@ test("active subscription past currentPeriodEnd locks as subscription_expired", 
   const s = getPlanState(wsFields({ currentPeriodEnd: past }))
   expect(s.hasAccess).toBe(false)
   expect(s.lockReason).toBe("subscription_expired")
+})
+
+test("trial end skips weekends and preserves the verification time", () => {
+  const friday = new Date("2026-08-28T07:30:00.000Z") // İstanbul 10:30
+  expect(computeTrialEnd(friday).toISOString()).toBe("2026-09-08T07:30:00.000Z")
+})
+
+test("trial countdown reports business days instead of calendar days", () => {
+  const start = new Date("2026-08-28T07:30:00.000Z")
+  const end = computeTrialEnd(start)
+  expect(businessDaysUntil(start, end)).toBe(7)
+  expect(businessDaysUntil(new Date("2026-08-29T07:30:00.000Z"), end)).toBe(7)
 })
 
 test("active subscription within period has access and reports days left", () => {
@@ -101,7 +115,7 @@ test("canWrite is false when the subscription is past_due (inactive)", () => {
 // pending/rejected MUST also block writes: the full-screen PlanLocked view is
 // only HTML — a pending session can call server actions / API routes directly
 // with its cookie, so canWrite (server-side enforcement) is the real gate.
-test("canWrite is false for a pending workshop (card not verified — server-side gate)", () => {
+test("canWrite is false for a pending workshop (e-mail not verified — server-side gate)", () => {
   const s = getPlanState(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
   expect(s.hasAccess).toBe(false)
   expect(s.lockReason).toBe("pending")
@@ -145,7 +159,7 @@ test("assertWriteAccess throws the subscription message for an expired subscript
   }
 })
 
-test("assertWriteAccess throws the card-verification message for a pending workshop", () => {
+test("assertWriteAccess throws the e-mail verification message for a pending workshop", () => {
   try {
     assertWriteAccess(wsFields({ approvalStatus: "pending", subscriptionStatus: "trialing" }))
     throw new Error("expected throw")
@@ -153,7 +167,7 @@ test("assertWriteAccess throws the card-verification message for a pending works
     expect(e).toBeInstanceOf(PlanWriteLockedError)
     expect((e as PlanWriteLockedError).lockReason).toBe("pending")
     expect((e as Error).message).toBe(
-      "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      "Hesabınız e-posta doğrulaması bekliyor. Devam etmek için e-posta adresinizi doğrulayın."
     )
   }
 })

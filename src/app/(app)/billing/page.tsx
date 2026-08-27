@@ -99,7 +99,7 @@ export default async function BillingPage({
             <Clock className="size-5 text-primary shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-foreground">
-                Ücretsiz deneme · {plan.trialDaysLeft} gün kaldı
+                Ücretsiz deneme · {plan.trialDaysLeft} iş günü kaldı
               </p>
               <p className="text-muted-foreground mt-0.5">
                 Deneme süreniz boyunca tüm özellikler açık. Kesintisiz devam için bir paket seçin.

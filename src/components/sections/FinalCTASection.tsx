@@ -35,8 +35,8 @@ export function FinalCTASection() {
           delay={100}
           className="mx-auto mt-4 max-w-xl text-base sm:text-lg"
         >
-          Kurulum yok, taahhüt yok. Kart doğrulamasının ardından 7 günlük
-          denemeniz anında başlar.
+          Kurulum, paket veya kart seçimi yok. E-posta doğrulamasının ardından
+          7 iş günlük ücretsiz kullanımınız başlar.
         </Reveal>
         <Reveal
           amount={0.3}
@@ -52,7 +52,7 @@ export function FinalCTASection() {
               className: "h-12 gap-2 px-8 text-base",
             })}
           >
-            7 Gün Ücretsiz Dene
+            Ücretsiz Dene
             <ArrowRight className="h-4 w-4" />
           </Link>
           {/* Form hemen alt bölümde: çapa aşağı gider, yukarı değil.

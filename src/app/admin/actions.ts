@@ -87,7 +87,7 @@ type SubStatus = (typeof STATUSES)[number]
 const DEMO_STATUSES: DemoRequestStatus[] = ["new", "contacted", "qualified", "converted", "archived"]
 const SUPPORT_STATUSES: SupportRequestStatus[] = ["new", "in_progress", "resolved", "archived"]
 
-/** Approve a workshop and (re)start its 7-day trial. Legacy / manual escape
+/** Approve a workshop and (re)start its 7-business-day trial. Legacy / manual escape
  *  hatch: self sign-ups now flip to approved automatically when card
  *  verification succeeds (activateVerifiedWorkshop), so this is only reached to
  *  approve a `pending` row without a card (manual admin override) or to

@@ -56,6 +56,10 @@ model Workshop {
   referredByWorkshopId String?
   referralCodeUsed     String?
 
+  // Self-serve kayıt sihirbazındaki sektör, ekip, ihtiyaç ve modül tercihleri.
+  // Yetki/paket kapısı değildir; kurulum ve müşteri başarısı profilidir.
+  onboardingProfile Json?
+
   // --- BakımX pricing (BAK-47) ---
   // Workshop-level discount applied to all BakımX products (basis points: 0-10000, 2000 = 20%).
   bakimxDiscountBps Int @default(0)
