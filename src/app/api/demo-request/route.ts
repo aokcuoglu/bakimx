@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { normalizeSalesPhone } from "@/lib/sales/crm";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
             businessName: request.businessName,
             contactName: request.name,
             phone: request.phone,
+            normalizedPhone: normalizeSalesPhone(request.phone),
             city: request.city,
             monthlyVehicles: request.monthlyVehicles,
             notes: request.notes,
@@ -112,7 +114,7 @@ export async function POST(request: Request) {
         })
         // The test double predates the sales table; public request persistence
         // remains successful there while production always creates both rows.
-        if ("salesLead" in prisma) await prisma.salesLead.create({ data: { source: "public_demo_request", businessName: request.businessName, contactName: request.name, phone: request.phone, city: request.city, monthlyVehicles: request.monthlyVehicles, notes: request.notes, demoRequestId: request.id } })
+        if ("salesLead" in prisma) await prisma.salesLead.create({ data: { source: "public_demo_request", businessName: request.businessName, contactName: request.name, phone: request.phone, normalizedPhone: normalizeSalesPhone(request.phone), city: request.city, monthlyVehicles: request.monthlyVehicles, notes: request.notes, demoRequestId: request.id } })
       }
     } catch (err) {
       console.error("[demo-request] Failed to persist:", err);

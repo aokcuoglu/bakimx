@@ -3,7 +3,7 @@ export function salesLeadAnchorId(leadId: string): string {
 }
 
 export function salesLeadAdminHref(leadId: string): string {
-  return `/admin/sales?lead=${encodeURIComponent(leadId)}#${salesLeadAnchorId(leadId)}`
+  return `/admin/sales/leads/${encodeURIComponent(leadId)}`
 }
 
 export function workshopAdminHref(workshopId: string): string {

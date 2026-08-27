@@ -16,6 +16,7 @@ import {
   Radio,
   Handshake,
   UserRoundPlus,
+  ListFilter,
 } from "lucide-react"
 import {
   SidebarMenuItem,
@@ -37,7 +38,8 @@ const ITEMS: NavItem[] = [
   { href: "/admin/workshops", label: "İş Yerleri", icon: Building2 },
   { href: "/admin/billing", label: "Faturalandırma", icon: Receipt },
   { href: "/admin/leads", label: "Talepler", icon: Inbox },
-  { href: "/admin/sales", label: "Satış Paneli", icon: Handshake, exact: true, capability: "viewSales" },
+  { href: "/admin/sales", label: "Satış — Bugünüm", icon: Handshake, exact: true, capability: "viewSales" },
+  { href: "/admin/sales/leads", label: "Satış Adayları", icon: ListFilter, capability: "viewSales" },
   { href: "/admin/sales/advisors", label: "Satış Danışmanları", icon: UserRoundPlus, capability: "manageSalesAdvisors" },
   {
     href: "/admin/live-chat",
