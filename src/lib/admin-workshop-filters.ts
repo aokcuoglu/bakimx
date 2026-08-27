@@ -79,7 +79,9 @@ export function isWorkshopListFiltered(query: WorkshopListQuery): boolean {
  * personeli ikinci bir kullanıcının adresiyle de atölyeyi bulabilmeli.
  */
 export function buildWorkshopWhere(query: WorkshopListQuery): Prisma.WorkshopWhereInput {
-  const where: Prisma.WorkshopWhereInput = {}
+  // BakımX'in kendi iç personel container'ı hiçbir müşteri listesine giremez.
+  // Bu taban filtresi tüm arama/filtre kombinasyonlarında korunur.
+  const where: Prisma.WorkshopWhereInput = { kind: "customer" }
   if (query.approval) where.approvalStatus = query.approval
   if (query.subscription) where.subscriptionStatus = query.subscription
   if (query.acquisitionSource) where.acquisitionSource = query.acquisitionSource

@@ -75,6 +75,7 @@ export async function getAdminBakimxOrders(
   filters: AdminOrderFilters,
 ): Promise<{ rows: AdminOrderRow[]; total: number; truncated: boolean }> {
   const where = {
+    workshop: { kind: "customer" as const },
     ...(filters.status === "all" ? {} : { status: filters.status }),
     ...(filters.workshopId ? { workshopId: filters.workshopId } : {}),
   }
@@ -162,7 +163,7 @@ export async function getOrderWorkshopOptions(): Promise<AdminOrderWorkshopOptio
   const grouped = await prisma.bakimxOrder.groupBy({ by: ["workshopId"] })
   if (grouped.length === 0) return []
   const workshops = await prisma.workshop.findMany({
-    where: { id: { in: grouped.map((g) => g.workshopId) } },
+    where: { kind: "customer", id: { in: grouped.map((g) => g.workshopId) } },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   })

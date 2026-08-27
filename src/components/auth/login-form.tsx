@@ -63,7 +63,13 @@ const EXPIRED_NOTICE: Record<string, string> = {
 /** Giriş isteğinin istemci tarafı üst sınırı — sunucunun bağlantı sınırından uzun. */
 const LOGIN_TIMEOUT_MS = 20_000
 
-export function LoginForm({ expiredReason }: { expiredReason?: string | null }) {
+export function LoginForm({
+  expiredReason,
+  successNotice,
+}: {
+  expiredReason?: string | null
+  successNotice?: string
+}) {
   const router = useRouter()
   const expiredNotice = expiredReason ? EXPIRED_NOTICE[expiredReason] : undefined
   const [error, setError] = useState("")
@@ -146,6 +152,11 @@ export function LoginForm({ expiredReason }: { expiredReason?: string | null }) 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {successNotice && !error && (
+          <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success-strong">
+            {successNotice}
+          </div>
+        )}
         {expiredNotice && !error && (
           <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-strong">
             {expiredNotice}

@@ -45,10 +45,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       trialEndsAt: true,
       currentPeriodEnd: true,
       requestedPlanTier: true,
+      kind: true,
     },
   })
   if (!workshop) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
+  }
+  if (workshop.kind === "internal") {
+    redirect("/admin/sales")
   }
 
   const plan = getPlanState(workshop)

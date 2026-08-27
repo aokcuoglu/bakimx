@@ -44,6 +44,18 @@ const ALLOWLIST = new Map<string, string>([
   ["sales/actions.ts::updateSalesDiscountCode", "İndirim kodu güncellemesi satış erişimi ve sahiplik kontrolüyle korunur."],
   ["sales/actions.ts::deactivateSalesDiscountCode", "İndirim kodu pasifleştirmesi satış erişimi ve sahiplik kontrolüyle korunur."],
   [
+    "sales/advisors/actions.ts::inviteSalesAdvisor",
+    "Danışman daveti yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır; satış yüzeyinin ortak kapısı kullanılır.",
+  ],
+  [
+    "sales/advisors/actions.ts::resendSalesAdvisorInvite",
+    "Yeniden davet yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır ve önceki tokenı değiştirir.",
+  ],
+  [
+    "sales/advisors/actions.ts::setSalesAdvisorActive",
+    "Danışman erişimi yalnız getSalesAccess(manageSalesAdvisors) yeteneğiyle kurucuya açılır ve açık oturumları iptal eder.",
+  ],
+  [
     "impersonation-actions.ts::stopImpersonation",
     "Kendi impersonation oturumunu KAPATMA işlemi. Yetki kapısına bağlansaydı, yetkisi geri alınmış bir yönetici açık oturumdan çıkamaz hâle gelirdi; işlem yalnız çerezdeki kendi oturumunu sonlandırır.",
   ],

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { cookies } from "next/headers"
-import { ShieldCheck } from "lucide-react"
+import { CircleUserRound, Handshake, ShieldCheck } from "lucide-react"
 import { adminCapabilities, can, getAdminContext, isCurrentUserAdmin, ADMIN_ROLE_LABELS } from "@/lib/admin"
 import { getSalesAccess } from "@/lib/sales/access"
 import { logoutAction } from "@/app/(auth)/login/actions"
@@ -28,11 +28,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return (
       <div className="min-h-screen bg-muted">
         <header className="border-b bg-card">
-          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
             <Link href="/admin/sales" className="flex items-center gap-2 font-semibold text-foreground">
               <ShieldCheck className="size-5 text-primary" /> BakimX Satış
             </Link>
-            <form action={logoutAction}><Button type="submit" variant="ghost" size="sm">Çıkış</Button></form>
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin/sales"><Handshake className="size-4" /> Panel</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin/sales/account"><CircleUserRound className="size-4" /> Hesabım</Link>
+              </Button>
+              <form action={logoutAction}><Button type="submit" variant="ghost" size="sm">Çıkış</Button></form>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6"><AdminPageTransition>{children}</AdminPageTransition></main>

@@ -15,11 +15,11 @@ export default async function AdminCommunicationsPage({ searchParams }: { search
   await requireAdminCapability("viewAudit")
   const sp = await searchParams
   const page = Math.max(1, Number(sp.page) || 1)
-  const where: Prisma.CommunicationLogWhereInput = { ...(sp.workshopId ? { workshopId: sp.workshopId } : {}), ...(sp.type ? { type: sp.type as "sms" | "whatsapp" | "email" } : {}), ...(sp.status ? { status: sp.status } : {}) }
+  const where: Prisma.CommunicationLogWhereInput = { workshop: { kind: "customer" }, ...(sp.workshopId ? { workshopId: sp.workshopId } : {}), ...(sp.type ? { type: sp.type as "sms" | "whatsapp" | "email" } : {}), ...(sp.status ? { status: sp.status } : {}) }
   const [logs, total, workshops] = await Promise.all([
     prisma.communicationLog.findMany({ where, orderBy: { sentAt: "desc" }, take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE, include: { workshop: { select: { name: true } } } }),
     prisma.communicationLog.count({ where }),
-    prisma.workshop.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.workshop.findMany({ where: { kind: "customer" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ])
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const href = (next: Search) => {

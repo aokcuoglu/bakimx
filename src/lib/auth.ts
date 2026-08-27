@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db"
-import type { UserRole } from "@prisma/client"
+import type { UserRole, WorkshopKind } from "@prisma/client"
 import { assertWriteAccess } from "@/lib/plan"
 import { isImpersonationRevoked } from "@/lib/impersonation"
 import type { Permission } from "@/lib/roles"
+import { isCustomerWorkshopKind } from "@/lib/workshop-kind"
 
 export interface AuthUser {
   id: string
@@ -11,6 +12,7 @@ export interface AuthUser {
   /** Tenant içi giriş adı; e-posta ile açılmış hesaplarda NULL. */
   username: string | null
   workshopId: string
+  workshopKind: WorkshopKind
   firstName: string | null
   lastName: string | null
   role: UserRole
@@ -39,6 +41,7 @@ const USER_SELECT = {
   isActive: true,
   mustChangePassword: true,
   technicianId: true,
+  workshop: { select: { kind: true } },
 } as const
 
 /**
@@ -87,8 +90,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       select: USER_SELECT,
     })
     if (target) {
+      const { workshop, ...identity } = target
       return {
-        ...target,
+        ...identity,
+        workshopKind: workshop.kind,
         impersonatorAdminId: overlay.adminUserId,
         impersonationReadOnly: overlay.readOnly,
       }
@@ -105,10 +110,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   if (!user) return null
 
-  return user
+  const { workshop, ...identity } = user
+  return { ...identity, workshopKind: workshop.kind }
 }
 
-export async function requireAuth(): Promise<AuthUser> {
+/** Active identity gate shared by tenant and internal account/security actions. */
+export async function requireIdentity(): Promise<AuthUser> {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error("Unauthorized")
@@ -119,6 +126,22 @@ export async function requireAuth(): Promise<AuthUser> {
     throw new Error("Hesabınız devre dışı bırakılmıştır.")
   }
   return user
+}
+
+/** Tenant application gate. Internal staff can never cross this boundary. */
+export async function requireAuth(): Promise<AuthUser> {
+  const user = await requireIdentity()
+  if (!isCustomerWorkshopKind(user.workshopKind)) {
+    throw new InternalWorkshopAccessError()
+  }
+  return user
+}
+
+export class InternalWorkshopAccessError extends Error {
+  constructor() {
+    super("İç operasyon hesabı iş yeri uygulamasına erişemez.")
+    this.name = "InternalWorkshopAccessError"
+  }
 }
 
 /**

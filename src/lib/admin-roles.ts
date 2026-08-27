@@ -42,6 +42,11 @@ export type AdminCapability =
   | "manageLeads"
   | "manageAdmins"
   | "manageStatusPage"
+  | "viewSales"
+  | "manageSalesPipeline"
+  | "manageSalesAdvisors"
+  | "viewSalesCommissions"
+  | "manageSalesCommissions"
 
 /**
  * Yetki matrisi — kaynak: `docs/operations/platform-admin-model.md` §2.
@@ -65,6 +70,11 @@ const CAPABILITIES: Record<AdminCapability, readonly AdminRole[]> = {
   manageAdmins: ["founder"],
   // Kesinti iletişimi destek ekibinin de işi (BAK-119/BAK-128) — founder'a kilitli değil.
   manageStatusPage: ["founder", "support"],
+  viewSales: ["founder", "support", "finance", "readonly"],
+  manageSalesPipeline: ["founder", "support"],
+  manageSalesAdvisors: ["founder"],
+  viewSalesCommissions: ["founder", "finance"],
+  manageSalesCommissions: ["founder", "finance"],
 }
 
 /** Capability check against the {@link CAPABILITIES} matrix. */
