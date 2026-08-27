@@ -51,7 +51,7 @@ const EMPTY_FORM: FormData = {
 const trustBadges = [
   { icon: ShieldCheck, label: "KVKK uyumlu" },
   { icon: Zap, label: "Kurulumsuz" },
-  { icon: CalendarCheck, label: "7 gün ücretsiz" },
+  { icon: CalendarCheck, label: "7 iş günü ücretsiz" },
 ];
 
 export function HeroLeadForm() {
@@ -138,7 +138,7 @@ export function HeroLeadForm() {
           href="/register"
           className={buttonVariants({ size: "default", className: "mt-5 w-full gap-2" })}
         >
-          7 Gün Ücretsiz Dene
+          Ücretsiz Dene
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -280,7 +280,7 @@ export function HeroLeadForm() {
       </form>
       <div className="mt-4 border-t pt-4 text-center">
         <Link href="/register" className="text-sm font-medium text-primary hover:underline">
-          Ya da beklemeden 7 gün ücretsiz deneyin →
+          Ya da beklemeden 7 iş günü ücretsiz deneyin →
         </Link>
       </div>
     </div>

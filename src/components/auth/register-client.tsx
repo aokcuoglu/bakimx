@@ -1,28 +1,61 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { BrandRail } from "@/components/billing/brand-rail"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { RegisterForm } from "@/components/auth/register-form"
-import type { PlanTier } from "@/lib/plan"
+import { RegisterSidebar } from "@/components/auth/register-sidebar"
+import type { RegisterWizardSnapshot } from "@/lib/register-onboarding"
+
+const INITIAL_SNAPSHOT: RegisterWizardSnapshot = {
+  currentStep: 0,
+  sector: "",
+  businessFeatureCount: 0,
+  teamSize: "",
+  moduleCount: 0,
+}
 
 export function RegisterClient({ advisors = [] }: { advisors?: { id: string; label: string }[] }) {
-  const [tier, setTier] = useState<PlanTier>("pro")
-  const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly")
+  const [snapshot, setSnapshot] = useState(INITIAL_SNAPSHOT)
 
-  const handlePlanChange = useCallback((newTier: string, newCycle: string) => {
-    setTier(newTier as PlanTier)
-    setCycle(newCycle as "monthly" | "yearly")
+  const handleSnapshotChange = useCallback((next: RegisterWizardSnapshot) => {
+    setSnapshot((current) => {
+      if (
+        current.currentStep === next.currentStep &&
+        current.sector === next.sector &&
+        current.businessFeatureCount === next.businessFeatureCount &&
+        current.teamSize === next.teamSize &&
+        current.moduleCount === next.moduleCount
+      ) return current
+      return next
+    })
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row lg:h-screen bg-muted">
-      <div className="lg:w-[38%] shrink-0 lg:h-full">
-        <BrandRail mode="public" tier={tier} cycle={cycle} step={0} />
-      </div>
-      <div className="flex-1 flex items-center lg:items-start justify-center p-6 lg:p-10 lg:overflow-y-auto">
-        <div className="w-full max-w-[520px]">
-          <RegisterForm onPlanChange={handlePlanChange} advisors={advisors} />
-        </div>
+    <div className="flex min-h-screen flex-col bg-muted">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 sm:px-5">
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/">
+            <ArrowLeft data-icon="inline-start" />
+            Ana Sayfa
+          </Link>
+        </Button>
+        <p className="text-xs text-muted-foreground sm:text-sm">
+          Zaten üye misiniz?{" "}
+          <Link href="/login" className="font-semibold text-primary hover:underline">
+            Giriş Yap
+          </Link>
+        </p>
+      </header>
+
+      <div className="flex flex-1 lg:min-h-[calc(100vh-3.5rem)]">
+        <RegisterSidebar snapshot={snapshot} />
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-12">
+          <div className="mx-auto w-full max-w-4xl">
+            <RegisterForm advisors={advisors} onSnapshotChange={handleSnapshotChange} />
+          </div>
+        </main>
       </div>
     </div>
   )

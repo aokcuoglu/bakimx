@@ -4,9 +4,9 @@ import type { Workshop } from "@prisma/client"
  * Plan / subscription / trial logic for the SaaS access model.
  *
  * Two orthogonal gates exist:
- *  - approvalStatus: card-verification gate. Self sign-ups (/register) create a
+ *  - approvalStatus: e-mail-verification gate. Self sign-ups (/register) create a
  *    `pending` workshop with NO trial; the workshop flips to `approved` and its
- *    7-day trial starts only when 1 TL card verification succeeds
+ *    7-business-day trial starts only when e-mail verification succeeds
  *    (activateVerifiedWorkshop). Pending users CAN sign in — they land on the
  *    full-screen PlanLocked verify screen ((app)/layout.tsx). `rejected` is the
  *    admin kill switch (blocks login entirely); admin approveWorkshop remains a
@@ -18,7 +18,7 @@ import type { Workshop } from "@prisma/client"
  *    SERVER-SIDE enforcement: every mutating server action / API route must be
  *    blocked when ANY lockReason is set — pending/rejected included, since a
  *    pending session could otherwise call actions/APIs directly with its
- *    cookie and use the app without ever verifying a card.
+ *    cookie and use the app without ever verifying its e-mail address.
  *  - `hasAccess` + PlanLocked ((app)/layout.tsx) is the UX layer: full-screen
  *    lock for pending/rejected. Plan-EXPIRY reasons (see
  *    {@link isPlanExpiredLock}) are a hard paywall instead: (app)/layout.tsx
@@ -36,8 +36,31 @@ import type { Workshop } from "@prisma/client"
  *    are available across all tiers, so the gate is informational only.
  */
 
-export const TRIAL_DAYS = 7
+export const TRIAL_BUSINESS_DAYS = 7
 const DAY_MS = 86_400_000
+const ISTANBUL_WEEKDAY = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Istanbul",
+  weekday: "short",
+})
+
+function isBusinessDay(date: Date): boolean {
+  const weekday = ISTANBUL_WEEKDAY.format(date)
+  return weekday !== "Sat" && weekday !== "Sun"
+}
+
+/** Cumartesi/pazar günlerini saymadan başlangıçtan sonraki iş günlerini sayar. */
+export function businessDaysUntil(from: Date, until: Date): number {
+  if (until.getTime() <= from.getTime()) return 0
+
+  let count = 0
+  const cursor = new Date(from)
+  while (true) {
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+    if (cursor.getTime() > until.getTime()) break
+    if (isBusinessDay(cursor)) count += 1
+  }
+  return count
+}
 
 export const PLAN_TIERS = ["lite", "starter", "pro", "premium"] as const
 export type PlanTier = (typeof PLAN_TIERS)[number]
@@ -112,7 +135,7 @@ export type LockReason =
 /**
  * Lock reasons that mean "the workshop has to pay to continue" — as opposed to
  * the approval gate (`pending`/`rejected`), which is recovered by verifying a
- * card or contacting support. These three are enforced as a hard paywall:
+ * e-mail or contacting support. These three are enforced as a hard paywall:
  * (app)/layout.tsx signs the session out (GET /api/auth/logout) and the next
  * login is redirected to /checkout instead of /dashboard.
  */
@@ -169,7 +192,7 @@ export interface PlanState {
   isApproved: boolean
   isTrialing: boolean
   trialEndsAt: Date | null
-  /** Whole days left in the trial (ceil), or null when not trialing. */
+  /** Remaining business days in the trial, or null when not trialing. */
   trialDaysLeft: number | null
   isTrialExpired: boolean
   /** Paid period end (active subs only), or null. */
@@ -185,7 +208,7 @@ export interface PlanState {
    * `lockReason` is set (i.e. `canWrite === hasAccess`). This is the
    * server-side enforcement (assertWriteAccess / requireWritableWorkshop);
    * PlanLocked / the read-only banner are only the UX layer on top. In
-   * particular `pending` (card not verified yet) and `rejected` MUST block
+   * particular `pending` (e-mail not verified yet) and `rejected` MUST block
    * writes here too: those sessions can reach server actions / API routes
    * directly with their cookie, bypassing the full-screen lock HTML.
    */
@@ -207,7 +230,7 @@ export function getPlanState(workshop: WorkshopPlanFields): PlanState {
 
   const trialDaysLeft =
     isTrialing && trialEndsAt != null
-      ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now) / DAY_MS))
+      ? businessDaysUntil(new Date(now), trialEndsAt)
       : null
 
   const subscriptionDaysLeft =
@@ -270,7 +293,7 @@ export class PlanWriteLockedError extends Error {
 
 /**
  * Central write guard. Throws {@link PlanWriteLockedError} whenever the
- * workshop may not mutate data: card verification not completed (`pending`),
+ * workshop may not mutate data: e-mail verification not completed (`pending`),
  * suspended (`rejected`), or plan expired (read-only mode). Server
  * actions/routes that mutate tenant data should call this after auth. The
  * billing/purchase flow and auth actions are intentionally exempt so a locked
@@ -282,7 +305,7 @@ export function assertWriteAccess(workshop: WorkshopPlanFields): void {
   let message: string
   switch (lockReason) {
     case "pending":
-      message = "Hesabınız kart doğrulaması bekliyor. Devam etmek için kartınızı doğrulayın."
+      message = "Hesabınız e-posta doğrulaması bekliyor. Devam etmek için e-posta adresinizi doğrulayın."
       break
     case "rejected":
       message = "Hesabınız askıya alınmış. Destek ile iletişime geçin."
@@ -296,9 +319,15 @@ export function assertWriteAccess(workshop: WorkshopPlanFields): void {
   throw new PlanWriteLockedError(message, lockReason)
 }
 
-/** Trial end timestamp computed from a start date (used when a workshop is approved). */
+/** Deneme bitişi: doğrulama anından sonraki yedinci İstanbul iş günü. */
 export function computeTrialEnd(from: Date): Date {
-  return new Date(from.getTime() + TRIAL_DAYS * DAY_MS)
+  const result = new Date(from)
+  let added = 0
+  while (added < TRIAL_BUSINESS_DAYS) {
+    result.setUTCDate(result.getUTCDate() + 1)
+    if (isBusinessDay(result)) added += 1
+  }
+  return result
 }
 
 export function hasFeature(tier: PlanTier, feature: GatedFeature): boolean {

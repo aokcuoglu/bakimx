@@ -30,7 +30,7 @@ const LIVE_CHAT_ACTION: MenuAction = {
 
 const ACTIONS: MenuAction[] = [
   { key: "demo", label: "Demo talep et", description: "Size özel canlı tanıtım ayarlayalım", icon: CalendarCheck, view: "demo" },
-  { key: "buy", label: "Satın al / Fiyatlar", description: "Anında 7 gün ücretsiz deneyin", icon: ShoppingCart, href: "/satin-al" },
+  { key: "buy", label: "Satın al / Fiyatlar", description: "Paketleri ve fiyatları karşılaştırın", icon: ShoppingCart, href: "/satin-al" },
   { key: "support", label: "Destek / İletişim", description: "Sorunuzu ekibimize iletelim", icon: LifeBuoy, view: "support" },
   { key: "faq", label: "Sık Sorulanlar", description: "En çok merak edilenler", icon: HelpCircle, view: "faq" },
 ];
