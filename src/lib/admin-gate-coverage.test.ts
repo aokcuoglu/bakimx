@@ -47,6 +47,7 @@ const ALLOWLIST = new Map<string, string>([
   ["sales/commissions/actions.ts::markSalesCommissionPaid", "Ödendi geçişi getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve transaction içinde durum guard'ı uygular."],
   ["sales/commissions/actions.ts::voidSalesCommission", "Hakediş iptali getSalesAccess(manageSalesCommissions) ile yalnız founder/finance yöneticiye açıktır ve zorunlu gerekçeyi denetim olayına yazar."],
   ["sales/settings/actions.ts::createSalesCommissionRule", "Append-only hakediş kuralı yalnız getSalesAccess(manageSalesCommissions) yeteneğine sahip founder/finance yöneticilerince eklenebilir."],
+  ["sales/performance/actions.ts::setSalesMonthlyTarget", "Aylık satış hedefi yalnız getSalesAccess(manageSalesAdvisors) yeteneğine sahip kurucu tarafından danışman ve ay anahtarı doğrulandıktan sonra yazılır."],
   [
     "sales/actions.ts::generateSalesRegistrationLink",
     "Kayıt linki getSalesAccess(manageSalesPipeline), aday sahipliği ve dondurulmuş atıf kontrolleriyle korunur; tenant yalnız müşteri kayıt akışında oluşur.",

@@ -20,6 +20,8 @@ import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-
 import { cn } from "@/lib/utils"
 import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
+import { formatMinor } from "@/lib/billing/pricing"
+import type { SalesAdvisorPerformance } from "@/lib/sales/performance"
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
@@ -29,7 +31,7 @@ import {
   deactivateSalesDiscountCode,
   setSalesLeadStatus,
 } from "./actions"
-import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck } from "lucide-react"
+import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck, ChartNoAxesCombined } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -134,6 +136,7 @@ export function SalesConsole({
   isAdmin,
   canManagePipeline,
   initialLeadId,
+  monthlyPerformance,
 }: {
   leads: Lead[]
   tasks: AgendaTask[]
@@ -142,6 +145,7 @@ export function SalesConsole({
   isAdmin: boolean
   canManagePipeline: boolean
   initialLeadId: string | null
+  monthlyPerformance: { periodLabel: string; row: SalesAdvisorPerformance } | null
 }) {
   const [pending, startTransition] = useTransition()
   const form = useForm({
@@ -267,6 +271,9 @@ export function SalesConsole({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/sales/performance"><ChartNoAxesCombined className="size-4" /> Performans</Link>
+          </Button>
           {isAdmin && (
             <Button asChild variant="outline">
               <Link href="/admin/sales/advisors"><Users className="size-4" /> Danışmanlar</Link>
@@ -286,6 +293,8 @@ export function SalesConsole({
         <SalesMetric label="Görüşme kaydı" value={stats.conversations} detail="Son kayıtlı temaslar" icon={MessageSquare} tone="muted" />
         <SalesMetric label="Dönüşüm" value={`%${stats.conversionRate}`} detail={`${stats.won} kazanılan şirket`} icon={TrendingUp} tone="success" />
       </section>
+
+      {monthlyPerformance && <MonthlyTargetProgress performance={monthlyPerformance} />}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <SalesTerritoryMap leads={leads} selectedLeadId={selectedLeadId} onSelectLead={focusLead} />
@@ -590,6 +599,57 @@ function SalesMetric({
       </div>
       <p className="mt-2 truncate text-xs text-muted-foreground">{detail}</p>
     </article>
+  )
+}
+
+function MonthlyTargetProgress({ performance }: {
+  performance: { periodLabel: string; row: SalesAdvisorPerformance }
+}) {
+  const metrics = [
+    { label: "Yeni aday", actual: performance.row.actual.newLeads, target: performance.row.target.newLeads },
+    { label: "Nitelikli görüşme", actual: performance.row.actual.qualifiedInteractions, target: performance.row.target.qualifiedInteractions },
+    { label: "Tamamlanan demo", actual: performance.row.actual.completedDemos, target: performance.row.target.completedDemos },
+    { label: "Kazanılan şirket", actual: performance.row.actual.wonWorkshops, target: performance.row.target.wonWorkshops },
+  ]
+  const salesPercent = performance.row.target.netSalesMinor > 0
+    ? Math.min(100, Math.round((performance.row.actual.netSalesMinor / performance.row.target.netSalesMinor) * 100))
+    : 0
+
+  return (
+    <section className="rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="monthly-target-title">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">{performance.periodLabel}</p>
+          <h2 id="monthly-target-title" className="mt-1 text-lg font-semibold text-foreground">Aylık hedef ilerlemeniz</h2>
+          <p className="mt-1 text-sm text-muted-foreground">CRM aktiviteleri ve onaylı tahsilat ledger’ı üzerinden güncellenir.</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin/sales/performance"><ChartNoAxesCombined className="size-4" /> Ayrıntılı performans</Link>
+        </Button>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {metrics.map((metric) => {
+          const percent = metric.target > 0 ? Math.min(100, Math.round((metric.actual / metric.target) * 100)) : 0
+          return (
+            <div key={metric.label} className="rounded-xl bg-muted/50 p-3">
+              <p className="text-xs text-muted-foreground-strong">{metric.label}</p>
+              <p className="mt-1 font-semibold tabular-nums text-foreground">{metric.actual} / {metric.target || "—"}</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background" role="progressbar" aria-label={`${metric.label} hedef ilerlemesi`} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+                <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          )
+        })}
+        <div className="rounded-xl bg-primary/10 p-3 text-primary-strong">
+          <p className="text-xs">KDV hariç net satış</p>
+          <p className="mt-1 font-semibold tabular-nums text-foreground">{formatMinor(performance.row.actual.netSalesMinor)}</p>
+          <p className="mt-0.5 text-xs">Hedef {performance.row.target.netSalesMinor > 0 ? formatMinor(performance.row.target.netSalesMinor) : "tanımlanmadı"}</p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background" role="progressbar" aria-label="Net satış hedef ilerlemesi" aria-valuenow={salesPercent} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-primary" style={{ width: `${salesPercent}%` }} />
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 

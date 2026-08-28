@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { canAccessSales, getSalesAccess, salesLeadScope } from "@/lib/sales/access"
 import { istanbulDayBounds } from "@/lib/sales/time"
+import { loadSalesPerformance } from "@/lib/sales/performance-query"
 import { SalesConsole } from "./sales-console"
 
 export const dynamic = "force-dynamic"
@@ -94,6 +95,9 @@ export default async function SalesPage({
         },
       })
     : []
+  const monthlyPerformance = access.kind === "advisor"
+    ? await loadSalesPerformance(access, { now })
+    : null
 
   const serializedLeads = leads.map((lead) => ({
     ...lead,
@@ -126,6 +130,10 @@ export default async function SalesPage({
         isAdmin={access.kind === "admin"}
         canManagePipeline={canManagePipeline}
         initialLeadId={initialLeadId}
+        monthlyPerformance={monthlyPerformance ? {
+          periodLabel: monthlyPerformance.period.label,
+          row: monthlyPerformance.summary,
+        } : null}
         leads={serializedLeads}
         tasks={tasks.map((task) => ({
           id: task.id,

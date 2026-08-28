@@ -108,6 +108,19 @@ export const salesCommissionRuleSchema = z.object({
   ),
 })
 
+export const salesMonthlyTargetSchema = z.object({
+  advisorId: z.string().trim().min(1, "Satış danışmanı seçin"),
+  month: z.string().trim().regex(/^(20\d{2}|21\d{2}|2200)-(0[1-9]|1[0-2])$/, "Geçerli bir hedef ayı seçin"),
+  newLeadTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  qualifiedInteractionTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  completedDemoTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  wonWorkshopTarget: z.number().int("Tam sayı girin").min(0, "Hedef negatif olamaz").max(1_000_000),
+  netSalesTarget: z.number()
+    .min(0, "Hedef negatif olamaz")
+    .max(100_000_000, "Net satış hedefi sınırı aşıyor")
+    .refine((value) => Number.isInteger(value * 100), "En fazla iki ondalık basamak girin"),
+})
+
 export const salesDiscountFundingSchema = z.enum(["advisor_margin", "bakimx_funded"])
 
 export const salesDiscountCodeSchema = z.object({
