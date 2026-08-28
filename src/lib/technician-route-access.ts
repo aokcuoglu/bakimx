@@ -30,8 +30,19 @@ export function isTechnicianRestrictedRole(role: string | undefined | null): boo
   return (TECHNICIAN_RESTRICTED_ROLES as readonly string[]).includes(role)
 }
 
-export function getAppHomeRoute(role: string | undefined | null): "/technician" | "/dashboard" {
+export type SessionSurface = "tenant" | "sales"
+
+export function getAppHomeRoute(
+  role: string | undefined | null,
+  surface?: SessionSurface,
+): "/technician" | "/dashboard" | "/admin/sales" {
+  if (surface === "sales") return "/admin/sales"
   return isTechnicianRestrictedRole(role) ? "/technician" : "/dashboard"
+}
+
+/** Sales cookies are deny-by-default outside the dedicated console surface. */
+export function isRouteAllowedForSalesSurface(pathname: string): boolean {
+  return pathname === "/admin/sales" || pathname.startsWith("/admin/sales/")
 }
 
 export function isRouteAllowedForTechnician(pathname: string): boolean {

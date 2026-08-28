@@ -89,8 +89,8 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
     ...(orderFilters.cycle ? { billingCycle: orderFilters.cycle } : {}),
   }
 
-  const workshop = await prisma.workshop.findUnique({
-    where: { id },
+  const workshop = await prisma.workshop.findFirst({
+    where: { id, kind: "customer" },
     include: {
       users: { orderBy: { createdAt: "asc" } },
       acquisitionAdvisor: {
@@ -172,7 +172,7 @@ export default async function WorkshopDetailPage({ params, searchParams }: { par
               {ownerEmail && <span> · {ownerEmail}</span>}
             </p>
             {plan.isTrialing && plan.trialDaysLeft != null && (
-              <p className="text-sm text-primary mt-1">Deneme: {plan.trialDaysLeft} gün kaldı</p>
+              <p className="text-sm text-primary mt-1">Deneme: {plan.trialDaysLeft} iş günü kaldı</p>
             )}
             {plan.subscriptionDaysLeft != null && (
               <p className={cn("text-sm mt-1", plan.subscriptionDaysLeft <= 7 ? "text-warning-strong" : "text-muted-foreground")}>

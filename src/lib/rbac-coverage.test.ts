@@ -39,6 +39,10 @@ const ALLOWLIST = new Map<string, string>([
     "Daveti kabul eden kullanıcı henüz atölye üyesi değildir; rol kapısı uygulanamaz.",
   ],
   [
+    "invite/sales/[token]/actions.ts::acceptSalesAdvisorInvite",
+    "Satış danışmanı davetini kabul eden kişi henüz kullanıcı değildir; tek kullanımlık token ve transaction kapısı kimliği kurar.",
+  ],
+  [
     "(app)/account/actions.ts::changeOwnPasswordAction",
     "Kendi şifresini değiştirme kimlik işlemidir, izin gerektirmez. Kapı geçici şifreli kullanıcıyı reddettiği için (assertPasswordChanged) buradan geçseydi kilit hiç açılamazdı; mevcut şifre bcrypt ile ayrıca doğrulanır.",
   ],

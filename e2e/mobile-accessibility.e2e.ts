@@ -6,6 +6,8 @@ const authenticatedRoutes = [
   { name: "teknisyen", path: "/technician/orders" },
   { name: "iş emri listesi", path: "/orders" },
   { name: "uygulama kabuğu", path: "/dashboard" },
+  { name: "satış bugünüm", path: "/admin/sales" },
+  { name: "satış adayları", path: "/admin/sales/leads" },
 ]
 
 async function assertMobileKeyboardAndA11y(page: Page) {

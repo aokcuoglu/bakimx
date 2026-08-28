@@ -58,7 +58,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Ücretsiz deneme nasıl başlar?",
     answer:
-      "\"Ücretsiz Dene\" ile hesabınızı açar, kartınızı doğrularsınız; doğrulamada yalnız 1 TL provizyon alınır ve anında iade edilir. 7 gün ücretsiz kullanırsınız, süre boyunca ücret alınmaz.",
+      "\"Ücretsiz Dene\" ile paket veya kart seçmeden hesabınızı açarsınız. E-posta doğrulamasından sonra 7 iş günü ücretsiz kullanırsınız; satın alma yapılmazsa verileriniz korunarak üyeliğiniz dondurulur.",
   },
   {
     question: "Fiyatlandırma nasıl çalışıyor?",

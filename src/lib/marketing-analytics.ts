@@ -20,8 +20,12 @@ export type MarketingEventPayloads = {
   seo_landing_view: Common & { landing_type: "home" | "product" | "pricing" | "demo" }
   trial_cta_click: Common & { cta_location: string; plan_tier?: PlanTier }
   demo_cta_click: Common & { cta_location: string; destination: "form" | "assistant" }
-  register_started: Common & { entry_step: "plan"; plan_tier: PlanTier; billing_cycle: BillingCycle }
-  register_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle }
+  register_started: Common & { entry_step: "sector" }
+  register_submitted: Common & {
+    sector: "auto_service"
+    team_size: "solo" | "2_5" | "6_10" | "11_25" | "26_50" | "50_plus"
+    module_count: string
+  }
   demo_submitted: Common & { form_location: "home" | "demo_page" | "assistant" }
   purchase_started: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; cta_location: "pricing_card" }
   purchase_submitted: Common & { plan_tier: PlanTier; billing_cycle: BillingCycle; payment_method: "card" | "havale" }
@@ -41,8 +45,8 @@ const EVENT_FIELDS: Record<MarketingEventName, readonly string[]> = {
   seo_landing_view: ["landing_type"],
   trial_cta_click: ["plan_tier"],
   demo_cta_click: ["destination"],
-  register_started: ["entry_step", "plan_tier", "billing_cycle"],
-  register_submitted: ["plan_tier", "billing_cycle"],
+  register_started: ["entry_step"],
+  register_submitted: ["sector", "team_size", "module_count"],
   demo_submitted: ["form_location"],
   purchase_started: ["plan_tier", "billing_cycle"],
   purchase_submitted: ["plan_tier", "billing_cycle", "payment_method"],

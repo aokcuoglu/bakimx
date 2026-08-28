@@ -16,7 +16,7 @@ test("tanınmayan durum değerleri sorguya sızmaz", () => {
 
   expect(query.approval).toBeNull()
   expect(query.subscription).toBeNull()
-  expect(buildWorkshopWhere(query)).toEqual({})
+  expect(buildWorkshopWhere(query)).toEqual({ kind: "customer" })
 })
 
 test("geçerli durum değerleri where'e girer", () => {
@@ -27,6 +27,12 @@ test("geçerli durum değerleri where'e girer", () => {
   expect(where.approvalStatus).toBe("pending")
   expect(where.subscriptionStatus).toBe("trialing")
   expect(where.OR).toBeUndefined()
+  expect(where.kind).toBe("customer")
+})
+
+test("iç operasyon workshop'u hiçbir liste filtresinde görünmez", () => {
+  expect(buildWorkshopWhere(parseWorkshopListParams({})).kind).toBe("customer")
+  expect(buildWorkshopWhere(parseWorkshopListParams({ q: "BakımX İç Operasyon" })).kind).toBe("customer")
 })
 
 test("arama atölye adını ve herhangi bir üyenin e-postasını kapsar", () => {

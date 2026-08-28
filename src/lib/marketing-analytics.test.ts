@@ -32,4 +32,15 @@ describe("marketing analytics contract", () => {
     } as never)
     expect(payload).toEqual({ form_location: "home" })
   })
+
+  test("register analytics describes onboarding without package or billing fields", () => {
+    const payload = sanitizeMarketingPayload("register_submitted", {
+      sector: "auto_service",
+      team_size: "2_5",
+      module_count: "7",
+      plan_tier: "pro",
+      billing_cycle: "monthly",
+    } as never)
+    expect(payload).toEqual({ sector: "auto_service", team_size: "2_5", module_count: "7" })
+  })
 })

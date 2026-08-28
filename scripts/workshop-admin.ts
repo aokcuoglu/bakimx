@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
-import { computeTrialEnd, TRIAL_DAYS } from "../src/lib/plan"
+import { computeTrialEnd, TRIAL_BUSINESS_DAYS } from "../src/lib/plan"
 import { addPeriod } from "../src/lib/billing/period"
 import { buildPoolConfig } from "../src/lib/pg-connection"
 
@@ -15,7 +15,7 @@ import { buildPoolConfig } from "../src/lib/pg-connection"
  *   bun run workshop set-plan <workshopId|ownerEmail> <starter|pro|premium> [status] [--cycle monthly|yearly] [--ends-in <gün>]
  *   bun run workshop set-seats <workshopId|ownerEmail> <ek_koltuk_sayısı>
  *
- * `approve` flips the workshop to approved AND starts the 15-day trial.
+ * `approve` flips the workshop to approved AND starts the 7-business-day trial.
  */
 
 // DATABASE_URL önce: `.env.local`'de sslmode'u taşıyan URL odur. DIRECT_URL'i
@@ -157,7 +157,7 @@ async function approve(idOrEmail: string) {
       trialEndsAt: computeTrialEnd(now),
     },
   })
-  console.log(`✅ Onaylandı: ${id} — ${TRIAL_DAYS} günlük deneme başladı (bitiş: ${computeTrialEnd(now).toISOString().slice(0, 10)}).`)
+  console.log(`✅ Onaylandı: ${id} — ${TRIAL_BUSINESS_DAYS} iş günlük deneme başladı (bitiş: ${computeTrialEnd(now).toISOString().slice(0, 10)}).`)
 }
 
 async function reject(idOrEmail: string) {

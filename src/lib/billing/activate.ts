@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { AuditLogAction } from "@/lib/audit"
 import { addPeriod, periodStartFrom } from "@/lib/billing/period"
+import { createCommissionDraftForBillingOrderTx } from "@/lib/sales/commission"
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -32,11 +33,11 @@ export async function activateBillingOrder(
 
   const workshop = await prisma.workshop.findUnique({
     where: { id: order.workshopId },
-    select: { currentPeriodEnd: true },
+    select: { currentPeriodEnd: true, planTier: true },
   })
   const now = new Date()
-  // Renewal extends from the current period end (no lost days); upgrade /
-  // new_purchase start a fresh period now (upgrades were proration-credited).
+  // Renewal extends from the current period end (no lost days); package changes
+  // and new purchases start a fresh period now (changes were proration-credited).
   const periodStart =
     order.type === "renewal" ? periodStartFrom(workshop?.currentPeriodEnd ?? null, now) : now
   const periodEnd = addPeriod(periodStart, order.billingCycle)
@@ -69,6 +70,12 @@ export async function activateBillingOrder(
           planRequestedAt: null,
         },
       })
+      await createCommissionDraftForBillingOrderTx(
+        tx,
+        order,
+        workshop?.planTier ?? null,
+        { userId: opts.actorUserId, label: opts.confirmedByEmail },
+      )
     })
   } catch (err) {
     if (err instanceof Error && err.message === "ALREADY_PROCESSED") {
@@ -91,8 +98,5 @@ export async function activateBillingOrder(
       actor: opts.actor,
     })
   )
-  // Hakediş dış ödeme yolundan da manuel onay yolundan da aynı idempotent
-  // noktada açılır. Tutarı kural motoru değil yönetici belirler.
-  await (await import("@/lib/sales/commission")).createCommissionDraftForBillingOrder(order.id)
   return { ok: true }
 }

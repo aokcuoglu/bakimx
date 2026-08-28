@@ -9,6 +9,7 @@ import { getPlanPriceMinor } from "@/lib/billing/pricing"
 import { generateOrderReference } from "@/lib/billing/reference"
 import { computeUpgradeAmountMinor } from "@/lib/billing/proration"
 import { deriveBillingOrderType } from "@/lib/billing/order-type"
+import { createBillingTaxSnapshot } from "@/lib/billing/tax"
 import type { BillingCycle } from "@prisma/client"
 import type { PlanTier } from "@/lib/plan"
 import { roleCan } from "@/lib/roles"
@@ -76,10 +77,10 @@ export async function createBillingOrder(input: {
     targetTier: tier,
   })
 
-  // Upgrades credit the unused portion of the current plan against the new
-  // plan's price (and get a fresh period on confirm); new_purchase/renewal pay full.
+  // Paket değişimleri mevcut davranışı koruyarak kullanılmayan dönem kredisini
+  // uygular; tip alanı hakediş için gerçek yükseltme/düşürmeyi ayrıca ayırır.
   const amountMinor =
-    type === "upgrade"
+    type === "upgrade" || type === "downgrade"
       ? computeUpgradeAmountMinor({
           currentTier: workshop.planTier as PlanTier,
           currentCycle: (workshop.billingCycle ?? "monthly") as BillingCycle,
@@ -89,6 +90,7 @@ export async function createBillingOrder(input: {
           now: new Date(),
         })
       : getPlanPriceMinor(tier, cycle)
+  const taxSnapshot = createBillingTaxSnapshot(amountMinor)
 
   const billingSnapshot = {
     invoiceTitle: data.invoiceTitle,
@@ -122,8 +124,10 @@ export async function createBillingOrder(input: {
             workshopId: workshop.id,
             type,
             planTier: tier,
+            previousPlanTier: type === "new_purchase" ? null : workshop.planTier,
             billingCycle: cycle,
             amountMinor,
+            ...taxSnapshot,
             status: "pending_payment",
             method: data.method,
             reference,
@@ -138,7 +142,7 @@ export async function createBillingOrder(input: {
         "BillingOrder",
         reference,
         "billing_order_created",
-        JSON.stringify({ tier, cycle, amountMinor, type, method: data.method })
+        JSON.stringify({ tier, cycle, amountMinor, netAmountMinor: taxSnapshot.netAmountMinor, type, method: data.method })
       )
       revalidatePath("/billing")
       revalidatePath("/admin")

@@ -11,6 +11,7 @@ import {
 } from "@/lib/session-recovery"
 import {
   getAppHomeRoute,
+  isRouteAllowedForSalesSurface,
   isTechnicianRestrictedRole,
   isRouteAllowedForTechnician,
 } from "@/lib/technician-route-access"
@@ -32,7 +33,7 @@ const PUBLIC_EXACT = new Set(["/", "/login", "/admin-login", "/forgot-password",
 // /w/<kod>: İş yeri özel giriş ekranı (BAK-38) — e-postasız kullanıcı için tenant seçimi.
 // /destek/<token>: canlı destek "sohbete dön" bağlantısı (BAK-99) — e-postadaki
 // bağlantı oturumsuz bir tarayıcıda açılır, auth kapısına takılırsa asla açılmaz.
-const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/", "/rehber/"]
+const PUBLIC_PREFIX = ["/s/", "/p/", "/w/", "/invite/", "/register/", "/demo", "/satin-al", "/payment", "/reset-password/", "/destek/", "/rehber/"]
 
 // API auth (host-agnostic — same container serves both hosts).
 const PUBLIC_API_PREFIX = ["/api/auth", "/api/checkout", "/api/demo-request", "/api/support-request", "/api/cron"]
@@ -126,6 +127,9 @@ export async function middleware(request: NextRequest) {
     if (PROTECTED_API_PREFIX.some((p) => pathname.startsWith(p))) {
       const session = await getSession()
       if (!session?.userId) return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
+      if (session.surface === "sales") {
+        return NextResponse.json({ error: "Satış hesabı iş yeri API'lerine erişemez" }, { status: 403 })
+      }
     }
     return NextResponse.next()
   }
@@ -136,14 +140,14 @@ export async function middleware(request: NextRequest) {
       if (pathname === "/") {
         const session = await getSession()
         if (session?.userId) {
-          return NextResponse.redirect(new URL(getAppHomeRoute(session.role), request.url))
+          return NextResponse.redirect(new URL(getAppHomeRoute(session.role, session.surface), request.url))
         }
       }
       if (pathname === "/login") {
         const session = await getSession()
         if (session?.userId) {
           if (isForcedLogout(request)) return clearSession(NextResponse.next())
-          const loginTarget = getAppHomeRoute(session.role)
+          const loginTarget = getAppHomeRoute(session.role, session.surface)
           return guardBounce(request, new URL(loginTarget, request.url))
         }
       }
@@ -155,8 +159,11 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
+    if (session.surface === "sales" && !isRouteAllowedForSalesSurface(pathname)) {
+      return NextResponse.redirect(new URL("/admin/sales", request.url))
+    }
     // BAK-106: usta/cirak/staff deny-by-default — izin listesi dışı /technician'a yönlenir.
-    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+    if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(new URL("/technician", request.url))
     }
     return clearBounceIfPresent(request, NextResponse.next())
@@ -178,7 +185,7 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/") {
       const session = await getSession()
       if (session?.userId) {
-        const homeTarget = getAppHomeRoute(session.role)
+        const homeTarget = getAppHomeRoute(session.role, session.surface)
         return NextResponse.redirect(`${APP_ORIGIN}${homeTarget}`)
       }
       return NextResponse.redirect(`${APP_ORIGIN}/dashboard`)
@@ -193,8 +200,11 @@ export async function middleware(request: NextRequest) {
       const target = encodeURIComponent(`${APP_ORIGIN}${pathname}${search}`)
       return NextResponse.redirect(`${LANDING_ORIGIN}/login?redirect=${target}`)
     }
+    if (session.surface === "sales" && !isRouteAllowedForSalesSurface(pathname)) {
+      return NextResponse.redirect(`${APP_ORIGIN}/admin/sales`)
+    }
     // BAK-106: usta/cirak/staff deny-by-default
-    if (isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
+    if (session.surface !== "sales" && isTechnicianRestrictedRole(session.role) && !isRouteAllowedForTechnician(pathname)) {
       return NextResponse.redirect(`${APP_ORIGIN}/technician`)
     }
     return clearBounceIfPresent(request, NextResponse.next())
@@ -206,7 +216,7 @@ export async function middleware(request: NextRequest) {
       const session = await getSession()
       if (session?.userId) {
         if (isForcedLogout(request)) return clearSession(NextResponse.next())
-        const loginTarget = getAppHomeRoute(session.role)
+        const loginTarget = getAppHomeRoute(session.role, session.surface)
         return guardBounce(request, `${APP_ORIGIN}${loginTarget}`)
       }
     }

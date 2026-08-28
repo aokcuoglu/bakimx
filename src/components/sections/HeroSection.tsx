@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Pause,
-  Play,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -51,7 +45,10 @@ export function HeroSection() {
   useEffect(() => {
     if (!api || !isPlaying) return;
 
-    const interval = window.setInterval(() => api.scrollNext(), AUTOPLAY_DELAY_MS);
+    const interval = window.setInterval(
+      () => api.scrollNext(),
+      AUTOPLAY_DELAY_MS,
+    );
     return () => window.clearInterval(interval);
   }, [api, isPlaying]);
 
@@ -129,7 +126,10 @@ export function HeroSection() {
 
                       <ul className="mt-6 flex flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
                         {slide.bullets.map((bullet) => (
-                          <li key={bullet} className="inline-flex items-center gap-2">
+                          <li
+                            key={bullet}
+                            className="inline-flex items-center gap-2"
+                          >
                             <Check className="size-4 text-primary" />
                             {bullet}
                           </li>
@@ -151,7 +151,7 @@ export function HeroSection() {
                             className: "h-12 gap-2 px-6 text-sm sm:px-7",
                           })}
                         >
-                          7 Gün Ücretsiz Dene
+                          Ücretsiz Dene
                           <ArrowRight className="size-4" />
                         </Link>
                         <Link
@@ -198,9 +198,7 @@ export function HeroSection() {
                   <span
                     className={cn(
                       "h-1.5 rounded-full bg-navy-foreground/35 transition-[width,background-color] motion-reduce:transition-none",
-                      selectedIndex === index
-                        ? "w-7 bg-primary"
-                        : "w-2.5",
+                      selectedIndex === index ? "w-7 bg-primary" : "w-2.5",
                     )}
                   />
                 </Button>

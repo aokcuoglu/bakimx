@@ -15,6 +15,10 @@ import {
   ShieldUser,
   Radio,
   Handshake,
+  UserRoundPlus,
+  ListFilter,
+  Settings2,
+  WalletCards,
 } from "lucide-react"
 import {
   SidebarMenuItem,
@@ -36,7 +40,11 @@ const ITEMS: NavItem[] = [
   { href: "/admin/workshops", label: "İş Yerleri", icon: Building2 },
   { href: "/admin/billing", label: "Faturalandırma", icon: Receipt },
   { href: "/admin/leads", label: "Talepler", icon: Inbox },
-  { href: "/admin/sales", label: "Satış Paneli", icon: Handshake },
+  { href: "/admin/sales", label: "Satış — Bugünüm", icon: Handshake, exact: true, capability: "viewSales" },
+  { href: "/admin/sales/leads", label: "Satış Adayları", icon: ListFilter, capability: "viewSales" },
+  { href: "/admin/sales/advisors", label: "Satış Danışmanları", icon: UserRoundPlus, capability: "manageSalesAdvisors" },
+  { href: "/admin/sales/commissions", label: "Satış Hakedişleri", icon: WalletCards, capability: "viewSalesCommissions" },
+  { href: "/admin/sales/settings", label: "Hakediş Kuralları", icon: Settings2, capability: "manageSalesCommissions" },
   {
     href: "/admin/live-chat",
     label: "Canlı Destek",

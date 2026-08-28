@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { format, startOfDay } from "date-fns"
 import { tr } from "date-fns/locale"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -14,21 +15,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-agenda"
 import { cn } from "@/lib/utils"
-import { salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
+import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
+import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
-  convertSalesLead,
   createSalesLead,
   generateSalesDiscountCode,
   updateSalesDiscountCode,
   deactivateSalesDiscountCode,
   setSalesLeadStatus,
-  updateSalesCommission,
 } from "./actions"
-import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays } from "lucide-react"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
@@ -37,30 +39,45 @@ type Lead = {
   businessName: string
   contactName: string
   phone: string
+  email: string | null
   city: string | null
+  district: string | null
+  address: string | null
+  monthlyVehicles: string | null
   notes: string | null
   status: string
   source: string
   nextActionAt: string | null
   createdAt: string
   advisorName: string | null
+  advisorId: string | null
   workshopId: string | null
   activities: { id: string; type: string; summary: string; occurredAt: string }[]
 }
 
-type Commission = {
-  id: string
-  status: string
-  businessName: string
-  advisorName: string
-  amountMinor: number | null
-  note: string | null
-}
+const SalesTerritoryMap = dynamic(
+  () => import("@/components/sales/sales-territory-map").then((module) => module.SalesTerritoryMap),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="overflow-hidden rounded-2xl border bg-card shadow-sm" aria-label="Türkiye saha haritası yükleniyor">
+        <div className="p-4 sm:p-5">
+          <div className="h-3 w-28 animate-pulse rounded bg-muted" />
+          <div className="mt-3 h-6 w-64 max-w-full animate-pulse rounded bg-muted" />
+          <div className="mt-2 h-4 w-80 max-w-full animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-80 animate-pulse border-y bg-muted sm:h-[26rem]" />
+        <div className="h-14 animate-pulse bg-card" />
+      </section>
+    ),
+  },
+)
 
 type DiscountCode = {
   id: string
   code: string
   discountPercent: number
+  fundingSource: SalesDiscountFunding
   usedCount: number
   maxUses: number
   expiresAt: string
@@ -69,6 +86,7 @@ type DiscountCode = {
   createdAt: string
   leadName: string | null
   advisorName: string | null
+  createdByName: string | null
 }
 
 type Advisor = { id: string; name: string }
@@ -78,6 +96,7 @@ const statuses = [
   ["demo_scheduled", "Demo Planlandı", "bg-muted text-muted-foreground border-border"],
   ["demo_completed", "Demo Yapıldı", "bg-secondary text-secondary-foreground border-border"],
   ["proposal", "Teklif", "bg-accent text-accent-foreground border-border"],
+  ["onboarding", "Kayıt Aşamasında", "bg-primary/10 text-primary-strong border-primary/20"],
   ["won", "Kazanıldı", "bg-success/10 text-success-strong border-success/20"],
   ["lost", "Kaybedildi", "bg-destructive/10 text-destructive-strong border-destructive/20"],
 ] as const
@@ -109,39 +128,58 @@ function isExpired(iso: string) {
 
 export function SalesConsole({
   leads,
-  commissions,
+  tasks,
   discountCodes,
   advisors,
   isAdmin,
+  canManagePipeline,
   initialLeadId,
 }: {
   leads: Lead[]
-  commissions: Commission[]
+  tasks: AgendaTask[]
   discountCodes: DiscountCode[]
   advisors: Advisor[]
   isAdmin: boolean
+  canManagePipeline: boolean
   initialLeadId: string | null
 }) {
   const [pending, startTransition] = useTransition()
   const form = useForm({
     resolver: zodResolver(salesLeadSchema),
-    defaultValues: { businessName: "", contactName: "", phone: "", email: "", city: "", notes: "" },
+    defaultValues: {
+      businessName: "",
+      contactName: "",
+      phone: "",
+      email: "",
+      city: "",
+      district: "",
+      address: "",
+      monthlyVehicles: "",
+      notes: "",
+      allowDuplicate: false,
+    },
   })
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    duplicates: { id: string; businessName: string; phone: string; email: string | null; matchedBy: ("phone" | "email")[] }[]
+  } | null>(null)
   const [activity, setActivity] = useState<Record<string, string>>({})
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [advisorFilter, setAdvisorFilter] = useState<string>("all")
   const [showNewLeadForm, setShowNewLeadForm] = useState(false)
   const initialLeadStatus = leads.find((lead) => lead.id === initialLeadId)?.status
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(initialLeadId)
+  const [openStatuses, setOpenStatuses] = useState<string[]>(initialLeadStatus ? [initialLeadStatus] : [])
+  const newLeadButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!initialLeadId) return
+    if (!selectedLeadId) return
     const frame = requestAnimationFrame(() => {
-      const target = document.getElementById(salesLeadAnchorId(initialLeadId))
+      const target = document.getElementById(salesLeadAnchorId(selectedLeadId))
       const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
       target?.scrollIntoView({ behavior, block: "center" })
     })
     return () => cancelAnimationFrame(frame)
-  }, [initialLeadId])
+  }, [advisorFilter, openStatuses, selectedLeadId, statusFilter])
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -162,112 +200,276 @@ export function SalesConsole({
     const total = leads.length
     const won = leads.filter((l) => l.status === "won").length
     const active = leads.filter((l) => !["won", "lost"].includes(l.status)).length
-    const lost = leads.filter((l) => l.status === "lost").length
+    const engaged = leads.filter((l) => ["contacted", "demo_scheduled", "demo_completed", "proposal"].includes(l.status)).length
+    const conversations = leads.reduce((sum, lead) => sum + lead.activities.length, 0)
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0
-    return { total, won, active, lost, conversionRate }
+    return { total, won, active, engaged, conversations, conversionRate }
   }, [leads])
 
-  function submitLead(values: { businessName: string; contactName: string; phone: string; email: string; city: string; notes: string }) {
+  const focusLeads = useMemo(() => {
+    return leads
+      .filter((lead) => !["won", "lost"].includes(lead.status))
+      .sort((a, b) => {
+        const aTime = a.nextActionAt ? new Date(a.nextActionAt).getTime() : Number.POSITIVE_INFINITY
+        const bTime = b.nextActionAt ? new Date(b.nextActionAt).getTime() : Number.POSITIVE_INFINITY
+        if (aTime !== bTime) return aTime - bTime
+        return b.activities.length - a.activities.length
+      })
+      .slice(0, 4)
+  }, [leads])
+
+  function focusLead(lead: Pick<Lead, "id" | "status">) {
+    setStatusFilter("all")
+    setAdvisorFilter("all")
+    setSelectedLeadId(lead.id)
+    setOpenStatuses((current) => current.includes(lead.status) ? current : [...current, lead.status])
+  }
+
+  function submitLead(values: {
+    businessName: string
+    contactName: string
+    phone: string
+    email: string
+    city: string
+    district: string
+    address: string
+    monthlyVehicles: string
+    notes: string
+    allowDuplicate?: boolean
+  }) {
     startTransition(async () => {
       const res = await createSalesLead(values)
-      if (!res.ok) { toast.error(res.error); return }
+      if (!res.ok) {
+        if (res.code === "duplicate" && res.duplicates) {
+          setDuplicateWarning({ duplicates: res.duplicates })
+          return
+        }
+        toast.error(res.error)
+        return
+      }
       form.reset()
+      setDuplicateWarning(null)
       setShowNewLeadForm(false)
       toast.success("Servis adayı satış havuzuna eklendi.")
     })
   }
 
   return (
-    <div className="space-y-6">
-      {/* KPI Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Toplam Aday", value: stats.total, icon: Users, color: "text-foreground" },
-          { label: "Aktif Aday", value: stats.active, icon: TrendingUp, color: "text-primary-strong" },
-          { label: "Kazanılan", value: stats.won, icon: CheckCircle2, color: "text-success-strong" },
-          { label: "Dönüşüm", value: `%${stats.conversionRate}`, icon: TrendingUp, color: "text-primary-strong" },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-            <p className={`mt-1 text-2xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
-          </div>
-        ))}
-      </div>
+    <div className="space-y-8">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl">
+          <Badge variant="outline" className="mb-3 gap-1.5 bg-primary/10 text-primary-strong">
+            <Radar className="size-3.5" /> Canlı saha görünümü
+          </Badge>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Satış operasyon merkezi</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
+            Şirketleri haritada görün, günün temaslarını öne alın ve fırsatları tek bir akıştan ilerletin.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <Button asChild variant="outline">
+              <Link href="/admin/sales/advisors"><Users className="size-4" /> Danışmanlar</Link>
+            </Button>
+          )}
+          {canManagePipeline && (
+            <Button ref={newLeadButtonRef} type="button" onClick={() => setShowNewLeadForm(true)}>
+              <Plus className="size-4" /> Yeni şirket adayı
+            </Button>
+          )}
+        </div>
+      </header>
 
-      {/* New Lead Form */}
-      <section className="rounded-xl border bg-card">
-        <Button
-          type="button"
-          onClick={() => setShowNewLeadForm(!showNewLeadForm)}
-          variant="ghost"
-          className="flex h-auto w-full items-center justify-between p-4 text-left"
-        >
-          <div>
-            <h2 className="font-semibold text-foreground">Yeni Servis Adayı</h2>
-            <p className="text-sm text-muted-foreground">Satış havuzuna yeni bir aday ekleyin.</p>
+      <section aria-label="Satış özeti" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <SalesMetric label="Toplam portföy" value={stats.total} detail="Tüm şirket adayları" icon={Users} tone="primary" />
+        <SalesMetric label="Aktif fırsat" value={stats.active} detail="Takipteki şirketler" icon={Target} tone="warning" />
+        <SalesMetric label="Görüşme kaydı" value={stats.conversations} detail="Son kayıtlı temaslar" icon={MessageSquare} tone="muted" />
+        <SalesMetric label="Dönüşüm" value={`%${stats.conversionRate}`} detail={`${stats.won} kazanılan şirket`} icon={TrendingUp} tone="success" />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <SalesTerritoryMap leads={leads} selectedLeadId={selectedLeadId} onSelectLead={focusLead} />
+        <aside className="flex flex-col rounded-2xl border bg-card p-4 sm:p-5" aria-labelledby="focus-queue-title">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Öncelik sırası</p>
+              <h2 id="focus-queue-title" className="mt-1 text-lg font-semibold text-foreground">Bugünün odağı</h2>
+            </div>
+            <div className="flex size-9 items-center justify-center rounded-xl bg-warning/10 text-warning-strong">
+              <Target className="size-4" />
+            </div>
           </div>
-          <span className="text-muted-foreground">{showNewLeadForm ? "−" : "+"}</span>
-        </Button>
-        {showNewLeadForm && (
-          <div className="border-t px-4 pb-4 pt-4">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(submitLead)} className="grid gap-3 sm:grid-cols-2">
-                {(["businessName", "contactName", "phone", "email", "city"] as const).map((name) => (
-                  <FormField
-                    key={name}
-                    control={form.control}
-                    name={name}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {({ businessName: "Servis Adı", contactName: "Yetkili", phone: "Telefon", email: "E-posta", city: "Şehir" })[name]}
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+          <p className="mt-1 text-sm text-muted-foreground">Yaklaşan takipler ve ilerlemeye en yakın fırsatlar.</p>
+          <div className="mt-4 space-y-2">
+            {focusLeads.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-5 text-center">
+                <CheckCircle2 className="mx-auto size-6 text-success-strong" />
+                <p className="mt-2 text-sm font-medium text-foreground">Takip kuyruğu temiz</p>
+                <p className="mt-1 text-xs text-muted-foreground">Yeni bir şirket adayı ekleyerek başlayın.</p>
+              </div>
+            ) : focusLeads.map((lead, index) => {
+              const [, statusLabel] = getStatusConfig(lead.status)
+              return (
+                <Button
+                  key={lead.id}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => focusLead(lead)}
+                  className="h-auto w-full justify-start gap-3 rounded-xl border border-transparent px-2.5 py-2.5 text-left hover:border-border"
+                >
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground-strong">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-foreground">{lead.businessName}</span>
+                    <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">
+                      {lead.nextActionAt ? formatDateTime(lead.nextActionAt) : statusLabel}
+                    </span>
+                  </span>
+                  <ArrowUpRight className="size-4 text-muted-foreground" />
+                </Button>
+              )
+            })}
+          </div>
+          <div className="mt-auto border-t pt-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-foreground">Huni nabzı</p>
+              <span className="text-xs text-muted-foreground">Anlık portföy</span>
+            </div>
+            <div className="mt-3 space-y-3">
+              {[
+                { label: "Portföy", value: stats.total, bar: "bg-primary" },
+                { label: "Görüşmede", value: stats.engaged, bar: "bg-warning" },
+                { label: "Kazanılan", value: stats.won, bar: "bg-success" },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold tabular-nums text-foreground">{item.value}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className={cn("h-full rounded-full", item.bar)} style={{ width: `${Math.max(item.value > 0 ? 8 : 0, Math.round((item.value / Math.max(1, stats.total)) * 100))}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <SalesTaskAgenda canManage={canManagePipeline} tasks={tasks} />
+
+      <Dialog open={showNewLeadForm} onOpenChange={setShowNewLeadForm}>
+        <DialogContent
+          className="sm:max-w-2xl"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            newLeadButtonRef.current?.focus()
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Yeni şirket adayı</DialogTitle>
+            <DialogDescription>Sahada görüşülecek servis veya işletmeyi satış portföyüne ekleyin.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form id="new-sales-lead-form" onSubmit={form.handleSubmit(submitLead)} className="grid gap-4 sm:grid-cols-2">
+              {(["businessName", "contactName", "phone", "email", "city", "district", "monthlyVehicles"] as const).map((name) => (
                 <FormField
+                  key={name}
                   control={form.control}
-                  name="notes"
+                  name={name}
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Not</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} rows={2} />
-                      </FormControl>
+                    <FormItem>
+                      <FormLabel>
+                        {({
+                          businessName: "Şirket / servis adı",
+                          contactName: "Yetkili",
+                          phone: "Telefon",
+                          email: "E-posta",
+                          city: "Şehir",
+                          district: "İlçe",
+                          monthlyVehicles: "Aylık araç hacmi",
+                        })[name]}
+                      </FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="sm:col-span-2 flex gap-2">
-                  <Button type="submit" disabled={pending}>Kaydet</Button>
-                  <Button type="button" variant="ghost" onClick={() => { form.reset(); setShowNewLeadForm(false) }}>Vazgeç</Button>
-                </div>
-              </form>
-            </Form>
-          </div>
-        )}
-      </section>
+              ))}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Adres</FormLabel>
+                    <FormControl><Textarea {...field} rows={2} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>İlk izlenim / not</FormLabel>
+                    <FormControl><Textarea {...field} rows={3} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {duplicateWarning && (
+                <Alert variant="warning" className="sm:col-span-2">
+                  <AlertTitle>Olası mükerrer aday bulundu</AlertTitle>
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      {duplicateWarning.duplicates.map((duplicate) => (
+                        <p key={duplicate.id}>
+                          <Link href={salesLeadAdminHref(duplicate.id)} className="font-medium underline">
+                            {duplicate.businessName}
+                          </Link>{" "}
+                          ({duplicate.matchedBy.includes("phone") ? "telefon" : ""}
+                          {duplicate.matchedBy.length === 2 ? " ve " : ""}
+                          {duplicate.matchedBy.includes("email") ? "e-posta" : ""})
+                        </p>
+                      ))}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </form>
+          </Form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { form.reset(); setDuplicateWarning(null); setShowNewLeadForm(false) }}>Vazgeç</Button>
+            {duplicateWarning && (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={pending}
+                onClick={() => submitLead({ ...form.getValues(), allowDuplicate: true })}
+              >
+                Yine de ekle
+              </Button>
+            )}
+            <Button type="submit" form="new-sales-lead-form" disabled={pending}>Portföye ekle</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Sales Pool */}
-      <section className="space-y-4">
+      <section id="sales-pipeline" className="space-y-4 scroll-m-24">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Satış Havuzu</h2>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Fırsat akışı</p>
+            <h2 className="mt-1 text-xl font-bold text-foreground">Şirket portföyü</h2>
             <p className="text-sm text-muted-foreground">
               {isAdmin ? "Tüm danışmanların adayları." : "Size atanmış servis adayları."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[140px]" aria-label="Durum filtresi">
                 <SelectValue placeholder="Durum" />
               </SelectTrigger>
               <SelectContent>
@@ -279,7 +481,7 @@ export function SalesConsole({
             </Select>
             {isAdmin && (
               <Select value={advisorFilter} onValueChange={setAdvisorFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[160px]" aria-label="Danışman filtresi">
                   <SelectValue placeholder="Danışman" />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,7 +503,8 @@ export function SalesConsole({
         ) : (
           <Accordion
             type="multiple"
-            defaultValue={initialLeadStatus ? [initialLeadStatus] : []}
+            value={openStatuses}
+            onValueChange={setOpenStatuses}
             className="space-y-2"
           >
             {statuses.map(([statusValue, statusLabel, statusColor]) => {
@@ -321,8 +524,9 @@ export function SalesConsole({
                         <LeadCard
                           key={lead.id}
                           lead={lead}
-                          isLinked={lead.id === initialLeadId}
+                          isLinked={lead.id === selectedLeadId}
                           isAdmin={isAdmin}
+                          canManagePipeline={canManagePipeline}
                           pending={pending}
                           activity={activity[lead.id] ?? ""}
                           onActivityChange={(val) => setActivity((v) => ({ ...v, [lead.id]: val }))}
@@ -342,24 +546,50 @@ export function SalesConsole({
       <DiscountCodeSection
         discountCodes={discountCodes}
         leads={leads}
+        advisors={advisors}
         isAdmin={isAdmin}
+        canManagePipeline={canManagePipeline}
         pending={pending}
         startTransition={startTransition}
       />
 
-      {/* Commission Queue */}
-      {isAdmin && commissions.length > 0 && (
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Hakediş Kuyruğu</h2>
-            <p className="text-sm text-muted-foreground">İlk ücretli abonelikten oluşan, manuel fiyatlanacak taslaklar.</p>
-          </div>
-          {commissions.map((commission) => (
-            <CommissionRow key={commission.id} commission={commission} pending={pending} startTransition={startTransition} />
-          ))}
-        </section>
-      )}
     </div>
+  )
+}
+
+function SalesMetric({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: number | string
+  detail: string
+  icon: typeof Users
+  tone: "primary" | "warning" | "success" | "muted"
+}) {
+  const toneClass = {
+    primary: "bg-primary/10 text-primary-strong",
+    warning: "bg-warning/10 text-warning-strong",
+    success: "bg-success/10 text-success-strong",
+    muted: "bg-muted text-muted-foreground-strong",
+  }[tone]
+
+  return (
+    <article className="relative overflow-hidden rounded-2xl border bg-card p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-3xl">{value}</p>
+        </div>
+        <div className={cn("flex size-9 items-center justify-center rounded-xl", toneClass)}>
+          <Icon className="size-4" />
+        </div>
+      </div>
+      <p className="mt-2 truncate text-xs text-muted-foreground">{detail}</p>
+    </article>
   )
 }
 
@@ -367,6 +597,7 @@ function LeadCard({
   lead,
   isLinked,
   isAdmin,
+  canManagePipeline,
   pending,
   activity,
   onActivityChange,
@@ -375,6 +606,7 @@ function LeadCard({
   lead: Lead
   isLinked: boolean
   isAdmin: boolean
+  canManagePipeline: boolean
   pending: boolean
   activity: string
   onActivityChange: (val: string) => void
@@ -413,6 +645,9 @@ function LeadCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button asChild variant="outline" size="sm">
+            <Link href={salesLeadAdminHref(lead.id)}>Detay</Link>
+          </Button>
           {isAdmin && lead.workshopId && (
             <Button asChild variant="outline" size="sm">
               <Link href={workshopAdminHref(lead.workshopId)}>
@@ -420,7 +655,7 @@ function LeadCard({
               </Link>
             </Button>
           )}
-          <Select
+          {canManagePipeline && !["won", "lost"].includes(lead.status) && <Select
             value={lead.status}
             disabled={pending}
             onValueChange={(status) =>
@@ -430,15 +665,15 @@ function LeadCard({
               })
             }
           >
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-[130px]" aria-label={`${lead.businessName} durumu`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {statuses.map(([value, label]) => (
+              {statuses.filter(([value]) => !["won", "lost"].includes(value)).map(([value, label]) => (
                 <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select>}
         </div>
       </div>
 
@@ -483,7 +718,7 @@ function LeadCard({
       )}
 
       {/* Activity Input */}
-      <div className="flex gap-2">
+      {canManagePipeline && lead.status !== "won" && <div className="flex gap-2">
         <Input
           value={activity}
           onChange={(e) => onActivityChange(e.target.value)}
@@ -507,28 +742,8 @@ function LeadCard({
         >
           Ekle
         </Button>
-      </div>
+      </div>}
 
-      {/* Admin Actions */}
-      {isAdmin && lead.status !== "won" && (
-        <div className="flex gap-2 pt-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const res = await convertSalesLead(lead.id)
-                if (!res.ok) toast.error(res.error)
-                else toast.success("İş yeri kaydı oluşturuldu.")
-              })
-            }
-          >
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            İş yerine dönüştür
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
@@ -536,35 +751,56 @@ function LeadCard({
 function DiscountCodeSection({
   discountCodes,
   leads,
-  isAdmin: _isAdmin,
+  advisors,
+  isAdmin,
+  canManagePipeline,
   pending,
   startTransition,
 }: {
   discountCodes: DiscountCode[]
   leads: Lead[]
+  advisors: Advisor[]
   isAdmin: boolean
+  canManagePipeline: boolean
   pending: boolean
   startTransition: ReturnType<typeof useTransition>[1]
 }) {
   const form = useForm({
     resolver: zodResolver(salesDiscountCodeSchema),
-    defaultValues: { discountPercent: 10, leadId: "" },
+    defaultValues: {
+      discountPercent: 10,
+      leadId: "",
+      advisorId: "",
+      fundingSource: isAdmin ? "bakimx_funded" as const : "advisor_margin" as const,
+    },
   })
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
-  const [generatedCode, setGeneratedCode] = useState<{ code: string; discountPercent: number; expiresAt: string } | null>(null)
+  const [generatedCode, setGeneratedCode] = useState<{ code: string; discountPercent: number; expiresAt: string; fundingSource: SalesDiscountFunding } | null>(null)
   const [editingCode, setEditingCode] = useState<DiscountCode | null>(null)
   const [expiryDate, setExpiryDate] = useState("")
   const [calendarOpen, setCalendarOpen] = useState(false)
 
-  function generateCode(values: { discountPercent: number; leadId?: string }) {
+  const selectedAdvisorId = useWatch({ control: form.control, name: "advisorId" })
+  const eligibleLeads = leads.filter((lead) =>
+    !["won", "lost"].includes(lead.status) && (!isAdmin || (selectedAdvisorId && lead.advisorId === selectedAdvisorId))
+  )
+
+  function generateCode(values: { discountPercent: number; leadId?: string; advisorId?: string; fundingSource?: SalesDiscountFunding }) {
     startTransition(async () => {
       const res = await generateSalesDiscountCode({
         discountPercent: values.discountPercent,
         leadId: values.leadId || undefined,
+        advisorId: values.advisorId || undefined,
+        fundingSource: isAdmin ? "bakimx_funded" : "advisor_margin",
       })
       if (!res.ok) { toast.error(res.error); return }
-      setGeneratedCode({ code: res.code!, discountPercent: res.discountPercent!, expiresAt: res.expiresAt! })
-      form.reset({ discountPercent: 10, leadId: "" })
+      setGeneratedCode({ code: res.code!, discountPercent: res.discountPercent!, expiresAt: res.expiresAt!, fundingSource: res.fundingSource! })
+      form.reset({
+        discountPercent: 10,
+        leadId: "",
+        advisorId: "",
+        fundingSource: isAdmin ? "bakimx_funded" : "advisor_margin",
+      })
       toast.success(`İndirim kodu oluşturuldu: ${res.code}`)
     })
   }
@@ -606,21 +842,55 @@ function DiscountCodeSection({
   }
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-foreground">İndirim Kodları</h2>
-        <p className="text-sm text-muted-foreground">Müşterileriniz için 7 gün geçerli indirim kodları oluşturun.</p>
+    <section className="space-y-4" aria-labelledby="discount-codes-title">
+      <div className="flex items-start gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-strong">
+          <WalletCards className="size-5" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Teklif araçları</p>
+          <h2 id="discount-codes-title" className="mt-1 text-xl font-bold text-foreground">İndirim bütçesi</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Kodun yüzdesi kadar ekonomik yük, kartta görünen kaynaktan karşılanır.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-2xl border border-warning/20 bg-warning/10 p-4 text-warning-strong">
+          <div className="flex items-center gap-2 font-semibold"><WalletCards className="size-4" /> Danışman bütçeli</div>
+          <p className="mt-2 text-sm leading-5">Danışmanın kendi oluşturduğu kod, kendi satış kârlılığından karşılanır ve yalnız kendi portföyünde yönetilir.</p>
+        </div>
+        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4 text-primary-strong">
+          <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="size-4" /> BakımX destekli</div>
+          <p className="mt-2 text-sm leading-5">BakımX ekibinin tahsis ettiği kodu danışman potansiyel müşterisiyle paylaşır; bütçe ve yönetim platformda kalır.</p>
+        </div>
       </div>
 
       {/* Generate Form */}
-      <div className="rounded-xl border bg-card p-4">
+      {canManagePipeline && <div className="rounded-2xl border bg-card p-4 sm:p-5">
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-semibold text-foreground">Yeni kod tahsisi</h3>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "BakımX bütçesinden bir danışmana özel kod verin." : "Kendi satış marjınızdan müşteriye özel kod oluşturun."}
+            </p>
+          </div>
+          <Badge variant="outline" className={isAdmin ? "bg-primary/10 text-primary-strong" : "bg-warning/10 text-warning-strong"}>
+            {isAdmin ? "BakımX destekli" : "Danışman bütçeli"}
+          </Badge>
+        </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(generateCode)} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <form
+            onSubmit={form.handleSubmit(generateCode)}
+            className={cn(
+              "grid gap-3 md:grid-cols-2 xl:items-end",
+              isAdmin ? "xl:grid-cols-[10rem_1fr_1fr_auto]" : "xl:grid-cols-[10rem_1fr_auto]",
+            )}
+          >
             <FormField
               control={form.control}
               name="discountPercent"
               render={({ field }) => (
-                <FormItem className="w-full sm:w-40">
+                <FormItem>
                   <FormLabel>İndirim (%)</FormLabel>
                   <FormControl>
                     <Input type="number" min={1} max={99} value={String(field.value)} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
@@ -629,19 +899,41 @@ function DiscountCodeSection({
                 </FormItem>
               )}
             />
+            {isAdmin && <FormField
+              control={form.control}
+              name="advisorId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Danışman</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value)
+                      form.setValue("leadId", "")
+                    }}
+                  >
+                    <SelectTrigger aria-label="Danışman"><SelectValue placeholder="Danışman seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {advisors.map((advisor) => <SelectItem key={advisor.id} value={advisor.id}>{advisor.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />}
             <FormField
               control={form.control}
               name="leadId"
               render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Aday (Opsiyonel)</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Genel kod" />
+                <FormItem>
+                  <FormLabel>Şirket adayı (opsiyonel)</FormLabel>
+                  <Select value={field.value} disabled={isAdmin && !selectedAdvisorId} onValueChange={field.onChange}>
+                    <SelectTrigger aria-label="Şirket adayı (opsiyonel)">
+                      <SelectValue placeholder={isAdmin && !selectedAdvisorId ? "Önce danışman seçin" : "Portföy geneli"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Genel Kod</SelectItem>
-                      {leads.filter((l) => !["won", "lost"].includes(l.status)).map((lead) => (
+                      <SelectItem value="">Portföy geneli</SelectItem>
+                      {eligibleLeads.map((lead) => (
                         <SelectItem key={lead.id} value={lead.id}>{lead.businessName}</SelectItem>
                       ))}
                     </SelectContent>
@@ -650,20 +942,19 @@ function DiscountCodeSection({
               )}
             />
             <Button type="submit" disabled={pending}>
-              <Gift className="mr-1 h-4 w-4" />
-              Kod Oluştur
+              <Gift className="size-4" /> Kod oluştur
             </Button>
           </form>
         </Form>
 
         {generatedCode && (
-          <div className="mt-4 rounded-lg border border-success/20 bg-success/10 p-4">
-            <div className="flex items-center justify-between">
+          <div className="mt-4 rounded-xl border border-success/20 bg-success/10 p-4 text-success-strong">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-success-strong">Oluşturulan Kod</p>
-                <p className="mt-1 text-2xl font-bold tracking-wider text-success-strong">{generatedCode.code}</p>
-                <p className="text-sm text-success-strong">
-                  %{generatedCode.discountPercent} indirim · Geçerlilik: {formatDate(generatedCode.expiresAt)}
+                <p className="text-sm font-medium">Paylaşıma hazır</p>
+                <p className="mt-1 text-2xl font-bold tracking-wider">{generatedCode.code}</p>
+                <p className="text-sm">
+                  %{generatedCode.discountPercent} · {SALES_DISCOUNT_FUNDING_LABELS[generatedCode.fundingSource]} · {formatDate(generatedCode.expiresAt)} tarihine kadar
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => copyCode(generatedCode.code)}>
@@ -672,19 +963,20 @@ function DiscountCodeSection({
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Code List */}
       {discountCodes.length > 0 && (
-        <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50 text-left text-xs text-muted-foreground">
                   <th className="px-4 py-2.5 font-medium">Kod</th>
                   <th className="px-4 py-2.5 font-medium">İndirim</th>
+                  <th className="px-4 py-2.5 font-medium">Bütçe kaynağı</th>
                   <th className="px-4 py-2.5 font-medium">Durum</th>
-                  <th className="px-4 py-2.5 font-medium">Oluşturan</th>
+                  <th className="px-4 py-2.5 font-medium">Tahsis</th>
                   <th className="px-4 py-2.5 font-medium">Oluşturma</th>
                   <th className="px-4 py-2.5 font-medium"></th>
                 </tr>
@@ -695,10 +987,19 @@ function DiscountCodeSection({
                   const used = dc.usedCount >= dc.maxUses
                   const inactive = Boolean(dc.disabledAt)
                   const active = !inactive && !expired && !used
+                  const canManageCode = isAdmin || dc.fundingSource === "advisor_margin"
                   return (
                     <tr key={dc.id} className="border-b last:border-0">
                       <td className="px-4 py-2.5 font-mono font-semibold text-foreground">{dc.code}</td>
                       <td className="px-4 py-2.5">%{dc.discountPercent}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge
+                          variant="outline"
+                          className={dc.fundingSource === "bakimx_funded" ? "bg-primary/10 text-primary-strong" : "bg-warning/10 text-warning-strong"}
+                        >
+                          {SALES_DISCOUNT_FUNDING_LABELS[dc.fundingSource]}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-2.5">
                         {inactive ? (
                           <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">Pasif</Badge>
@@ -710,22 +1011,30 @@ function DiscountCodeSection({
                           <Badge variant="outline" className="text-[11px] bg-success/10 text-success-strong">Aktif</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{dc.advisorName ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{formatDate(dc.createdAt)}</td>
                       <td className="px-4 py-2.5">
-                        {!inactive && !used && (
+                        <p className="font-medium text-foreground">{dc.advisorName ?? "Atanmamış"}</p>
+                        <p className="text-xs text-muted-foreground">{dc.leadName ?? `Oluşturan: ${dc.createdByName ?? "Eski kayıt"}`}</p>
+                      </td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        <p>{formatDate(dc.createdAt)}</p>
+                        <p className="text-xs">Son: {formatDate(dc.expiresAt)}</p>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {canManagePipeline && !inactive && !used && (
                           <div className="flex items-center justify-end gap-1">
                             {active && (
                               <Button variant="ghost" size="icon-sm" onClick={() => copyCode(dc.code)} aria-label="Kodu kopyala">
                                 {copiedCode === dc.code ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                               </Button>
                             )}
-                            <Button variant="ghost" size="icon-sm" onClick={() => openExpiryEditor(dc)} aria-label="Geçerlilik tarihini düzenle">
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon-sm" onClick={() => deactivateCode(dc)} aria-label="Kodu pasife al">
-                              <Ban className="h-3 w-3" />
-                            </Button>
+                            {canManageCode && <>
+                              <Button variant="ghost" size="icon-sm" onClick={() => openExpiryEditor(dc)} aria-label="Geçerlilik tarihini düzenle">
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" onClick={() => deactivateCode(dc)} aria-label="Kodu pasife al">
+                                <Ban className="h-3 w-3" />
+                              </Button>
+                            </>}
                           </div>
                         )}
                       </td>
@@ -735,6 +1044,13 @@ function DiscountCodeSection({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {discountCodes.length === 0 && (
+        <div className="rounded-2xl border border-dashed bg-card p-8 text-center">
+          <Gift className="mx-auto size-7 text-muted-foreground-strong" />
+          <p className="mt-2 font-medium text-foreground">Henüz indirim kodu yok</p>
+          <p className="mt-1 text-sm text-muted-foreground">İlk kod oluşturulduğunda bütçe kaynağıyla birlikte burada görünür.</p>
         </div>
       )}
 
@@ -778,47 +1094,5 @@ function DiscountCodeSection({
         </DialogContent>
       </Dialog>
     </section>
-  )
-}
-
-function CommissionRow({
-  commission,
-  pending,
-  startTransition,
-}: {
-  commission: Commission
-  pending: boolean
-  startTransition: ReturnType<typeof useTransition>[1]
-}) {
-  const [amount, setAmount] = useState(commission.amountMinor ? String(commission.amountMinor / 100) : "")
-  const [note, setNote] = useState(commission.note ?? "")
-
-  const update = (status: "approved" | "paid" | "void") =>
-    startTransition(async () => {
-      const lira = Number(amount.replace(",", "."))
-      const res = await updateSalesCommission(commission.id, { amountMinor: Math.round(lira * 100), note }, status)
-      if (!res.ok) toast.error(res.error)
-      else toast.success("Hakediş güncellendi.")
-    })
-
-  return (
-    <article className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-end">
-      <div className="min-w-48">
-        <p className="font-semibold text-foreground">{commission.businessName}</p>
-        <p className="text-sm text-muted-foreground">{commission.advisorName} · {commission.status}</p>
-      </div>
-      <label className="flex-1 text-xs text-muted-foreground">
-        Tutar (TL)
-        <Input value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value)} />
-      </label>
-      <label className="flex-1 text-xs text-muted-foreground">
-        Not
-        <Input value={note} onChange={(e) => setNote(e.target.value)} />
-      </label>
-      <div className="flex gap-2">
-        <Button size="sm" disabled={pending} onClick={() => update("approved")}>Onayla</Button>
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => update("paid")}>Ödendi</Button>
-      </div>
-    </article>
   )
 }

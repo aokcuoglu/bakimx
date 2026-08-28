@@ -5,7 +5,7 @@
  * OLMASIN diye yalnızca ÜÇ koşul birden sağlanırsa doğrulama token'ı geri verilir:
  *  1) gönderilen şifre saklı hash'le DOĞRULANIYOR (login'in kullandığı bcrypt.compare),
  *  2) workshop hâlâ `pending` (henüz onaylanmamış/aktifleşmemiş),
- *  3) trial HENÜZ başlamamış (trialStartedAt null — yani kart doğrulaması yapılmamış).
+ *  3) trial HENÜZ başlamamış (trialStartedAt null — yani e-posta doğrulaması yapılmamış).
  *
  * Herhangi biri sağlanmazsa çağıran taraf sıradan "e-posta kullanımda" hatasını
  * döndürür (yanlış şifre ile "doğrulanmamış-pending ama-tutmayan" ayırt edilemez).

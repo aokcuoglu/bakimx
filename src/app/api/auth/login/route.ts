@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth-login"
 import { isEmailIdentifier } from "@/lib/user-identity"
 import { auditBreakGlassLogin } from "@/lib/admin-break-glass"
+import { resolveSessionSurface } from "@/lib/sales/session-surface"
 
 function tooManyAttempts(retryAfterMs: number) {
   return NextResponse.json(
@@ -75,7 +76,8 @@ export async function POST(request: Request) {
 
     // Rotate the session on login: clear any pre-existing (possibly fixated)
     // session data before writing the authenticated identity.
-    await establishSession(result.userId, result.workshopId, result.role)
+    const surface = await resolveSessionSurface(result.userId, result.workshopId)
+    await establishSession(result.userId, result.workshopId, result.role, "password", surface)
     await auditBreakGlassLogin({
       identifier: parsed.data.identifier,
       userId: result.userId,
@@ -86,7 +88,11 @@ export async function POST(request: Request) {
     // rotaları onları zaten çıkışa yönlendirir (bkz. (app)/layout.tsx).
     return NextResponse.json({
       success: true,
-      redirect: result.planExpiredReason ? PLAN_EXPIRED_LOGIN_REDIRECT : null,
+      redirect: surface === "sales"
+        ? "/admin/sales"
+        : result.planExpiredReason
+          ? PLAN_EXPIRED_LOGIN_REDIRECT
+          : null,
       mustChangePassword: result.mustChangePassword,
     })
   } catch (error) {

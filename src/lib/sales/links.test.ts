@@ -8,7 +8,7 @@ import {
 
 test("iş yeri ve satış adayı yönetim ekranları karşılıklı bağlanır", () => {
   expect(salesLeadAnchorId("lead-1")).toBe("sales-lead-lead-1")
-  expect(salesLeadAdminHref("lead-1")).toBe("/admin/sales?lead=lead-1#sales-lead-lead-1")
+  expect(salesLeadAdminHref("lead-1")).toBe("/admin/sales/leads/lead-1")
   expect(workshopAdminHref("workshop-1")).toBe("/admin/workshops/workshop-1")
 })
 

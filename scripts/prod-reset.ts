@@ -95,10 +95,16 @@ export const TENANT_TABLES = [
   // dönüşmüş Workshop satırlarına FK taşır. Bu reset tüm tenant/user verisini
   // sildiği için aynı transaction içinde bunlar da temizlenmelidir.
   "SalesAdvisor",
+  "SalesAdvisorInvite",
   "SalesLead",
+  "SalesRegistrationLink",
+  "SalesLeadAssignment",
   "SalesActivity",
+  "SalesTask",
   "SalesDemoSession",
+  "SalesCommissionRule",
   "SalesCommission",
+  "SalesCommissionEvent",
   "SalesDiscountCode",
   "SalesReferral",
   "CronRun",

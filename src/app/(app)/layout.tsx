@@ -45,10 +45,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       trialEndsAt: true,
       currentPeriodEnd: true,
       requestedPlanTier: true,
+      kind: true,
     },
   })
   if (!workshop) {
     redirect(`/login?${LOGOUT_REASON_PARAM}=${SESSION_INVALID_REASON}`)
+  }
+  if (workshop.kind === "internal") {
+    redirect("/admin/sales")
   }
 
   const plan = getPlanState(workshop)
@@ -131,7 +135,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {!readOnlyLocked && plan.isTrialing && plan.trialDaysLeft != null && (
         <div className="bg-primary/10 text-primary-strong text-xs sm:text-sm px-4 py-2 text-center">
           Deneme sürenizin bitmesine{" "}
-          <span className="font-semibold">{plan.trialDaysLeft} gün</span> kaldı.{" "}
+          <span className="font-semibold">{plan.trialDaysLeft} iş günü</span> kaldı.{" "}
           <Link href="/billing" className="font-semibold underline underline-offset-2">
             Paketi etkinleştir
           </Link>

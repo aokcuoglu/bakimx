@@ -5,7 +5,7 @@ export const DIJITAL_ARAC_KABUL_TITLE = "Dijital Araç Kabul: Ruhsat, Fotoğraf 
 export const DIJITAL_ARAC_KABUL_H1 = "Dijital araç kabulle ruhsatı okutun, kabul kaydını telefondan tamamlayın"
 
 export const DIJITAL_ARAC_KABUL_DESCRIPTION =
-  "Dijital araç kabul ile ruhsatı okutup araç ve müşteri bilgisini otomatik doldurun, kabul fotoğraflarını çekin, hasarı araç şeması üzerinde işaretleyin. BakımX'i 7 gün ücretsiz deneyin."
+  "Dijital araç kabul ile ruhsatı okutup araç ve müşteri bilgisini otomatik doldurun, kabul fotoğraflarını çekin, hasarı araç şeması üzerinde işaretleyin. BakımX'i 7 iş günü ücretsiz deneyin."
 
 export const DIJITAL_ARAC_KABUL_INTRO =
   "Dijital araç kabul; ruhsatı okutarak araç ve müşteri bilgisini otomatik doldurduğunuz, zorunlu kabul fotoğraflarını çektiğiniz ve hasarı araç şeması üzerinde işaretlediğiniz kayıt sürecidir. BakımX'te bu adımlar tek sihirbazda ilerler: kağıt form veya ayrı bir uygulama gerekmez, kayıt aynı anda iş emrine bağlanır ve ekip aracın kabul durumunu telefondan görür."

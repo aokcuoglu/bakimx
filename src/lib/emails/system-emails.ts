@@ -36,7 +36,7 @@ export function workshopApprovedEmail(p: { firstName: string; workshopName: stri
       heading: "Hesabınız onaylandı",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 7 günlük ücretsiz deneme süreniz başladı.</p>` +
+        `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX başvurunuz onaylandı. 7 iş günlük ücretsiz deneme süreniz başladı.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
       footerNote: "Bu e-postayı, BakimX'e iş yeri başvurusu yaptığınız için aldınız.",
@@ -60,8 +60,8 @@ export function workshopRejectedEmail(p: { firstName: string; workshopName: stri
   }
 }
 
-/** Sent the moment card verification succeeds (activateVerifiedWorkshop) — the
- *  pending workshop flips to approved and its 7-day trial starts right then. */
+/** Sent the moment e-mail verification succeeds (activateVerifiedWorkshop) — the
+ *  pending workshop flips to approved and its 7-business-day trial starts right then. */
 export function welcomeTrialEmail(p: {
   ownerName: string
   workshopName: string
@@ -76,13 +76,13 @@ export function welcomeTrialEmail(p: {
     year: "numeric",
   })
   return {
-    subject: "BakimX'e hoş geldiniz — 7 günlük deneme süreniz başladı",
+    subject: "BakimX'e hoş geldiniz — 7 iş günlük denemeniz başladı",
     html: renderEmailLayout({
       heading: "Hesabınız hazır",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
         `<p style="margin:0 0 12px;"><strong>${ws}</strong> için BakimX hesabınız oluşturuldu ve kullanıma hazır. ` +
-        `7 günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
+        `7 iş günlük ücretsiz deneme süreniz başladı; <strong>${trialEndsFormatted}</strong> tarihine kadar tüm özellikleri kullanabilirsiniz.</p>` +
         `<p style="margin:0 0 12px;">Hemen giriş yaparak iş yerinizi kurmaya başlayabilirsiniz.</p>`,
       cta: { label: "Giriş Yap", url: `${appUrl()}/login` },
       footerNote: `Deneme süreniz bittiğinde size uygun bir paket seçebilirsiniz: <a href="${appUrl()}/billing">${appUrl()}/billing</a>`,
@@ -107,7 +107,7 @@ export function newApplicationAdminEmail(p: {
     html: renderEmailLayout({
       heading: "Yeni iş yeri kaydı",
       bodyHtml:
-        `<p style="margin:0 0 12px;">Yeni bir BakimX iş yeri kaydı oluşturuldu (hesap zaten aktif, 7 günlük deneme başladı):</p>` +
+        `<p style="margin:0 0 12px;">Yeni bir BakimX iş yeri kaydı oluşturuldu. Hesap e-posta doğrulaması bekliyor; ücretsiz deneme henüz başlamadı:</p>` +
         `<p style="margin:0 0 4px;"><strong>İş yeri:</strong> ${ws}</p>` +
         `<p style="margin:0 0 4px;"><strong>Yetkili:</strong> ${owner}</p>` +
         `<p style="margin:0 0 4px;"><strong>E-posta:</strong> ${email}</p>` +
@@ -149,13 +149,13 @@ export function trialExpiryWarningEmail(p: {
   const trialEndsFormatted = formatTrDate(p.trialEndsAt)
   const isExpired = p.daysLeft <= 0
 
-  const heading = isExpired ? "Deneme süreniz sona erdi" : `Deneme sürenizin bitmesine ${p.daysLeft} gün kaldı`
+  const heading = isExpired ? "Deneme süreniz sona erdi" : `Deneme sürenizin bitmesine ${p.daysLeft} iş günü kaldı`
   const bodyHtml = isExpired
     ? `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 günlük ücretsiz deneme süreniz ${trialEndsFormatted} tarihinde sona erdi.</p>` +
-      `<p style="margin:0 0 12px;">Mevcut verileriniz (müşteri, araç, iş emri kayıtlarınız) güvende ve salt-okunur kilitte tutuluyor; bir paket seçtiğinizde kaldığınız yerden devam edebilirsiniz.</p>`
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 iş günlük ücretsiz deneme süreniz ${trialEndsFormatted} tarihinde sona erdi.</p>` +
+      `<p style="margin:0 0 12px;">Üyeliğiniz donduruldu; mevcut verileriniz (müşteri, araç ve iş emri kayıtlarınız) güvende. Bir paket seçtiğinizde kaldığınız yerden devam edebilirsiniz.</p>`
     : `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 günlük ücretsiz deneme süreniz <strong>${trialEndsFormatted}</strong> tarihinde sona erecek.</p>` +
+      `<p style="margin:0 0 12px;"><strong>${ws}</strong> için 7 iş günlük ücretsiz deneme süreniz <strong>${trialEndsFormatted}</strong> tarihinde sona erecek.</p>` +
       `<p style="margin:0 0 12px;">Kesintisiz kullanmaya devam etmek için şimdi bir paket seçebilirsiniz.</p>`
 
   return {
@@ -260,7 +260,7 @@ export function passwordResetEmail(p: { resetUrl: string; firstName?: string }):
   }
 }
 
-/** Kayıt sonrası e-posta doğrulama linki — linke tıklayınca 7 günlük deneme
+/** Kayıt sonrası e-posta doğrulama linki — linke tıklayınca 7 iş günlük deneme
  *  başlar (bkz. activateVerifiedWorkshop). Kart provizyonunun yerini alır. */
 export function verifyEmailEmail(p: { verifyUrl: string; firstName?: string }): BuiltEmail {
   const name = escapeHtml(p.firstName || "Yetkili")
@@ -270,7 +270,7 @@ export function verifyEmailEmail(p: { verifyUrl: string; firstName?: string }): 
       heading: "E-posta adresinizi doğrulayın",
       bodyHtml:
         `<p style="margin:0 0 12px;">Merhaba ${name},</p>` +
-        `<p style="margin:0 0 12px;">BakimX ücretsiz denemenizi başlatmak için e-posta adresinizi doğrulamanız yeterli. Aşağıdaki butona tıkladığınızda <strong>7 günlük ücretsiz denemeniz</strong> hemen başlar.</p>` +
+        `<p style="margin:0 0 12px;">BakimX ücretsiz denemenizi başlatmak için e-posta adresinizi doğrulamanız yeterli. Aşağıdaki butona tıkladığınızda <strong>7 iş günlük ücretsiz denemeniz</strong> hemen başlar. Kart bilgisi gerekmez.</p>` +
         `<p style="margin:0 0 12px;">Bu bağlantı <strong>48 saat</strong> boyunca geçerlidir.</p>` +
         `<p style="margin:0 0 12px;color:#64748b;">Bu talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>`,
       cta: { label: "E-postamı Doğrula ve Denemeyi Başlat", url: p.verifyUrl },
