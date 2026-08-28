@@ -366,6 +366,7 @@ model User {
   createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
   createdSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkCreator")
   revokedSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkRevoker")
+  createdSalesDiscountCodes SalesDiscountCode[] @relation("SalesDiscountCodeCreator")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -2151,6 +2152,7 @@ model SalesDiscountCode {
   id                String   @id @default(cuid())
   code              String   @unique
   discountPercent   Int      // 1-100 arası yüzde
+  fundingSource     SalesDiscountFundingSource @default(advisor_margin)
   maxUses           Int      @default(1)
   usedCount         Int      @default(0)
   advisorId         String?
@@ -2162,12 +2164,21 @@ model SalesDiscountCode {
   expiresAt         DateTime
   usedAt            DateTime?
   disabledAt         DateTime?
+  createdByUserId   String?
+  createdBy         User?    @relation("SalesDiscountCodeCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdAt         DateTime @default(now())
 
   @@index([code])
   @@index([advisorId, createdAt])
+  @@index([fundingSource, createdAt])
+  @@index([createdByUserId])
   @@index([expiresAt])
   @@index([disabledAt])
+}
+
+enum SalesDiscountFundingSource {
+  advisor_margin
+  bakimx_funded
 }
 
 enum SalesReferralStatus {

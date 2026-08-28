@@ -89,9 +89,21 @@ export const salesCommissionSchema = z.object({
   note: z.string().trim().max(1000),
 })
 
+export const salesDiscountFundingSchema = z.enum(["advisor_margin", "bakimx_funded"])
+
 export const salesDiscountCodeSchema = z.object({
   discountPercent: z.coerce.number().int().min(1, "İndirim en az %1 olmalıdır").max(99, "İndirim %99'u aşamaz"),
   leadId: z.string().trim().optional(),
+  advisorId: z.string().trim().optional(),
+  fundingSource: salesDiscountFundingSchema.optional(),
+}).superRefine((value, ctx) => {
+  if (value.fundingSource === "bakimx_funded" && !value.advisorId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["advisorId"],
+      message: "BakımX destekli kod için danışman seçin",
+    })
+  }
 })
 
 export const salesDiscountCodeUpdateSchema = z.object({
