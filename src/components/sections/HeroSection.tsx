@@ -92,88 +92,94 @@ export function HeroSection() {
                 aria-hidden={!isActive}
                 className="pl-0"
               >
-                <div className="relative flex min-h-[42rem] items-center overflow-hidden sm:min-h-[40rem] lg:min-h-[39rem]">
-                  <Image
-                    src={slide.image}
-                    alt=""
-                    fill
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="100vw"
-                    style={{ objectPosition: slide.imagePosition }}
-                    className="object-cover"
-                  />
-                  <div aria-hidden className="absolute inset-0 bg-navy/25" />
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-b from-navy via-navy/90 to-navy/55 sm:via-navy/80 lg:bg-gradient-to-r lg:from-navy lg:from-20% lg:via-navy/90 lg:via-48% lg:to-transparent lg:to-82%"
-                  />
+                <div className="mx-auto grid min-h-[48rem] w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 pb-32 pt-12 sm:min-h-[50rem] sm:px-6 sm:pb-28 sm:pt-16 lg:min-h-[39rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12 lg:px-8 lg:py-20">
+                  <div className="max-w-2xl lg:max-w-[39rem]">
+                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-navy-foreground/20 bg-navy/55 px-3 py-1.5 text-xs font-semibold text-navy-foreground backdrop-blur-sm">
+                      <span className="size-1.5 rounded-full bg-warning" />
+                      {slide.eyebrow}
+                    </span>
 
-                  <div className="relative mx-auto w-full max-w-7xl px-4 pb-32 pt-14 sm:px-6 sm:pb-28 sm:pt-16 lg:px-8 lg:pb-28 lg:pt-20">
-                    <div className="max-w-2xl lg:max-w-[39rem]">
-                      <span className="inline-flex w-fit items-center gap-2 rounded-full border border-navy-foreground/20 bg-navy/55 px-3 py-1.5 text-xs font-semibold text-navy-foreground backdrop-blur-sm">
-                        <span className="size-1.5 rounded-full bg-warning" />
-                        {slide.eyebrow}
-                      </span>
-
+                    {index === 0 ? (
                       <h1 className={cn(headingClassName, "mt-6")}>
                         {slide.title}{" "}
                         <span className="text-primary">{slide.highlight}</span>
                       </h1>
+                    ) : (
+                      <h2 className={cn(headingClassName, "mt-6")}>
+                        {slide.title}{" "}
+                        <span className="text-primary">{slide.highlight}</span>
+                      </h2>
+                    )}
 
-                      <p className="mt-5 max-w-xl text-base leading-relaxed text-navy-foreground/80 sm:text-lg">
-                        {slide.description}
-                      </p>
+                    <p className="mt-5 max-w-xl text-base leading-relaxed text-navy-foreground/80 sm:text-lg">
+                      {slide.description}
+                    </p>
 
-                      <ul className="mt-6 flex flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
-                        {slide.bullets.map((bullet) => (
-                          <li
-                            key={bullet}
-                            className="inline-flex items-center gap-2"
-                          >
-                            <Check className="size-4 text-primary" />
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <Link
-                          href="/register"
-                          tabIndex={isActive ? 0 : -1}
-                          onClick={() =>
-                            trackMarketingEvent("trial_cta_click", {
-                              cta_location: `hero_${slide.id}_primary`,
-                            })
-                          }
-                          className={buttonVariants({
-                            variant: "gradient",
-                            size: "lg",
-                            className: "h-12 gap-2 px-6 text-sm sm:px-7",
-                          })}
+                    <ul className="mt-6 flex flex-col gap-3 text-sm text-navy-foreground/90 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3">
+                      {slide.bullets.map((bullet) => (
+                        <li
+                          key={bullet}
+                          className="inline-flex items-center gap-2"
                         >
-                          Ücretsiz Dene
-                          <ArrowRight className="size-4" />
-                        </Link>
-                        <Link
-                          href="/#demo-form"
-                          tabIndex={isActive ? 0 : -1}
-                          onClick={() =>
-                            trackMarketingEvent("demo_cta_click", {
-                              cta_location: `hero_${slide.id}_secondary`,
-                              destination: "form",
-                            })
-                          }
-                          className={buttonVariants({
-                            variant: "navy",
-                            size: "lg",
-                            className:
-                              "h-12 border border-navy-foreground/30 bg-navy/60 px-6 text-sm shadow-none hover:bg-navy",
-                          })}
-                        >
-                          Demo İste
-                        </Link>
-                      </div>
+                          <Check className="size-4 text-primary" />
+                          {bullet}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <Link
+                        href="/register"
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() =>
+                          trackMarketingEvent("trial_cta_click", {
+                            cta_location: "hero_primary",
+                          })
+                        }
+                        className={buttonVariants({
+                          variant: "gradient",
+                          size: "lg",
+                          className: "h-12 gap-2 px-6 text-sm sm:px-7",
+                        })}
+                      >
+                        Ücretsiz Dene
+                        <ArrowRight className="size-4" />
+                      </Link>
+                      <Link
+                        href="/#demo-form"
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() =>
+                          trackMarketingEvent("demo_cta_click", {
+                            cta_location: "hero_secondary",
+                            destination: "form",
+                          })
+                        }
+                        className={buttonVariants({
+                          variant: "navy",
+                          size: "lg",
+                          className:
+                            "h-12 border border-navy-foreground/30 bg-navy/60 px-6 text-sm shadow-none hover:bg-navy",
+                        })}
+                      >
+                        Demo İste
+                      </Link>
                     </div>
+                  </div>
+
+                  <div className="relative min-h-64 overflow-hidden rounded-2xl border border-navy-foreground/10 bg-navy/70 shadow-2xl shadow-background/20 sm:min-h-80 lg:min-h-[29rem]">
+                    <Image
+                      src={slide.image}
+                      alt=""
+                      fill
+                      loading={index === 0 ? "eager" : "lazy"}
+                      sizes="(min-width: 1024px) 52vw, 100vw"
+                      style={{ objectPosition: slide.imagePosition }}
+                      className="object-cover"
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-r from-navy/35 via-transparent to-transparent"
+                    />
                   </div>
                 </div>
               </CarouselItem>
@@ -192,6 +198,7 @@ export function HeroSection() {
                   size="icon-xs"
                   aria-label={`${index + 1}. slayta git: ${slide.eyebrow}`}
                   aria-current={selectedIndex === index ? "true" : undefined}
+                  disabled={!api}
                   onClick={() => navigateManually(() => api?.scrollTo(index))}
                   className="size-8 rounded-full text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
                 >
@@ -226,6 +233,7 @@ export function HeroSection() {
                 size="icon-sm"
                 onClick={() => navigateManually(() => api?.scrollPrev())}
                 aria-label="Önceki slayt"
+                disabled={!api}
                 className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
               >
                 <ArrowLeft className="size-4" />
@@ -236,6 +244,7 @@ export function HeroSection() {
                 size="icon-sm"
                 onClick={() => navigateManually(() => api?.scrollNext())}
                 aria-label="Sonraki slayt"
+                disabled={!api}
                 className="size-10 rounded-full border border-navy-foreground/25 bg-navy/55 text-navy-foreground backdrop-blur-sm hover:bg-navy hover:text-navy-foreground"
               >
                 <ArrowRight className="size-4" />

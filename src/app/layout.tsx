@@ -2,12 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { SiteAssistant } from "@/components/site-assistant/site-assistant"
-import { announcementDismissScript } from "@/lib/landing/announcement"
-import { SITE_URL } from "@/lib/seo"
-import { MarketingAnalytics } from "@/components/analytics/marketing-analytics"
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SiteAssistant } from "@/components/site-assistant/site-assistant";
+import { SITE_URL } from "@/lib/seo";
+import { MarketingAnalytics } from "@/components/analytics/marketing-analytics";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -54,7 +53,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     siteName: "BakimX",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BakimX — Oto Servis Yönetim Platformu" }],
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "BakimX — Oto Servis Yönetim Platformu",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -88,11 +94,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <head>
-        <Script
-          id="announcement-dismiss"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: announcementDismissScript() }}
-        />
         {/*
           JS kapalıyken kaydırma animasyonlarını tamamen devre dışı bırakır
           (BAK-165). `Reveal` gizliliği sunucuda basar — titremeyi önlemek
@@ -101,7 +102,11 @@ export default function RootLayout({
           kuralı yalnız JS devre dışıyken uygular.
         */}
         <noscript>
-          <style dangerouslySetInnerHTML={{ __html: '[data-reveal="pending"]{opacity:1}' }} />
+          <style
+            dangerouslySetInnerHTML={{
+              __html: '[data-reveal="pending"]{opacity:1}',
+            }}
+          />
         </noscript>
       </head>
       <body className="min-h-screen flex flex-col bg-background text-foreground">
@@ -109,8 +114,15 @@ export default function RootLayout({
           {children}
           <MarketingAnalytics />
           <Toaster />
-          <SiteAssistant aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"} />
+          <SiteAssistant
+            aiEnabled={process.env.LANDING_ASSISTANT_AI === "on"}
+          />
         </TooltipProvider>
+        <Script
+          id="announcement-dismiss"
+          src="/landing/announcement-dismiss.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );

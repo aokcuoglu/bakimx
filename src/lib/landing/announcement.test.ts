@@ -8,7 +8,8 @@ import {
   landingAnnouncement,
 } from "./announcement";
 
-const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
+const read = (file: string) =>
+  readFileSync(new URL(file, import.meta.url), "utf8");
 
 describe("landing duyuru barı", () => {
   test("duyuru içeriği eksiksiz ve tıklanabilir", () => {
@@ -51,11 +52,17 @@ describe("landing duyuru barı", () => {
   test("kapatma script'i client bileşende değil kök layout'ta çalışır", () => {
     const component = read("../../components/sections/AnnouncementBar.tsx");
     const layout = read("../../app/layout.tsx");
+    const publicScript = read(
+      "../../../public/landing/announcement-dismiss.js",
+    ).trim();
 
     expect(component).not.toContain("<script");
     expect(component).not.toContain("announcementDismissScript");
     expect(layout).toContain('import Script from "next/script"');
     expect(layout).toContain('strategy="beforeInteractive"');
-    expect(layout).toContain("announcementDismissScript()");
+    expect(layout).toContain('src="/landing/announcement-dismiss.js"');
+    expect(publicScript).toBe(announcementDismissScript());
+    expect(layout.indexOf("<Script")).toBeGreaterThan(layout.indexOf("<body"));
+    expect(layout.indexOf("<Script")).toBeLessThan(layout.indexOf("</body>"));
   });
 });
