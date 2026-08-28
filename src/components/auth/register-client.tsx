@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RegisterForm } from "@/components/auth/register-form"
+import type { SalesRegistrationPrefill } from "@/components/auth/register-form"
 import { RegisterSidebar } from "@/components/auth/register-sidebar"
 import type { RegisterWizardSnapshot } from "@/lib/register-onboarding"
 
@@ -16,7 +17,7 @@ const INITIAL_SNAPSHOT: RegisterWizardSnapshot = {
   moduleCount: 0,
 }
 
-export function RegisterClient({ advisors = [] }: { advisors?: { id: string; label: string }[] }) {
+export function RegisterClient({ salesRegistration }: { salesRegistration?: SalesRegistrationPrefill }) {
   const [snapshot, setSnapshot] = useState(INITIAL_SNAPSHOT)
 
   const handleSnapshotChange = useCallback((next: RegisterWizardSnapshot) => {
@@ -53,7 +54,7 @@ export function RegisterClient({ advisors = [] }: { advisors?: { id: string; lab
         <RegisterSidebar snapshot={snapshot} />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-12">
           <div className="mx-auto w-full max-w-4xl">
-            <RegisterForm advisors={advisors} onSnapshotChange={handleSnapshotChange} />
+            <RegisterForm salesRegistration={salesRegistration} onSnapshotChange={handleSnapshotChange} />
           </div>
         </main>
       </div>

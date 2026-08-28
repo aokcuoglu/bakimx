@@ -97,6 +97,7 @@ export const TENANT_TABLES = [
   "SalesAdvisor",
   "SalesAdvisorInvite",
   "SalesLead",
+  "SalesRegistrationLink",
   "SalesLeadAssignment",
   "SalesActivity",
   "SalesTask",

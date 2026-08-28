@@ -45,7 +45,7 @@ export const registerSchema = z
     ]),
     setupPreference: z.enum(SETUP_PREFERENCE_IDS).default("self_service"),
     acquisitionSource: z.enum(ACQUISITION_SOURCES).default("unknown"),
-    acquisitionAdvisorId: z.string().optional().default(""),
+    salesRegistrationToken: z.string().trim().optional().default(""),
     referralCode: optionalReferralCodeSchema,
     email: z.email("Geçerli bir e-posta adresi giriniz"),
     password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),

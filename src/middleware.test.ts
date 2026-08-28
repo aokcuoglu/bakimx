@@ -42,4 +42,20 @@ describe("public landing routes", () => {
     const response = await middleware(new NextRequest("http://localhost/karsilastir/defter-excel-oto-servis-programi"))
     expect(response.status).toBe(200)
   })
+
+  test("allows anonymous customers to open a sales registration token", async () => {
+    const response = await middleware(new NextRequest("http://localhost/register/sales/opaque-token"))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  test("keeps sales registration tokens on the landing host in production", async () => {
+    const response = await middleware(new NextRequest("https://app.bakimx.com/register/sales/opaque-token", {
+      headers: { host: "app.bakimx.com" },
+    }))
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe("https://bakimx.com/register/sales/opaque-token")
+  })
 })

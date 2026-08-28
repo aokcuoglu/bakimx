@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -11,6 +11,8 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Copy,
+  Link2,
   Mail,
   MapPin,
   Phone,
@@ -20,6 +22,7 @@ import {
   addSalesActivity,
   assignSalesLead,
   createSalesTask,
+  generateSalesRegistrationLink,
   resolveSalesTask,
   setSalesLeadStatus,
 } from "@/app/admin/sales/actions"
@@ -42,7 +45,7 @@ import { z } from "zod"
 type ActivityResult = "reached" | "no_answer" | "follow_up_required" | "demo_scheduled" | "proposal_sent" | "won" | "lost"
 type ActivityType = "visit" | "phone" | "whatsapp" | "email" | "demo" | "note"
 type TaskType = "call" | "visit" | "online_demo" | "follow_up"
-type LeadStatus = "new" | "contacted" | "demo_scheduled" | "demo_completed" | "proposal" | "won" | "lost"
+type LeadStatus = "new" | "contacted" | "demo_scheduled" | "demo_completed" | "proposal" | "onboarding" | "won" | "lost"
 
 export type SalesLeadDetailData = {
   id: string
@@ -64,6 +67,11 @@ export type SalesLeadDetailData = {
   advisorId: string | null
   advisorName: string | null
   createdAt: string
+  registrationLink: {
+    state: "active" | "expired" | "revoked" | "used"
+    expiresAt: string
+    createdAt: string
+  } | null
   tasks: {
     id: string
     type: TaskType
@@ -100,6 +108,7 @@ const STATUS_OPTIONS: readonly [LeadStatus, string][] = [
   ["demo_scheduled", "Demo planlandı"],
   ["demo_completed", "Demo yapıldı"],
   ["proposal", "Teklif"],
+  ["onboarding", "Kayıt aşamasında"],
 ]
 
 const ACTIVITY_TYPES: readonly [ActivityType, string][] = [
@@ -181,6 +190,7 @@ export function SalesLeadDetail({
   activityPages: number
 }) {
   const [pending, startTransition] = useTransition()
+  const [generatedRegistrationUrl, setGeneratedRegistrationUrl] = useState<string | null>(null)
   const assignmentForm = useForm<{ advisorId: string | null }>({
     resolver: zodResolver(salesLeadAssignmentSchema),
     defaultValues: { advisorId: lead.advisorId },
@@ -305,6 +315,58 @@ export function SalesLeadDetail({
         {lead.notes && <div className="md:col-span-2 xl:col-span-3"><p className="text-xs text-muted-foreground">İlk not</p><p className="mt-1 text-sm text-foreground">{lead.notes}</p></div>}
       </section>
 
+      {!lead.workshopId && canManage && lead.status !== "lost" && !lead.attributionFrozenAt && (
+        <section className="rounded-xl border border-border bg-card p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 font-semibold text-foreground"><Link2 className="size-4" /> Güvenli müşteri kaydı</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Müşteri firma ve hesap bilgilerini kendisi tamamlar; iş yeri, owner ve danışman atfı birlikte oluşturulur.</p>
+            </div>
+            {lead.registrationLink && (
+              <Badge variant={lead.registrationLink.state === "active" ? "secondary" : "outline"}>
+                {lead.registrationLink.state === "active" ? "Aktif" : lead.registrationLink.state === "expired" ? "Süresi doldu" : lead.registrationLink.state === "used" ? "Kullanıldı" : "İptal edildi"}
+              </Badge>
+            )}
+          </div>
+          {!lead.advisorId ? (
+            <Alert variant="warning" className="mt-4"><AlertTitle>Önce danışman atayın</AlertTitle><AlertDescription>Kayıt bağlantısı, doğrulanmış danışman atfını sunucuda taşıdığı için atanmamış adayda üretilemez.</AlertDescription></Alert>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {lead.registrationLink?.state === "active" && !generatedRegistrationUrl && (
+                <p className="text-xs text-muted-foreground">Aktif bağlantının ham token’ı güvenlik gereği veritabanında tutulmaz. Yeni bağlantı üretmek mevcut bağlantıyı iptal eder.</p>
+              )}
+              {generatedRegistrationUrl && (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input readOnly value={generatedRegistrationUrl} aria-label="Müşteri kayıt bağlantısı" className="font-mono text-xs" />
+                  <Button type="button" variant="outline" onClick={async () => {
+                    await navigator.clipboard.writeText(generatedRegistrationUrl)
+                    toast.success("Kayıt bağlantısı kopyalandı.")
+                  }}><Copy className="size-4" /> Kopyala</Button>
+                </div>
+              )}
+              <Button type="button" disabled={pending} onClick={() => startTransition(async () => {
+                const result = await generateSalesRegistrationLink(lead.id)
+                if (!result.ok) {
+                  toast.error(result.error)
+                  return
+                }
+                if (!result.registrationPath) {
+                  toast.error("Kayıt bağlantısı oluşturulamadı.")
+                  return
+                }
+                const url = new URL(result.registrationPath, window.location.origin).toString()
+                setGeneratedRegistrationUrl(url)
+                await navigator.clipboard.writeText(url).catch(() => undefined)
+                toast.success("Kayıt bağlantısı oluşturuldu ve panoya kopyalandı.")
+              })}>
+                <Link2 className="size-4" />
+                {lead.registrationLink?.state === "active" ? "Bağlantıyı yenile" : "Kayıt bağlantısı oluştur"}
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
+
       {canManage && !lead.attributionFrozenAt && (
         <div className="grid gap-4 lg:grid-cols-2">
           {isAdmin && (
@@ -338,7 +400,7 @@ export function SalesLeadDetail({
                 else toast.success("Satış aşaması güncellendi.")
               }))}>
                 <FormField control={stageForm.control} name="status" render={({ field }) => (
-                  <FormItem className="flex-1"><FormLabel>Aşama</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{STATUS_OPTIONS.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                  <FormItem className="flex-1"><FormLabel>Aşama</FormLabel><Select value={field.value} onValueChange={field.onChange}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{STATUS_OPTIONS.map(([value, label]) => <SelectItem key={value} value={value} disabled={value === "onboarding"}>{label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                 )} />
                 <Button type="submit" disabled={pending}>Güncelle</Button>
               </form>

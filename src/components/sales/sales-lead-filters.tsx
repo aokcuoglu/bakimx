@@ -11,7 +11,7 @@ import { salesLeadFilterSchema } from "@/lib/validations/sales"
 
 export type SalesLeadFilterValues = {
   q: string
-  status: "all" | "new" | "contacted" | "demo_scheduled" | "demo_completed" | "proposal" | "won" | "lost"
+  status: "all" | "new" | "contacted" | "demo_scheduled" | "demo_completed" | "proposal" | "onboarding" | "won" | "lost"
   follow: "all" | "overdue" | "today" | "upcoming" | "none"
   advisorId: string
   createdFrom: string
@@ -25,6 +25,7 @@ const STATUS_OPTIONS = [
   ["demo_scheduled", "Demo planlandı"],
   ["demo_completed", "Demo yapıldı"],
   ["proposal", "Teklif"],
+  ["onboarding", "Kayıt aşamasında"],
   ["won", "Kazanıldı"],
   ["lost", "Kaybedildi"],
 ] as const
