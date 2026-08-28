@@ -73,7 +73,7 @@ export const salesLeadAssignmentSchema = z.object({
 
 export const salesLeadFilterSchema = z.object({
   q: z.string().trim().max(120),
-  status: z.enum(["all", "new", "contacted", "demo_scheduled", "demo_completed", "proposal", "won", "lost"]),
+  status: z.enum(["all", "new", "contacted", "demo_scheduled", "demo_completed", "proposal", "onboarding", "won", "lost"]),
   follow: z.enum(["all", "overdue", "today", "upcoming", "none"]),
   advisorId: z.string().trim(),
   createdFrom: z.string().trim().regex(/^$|^\d{4}-\d{2}-\d{2}$/, "Geçerli bir başlangıç tarihi girin"),
@@ -81,7 +81,7 @@ export const salesLeadFilterSchema = z.object({
 })
 
 export const salesLeadStatusSchema = z.enum([
-  "new", "contacted", "demo_scheduled", "demo_completed", "proposal", "won", "lost",
+  "new", "contacted", "demo_scheduled", "demo_completed", "proposal", "onboarding", "won", "lost",
 ])
 
 export const salesCommissionSchema = z.object({

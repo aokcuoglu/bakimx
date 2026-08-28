@@ -48,8 +48,8 @@ const ALLOWLIST = new Map<string, string>([
     "Hakediş action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışmanların tutar veya ödeme durumuna erişimi yoktur.",
   ],
   [
-    "sales/actions.ts::convertSalesLead",
-    "İş yeri açma action'ı getSalesAccess() ardından yalnız kind=admin kabul eder; danışman üretim tenant'ı oluşturamaz.",
+    "sales/actions.ts::generateSalesRegistrationLink",
+    "Kayıt linki getSalesAccess(manageSalesPipeline), aday sahipliği ve dondurulmuş atıf kontrolleriyle korunur; tenant yalnız müşteri kayıt akışında oluşur.",
   ],
   ["sales/actions.ts::setSalesReferralStatus", "Satış referansı getSalesAccess() ve danışman sahiplik kontrolüyle korunur."],
   ["sales/actions.ts::generateSalesDiscountCode", "İndirim kodu getSalesAccess() ve bağlı aday sahiplik kontrolüyle korunur."],

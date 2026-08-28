@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
 import { canAccessSales, getSalesAccess, salesLeadScope } from "@/lib/sales/access"
 import { salesAdvisorDisplayName } from "@/lib/sales/links"
+import { salesRegistrationLinkState } from "@/lib/sales/registration-link"
 import { SalesLeadDetail } from "@/components/sales/sales-lead-detail"
 
 export const dynamic = "force-dynamic"
@@ -75,6 +76,11 @@ export default async function SalesLeadDetailPage({
           actor: { select: { firstName: true, lastName: true, email: true } },
         },
       },
+      registrationLinks: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { expiresAt: true, usedAt: true, revokedAt: true, createdAt: true },
+      },
       _count: { select: { activities: true } },
     },
   })
@@ -140,6 +146,13 @@ export default async function SalesLeadDetailPage({
         advisorId: lead.advisorId,
         advisorName: lead.advisor ? personName(lead.advisor.user) : null,
         createdAt: lead.createdAt.toISOString(),
+        registrationLink: lead.registrationLinks[0]
+          ? {
+              state: salesRegistrationLinkState(lead.registrationLinks[0]),
+              expiresAt: lead.registrationLinks[0].expiresAt.toISOString(),
+              createdAt: lead.registrationLinks[0].createdAt.toISOString(),
+            }
+          : null,
         tasks: lead.tasks.map((task) => ({
           id: task.id,
           type: task.type,

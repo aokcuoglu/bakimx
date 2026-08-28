@@ -159,13 +159,19 @@ export async function setSalesAdvisorActive(advisorId: string, active: boolean):
   if (!advisor) return { ok: false, error: "Satış danışmanı bulunamadı." }
 
   const now = new Date()
-  await prisma.$transaction([
-    prisma.salesAdvisor.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.salesAdvisor.update({
       where: { id: advisor.id },
       data: { disabledAt: active ? null : now, sessionsValidFrom: now },
-    }),
-    prisma.user.update({ where: { id: advisor.userId }, data: { isActive: active } }),
-  ])
+    })
+    await tx.user.update({ where: { id: advisor.userId }, data: { isActive: active } })
+    if (!active) {
+      await tx.salesRegistrationLink.updateMany({
+        where: { advisorId: advisor.id, usedAt: null, revokedAt: null },
+        data: { revokedAt: now, revokedById: access.userId },
+      })
+    }
+  })
   await AuditLogAction(
     advisor.user.workshopId,
     access.userId,

@@ -20,7 +20,6 @@ import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
-  convertSalesLead,
   createSalesLead,
   generateSalesDiscountCode,
   updateSalesDiscountCode,
@@ -83,6 +82,7 @@ const statuses = [
   ["demo_scheduled", "Demo Planlandı", "bg-muted text-muted-foreground border-border"],
   ["demo_completed", "Demo Yapıldı", "bg-secondary text-secondary-foreground border-border"],
   ["proposal", "Teklif", "bg-accent text-accent-foreground border-border"],
+  ["onboarding", "Kayıt Aşamasında", "bg-primary/10 text-primary-strong border-primary/20"],
   ["won", "Kazanıldı", "bg-success/10 text-success-strong border-success/20"],
   ["lost", "Kaybedildi", "bg-destructive/10 text-destructive-strong border-destructive/20"],
 ] as const
@@ -606,26 +606,6 @@ function LeadCard({
         </Button>
       </div>}
 
-      {/* Admin Actions */}
-      {isAdmin && canManagePipeline && lead.status !== "won" && (
-        <div className="flex gap-2 pt-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const res = await convertSalesLead(lead.id)
-                if (!res.ok) toast.error(res.error)
-                else toast.success("İş yeri kaydı oluşturuldu.")
-              })
-            }
-          >
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            İş yerine dönüştür
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

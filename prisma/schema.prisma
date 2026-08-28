@@ -113,6 +113,7 @@ model Workshop {
   salesLeads                SalesLead[]
   demoSessions              SalesDemoSession[]
   salesDiscountCodes        SalesDiscountCode[]
+  salesRegistrationLink     SalesRegistrationLink?
   acquisitionAdvisor        SalesAdvisor? @relation("WorkshopAcquisitionAdvisor", fields: [acquisitionAdvisorId], references: [id], onDelete: SetNull)
   referredByWorkshop        Workshop?     @relation("WorkshopReferralAttribution", fields: [referredByWorkshopId], references: [id], onDelete: SetNull)
   referredWorkshops         Workshop[]    @relation("WorkshopReferralAttribution")
@@ -363,6 +364,8 @@ model User {
   salesLeadAssignments  SalesLeadAssignment[] @relation("SalesLeadAssignmentActor")
   createdSalesTasks     SalesTask[]          @relation("SalesTaskCreator")
   createdDemoSessions   SalesDemoSession[]   @relation("SalesDemoSessionCreator")
+  createdSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkCreator")
+  revokedSalesRegistrationLinks SalesRegistrationLink[] @relation("SalesRegistrationLinkRevoker")
 
   // Kimlik boş kalamaz (email VEYA username) ve ayrıcalıklı rollerde e-posta
   // zorunludur — ikisi de migration'da CHECK kısıtı olarak DB'de durur; PSL
@@ -1877,6 +1880,7 @@ model SalesAdvisor {
   discountCodes SalesDiscountCode[]
   acquisitionWorkshops Workshop[] @relation("WorkshopAcquisitionAdvisor")
   referrals SalesReferral[]
+  registrationLinks SalesRegistrationLink[]
 
   @@index([disabledAt])
 }
@@ -1919,6 +1923,7 @@ enum SalesLeadStatus {
   demo_scheduled
   demo_completed
   proposal
+  onboarding
   won
   lost
 }
@@ -1998,6 +2003,7 @@ model SalesLead {
   demoSessions       SalesDemoSession[]
   commissions        SalesCommission[]
   discountCodes      SalesDiscountCode[]
+  registrationLinks SalesRegistrationLink[]
   referral           SalesReferral?
 
   @@index([advisorId, status])
@@ -2005,6 +2011,33 @@ model SalesLead {
   @@index([normalizedPhone])
   @@index([normalizedEmail])
   @@index([createdAt])
+}
+
+/// Müşteri adayının mevcut kayıt sihirbazını güvenli danışman atfıyla açan
+/// süreli ve tek kullanımlık bağlantı. Ham token hiçbir zaman saklanmaz.
+model SalesRegistrationLink {
+  id          String       @id @default(cuid())
+  leadId      String
+  lead        SalesLead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  advisorId   String
+  advisor     SalesAdvisor @relation(fields: [advisorId], references: [id], onDelete: Restrict)
+  tokenHash   String       @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  revokedAt   DateTime?
+  workshopId  String?      @unique
+  workshop    Workshop?    @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User         @relation("SalesRegistrationLinkCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  revokedById String?
+  revokedBy   User?        @relation("SalesRegistrationLinkRevoker", fields: [revokedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime     @default(now())
+
+  @@index([leadId, createdAt])
+  @@index([advisorId, createdAt])
+  @@index([expiresAt])
+  @@index([createdById])
+  @@index([revokedById])
 }
 
 /// Atanmamış havuzdan danışmana atama ve danışmanlar arası devir geçmişi.
