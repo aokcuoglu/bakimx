@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { parseIstanbulLocalDateTime } from "@/lib/sales/time"
 
 export const salesLeadSchema = z.object({
   businessName: z.string().trim().min(2, "Servis adı en az 2 karakter olmalıdır").max(160),
@@ -84,9 +85,27 @@ export const salesLeadStatusSchema = z.enum([
   "new", "contacted", "demo_scheduled", "demo_completed", "proposal", "onboarding", "won", "lost",
 ])
 
-export const salesCommissionSchema = z.object({
-  amountMinor: z.coerce.number().int().min(0, "Tutar negatif olamaz").max(100_000_000),
+export const salesCommissionApprovalSchema = z.object({
+  approvedAmountMinor: z.number().int().min(0, "Tutar negatif olamaz").max(100_000_000),
+  adjustmentReason: z.string().trim().max(1000),
   note: z.string().trim().max(1000),
+})
+
+export const salesCommissionVoidSchema = z.object({
+  reason: z.string().trim().min(3, "İptal gerekçesi zorunludur").max(1000),
+})
+
+export const salesCommissionRuleSchema = z.object({
+  planTier: z.enum(["lite", "starter", "pro", "premium"]),
+  billingCycle: z.enum(["monthly", "yearly"]),
+  ratePercent: z.number()
+    .min(0, "Oran negatif olamaz")
+    .max(100, "Oran %100'ü aşamaz")
+    .refine((value) => Number.isInteger(value * 100), "En fazla iki ondalık basamak girin"),
+  effectiveFrom: z.string().trim().refine(
+    (value) => parseIstanbulLocalDateTime(value) != null,
+    "Geçerli bir yürürlük tarihi girin",
+  ),
 })
 
 export const salesDiscountFundingSchema = z.enum(["advisor_margin", "bakimx_funded"])

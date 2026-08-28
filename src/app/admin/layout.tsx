@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { cookies } from "next/headers"
-import { CircleUserRound, Handshake, ListFilter, ShieldCheck } from "lucide-react"
+import { CircleUserRound, Handshake, ListFilter, ShieldCheck, WalletCards } from "lucide-react"
 import { adminCapabilities, can, getAdminContext, isCurrentUserAdmin, ADMIN_ROLE_LABELS } from "@/lib/admin"
 import { getSalesAccess } from "@/lib/sales/access"
 import { logoutAction } from "@/app/(auth)/login/actions"
@@ -38,6 +38,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/admin/sales/leads"><ListFilter className="size-4" /> Adaylar</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin/sales/commissions"><WalletCards className="size-4" /> Hakedişler</Link>
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/admin/sales/account"><CircleUserRound className="size-4" /> Hesabım</Link>

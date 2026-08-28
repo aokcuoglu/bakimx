@@ -28,7 +28,6 @@ import {
   updateSalesDiscountCode,
   deactivateSalesDiscountCode,
   setSalesLeadStatus,
-  updateSalesCommission,
 } from "./actions"
 import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp, CheckCircle2, Gift, Copy, Check, Pencil, Ban, Building2, CalendarDays, Plus, Radar, Target, ArrowUpRight, WalletCards, ShieldCheck } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -73,15 +72,6 @@ const SalesTerritoryMap = dynamic(
     ),
   },
 )
-
-type Commission = {
-  id: string
-  status: string
-  businessName: string
-  advisorName: string
-  amountMinor: number | null
-  note: string | null
-}
 
 type DiscountCode = {
   id: string
@@ -139,22 +129,18 @@ function isExpired(iso: string) {
 export function SalesConsole({
   leads,
   tasks,
-  commissions,
   discountCodes,
   advisors,
   isAdmin,
   canManagePipeline,
-  canManageCommissions,
   initialLeadId,
 }: {
   leads: Lead[]
   tasks: AgendaTask[]
-  commissions: Commission[]
   discountCodes: DiscountCode[]
   advisors: Advisor[]
   isAdmin: boolean
   canManagePipeline: boolean
-  canManageCommissions: boolean
   initialLeadId: string | null
 }) {
   const [pending, startTransition] = useTransition()
@@ -567,18 +553,6 @@ export function SalesConsole({
         startTransition={startTransition}
       />
 
-      {/* Commission Queue */}
-      {canManageCommissions && commissions.length > 0 && (
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Hakediş Kuyruğu</h2>
-            <p className="text-sm text-muted-foreground">İlk ücretli abonelikten oluşan, manuel fiyatlanacak taslaklar.</p>
-          </div>
-          {commissions.map((commission) => (
-            <CommissionRow key={commission.id} commission={commission} pending={pending} startTransition={startTransition} />
-          ))}
-        </section>
-      )}
     </div>
   )
 }
@@ -1120,47 +1094,5 @@ function DiscountCodeSection({
         </DialogContent>
       </Dialog>
     </section>
-  )
-}
-
-function CommissionRow({
-  commission,
-  pending,
-  startTransition,
-}: {
-  commission: Commission
-  pending: boolean
-  startTransition: ReturnType<typeof useTransition>[1]
-}) {
-  const [amount, setAmount] = useState(commission.amountMinor ? String(commission.amountMinor / 100) : "")
-  const [note, setNote] = useState(commission.note ?? "")
-
-  const update = (status: "approved" | "paid" | "void") =>
-    startTransition(async () => {
-      const lira = Number(amount.replace(",", "."))
-      const res = await updateSalesCommission(commission.id, { amountMinor: Math.round(lira * 100), note }, status)
-      if (!res.ok) toast.error(res.error)
-      else toast.success("Hakediş güncellendi.")
-    })
-
-  return (
-    <article className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-end">
-      <div className="min-w-48">
-        <p className="font-semibold text-foreground">{commission.businessName}</p>
-        <p className="text-sm text-muted-foreground">{commission.advisorName} · {commission.status}</p>
-      </div>
-      <label className="flex-1 text-xs text-muted-foreground">
-        Tutar (TL)
-        <Input value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value)} />
-      </label>
-      <label className="flex-1 text-xs text-muted-foreground">
-        Not
-        <Input value={note} onChange={(e) => setNote(e.target.value)} />
-      </label>
-      <div className="flex gap-2">
-        <Button size="sm" disabled={pending} onClick={() => update("approved")}>Onayla</Button>
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => update("paid")}>Ödendi</Button>
-      </div>
-    </article>
   )
 }

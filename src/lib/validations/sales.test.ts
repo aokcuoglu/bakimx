@@ -3,9 +3,35 @@ import {
   salesActivitySchema,
   salesDiscountCodeSchema,
   salesDiscountCodeUpdateSchema,
+  salesCommissionApprovalSchema,
+  salesCommissionRuleSchema,
+  salesCommissionVoidSchema,
   salesLeadSchema,
   salesTaskSchema,
 } from "./sales"
+
+describe("sales commission validation", () => {
+  it("kuruş tutarını, append-only kural girdisini ve iptal gerekçesini doğrular", () => {
+    expect(salesCommissionApprovalSchema.safeParse({
+      approvedAmountMinor: 12_345,
+      adjustmentReason: "",
+      note: "",
+    }).success).toBe(true)
+    expect(salesCommissionRuleSchema.safeParse({
+      planTier: "pro",
+      billingCycle: "yearly",
+      ratePercent: 12.5,
+      effectiveFrom: "2026-09-01T03:00",
+    }).success).toBe(true)
+    expect(salesCommissionRuleSchema.safeParse({
+      planTier: "pro",
+      billingCycle: "yearly",
+      ratePercent: 12.345,
+      effectiveFrom: "2026-09-01T03:00",
+    }).success).toBe(false)
+    expect(salesCommissionVoidSchema.safeParse({ reason: "" }).success).toBe(false)
+  })
+})
 
 describe("sales discount code update validation", () => {
   it("accepts a date input value", () => {
