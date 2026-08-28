@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
+import { isUniqueConstraintError } from "@/lib/prisma-errors"
 import { getSalesAccess, assertSalesLeadAccess, salesLeadScope } from "@/lib/sales/access"
 import {
   isSalesLeadAttributionFrozen,
@@ -38,7 +39,7 @@ type DuplicateLead = {
 
 export type SalesActionResult =
   | { ok: true }
-  | { ok: false; error: string; code?: "duplicate"; duplicates?: DuplicateLead[] }
+  | { ok: false; error: string; code?: "duplicate" | "place_conflict"; duplicates?: DuplicateLead[] }
 
 type Result = SalesActionResult
 
@@ -66,6 +67,22 @@ export async function createSalesLead(input: unknown): Promise<Result> {
     ...(normalizedPhone ? [{ normalizedPhone }] : []),
     ...(normalizedEmail ? [{ normalizedEmail }] : []),
   ]
+
+  if (data.googlePlaceId) {
+    const placeConflict = await prisma.salesLead.findUnique({
+      where: { googlePlaceId: data.googlePlaceId },
+      select: { advisorId: true },
+    })
+    if (placeConflict) {
+      return {
+        ok: false,
+        code: "place_conflict",
+        error: access.kind === "advisor" && placeConflict.advisorId !== access.advisorId
+          ? "Bu Google işletmesi başka bir danışmanın portföyünde bulunuyor."
+          : "Bu Google işletmesi satış portföyüne daha önce eklenmiş.",
+      }
+    }
+  }
 
   if (!data.allowDuplicate && duplicateIdentity.length > 0) {
     const duplicates = await prisma.salesLead.findMany({
@@ -103,32 +120,107 @@ export async function createSalesLead(input: unknown): Promise<Result> {
     }
   }
 
-  await prisma.$transaction(async (tx) => {
-    const lead = await tx.salesLead.create({
+  try {
+    await prisma.$transaction(async (tx) => {
+      const lead = await tx.salesLead.create({
+        data: {
+          businessName: data.businessName,
+          contactName: data.contactName,
+          phone: data.phone,
+          normalizedPhone,
+          email: data.email || null,
+          normalizedEmail,
+          city: data.city || null,
+          district: data.district || null,
+          neighborhood: data.neighborhood || null,
+          route: data.route || null,
+          streetNumber: data.streetNumber || null,
+          postalCode: data.postalCode || null,
+          address: data.address || null,
+          formattedAddress: data.formattedAddress || null,
+          googlePlaceId: data.googlePlaceId || null,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
+          locationSource: data.locationSource ?? null,
+          locationConfirmedAt: data.locationConfirmed ? new Date() : null,
+          monthlyVehicles: data.monthlyVehicles || null,
+          notes: data.notes || null,
+          // Platform yöneticisi kaydı merkezi havuzda bırakabilir; danışman kendi
+          // adına açtığı kaydın sahibi olur.
+          advisorId: access.advisorId,
+        },
+      })
+      if (access.advisorId) {
+        await tx.salesLeadAssignment.create({
+          data: { leadId: lead.id, toAdvisorId: access.advisorId, actorId: access.userId },
+        })
+      }
+    })
+  } catch (error) {
+    if (isUniqueConstraintError(error, "googlePlaceId")) {
+      return { ok: false, code: "place_conflict", error: "Bu Google işletmesi satış portföyüne daha önce eklenmiş." }
+    }
+    throw error
+  }
+  refresh()
+  return { ok: true }
+}
+
+export async function updateSalesLeadLocation(leadId: string, input: unknown): Promise<Result> {
+  const access = await getSalesAccess("manageSalesPipeline")
+  const parsed = salesLeadSchema.safeParse(input)
+  if (!leadId || !parsed.success) {
+    return { ok: false, error: parsed.success ? "Geçersiz şirket adayı." : parsed.error.issues[0]?.message ?? "Geçersiz konum" }
+  }
+  const data = parsed.data
+  if (data.latitude == null || data.longitude == null || !data.locationSource || !data.locationConfirmed) {
+    return { ok: false, error: "Haritadaki şirket konumunu doğrulayın." }
+  }
+
+  const lead = await prisma.salesLead.findUnique({
+    where: { id: leadId },
+    select: { advisorId: true },
+  })
+  assertSalesLeadAccess(access, lead)
+
+  if (data.googlePlaceId) {
+    const placeConflict = await prisma.salesLead.findFirst({
+      where: { googlePlaceId: data.googlePlaceId, id: { not: leadId } },
+      select: { id: true },
+    })
+    if (placeConflict) {
+      return { ok: false, code: "place_conflict", error: "Bu Google işletmesi başka bir satış adayına bağlı." }
+    }
+  }
+
+  try {
+    const updated = await prisma.salesLead.updateMany({
+      where: { id: leadId, ...(access.kind === "advisor" ? { advisorId: access.advisorId } : {}) },
       data: {
-        businessName: data.businessName,
-        contactName: data.contactName,
-        phone: data.phone,
-        normalizedPhone,
-        email: data.email || null,
-        normalizedEmail,
         city: data.city || null,
         district: data.district || null,
+        neighborhood: data.neighborhood || null,
+        route: data.route || null,
+        streetNumber: data.streetNumber || null,
+        postalCode: data.postalCode || null,
         address: data.address || null,
-        monthlyVehicles: data.monthlyVehicles || null,
-        notes: data.notes || null,
-        // Platform yöneticisi kaydı merkezi havuzda bırakabilir; danışman kendi
-        // adına açtığı kaydın sahibi olur.
-        advisorId: access.advisorId,
+        formattedAddress: data.formattedAddress || null,
+        googlePlaceId: data.googlePlaceId || null,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        locationSource: data.locationSource,
+        locationConfirmedAt: new Date(),
       },
     })
-    if (access.advisorId) {
-      await tx.salesLeadAssignment.create({
-        data: { leadId: lead.id, toAdvisorId: access.advisorId, actorId: access.userId },
-      })
+    if (updated.count !== 1) return { ok: false, error: "Şirket konumu güncellenemedi." }
+  } catch (error) {
+    if (isUniqueConstraintError(error, "googlePlaceId")) {
+      return { ok: false, code: "place_conflict", error: "Bu Google işletmesi başka bir satış adayına bağlı." }
     }
-  })
-  refresh()
+    throw error
+  }
+
+  refresh(leadId)
   return { ok: true }
 }
 

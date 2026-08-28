@@ -24,6 +24,10 @@ const ALLOWLIST = new Map<string, string>([
     "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
   ],
   [
+    "sales/actions.ts::updateSalesLeadLocation",
+    "Konum güncellemesi getSalesAccess(manageSalesPipeline) ve assertSalesLeadAccess() ile danışman sahipliğini birlikte doğrular; tenant-admin kapısı danışman modelini bozar.",
+  ],
+  [
     "sales/actions.ts::setSalesLeadStatus",
     "Satış yüzeyi PlatformAdmin yetkisini değil getSalesAccess() ile danışman profili ya da yönetici kimliğini doğrular; tenant-admin yetenek kapısı burada yanlış güvenlik modelidir.",
   ],

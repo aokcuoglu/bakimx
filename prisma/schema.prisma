@@ -1960,6 +1960,11 @@ enum SalesLeadStatus {
   lost
 }
 
+enum SalesLeadLocationSource {
+  google_place
+  manual_pin
+}
+
 enum SalesActivityType {
   visit
   phone
@@ -2018,7 +2023,17 @@ model SalesLead {
   normalizedEmail     String?
   city                String?
   district            String?
+  neighborhood        String?
+  route               String?
+  streetNumber        String?
+  postalCode          String?
   address             String?
+  formattedAddress    String?
+  googlePlaceId       String?                 @unique
+  latitude            Decimal?                @db.Decimal(9, 6)
+  longitude           Decimal?                @db.Decimal(9, 6)
+  locationSource      SalesLeadLocationSource?
+  locationConfirmedAt DateTime?
   monthlyVehicles     String?
   notes               String?
   nextActionAt        DateTime?

@@ -26,6 +26,31 @@ S3_FORCE_PATH_STYLE=true
 - `bun run dev` çalıştırmak için geçerli bir `DATABASE_URL` gerekir
 - Production'da `DATABASE_URL` zorunludur
 
+#### Satış Saha Ağı — Google Maps ve Places
+
+```env
+GOOGLE_MAPS_BROWSER_API_KEY=browser-key
+GOOGLE_MAPS_MAP_ID=map-id
+# Yalnız ileride sunucu taraflı çağrı eklenirse:
+# GOOGLE_MAPS_SERVER_API_KEY=server-key
+```
+
+- `GOOGLE_MAPS_BROWSER_API_KEY`, Google Cloud'da yalnız **Maps JavaScript API**
+  ve **Places API (New)** için yetkili olmalı; `localhost` ile kullanılan BakımX
+  origin'lerine HTTP referrer kısıtı uygulanmalıdır.
+- Tarayıcı anahtarı gizli değildir. `NEXT_PUBLIC_*` yerine server page üzerinden
+  runtime'da aktarılır; böylece aynı ECS imajı ortamlar arasında taşınırken build
+  zamanında donmaz.
+- Advanced Markers için ortama ait `GOOGLE_MAPS_MAP_ID` zorunludur.
+- İki değer de eksikse `/admin/sales` içindeki portföy ve görev akışları çalışır;
+  harita, açık bir yapılandırma bekleme durumu gösterir.
+- Sunucu taraflı Places/Geocoding ihtiyacı doğarsa browser anahtarı yeniden
+  kullanılmaz. Ayrı `GOOGLE_MAPS_SERVER_API_KEY`, sunucu çıkış IP'leri ve gereken
+  API'lerle kısıtlanır; istemci bileşenlerine geçirilmez.
+- Google Places sonuçları topluca CRM'e aktarılmaz. Danışman haritada bir işletme
+  seçip açıkça satış fırsatı oluşturur; kalıcı harici kimlik olarak `placeId`
+  kullanılır.
+
 #### Depolama (Storage) Ortam Değişkenleri
 
 ```env
