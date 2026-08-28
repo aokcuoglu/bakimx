@@ -3,27 +3,42 @@ import { describe, expect, it } from "bun:test"
 const CONSOLE = await Bun.file(new URL("../../app/admin/sales/sales-console.tsx", import.meta.url)).text()
 const PAGE = await Bun.file(new URL("../../app/admin/sales/page.tsx", import.meta.url)).text()
 const TERRITORY_MAP = await Bun.file(new URL("./sales-territory-map.tsx", import.meta.url)).text()
+const LOCATION_PICKER = await Bun.file(new URL("./sales-location-picker.tsx", import.meta.url)).text()
 
 describe("sales operations surface contract", () => {
-  it("loads the browser-only Leaflet map without server-side rendering", () => {
+  it("loads the browser-only Google map without server-side rendering", () => {
     expect(CONSOLE).toContain('import("@/components/sales/sales-territory-map")')
     expect(CONSOLE).toContain("ssr: false")
-    expect(TERRITORY_MAP).toContain("<MapContainer")
-    expect(TERRITORY_MAP).toContain("<TileLayer")
-    expect(TERRITORY_MAP).toContain("territoryCoordinatesForCity")
+    expect(TERRITORY_MAP).toContain('loadSalesGoogleLibrary(apiKey!, mapId!, "maps")')
+    expect(TERRITORY_MAP).toContain("lead.latitude != null && lead.longitude != null")
+    expect(TERRITORY_MAP).not.toContain("territoryCoordinatesForCity")
   })
 
   it("keeps map pins tied to accessible lead selection", () => {
-    expect(TERRITORY_MAP).toContain('element.setAttribute("aria-label", label)')
-    expect(TERRITORY_MAP).toContain('element.setAttribute("aria-pressed", String(selected))')
-    expect(TERRITORY_MAP).toContain("keydown: (event)")
-    expect(TERRITORY_MAP).toContain("onSelectLead(lead)")
+    expect(TERRITORY_MAP).toContain('marker.setAttribute("aria-label"')
+    expect(TERRITORY_MAP).toContain('marker.setAttribute("aria-pressed", String(selected))')
+    expect(TERRITORY_MAP).toContain('gmpClickable: true')
+    expect(TERRITORY_MAP).toContain("onSelectLeadRef.current(lead)")
   })
 
-  it("keeps an attributed default map source and a tile failure state", () => {
-    expect(TERRITORY_MAP).toContain("https://tile.openstreetmap.org/{z}/{x}/{y}.png")
-    expect(TERRITORY_MAP).toContain("https://www.openstreetmap.org/copyright")
-    expect(TERRITORY_MAP).toContain("tileerror: () => setTileFailed(true)")
+  it("discovers automotive places without bulk importing them", () => {
+    expect(TERRITORY_MAP).toContain('"car_repair", "tire_shop", "car_dealer", "car_wash"')
+    expect(TERRITORY_MAP).toContain("Place.searchNearby")
+    expect(TERRITORY_MAP).toContain("Satış fırsatı oluştur")
+    expect(TERRITORY_MAP).not.toContain("createSalesLead(")
+  })
+
+  it("keeps Google configuration failure isolated from the sales console", () => {
+    expect(PAGE).toContain("GOOGLE_MAPS_BROWSER_API_KEY")
+    expect(PAGE).toContain("GOOGLE_MAPS_MAP_ID")
+    expect(TERRITORY_MAP).toContain("Harita kapalı olsa da satış portföyü çalışmaya devam eder")
+  })
+
+  it("requires a selected or manually pinned location to be confirmed", () => {
+    expect(LOCATION_PICKER).toContain("AutocompleteSuggestion.fetchAutocompleteSuggestions")
+    expect(LOCATION_PICKER).toContain('form.setValue("locationConfirmed", false')
+    expect(LOCATION_PICKER).toContain("Bu konumu doğrula")
+    expect(LOCATION_PICKER).toContain('gmpDraggable: true')
   })
 
   it("explains both economic sources instead of presenting a generic coupon", () => {
