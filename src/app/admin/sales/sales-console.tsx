@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { format, startOfDay } from "date-fns"
 import { tr } from "date-fns/locale"
@@ -19,7 +20,6 @@ import { SalesTaskAgenda, type AgendaTask } from "@/components/sales/sales-task-
 import { cn } from "@/lib/utils"
 import { salesLeadAdminHref, salesLeadAnchorId, workshopAdminHref } from "@/lib/sales/links"
 import { SALES_DISCOUNT_FUNDING_LABELS, type SalesDiscountFunding } from "@/lib/sales/discount-policy"
-import { territoryPositionForCity } from "@/lib/sales/territory"
 import { salesLeadSchema, salesDiscountCodeSchema, salesDiscountCodeUpdateSchema } from "@/lib/validations/sales"
 import {
   addSalesActivity,
@@ -35,7 +35,6 @@ import { Phone, Mail, MessageSquare, FileText, MapPin, Clock, Users, TrendingUp,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 type Lead = {
   id: string
@@ -57,6 +56,24 @@ type Lead = {
   workshopId: string | null
   activities: { id: string; type: string; summary: string; occurredAt: string }[]
 }
+
+const SalesTerritoryMap = dynamic(
+  () => import("@/components/sales/sales-territory-map").then((module) => module.SalesTerritoryMap),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="overflow-hidden rounded-2xl border bg-card shadow-sm" aria-label="Türkiye saha haritası yükleniyor">
+        <div className="p-4 sm:p-5">
+          <div className="h-3 w-28 animate-pulse rounded bg-muted" />
+          <div className="mt-3 h-6 w-64 max-w-full animate-pulse rounded bg-muted" />
+          <div className="mt-2 h-4 w-80 max-w-full animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-80 animate-pulse border-y bg-muted sm:h-[26rem]" />
+        <div className="h-14 animate-pulse bg-card" />
+      </section>
+    ),
+  },
+)
 
 type Commission = {
   id: string
@@ -215,7 +232,7 @@ export function SalesConsole({
       .slice(0, 4)
   }, [leads])
 
-  function focusLead(lead: Lead) {
+  function focusLead(lead: Pick<Lead, "id" | "status">) {
     setStatusFilter("all")
     setAdvisorFilter("all")
     setSelectedLeadId(lead.id)
@@ -599,108 +616,6 @@ function SalesMetric({
       </div>
       <p className="mt-2 truncate text-xs text-muted-foreground">{detail}</p>
     </article>
-  )
-}
-
-function mapPinVariant(status: string): "default" | "warning" | "success" | "destructive" | "secondary" {
-  if (status === "won") return "success"
-  if (status === "lost") return "destructive"
-  if (["contacted", "demo_scheduled"].includes(status)) return "warning"
-  if (["demo_completed", "proposal"].includes(status)) return "secondary"
-  return "default"
-}
-
-function SalesTerritoryMap({
-  leads,
-  selectedLeadId,
-  onSelectLead,
-}: {
-  leads: Lead[]
-  selectedLeadId: string | null
-  onSelectLead: (lead: Lead) => void
-}) {
-  const pins = useMemo(() => {
-    const cityCounts = new Map<string, number>()
-    return leads.flatMap((lead) => {
-      const position = territoryPositionForCity(lead.city)
-      if (!position) return []
-      const cityKey = lead.city?.toLocaleLowerCase("tr-TR") ?? ""
-      const occurrence = cityCounts.get(cityKey) ?? 0
-      cityCounts.set(cityKey, occurrence + 1)
-      const offsets = [[0, 0], [-1.7, 2.2], [1.7, 2.2], [-2.4, -1.7], [2.4, -1.7]] as const
-      const [offsetX, offsetY] = offsets[occurrence % offsets.length]
-      return [{ lead, x: position.x + offsetX, y: position.y + offsetY }]
-    })
-  }, [leads])
-  const unmappedCount = leads.length - pins.length
-
-  return (
-    <section className="relative overflow-hidden rounded-2xl bg-navy p-4 text-navy-foreground shadow-sm sm:p-6" aria-labelledby="territory-map-title">
-      <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-primary/20 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-navy-foreground/5 blur-3xl" />
-      <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-foreground">Türkiye saha ağı</p>
-          <h2 id="territory-map-title" className="mt-1 text-xl font-semibold sm:text-2xl">Görüşme yapılan şirketler</h2>
-          <p className="mt-1 max-w-xl text-sm text-navy-foreground">Bir pini seçerek şirketin satış kartına geçin.</p>
-        </div>
-        <div className="flex items-center gap-2 self-start rounded-xl border border-navy-foreground/15 bg-navy-foreground/10 px-3 py-2">
-          <MapPin className="size-4 text-primary" />
-          <span className="text-sm font-semibold tabular-nums">{pins.length}</span>
-          <span className="text-xs text-navy-foreground">haritada</span>
-        </div>
-      </div>
-
-      <div className="relative mt-4 aspect-[2/1] min-h-56 w-full sm:min-h-72" aria-label={`${pins.length} şirket adayı Türkiye haritasında gösteriliyor`}>
-        <svg aria-hidden viewBox="0 0 100 80" preserveAspectRatio="none" className="absolute inset-0 size-full text-navy-foreground">
-          <path
-            d="M3 31 L7 26 11 27 13 23 18 25 20 21 24 22 27 26 33 25 37 22 42 24 46 20 51 22 55 19 60 22 65 18 70 22 76 20 80 24 85 22 89 26 95 25 98 29 96 34 99 37 96 42 98 47 94 50 92 57 87 55 84 60 80 58 75 62 70 58 65 60 60 55 55 57 50 54 45 58 40 54 36 60 31 56 27 60 23 57 19 62 15 58 11 60 9 55 6 54 8 49 5 46 7 41 4 38 6 34 Z"
-            fill="currentColor"
-            fillOpacity="0.09"
-            stroke="currentColor"
-            strokeOpacity="0.28"
-            strokeWidth="0.45"
-            vectorEffect="non-scaling-stroke"
-          />
-          <path d="M17 29 C35 20 55 31 76 20 M28 53 C48 40 66 56 88 42" fill="none" stroke="currentColor" strokeOpacity="0.08" strokeDasharray="1.4 2.3" vectorEffect="non-scaling-stroke" />
-        </svg>
-
-        {pins.map(({ lead, x, y }) => (
-          <Tooltip key={lead.id}>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon-sm"
-                variant={mapPinVariant(lead.status)}
-                aria-label={`${lead.businessName}, ${lead.city ?? "şehir belirtilmedi"}`}
-                aria-pressed={lead.id === selectedLeadId}
-                onClick={() => onSelectLead(lead)}
-                className={cn(
-                  "absolute size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-navy shadow-lg transition-transform hover:scale-110 motion-reduce:transition-none motion-reduce:hover:scale-100",
-                  lead.id === selectedLeadId && "ring-4 ring-navy-foreground/25",
-                )}
-                style={{ left: `${x}%`, top: `${y}%` }}
-              >
-                <MapPin className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6}>
-              <span className="font-medium">{lead.businessName}</span>
-              <span>· {lead.city}</span>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-
-      <div className="relative mt-3 flex flex-col gap-3 border-t border-navy-foreground/10 pt-3 text-xs text-navy-foreground sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-x-4 gap-y-2">
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary" /> Yeni</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-warning" /> Görüşmede</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-success" /> Kazanıldı</span>
-        </div>
-        {unmappedCount > 0 && <span>{unmappedCount} aday şehir bilgisi bekliyor</span>}
-      </div>
-    </section>
   )
 }
 

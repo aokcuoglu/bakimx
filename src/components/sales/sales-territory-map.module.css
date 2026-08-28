@@ -1,0 +1,103 @@
+.map {
+  height: 100%;
+  width: 100%;
+  background: var(--muted);
+  font-family: inherit;
+}
+
+.markerWrapper {
+  border: 0;
+  background: transparent;
+}
+
+.marker {
+  --marker-fill: var(--primary);
+  --marker-contrast: var(--primary-foreground);
+  display: flex;
+  height: 1.8rem;
+  width: 1.8rem;
+  transform: rotate(-45deg);
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card);
+  border-radius: 50% 50% 50% 0;
+  background: var(--marker-fill);
+  box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--foreground) 24%, transparent);
+  transition: box-shadow 150ms ease, scale 150ms ease;
+}
+
+.markerDot {
+  height: 0.42rem;
+  width: 0.42rem;
+  transform: rotate(45deg);
+  border-radius: 9999px;
+  background: var(--marker-contrast);
+}
+
+.markerWarning {
+  --marker-fill: var(--warning);
+  --marker-contrast: var(--warning-foreground);
+}
+
+.markerSuccess {
+  --marker-fill: var(--success);
+  --marker-contrast: var(--success-foreground);
+}
+
+.markerDestructive {
+  --marker-fill: var(--destructive);
+  --marker-contrast: var(--destructive-foreground);
+}
+
+.markerSecondary {
+  --marker-fill: var(--secondary);
+  --marker-contrast: var(--secondary-foreground);
+}
+
+.markerSelected {
+  box-shadow:
+    0 0 0 4px var(--ring),
+    0 0.35rem 0.8rem color-mix(in srgb, var(--foreground) 24%, transparent);
+  scale: 1.12;
+}
+
+.markerWrapper:global(.leaflet-interactive):focus-visible .marker {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.companyTooltip:global(.leaflet-tooltip) {
+  border-color: var(--border);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.map :global(.leaflet-control-zoom),
+.map :global(.leaflet-control-attribution) {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+
+.map :global(.leaflet-control-zoom a) {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.map :global(.leaflet-control-zoom a:hover),
+.map :global(.leaflet-control-zoom a:focus-visible) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.map :global(.leaflet-control-attribution a) {
+  color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker {
+    transition: none;
+  }
+}
